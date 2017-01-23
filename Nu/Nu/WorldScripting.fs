@@ -45,6 +45,12 @@ module WorldScripting =
         static member private removeProceduralBindings world =
             World.updateScriptEnv EnvModule.Env.removeProceduralBindings world
 
+        static member private getProceduralFrames world =
+            World.getScriptEnvBy Scripting.EnvModule.Env.getProceduralFrames world
+
+        static member private setProceduralFrames proceduralFrames world =
+            World.updateScriptEnv (Scripting.EnvModule.Env.setProceduralFrames proceduralFrames) world
+
         static member internal getLocalFrame world =
             World.getScriptEnvBy Scripting.EnvModule.Env.getLocalFrame world
 
@@ -53,41 +59,41 @@ module WorldScripting =
 
     module Scripting =
 
-        let rec private tryImportList (value : obj) (ty : Type) originOpt =
+        let rec private tryImport value (ty : Type) =
+            let ty = if ty.IsGenericTypeDefinition then ty.GetGenericTypeDefinition () else ty
+            match Importers.TryGetValue ty.Name with
+            | (true, tryImportFn) -> tryImportFn value ty
+            | (false, _) -> None
+
+        and private tryImportList (value : obj) (ty : Type) =
             try let garg = (ty.GetGenericArguments ()).[0]
                 let objList = Reflection.objToObjList value
-                let evaledListOpts = List.map (fun item -> tryImport item garg originOpt) objList
+                let evaledListOpts = List.map (fun item -> tryImport item garg) objList
                 match List.definitizePlus evaledListOpts with
-                | (true, evaledList) -> Some (List (evaledList, originOpt))
+                | (true, evaledList) -> Some (List evaledList)
                 | (false, _) -> None
             with _ -> None
 
-        and private tryImport value (ty : Type) originOpt =
-            let ty = if ty.IsGenericTypeDefinition then ty.GetGenericTypeDefinition () else ty
-            match Importers.TryGetValue ty.Name with
-            | (true, tryImportFn) -> tryImportFn value ty originOpt
-            | (false, _) -> None
-
-        and private Importers : Dictionary<string, obj -> Type -> SymbolOrigin option -> Expr option> =
-            [(typeof<Expr>.Name, (fun (value : obj) _ _ -> Some (value :?> Expr)))
-             (typeof<bool>.Name, (fun (value : obj) _ originOpt -> match value with :? bool as bool -> Some (Bool (bool, originOpt)) | _ -> None))
-             (typeof<int>.Name, (fun (value : obj) _ originOpt -> match value with :? int as int -> Some (Int (int, originOpt)) | _ -> None))
-             (typeof<int64>.Name, (fun (value : obj) _ originOpt -> match value with :? int64 as int64 -> Some (Int64 (int64, originOpt)) | _ -> None))
-             (typeof<single>.Name, (fun (value : obj) _ originOpt -> match value with :? single as single -> Some (Single (single, originOpt)) | _ -> None))
-             (typeof<double>.Name, (fun (value : obj) _ originOpt -> match value with :? double as double -> Some (Double (double, originOpt)) | _ -> None))
-             (typeof<Vector2>.Name, (fun (value : obj) _ originOpt -> match value with :? Vector2 as vector2 -> Some (Vector2 (vector2, originOpt)) | _ -> None))
-             (typedefof<_ list>.Name, (fun value ty originOpt -> tryImportList value ty originOpt))] |>
+        and private Importers : Dictionary<string, obj -> Type -> Expr option> =
+            [(typeof<Expr>.Name, (fun (value : obj) _ -> Some (value :?> Expr)))
+             (typeof<bool>.Name, (fun (value : obj) _ -> match value with :? bool as bool -> Some (Bool bool) | _ -> None))
+             (typeof<int>.Name, (fun (value : obj) _ -> match value with :? int as int -> Some (Int int) | _ -> None))
+             (typeof<int64>.Name, (fun (value : obj) _ -> match value with :? int64 as int64 -> Some (Int64 int64) | _ -> None))
+             (typeof<single>.Name, (fun (value : obj) _ -> match value with :? single as single -> Some (Single single) | _ -> None))
+             (typeof<double>.Name, (fun (value : obj) _ -> match value with :? double as double -> Some (Double double) | _ -> None))
+             (typeof<Vector2>.Name, (fun (value : obj) _ -> match value with :? Vector2 as vector2 -> Some (Vector2 vector2) | _ -> None))
+             (typedefof<_ list>.Name, (fun value ty -> tryImportList value ty))] |>
              // TODO: remaining importers
             dictPlus
 
         and private tryImportEventData evt originOpt =
-            match tryImport evt.Data evt.DataType originOpt with
+            match tryImport evt.Data evt.DataType with
             | Some data -> data
             | None -> Violation ([!!"InvalidStreamValue"], "Stream value could not be imported into scripting environment.", originOpt)
 
         let rec private tryExportList (evaled : Expr) (ty : Type) =
             match evaled with
-            | List (evaleds, _) ->
+            | List evaleds ->
                 let garg = ty.GetGenericArguments () |> Array.item 0
                 let itemType = if garg.IsGenericTypeDefinition then garg.GetGenericTypeDefinition () else garg
                 let itemOpts =
@@ -102,12 +108,12 @@ module WorldScripting =
             | _ -> None
 
         and private Exporters : Dictionary<string, Expr -> Type -> obj option> =
-            [(typeof<bool>.Name, (fun evaled _ -> match evaled with Bool (value, _) -> value :> obj |> Some | _ -> None))
-             (typeof<int>.Name, (fun evaled _ -> match evaled with Int (value, _) -> value :> obj |> Some | _ -> None))
-             (typeof<int64>.Name, (fun evaled _ -> match evaled with Int64 (value, _) -> value :> obj |> Some | _ -> None))
-             (typeof<single>.Name, (fun evaled _ -> match evaled with Single (value, _) -> value :> obj |> Some | _ -> None))
-             (typeof<double>.Name, (fun evaled _ -> match evaled with Double (value, _) -> value :> obj |> Some | _ -> None))
-             (typeof<Vector2>.Name, (fun evaled _ -> match evaled with Vector2 (value, _) -> value :> obj |> Some | _ -> None))
+            [(typeof<bool>.Name, (fun evaled _ -> match evaled with Bool value -> value :> obj |> Some | _ -> None))
+             (typeof<int>.Name, (fun evaled _ -> match evaled with Int value -> value :> obj |> Some | _ -> None))
+             (typeof<int64>.Name, (fun evaled _ -> match evaled with Int64 value -> value :> obj |> Some | _ -> None))
+             (typeof<single>.Name, (fun evaled _ -> match evaled with Single value -> value :> obj |> Some | _ -> None))
+             (typeof<double>.Name, (fun evaled _ -> match evaled with Double value -> value :> obj |> Some | _ -> None))
+             (typeof<Vector2>.Name, (fun evaled _ -> match evaled with Vector2 value -> value :> obj |> Some | _ -> None))
              (typedefof<_ list>.Name, tryExportList)] |>
              // TODO: remaining exporters
             dictPlus
@@ -128,11 +134,11 @@ module WorldScripting =
 
         let SqrFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a bool.", originOpt)
-              Int = fun value originOpt -> Int (value * value, originOpt)
-              Int64 = fun value originOpt -> Int64 (value * value, originOpt)
-              Single = fun value originOpt -> Single (value * value, originOpt)
-              Double = fun value originOpt -> Double (value * value, originOpt)
-              Vector2 = fun value originOpt -> Vector2 (Vector2.Multiply (value, value), originOpt)
+              Int = fun value _ -> Int (value * value)
+              Int64 = fun value _ -> Int64 (value * value)
+              Single = fun value _ -> Single (value * value)
+              Double = fun value _ -> Double (value * value)
+              Vector2 = fun value _ -> Vector2 (Vector2.Multiply (value, value))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a keyphrase.", originOpt)
@@ -142,11 +148,11 @@ module WorldScripting =
 
         let SqrtFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a bool.", originOpt)
-              Int = fun value originOpt -> Int (int ^ Math.Sqrt (double value), originOpt)
-              Int64 = fun value originOpt -> Int64 (int64 ^ Math.Sqrt (double value), originOpt)
-              Single = fun value originOpt -> Single (single ^ Math.Sqrt (double value), originOpt)
-              Double = fun value originOpt -> Double (Math.Sqrt value, originOpt)
-              Vector2 = fun value originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Sqrt (double value.X), single ^ Math.Sqrt (double value.Y)), originOpt)
+              Int = fun value _ -> Int (int ^ Math.Sqrt (double value))
+              Int64 = fun value _ -> Int64 (int64 ^ Math.Sqrt (double value))
+              Single = fun value _ -> Single (single ^ Math.Sqrt (double value))
+              Double = fun value _ -> Double (Math.Sqrt value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Sqrt (double value.X), single ^ Math.Sqrt (double value.Y)))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a keyphrase.", originOpt)
@@ -156,11 +162,11 @@ module WorldScripting =
 
         let FloorFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a bool.", originOpt)
-              Int = fun value originOpt -> Int (int ^ Math.Floor (double value), originOpt)
-              Int64 = fun value originOpt -> Int64 (int64 ^ Math.Floor (double value), originOpt)
-              Single = fun value originOpt -> Single (single ^ Math.Floor (double value), originOpt)
-              Double = fun value originOpt -> Double (Math.Floor value, originOpt)
-              Vector2 = fun value originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Floor (double value.X), single ^ Math.Floor (double value.Y)), originOpt)
+              Int = fun value _ -> Int (int ^ Math.Floor (double value))
+              Int64 = fun value _ -> Int64 (int64 ^ Math.Floor (double value))
+              Single = fun value _ -> Single (single ^ Math.Floor (double value))
+              Double = fun value _ -> Double (Math.Floor value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Floor (double value.X), single ^ Math.Floor (double value.Y)))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a keyphrase.", originOpt)
@@ -170,11 +176,11 @@ module WorldScripting =
 
         let CeilingFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a bool.", originOpt)
-              Int = fun value originOpt -> Int (int ^ Math.Ceiling (double value), originOpt)
-              Int64 = fun value originOpt -> Int64 (int64 ^ Math.Ceiling (double value), originOpt)
-              Single = fun value originOpt -> Single (single ^ Math.Ceiling (double value), originOpt)
-              Double = fun value originOpt -> Double (Math.Ceiling value, originOpt)
-              Vector2 = fun value originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Ceiling (double value.X), single ^ Math.Ceiling (double value.Y)), originOpt)
+              Int = fun value _ -> Int (int ^ Math.Ceiling (double value))
+              Int64 = fun value _ -> Int64 (int64 ^ Math.Ceiling (double value))
+              Single = fun value _ -> Single (single ^ Math.Ceiling (double value))
+              Double = fun value _ -> Double (Math.Ceiling value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Ceiling (double value.X), single ^ Math.Ceiling (double value.Y)))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a keyphrase.", originOpt)
@@ -184,11 +190,11 @@ module WorldScripting =
 
         let TruncateFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a bool.", originOpt)
-              Int = fun value originOpt -> Int (int ^ Math.Truncate (double value), originOpt)
-              Int64 = fun value originOpt -> Int64 (int64 ^ Math.Truncate (double value), originOpt)
-              Single = fun value originOpt -> Single (single ^ Math.Truncate (double value), originOpt)
-              Double = fun value originOpt -> Double (Math.Truncate value, originOpt)
-              Vector2 = fun value originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Truncate (double value.X), single ^ Math.Truncate (double value.Y)), originOpt)
+              Int = fun value _ -> Int (int ^ Math.Truncate (double value))
+              Int64 = fun value _ -> Int64 (int64 ^ Math.Truncate (double value))
+              Single = fun value _ -> Single (single ^ Math.Truncate (double value))
+              Double = fun value _ -> Double (Math.Truncate value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Truncate (double value.X), single ^ Math.Truncate (double value.Y)))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a keyphrase.", originOpt)
@@ -198,11 +204,11 @@ module WorldScripting =
 
         let ExpFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a bool.", originOpt)
-              Int = fun value originOpt -> Int (int ^ Math.Exp (double value), originOpt)
-              Int64 = fun value originOpt -> Int64 (int64 ^ Math.Exp (double value), originOpt)
-              Single = fun value originOpt -> Single (single ^ Math.Exp (double value), originOpt)
-              Double = fun value originOpt -> Double (Math.Exp value, originOpt)
-              Vector2 = fun value originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Exp (double value.X), single ^ Math.Exp (double value.Y)), originOpt)
+              Int = fun value _ -> Int (int ^ Math.Exp (double value))
+              Int64 = fun value _ -> Int64 (int64 ^ Math.Exp (double value))
+              Single = fun value _ -> Single (single ^ Math.Exp (double value))
+              Double = fun value _ -> Double (Math.Exp value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Exp (double value.X), single ^ Math.Exp (double value.Y)))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a keyphrase.", originOpt)
@@ -212,11 +218,11 @@ module WorldScripting =
 
         let RoundFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a bool.", originOpt)
-              Int = fun value originOpt -> Int (int ^ Math.Round (double value), originOpt)
-              Int64 = fun value originOpt -> Int64 (int64 ^ Math.Round (double value), originOpt)
-              Single = fun value originOpt -> Single (single ^ Math.Round (double value), originOpt)
-              Double = fun value originOpt -> Double (Math.Round value, originOpt)
-              Vector2 = fun value originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Round (double value.X), single ^ Math.Round (double value.Y)), originOpt)
+              Int = fun value _ -> Int (int ^ Math.Round (double value))
+              Int64 = fun value _ -> Int64 (int64 ^ Math.Round (double value))
+              Single = fun value _ -> Single (single ^ Math.Round (double value))
+              Double = fun value _ -> Double (Math.Round value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Round (double value.X), single ^ Math.Round (double value.Y)))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a keyphrase.", originOpt)
@@ -226,11 +232,11 @@ module WorldScripting =
 
         let LogFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a bool.", originOpt)
-              Int = fun value originOpt -> if value = 0 then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a zero int.", originOpt) else Int (int ^ Math.Log (double value), originOpt)
-              Int64 = fun value originOpt -> if value = 0L then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a zero 64-bit int.", originOpt) else Int64 (int64 ^ Math.Log (double value), originOpt)
-              Single = fun value originOpt -> if value = 0.0f then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a zero single.", originOpt) else Single (single ^ Math.Log (double value), originOpt)
-              Double = fun value originOpt -> if value = 0.0 then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a zero double.", originOpt) else Double (Math.Log value, originOpt)
-              Vector2 = fun value originOpt -> if value.X = 0.0f || value.Y = 0.0f then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a vector containing a zero member.", originOpt) else Vector2 (OpenTK.Vector2 (single ^ Math.Log (double value.X), single ^ Math.Log (double value.Y)), originOpt)
+              Int = fun value originOpt -> if value = 0 then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a zero int.", originOpt) else Int (int ^ Math.Log (double value))
+              Int64 = fun value originOpt -> if value = 0L then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a zero 64-bit int.", originOpt) else Int64 (int64 ^ Math.Log (double value))
+              Single = fun value originOpt -> if value = 0.0f then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a zero single.", originOpt) else Single (single ^ Math.Log (double value))
+              Double = fun value originOpt -> if value = 0.0 then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a zero double.", originOpt) else Double (Math.Log value)
+              Vector2 = fun value originOpt -> if value.X = 0.0f || value.Y = 0.0f then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Log"], "Cannot log a vector containing a zero member.", originOpt) else Vector2 (OpenTK.Vector2 (single ^ Math.Log (double value.X), single ^ Math.Log (double value.Y)))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a keyphrase.", originOpt)
@@ -240,11 +246,11 @@ module WorldScripting =
 
         let SinFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a bool.", originOpt)
-              Int = fun value originOpt -> Int (int ^ Math.Sin (double value), originOpt)
-              Int64 = fun value originOpt -> Int64 (int64 ^ Math.Sin (double value), originOpt)
-              Single = fun value originOpt -> Single (single ^ Math.Sin (double value), originOpt)
-              Double = fun value originOpt -> Double (Math.Sin value, originOpt)
-              Vector2 = fun value originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Sin (double value.X), single ^ Math.Sin (double value.Y)), originOpt)
+              Int = fun value _ -> Int (int ^ Math.Sin (double value))
+              Int64 = fun value _ -> Int64 (int64 ^ Math.Sin (double value))
+              Single = fun value _ -> Single (single ^ Math.Sin (double value))
+              Double = fun value _ -> Double (Math.Sin value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Sin (double value.X), single ^ Math.Sin (double value.Y)))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a keyphrase.", originOpt)
@@ -254,11 +260,11 @@ module WorldScripting =
 
         let CosFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a bool.", originOpt)
-              Int = fun value originOpt -> Int (int ^ Math.Cos (double value), originOpt)
-              Int64 = fun value originOpt -> Int64 (int64 ^ Math.Cos (double value), originOpt)
-              Single = fun value originOpt -> Single (single ^ Math.Cos (double value), originOpt)
-              Double = fun value originOpt -> Double (Math.Cos value, originOpt)
-              Vector2 = fun value originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Cos (double value.X), single ^ Math.Cos (double value.Y)), originOpt)
+              Int = fun value _ -> Int (int ^ Math.Cos (double value))
+              Int64 = fun value _ -> Int64 (int64 ^ Math.Cos (double value))
+              Single = fun value _ -> Single (single ^ Math.Cos (double value))
+              Double = fun value _ -> Double (Math.Cos value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Cos (double value.X), single ^ Math.Cos (double value.Y)))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a keyphrase.", originOpt)
@@ -268,11 +274,11 @@ module WorldScripting =
 
         let TanFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a bool.", originOpt)
-              Int = fun value originOpt -> Int (int ^ Math.Tan (double value), originOpt)
-              Int64 = fun value originOpt -> Int64 (int64 ^ Math.Tan (double value), originOpt)
-              Single = fun value originOpt -> Single (single ^ Math.Tan (double value), originOpt)
-              Double = fun value originOpt -> Double (Math.Tan value, originOpt)
-              Vector2 = fun value originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Tan (double value.X), single ^ Math.Tan (double value.Y)), originOpt)
+              Int = fun value _ -> Int (int ^ Math.Tan (double value))
+              Int64 = fun value _ -> Int64 (int64 ^ Math.Tan (double value))
+              Single = fun value _ -> Single (single ^ Math.Tan (double value))
+              Double = fun value _ -> Double (Math.Tan value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Tan (double value.X), single ^ Math.Tan (double value.Y)))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a keyphrase.", originOpt)
@@ -282,11 +288,11 @@ module WorldScripting =
 
         let AsinFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a bool.", originOpt)
-              Int = fun value originOpt -> Int (int ^ Math.Asin (double value), originOpt)
-              Int64 = fun value originOpt -> Int64 (int64 ^ Math.Asin (double value), originOpt)
-              Single = fun value originOpt -> Single (single ^ Math.Asin (double value), originOpt)
-              Double = fun value originOpt -> Double (Math.Asin value, originOpt)
-              Vector2 = fun value originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Asin (double value.X), single ^ Math.Asin (double value.Y)), originOpt)
+              Int = fun value _ -> Int (int ^ Math.Asin (double value))
+              Int64 = fun value _ -> Int64 (int64 ^ Math.Asin (double value))
+              Single = fun value _ -> Single (single ^ Math.Asin (double value))
+              Double = fun value _ -> Double (Math.Asin value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Asin (double value.X), single ^ Math.Asin (double value.Y)))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a keyphrase.", originOpt)
@@ -296,11 +302,11 @@ module WorldScripting =
 
         let AcosFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a bool.", originOpt)
-              Int = fun value originOpt -> Int (int ^ Math.Acos (double value), originOpt)
-              Int64 = fun value originOpt -> Int64 (int64 ^ Math.Acos (double value), originOpt)
-              Single = fun value originOpt -> Single (single ^ Math.Acos (double value), originOpt)
-              Double = fun value originOpt -> Double (Math.Acos value, originOpt)
-              Vector2 = fun value originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Acos (double value.X), single ^ Math.Acos (double value.Y)), originOpt)
+              Int = fun value _ -> Int (int ^ Math.Acos (double value))
+              Int64 = fun value _ -> Int64 (int64 ^ Math.Acos (double value))
+              Single = fun value _ -> Single (single ^ Math.Acos (double value))
+              Double = fun value _ -> Double (Math.Acos value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Acos (double value.X), single ^ Math.Acos (double value.Y)))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a keyphrase.", originOpt)
@@ -310,11 +316,11 @@ module WorldScripting =
 
         let AtanFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a bool.", originOpt)
-              Int = fun value originOpt -> Int (int ^ Math.Atan (double value), originOpt)
-              Int64 = fun value originOpt -> Int64 (int64 ^ Math.Atan (double value), originOpt)
-              Single = fun value originOpt -> Single (single ^ Math.Atan (double value), originOpt)
-              Double = fun value originOpt -> Double (Math.Atan value, originOpt)
-              Vector2 = fun value originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Atan (double value.X), single ^ Math.Atan (double value.Y)), originOpt)
+              Int = fun value _ -> Int (int ^ Math.Atan (double value))
+              Int64 = fun value _ -> Int64 (int64 ^ Math.Atan (double value))
+              Single = fun value _ -> Single (single ^ Math.Atan (double value))
+              Double = fun value _ -> Double (Math.Atan value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Atan (double value.X), single ^ Math.Atan (double value.Y)))
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a keyphrase.", originOpt)
@@ -324,25 +330,25 @@ module WorldScripting =
 
         let LengthFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"length"], "Cannot get length of a bool.", originOpt)
-              Int = fun value originOpt -> Int (Math.Abs value, originOpt)
-              Int64 = fun value originOpt -> Int64 (Math.Abs value, originOpt)
-              Single = fun value originOpt -> Single (Math.Abs value, originOpt)
-              Double = fun value originOpt -> Double (Math.Abs value, originOpt)
-              Vector2 = fun value originOpt -> Single (value.Length, originOpt)
-              String = fun value originOpt -> Int (value.Length, originOpt)
-              Tuple = fun value originOpt -> Int (Array.length ^ Map.toArray value, originOpt)
-              Keyphrase = fun value originOpt -> Int (Array.length ^ Map.toArray value, originOpt)
-              List = fun value originOpt -> Int (List.length value, originOpt)
-              Ring = fun value originOpt -> Int (value.Count, originOpt)
-              Table = fun value originOpt -> Int (value.Count, originOpt) }
+              Int = fun value _ -> Int (Math.Abs value)
+              Int64 = fun value _ -> Int64 (Math.Abs value)
+              Single = fun value _ -> Single (Math.Abs value)
+              Double = fun value _ -> Double (Math.Abs value)
+              Vector2 = fun value _ -> Single (value.Length)
+              String = fun value _ -> Int (value.Length)
+              Tuple = fun value _ -> Int (Array.length ^ Map.toArray value)
+              Keyphrase = fun value _ -> Int (Array.length ^ Map.toArray value)
+              List = fun value _ -> Int (List.length value)
+              Ring = fun value _ -> Int (value.Count)
+              Table = fun value _ -> Int (value.Count) }
 
         let NormalFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a bool.", originOpt)
-              Int = fun value originOpt -> if value = 0 then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Normal"], "Cannot get the normal of a zero int.", originOpt) elif value < 0 then Int (-1, originOpt) else Int (1, originOpt)
-              Int64 = fun value originOpt -> if value = 0L then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Normal"], "Cannot get the normal of a zero 64-bit int.", originOpt) elif value < 0L then Int64 (-1L, originOpt) else Int64 (1L, originOpt)
-              Single = fun value originOpt -> if value = 0.0f then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Normal"], "Cannot get the normal of a zero single.", originOpt) elif value < 0.0f then Single (-1.0f, originOpt) else Single (1.0f, originOpt)
-              Double = fun value originOpt -> if value = 0.0 then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Normal"], "Cannot get the normal of a zero double.", originOpt) elif value < 0.0 then Double (-1.0, originOpt) else Double (1.0, originOpt)
-              Vector2 = fun value originOpt -> if value = Vector2.Zero then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Normal"], "Cannot get the normal of a zero vector.", originOpt) else Vector2 (Vector2.Normalize value, originOpt)
+              Int = fun value originOpt -> if value = 0 then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Normal"], "Cannot get the normal of a zero int.", originOpt) elif value < 0 then Int -1 else Int 1
+              Int64 = fun value originOpt -> if value = 0L then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Normal"], "Cannot get the normal of a zero 64-bit int.", originOpt) elif value < 0L then Int64 -1L else Int64 1L
+              Single = fun value originOpt -> if value = 0.0f then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Normal"], "Cannot get the normal of a zero single.", originOpt) elif value < 0.0f then Single -1.0f else Single 1.0f
+              Double = fun value originOpt -> if value = 0.0 then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Normal"], "Cannot get the normal of a zero double.", originOpt) elif value < 0.0 then Double -1.0 else Double 1.0
+              Vector2 = fun value originOpt -> if value = Vector2.Zero then Violation ([!!"InvalidArgumentValue"; !!"Unary"; !!"Normal"], "Cannot get the normal of a zero vector.", originOpt) else Vector2 (Vector2.Normalize value)
               String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a string.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a keyphrase.", originOpt)
@@ -351,13 +357,13 @@ module WorldScripting =
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a table.", originOpt) }
 
         let BoolFns =
-            { Bool = fun value originOpt -> Bool (value, originOpt)
-              Int = fun value originOpt -> Bool ((value = 0), originOpt)
-              Int64 = fun value originOpt -> Bool ((value = 0L), originOpt)
-              Single = fun value originOpt -> Bool ((value = 0.0f), originOpt)
-              Double = fun value originOpt -> Bool ((value = 0.0), originOpt)
+            { Bool = fun value _ -> Bool (value)
+              Int = fun value _ -> Bool ((value = 0))
+              Int64 = fun value _ -> Bool ((value = 0L))
+              Single = fun value _ -> Bool ((value = 0.0f))
+              Double = fun value _ -> Bool ((value = 0.0))
               Vector2 = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a vector to a bool.", originOpt)
-              String = fun value originOpt -> Bool (scvalue value, originOpt)
+              String = fun value _ -> Bool (scvalue value)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a bool to a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a bool to a keyphrase.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a list to a bool.", originOpt)
@@ -365,13 +371,13 @@ module WorldScripting =
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a table to a bool.", originOpt) }
 
         let IntFns =
-            { Bool = fun value originOpt -> Int ((if value then 1 else 0), originOpt)
-              Int = fun value originOpt -> Int (value, originOpt)
-              Int64 = fun value originOpt -> Int (int value, originOpt)
-              Single = fun value originOpt -> Int (int value, originOpt)
-              Double = fun value originOpt -> Int (int value, originOpt)
+            { Bool = fun value _ -> Int ((if value then 1 else 0))
+              Int = fun value _ -> Int (value)
+              Int64 = fun value _ -> Int (int value)
+              Single = fun value _ -> Int (int value)
+              Double = fun value _ -> Int (int value)
               Vector2 = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a vector to an int.", originOpt)
-              String = fun value originOpt -> Int (scvalue value, originOpt)
+              String = fun value _ -> Int (scvalue value)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert an int to a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert an int to a keyphrase.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a list to an int.", originOpt)
@@ -379,13 +385,13 @@ module WorldScripting =
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a table to an int.", originOpt) }
 
         let Int64Fns =
-            { Bool = fun value originOpt -> Int64 ((if value then 1L else 0L), originOpt)
-              Int = fun value originOpt -> Int64 (int64 value, originOpt)
-              Int64 = fun value originOpt -> Int64 (value, originOpt)
-              Single = fun value originOpt -> Int64 (int64 value, originOpt)
-              Double = fun value originOpt -> Int64 (int64 value, originOpt)
+            { Bool = fun value _ -> Int64 ((if value then 1L else 0L))
+              Int = fun value _ -> Int64 (int64 value)
+              Int64 = fun value _ -> Int64 (value)
+              Single = fun value _ -> Int64 (int64 value)
+              Double = fun value _ -> Int64 (int64 value)
               Vector2 = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a vector to a 64-bit int.", originOpt)
-              String = fun value originOpt -> Int64 (scvalue value, originOpt)
+              String = fun value _ -> Int64 (scvalue value)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert an int64 to a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert an int64 to a keyphrase.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a list to a 64-bit int.", originOpt)
@@ -393,13 +399,13 @@ module WorldScripting =
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a table to a 64-bit int.", originOpt) }
 
         let SingleFns =
-            { Bool = fun value originOpt -> Single ((if value then 1.0f else 0.0f), originOpt)
-              Int = fun value originOpt -> Single (single value, originOpt)
-              Int64 = fun value originOpt -> Single (single value, originOpt)
-              Single = fun value originOpt -> Single (value, originOpt)
-              Double = fun value originOpt -> Single (single value, originOpt)
+            { Bool = fun value _ -> Single ((if value then 1.0f else 0.0f))
+              Int = fun value _ -> Single (single value)
+              Int64 = fun value _ -> Single (single value)
+              Single = fun value _ -> Single (value)
+              Double = fun value _ -> Single (single value)
               Vector2 = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a vector to a single.", originOpt)
-              String = fun value originOpt -> Single (scvalue value, originOpt)
+              String = fun value _ -> Single (scvalue value)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a single to a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a single to a keyphrase.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a list to a single.", originOpt)
@@ -407,13 +413,13 @@ module WorldScripting =
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a table to a single.", originOpt) }
 
         let DoubleFns =
-            { Bool = fun value originOpt -> Double ((if value then 1.0 else 0.0), originOpt)
-              Int = fun value originOpt -> Double (double value, originOpt)
-              Int64 = fun value originOpt -> Double (double value, originOpt)
-              Single = fun value originOpt -> Double (double value, originOpt)
-              Double = fun value originOpt -> Double (value, originOpt)
+            { Bool = fun value _ -> Double ((if value then 1.0 else 0.0))
+              Int = fun value _ -> Double (double value)
+              Int64 = fun value _ -> Double (double value)
+              Single = fun value _ -> Double (double value)
+              Double = fun value _ -> Double (value)
               Vector2 = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a vector to a double.", originOpt)
-              String = fun value originOpt -> Double (scvalue value, originOpt)
+              String = fun value _ -> Double (scvalue value)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a double to a tuple.", originOpt)
               Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a double to a keyphrase.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a list to a double.", originOpt)
@@ -421,18 +427,18 @@ module WorldScripting =
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a table to a double.", originOpt) }
 
         let StringFns =
-            { Bool = fun value originOpt -> String (scstring value, originOpt)
-              Int = fun value originOpt -> String (scstring value, originOpt)
-              Int64 = fun value originOpt -> String (scstring value, originOpt)
-              Single = fun value originOpt -> String (scstring value, originOpt)
-              Double = fun value originOpt -> String (scstring value, originOpt)
-              Vector2 = fun value originOpt -> String (scstring value, originOpt)
-              String = fun value originOpt -> String (value, originOpt)
-              Tuple = fun value originOpt -> String (scstring value, originOpt)
-              Keyphrase = fun value originOpt -> String (scstring value, originOpt)
-              List = fun value originOpt -> String (scstring value, originOpt)
-              Ring = fun value originOpt -> String (scstring value, originOpt)
-              Table = fun value originOpt -> String (scstring value, originOpt) }
+            { Bool = fun value _ -> String (scstring value)
+              Int = fun value _ -> String (scstring value)
+              Int64 = fun value _ -> String (scstring value)
+              Single = fun value _ -> String (scstring value)
+              Double = fun value _ -> String (scstring value)
+              Vector2 = fun value _ -> String (scstring value)
+              String = fun value _ -> String (value)
+              Tuple = fun value _ -> String (scstring value)
+              Keyphrase = fun value _ -> String (scstring value)
+              List = fun value _ -> String (scstring value)
+              Ring = fun value _ -> String (scstring value)
+              Table = fun value _ -> String (scstring value) }
 
         type [<NoEquality; NoComparison>] BinaryFns =
             { Bool : bool -> bool -> SymbolOrigin option -> Expr
@@ -449,124 +455,124 @@ module WorldScripting =
               Table : Map<Expr, Expr> -> Map<Expr, Expr> -> SymbolOrigin option -> Expr }
 
         let EqFns =
-            { Bool = fun left right originOpt -> Bool ((left = right), originOpt)
-              Int = fun left right originOpt -> Bool ((left = right), originOpt)
-              Int64 = fun left right originOpt -> Bool ((left = right), originOpt)
-              Single = fun left right originOpt -> Bool ((left = right), originOpt)
-              Double = fun left right originOpt -> Bool ((left = right), originOpt)
-              Vector2 = fun left right originOpt -> Bool ((left = right), originOpt)
-              String = fun left right originOpt -> Bool ((left = right), originOpt)
-              Tuple = fun left right originOpt -> Bool ((left = right), originOpt)
-              Keyphrase = fun left right originOpt -> Bool ((left = right), originOpt)
-              List = fun left right originOpt -> Bool ((left = right), originOpt)
-              Ring = fun left right originOpt -> Bool ((left = right), originOpt)
-              Table = fun left right originOpt -> Bool ((left = right), originOpt) }
+            { Bool = fun left right _ -> Bool ((left = right))
+              Int = fun left right _ -> Bool ((left = right))
+              Int64 = fun left right _ -> Bool ((left = right))
+              Single = fun left right _ -> Bool ((left = right))
+              Double = fun left right _ -> Bool ((left = right))
+              Vector2 = fun left right _ -> Bool ((left = right))
+              String = fun left right _ -> Bool ((left = right))
+              Tuple = fun left right _ -> Bool ((left = right))
+              Keyphrase = fun left right _ -> Bool ((left = right))
+              List = fun left right _ -> Bool ((left = right))
+              Ring = fun left right _ -> Bool ((left = right))
+              Table = fun left right _ -> Bool ((left = right)) }
 
         let NotEqFns =
-            { Bool = fun left right originOpt -> Bool ((left <> right), originOpt)
-              Int = fun left right originOpt -> Bool ((left <> right), originOpt)
-              Int64 = fun left right originOpt -> Bool ((left <> right), originOpt)
-              Single = fun left right originOpt -> Bool ((left <> right), originOpt)
-              Double = fun left right originOpt -> Bool ((left <> right), originOpt)
-              Vector2 = fun left right originOpt -> Bool ((left <> right), originOpt)
-              String = fun left right originOpt -> Bool ((left <> right), originOpt)
-              Tuple = fun left right originOpt -> Bool ((left <> right), originOpt)
-              Keyphrase = fun left right originOpt -> Bool ((left <> right), originOpt)
-              List = fun left right originOpt -> Bool ((left <> right), originOpt)
-              Ring = fun left right originOpt -> Bool ((left <> right), originOpt)
-              Table = fun left right originOpt -> Bool ((left <> right), originOpt) }
+            { Bool = fun left right _ -> Bool ((left <> right))
+              Int = fun left right _ -> Bool ((left <> right))
+              Int64 = fun left right _ -> Bool ((left <> right))
+              Single = fun left right _ -> Bool ((left <> right))
+              Double = fun left right _ -> Bool ((left <> right))
+              Vector2 = fun left right _ -> Bool ((left <> right))
+              String = fun left right _ -> Bool ((left <> right))
+              Tuple = fun left right _ -> Bool ((left <> right))
+              Keyphrase = fun left right _ -> Bool ((left <> right))
+              List = fun left right _ -> Bool ((left <> right))
+              Ring = fun left right _ -> Bool ((left <> right))
+              Table = fun left right _ -> Bool ((left <> right)) }
 
         let LtFns =
-            { Bool = fun left right originOpt -> Bool ((left < right), originOpt)
-              Int = fun left right originOpt -> Bool ((left < right), originOpt)
-              Int64 = fun left right originOpt -> Bool ((left < right), originOpt)
-              Single = fun left right originOpt -> Bool ((left < right), originOpt)
-              Double = fun left right originOpt -> Bool ((left < right), originOpt)
-              Vector2 = fun left right originOpt -> Bool ((left.LengthSquared < right.LengthSquared), originOpt)
-              String = fun left right originOpt -> Bool ((left < right), originOpt)
-              Tuple = fun left right originOpt -> Bool ((left < right), originOpt)
-              Keyphrase = fun left right originOpt -> Bool ((left < right), originOpt)
-              List = fun left right originOpt -> Bool ((left < right), originOpt)
-              Ring = fun left right originOpt -> Bool ((left < right), originOpt)
-              Table = fun left right originOpt -> Bool ((left < right), originOpt) }
+            { Bool = fun left right _ -> Bool ((left < right))
+              Int = fun left right _ -> Bool ((left < right))
+              Int64 = fun left right _ -> Bool ((left < right))
+              Single = fun left right _ -> Bool ((left < right))
+              Double = fun left right _ -> Bool ((left < right))
+              Vector2 = fun left right _ -> Bool ((left.LengthSquared < right.LengthSquared))
+              String = fun left right _ -> Bool ((left < right))
+              Tuple = fun left right _ -> Bool ((left < right))
+              Keyphrase = fun left right _ -> Bool ((left < right))
+              List = fun left right _ -> Bool ((left < right))
+              Ring = fun left right _ -> Bool ((left < right))
+              Table = fun left right _ -> Bool ((left < right)) }
 
         let GtFns =
-            { Bool = fun left right originOpt -> Bool ((left > right), originOpt)
-              Int = fun left right originOpt -> Bool ((left > right), originOpt)
-              Int64 = fun left right originOpt -> Bool ((left > right), originOpt)
-              Single = fun left right originOpt -> Bool ((left > right), originOpt)
-              Double = fun left right originOpt -> Bool ((left > right), originOpt)
-              Vector2 = fun left right originOpt -> Bool ((left.LengthSquared > right.LengthSquared), originOpt)
-              String = fun left right originOpt -> Bool ((left > right), originOpt)
-              Tuple = fun left right originOpt -> Bool ((left > right), originOpt)
-              Keyphrase = fun left right originOpt -> Bool ((left > right), originOpt)
-              List = fun left right originOpt -> Bool ((left > right), originOpt)
-              Ring = fun left right originOpt -> Bool ((left > right), originOpt)
-              Table = fun left right originOpt -> Bool ((left > right), originOpt) }
+            { Bool = fun left right _ -> Bool ((left > right))
+              Int = fun left right _ -> Bool ((left > right))
+              Int64 = fun left right _ -> Bool ((left > right))
+              Single = fun left right _ -> Bool ((left > right))
+              Double = fun left right _ -> Bool ((left > right))
+              Vector2 = fun left right _ -> Bool ((left.LengthSquared > right.LengthSquared))
+              String = fun left right _ -> Bool ((left > right))
+              Tuple = fun left right _ -> Bool ((left > right))
+              Keyphrase = fun left right _ -> Bool ((left > right))
+              List = fun left right _ -> Bool ((left > right))
+              Ring = fun left right _ -> Bool ((left > right))
+              Table = fun left right _ -> Bool ((left > right)) }
 
         let LtEqFns =
-            { Bool = fun left right originOpt -> Bool ((left <= right), originOpt)
-              Int = fun left right originOpt -> Bool ((left <= right), originOpt)
-              Int64 = fun left right originOpt -> Bool ((left <= right), originOpt)
-              Single = fun left right originOpt -> Bool ((left <= right), originOpt)
-              Double = fun left right originOpt -> Bool ((left <= right), originOpt)
-              Vector2 = fun left right originOpt -> Bool ((left.LengthSquared <= right.LengthSquared), originOpt)
-              String = fun left right originOpt -> Bool ((left <= right), originOpt)
-              Tuple = fun left right originOpt -> Bool ((left <= right), originOpt)
-              Keyphrase = fun left right originOpt -> Bool ((left <= right), originOpt)
-              List = fun left right originOpt -> Bool ((left <= right), originOpt)
-              Ring = fun left right originOpt -> Bool ((left <= right), originOpt)
-              Table = fun left right originOpt -> Bool ((left <= right), originOpt) }
+            { Bool = fun left right _ -> Bool ((left <= right))
+              Int = fun left right _ -> Bool ((left <= right))
+              Int64 = fun left right _ -> Bool ((left <= right))
+              Single = fun left right _ -> Bool ((left <= right))
+              Double = fun left right _ -> Bool ((left <= right))
+              Vector2 = fun left right _ -> Bool ((left.LengthSquared <= right.LengthSquared))
+              String = fun left right _ -> Bool ((left <= right))
+              Tuple = fun left right _ -> Bool ((left <= right))
+              Keyphrase = fun left right _ -> Bool ((left <= right))
+              List = fun left right _ -> Bool ((left <= right))
+              Ring = fun left right _ -> Bool ((left <= right))
+              Table = fun left right _ -> Bool ((left <= right)) }
 
         let GtEqFns =
-            { Bool = fun left right originOpt -> Bool ((left >= right), originOpt)
-              Int = fun left right originOpt -> Bool ((left >= right), originOpt)
-              Int64 = fun left right originOpt -> Bool ((left >= right), originOpt)
-              Single = fun left right originOpt -> Bool ((left >= right), originOpt)
-              Double = fun left right originOpt -> Bool ((left >= right), originOpt)
-              Vector2 = fun left right originOpt -> Bool ((left.LengthSquared >= right.LengthSquared), originOpt)
-              String = fun left right originOpt -> Bool ((left >= right), originOpt)
-              Tuple = fun left right originOpt -> Bool ((left >= right), originOpt)
-              Keyphrase = fun left right originOpt -> Bool ((left >= right), originOpt)
-              List = fun left right originOpt -> Bool ((left >= right), originOpt)
-              Ring = fun left right originOpt -> Bool ((left >= right), originOpt)
-              Table = fun left right originOpt -> Bool ((left >= right), originOpt) }
+            { Bool = fun left right _ -> Bool ((left >= right))
+              Int = fun left right _ -> Bool ((left >= right))
+              Int64 = fun left right _ -> Bool ((left >= right))
+              Single = fun left right _ -> Bool ((left >= right))
+              Double = fun left right _ -> Bool ((left >= right))
+              Vector2 = fun left right _ -> Bool ((left.LengthSquared >= right.LengthSquared))
+              String = fun left right _ -> Bool ((left >= right))
+              Tuple = fun left right _ -> Bool ((left >= right))
+              Keyphrase = fun left right _ -> Bool ((left >= right))
+              List = fun left right _ -> Bool ((left >= right))
+              Ring = fun left right _ -> Bool ((left >= right))
+              Table = fun left right _ -> Bool ((left >= right)) }
 
         let AddFns =
-            { Bool = fun left right originOpt -> Bool ((if left && right then false elif left then true elif right then true else false), originOpt)
-              Int = fun left right originOpt -> Int ((left + right), originOpt)
-              Int64 = fun left right originOpt -> Int64 ((left + right), originOpt)
-              Single = fun left right originOpt -> Single ((left + right), originOpt)
-              Double = fun left right originOpt -> Double ((left + right), originOpt)
-              Vector2 = fun left right originOpt -> Vector2 ((left + right), originOpt)
-              String = fun left right originOpt -> String ((left + right), originOpt)
+            { Bool = fun left right _ -> Bool ((if left && right then false elif left then true elif right then true else false))
+              Int = fun left right _ -> Int ((left + right))
+              Int64 = fun left right _ -> Int64 ((left + right))
+              Single = fun left right _ -> Single ((left + right))
+              Double = fun left right _ -> Double ((left + right))
+              Vector2 = fun left right _ -> Vector2 ((left + right))
+              String = fun left right _ -> String ((left + right))
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Add"], "Cannot add tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Add"], "Cannot add phrases.", originOpt)
-              List = fun left right originOpt -> List ((left @ right), originOpt)
-              Ring = fun left right originOpt -> Ring ((Set.union left right), originOpt)
-              Table = fun left right originOpt -> Table ((left @@ right), originOpt) }
+              List = fun left right _ -> List ((left @ right))
+              Ring = fun left right _ -> Ring ((Set.union left right))
+              Table = fun left right _ -> Table ((left @@ right)) }
 
         let SubFns =
-            { Bool = fun left right originOpt -> Bool ((if left && right then false elif left then true elif right then true else false), originOpt)
-              Int = fun left right originOpt -> Int ((left - right), originOpt)
-              Int64 = fun left right originOpt -> Int64 ((left - right), originOpt)
-              Single = fun left right originOpt -> Single ((left - right), originOpt)
-              Double = fun left right originOpt -> Double ((left - right), originOpt)
-              Vector2 = fun left right originOpt -> Vector2 ((left - right), originOpt)
-              String = fun left right originOpt -> String (left.Replace (right, String.Empty), originOpt)
+            { Bool = fun left right _ -> Bool ((if left && right then false elif left then true elif right then true else false))
+              Int = fun left right _ -> Int ((left - right))
+              Int64 = fun left right _ -> Int64 ((left - right))
+              Single = fun left right _ -> Single ((left - right))
+              Double = fun left right _ -> Double ((left - right))
+              Vector2 = fun left right _ -> Vector2 ((left - right))
+              String = fun left right _ -> String (left.Replace (right, String.Empty))
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract phrases.", originOpt)
               List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract lists.", originOpt)
-              Ring = fun left right originOpt -> Ring (Set.difference left right, originOpt)
+              Ring = fun left right _ -> Ring (Set.difference left right)
               Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract tables.", originOpt) }
 
         let MulFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply bools.", originOpt)
-              Int = fun left right originOpt -> Int ((left * right), originOpt)
-              Int64 = fun left right originOpt -> Int64 ((left * right), originOpt)
-              Single = fun left right originOpt -> Single ((left * right), originOpt)
-              Double = fun left right originOpt -> Double ((left * right), originOpt)
-              Vector2 = fun left right originOpt -> Vector2 (Vector2.Multiply (left, right), originOpt)
+              Int = fun left right _ -> Int ((left * right))
+              Int64 = fun left right _ -> Int64 ((left * right))
+              Single = fun left right _ -> Single ((left * right))
+              Double = fun left right _ -> Double ((left * right))
+              Vector2 = fun left right _ -> Vector2 (Vector2.Multiply (left, right))
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply phrases.", originOpt)
@@ -575,12 +581,12 @@ module WorldScripting =
               Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply tables.", originOpt) }
 
         let DivFns =
-            { Bool = fun left right originOpt -> if right = false then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Div"], "Cannot divide by a false bool.", originOpt) else Bool ((if left && right then true else false), originOpt)
-              Int = fun left right originOpt -> if right = 0 then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Div"], "Cannot divide by a zero int.", originOpt) else Int ((left / right), originOpt)
-              Int64 = fun left right originOpt -> if right = 0L then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Div"], "Cannot divide by a zero 64-bit int.", originOpt) else Int64 ((left / right), originOpt)
-              Single = fun left right originOpt -> Single ((left / right), originOpt)
-              Double = fun left right originOpt -> Double ((left / right), originOpt)
-              Vector2 = fun left right originOpt -> Vector2 (Vector2.Divide (left, right), originOpt)
+            { Bool = fun left right originOpt -> if right = false then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Div"], "Cannot divide by a false bool.", originOpt) else Bool ((if left && right then true else false))
+              Int = fun left right originOpt -> if right = 0 then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Div"], "Cannot divide by a zero int.", originOpt) else Int ((left / right))
+              Int64 = fun left right originOpt -> if right = 0L then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Div"], "Cannot divide by a zero 64-bit int.", originOpt) else Int64 ((left / right))
+              Single = fun left right _ -> Single ((left / right))
+              Double = fun left right _ -> Double ((left / right))
+              Vector2 = fun left right _ -> Vector2 (Vector2.Divide (left, right))
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide phrases.", originOpt)
@@ -590,11 +596,11 @@ module WorldScripting =
 
         let ModFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate bools.", originOpt)
-              Int = fun left right originOpt -> if right = 0 then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Mod"], "Cannot modulate by a zero int.", originOpt) else Int ((left % right), originOpt)
-              Int64 = fun left right originOpt -> if right = 0L then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Mod"], "Cannot divide by a zero 64-bit int.", originOpt) else Int64 ((left % right), originOpt)
-              Single = fun left right originOpt -> Single ((left % right), originOpt)
-              Double = fun left right originOpt -> Double ((left % right), originOpt)
-              Vector2 = fun left right originOpt -> Vector2 (OpenTK.Vector2 (left.X % right.X, left.Y % right.Y), originOpt)
+              Int = fun left right originOpt -> if right = 0 then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Mod"], "Cannot modulate by a zero int.", originOpt) else Int ((left % right))
+              Int64 = fun left right originOpt -> if right = 0L then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Mod"], "Cannot divide by a zero 64-bit int.", originOpt) else Int64 ((left % right))
+              Single = fun left right _ -> Single ((left % right))
+              Double = fun left right _ -> Double ((left % right))
+              Vector2 = fun left right _ -> Vector2 (OpenTK.Vector2 (left.X % right.X, left.Y % right.Y))
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate phrases.", originOpt)
@@ -604,11 +610,11 @@ module WorldScripting =
 
         let PowFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power bools.", originOpt)
-              Int = fun left right originOpt -> Int (int ^ Math.Pow (double left, double right), originOpt)
-              Int64 = fun left right originOpt -> Int64 (int64 ^ Math.Pow (double left, double right), originOpt)
-              Single = fun left right originOpt -> Single (single ^ Math.Pow (double left, double right), originOpt)
-              Double = fun left right originOpt -> Double (Math.Pow (double left, double right), originOpt)
-              Vector2 = fun left right originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Pow (double left.X, double right.X), single ^ Math.Pow (double left.Y, double right.Y)), originOpt)
+              Int = fun left right _ -> Int (int ^ Math.Pow (double left, double right))
+              Int64 = fun left right _ -> Int64 (int64 ^ Math.Pow (double left, double right))
+              Single = fun left right _ -> Single (single ^ Math.Pow (double left, double right))
+              Double = fun left right _ -> Double (Math.Pow (double left, double right))
+              Vector2 = fun left right _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Pow (double left.X, double right.X), single ^ Math.Pow (double left.Y, double right.Y)))
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power phrases.", originOpt)
@@ -618,11 +624,11 @@ module WorldScripting =
 
         let RootFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root bools.", originOpt)
-              Int = fun left right originOpt -> Int (int ^ Math.Pow (double left, 1.0 / double right), originOpt)
-              Int64 = fun left right originOpt -> Int64 (int64 ^ Math.Pow (double left, 1.0 / double right), originOpt)
-              Single = fun left right originOpt -> Single (single ^ Math.Pow (double left, 1.0 / double right), originOpt)
-              Double = fun left right originOpt -> Double (Math.Pow (double left, 1.0 / double right), originOpt)
-              Vector2 = fun left right originOpt -> Vector2 (OpenTK.Vector2 (single ^ Math.Pow (double left.X, 1.0 / double right.X), single ^ Math.Pow (double left.Y, 1.0 / double right.Y)), originOpt)
+              Int = fun left right _ -> Int (int ^ Math.Pow (double left, 1.0 / double right))
+              Int64 = fun left right _ -> Int64 (int64 ^ Math.Pow (double left, 1.0 / double right))
+              Single = fun left right _ -> Single (single ^ Math.Pow (double left, 1.0 / double right))
+              Double = fun left right _ -> Double (Math.Pow (double left, 1.0 / double right))
+              Vector2 = fun left right _ -> Vector2 (OpenTK.Vector2 (single ^ Math.Pow (double left.X, 1.0 / double right.X), single ^ Math.Pow (double left.Y, 1.0 / double right.Y)))
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root phrases.", originOpt)
@@ -632,10 +638,10 @@ module WorldScripting =
 
         let CrossFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply bools.", originOpt)
-              Int = fun left right originOpt -> Int ((left * right), originOpt)
-              Int64 = fun left right originOpt -> Int64 ((left * right), originOpt)
-              Single = fun left right originOpt -> Single ((left * right), originOpt)
-              Double = fun left right originOpt -> Double ((left * right), originOpt)
+              Int = fun left right _ -> Int ((left * right))
+              Int64 = fun left right _ -> Int64 ((left * right))
+              Single = fun left right _ -> Single ((left * right))
+              Double = fun left right _ -> Double ((left * right))
               Vector2 = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply 2-dimensional vectors.", originOpt)
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply tuples.", originOpt)
@@ -646,11 +652,11 @@ module WorldScripting =
 
         let DotFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply bools.", originOpt)
-              Int = fun left right originOpt -> Int ((left * right), originOpt)
-              Int64 = fun left right originOpt -> Int64 ((left * right), originOpt)
-              Single = fun left right originOpt -> Single ((left * right), originOpt)
-              Double = fun left right originOpt -> Double ((left * right), originOpt)
-              Vector2 = fun left right originOpt -> Single (Vector2.Dot (left, right), originOpt)
+              Int = fun left right _ -> Int ((left * right))
+              Int64 = fun left right _ -> Int64 ((left * right))
+              Single = fun left right _ -> Single ((left * right))
+              Double = fun left right _ -> Double ((left * right))
+              Vector2 = fun left right _ -> Single (Vector2.Dot (left, right))
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply phrases.", originOpt)
@@ -667,59 +673,59 @@ module WorldScripting =
             match evaledArgs with
             | [evaled] ->
                 match evaled with
-                | Bool (bool, originOpt) -> (Bool (fn bool, originOpt), world)
-                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply a bool function to a non-bool value.", Expr.getOriginOpt evaled), world)
+                | Bool bool -> (Bool (fn bool), world)
+                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply a bool function to a non-bool value.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Unary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
         let evalBoolBinary fn fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [evaledLeft; evaledRight] ->
                 match (evaledLeft, evaledRight) with
-                | (Bool (boolLeft, originLeftOpt), Bool (boolRight, originRightOpt)) -> (Bool (fn boolLeft boolRight, combine originLeftOpt originRightOpt), world)
-                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a bool function to a non-bool value.", combine (Expr.getOriginOpt evaledLeft) (Expr.getOriginOpt evaledRight)), world)
+                | (Bool boolLeft, Bool boolRight) -> (Bool (fn boolLeft boolRight), world)
+                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a bool function to a non-bool value.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
 
-        let evalUnaryInner (fns : UnaryFns) fnName evaledArg world =
+        let evalUnaryInner (fns : UnaryFns) fnOriginOpt fnName evaledArg world =
             match evaledArg with
-            | Bool (boolValue, originOpt) -> ((fns.Bool boolValue originOpt), world)
-            | Int (intValue, originOpt) -> ((fns.Int intValue originOpt), world)
-            | Int64 (int64Value, originOpt) -> ((fns.Int64 int64Value originOpt), world)
-            | Single (singleValue, originOpt) -> ((fns.Single singleValue originOpt), world)
-            | Double (doubleValue, originOpt) -> ((fns.Double doubleValue originOpt), world)
-            | Vector2 (vector2Value, originOpt) -> ((fns.Vector2 vector2Value originOpt), world)
-            | String (stringValue, originOpt) -> ((fns.String stringValue originOpt), world)
-            | Tuple (tupleValue, originOpt) -> ((fns.Tuple tupleValue originOpt), world)
-            | Keyphrase (_, phraseValue, originOpt) -> ((fns.Keyphrase phraseValue originOpt), world)
-            | List (listValue, originOpt) -> ((fns.List listValue originOpt), world)
-            | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", Expr.getOriginOpt evaledArg), world)
+            | Bool boolValue -> ((fns.Bool boolValue fnOriginOpt), world)
+            | Int intValue -> ((fns.Int intValue fnOriginOpt), world)
+            | Int64 int64Value -> ((fns.Int64 int64Value fnOriginOpt), world)
+            | Single singleValue -> ((fns.Single singleValue fnOriginOpt), world)
+            | Double doubleValue -> ((fns.Double doubleValue fnOriginOpt), world)
+            | Vector2 vector2Value -> ((fns.Vector2 vector2Value fnOriginOpt), world)
+            | String stringValue -> ((fns.String stringValue fnOriginOpt), world)
+            | Tuple tupleValue -> ((fns.Tuple tupleValue fnOriginOpt), world)
+            | Keyphrase (_, phraseValue) -> ((fns.Keyphrase phraseValue fnOriginOpt), world)
+            | List listValue -> ((fns.List listValue fnOriginOpt), world)
+            | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", fnOriginOpt), world)
 
         let evalUnary fns fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [evaledArg] -> evalUnaryInner fns fnName evaledArg world
+            | [evaledArg] -> evalUnaryInner fns fnOriginOpt fnName evaledArg world
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Unary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
-        let evalBinaryInner (fns : BinaryFns) fnName evaledLeft evaledRight world =
+        let evalBinaryInner (fns : BinaryFns) fnOriginOpt fnName evaledLeft evaledRight world =
             match (evaledLeft, evaledRight) with
-            | (Bool (boolLeft, originLeftOpt), Bool (boolRight, originRightOpt)) -> ((fns.Bool boolLeft boolRight (combine originLeftOpt originRightOpt)), world)
-            | (Int (intLeft, originLeftOpt), Int (intRight, originRightOpt)) -> ((fns.Int intLeft intRight (combine originLeftOpt originRightOpt)), world)
-            | (Int64 (int64Left, originLeftOpt), Int64 (int64Right, originRightOpt)) -> ((fns.Int64 int64Left int64Right (combine originLeftOpt originRightOpt)), world)
-            | (Single (singleLeft, originLeftOpt), Single (singleRight, originRightOpt)) -> ((fns.Single singleLeft singleRight (combine originLeftOpt originRightOpt)), world)
-            | (Double (doubleLeft, originLeftOpt), Double (doubleRight, originRightOpt)) -> ((fns.Double doubleLeft doubleRight (combine originLeftOpt originRightOpt)), world)
-            | (Vector2 (vector2Left, originLeftOpt), Vector2 (vector2Right, originRightOpt)) -> ((fns.Vector2 vector2Left vector2Right (combine originLeftOpt originRightOpt)), world)
-            | (String (stringLeft, originLeftOpt), String (stringRight, originRightOpt)) -> ((fns.String stringLeft stringRight (combine originLeftOpt originRightOpt)), world)
-            | (Tuple (tupleLeft, originLeftOpt), Tuple (tupleRight, originRightOpt)) -> ((fns.Tuple tupleLeft tupleRight (combine originLeftOpt originRightOpt)), world)
-            | (Keyphrase (_, phraseLeft, originLeftOpt), Keyphrase (_, phraseRight, originRightOpt)) -> ((fns.Keyphrase phraseLeft phraseRight (combine originLeftOpt originRightOpt)), world)
-            | (List (listLeft, originLeftOpt), List (listRight, originRightOpt)) -> ((fns.List listLeft listRight (combine originLeftOpt originRightOpt)), world)
-            | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a binary function on unlike or incompatible values.", combine (Expr.getOriginOpt evaledLeft) (Expr.getOriginOpt evaledRight)), world)
+            | (Bool boolLeft, Bool boolRight) -> ((fns.Bool boolLeft boolRight fnOriginOpt), world)
+            | (Int intLeft, Int intRight) -> ((fns.Int intLeft intRight fnOriginOpt), world)
+            | (Int64 int64Left, Int64 int64Right) -> ((fns.Int64 int64Left int64Right fnOriginOpt), world)
+            | (Single singleLeft, Single singleRight) -> ((fns.Single singleLeft singleRight fnOriginOpt), world)
+            | (Double doubleLeft, Double doubleRight) -> ((fns.Double doubleLeft doubleRight fnOriginOpt), world)
+            | (Vector2 vector2Left, Vector2 vector2Right) -> ((fns.Vector2 vector2Left vector2Right fnOriginOpt), world)
+            | (String stringLeft, String stringRight) -> ((fns.String stringLeft stringRight fnOriginOpt), world)
+            | (Tuple tupleLeft, Tuple tupleRight) -> ((fns.Tuple tupleLeft tupleRight fnOriginOpt), world)
+            | (Keyphrase (_, phraseLeft), Keyphrase (_, phraseRight)) -> ((fns.Keyphrase phraseLeft phraseRight fnOriginOpt), world)
+            | (List listLeft, List listRight) -> ((fns.List listLeft listRight fnOriginOpt), world)
+            | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a binary function on unlike or incompatible values.", fnOriginOpt), world)
 
         let evalBinary fns fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [evaledLeft; evaledRight] -> evalBinaryInner fns fnName evaledLeft evaledRight world                
+            | [evaledLeft; evaledRight] -> evalBinaryInner fns fnOriginOpt fnName evaledLeft evaledRight world                
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
         
         let evalV2 fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [Single (x, _); Single (y, _)] -> (Vector2 (OpenTK.Vector2 (x, y), fnOriginOpt), world)
+            | [Single x; Single y] -> (Vector2 (OpenTK.Vector2 (x, y)), world)
             | [Violation _ as violation; _] -> (violation, world)
             | [_; Violation _ as violation] -> (violation, world)
             | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"V2"; !!(String.capitalize fnName)], "Application of " + fnName + " requires a single for the both arguments.", fnOriginOpt), world)
@@ -727,26 +733,26 @@ module WorldScripting =
 
         let evalPair fnOriginOpt (_ : string) evaledArgs world =
             match evaledArgs with
-            | [_; _] -> (Tuple (evaledArgs |> List.indexed |> Map.ofList, fnOriginOpt), world)
+            | [_; _] -> (Tuple (evaledArgs |> List.indexed |> Map.ofList), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Pair"], "Incorrect number of arguments for creation of a pair; 2 arguments required.", fnOriginOpt), world)
 
-        let evalTuple fnOriginOpt _ evaledArgs world =
-            (Tuple (evaledArgs |> List.indexed |> Map.ofList, fnOriginOpt), world)
+        let evalTuple _ _ evaledArgs world =
+            (Tuple (evaledArgs |> List.indexed |> Map.ofList), world)
     
         let evalNth5 index fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [Tuple (evaleds, originOpt)] ->
+            | [Tuple evaleds] ->
                 match Map.tryFind index evaleds with
                 | Some evaled -> (evaled, world)
-                | None -> (Violation ([!!"OutOfRange"], "Tuple does not contain element at index " + string index + ".", originOpt), world)
-            | [Keyphrase (_, evaleds, originOpt)] ->
+                | None -> (Violation ([!!"OutOfRange"], "Tuple does not contain element at index " + string index + ".", fnOriginOpt), world)
+            | [Keyphrase (_, evaleds)] ->
                 match Map.tryFind index evaleds with
                 | Some evaled -> (evaled, world)
-                | None -> (Violation ([!!"OutOfRange"], "Keyphrase does not contain element at index " + string index + ".", originOpt), world)
-            | [List (evaleds, originOpt)] ->
+                | None -> (Violation ([!!"OutOfRange"], "Keyphrase does not contain element at index " + string index + ".", fnOriginOpt), world)
+            | [List evaleds] ->
                 match List.tryFindAt index evaleds with
                 | Some evaled -> (evaled, world)
-                | None -> (Violation ([!!"OutOfRange"], "List does not contain element at index " + string index + ".", originOpt), world)
+                | None -> (Violation ([!!"OutOfRange"], "List does not contain element at index " + string index + ".", fnOriginOpt), world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-sequence.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
         
@@ -754,69 +760,69 @@ module WorldScripting =
             match evaledArgs with
             | [head; foot] ->
                 match head with
-                | Int (int, _) -> evalNth5 int fnOriginOpt fnName [foot] world
+                | Int int -> evalNth5 int fnOriginOpt fnName [foot] world
                 | _ -> (Violation ([!!"InvalidNthArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Application of " + fnName + " requires an int for the first argument.", fnOriginOpt), world)
             | _ ->  (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
             
         let evalSome fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [evaledArg] -> (Option (Some evaledArg, fnOriginOpt), world)
+            | [evaledArg] -> (Option (Some evaledArg), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Option"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
     
         let evalIsNone fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [Option (evaled, originOpt)] -> (Bool (Option.isNone evaled, originOpt), world)
+            | [Option evaled] -> (Bool (Option.isNone evaled), world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Option"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-option.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Option"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
     
         let evalIsSome fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [Option (evaled, originOpt)] -> (Bool (Option.isSome evaled, originOpt), world)
+            | [Option evaled] -> (Bool (Option.isSome evaled), world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Option"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-option.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Option"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
     
         let evalMap evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [_; Option (opt, _) as option] ->
+            | [_; Option opt as option] ->
                 match opt with
                 | Some value -> evalApply [value] fnOriginOpt world
                 | None -> (option, world)
-            | [_; List (list, _)] ->
+            | [_; List list] ->
                 let (list, world) =
                     List.fold (fun (elems, world) current ->
                         let (elem, world) = evalApply [current] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
                         list
-                (List (List.rev list, fnOriginOpt), world)
-            | [_; Ring (set, _)] ->
+                (List (List.rev list), world)
+            | [_; Ring set] ->
                 let (set, world) =
                     Set.fold (fun (elems, world) current ->
                         let (elem, world) = evalApply [current] fnOriginOpt world
                         (Set.add elem elems, world))
                         (Set.empty, world)
                         set
-                (Ring (set, fnOriginOpt), world)
-            | [_; Table (map, _)] ->
+                (Ring set, world)
+            | [_; Table map] ->
                 let (map, world) =
                     Map.fold (fun (elems, world) currentKey currentValue ->
-                        let current = Tuple ([currentKey; currentValue] |> List.indexed |> Map.ofList, fnOriginOpt)
+                        let current = Tuple ([currentKey; currentValue] |> List.indexed |> Map.ofList)
                         let (elem, world) = evalApply [current] fnOriginOpt world
                         match elem with
-                        | Tuple (elems', _) when elems'.Count = 2 -> ((Map.add (Map.find 0 elems') (Map.find 1 elems') elems), world)
+                        | Tuple elems' when elems'.Count = 2 -> ((Map.add (Map.find 0 elems') (Map.find 1 elems') elems), world)
                         | _ -> (elems, world))
                         (Map.empty, world)
                         map
-                (Table (map, fnOriginOpt), world)
+                (Table map, world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Functor"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-functor.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Functor"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
             
-        let evalList fnOriginOpt _ evaledArgs world =
-            (List (evaledArgs, fnOriginOpt), world)
+        let evalList _ _ evaledArgs world =
+            (List evaledArgs, world)
     
         let evalHead fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [List (evaledArgs, _)] ->
+            | [List evaledArgs] ->
                 match evaledArgs with
                 | evaledHead :: _ -> (evaledHead, world)
                 | _ -> (Violation ([!!"InvalidArgumentValue"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a list with no members.", fnOriginOpt), world)
@@ -825,42 +831,42 @@ module WorldScripting =
     
         let evalTail fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [List (evaleds, originOpt)] ->
+            | [List evaleds] ->
                 match evaleds with
-                | _ :: evaledTail -> (List (evaledTail, originOpt), world)
+                | _ :: evaledTail -> (List evaledTail, world)
                 | _ -> (Violation ([!!"InvalidArgumentValue"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a list with no members.", fnOriginOpt), world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
     
         let evalCons fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [evaled; List (evaleds, originOpt)] -> (List (evaled :: evaleds, originOpt), world)
+            | [evaled; List evaleds] -> (List (evaled :: evaleds), world)
             | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
     
         let evalIsEmpty fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [List (list, originOpt)] -> (Bool (List.isEmpty list, originOpt), world)
-            | [Ring (set, originOpt)] -> (Bool (Set.isEmpty set, originOpt), world)
-            | [Table (map, originOpt)] -> (Bool (Map.isEmpty map, originOpt), world)
+            | [List list] -> (Bool (List.isEmpty list), world)
+            | [Ring set] -> (Bool (Set.isEmpty set), world)
+            | [Table map] -> (Bool (Map.isEmpty map), world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
     
         let evalNotEmpty fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [List (evaleds, originOpt)] -> (Bool (not ^ List.isEmpty evaleds, originOpt), world)
-            | [Ring (set, originOpt)] -> (Bool (not ^ Set.isEmpty set, originOpt), world)
-            | [Table (map, originOpt)] -> (Bool (not ^ Map.isEmpty map, originOpt), world)
+            | [List evaleds] -> (Bool (not ^ List.isEmpty evaleds), world)
+            | [Ring set] -> (Bool (not ^ Set.isEmpty set), world)
+            | [Table map] -> (Bool (not ^ Map.isEmpty map), world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
     
         let evalFold evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [_; state; List (list, _)] -> List.fold (fun (acc, world) current -> evalApply [acc; current] fnOriginOpt world) (state, world) list
-            | [_; state; Ring (set, _)] -> Set.fold (fun (acc, world) current -> evalApply [acc; current] fnOriginOpt world) (state, world) set
-            | [_; state; Table (map, _)] ->
+            | [_; state; List list] -> List.fold (fun (acc, world) current -> evalApply [acc; current] fnOriginOpt world) (state, world) list
+            | [_; state; Ring set] -> Set.fold (fun (acc, world) current -> evalApply [acc; current] fnOriginOpt world) (state, world) set
+            | [_; state; Table map] ->
                 Map.fold (fun (acc, world) currentKey currentValue ->
-                    let current = Tuple ([currentKey; currentValue] |> List.indexed |> Map.ofList, fnOriginOpt)
+                    let current = Tuple ([currentKey; currentValue] |> List.indexed |> Map.ofList)
                     evalApply [acc; current] fnOriginOpt world)
                     (state, world)
                     map
@@ -869,24 +875,24 @@ module WorldScripting =
     
         let evalReduce evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [_; List (list, _)] ->
+            | [_; List list] ->
                 match list with
                 | head :: tail -> List.fold (fun (acc, world) current -> evalApply [acc; current] fnOriginOpt world) (head, world) tail
                 | _ -> (Violation ([!!"InvalidArgument"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to an empty list.", fnOriginOpt), world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
             
-        let evalRing fnOriginOpt (_ : string) evaledArgs world =
-            (Ring (Set.ofList evaledArgs, fnOriginOpt), world)
+        let evalRing _ (_ : string) evaledArgs world =
+            (Ring (Set.ofList evaledArgs), world)
 
         let evalAdd fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [value; container] ->
                 match container with
-                | Ring (set, originOpt) -> (Ring (Set.add value set, originOpt), world)
-                | Table (map, originOpt) ->
+                | Ring set -> (Ring (Set.add value set), world)
+                | Table map ->
                     match value with
-                    | Tuple (map', _) when map'.Count = 2 -> (Table (Map.add (Map.find 0 map') (Map.find 1 map') map, originOpt), world)
+                    | Tuple map' when map'.Count = 2 -> (Table (Map.add (Map.find 0 map') (Map.find 1 map') map), world)
                     | _ -> (Violation ([!!"InvalidEntry"; !!"Table"; !!(String.capitalize fnName)], "Table entry must consist of a pair.", fnOriginOpt), world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
@@ -895,8 +901,8 @@ module WorldScripting =
             match evaledArgs with
             | [value; container] ->
                 match container with
-                | Ring (set, originOpt) -> (Ring (Set.remove value set, originOpt), world)
-                | Table (map, originOpt) -> (Table (Map.remove value map, originOpt), world)
+                | Ring set -> (Ring (Set.remove value set), world)
+                | Table map -> (Table (Map.remove value map), world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
@@ -904,7 +910,7 @@ module WorldScripting =
             match evaledArgs with
             | [key; container] ->
                 match container with
-                | Table (map, _) -> (Option (Map.tryFind key map, fnOriginOpt), world)
+                | Table map -> (Option (Map.tryFind key map), world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
@@ -912,7 +918,7 @@ module WorldScripting =
             match evaledArgs with
             | [key; container] ->
                 match container with
-                | Table (map, _) ->
+                | Table map ->
                     match Map.tryFind key map with
                     | Some value -> (value, world)
                     | None -> (Violation ([!!"InvalidKey"; !!"Table"; !!(String.capitalize fnName)], "Key not found in table.", fnOriginOpt), world)
@@ -920,10 +926,10 @@ module WorldScripting =
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
         let evalTable fnOriginOpt fnName evaledArgs world =
-            if List.forall (function Tuple (map, _) when map.Count = 2 -> true | _ -> false) evaledArgs then
-                let evaledPairs = List.map (function List ([evaledFst; evaledSnd], _) -> (evaledFst, evaledSnd) | _ -> failwithumf ()) evaledArgs
+            if List.forall (function Tuple map when map.Count = 2 -> true | _ -> false) evaledArgs then
+                let evaledPairs = List.map (function List [evaledFst; evaledSnd] -> (evaledFst, evaledSnd) | _ -> failwithumf ()) evaledArgs
                 let evaledMap = Map.ofList evaledPairs
-                (Table (evaledMap, fnOriginOpt), world)
+                (Table evaledMap, world)
             else (Violation ([!!"InvalidEntries"; !!"Table"; !!(String.capitalize fnName)], "Table entries must consist of 1 or more pairs.", fnOriginOpt), world)
 
         let rec Intrinsics =
@@ -1034,8 +1040,8 @@ module WorldScripting =
             | EventStream eventAddress ->
                 let (eventAddressEvaled, world) = eval eventAddress world
                 match eventAddressEvaled with
-                | String (eventAddressStr, originOpt)
-                | Keyword (eventAddressStr, originOpt) ->
+                | String eventAddressStr
+                | Keyword eventAddressStr ->
                     try let eventAddress = Address.makeFromString eventAddressStr
                         let eventStream = Stream.stream eventAddress
                         Right (eventStream, world)
@@ -1044,8 +1050,8 @@ module WorldScripting =
             | PropertyStream (propertyName, propertyRelation) ->
                 let (propertyRelationEvaled, world) = eval propertyRelation world
                 match propertyRelationEvaled with
-                | String (propertyRelationStr, originOpt)
-                | Keyword (propertyRelationStr, originOpt) ->
+                | String propertyRelationStr
+                | Keyword propertyRelationStr ->
                     try let context = World.getScriptContext world
                         let propertyRelation = Relation.makeFromString propertyRelationStr
                         let propertyAddress = Relation.resolve context.SimulantAddress propertyRelation -<<- Address.makeFromName !!propertyName
@@ -1070,26 +1076,33 @@ module WorldScripting =
             match evalMany exprs world with
             | (evaledHead :: evaledTail, world) ->
                 match evaledHead with
-                | Keyword (_, originOpt) as keyword ->
+                | Keyword _ as keyword ->
                     let map = evaledTail |> List.indexed |> Map.ofList
-                    (Keyphrase (keyword, map, originOpt), world)
+                    (Keyphrase (keyword, map), world)
                 | Binding (name, _, originOpt) ->
                     let (evaled, _) = evalIntrinsic originOpt name evaledTail world
                     (evaled, world)
-                | Fun (pars, parsCount, body, _, worldOpt, originOpt) ->
-                    let world =
-                        match worldOpt with
-                        | Some world -> world :?> World
-                        | None -> world
-                    let evaledArgs = evaledTail
-                    if List.hasExactly parsCount evaledArgs then
-                        let bindings = List.map2 (fun par evaledArg -> (par, evaledArg)) pars evaledArgs
-                        let world = World.addProceduralBindings (AddToNewFrame parsCount) bindings world
-                        let (evaled, world) = eval body world
-                        (evaled, World.removeProceduralBindings world)
-                    else (Violation ([!!"MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), world)                        
+                | Fun (pars, parsCount, body, _, framesOpt, originOpt) ->
+                    let (framesCurrentOpt, world) =
+                        match framesOpt with
+                        | Some frames ->
+                            let framesCurrent =  World.getProceduralFrames world
+                            let world = World.setProceduralFrames (frames :?> ProceduralFrame list) world
+                            (Some framesCurrent, world)
+                        | None -> (None, world)
+                    let (evaled, world) =
+                        let evaledArgs = evaledTail
+                        if List.hasExactly parsCount evaledArgs then
+                            let bindings = List.map2 (fun par evaledArg -> (par, evaledArg)) pars evaledArgs
+                            let world = World.addProceduralBindings (AddToNewFrame parsCount) bindings world
+                            let (evaled, world) = eval body world
+                            (evaled, World.removeProceduralBindings world)
+                        else (Violation ([!!"MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), world)
+                    match framesCurrentOpt with
+                    | Some framesCurrent -> (evaled, World.setProceduralFrames framesCurrent world)
+                    | None -> (evaled, world)
                 | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), world)
-            | ([], _) -> (Unit originOpt, world)
+            | ([], _) -> (Unit, world)
 
         and evalLet4 binding body originOpt world =
             let world =
@@ -1098,7 +1111,8 @@ module WorldScripting =
                     let evaled = evalDropEnv body world
                     World.addProceduralBinding (AddToNewFrame 1) name evaled world
                 | LetFunction (name, args, body) ->
-                    let fn = Fun (args, List.length args, body, true, Some (world :> obj), originOpt)
+                    let frames = World.getProceduralFrames world :> obj
+                    let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
                     World.addProceduralBinding (AddToNewFrame 1) name fn world
             let (evaled, world) = eval body world
             (evaled, World.removeProceduralBindings world)
@@ -1110,7 +1124,8 @@ module WorldScripting =
                     let bodyValue = evalDropEnv body world
                     World.addProceduralBinding (AddToNewFrame bindingsCount) name bodyValue world
                 | LetFunction (name, args, body) ->
-                    let fn = Fun (args, List.length args, body, true, Some (world :> obj), originOpt)
+                    let frames = World.getProceduralFrames world :> obj
+                    let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
                     World.addProceduralBinding (AddToNewFrame bindingsCount) name fn world
             let mutable start = 1
             for binding in bindingsTail do
@@ -1119,7 +1134,8 @@ module WorldScripting =
                     let bodyValue = evalDropEnv body world
                     World.addProceduralBinding (AddToHeadFrame start) name bodyValue world |> ignore
                 | LetFunction (name, args, body) ->
-                    let fn = Fun (args, List.length args, body, true, Some (world :> obj), originOpt)
+                    let frames = World.getProceduralFrames world :> obj
+                    let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
                     World.addProceduralBinding (AddToHeadFrame start) name fn world |> ignore
                 start <- start + 1
             let (evaled, world) = eval body world
@@ -1137,18 +1153,19 @@ module WorldScripting =
                 let (evaled, _) = evalLetMany4 bindingsHead bindingsTail bindingsCount body originOpt world
                 (evaled, world)
 
-        and evalFun fn pars parsCount body worldPushed worldOpt originOpt world =
-            if not worldPushed then
-                match worldOpt with
-                | Some world as worldOpt -> (Fun (pars, parsCount, body, true, worldOpt, originOpt), world :?> World)
-                | None -> (Fun (pars, parsCount, body, true, Some (world :> obj), originOpt), world)
+        and evalFun fn pars parsCount body framesPushed framesOpt originOpt world =
+            if not framesPushed then
+                if Option.isNone framesOpt then
+                    let frames = World.getProceduralFrames world :> obj
+                    (Fun (pars, parsCount, body, true, Some frames, originOpt), world)
+                else (Fun (pars, parsCount, body, true, framesOpt, originOpt), world)
             else (fn, world)
 
         and evalIf condition consequent alternative originOpt world =
             let (evaled, world) = eval condition world
             match evaled with
             | Violation _ -> (evaled, world)
-            | Bool (bool, _) -> if bool then eval consequent world else eval alternative world
+            | Bool bool -> if bool then eval consequent world else eval alternative world
             | _ -> (Violation ([!!"InvalidIfCondition"], "Must provide an expression that evaluates to a bool in an if condition.", originOpt), world)
 
         and evalMatch input (cases : (Expr * Expr) list) originOpt world =
@@ -1156,10 +1173,10 @@ module WorldScripting =
             let eir =
                 List.foldUntilRight (fun world (condition, consequent) ->
                     let (evaledInput, world) = eval condition world
-                    match evalBinaryInner EqFns "match" input evaledInput world with
+                    match evalBinaryInner EqFns originOpt "match" input evaledInput world with
                     | (Violation _, _) -> Right (evaledInput, world)
-                    | (Bool (true, _), world) -> Right (eval consequent world)
-                    | (Bool (false, _), _) -> Left world
+                    | (Bool true, world) -> Right (eval consequent world)
+                    | (Bool false, _) -> Left world
                     | _ -> failwithumf ())
                     (Left world)
                     cases
@@ -1173,7 +1190,7 @@ module WorldScripting =
                     let (evaled, world) = eval condition world
                     match evaled with
                     | Violation _ -> Right (evaled, world)
-                    | Bool (bool, _) -> if bool then Right (eval consequent world) else Left world
+                    | Bool bool -> if bool then Right (eval consequent world) else Left world
                     | _ -> Right ((Violation ([!!"InvalidSelectCondition"], "Must provide an expression that evaluates to a bool in a case condition.", originOpt), world)))
                     (Left world)
                     exprPairs
@@ -1196,14 +1213,14 @@ module WorldScripting =
                 | Left world -> (evaled, world)
             | _ -> (evaled, world)
 
-        and evalDo exprs originOpt world =
+        and evalDo exprs _ world =
             let evaledEir =
                 List.foldWhileRight (fun (_, world) expr ->
                     let (evaled, world) = eval expr world
                     match evaled with
                     | Violation _ as violation -> Left (violation, world)
                     | _ -> Right (evaled, world))
-                    (Right (Unit originOpt, world))
+                    (Right (Unit, world))
                     exprs
             match evaledEir with
             | Right evaled -> evaled
@@ -1221,8 +1238,8 @@ module WorldScripting =
                 | Some relationExpr ->
                     let (evaledExpr, world) = eval relationExpr world
                     match evaledExpr with
-                    | String (str, _)
-                    | Keyword (str, _) ->
+                    | String str
+                    | Keyword str ->
                         let relation = Relation.makeFromString str
                         let address = Relation.resolve context.SimulantAddress relation
                         match World.tryProxySimulant address with
@@ -1236,7 +1253,7 @@ module WorldScripting =
                 | Some (propertyValue, propertyType) ->
                     match Importers.TryGetValue propertyType.Name with
                     | (true, tryImport) ->
-                        match tryImport propertyValue propertyType originOpt with
+                        match tryImport propertyValue propertyType with
                         | Some propertyValue -> (propertyValue, world)
                         | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting worldironment.", originOpt), world)
                     | (false, _) -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting worldironment.", originOpt), world)
@@ -1250,8 +1267,8 @@ module WorldScripting =
                 | Some relationExpr ->
                     let (evaledExpr, world) = eval relationExpr world
                     match evaledExpr with
-                    | String (str, _)
-                    | Keyword (str, _) ->
+                    | String str
+                    | Keyword str ->
                         let relation = Relation.makeFromString str
                         let address = Relation.resolve context.SimulantAddress relation
                         match World.tryProxySimulant address with
@@ -1270,7 +1287,7 @@ module WorldScripting =
                         match tryExport propertyValue propertyType with
                         | Some propertyValue ->
                             match World.trySetSimulantProperty propertyName (propertyValue, propertyType) simulant world with
-                            | (true, world) -> (Unit originOpt, world)
+                            | (true, world) -> (Unit, world)
                             | (false, _) -> (Violation ([!!"InvalidProperty"], "Property value could not be set.", originOpt), world)
                         | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be exported into simulant property.", originOpt), world)
                     | (false, _) -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be exported into simulant property.", originOpt), world)
@@ -1280,7 +1297,7 @@ module WorldScripting =
         and evalDefine name expr originOpt world =
             let (evaled, world) = eval expr world
             match World.tryAddDeclarationBinding name evaled world with
-            | Some world -> (Unit originOpt, world)
+            | Some world -> (Unit, world)
             | None -> (Violation ([!!"InvalidDefinition"], "Definition '" + name + "' could not be created due to having the same name as another top-level binding.", originOpt), world)
 
         and eval expr world : Expr * World =
@@ -1306,7 +1323,7 @@ module WorldScripting =
             | Apply (exprs, originOpt) -> evalApply exprs originOpt world
             | Let (binding, body, originOpt) -> evalLet binding body originOpt world
             | LetMany (bindings, body, originOpt) -> evalLetMany bindings body originOpt world
-            | Fun (pars, parsCount, body, worldPushed, worldOpt, originOpt) as fn -> evalFun fn pars parsCount body worldPushed worldOpt originOpt world
+            | Fun (pars, parsCount, body, framesPushed, framesOpt, originOpt) as fn -> evalFun fn pars parsCount body framesPushed framesOpt originOpt world
             | If (condition, consequent, alternative, originOpt) -> evalIf condition consequent alternative originOpt world
             | Match (input, cases, originOpt) -> evalMatch input cases originOpt world
             | Select (exprPairs, originOpt) -> evalSelect exprPairs originOpt world
