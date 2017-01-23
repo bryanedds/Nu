@@ -51,6 +51,9 @@ module WorldScripting =
         static member addProceduralBindings appendType bindings world =
             World.updateScriptEnv (EnvModule.Env.addProceduralBindings appendType bindings) world
 
+        static member removeProceduralBindings world =
+            World.updateScriptEnv EnvModule.Env.removeProceduralBindings world
+
     module Scripting =
 
         let rec private tryImportList (value : obj) (ty : Type) originOpt =
@@ -1067,16 +1070,15 @@ module WorldScripting =
             | Some binding -> (binding, world)
 
         and evalApply exprs originOpt world =
-            let oldWorld = world
             match evalMany exprs world with
             | (evaledHead :: evaledTail, world) ->
                 match evaledHead with
                 | Keyword (_, originOpt) as keyword ->
                     let map = evaledTail |> List.indexed |> Map.ofList
-                    (Keyphrase (keyword, map, originOpt), oldWorld)
+                    (Keyphrase (keyword, map, originOpt), world)
                 | Binding (name, _, originOpt) ->
                     let (evaled, _) = evalIntrinsic originOpt name evaledTail world
-                    (evaled, oldWorld)
+                    (evaled, world)
                 | Fun (pars, parsCount, body, _, worldOpt, originOpt) ->
                     let world =
                         match worldOpt with
@@ -1086,11 +1088,11 @@ module WorldScripting =
                     if List.hasExactly parsCount evaledArgs then
                         let bindings = List.map2 (fun par evaledArg -> (par, evaledArg)) pars evaledArgs
                         let world = World.addProceduralBindings (AddToNewFrame parsCount) bindings world
-                        let (evaled, _) = eval body world
-                        (evaled, oldWorld)
-                    else (Violation ([!!"MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), oldWorld)                        
-                | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), oldWorld)
-            | ([], _) -> (Unit originOpt, oldWorld)
+                        let (evaled, world) = eval body world
+                        (evaled, World.removeProceduralBindings world)
+                    else (Violation ([!!"MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), world)                        
+                | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), world)
+            | ([], _) -> (Unit originOpt, world)
 
         and evalLet4 binding body originOpt world =
             let world =
@@ -1101,7 +1103,8 @@ module WorldScripting =
                 | LetFunction (name, args, body) ->
                     let fn = Fun (args, List.length args, body, true, Some (world :> obj), originOpt)
                     World.addProceduralBinding (AddToNewFrame 1) name fn world
-            eval body world
+            let (evaled, world) = eval body world
+            (evaled, World.removeProceduralBindings world)
 
         and evalLetMany4 bindingsHead bindingsTail bindingsCount body originOpt world =
             let world =
@@ -1122,7 +1125,8 @@ module WorldScripting =
                     let fn = Fun (args, List.length args, body, true, Some (world :> obj), originOpt)
                     World.addProceduralBinding (AddToHeadFrame start) name fn world |> ignore
                 start <- start + 1
-            eval body world
+            let (evaled, world) = eval body world
+            (evaled, World.removeProceduralBindings world)
         
         and evalLet binding body originOpt world =
             let (evaled, _) = evalLet4 binding body originOpt world
