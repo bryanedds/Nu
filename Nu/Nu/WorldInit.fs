@@ -37,10 +37,15 @@ module Nu =
             Math.init ()
 
             // init F# reach-arounds
-            WorldModule.eval <- fun expr localFrame simulant world ->
-                let world = World.setScriptContext simulant world
+            WorldModule.eval <- fun expr localFrame scriptContext world ->
+                let oldLocalFrame = World.getLocalFrame world
+                let oldScriptContext = World.getScriptContext world
                 let world = World.setLocalFrame localFrame world
-                Scripting.eval expr world
+                let world = World.setScriptContext scriptContext world
+                let (evaled, world) = Scripting.eval expr world
+                let world = World.setLocalFrame oldLocalFrame world
+                let world = World.setScriptContext oldScriptContext world
+                (evaled, world)
 #if DEBUG
             Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
             Debug.World.viewScreen <- fun screen world -> Debug.Screen.view (screen :?> Screen) (world :?> World)

@@ -601,6 +601,11 @@ module Scripting =
                             index <- index + 1
                         env
                     | [] -> failwithumf ()
+
+            let removeProceduralBindings env =
+                match env.ProceduralFrames with
+                | [] -> failwithumf ()
+                | _ :: tail -> { env with ProceduralFrames = tail }
     
             let make rebinding =
                 { Rebinding = rebinding
