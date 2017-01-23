@@ -14,9 +14,25 @@ module WorldModule =
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
     let mutable private Clipboard : obj option = None
 
-    /// F# reach-around for evaluating script expressions.
+    /// F# reach-around for evaluating a script expression.
     let mutable internal eval : Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr * World =
         Unchecked.defaultof<Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr * World>
+
+    /// F# reach-around for evaluating script expressions.
+    let mutable internal evalMany : Scripting.Expr list -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr list * World =
+        Unchecked.defaultof<Scripting.Expr list -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr list * World>
+
+    /// Evaluate a script expression, with logging on violation result.
+    let evalWithLogging expr localFrame simulant world =
+        let (evaled, world) = eval expr localFrame simulant world
+        Scripting.log evaled
+        (evaled, world)
+
+    /// Evaluate a series of script expressions, with logging on violation result.
+    let evalManyWithLogging exprs localFrame simulant world =
+        let (evaleds, world) = evalMany exprs localFrame simulant world
+        List.iter Scripting.log evaleds
+        (evaleds, world)
 
     type World with
 
@@ -450,7 +466,11 @@ module WorldModule =
         static member internal getGameScriptOpt world = (World.getGameState world).ScriptOpt
         static member internal setGameScriptOpt value world = World.updateGameState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt world
         static member internal getGameScript world = (World.getGameState world).Script
-        static member internal setGameScript value world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world
+        static member internal setGameScript value world =
+            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+            let world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world
+            let world = World.setGameScriptFrameNp scriptFrame world
+            evalManyWithLogging value scriptFrame (Game.proxy Address.empty) world |> snd
         static member internal getGameScriptFrameNp world = (World.getGameState world).ScriptFrameNp
         static member internal setGameScriptFrameNp value world = World.updateGameState (fun gameState -> { gameState with ScriptFrameNp = value }) Property? ScriptFrameNp world
         static member internal getGameOnRegister world = (World.getGameState world).OnRegister
@@ -823,7 +843,11 @@ module WorldModule =
         static member internal getScreenScriptOpt screen world = (World.getScreenState screen world).ScriptOpt
         static member internal setScreenScriptOpt value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptOpt = value }) Property? ScriptOpt screen world
         static member internal getScreenScript screen world = (World.getScreenState screen world).Script
-        static member internal setScreenScript value screen world = World.updateScreenState (fun screenState -> { screenState with Script = value }) Property? Script screen world
+        static member internal setScreenScript value screen world =
+            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+            let world = World.updateScreenState (fun screenState -> { screenState with Script = value }) Property? Script screen world
+            let world = World.setScreenScriptFrameNp scriptFrame screen world
+            evalManyWithLogging value scriptFrame screen world |> snd
         static member internal getScreenScriptFrameNp screen world = (World.getScreenState screen world).ScriptFrameNp
         static member internal setScreenScriptFrameNp value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptFrameNp = value }) Property? ScriptFrameNp screen world
         static member internal getScreenOnRegister screen world = (World.getScreenState screen world).OnRegister
@@ -1170,7 +1194,11 @@ module WorldModule =
         static member internal getLayerScriptOpt layer world = (World.getLayerState layer world).ScriptOpt
         static member internal setLayerScriptOpt value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptOpt = value }) Property? ScriptOpt layer world
         static member internal getLayerScript layer world = (World.getLayerState layer world).Script
-        static member internal setLayerScript value layer world = World.updateLayerState (fun layerState -> { layerState with Script = value }) Property? Script layer world
+        static member internal setLayerScript value layer world =
+            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+            let world = World.updateLayerState (fun layerState -> { layerState with Script = value }) Property? Script layer world
+            let world = World.setLayerScriptFrameNp scriptFrame layer world
+            evalManyWithLogging value scriptFrame layer world |> snd
         static member internal getLayerScriptFrameNp layer world = (World.getLayerState layer world).ScriptFrameNp
         static member internal setLayerScriptFrameNp value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptFrameNp = value }) Property? ScriptFrameNp layer world
         static member internal getLayerOnRegister layer world = (World.getLayerState layer world).OnRegister
@@ -2408,20 +2436,21 @@ module WorldModule =
         static member setScriptContext context (world : World) =
             { world with ScriptContext = context }
 
-        /// Evaluate an script expression.
+        /// Evaluate a script expression.
         static member eval expr localFrame simulant world =
             eval expr localFrame simulant world
 
-        /// Evaluate an script expression, with logging on violation result.
-        static member evelWithLogging expr localFrame simulant world =
-            match World.eval expr localFrame simulant world with
-            | (Scripting.Violation (names, error, optOrigin) as evaled, world) ->
-                Log.debug ^
-                    "Unexpected violation:" + (names |> Name.join "" |> Name.getNameStr) +
-                    "\ndue to:" + error +
-                    "\nat: " + scstring optOrigin + "'."
-                (evaled, world)
-            | (evaled, world) -> (evaled, world)
+        /// Evaluate a script expression, with logging on violation result.
+        static member evalWithLogging expr localFrame simulant world =
+            evalWithLogging expr localFrame simulant world
+
+        /// Evaluate a series of script expressions.
+        static member evalMany exprs localFrame simulant world =
+            evalMany exprs localFrame simulant world
+
+        /// Evaluate a series of script expressions, with logging on violation results.
+        static member evalManyWithLogging exprs localFrame simulant world =
+            evalManyWithLogging exprs localFrame simulant world
 
     type World with
 
