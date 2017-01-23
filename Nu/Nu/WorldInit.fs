@@ -46,6 +46,17 @@ module Nu =
                 let world = World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 (evaled, world)
+
+            // init F# reach-arounds
+            WorldModule.evalMany <- fun exprs localFrame scriptContext world ->
+                let oldLocalFrame = World.getLocalFrame world
+                let oldScriptContext = World.getScriptContext world
+                let world = World.setLocalFrame localFrame world
+                let world = World.setScriptContext scriptContext world
+                let (evaleds, world) = Scripting.evalMany exprs world
+                let world = World.setLocalFrame oldLocalFrame world
+                let world = World.setScriptContext oldScriptContext world
+                (evaleds, world)
 #if DEBUG
             Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
             Debug.World.viewScreen <- fun screen world -> Debug.Screen.view (screen :?> Screen) (world :?> World)

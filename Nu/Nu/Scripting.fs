@@ -461,6 +461,16 @@ module Scripting =
     
     /// The false value in scripting.
     let FalseValue = Bool (false, None)
+
+    /// Log a violation if an expression is one.
+    let log expr =
+        match expr with
+        | Violation (names, error, optOrigin) ->
+            Log.debug ^
+                "Unexpected violation:" + (names |> Name.join "" |> Name.getNameStr) +
+                "\ndue to:" + error +
+                "\nat: " + scstring optOrigin + "'."
+        | _ -> ()
     
     /// A declaration bindings frame in a scripting environment.
     type DeclarationFrame = Dictionary<string, Expr>
@@ -502,9 +512,6 @@ module Scripting =
 
             let setLocalFrame localFrame env =
                 { env with LocalFrame = localFrame }
-
-            let resetLocalFrame env =
-                { env with LocalFrame = DeclarationFrame HashIdentity.Structural }
 
             let private makeProceduralFrame size =
                 Array.create size BottomBinding

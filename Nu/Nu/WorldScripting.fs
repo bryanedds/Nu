@@ -18,41 +18,38 @@ module WorldScripting =
 
     type World with
 
-        static member getLocalDeclaration world =
+        static member private getLocalDeclaration world =
             World.getScriptEnvBy Scripting.EnvModule.Env.getLocalDeclaration world
 
-        static member setLocalDeclaration localDeclaration world =
+        static member private setLocalDeclaration localDeclaration world =
             World.updateScriptEnv (Scripting.EnvModule.Env.setLocalDeclaration localDeclaration) world
 
-        static member getLocalFrame world =
-            World.getScriptEnvBy Scripting.EnvModule.Env.getLocalFrame world
-
-        static member setLocalFrame localFrame world =
-            World.updateScriptEnv (Scripting.EnvModule.Env.setLocalFrame localFrame) world
-
-        static member resetLocalFrame world =
-            World.updateScriptEnv Scripting.EnvModule.Env.resetLocalFrame world
-
-        static member tryGetDeclarationBinding name world =
+        static member private tryGetDeclarationBinding name world =
             World.getScriptEnvBy (Scripting.EnvModule.Env.tryGetDeclarationBinding name) world
 
-        static member tryGetProceduralBinding name world =
+        static member private tryGetProceduralBinding name world =
             World.getScriptEnvBy (Scripting.EnvModule.Env.tryGetProceduralBinding name) world
 
-        static member tryGetBinding name cachedBinding world =
+        static member private tryGetBinding name cachedBinding world =
             World.getScriptEnvBy (Scripting.EnvModule.Env.tryGetBinding name cachedBinding) world
 
-        static member tryAddDeclarationBinding name value world =
+        static member private tryAddDeclarationBinding name value world =
             World.tryUpdateScriptEnv (Scripting.EnvModule.Env.tryAddDeclarationBinding name value) world
 
-        static member addProceduralBinding appendType name value world =
+        static member private addProceduralBinding appendType name value world =
             World.updateScriptEnv (EnvModule.Env.addProceduralBinding appendType name value) world
 
-        static member addProceduralBindings appendType bindings world =
+        static member private addProceduralBindings appendType bindings world =
             World.updateScriptEnv (EnvModule.Env.addProceduralBindings appendType bindings) world
 
-        static member removeProceduralBindings world =
+        static member private removeProceduralBindings world =
             World.updateScriptEnv EnvModule.Env.removeProceduralBindings world
+
+        static member internal getLocalFrame world =
+            World.getScriptEnvBy Scripting.EnvModule.Env.getLocalFrame world
+
+        static member internal setLocalFrame localFrame world =
+            World.updateScriptEnv (Scripting.EnvModule.Env.setLocalFrame localFrame) world
 
     module Scripting =
 
@@ -1148,10 +1145,9 @@ module WorldScripting =
             else (fn, world)
 
         and evalIf condition consequent alternative originOpt world =
-            let oldWorld = world
             let (evaled, world) = eval condition world
             match evaled with
-            | Violation _ -> (evaled, oldWorld)
+            | Violation _ -> (evaled, world)
             | Bool (bool, _) -> if bool then eval consequent world else eval alternative world
             | _ -> (Violation ([!!"InvalidIfCondition"], "Must provide an expression that evaluates to a bool in an if condition.", originOpt), world)
 
@@ -1186,7 +1182,6 @@ module WorldScripting =
             | Left world -> (Violation ([!!"InexhaustiveSelect"], "A select expression failed to meet any of its cases.", originOpt), world)
 
         and evalTry body handlers _ world =
-            let oldWorld = world
             let (evaled, world) = eval body world
             match evaled with
             | Violation (categories, _, _) ->
@@ -1194,7 +1189,7 @@ module WorldScripting =
                     List.foldUntilRight (fun world (handlerCategories, handlerBody) ->
                         let categoriesTrunc = List.truncate (List.length handlerCategories) categories
                         if categoriesTrunc = handlerCategories then Right (eval handlerBody world) else Left world)
-                        (Left oldWorld)
+                        (Left world)
                         handlers
                 match eir with
                 | Right (evaled, world) -> (evaled, world)
@@ -1204,10 +1199,9 @@ module WorldScripting =
         and evalDo exprs originOpt world =
             let evaledEir =
                 List.foldWhileRight (fun (_, world) expr ->
-                    let oldWorld = world
                     let (evaled, world) = eval expr world
                     match evaled with
-                    | Violation _ as violation -> Left (violation, oldWorld)
+                    | Violation _ as violation -> Left (violation, world)
                     | _ -> Right (evaled, world))
                     (Right (Unit originOpt, world))
                     exprs
