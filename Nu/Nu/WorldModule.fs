@@ -2408,10 +2408,11 @@ module WorldModule =
         static member setScriptContext context (world : World) =
             { world with ScriptContext = context }
 
-        /// Evaluate an expression within the context of the given script and simulant.
+        /// Evaluate an script expression.
         static member eval expr localFrame simulant world =
             eval expr localFrame simulant world
 
+        /// Evaluate an script expression, with logging on violation result.
         static member evelWithLogging expr localFrame simulant world =
             match World.eval expr localFrame simulant world with
             | (Scripting.Violation (names, error, optOrigin) as evaled, world) ->
