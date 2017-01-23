@@ -15,8 +15,8 @@ module WorldModule =
     let mutable private Clipboard : obj option = None
 
     /// F# reach-around for evaluating script expressions.
-    let mutable internal eval : Scripting.Expr -> Scripting.Frame list -> Simulant -> World -> Scripting.Expr * World =
-        Unchecked.defaultof<Scripting.Expr -> Scripting.Frame list -> Simulant -> World -> Scripting.Expr * World>
+    let mutable internal eval : Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr * World =
+        Unchecked.defaultof<Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr * World>
 
     type World with
 
@@ -451,8 +451,8 @@ module WorldModule =
         static member internal setGameScriptOpt value world = World.updateGameState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt world
         static member internal getGameScript world = (World.getGameState world).Script
         static member internal setGameScript value world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world
-        static member internal getGameScriptFramesNp world = (World.getGameState world).ScriptFramesNp
-        static member internal setGameScriptFramesNp value world = World.updateGameState (fun gameState -> { gameState with ScriptFramesNp = value }) Property? ScriptFramesNp world
+        static member internal getGameScriptFrameNp world = (World.getGameState world).ScriptFrameNp
+        static member internal setGameScriptFrameNp value world = World.updateGameState (fun gameState -> { gameState with ScriptFrameNp = value }) Property? ScriptFrameNp world
         static member internal getGameOnRegister world = (World.getGameState world).OnRegister
         static member internal setGameOnRegister value world = World.updateGameState (fun gameState -> { gameState with OnRegister = value }) Property? OnRegister world
         static member internal getGameOnUnregister world = (World.getGameState world).OnUnregister
@@ -600,7 +600,7 @@ module WorldModule =
             | "Imperative" -> Some (World.getGameImperative world :> obj, typeof<bool>)
             | "ScriptOpt" -> Some (World.getGameScriptOpt world :> obj, typeof<AssetTag option>)
             | "Script" -> Some (World.getGameScript world :> obj, typeof<Scripting.Expr list>)
-            | "ScriptFramesNp" -> Some (World.getGameScript world :> obj, typeof<Scripting.Frame list>)
+            | "ScriptFrameNp" -> Some (World.getGameScript world :> obj, typeof<Scripting.ProceduralFrame list>)
             | "OnRegister" -> Some (World.getGameOnRegister world :> obj, typeof<Scripting.Expr>)
             | "OnUnregister" -> Some (World.getGameOnUnregister world :> obj, typeof<Scripting.Expr>)
             | "OnUpdate" -> Some (World.getGameOnUpdate world :> obj, typeof<Scripting.Expr>)
@@ -641,7 +641,7 @@ module WorldModule =
             | "Imperative" -> (false, world)
             | "ScriptOpt" -> (false, world)
             | "Script" -> (false, world)
-            | "ScriptFramesNp" -> (false, world)
+            | "ScriptFrameNp" -> (false, world)
             | "OnRegister" -> (false, world)
             | "OnUnregister" -> (false, world)
             | "OnUpdate" -> (false, world)
@@ -672,7 +672,7 @@ module WorldModule =
             | "Imperative" -> failwith ^ "Cannot change game " + propertyName + "."
             | "ScriptOpt" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "Script" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
-            | "ScriptFramesNp" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
+            | "ScriptFrameNp" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "OnRegister" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "OnUnregister" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "OnUpdate" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
@@ -824,8 +824,8 @@ module WorldModule =
         static member internal setScreenScriptOpt value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptOpt = value }) Property? ScriptOpt screen world
         static member internal getScreenScript screen world = (World.getScreenState screen world).Script
         static member internal setScreenScript value screen world = World.updateScreenState (fun screenState -> { screenState with Script = value }) Property? Script screen world
-        static member internal getScreenScriptFramesNp screen world = (World.getScreenState screen world).ScriptFramesNp
-        static member internal setScreenScriptFramesNp value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptFramesNp = value }) Property? ScriptFramesNp screen world
+        static member internal getScreenScriptFrameNp screen world = (World.getScreenState screen world).ScriptFrameNp
+        static member internal setScreenScriptFrameNp value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptFrameNp = value }) Property? ScriptFrameNp screen world
         static member internal getScreenOnRegister screen world = (World.getScreenState screen world).OnRegister
         static member internal setScreenOnRegister value screen world = World.updateScreenState (fun screenState -> { screenState with OnRegister = value }) Property? OnRegister screen world
         static member internal getScreenOnUnregister screen world = (World.getScreenState screen world).OnUnregister
@@ -859,7 +859,7 @@ module WorldModule =
                 | "Imperative" -> Some (World.getScreenImperative screen world :> obj, typeof<bool>)
                 | "ScriptOpt" -> Some (World.getScreenScriptOpt screen world :> obj, typeof<AssetTag option>)
                 | "Script" -> Some (World.getScreenScript screen world :> obj, typeof<Scripting.Expr list>)
-                | "ScriptFramesNp" -> Some (World.getScreenScriptFramesNp screen world :> obj, typeof<Scripting.Frame list>)
+                | "ScriptFrameNp" -> Some (World.getScreenScriptFrameNp screen world :> obj, typeof<Scripting.ProceduralFrame list>)
                 | "OnRegister" -> Some (World.getScreenOnRegister screen world :> obj, typeof<Scripting.Expr>)
                 | "OnUnregister" -> Some (World.getScreenOnUnregister screen world :> obj, typeof<Scripting.Expr>)
                 | "OnUpdate" -> Some (World.getScreenOnUpdate screen world :> obj, typeof<Scripting.Expr>)
@@ -884,7 +884,7 @@ module WorldModule =
             | "Imperative" -> (World.getScreenImperative screen world :> obj, typeof<bool>)
             | "ScriptOpt" -> (World.getScreenScriptOpt screen world :> obj, typeof<AssetTag option>)
             | "Script" -> (World.getScreenScript screen world :> obj, typeof<Scripting.Expr list>)
-            | "ScriptFramesNp" -> (World.getScreenScriptFramesNp screen world :> obj, typeof<Scripting.Frame list>)
+            | "ScriptFrameNp" -> (World.getScreenScriptFrameNp screen world :> obj, typeof<Scripting.ProceduralFrame list>)
             | "OnRegister" -> (World.getScreenOnRegister screen world :> obj, typeof<Scripting.Expr>)
             | "OnUnregister" -> (World.getScreenOnUnregister screen world :> obj, typeof<Scripting.Expr>)
             | "OnUpdate" -> (World.getScreenOnUpdate screen world :> obj, typeof<Scripting.Expr>)
@@ -909,7 +909,7 @@ module WorldModule =
                 | "Imperative" -> (false, world)
                 | "ScriptOpt" -> (false, world)
                 | "Script" -> (false, world)
-                | "ScriptFramesNp" -> (false, world)
+                | "ScriptFrameNp" -> (false, world)
                 | "OnRegister" -> (false, world)
                 | "OnUnregister" -> (false, world)
                 | "OnUpdate" -> (false, world)
@@ -945,7 +945,7 @@ module WorldModule =
             | "Imperative" -> failwith ^ "Cannot change screen " + propertyName + "."
             | "ScriptOpt" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "Script" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
-            | "ScriptFramesNp" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
+            | "ScriptFrameNp" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "OnRegister" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "OnUnregister" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "OnUpdate" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
@@ -982,7 +982,7 @@ module WorldModule =
                     let world = dispatcher.Register (screen, world)
                     let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
                     let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Register"; !!"Event"] ->- screen) eventTrace screen world
-                    eval (World.getScreenOnUnregister screen world) (World.getScreenScriptFramesNp screen world) screen world |> snd)
+                    eval (World.getScreenOnUnregister screen world) (World.getScreenScriptFrameNp screen world) screen world |> snd)
                     screen
                     world
             World.choose world
@@ -990,7 +990,7 @@ module WorldModule =
         static member internal unregisterScreen screen world =
             let world =
                 World.withEventContext (fun world ->
-                    let world = eval (World.getScreenOnRegister screen world) (World.getScreenScriptFramesNp screen world) screen world |> snd
+                    let world = eval (World.getScreenOnRegister screen world) (World.getScreenScriptFrameNp screen world) screen world |> snd
                     let dispatcher = World.getScreenDispatcherNp screen world
                     let eventTrace = EventTrace.record "World" "unregisterScreen" EventTrace.empty
                     let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Unregistering"; !!"Event"] ->- screen) eventTrace screen world
@@ -1171,8 +1171,8 @@ module WorldModule =
         static member internal setLayerScriptOpt value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptOpt = value }) Property? ScriptOpt layer world
         static member internal getLayerScript layer world = (World.getLayerState layer world).Script
         static member internal setLayerScript value layer world = World.updateLayerState (fun layerState -> { layerState with Script = value }) Property? Script layer world
-        static member internal getLayerScriptFramesNp layer world = (World.getLayerState layer world).ScriptFramesNp
-        static member internal setLayerScriptFramesNp value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptFramesNp = value }) Property? ScriptFramesNp layer world
+        static member internal getLayerScriptFrameNp layer world = (World.getLayerState layer world).ScriptFrameNp
+        static member internal setLayerScriptFrameNp value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptFrameNp = value }) Property? ScriptFrameNp layer world
         static member internal getLayerOnRegister layer world = (World.getLayerState layer world).OnRegister
         static member internal setLayerOnRegister value layer world = World.updateLayerState (fun layerState -> { layerState with OnRegister = value }) Property? OnRegister layer world
         static member internal getLayerOnUnregister layer world = (World.getLayerState layer world).OnUnregister
@@ -1200,7 +1200,7 @@ module WorldModule =
                 | "Imperative" -> Some (World.getLayerImperative layer world :> obj, typeof<bool>)
                 | "ScriptOpt" -> Some (World.getLayerScriptOpt layer world :> obj, typeof<AssetTag option>)
                 | "Script" -> Some (World.getLayerScript layer world :> obj, typeof<Scripting.Expr list>)
-                | "ScriptFramesNp" -> Some (World.getLayerScript layer world :> obj, typeof<Scripting.Frame list>)
+                | "ScriptFrameNp" -> Some (World.getLayerScript layer world :> obj, typeof<Scripting.ProceduralFrame list>)
                 | "OnRegister" -> Some (World.getLayerOnRegister layer world :> obj, typeof<Scripting.Expr>)
                 | "OnUnregister" -> Some (World.getLayerOnUnregister layer world :> obj, typeof<Scripting.Expr>)
                 | "OnUpdate" -> Some (World.getLayerOnUpdate layer world :> obj, typeof<Scripting.Expr>)
@@ -1222,7 +1222,7 @@ module WorldModule =
             | "Imperative" -> (World.getLayerImperative layer world :> obj, typeof<bool>)
             | "ScriptOpt" -> (World.getLayerScriptOpt layer world :> obj, typeof<AssetTag option>)
             | "Script" -> (World.getLayerScript layer world :> obj, typeof<Scripting.Expr list>)
-            | "ScriptFramesNp" -> (World.getLayerScript layer world :> obj, typeof<Scripting.Frame list>)
+            | "ScriptFrameNp" -> (World.getLayerScript layer world :> obj, typeof<Scripting.ProceduralFrame list>)
             | "OnRegister" -> (World.getLayerOnRegister layer world :> obj, typeof<Scripting.Expr>)
             | "OnUnregister" -> (World.getLayerOnUnregister layer world :> obj, typeof<Scripting.Expr>)
             | "OnUpdate" -> (World.getLayerOnUpdate layer world :> obj, typeof<Scripting.Expr>)
@@ -1244,7 +1244,7 @@ module WorldModule =
                 | "Imperative" -> (false, world)
                 | "ScriptOpt" -> (false, world)
                 | "Script" -> (false, world)
-                | "ScriptFramesNp" -> (false, world)
+                | "ScriptFrameNp" -> (false, world)
                 | "OnRegister" -> (false, world)
                 | "OnUnregister" -> (false, world)
                 | "OnUpdate" -> (false, world)
@@ -1275,7 +1275,7 @@ module WorldModule =
             | "Imperative" -> failwith ^ "Cannot change layer " + propertyName + "."
             | "ScriptOpt" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
             | "Script" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
-            | "ScriptFramesNp" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
+            | "ScriptFrameNp" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
             | "OnRegister" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
             | "OnUnregister" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
             | "OnUpdate" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
@@ -1307,7 +1307,7 @@ module WorldModule =
                     let world = dispatcher.Register (layer, world)
                     let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
                     let world = World.publish () (ltoa<unit> [!!"Layer"; !!"Register"; !!"Event"] ->- layer) eventTrace layer world
-                    eval (World.getLayerOnUnregister layer world) (World.getLayerScriptFramesNp layer world) layer world |> snd)
+                    eval (World.getLayerOnUnregister layer world) (World.getLayerScriptFrameNp layer world) layer world |> snd)
                     layer
                     world
             World.choose world
@@ -1315,7 +1315,7 @@ module WorldModule =
         static member internal unregisterLayer layer world =
             let world =
                 World.withEventContext (fun world ->
-                    let world = eval (World.getLayerOnRegister layer world) (World.getLayerScriptFramesNp layer world) layer world |> snd
+                    let world = eval (World.getLayerOnRegister layer world) (World.getLayerScriptFrameNp layer world) layer world |> snd
                     let dispatcher = World.getLayerDispatcherNp layer world
                     let eventTrace = EventTrace.record "World" "unregisterLayer" EventTrace.empty
                     let world = World.publish () (ltoa<unit> [!!"Layer"; !!"Unregistering"; !!"Event"] ->- layer) eventTrace layer world
@@ -2407,14 +2407,6 @@ module WorldModule =
         /// Get the context of the script system.
         static member setScriptContext context (world : World) =
             { world with ScriptContext = context }
-
-        /// Get the active frames of the script system.
-        static member getScriptFrames (world : World) =
-            World.getScriptEnvBy Scripting.EnvModule.Env.getFrames world
-
-        /// Set the active frames of the script system.
-        static member setScriptFrames frames (world : World) =
-            World.updateScriptEnv (Scripting.EnvModule.Env.setFrames frames) world
 
         /// Evaluate an expression within the context of the given script and simulant.
         static member eval expr simulant world =

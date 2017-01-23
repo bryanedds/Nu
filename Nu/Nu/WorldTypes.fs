@@ -329,7 +329,7 @@ module WorldTypes =
           CreationTimeStampNp : int64
           ScriptOpt : AssetTag option
           Script : Scripting.Expr list
-          ScriptFramesNp : Scripting.Frame list
+          ScriptFrameNp : Scripting.DeclarationFrame
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
@@ -386,7 +386,7 @@ module WorldTypes =
               CreationTimeStampNp = Core.getTimeStamp ()
               ScriptOpt = None
               Script = []
-              ScriptFramesNp = []
+              ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
               OnRegister = Scripting.UnitValue
               OnUnregister = Scripting.UnitValue
               OnUpdate = Scripting.UnitValue
@@ -416,7 +416,7 @@ module WorldTypes =
           CreationTimeStampNp : int64
           ScriptOpt : AssetTag option
           Script : Scripting.Expr list
-          ScriptFramesNp : Scripting.Frame list
+          ScriptFrameNp : Scripting.DeclarationFrame
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
@@ -476,7 +476,7 @@ module WorldTypes =
                   CreationTimeStampNp = Core.getTimeStamp ()
                   ScriptOpt = None
                   Script = []
-                  ScriptFramesNp = []
+                  ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
                   OnRegister = Scripting.UnitValue
                   OnUnregister = Scripting.UnitValue
                   OnUpdate = Scripting.UnitValue
@@ -507,7 +507,7 @@ module WorldTypes =
           Specialization : string
           Persistent : bool
           CreationTimeStampNp : int64
-          ScriptFramesNp : Scripting.Frame list
+          ScriptFrameNp : Scripting.DeclarationFrame
           ScriptOpt : AssetTag option
           Script : Scripting.Expr list
           OnRegister : Scripting.Expr
@@ -565,7 +565,7 @@ module WorldTypes =
               CreationTimeStampNp = Core.getTimeStamp ()
               ScriptOpt = None
               Script = []
-              ScriptFramesNp = []
+              ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
               OnRegister = Scripting.UnitValue
               OnUnregister = Scripting.UnitValue
               OnUpdate = Scripting.UnitValue

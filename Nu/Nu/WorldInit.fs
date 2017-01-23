@@ -37,9 +37,9 @@ module Nu =
             Math.init ()
 
             // init F# reach-arounds
-            WorldModule.eval <- fun expr frames simulant world ->
+            WorldModule.eval <- fun expr localFrame simulant world ->
                 let world = World.setScriptContext simulant world
-                let world = World.setScriptFrames frames world
+                let world = World.setLocalFrame localFrame world
                 Scripting.evalWithLogging expr world
 #if DEBUG
             Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)

@@ -689,7 +689,7 @@ module WorldModule2 =
 
             // make the world's script environment
             // TODO: parameterize hard-coded boolean
-            let scriptEnv = Scripting.EnvModule.Env.make false (Dictionary<string, Scripting.Expr> HashIdentity.Structural) []
+            let scriptEnv = Scripting.EnvModule.Env.make false
 
             // make the world's ambient state
             let ambientState =
@@ -789,7 +789,7 @@ module WorldModule2 =
 
                 // make the world's script environment
                 // TODO: parameterize hard-coded boolean
-                let scriptEnv = Scripting.EnvModule.Env.make false (Dictionary<string, Scripting.Expr> HashIdentity.Structural) []
+                let scriptEnv = Scripting.EnvModule.Env.make false
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
