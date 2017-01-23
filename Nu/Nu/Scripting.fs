@@ -490,6 +490,7 @@ module Scripting =
                   LocalDeclaration : bool
                   GlobalFrame : DeclarationFrame
                   LocalFrame : DeclarationFrame
+                  // TODO: consider making this mutating for speed
                   ProceduralFrames : ProceduralFrame list }
     
         [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -518,11 +519,11 @@ module Scripting =
 
             let tryGetDeclarationBinding name env =
                 match env.LocalFrame.TryGetValue name with
-                | (true, value) -> Some value
                 | (false, _) ->
                     match env.GlobalFrame.TryGetValue name with
-                    | (true, value) -> Some value
                     | (false, _) -> None
+                    | (true, value) -> Some value
+                | (true, value) -> Some value
     
             let tryGetProceduralBinding name env =
                 let refOffset = ref -1
@@ -563,14 +564,14 @@ module Scripting =
                     let (_, binding) = frame.[index]
                     Some binding
 
-            let private addDeclarationBinding name value env =
+            let private forceAddDeclarationBinding name value env =
                 if env.LocalDeclaration
                 then env.LocalFrame.ForceAdd (name, value)
                 else env.GlobalFrame.ForceAdd (name, value)
     
             let tryAddDeclarationBinding name value env =
                 if (env.Rebinding || not ^ env.LocalFrame.ContainsKey name) then
-                    addDeclarationBinding name value env
+                    forceAddDeclarationBinding name value env
                     Some env
                 else None
     
