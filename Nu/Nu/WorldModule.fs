@@ -15,8 +15,8 @@ module WorldModule =
     let mutable private Clipboard : obj option = None
 
     /// F# reach-around for evaluating script expressions.
-    let mutable internal eval : Scripting.Expr -> Simulant -> World -> Scripting.Expr * World =
-        Unchecked.defaultof<Scripting.Expr -> Simulant -> World -> Scripting.Expr * World>
+    let mutable internal eval : Scripting.Expr -> Scripting.Frame list -> Simulant -> World -> Scripting.Expr * World =
+        Unchecked.defaultof<Scripting.Expr -> Scripting.Frame list -> Simulant -> World -> Scripting.Expr * World>
 
     type World with
 
@@ -982,7 +982,7 @@ module WorldModule =
                     let world = dispatcher.Register (screen, world)
                     let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
                     let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Register"; !!"Event"] ->- screen) eventTrace screen world
-                    eval (World.getScreenOnUnregister screen world) screen world |> snd)
+                    eval (World.getScreenOnUnregister screen world) (World.getScreenScriptFramesNp screen world) screen world |> snd)
                     screen
                     world
             World.choose world
@@ -990,7 +990,7 @@ module WorldModule =
         static member internal unregisterScreen screen world =
             let world =
                 World.withEventContext (fun world ->
-                    let world = eval (World.getScreenOnRegister screen world) screen world |> snd
+                    let world = eval (World.getScreenOnRegister screen world) (World.getScreenScriptFramesNp screen world) screen world |> snd
                     let dispatcher = World.getScreenDispatcherNp screen world
                     let eventTrace = EventTrace.record "World" "unregisterScreen" EventTrace.empty
                     let world = World.publish () (ltoa<unit> [!!"Screen"; !!"Unregistering"; !!"Event"] ->- screen) eventTrace screen world
@@ -1307,7 +1307,7 @@ module WorldModule =
                     let world = dispatcher.Register (layer, world)
                     let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
                     let world = World.publish () (ltoa<unit> [!!"Layer"; !!"Register"; !!"Event"] ->- layer) eventTrace layer world
-                    eval (World.getLayerOnUnregister layer world) layer world |> snd)
+                    eval (World.getLayerOnUnregister layer world) (World.getLayerScriptFramesNp layer world) layer world |> snd)
                     layer
                     world
             World.choose world
@@ -1315,7 +1315,7 @@ module WorldModule =
         static member internal unregisterLayer layer world =
             let world =
                 World.withEventContext (fun world ->
-                    let world = eval (World.getLayerOnRegister layer world) layer world |> snd
+                    let world = eval (World.getLayerOnRegister layer world) (World.getLayerScriptFramesNp layer world) layer world |> snd
                     let dispatcher = World.getLayerDispatcherNp layer world
                     let eventTrace = EventTrace.record "World" "unregisterLayer" EventTrace.empty
                     let world = World.publish () (ltoa<unit> [!!"Layer"; !!"Unregistering"; !!"Event"] ->- layer) eventTrace layer world
@@ -2380,14 +2380,6 @@ module WorldModule =
 
     type World with
 
-        /// Get the context of the script system.
-        static member getScriptContext (world : World) =
-            world.ScriptContext
-
-        /// Get the context of the script system.
-        static member setScriptContext context (world : World) =
-            { world with ScriptContext = context }
-
         static member getScriptEnv world =
             world.ScriptEnv
 
@@ -2407,6 +2399,22 @@ module WorldModule =
             match tryUpdater env with
             | Some env -> Some ^ World.setScriptEnv env world
             | None -> None
+
+        /// Get the context of the script system.
+        static member getScriptContext (world : World) =
+            world.ScriptContext
+
+        /// Get the context of the script system.
+        static member setScriptContext context (world : World) =
+            { world with ScriptContext = context }
+
+        /// Get the active frames of the script system.
+        static member getScriptFrames (world : World) =
+            World.getScriptEnvBy Scripting.EnvModule.Env.getFrames world
+
+        /// Set the active frames of the script system.
+        static member setScriptFrames frames (world : World) =
+            World.updateScriptEnv (Scripting.EnvModule.Env.setFrames frames) world
 
         /// Evaluate an expression within the context of the given script and simulant.
         static member eval expr simulant world =

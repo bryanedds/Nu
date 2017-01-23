@@ -30,6 +30,9 @@ module WorldGameModule =
         member this.GetScript world = World.getGameScript world
         member this.SetScript value world = World.setGameScript value world
         member this.Script = PropertyTag.make this Property? Script this.GetScript this.SetScript
+        member this.GetScriptFramesNp world = World.getGameScriptFramesNp world
+        member this.SetScriptFramesNp value world = World.setGameScriptFramesNp value world
+        member this.ScriptFramesNp = PropertyTag.make this Property? Script this.GetScriptFramesNp this.SetScriptFramesNp
         member this.GetOnRegister world = World.getGameOnRegister world
         member this.SetOnRegister value world = World.setGameOnRegister value world
         member this.OnRegister = PropertyTag.make this Property? OnRegister this.GetOnRegister this.SetOnRegister
@@ -139,7 +142,7 @@ module WorldGameModule =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcherNp world
                     let world = dispatcher.Register (game, world)
-                    World.eval (game.GetOnUnregister world) game world |> snd)
+                    World.eval (game.GetOnUnregister world) (game.GetScriptFramesNp world) game world |> snd)
                     game
                     world
             World.choose world
@@ -149,7 +152,7 @@ module WorldGameModule =
             let world =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcherNp world
-                    let world = World.eval (game.GetOnRegister world) game world |> snd
+                    let world = World.eval (game.GetOnRegister world) (game.GetScriptFramesNp world)game world |> snd
                     dispatcher.Unregister (game, world))
                     game
                     world

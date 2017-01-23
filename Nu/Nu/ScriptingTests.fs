@@ -14,7 +14,7 @@ module ScriptingTests =
     let eval exprStr =
         let world = World.makeEmpty ()
         let expr = scvalue<Scripting.Expr> exprStr
-        World.eval expr Simulants.Game world |> fst
+        World.eval expr [] Simulants.Game world |> fst
 
     let [<Fact>] keywordsWork () =
         match eval "Keyword" with
@@ -115,5 +115,5 @@ module ScriptingTests =
         let world = World.makeEmpty ()
         let game = Simulants.Game
         let expr = scvalue<Scripting.Expr> "[set EyeCenter [v2 10f 10f]]"
-        let world = World.eval expr game world |> snd
+        let world = World.eval expr [] game world |> snd
         Assert.Equal (Vector2 (10.0f, 10.0f), Game.GetEyeCenter world)

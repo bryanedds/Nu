@@ -1324,7 +1324,7 @@ module WorldScripting =
         and evalDropEnv expr world =
             eval expr world |> fst
 
-        let evalLogging expr world =
+        let evalWithLogging expr world =
             match eval expr world with
             | (Violation (names, error, optOrigin) as evaled, world) ->
                 Log.debug ^
