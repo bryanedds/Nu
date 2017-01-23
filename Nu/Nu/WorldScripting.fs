@@ -358,10 +358,10 @@ module WorldScripting =
 
         let BoolFns =
             { Bool = fun value _ -> Bool (value)
-              Int = fun value _ -> Bool ((value = 0))
-              Int64 = fun value _ -> Bool ((value = 0L))
-              Single = fun value _ -> Bool ((value = 0.0f))
-              Double = fun value _ -> Bool ((value = 0.0))
+              Int = fun value _ -> Bool (value = 0)
+              Int64 = fun value _ -> Bool (value = 0L)
+              Single = fun value _ -> Bool (value = 0.0f)
+              Double = fun value _ -> Bool (value = 0.0)
               Vector2 = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a vector to a bool.", originOpt)
               String = fun value _ -> Bool (scvalue value)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a bool to a tuple.", originOpt)
@@ -371,7 +371,7 @@ module WorldScripting =
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a table to a bool.", originOpt) }
 
         let IntFns =
-            { Bool = fun value _ -> Int ((if value then 1 else 0))
+            { Bool = fun value _ -> Int (if value then 1 else 0)
               Int = fun value _ -> Int (value)
               Int64 = fun value _ -> Int (int value)
               Single = fun value _ -> Int (int value)
@@ -385,7 +385,7 @@ module WorldScripting =
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a table to an int.", originOpt) }
 
         let Int64Fns =
-            { Bool = fun value _ -> Int64 ((if value then 1L else 0L))
+            { Bool = fun value _ -> Int64 (if value then 1L else 0L)
               Int = fun value _ -> Int64 (int64 value)
               Int64 = fun value _ -> Int64 (value)
               Single = fun value _ -> Int64 (int64 value)
@@ -399,7 +399,7 @@ module WorldScripting =
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a table to a 64-bit int.", originOpt) }
 
         let SingleFns =
-            { Bool = fun value _ -> Single ((if value then 1.0f else 0.0f))
+            { Bool = fun value _ -> Single (if value then 1.0f else 0.0f)
               Int = fun value _ -> Single (single value)
               Int64 = fun value _ -> Single (single value)
               Single = fun value _ -> Single (value)
@@ -413,7 +413,7 @@ module WorldScripting =
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a table to a single.", originOpt) }
 
         let DoubleFns =
-            { Bool = fun value _ -> Double ((if value then 1.0 else 0.0))
+            { Bool = fun value _ -> Double (if value then 1.0 else 0.0)
               Int = fun value _ -> Double (double value)
               Int64 = fun value _ -> Double (double value)
               Single = fun value _ -> Double (double value)
@@ -455,110 +455,110 @@ module WorldScripting =
               Table : Map<Expr, Expr> -> Map<Expr, Expr> -> SymbolOrigin option -> Expr }
 
         let EqFns =
-            { Bool = fun left right _ -> Bool ((left = right))
-              Int = fun left right _ -> Bool ((left = right))
-              Int64 = fun left right _ -> Bool ((left = right))
-              Single = fun left right _ -> Bool ((left = right))
-              Double = fun left right _ -> Bool ((left = right))
-              Vector2 = fun left right _ -> Bool ((left = right))
-              String = fun left right _ -> Bool ((left = right))
-              Tuple = fun left right _ -> Bool ((left = right))
-              Keyphrase = fun left right _ -> Bool ((left = right))
-              List = fun left right _ -> Bool ((left = right))
-              Ring = fun left right _ -> Bool ((left = right))
-              Table = fun left right _ -> Bool ((left = right)) }
+            { Bool = fun left right _ -> Bool (left = right)
+              Int = fun left right _ -> Bool (left = right)
+              Int64 = fun left right _ -> Bool (left = right)
+              Single = fun left right _ -> Bool (left = right)
+              Double = fun left right _ -> Bool (left = right)
+              Vector2 = fun left right _ -> Bool (left = right)
+              String = fun left right _ -> Bool (left = right)
+              Tuple = fun left right _ -> Bool (left = right)
+              Keyphrase = fun left right _ -> Bool (left = right)
+              List = fun left right _ -> Bool (left = right)
+              Ring = fun left right _ -> Bool (left = right)
+              Table = fun left right _ -> Bool (left = right) }
 
         let NotEqFns =
-            { Bool = fun left right _ -> Bool ((left <> right))
-              Int = fun left right _ -> Bool ((left <> right))
-              Int64 = fun left right _ -> Bool ((left <> right))
-              Single = fun left right _ -> Bool ((left <> right))
-              Double = fun left right _ -> Bool ((left <> right))
-              Vector2 = fun left right _ -> Bool ((left <> right))
-              String = fun left right _ -> Bool ((left <> right))
-              Tuple = fun left right _ -> Bool ((left <> right))
-              Keyphrase = fun left right _ -> Bool ((left <> right))
-              List = fun left right _ -> Bool ((left <> right))
-              Ring = fun left right _ -> Bool ((left <> right))
-              Table = fun left right _ -> Bool ((left <> right)) }
+            { Bool = fun left right _ -> Bool (left <> right)
+              Int = fun left right _ -> Bool (left <> right)
+              Int64 = fun left right _ -> Bool (left <> right)
+              Single = fun left right _ -> Bool (left <> right)
+              Double = fun left right _ -> Bool (left <> right)
+              Vector2 = fun left right _ -> Bool (left <> right)
+              String = fun left right _ -> Bool (left <> right)
+              Tuple = fun left right _ -> Bool (left <> right)
+              Keyphrase = fun left right _ -> Bool (left <> right)
+              List = fun left right _ -> Bool (left <> right)
+              Ring = fun left right _ -> Bool (left <> right)
+              Table = fun left right _ -> Bool (left <> right) }
 
         let LtFns =
-            { Bool = fun left right _ -> Bool ((left < right))
-              Int = fun left right _ -> Bool ((left < right))
-              Int64 = fun left right _ -> Bool ((left < right))
-              Single = fun left right _ -> Bool ((left < right))
-              Double = fun left right _ -> Bool ((left < right))
-              Vector2 = fun left right _ -> Bool ((left.LengthSquared < right.LengthSquared))
-              String = fun left right _ -> Bool ((left < right))
-              Tuple = fun left right _ -> Bool ((left < right))
-              Keyphrase = fun left right _ -> Bool ((left < right))
-              List = fun left right _ -> Bool ((left < right))
-              Ring = fun left right _ -> Bool ((left < right))
-              Table = fun left right _ -> Bool ((left < right)) }
+            { Bool = fun left right _ -> Bool (left < right)
+              Int = fun left right _ -> Bool (left < right)
+              Int64 = fun left right _ -> Bool (left < right)
+              Single = fun left right _ -> Bool (left < right)
+              Double = fun left right _ -> Bool (left < right)
+              Vector2 = fun left right _ -> Bool (left.LengthSquared < right.LengthSquared)
+              String = fun left right _ -> Bool (left < right)
+              Tuple = fun left right _ -> Bool (left < right)
+              Keyphrase = fun left right _ -> Bool (left < right)
+              List = fun left right _ -> Bool (left < right)
+              Ring = fun left right _ -> Bool (left < right)
+              Table = fun left right _ -> Bool (left < right) }
 
         let GtFns =
-            { Bool = fun left right _ -> Bool ((left > right))
-              Int = fun left right _ -> Bool ((left > right))
-              Int64 = fun left right _ -> Bool ((left > right))
-              Single = fun left right _ -> Bool ((left > right))
-              Double = fun left right _ -> Bool ((left > right))
-              Vector2 = fun left right _ -> Bool ((left.LengthSquared > right.LengthSquared))
-              String = fun left right _ -> Bool ((left > right))
-              Tuple = fun left right _ -> Bool ((left > right))
-              Keyphrase = fun left right _ -> Bool ((left > right))
-              List = fun left right _ -> Bool ((left > right))
-              Ring = fun left right _ -> Bool ((left > right))
-              Table = fun left right _ -> Bool ((left > right)) }
+            { Bool = fun left right _ -> Bool (left > right)
+              Int = fun left right _ -> Bool (left > right)
+              Int64 = fun left right _ -> Bool (left > right)
+              Single = fun left right _ -> Bool (left > right)
+              Double = fun left right _ -> Bool (left > right)
+              Vector2 = fun left right _ -> Bool (left.LengthSquared > right.LengthSquared)
+              String = fun left right _ -> Bool (left > right)
+              Tuple = fun left right _ -> Bool (left > right)
+              Keyphrase = fun left right _ -> Bool (left > right)
+              List = fun left right _ -> Bool (left > right)
+              Ring = fun left right _ -> Bool (left > right)
+              Table = fun left right _ -> Bool (left > right) }
 
         let LtEqFns =
-            { Bool = fun left right _ -> Bool ((left <= right))
-              Int = fun left right _ -> Bool ((left <= right))
-              Int64 = fun left right _ -> Bool ((left <= right))
-              Single = fun left right _ -> Bool ((left <= right))
-              Double = fun left right _ -> Bool ((left <= right))
-              Vector2 = fun left right _ -> Bool ((left.LengthSquared <= right.LengthSquared))
-              String = fun left right _ -> Bool ((left <= right))
-              Tuple = fun left right _ -> Bool ((left <= right))
-              Keyphrase = fun left right _ -> Bool ((left <= right))
-              List = fun left right _ -> Bool ((left <= right))
-              Ring = fun left right _ -> Bool ((left <= right))
-              Table = fun left right _ -> Bool ((left <= right)) }
+            { Bool = fun left right _ -> Bool (left <= right)
+              Int = fun left right _ -> Bool (left <= right)
+              Int64 = fun left right _ -> Bool (left <= right)
+              Single = fun left right _ -> Bool (left <= right)
+              Double = fun left right _ -> Bool (left <= right)
+              Vector2 = fun left right _ -> Bool (left.LengthSquared <= right.LengthSquared)
+              String = fun left right _ -> Bool (left <= right)
+              Tuple = fun left right _ -> Bool (left <= right)
+              Keyphrase = fun left right _ -> Bool (left <= right)
+              List = fun left right _ -> Bool (left <= right)
+              Ring = fun left right _ -> Bool (left <= right)
+              Table = fun left right _ -> Bool (left <= right) }
 
         let GtEqFns =
-            { Bool = fun left right _ -> Bool ((left >= right))
-              Int = fun left right _ -> Bool ((left >= right))
-              Int64 = fun left right _ -> Bool ((left >= right))
-              Single = fun left right _ -> Bool ((left >= right))
-              Double = fun left right _ -> Bool ((left >= right))
-              Vector2 = fun left right _ -> Bool ((left.LengthSquared >= right.LengthSquared))
-              String = fun left right _ -> Bool ((left >= right))
-              Tuple = fun left right _ -> Bool ((left >= right))
-              Keyphrase = fun left right _ -> Bool ((left >= right))
-              List = fun left right _ -> Bool ((left >= right))
-              Ring = fun left right _ -> Bool ((left >= right))
-              Table = fun left right _ -> Bool ((left >= right)) }
+            { Bool = fun left right _ -> Bool (left >= right)
+              Int = fun left right _ -> Bool (left >= right)
+              Int64 = fun left right _ -> Bool (left >= right)
+              Single = fun left right _ -> Bool (left >= right)
+              Double = fun left right _ -> Bool (left >= right)
+              Vector2 = fun left right _ -> Bool (left.LengthSquared >= right.LengthSquared)
+              String = fun left right _ -> Bool (left >= right)
+              Tuple = fun left right _ -> Bool (left >= right)
+              Keyphrase = fun left right _ -> Bool (left >= right)
+              List = fun left right _ -> Bool (left >= right)
+              Ring = fun left right _ -> Bool (left >= right)
+              Table = fun left right _ -> Bool (left >= right) }
 
         let AddFns =
-            { Bool = fun left right _ -> Bool ((if left && right then false elif left then true elif right then true else false))
-              Int = fun left right _ -> Int ((left + right))
-              Int64 = fun left right _ -> Int64 ((left + right))
-              Single = fun left right _ -> Single ((left + right))
-              Double = fun left right _ -> Double ((left + right))
-              Vector2 = fun left right _ -> Vector2 ((left + right))
-              String = fun left right _ -> String ((left + right))
+            { Bool = fun left right _ -> Bool (if left && right then false elif left then true elif right then true else false)
+              Int = fun left right _ -> Int (left + right)
+              Int64 = fun left right _ -> Int64 (left + right)
+              Single = fun left right _ -> Single (left + right)
+              Double = fun left right _ -> Double (left + right)
+              Vector2 = fun left right _ -> Vector2 (left + right)
+              String = fun left right _ -> String (left + right)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Add"], "Cannot add tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Add"], "Cannot add phrases.", originOpt)
-              List = fun left right _ -> List ((left @ right))
-              Ring = fun left right _ -> Ring ((Set.union left right))
-              Table = fun left right _ -> Table ((left @@ right)) }
+              List = fun left right _ -> List (left @ right)
+              Ring = fun left right _ -> Ring (Set.union left right)
+              Table = fun left right _ -> Table (left @@ right) }
 
         let SubFns =
-            { Bool = fun left right _ -> Bool ((if left && right then false elif left then true elif right then true else false))
-              Int = fun left right _ -> Int ((left - right))
-              Int64 = fun left right _ -> Int64 ((left - right))
-              Single = fun left right _ -> Single ((left - right))
-              Double = fun left right _ -> Double ((left - right))
-              Vector2 = fun left right _ -> Vector2 ((left - right))
+            { Bool = fun left right _ -> Bool (if left && right then false elif left then true elif right then true else false)
+              Int = fun left right _ -> Int (left - right)
+              Int64 = fun left right _ -> Int64 (left - right)
+              Single = fun left right _ -> Single (left - right)
+              Double = fun left right _ -> Double (left - right)
+              Vector2 = fun left right _ -> Vector2 (left - right)
               String = fun left right _ -> String (left.Replace (right, String.Empty))
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract tuples.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract phrases.", originOpt)
@@ -568,10 +568,10 @@ module WorldScripting =
 
         let MulFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply bools.", originOpt)
-              Int = fun left right _ -> Int ((left * right))
-              Int64 = fun left right _ -> Int64 ((left * right))
-              Single = fun left right _ -> Single ((left * right))
-              Double = fun left right _ -> Double ((left * right))
+              Int = fun left right _ -> Int (left * right)
+              Int64 = fun left right _ -> Int64 (left * right)
+              Single = fun left right _ -> Single (left * right)
+              Double = fun left right _ -> Double (left * right)
               Vector2 = fun left right _ -> Vector2 (Vector2.Multiply (left, right))
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply tuples.", originOpt)
@@ -581,11 +581,11 @@ module WorldScripting =
               Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply tables.", originOpt) }
 
         let DivFns =
-            { Bool = fun left right originOpt -> if right = false then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Div"], "Cannot divide by a false bool.", originOpt) else Bool ((if left && right then true else false))
-              Int = fun left right originOpt -> if right = 0 then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Div"], "Cannot divide by a zero int.", originOpt) else Int ((left / right))
-              Int64 = fun left right originOpt -> if right = 0L then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Div"], "Cannot divide by a zero 64-bit int.", originOpt) else Int64 ((left / right))
-              Single = fun left right _ -> Single ((left / right))
-              Double = fun left right _ -> Double ((left / right))
+            { Bool = fun left right originOpt -> if right = false then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Div"], "Cannot divide by a false bool.", originOpt) else Bool (if left && right then true else false)
+              Int = fun left right originOpt -> if right = 0 then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Div"], "Cannot divide by a zero int.", originOpt) else Int (left / right)
+              Int64 = fun left right originOpt -> if right = 0L then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Div"], "Cannot divide by a zero 64-bit int.", originOpt) else Int64 (left / right)
+              Single = fun left right _ -> Single (left / right)
+              Double = fun left right _ -> Double (left / right)
               Vector2 = fun left right _ -> Vector2 (Vector2.Divide (left, right))
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide tuples.", originOpt)
@@ -596,10 +596,10 @@ module WorldScripting =
 
         let ModFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate bools.", originOpt)
-              Int = fun left right originOpt -> if right = 0 then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Mod"], "Cannot modulate by a zero int.", originOpt) else Int ((left % right))
-              Int64 = fun left right originOpt -> if right = 0L then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Mod"], "Cannot divide by a zero 64-bit int.", originOpt) else Int64 ((left % right))
-              Single = fun left right _ -> Single ((left % right))
-              Double = fun left right _ -> Double ((left % right))
+              Int = fun left right originOpt -> if right = 0 then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Mod"], "Cannot modulate by a zero int.", originOpt) else Int (left % right)
+              Int64 = fun left right originOpt -> if right = 0L then Violation ([!!"InvalidArgumentValue"; !!"Binary"; !!"Mod"], "Cannot divide by a zero 64-bit int.", originOpt) else Int64 (left % right)
+              Single = fun left right _ -> Single (left % right)
+              Double = fun left right _ -> Double (left % right)
               Vector2 = fun left right _ -> Vector2 (OpenTK.Vector2 (left.X % right.X, left.Y % right.Y))
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate tuples.", originOpt)
@@ -638,10 +638,10 @@ module WorldScripting =
 
         let CrossFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply bools.", originOpt)
-              Int = fun left right _ -> Int ((left * right))
-              Int64 = fun left right _ -> Int64 ((left * right))
-              Single = fun left right _ -> Single ((left * right))
-              Double = fun left right _ -> Double ((left * right))
+              Int = fun left right _ -> Int (left * right)
+              Int64 = fun left right _ -> Int64 (left * right)
+              Single = fun left right _ -> Single (left * right)
+              Double = fun left right _ -> Double (left * right)
               Vector2 = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply 2-dimensional vectors.", originOpt)
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply tuples.", originOpt)
@@ -652,10 +652,10 @@ module WorldScripting =
 
         let DotFns =
             { Bool = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply bools.", originOpt)
-              Int = fun left right _ -> Int ((left * right))
-              Int64 = fun left right _ -> Int64 ((left * right))
-              Single = fun left right _ -> Single ((left * right))
-              Double = fun left right _ -> Double ((left * right))
+              Int = fun left right _ -> Int (left * right)
+              Int64 = fun left right _ -> Int64 (left * right)
+              Single = fun left right _ -> Single (left * right)
+              Double = fun left right _ -> Double (left * right)
               Vector2 = fun left right _ -> Single (Vector2.Dot (left, right))
               String = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply strings.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply tuples.", originOpt)
