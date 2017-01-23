@@ -2409,8 +2409,18 @@ module WorldModule =
             { world with ScriptContext = context }
 
         /// Evaluate an expression within the context of the given script and simulant.
-        static member eval expr simulant world =
-            eval expr simulant world
+        static member eval expr localFrame simulant world =
+            eval expr localFrame simulant world
+
+        static member evelWithLogging expr localFrame simulant world =
+            match World.eval expr localFrame simulant world with
+            | (Scripting.Violation (names, error, optOrigin) as evaled, world) ->
+                Log.debug ^
+                    "Unexpected violation:" + (names |> Name.join "" |> Name.getNameStr) +
+                    "\ndue to:" + error +
+                    "\nat: " + scstring optOrigin + "'."
+                (evaled, world)
+            | (evaled, world) -> (evaled, world)
 
     type World with
 

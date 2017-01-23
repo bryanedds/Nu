@@ -40,7 +40,7 @@ module Nu =
             WorldModule.eval <- fun expr localFrame simulant world ->
                 let world = World.setScriptContext simulant world
                 let world = World.setLocalFrame localFrame world
-                Scripting.evalWithLogging expr world
+                Scripting.eval expr world
 #if DEBUG
             Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
             Debug.World.viewScreen <- fun screen world -> Debug.Screen.view (screen :?> Screen) (world :?> World)
