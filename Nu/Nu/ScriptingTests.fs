@@ -18,42 +18,42 @@ module ScriptingTests =
 
     let [<Fact>] keywordsWork () =
         match eval "Keyword" with
-        | Scripting.Keyword (result, _) -> Assert.Equal ("Keyword", result)
+        | Scripting.Keyword result -> Assert.Equal ("Keyword", result)
         | _ -> Assert.True false
 
     let [<Fact>] plusWorks () =
         match eval "[+ 1 1]" with
-        | Scripting.Int (result, _) -> Assert.Equal (2, result)
+        | Scripting.Int result -> Assert.Equal (2, result)
         | _ -> Assert.True false
 
     let [<Fact>] equalityWorks () =
         match eval "[= 1 1]" with
-        | Scripting.Bool (result, _) -> Assert.True result
+        | Scripting.Bool result -> Assert.True result
         | _ -> Assert.True false
 
     let [<Fact>] nestedApplicationWorks () =
         match eval "[+ [+ 1 1] [+ 1 1]]" with
-        | Scripting.Int (result, _) -> Assert.Equal (4, result)
+        | Scripting.Int result -> Assert.Equal (4, result)
         | _ -> Assert.True false
 
     let [<Fact>] optionsWork () =
         match eval "[isSome [some 1]]" with
-        | Scripting.Bool (result, _) -> Assert.True result
+        | Scripting.Bool result -> Assert.True result
         | _ -> Assert.True false
 
     let [<Fact>] tuplesWork () =
         match eval "[fst [tuple 1]]" with
-        | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | Scripting.Int result -> Assert.Equal (1, result)
         | _ -> Assert.True false
 
     let [<Fact>] listsWork () =
         match eval "[fst [list 1]]" with
-        | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | Scripting.Int result -> Assert.Equal (1, result)
         | _ -> Assert.True false
 
     let [<Fact>] keyphrasesWork () =
         match eval "[fst [K 1]]" with
-        | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | Scripting.Int result -> Assert.Equal (1, result)
         | _ -> Assert.True false
 
     let [<Fact>] outOfRangeWorks () =
@@ -63,12 +63,12 @@ module ScriptingTests =
 
     let [<Fact>] conditionalWorks () =
         match eval "[if [= 1 1] 1 0]" with
-        | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | Scripting.Int result -> Assert.Equal (1, result)
         | _ -> Assert.True false
 
     let [<Fact>] matchWorks () =
         match eval "[match 1 [0 0] [1 2]]" with
-        | Scripting.Int (result, _) -> Assert.Equal (2, result)
+        | Scripting.Int result -> Assert.Equal (2, result)
         | _ -> Assert.True false
 
     let [<Fact>] matchFailureWorks () =
@@ -78,7 +78,7 @@ module ScriptingTests =
 
     let [<Fact>] selectWorks () =
         match eval "[select [false 0] [true 1]]" with
-        | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | Scripting.Int result -> Assert.Equal (1, result)
         | _ -> Assert.True false
 
     let [<Fact>] selectFailureWorks () =
@@ -88,27 +88,27 @@ module ScriptingTests =
 
     let [<Fact>] letWorks () =
         match eval "[let [x 1] [+ x x]]" with
-        | Scripting.Int (result, _) -> Assert.Equal (2, result)
+        | Scripting.Int result -> Assert.Equal (2, result)
         | _ -> Assert.True false
 
     let [<Fact>] letManyWorks () =
         match eval "[let [x 1] [y 2] [+ x y]]" with
-        | Scripting.Int (result, _) -> Assert.Equal (3, result)
+        | Scripting.Int result -> Assert.Equal (3, result)
         | _ -> Assert.True false
 
     let [<Fact>] letFxWorks () =
         match eval "[let [f [x] x] [f 1]]" with
-        | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | Scripting.Int result -> Assert.Equal (1, result)
         | _ -> Assert.True false
 
     let [<Fact>] letFunWorks () =
         match eval "[let [f [fun [x] x]] [f 1]]" with
-        | Scripting.Int (result, _) -> Assert.Equal (1, result)
+        | Scripting.Int result -> Assert.Equal (1, result)
         | _ -> Assert.True false
 
     let [<Fact>] doWorks () =
         match eval "[do [+ 1 1] [+ 2 2]]" with
-        | Scripting.Int (result, _) -> Assert.Equal (4, result)
+        | Scripting.Int result -> Assert.Equal (4, result)
         | _ -> Assert.True false
 
     let [<Fact>] setEyeCenterFromGameScriptWorks () =

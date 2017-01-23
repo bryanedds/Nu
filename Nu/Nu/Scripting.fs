@@ -84,23 +84,23 @@ module Scripting =
 
         (* Primitive Value Types *)
         | Violation of Name list * string * SymbolOrigin option
-        | Unit of SymbolOrigin option // constructed as []
-        | Bool of bool * SymbolOrigin option
-        | Int of int * SymbolOrigin option
-        | Int64 of int64 * SymbolOrigin option
-        | Single of single * SymbolOrigin option
-        | Double of double * SymbolOrigin option
-        | Vector2 of Vector2 * SymbolOrigin option
-        | String of string * SymbolOrigin option
-        | Keyword of string * SymbolOrigin option
+        | Unit
+        | Bool of bool
+        | Int of int
+        | Int64 of int64
+        | Single of single
+        | Double of double
+        | Vector2 of Vector2
+        | String of string
+        | Keyword of string
 
         (* Primitive Data Structures *)
-        | Tuple of Map<int, Expr> * SymbolOrigin option
-        | Keyphrase of Expr * Map<int, Expr> * SymbolOrigin option
-        | Option of Expr option * SymbolOrigin option
-        | List of Expr list * SymbolOrigin option
-        | Ring of Set<Expr> * SymbolOrigin option
-        | Table of Map<Expr, Expr> * SymbolOrigin option
+        | Tuple of Map<int, Expr>
+        | Keyphrase of Expr * Map<int, Expr>
+        | Option of Expr option
+        | List of Expr list
+        | Ring of Set<Expr>
+        | Table of Map<Expr, Expr>
         | Stream of Stream * SymbolOrigin option
 
         (* Special Forms *)
@@ -125,24 +125,24 @@ module Scripting =
         (* Declarations - only work at the top level. *)
         | Define of string * Expr * SymbolOrigin option // constructed as [define c 0]
 
-        static member getOriginOpt term =
+        static member tryGetOrigin term =
             match term with
-            | Violation (_, _, originOpt)
-            | Unit originOpt
-            | Bool (_, originOpt)
-            | Int (_, originOpt)
-            | Int64 (_, originOpt)
-            | Single (_, originOpt)
-            | Double (_, originOpt)
-            | Vector2 (_, originOpt)
-            | String (_, originOpt)
-            | Keyword (_, originOpt)
-            | Tuple (_, originOpt)
-            | Keyphrase (_, _, originOpt)
-            | Option (_, originOpt)
-            | List (_, originOpt)
-            | Ring (_, originOpt)
-            | Table (_, originOpt)
+            | Violation (_, _, originOpt) -> originOpt
+            | Unit
+            | Bool _
+            | Int _
+            | Int64 _
+            | Single _
+            | Double _
+            | Vector2 _
+            | String _
+            | Keyword _
+            | Tuple _
+            | Keyphrase _
+            | Option _
+            | List _
+            | Ring _
+            | Table _ -> None
             | Stream (_, originOpt)
             | Binding (_, _, originOpt)
             | Apply (_, originOpt)
@@ -166,20 +166,20 @@ module Scripting =
         static member equals left right =
             match (left, right) with
             | (Violation (leftNames, leftError, _), Violation (rightNames, rightError, _)) -> (leftNames, leftError) = (rightNames, rightError)
-            | (Unit _, Unit _) -> true
-            | (Bool (left, _), Bool (right, _)) -> left = right
-            | (Int (left, _), Int (right, _)) -> left = right
-            | (Int64 (left, _), Int64 (right, _)) -> left = right
-            | (Single (left, _), Single (right, _)) -> left = right
-            | (Double (left, _), Double (right, _)) -> left = right
-            | (Vector2 (left, _), Vector2 (right, _)) -> left = right
-            | (String (left, _), String (right, _)) -> left = right
-            | (Keyword (left, _), Keyword (right, _)) -> left = right
-            | (Tuple (left, _), Tuple (right, _)) -> left = right
-            | (Keyphrase (leftKeyword, leftExprs, _), Keyphrase (rightKeyword, rightExprs, _)) -> (leftKeyword, leftExprs) = (rightKeyword, rightExprs)
-            | (Option (left, _), Option (right, _)) -> left = right
-            | (List (left, _), List (right, _)) -> left = right
-            | (Ring (left, _), Ring (right, _)) -> left = right
+            | (Unit, Unit) -> true
+            | (Bool left, Bool right) -> left = right
+            | (Int left, Int right) -> left = right
+            | (Int64 left, Int64 right) -> left = right
+            | (Single left, Single right) -> left = right
+            | (Double left, Double right) -> left = right
+            | (Vector2 left, Vector2 right) -> left = right
+            | (String left, String right) -> left = right
+            | (Keyword left, Keyword right) -> left = right
+            | (Tuple left, Tuple right) -> left = right
+            | (Keyphrase (leftKeyword, leftExprs), Keyphrase (rightKeyword, rightExprs)) -> (leftKeyword, leftExprs) = (rightKeyword, rightExprs)
+            | (Option left, Option right) -> left = right
+            | (List left, List right) -> left = right
+            | (Ring left, Ring right) -> left = right
             | (Stream (left, _), Stream (right, _)) -> left = right
             | (Binding (left, _, _), Binding (right, _, _)) -> left = right
             | (Apply (left, _), Apply (right, _)) -> left = right
@@ -204,42 +204,42 @@ module Scripting =
         static member compare left right =
             match (left, right) with
             | (Violation (leftNames, leftError, _), Violation (rightNames, rightError, _)) -> compare (leftNames, leftError) (rightNames, rightError)
-            | (Unit _, Unit _) -> 0
-            | (Bool (left, _), Bool (right, _)) -> compare left right
-            | (Int (left, _), Int (right, _)) -> compare left right
-            | (Int64 (left, _), Int64 (right, _)) -> compare left right
-            | (Single (left, _), Single (right, _)) -> compare left right
-            | (Double (left, _), Double (right, _)) -> compare left right
-            | (Vector2 (left, _), Vector2 (right, _)) -> compare (left.X, left.Y) (right.X, right.Y) // TODO: comparison for OpenTK.Vector2!
-            | (String (left, _), String (right, _)) -> compare left right
-            | (Keyword (left, _), Keyword (right, _)) -> compare left right
-            | (Tuple (left, _), Tuple (right, _)) -> compare left right
-            | (Keyphrase (leftKeyword, leftExprs, _), Keyphrase (rightKeyword, rightExprs, _)) -> compare (leftKeyword, leftExprs) (rightKeyword, rightExprs)
-            | (Option (left, _), Option (right, _)) -> compare left right
-            | (List (left, _), List (right, _)) -> compare left right
-            | (Ring (left, _), Ring (right, _)) -> compare left right
-            | (Table (left, _), Table (right, _)) -> compare left right
+            | (Unit, Unit) -> 0
+            | (Bool left, Bool right) -> compare left right
+            | (Int left, Int right) -> compare left right
+            | (Int64 left, Int64 right) -> compare left right
+            | (Single left, Single right) -> compare left right
+            | (Double left, Double right) -> compare left right
+            | (Vector2 left, Vector2 right) -> compare (left.X, left.Y) (right.X, right.Y) // TODO: comparison for OpenTK.Vector2!
+            | (String left, String right) -> compare left right
+            | (Keyword left, Keyword right) -> compare left right
+            | (Tuple left, Tuple right) -> compare left right
+            | (Keyphrase (leftKeyword, leftExprs), Keyphrase (rightKeyword, rightExprs)) -> compare (leftKeyword, leftExprs) (rightKeyword, rightExprs)
+            | (Option left, Option right) -> compare left right
+            | (List left, List right) -> compare left right
+            | (Ring left, Ring right) -> compare left right
+            | (Table left, Table right) -> compare left right
             | (_, _) -> -1
 
         // TODO: check if we can trust the hash function to be efficient on value types...
         override this.GetHashCode () =
             match this with
             | Violation (names, error, _) -> hash names ^^^ hash error
-            | Unit _ -> 0
-            | Bool (value, _) -> hash value
-            | Int (value, _) -> hash value
-            | Int64 (value, _) -> hash value
-            | Single (value, _) -> hash value
-            | Double (value, _) -> hash value
-            | Vector2 (value, _) -> hash value
-            | String (value, _) -> hash value
-            | Keyword (value, _) -> hash value
-            | Tuple (value, _) -> hash value
-            | Keyphrase (valueKeyword, valueExprs, _) -> hash (valueKeyword, valueExprs)
-            | Option (value, _) -> hash value
-            | List (value, _) -> hash value
-            | Ring (value, _) -> hash value
-            | Table (value, _) -> hash value
+            | Unit -> 0
+            | Bool value -> hash value
+            | Int value -> hash value
+            | Int64 value -> hash value
+            | Single value -> hash value
+            | Double value -> hash value
+            | Vector2 value -> hash value
+            | String value -> hash value
+            | Keyword value -> hash value
+            | Tuple value -> hash value
+            | Keyphrase (valueKeyword, valueExprs) -> hash (valueKeyword, valueExprs)
+            | Option value -> hash value
+            | List value -> hash value
+            | Ring value -> hash value
+            | Table value -> hash value
             | _ -> -1
 
         override this.Equals that =
@@ -297,14 +297,14 @@ module Scripting =
                 match symbol with
                 | Prime.Atom (str, originOpt) ->
                     match str with
-                    | "true" -> Bool (true, originOpt) :> obj
-                    | "false" -> Bool (false, originOpt) :> obj
-                    | "none" -> Option (None, originOpt) :> obj
-                    | "empty" -> List (List.empty, originOpt) :> obj
+                    | "true" -> Bool true :> obj
+                    | "false" -> Bool false :> obj
+                    | "none" -> Option None :> obj
+                    | "empty" -> List List.empty :> obj
                     | _ ->
                         let firstChar = str.[0]
                         if firstChar = '.' || Char.IsUpper firstChar
-                        then Keyword (str, originOpt) :> obj
+                        then Keyword str :> obj
                         else Binding (str, ref UncachedBinding, originOpt) :> obj
                 | Prime.Number (str, originOpt) ->
                     match Int32.TryParse str with
@@ -314,16 +314,16 @@ module Scripting =
                             if str.EndsWith "f" || str.EndsWith "F" then
                                 let str = str.Substring(0, str.Length - 1)
                                 match Single.TryParse str with
-                                | (true, single) -> Single (single, originOpt) :> obj
+                                | (true, single) -> Single single :> obj
                                 | (false, _) -> Violation ([!!"InvalidNumberForm"], "Unexpected number parse failure.", originOpt) :> obj
                             else
                                 let str = if str.EndsWith "d" || str.EndsWith "D" then str.Substring(0, str.Length - 1) else str
                                 match Double.TryParse (str, Globalization.NumberStyles.Float, Globalization.CultureInfo.CurrentCulture) with
-                                | (true, double) -> Double (double, originOpt) :> obj
+                                | (true, double) -> Double double :> obj
                                 | (false, _) -> Violation ([!!"InvalidNumberForm"], "Unexpected number parse failure.", originOpt) :> obj
-                        | (true, int64) -> Int64 (int64, originOpt) :> obj
-                    | (true, int) -> Int (int, originOpt) :> obj
-                | Prime.String (str, originOpt) -> String (str, originOpt) :> obj
+                        | (true, int64) -> Int64 int64 :> obj
+                    | (true, int) -> Int int :> obj
+                | Prime.String (str, _) -> String str :> obj
                 | Prime.Quote (str, originOpt) -> Quote (str, originOpt) :> obj
                 | Prime.Symbols (symbols, originOpt) ->
                     match symbols with
@@ -453,14 +453,11 @@ module Scripting =
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
 
-    /// The unit value in scripting.
-    let UnitValue = Unit None
-
     /// The true value in scripting.
-    let TrueValue = Bool (true, None)
+    let TrueValue = Bool true
     
     /// The false value in scripting.
-    let FalseValue = Bool (false, None)
+    let FalseValue = Bool false
 
     /// Log a violation if an expression is one.
     let log expr =
@@ -613,6 +610,12 @@ module Scripting =
                 match env.ProceduralFrames with
                 | [] -> failwithumf ()
                 | _ :: tail -> { env with ProceduralFrames = tail }
+
+            let getProceduralFrames env =
+                env.ProceduralFrames
+
+            let setProceduralFrames proceduralFrames env =
+                { env with ProceduralFrames = proceduralFrames }
     
             let make rebinding =
                 { Rebinding = rebinding
