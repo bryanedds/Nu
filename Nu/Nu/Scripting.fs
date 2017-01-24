@@ -49,8 +49,8 @@ module Scripting =
             | (PropertyStreamMany (leftPropertyName, leftTarget, leftClassn), PropertyStreamMany (rightPropertyName, rightTarget, rightClassn)) -> (leftPropertyName, leftTarget, leftClassn) = (rightPropertyName, rightTarget, rightClassn)
             | (_, _) -> false
 
-        // TODO: check if we can trust the hash function to be efficient on value types...
         override this.GetHashCode () =
+            // TODO: implement
             failwithnie ()
 
         override this.Equals that =
@@ -125,8 +125,8 @@ module Scripting =
         (* Declarations - only work at the top level. *)
         | Define of string * Expr * SymbolOrigin option // constructed as [define c 0]
 
-        static member tryGetOrigin term =
-            match term with
+        static member tryGetOrigin expr =
+            match expr with
             | Violation (_, _, originOpt) -> originOpt
             | Unit
             | Bool _
@@ -283,7 +283,44 @@ module Scripting =
             destType = typeof<Expr>
 
         override this.ConvertTo (_, _, source, destType) =
-            if destType = typeof<Symbol> then Symbols ([], None) :> obj // TODO: implement
+            if destType = typeof<Symbol> then
+                let expr = source :?> Expr
+                match expr with
+                | Violation (names, error, originOpt) -> Symbol.Symbols ([Symbol.String (String.Join ("/", names), None); Symbol.String (error, None)], originOpt) :> obj
+                | Unit -> Symbol.Symbols ([], None) :> obj
+                | Bool bool -> Symbol.String (String.boolToCodeString bool, None) :> obj
+                | Int int -> Symbol.Number (string int, None) :> obj
+                | Int64 int64 -> Symbol.Number (string int64, None) :> obj
+                | Single single -> Symbol.Number (String.singleToCodeString single, None) :> obj
+                | Double double -> Symbol.Number (String.doubleToCodeString double, None) :> obj
+                | Vector2 v2 -> Symbol.Symbols ([Symbol.Number (String.singleToCodeString v2.X, None); Symbol.Number (String.singleToCodeString v2.Y, None)], None) :> obj
+                | String string -> Symbol.String (string, None) :> obj
+                | Keyword string -> Symbol.String (string, None) :> obj
+                | Tuple _
+                | Keyphrase _
+                | Option _
+                | List _
+                | Ring _
+                | Table _
+                | Stream _
+                | Binding _
+                | Apply _
+                | Let _
+                | LetMany _
+                | Fun _
+                | If _
+                | Match _
+                | Select _
+                | Try _
+                | Do _
+                | Run _
+                | Break _
+                | Get _
+                | GetFrom _
+                | Set _
+                | SetTo _
+                | Quote _
+                | Define _ -> Symbols ([], None) :> obj // TODO: implement
             elif destType = typeof<Expr> then source
             else failconv "Invalid ExprConverter conversion to source." None
 

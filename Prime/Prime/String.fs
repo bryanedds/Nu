@@ -8,7 +8,35 @@ open System.Text
 
 [<RequireQualifiedAccess>]
 module String =
-    
+
+    /// Convert a bool to a string that works well in code.
+    let boolToCodeString (bool : bool) =
+        if bool then "true" else "false"
+
+    /// Convert a single to a string that works well in code.
+    let singleToCodeString (num : single) =
+        let decimaled = num.ToString ("N7")
+        let trimmed = decimaled.TrimEnd('0')
+        let zeroed = if trimmed.EndsWith "." then trimmed + "0" else trimmed
+        zeroed + "f"
+
+    /// Convert a double to a string that works well in code.
+    let doubleToCodeString (num : double) =
+        let decimaled = num.ToString ("N15")
+        let trimmed = decimaled.TrimEnd('0')
+        if trimmed.EndsWith "." then trimmed + "0" else trimmed
+
+    /// Convert a number to a string that works well in code.
+    let numberToCodeString (num : obj) =
+        match num with
+        | :? bool as bool -> boolToCodeString bool
+        | :? char as char -> string char
+        | :? int as int -> string int
+        | :? int64 as int64 -> string int64
+        | :? single as single -> singleToCodeString single
+        | :? double as double -> doubleToCodeString double
+        | _ -> failwithumf ()
+
     /// Converts a string into a list of characters.
     let explode (str : string) =
         let rec loop n acc =
