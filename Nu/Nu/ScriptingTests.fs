@@ -11,104 +11,46 @@ open Nu.Simulants
 open OpenTK
 module ScriptingTests =
 
-    let eval exprStr =
+    let evalPartial exprStr =
         let world = World.makeEmpty ()
         let expr = scvalue<Scripting.Expr> exprStr
         World.eval expr (Simulants.Game.GetScriptFrameNp world) Simulants.Game world |> fst
 
-    let [<Fact>] keywordsWork () =
-        match eval "Keyword" with
-        | Scripting.Keyword result -> Assert.Equal ("Keyword", result)
-        | _ -> Assert.True false
+    let eval exprStr =
+        let evaled = evalPartial exprStr
+        let evaledSymbol = SymbolicDescriptor.convertTo evaled typeof<Scripting.Expr> typeof<Symbol> :?> Symbol
+        Symbol.toString evaledSymbol
 
-    let [<Fact>] plusWorks () =
-        match eval "[+ 1 1]" with
-        | Scripting.Int result -> Assert.Equal (2, result)
-        | _ -> Assert.True false
-
-    let [<Fact>] equalityWorks () =
-        match eval "[= 1 1]" with
-        | Scripting.Bool result -> Assert.True result
-        | _ -> Assert.True false
-
-    let [<Fact>] nestedApplicationWorks () =
-        match eval "[+ [+ 1 1] [+ 1 1]]" with
-        | Scripting.Int result -> Assert.Equal (4, result)
-        | _ -> Assert.True false
-
-    let [<Fact>] optionsWork () =
-        match eval "[isSome [some 1]]" with
-        | Scripting.Bool result -> Assert.True result
-        | _ -> Assert.True false
-
-    let [<Fact>] tuplesWork () =
-        match eval "[fst [tuple 1]]" with
-        | Scripting.Int result -> Assert.Equal (1, result)
-        | _ -> Assert.True false
-
-    let [<Fact>] listsWork () =
-        match eval "[fst [list 1]]" with
-        | Scripting.Int result -> Assert.Equal (1, result)
-        | _ -> Assert.True false
-
-    let [<Fact>] keyphrasesWork () =
-        match eval "[fst [K 1]]" with
-        | Scripting.Int result -> Assert.Equal (1, result)
-        | _ -> Assert.True false
-
-    let [<Fact>] outOfRangeWorks () =
-        match eval "[fst empty]" with
-        | Scripting.Violation _ -> Assert.True true
-        | _ -> Assert.True false
-
-    let [<Fact>] conditionalWorks () =
-        match eval "[if [= 1 1] 1 0]" with
-        | Scripting.Int result -> Assert.Equal (1, result)
-        | _ -> Assert.True false
-
-    let [<Fact>] matchWorks () =
-        match eval "[match 1 [0 0] [1 2]]" with
-        | Scripting.Int result -> Assert.Equal (2, result)
-        | _ -> Assert.True false
+    let [<Fact>] keywordsWork () = Assert.Equal ("Keyword", eval "Keyword")
+    let [<Fact>] plusWorks () = Assert.Equal ("2", eval "[+ 1 1]")
+    let [<Fact>] equalityWorks () = Assert.Equal ("true", eval "[= 1 1]")
+    let [<Fact>] nestedApplicationWorks () = Assert.Equal ("4", eval "[+ [+ 1 1] [+ 1 1]]")
+    let [<Fact>] optionsWork () = Assert.Equal ("true", eval "[isSome [some 1]]")
+    let [<Fact>] tuplesWork () = Assert.Equal ("1", eval "[fst [tuple 1]]")
+    let [<Fact>] listsWork () = Assert.Equal ("1", eval "[fst [list 1]]")
+    let [<Fact>] keyphrasesWork () = Assert.Equal ("1", eval "[fst [K 1]]")
+    let [<Fact>] conditionalWorks () = Assert.Equal ("1", eval "[if [= 1 1] 1 0]")
+    let [<Fact>] matchWorks () = Assert.Equal ("2", eval "[match 1 [0 0] [1 2]]")
+    let [<Fact>] selectWorks () = Assert.Equal ("1", eval "[select [false 0] [true 1]]")
+    let [<Fact>] letWorks () = Assert.Equal ("2", eval "[let [x 1] [+ x x]]")
+    let [<Fact>] letManyWorks () = Assert.Equal ("3", eval "[let [x 1] [y 2] [+ x y]]")
+    let [<Fact>] letFxWorks () = Assert.Equal ("1", eval "[let [f [x] x] [f 1]]")
+    let [<Fact>] letFunWorks () = Assert.Equal ("1", eval "[let [f [fun [x] x]] [f 1]]")
+    let [<Fact>] doWorks () = Assert.Equal ("4", eval "[do [+ 1 1] [+ 2 2]]")
 
     let [<Fact>] matchFailureWorks () =
-        match eval "[match 2 [0 0] [1 2]]" with
+        match evalPartial "[match 2 [0 0] [1 2]]" with
         | Scripting.Violation (_, _, _) -> Assert.True true
-        | _ -> Assert.True false
-
-    let [<Fact>] selectWorks () =
-        match eval "[select [false 0] [true 1]]" with
-        | Scripting.Int result -> Assert.Equal (1, result)
         | _ -> Assert.True false
 
     let [<Fact>] selectFailureWorks () =
-        match eval "[select [false 0] [false 1]]" with
+        match evalPartial "[select [false 0] [false 1]]" with
         | Scripting.Violation (_, _, _) -> Assert.True true
         | _ -> Assert.True false
 
-    let [<Fact>] letWorks () =
-        match eval "[let [x 1] [+ x x]]" with
-        | Scripting.Int result -> Assert.Equal (2, result)
-        | _ -> Assert.True false
-
-    let [<Fact>] letManyWorks () =
-        match eval "[let [x 1] [y 2] [+ x y]]" with
-        | Scripting.Int result -> Assert.Equal (3, result)
-        | _ -> Assert.True false
-
-    let [<Fact>] letFxWorks () =
-        match eval "[let [f [x] x] [f 1]]" with
-        | Scripting.Int result -> Assert.Equal (1, result)
-        | _ -> Assert.True false
-
-    let [<Fact>] letFunWorks () =
-        match eval "[let [f [fun [x] x]] [f 1]]" with
-        | Scripting.Int result -> Assert.Equal (1, result)
-        | _ -> Assert.True false
-
-    let [<Fact>] doWorks () =
-        match eval "[do [+ 1 1] [+ 2 2]]" with
-        | Scripting.Int result -> Assert.Equal (4, result)
+    let [<Fact>] outOfRangeWorks () =
+        match evalPartial "[fst empty]" with
+        | Scripting.Violation _ -> Assert.True true
         | _ -> Assert.True false
 
     let [<Fact>] setEyeCenterFromGameScriptWorks () =

@@ -286,22 +286,43 @@ module Scripting =
             if destType = typeof<Symbol> then
                 let expr = source :?> Expr
                 match expr with
-                | Violation (names, error, originOpt) -> Symbol.Symbols ([Symbol.String (String.Join ("/", names), None); Symbol.String (error, None)], originOpt) :> obj
+                | Violation (names, error, originOpt) -> Symbol.Symbols ([Symbol.Atom (String.Join ("/", names), None); Symbol.Atom (error, None)], originOpt) :> obj
                 | Unit -> Symbol.Symbols ([], None) :> obj
-                | Bool bool -> Symbol.String (String.boolToCodeString bool, None) :> obj
+                | Bool bool -> Symbol.Atom (String.boolToCodeString bool, None) :> obj
                 | Int int -> Symbol.Number (string int, None) :> obj
                 | Int64 int64 -> Symbol.Number (string int64, None) :> obj
                 | Single single -> Symbol.Number (String.singleToCodeString single, None) :> obj
                 | Double double -> Symbol.Number (String.doubleToCodeString double, None) :> obj
                 | Vector2 v2 -> Symbol.Symbols ([Symbol.Number (String.singleToCodeString v2.X, None); Symbol.Number (String.singleToCodeString v2.Y, None)], None) :> obj
-                | String string -> Symbol.String (string, None) :> obj
-                | Keyword string -> Symbol.String (string, None) :> obj
-                | Tuple _
-                | Keyphrase _
-                | Option _
-                | List _
-                | Ring _
-                | Table _
+                | String string -> Symbol.Atom (string, None) :> obj
+                | Keyword string -> Symbol.Atom (string, None) :> obj
+                | Tuple map ->
+                    let headingSymbol = Symbol.Atom ((if map.Count = 2 then "pair" else "tuple"), None)
+                    let elemSymbols = List.map (fun elem -> this.ConvertTo (elem, destType) :?> Symbol) (Map.toValueList map)
+                    Symbol.Symbols (headingSymbol :: elemSymbols, None) :> obj
+                | Keyphrase (keyword, map) ->
+                    let keywordSymbol = this.ConvertTo (keyword, destType) :?> Symbol
+                    let elemSymbols = map |> Map.toValueList |> List.map (fun elem -> this.ConvertTo (elem, destType) :?> Symbol)
+                    Symbol.Symbols (keywordSymbol :: elemSymbols, None) :> obj
+                | Option option ->
+                    match option with
+                    | Some value -> Symbol.Symbols ([Symbol.Atom ("some", None); this.ConvertTo (value, destType) :?> Symbol], None) :> obj
+                    | None -> Symbol.Atom ("none", None) :> obj
+                | List elems -> 
+                    let elemSymbols = List.map (fun elem -> this.ConvertTo (elem, destType) :?> Symbol) elems
+                    Symbol.Symbols (Symbol.Atom ("list", None) :: elemSymbols, None) :> obj
+                | Ring set ->
+                    let elemSymbols = List.map (fun elem -> this.ConvertTo (elem, destType) :?> Symbol) (Set.toList set)
+                    Symbol.Symbols (Symbol.Atom ("ring", None) :: elemSymbols, None) :> obj
+                | Table map ->
+                    let elemSymbols =
+                        List.map (fun (key, value) ->
+                            let pairSymbol = Symbol.Atom ("pair", None)
+                            let keySymbol = this.ConvertTo (key, destType) :?> Symbol
+                            let valueSymbol = this.ConvertTo (value, destType) :?> Symbol
+                            Symbol.Symbols ([pairSymbol; keySymbol; valueSymbol], None))
+                            (Map.toList map)
+                    Symbol.Symbols (Symbol.Atom ("table", None) :: elemSymbols, None) :> obj
                 | Stream _
                 | Binding _
                 | Apply _
