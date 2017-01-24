@@ -57,7 +57,6 @@ module Program =
     be mitigated in a few ways with approximate speed-ups -
 
     2x gain - put physics and rendering each in another process.
-    2x gain - run at 30fps instead of 60.
     1.?x gain - compile with .NET Native or Mono AOT.
     1.?x gain - upgrade to F# 4.1.
     1.?x gain - target x64 instead of x86.
