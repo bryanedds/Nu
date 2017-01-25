@@ -324,12 +324,15 @@ module Scripting =
                     | Some value -> Symbol.Symbols ([Symbol.Atom ("some", None); this.ExprToSymbol value], None) :> obj
                     | None -> Symbol.Atom ("none", None) :> obj
                 | List elems -> 
+                    let listSymbol = Symbol.Atom ("list", None)
                     let elemSymbols = List.map this.ExprToSymbol elems
-                    Symbol.Symbols (Symbol.Atom ("list", None) :: elemSymbols, None) :> obj
+                    Symbol.Symbols (listSymbol :: elemSymbols, None) :> obj
                 | Ring set ->
+                    let ringSymbol = Symbol.Atom ("ring", None)
                     let elemSymbols = List.map this.ExprToSymbol (Set.toList set)
-                    Symbol.Symbols (Symbol.Atom ("ring", None) :: elemSymbols, None) :> obj
+                    Symbol.Symbols (ringSymbol :: elemSymbols, None) :> obj
                 | Table map ->
+                    let tableSymbol = Symbol.Atom ("table", None)
                     let elemSymbols =
                         List.map (fun (key, value) ->
                             let pairSymbol = Symbol.Atom ("pair", None)
@@ -337,14 +340,14 @@ module Scripting =
                             let valueSymbol = this.ExprToSymbol value
                             Symbol.Symbols ([pairSymbol; keySymbol; valueSymbol], None))
                             (Map.toList map)
-                    Symbol.Symbols (Symbol.Atom ("table", None) :: elemSymbols, None) :> obj
+                    Symbol.Symbols (tableSymbol :: elemSymbols, None) :> obj
                 | Stream _ ->
                     Symbols ([], None) :> obj // TODO: implement
                 | Binding (name, _, originOpt) ->
                     Symbol.Atom (name, originOpt) :> obj
-                | Apply (list, originOpt) ->
-                    let elemSymbols = List.map this.ExprToSymbol list
-                    Symbol.Symbols (Symbol.Atom ("list", None) :: elemSymbols, originOpt) :> obj
+                | Apply (exprs, originOpt) ->
+                    let exprSymbols = List.map this.ExprToSymbol exprs
+                    Symbol.Symbols (exprSymbols, originOpt) :> obj
                 | Let (binding, body, originOpt) ->
                     let letSymbol = Symbol.Atom ("let", None)
                     let bindingSymbol = this.BindingToSymbol binding
@@ -395,14 +398,37 @@ module Scripting =
                             Symbol.Symbols ([tagSymbol; consequentSymbol], None))
                             cases
                     Symbol.Symbols (trySymbol :: inputSymbol :: caseSymbols, originOpt) :> obj
-                | Do _
-                | Run _
-                | Break _
-                | Get _
-                | GetFrom _
-                | Set _
-                | SetTo _
-                | Quote _
+                | Do (exprs, originOpt) ->
+                    let doSymbol = Symbol.Atom ("do", None)
+                    let exprSymbols = List.map this.ExprToSymbol exprs
+                    Symbol.Symbols (doSymbol :: exprSymbols, originOpt) :> obj
+                | Run _ ->
+                    Symbols ([], None) :> obj // TODO: implement
+                | Break (body, originOpt) ->
+                    let breakSymbol = Symbol.Atom ("break", None)
+                    let bodySymbol = this.ExprToSymbol body
+                    Symbol.Symbols ([breakSymbol; bodySymbol], originOpt) :> obj
+                | Get (propertyName, originOpt) ->
+                    let getSymbol = Symbol.Atom ("get", None)
+                    let propertySymbol = Symbol.Atom (propertyName, None)
+                    Symbol.Symbols ([getSymbol; propertySymbol], originOpt) :> obj
+                | GetFrom (propertyName, relation, originOpt) ->
+                    let setSymbol = Symbol.Atom ("get", None)
+                    let propertySymbol = Symbol.Atom (propertyName, None)
+                    let relationSymbol = this.ExprToSymbol relation
+                    Symbol.Symbols ([setSymbol; propertySymbol; relationSymbol], originOpt) :> obj
+                | Set (propertyName, value, originOpt) ->
+                    let setSymbol = Symbol.Atom ("set", None)
+                    let propertySymbol = Symbol.Atom (propertyName, None)
+                    let valueSymbol = this.ExprToSymbol value
+                    Symbol.Symbols ([setSymbol; propertySymbol; valueSymbol], originOpt) :> obj
+                | SetTo (propertyName, value, relation, originOpt) ->
+                    let setSymbol = Symbol.Atom ("set", None)
+                    let propertySymbol = Symbol.Atom (propertyName, None)
+                    let valueSymbol = this.ExprToSymbol value
+                    let relationSymbol = this.ExprToSymbol relation
+                    Symbol.Symbols ([setSymbol; propertySymbol; valueSymbol; relationSymbol], originOpt) :> obj
+                | Quote _ -> Symbols ([], None) :> obj // TODO: implement
                 | Define _ -> Symbols ([], None) :> obj // TODO: implement
             elif destType = typeof<Expr> then source
             else failconv "Invalid ExprConverter conversion to source." None
@@ -606,8 +632,7 @@ module Scripting =
         /// The execution environment for scripts.
         type [<NoEquality; NoComparison>] Env =
             private
-                { Rebinding : bool
-                  LocalDeclaration : bool
+                { LocalDeclaration : bool
                   GlobalFrame : DeclarationFrame
                   LocalFrame : DeclarationFrame
                   // TODO: consider making this mutating for speed
@@ -637,7 +662,7 @@ module Scripting =
             let private addProceduralFrame frame env =
                 { env with ProceduralFrames = frame :: env.ProceduralFrames }
 
-            let tryGetDeclarationBinding name env =
+            let private tryGetDeclarationBinding name env =
                 match env.LocalFrame.TryGetValue name with
                 | (false, _) ->
                     match env.GlobalFrame.TryGetValue name with
@@ -645,7 +670,7 @@ module Scripting =
                     | (true, value) -> Some value
                 | (true, value) -> Some value
     
-            let tryGetProceduralBinding name env =
+            let private tryGetProceduralBinding name env =
                 let refOffset = ref -1
                 let refOptIndex = ref None
                 let optBinding =
@@ -668,9 +693,8 @@ module Scripting =
                     | None ->
                         match tryGetDeclarationBinding name env with
                         | Some binding ->
-                            if not env.Rebinding then
-                                let newCachedBinding = DeclarationBinding binding
-                                cachedBinding := newCachedBinding
+                            let newCachedBinding = DeclarationBinding binding
+                            cachedBinding := newCachedBinding
                             Some binding
                         | None -> None
                     | Some (binding, offset, index) ->
@@ -684,16 +708,11 @@ module Scripting =
                     let (_, binding) = frame.[index]
                     Some binding
 
-            let private forceAddDeclarationBinding name value env =
+            let addDeclarationBinding name value env =
                 if env.LocalDeclaration
                 then env.LocalFrame.ForceAdd (name, value)
                 else env.GlobalFrame.ForceAdd (name, value)
-    
-            let tryAddDeclarationBinding name value env =
-                if (env.Rebinding || not ^ env.LocalFrame.ContainsKey name) then
-                    forceAddDeclarationBinding name value env
-                    Some env
-                else None
+                env
     
             let addProceduralBinding appendType name value env =
                 match appendType with
@@ -727,6 +746,12 @@ module Scripting =
                         env
                     | [] -> failwithumf ()
 
+            let addBinding appendType name value env =
+                let isTopLevel = List.isEmpty env.ProceduralFrames
+                if isTopLevel then addDeclarationBinding name value env
+                else addProceduralBinding appendType name value env
+                
+
             let removeProceduralBindings env =
                 match env.ProceduralFrames with
                 | [] -> failwithumf ()
@@ -738,9 +763,8 @@ module Scripting =
             let setProceduralFrames proceduralFrames env =
                 { env with ProceduralFrames = proceduralFrames }
     
-            let make rebinding =
-                { Rebinding = rebinding
-                  LocalDeclaration = false
+            let make () =
+                { LocalDeclaration = false
                   GlobalFrame = DeclarationFrame HashIdentity.Structural
                   LocalFrame = DeclarationFrame HashIdentity.Structural
                   ProceduralFrames = [] }

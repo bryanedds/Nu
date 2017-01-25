@@ -2422,12 +2422,6 @@ module WorldModule =
             let env = updater env
             World.setScriptEnv env world
 
-        static member tryUpdateScriptEnv tryUpdater world =
-            let env = World.getScriptEnv world
-            match tryUpdater env with
-            | Some env -> Some ^ World.setScriptEnv env world
-            | None -> None
-
         /// Get the context of the script system.
         static member getScriptContext (world : World) =
             world.ScriptContext

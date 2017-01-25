@@ -688,8 +688,7 @@ module WorldModule2 =
                 Subsystems.make subsystemMap
 
             // make the world's script environment
-            // TODO: parameterize hard-coded boolean
-            let scriptEnv = Scripting.EnvModule.Env.make false
+            let scriptEnv = Scripting.EnvModule.Env.make ()
 
             // make the world's ambient state
             let ambientState =
@@ -788,8 +787,7 @@ module WorldModule2 =
                     Subsystems.make subsystemMap
 
                 // make the world's script environment
-                // TODO: parameterize hard-coded boolean
-                let scriptEnv = Scripting.EnvModule.Env.make false
+                let scriptEnv = Scripting.EnvModule.Env.make ()
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
