@@ -24,10 +24,6 @@ type [<ReferenceEquality>] Event<'a, 's when 's :> Participant> =
       Publisher : Participant
       Subscriber : 's }
 
-/// Describes an event subscription.
-type Subscription<'a, 's, 'w when 's :> Participant> =
-    Event<'a, 's> -> 'w -> Handling * 'w
-
 /// An entry in the subscription map.
 type SubscriptionEntry =
     Guid * Participant * obj

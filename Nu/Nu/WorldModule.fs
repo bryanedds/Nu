@@ -155,33 +155,23 @@ module WorldModule =
             EventWorld.unsubscribe<Game, World> subscriptionKey world
 
         /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
-        static member subscribePlus5<'a, 's when 's :> Simulant>
-            subscriptionKey (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventWorld.subscribePlus5<'a, 's, Game, World> subscriptionKey subscription eventAddress subscriber world
-
-        /// Subscribe to an event, and be provided with an unsubscription callback.
         static member subscribePlus<'a, 's when 's :> Simulant>
-            (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventWorld.subscribePlus<'a, 's, Game, World> subscription eventAddress subscriber world
-
-        /// Subscribe to an event using the given subscriptionKey.
-        static member subscribe5<'a, 's when 's :> Simulant>
-            subscriptionKey (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventWorld.subscribe5<'a, 's, Game, World> subscriptionKey subscription eventAddress subscriber world
+            subscriptionKey (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
+            EventWorld.subscribePlus<'a, 's, Game, World> subscriptionKey subscription eventAddress subscriber world
 
         /// Subscribe to an event.
         static member subscribe<'a, 's when 's :> Simulant>
-            (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
+            (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
             EventWorld.subscribe<'a, 's, Game, World> subscription eventAddress subscriber world
 
         /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
         static member monitorPlus<'a, 's when 's :> Simulant>
-            (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
+            (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
             EventWorld.monitorPlus<'a, 's, Game, World> subscription eventAddress subscriber world
 
         /// Keep active a subscription for the lifetime of a simulant.
         static member monitor<'a, 's when 's :> Simulant>
-            (subscription : Subscription<'a, 's, World>) (eventAddress : 'a Address) (subscriber : 's) world =
+            (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
             EventWorld.monitor<'a, 's, Game, World> subscription eventAddress subscriber world
 
     type World with
@@ -985,17 +975,16 @@ module WorldModule =
         static member private screenOnRegisterChanged evt world =
             let screen = evt.Subscriber : Screen
             let world = World.registerScreen screen world
-            let world = World.unregisterScreen screen world
-            (Cascade, world)
+            World.unregisterScreen screen world
 
         static member private screenScriptOptChanged evt world =
             let screen = evt.Subscriber : Screen
             match World.getScreenScriptOpt screen world with
             | Some script ->
                 match World.assetTagToScriptOpt script world with
-                | (Some script, world) -> (Cascade, World.setScreenScript script screen world)
-                | (None, world) -> (Cascade, world)
-            | None -> (Cascade, world)
+                | (Some script, world) -> World.setScreenScript script screen world
+                | (None, world) -> world
+            | None -> world
 
         static member internal registerScreen screen world =
             let world = World.monitor World.screenOnRegisterChanged (ltoa<ParticipantChangeData<Screen, World>> [!!"Screen"; !!"Change"; !!(Property? OnRegister); !!"Event"] ->- screen) screen world
@@ -1314,17 +1303,16 @@ module WorldModule =
         static member private layerOnRegisterChanged evt world =
             let layer = evt.Subscriber : Layer
             let world = World.registerLayer layer world
-            let world = World.unregisterLayer layer world
-            (Cascade, world)
+            World.unregisterLayer layer world
 
         static member private layerScriptOptChanged evt world =
             let layer = evt.Subscriber : Layer
             match World.getLayerScriptOpt layer world with
             | Some script ->
                 match World.assetTagToScriptOpt script world with
-                | (Some script, world) -> (Cascade, World.setLayerScript script layer world)
-                | (None, world) -> (Cascade, world)
-            | None -> (Cascade, world)
+                | (Some script, world) -> World.setLayerScript script layer world
+                | (None, world) -> world
+            | None -> world
 
         static member internal registerLayer layer world =
             let world = World.monitor World.layerOnRegisterChanged (ltoa<ParticipantChangeData<Layer, World>> [!!"Layer"; !!"Change"; !!(Property? OnRegister); !!"Event"] ->- layer) layer world

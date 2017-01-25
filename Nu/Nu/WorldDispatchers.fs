@@ -68,9 +68,8 @@ module MountFacetModule =
                 let (unsubscribe2, world) = World.monitorPlus handleParentPropertyChange parent.Depth.Change entity world
                 let (unsubscribe3, world) = World.monitorPlus handleParentPropertyChange parent.Visible.Change entity world
                 let (unsubscribe4, world) = World.monitorPlus handleParentPropertyChange parent.Enabled.Change entity world
-                let world = entity.SetMountUnsubscribeNp (unsubscribe4 >> unsubscribe3 >> unsubscribe2 >> unsubscribe) world
-                (Cascade, world)
-            | None -> (Cascade, world)
+                entity.SetMountUnsubscribeNp (unsubscribe4 >> unsubscribe3 >> unsubscribe2 >> unsubscribe) world
+            | None -> world
 
         static member PropertyDefinitions =
             [Define? ParentOpt (None : Entity Relation option)
@@ -167,17 +166,15 @@ module EffectFacetModule =
                 entity.SetEffect effectCombined world
             | None -> world
 
-        static let effectsOptChanged evt world =
+        static let handleEffectsOptChanged evt world =
             let entity = evt.Subscriber : Entity
             let effectsOpt = entity.GetEffectsOptPa world
-            let world = setEffect effectsOpt entity world
-            (Cascade, world)
+            setEffect effectsOpt entity world
 
         static let handleAssetsReload evt world =
             let entity = evt.Subscriber : Entity
             let effectsOpt = entity.GetEffectsOptPa world
-            let world = setEffect effectsOpt entity world
-            (Cascade, world)
+            setEffect effectsOpt entity world
 
         static member PropertyDefinitions =
             [Define? SelfDestruct false
@@ -240,7 +237,7 @@ module EffectFacetModule =
         override facet.Register (entity, world) =
             let effectStartTime = Option.getOrDefault (World.getTickTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
-            let world = World.monitor effectsOptChanged (entity.GetChangeEvent Property? EffectsOptPa) entity world
+            let world = World.monitor handleEffectsOptChanged (entity.GetChangeEvent Property? EffectsOptPa) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
 // TODO: ScriptFacet
@@ -530,9 +527,9 @@ module GuiDispatcherModule =
              Define? SwallowMouseLeft true]
 
         override dispatcher.Register (gui, world) =
-            world |>
-                World.monitor handleMouseLeft Events.MouseLeftDown gui |>
-                World.monitor handleMouseLeft Events.MouseLeftUp gui
+            let world = World.monitorPlus handleMouseLeft Events.MouseLeftDown gui world |> snd
+            let world = World.monitorPlus handleMouseLeft Events.MouseLeftUp gui world |> snd
+            world
 
 [<AutoOpen>]
 module ButtonDispatcherModule =
@@ -602,9 +599,9 @@ module ButtonDispatcherModule =
              Define? ClickSoundOpt ^ Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" }]
 
         override dispatcher.Register (button, world) =
-            world |>
-                World.monitor handleMouseLeftDown Events.MouseLeftDown button |>
-                World.monitor handleMouseLeftUp Events.MouseLeftUp button
+            let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown button world |> snd
+            let world = World.monitorPlus handleMouseLeftUp Events.MouseLeftUp button world |> snd
+            world
 
         override dispatcher.Actualize (button, world) =
             if button.GetVisibleLayered world then
@@ -810,9 +807,9 @@ module ToggleDispatcherModule =
              Define? ToggleSoundOpt ^ Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" }]
 
         override dispatcher.Register (toggle, world) =
-            world |>
-                World.monitor handleMouseLeftDown Events.MouseLeftDown toggle |>
-                World.monitor handleMouseLeftUp Events.MouseLeftUp toggle
+            let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown toggle world |> snd
+            let world = World.monitorPlus handleMouseLeftUp Events.MouseLeftUp toggle world |> snd
+            world
 
         override dispatcher.Actualize (toggle, world) =
             if toggle.GetVisibleLayered world then
@@ -884,9 +881,9 @@ module FeelerDispatcherModule =
              Define? Touched false]
 
         override dispatcher.Register (feeler, world) =
-            world |>
-                World.monitor handleMouseLeftDown Events.MouseLeftDown feeler |>
-                World.monitor handleMouseLeftUp Events.MouseLeftUp feeler
+            let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown feeler world |> snd
+            let world = World.monitorPlus handleMouseLeftUp Events.MouseLeftUp feeler world |> snd
+            world
 
         override dispatcher.GetQuickSize (_, _) =
             Vector2 64.0f

@@ -112,22 +112,22 @@ module WorldModule2 =
             let world = screen.SetTransitionStateNp state world
             match state with
             | IdlingState ->
-                world |>
-                    World.unsubscribe ScreenTransitionMouseLeftKey |>
-                    World.unsubscribe ScreenTransitionMouseCenterKey |>
-                    World.unsubscribe ScreenTransitionMouseRightKey |>
-                    World.unsubscribe ScreenTransitionMouseX1Key |>
-                    World.unsubscribe ScreenTransitionMouseX2Key |>
-                    World.unsubscribe ScreenTransitionKeyboardKeyKey
+                let world = World.unsubscribe ScreenTransitionMouseLeftKey world
+                let world = World.unsubscribe ScreenTransitionMouseCenterKey world
+                let world = World.unsubscribe ScreenTransitionMouseRightKey world
+                let world = World.unsubscribe ScreenTransitionMouseX1Key world
+                let world = World.unsubscribe ScreenTransitionMouseX2Key world
+                let world = World.unsubscribe ScreenTransitionKeyboardKeyKey world
+                world
             | IncomingState
             | OutgoingState ->
-                world |>
-                    World.subscribe5 ScreenTransitionMouseLeftKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Simulants.Game |>
-                    World.subscribe5 ScreenTransitionMouseCenterKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Simulants.Game |>
-                    World.subscribe5 ScreenTransitionMouseRightKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Simulants.Game |>
-                    World.subscribe5 ScreenTransitionMouseX1Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X1/@/Event") Simulants.Game |>
-                    World.subscribe5 ScreenTransitionMouseX2Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X2/@/Event") Simulants.Game |>
-                    World.subscribe5 ScreenTransitionKeyboardKeyKey World.handleAsSwallow (stoa<KeyboardKeyData> "KeyboardKey/@/Event") Simulants.Game
+                let world = World.subscribePlus ScreenTransitionMouseLeftKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseCenterKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseRightKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX1Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X1/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX2Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X2/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionKeyboardKeyKey World.handleAsSwallow (stoa<KeyboardKeyData> "KeyboardKey/@/Event") Simulants.Game world |> snd
+                world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member selectScreen screen world =
@@ -158,7 +158,7 @@ module WorldModule2 =
                         | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
                     let world = World.setScreenTransitionDestinationOpt (Some destination) world
                     let world = World.setScreenTransitionState OutgoingState selectedScreen world
-                    let world = World.subscribe5<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish ->- selectedScreen) selectedScreen world
+                    let world = World.subscribePlus<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish ->- selectedScreen) selectedScreen world |> snd
                     Some world
                 else let _ = World.choose world in None
             | None -> None
@@ -185,7 +185,7 @@ module WorldModule2 =
             let (handling, world) = by evt world
             World.handleAsScreenTransitionFromSplash4<'a, 's> handling destination evt world
 
-        static member private handleAsScreenTransition4<'a, 's when 's :> Simulant>
+        static member private handleAsScreenTransitionPlus<'a, 's when 's :> Simulant>
             handling destination (_ : Event<'a, 's>) world =
             match World.tryTransitionScreen destination world with
             | Some world -> (handling, world)
@@ -196,14 +196,7 @@ module WorldModule2 =
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen.
         static member handleAsScreenTransition<'a, 's when 's :> Simulant> destination evt world =
-            World.handleAsScreenTransition4<'a, 's> Cascade destination evt world
-
-        /// A procedure that can be passed to an event handler to specify that an event is to
-        /// result in a transition to the given destination screen, as well as with additional
-        /// handling provided via the 'by' procedure.
-        static member handleAsScreenTransitionBy<'a, 's when 's :> Simulant> by destination evt (world : World) =
-            let (handling, world) = by evt world
-            World.handleAsScreenTransition4<'a, 's> handling destination evt world
+            World.handleAsScreenTransitionPlus<'a, 's> Cascade destination evt world |> snd
 
         static member private updateScreenTransition1 (screen : Screen) transition world =
             let transitionTicks = screen.GetTransitionTicksNp world
@@ -259,7 +252,7 @@ module WorldModule2 =
             let world = World.unsubscribe SplashScreenUpdateKey world
             if ticks < idlingTime then
                 let subscription = World.handleSplashScreenIdleUpdate idlingTime (inc ticks)
-                let world = World.subscribe5 SplashScreenUpdateKey subscription evt.Address evt.Subscriber world
+                let world = World.subscribePlus SplashScreenUpdateKey subscription evt.Address evt.Subscriber world |> snd
                 (Cascade, world)
             else
                 match World.getSelectedScreenOpt world with
@@ -275,7 +268,7 @@ module WorldModule2 =
                     (Resolve, World.exit world)
 
         static member private handleSplashScreenIdle idlingTime (splashScreen : Screen) evt world =
-            let world = World.subscribe5 SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update ->- splashScreen) evt.Subscriber world
+            let world = World.subscribePlus SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update ->- splashScreen) evt.Subscriber world |> snd
             (Resolve, world)
 
         /// Create a dissolve screen whose contents is loaded from the given layer file.
@@ -290,13 +283,11 @@ module WorldModule2 =
             let (splashScreen, world) = World.createDissolveScreen<'d> splashData.DissolveData specializationOpt nameOpt world
             let (splashLayer, world) = World.createLayer<LayerDispatcher> None (Some !!"SplashLayer") splashScreen world
             let (splashLabel, world) = World.createEntity<LabelDispatcher> None (Some !!"SplashLabel") splashLayer world
-            let world =
-                world |>
-                splashLabel.SetSize cameraEyeSize |>
-                splashLabel.SetPosition (-cameraEyeSize * 0.5f) |>
-                splashLabel.SetLabelImage splashData.SplashImage |>
-                World.monitor (World.handleSplashScreenIdle splashData.IdlingTime splashScreen) (Events.IncomingFinish ->- splashScreen) splashScreen |>
-                World.monitor (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- splashScreen) splashScreen
+            let world = splashLabel.SetSize cameraEyeSize world
+            let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
+            let world = splashLabel.SetLabelImage splashData.SplashImage world
+            let world = World.monitorPlus (World.handleSplashScreenIdle splashData.IdlingTime splashScreen) (Events.IncomingFinish ->- splashScreen) splashScreen world |> snd
+            let world = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- splashScreen) splashScreen world |> snd
             (splashScreen, world)
 
         static member private handleSubscribeAndUnsubscribe event world =
@@ -306,33 +297,31 @@ module WorldModule2 =
             // warn if the user attempts to subscribe to a Change event with a wildcard as doing so is not supported.
             let eventAddress = event.Data
             let eventNames = Address.getNames eventAddress
-            let world =
-                match eventNames with
-                | eventFirstName :: _ :: ([_ ;_ ; _] as entityAddress) ->
-                    let entity = Entity.proxy ^ ltoa entityAddress
-                    match Name.getNameStr eventFirstName with
-                    | "Update" ->
-                        if List.contains (Address.head Events.Wildcard) eventNames then
-                            Log.debug ^
-                                "Subscribing to entity update events with a wildcard is not supported. " +
-                                "This will cause a bug where some entity update events are not published."
-                        World.updateEntityPublishUpdateFlag entity world
-                    | "PostUpdate" ->
-                        if List.contains (Address.head Events.Wildcard) eventNames then
-                            Log.debug ^
-                                "Subscribing to entity post-update events with a wildcard is not supported. " +
-                                "This will cause a bug where some entity post-update events are not published."
-                        World.updateEntityPublishPostUpdateFlag entity world
-                    | _ -> world
-                | eventFirstName :: _ :: _ :: _ ->
-                    match Name.getNameStr eventFirstName with
-                    | "Change" ->
-                        if List.contains (Address.head Events.Wildcard) eventNames then
-                            Log.debug "Subscribing to change events with a wildcard is not supported."
-                        world
-                    | _ -> world
+            match eventNames with
+            | eventFirstName :: _ :: ([_ ;_ ; _] as entityAddress) ->
+                let entity = Entity.proxy ^ ltoa entityAddress
+                match Name.getNameStr eventFirstName with
+                | "Update" ->
+                    if List.contains (Address.head Events.Wildcard) eventNames then
+                        Log.debug ^
+                            "Subscribing to entity update events with a wildcard is not supported. " +
+                            "This will cause a bug where some entity update events are not published."
+                    World.updateEntityPublishUpdateFlag entity world
+                | "PostUpdate" ->
+                    if List.contains (Address.head Events.Wildcard) eventNames then
+                        Log.debug ^
+                            "Subscribing to entity post-update events with a wildcard is not supported. " +
+                            "This will cause a bug where some entity post-update events are not published."
+                    World.updateEntityPublishPostUpdateFlag entity world
                 | _ -> world
-            (Cascade, world)
+            | eventFirstName :: _ :: _ :: _ ->
+                match Name.getNameStr eventFirstName with
+                | "Change" ->
+                    if List.contains (Address.head Events.Wildcard) eventNames then
+                        Log.debug "Subscribing to change events with a wildcard is not supported."
+                    world
+                | _ -> world
+            | _ -> world
 
         static member private createIntrinsicOverlays facets entityDispatchers =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
