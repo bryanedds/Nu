@@ -363,8 +363,23 @@ module Scripting =
                     let consequentSymbol = this.ExprToSymbol consequent
                     let alternativeSymbol = this.ExprToSymbol alternative
                     Symbol.Symbols ([ifSymbol; conditionSymbol; consequentSymbol; alternativeSymbol], originOpt) :> obj
-                | Match _
-                | Select _
+                | Match (input, cases, originOpt) ->
+                    let inputSymbol = this.ExprToSymbol input
+                    let caseSymbols =
+                        List.map (fun (condition, consequent) ->
+                            let conditionSymbol = this.ExprToSymbol condition
+                            let consequentSymbol = this.ExprToSymbol consequent
+                            Symbol.Symbols ([conditionSymbol; consequentSymbol], None))
+                            cases
+                    Symbol.Symbols (inputSymbol :: caseSymbols, originOpt) :> obj
+                | Select (cases, originOpt) ->
+                    let caseSymbols =
+                        List.map (fun (condition, consequent) ->
+                            let conditionSymbol = this.ExprToSymbol condition
+                            let consequentSymbol = this.ExprToSymbol consequent
+                            Symbol.Symbols ([conditionSymbol; consequentSymbol], None))
+                            cases
+                    Symbol.Symbols (caseSymbols, originOpt) :> obj
                 | Try _
                 | Do _
                 | Run _
