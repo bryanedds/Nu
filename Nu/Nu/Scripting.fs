@@ -353,8 +353,16 @@ module Scripting =
                     let bindingSymbols = Symbol.Symbols (List.map this.BindingToSymbol bindings, None)
                     let bodySymbol = this.ExprToSymbol body
                     Symbol.Symbols ([bindingSymbols; bodySymbol], originOpt) :> obj
-                | Fun _
-                | If _
+                | Fun (pars, _, body, _, _, originOpt) ->
+                    let parSymbols = List.map (fun par -> Symbol.Atom (par, None)) pars
+                    let bodySymbol = this.ExprToSymbol body
+                    Symbol.Symbols (parSymbols @ [bodySymbol], originOpt) :> obj
+                | If (condition, consequent, alternative, originOpt) ->
+                    let ifSymbol = Symbol.Atom ("if", None)
+                    let conditionSymbol = this.ExprToSymbol condition
+                    let consequentSymbol = this.ExprToSymbol consequent
+                    let alternativeSymbol = this.ExprToSymbol alternative
+                    Symbol.Symbols ([ifSymbol; conditionSymbol; consequentSymbol; alternativeSymbol], originOpt) :> obj
                 | Match _
                 | Select _
                 | Try _
