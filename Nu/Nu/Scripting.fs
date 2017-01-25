@@ -261,8 +261,23 @@ module Scripting =
     and ExprConverter () =
         inherit TypeConverter ()
 
-        member this.SymbolToExpr symbol =
+        member this.SymbolToExpr (symbol : Symbol) =
             this.ConvertFrom symbol :?> Expr
+
+        member this.ExprToSymbol (expr : Expr) =
+            this.ConvertTo (expr, typeof<Symbol>) :?> Symbol
+
+        member this.BindingToSymbol (binding : LetBinding) =
+            match binding with
+            | LetVariable (name, value) ->
+                let nameSymbol = Symbol.Atom (name, None)
+                let valueSymbol = this.ExprToSymbol value
+                Symbol.Symbols ([nameSymbol; valueSymbol], None)
+            | LetFunction (name, pars, body) ->
+                let nameSymbol = Symbol.Atom (name, None)
+                let parSymbols = List.map (fun par -> Symbol.Atom (par, None)) pars
+                let bodySymbol = this.ExprToSymbol body
+                Symbol.Symbols (nameSymbol :: parSymbols @ [bodySymbol], None)
 
         member this.SymbolsToLetBindingOpt bindingSymbols =
             match bindingSymbols with
@@ -298,36 +313,46 @@ module Scripting =
                 | Keyword string -> Symbol.Atom (string, None) :> obj
                 | Tuple map ->
                     let headingSymbol = Symbol.Atom ((if map.Count = 2 then "pair" else "tuple"), None)
-                    let elemSymbols = List.map (fun elem -> this.ConvertTo (elem, destType) :?> Symbol) (Map.toValueList map)
+                    let elemSymbols = List.map (fun elem -> this.ExprToSymbol elem) (Map.toValueList map)
                     Symbol.Symbols (headingSymbol :: elemSymbols, None) :> obj
                 | Keyphrase (keyword, map) ->
-                    let keywordSymbol = this.ConvertTo (keyword, destType) :?> Symbol
-                    let elemSymbols = map |> Map.toValueList |> List.map (fun elem -> this.ConvertTo (elem, destType) :?> Symbol)
+                    let keywordSymbol = this.ExprToSymbol keyword
+                    let elemSymbols = map |> Map.toValueList |> List.map this.ExprToSymbol
                     Symbol.Symbols (keywordSymbol :: elemSymbols, None) :> obj
                 | Option option ->
                     match option with
-                    | Some value -> Symbol.Symbols ([Symbol.Atom ("some", None); this.ConvertTo (value, destType) :?> Symbol], None) :> obj
+                    | Some value -> Symbol.Symbols ([Symbol.Atom ("some", None); this.ExprToSymbol value], None) :> obj
                     | None -> Symbol.Atom ("none", None) :> obj
                 | List elems -> 
-                    let elemSymbols = List.map (fun elem -> this.ConvertTo (elem, destType) :?> Symbol) elems
+                    let elemSymbols = List.map this.ExprToSymbol elems
                     Symbol.Symbols (Symbol.Atom ("list", None) :: elemSymbols, None) :> obj
                 | Ring set ->
-                    let elemSymbols = List.map (fun elem -> this.ConvertTo (elem, destType) :?> Symbol) (Set.toList set)
+                    let elemSymbols = List.map this.ExprToSymbol (Set.toList set)
                     Symbol.Symbols (Symbol.Atom ("ring", None) :: elemSymbols, None) :> obj
                 | Table map ->
                     let elemSymbols =
                         List.map (fun (key, value) ->
                             let pairSymbol = Symbol.Atom ("pair", None)
-                            let keySymbol = this.ConvertTo (key, destType) :?> Symbol
-                            let valueSymbol = this.ConvertTo (value, destType) :?> Symbol
+                            let keySymbol = this.ExprToSymbol key
+                            let valueSymbol = this.ExprToSymbol value
                             Symbol.Symbols ([pairSymbol; keySymbol; valueSymbol], None))
                             (Map.toList map)
                     Symbol.Symbols (Symbol.Atom ("table", None) :: elemSymbols, None) :> obj
-                | Stream _
-                | Binding _
-                | Apply _
-                | Let _
-                | LetMany _
+                | Stream _ ->
+                    Symbols ([], None) :> obj // TODO: implement
+                | Binding (name, _, originOpt) ->
+                    Symbol.Atom (name, originOpt) :> obj
+                | Apply (list, originOpt) ->
+                    let elemSymbols = List.map this.ExprToSymbol list
+                    Symbol.Symbols (Symbol.Atom ("list", None) :: elemSymbols, originOpt) :> obj
+                | Let (binding, body, originOpt) ->
+                    let bindingSymbol = this.BindingToSymbol binding
+                    let bodySymbol = this.ExprToSymbol body
+                    Symbol.Symbols ([bindingSymbol; bodySymbol], originOpt) :> obj
+                | LetMany (bindings, body, originOpt) ->
+                    let bindingSymbols = Symbol.Symbols (List.map this.BindingToSymbol bindings, None)
+                    let bodySymbol = this.ExprToSymbol body
+                    Symbol.Symbols ([bindingSymbols; bodySymbol], originOpt) :> obj
                 | Fun _
                 | If _
                 | Match _
