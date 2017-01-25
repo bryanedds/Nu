@@ -1106,10 +1106,10 @@ module WorldScripting =
         and evalLet4 binding body originOpt world =
             let world =
                 match binding with
-                | LetVariable (name, body) ->
+                | VariableBinding (name, body) ->
                     let evaled = evalDropEnv body world
                     World.addProceduralBinding (AddToNewFrame 1) name evaled world
-                | LetFunction (name, args, body) ->
+                | FunctionBinding (name, args, body) ->
                     let frames = World.getProceduralFrames world :> obj
                     let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
                     World.addProceduralBinding (AddToNewFrame 1) name fn world
@@ -1119,20 +1119,20 @@ module WorldScripting =
         and evalLetMany4 bindingsHead bindingsTail bindingsCount body originOpt world =
             let world =
                 match bindingsHead with
-                | LetVariable (name, body) ->
+                | VariableBinding (name, body) ->
                     let bodyValue = evalDropEnv body world
                     World.addProceduralBinding (AddToNewFrame bindingsCount) name bodyValue world
-                | LetFunction (name, args, body) ->
+                | FunctionBinding (name, args, body) ->
                     let frames = World.getProceduralFrames world :> obj
                     let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
                     World.addProceduralBinding (AddToNewFrame bindingsCount) name fn world
             let world =
                 List.foldi (fun i world binding ->
                     match binding with
-                    | LetVariable (name, body) ->
+                    | VariableBinding (name, body) ->
                         let bodyValue = evalDropEnv body world
                         World.addProceduralBinding (AddToHeadFrame ^ inc i) name bodyValue world
-                    | LetFunction (name, args, body) ->
+                    | FunctionBinding (name, args, body) ->
                         let frames = World.getProceduralFrames world :> obj
                         let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
                         World.addProceduralBinding (AddToHeadFrame ^ inc i) name fn world)
@@ -1284,10 +1284,17 @@ module WorldScripting =
                 | None -> (Violation ([!!"InvalidProperty"], "Property value could not be set.", originOpt), world)
             | Left error -> error
 
-        and evalDefine name expr _ world =
-            let (evaled, world) = eval expr world
-            let world = World.addDeclarationBinding name evaled world
-            (evaled, world)
+        and evalDefine binding originOpt world =
+            let world =
+                match binding with
+                | VariableBinding (name, body) ->
+                    let evaled = evalDropEnv body world
+                    World.addDeclarationBinding name evaled world
+                | FunctionBinding (name, args, body) ->
+                    let frames = World.getProceduralFrames world :> obj
+                    let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
+                    World.addDeclarationBinding name fn world
+            (Unit, world)
 
         and eval expr world : Expr * World =
             match expr with
@@ -1325,7 +1332,7 @@ module WorldScripting =
             | Set (name, expr, originOpt) -> evalSet name None expr originOpt world
             | SetTo (name, expr, expr2, originOpt) -> evalSet name (Some expr) expr2 originOpt world
             | Quote (_, originOpt) -> (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt), world) // TODO
-            | Define (name, expr, originOpt) -> evalDefine name expr originOpt world
+            | Define (binding, originOpt) -> evalDefine binding originOpt world
 
         and evalMany exprs world =
             let (evaledsRev, world) =
