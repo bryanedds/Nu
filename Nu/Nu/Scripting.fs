@@ -267,17 +267,20 @@ module Scripting =
         member this.ExprToSymbol (expr : Expr) =
             this.ConvertTo (expr, typeof<Symbol>) :?> Symbol
 
-        member this.BindingToSymbol (binding : Binding) =
+        member this.BindingToSymbols (binding : Binding) =
             match binding with
             | VariableBinding (name, value) ->
                 let nameSymbol = Symbol.Atom (name, None)
                 let valueSymbol = this.ExprToSymbol value
-                Symbol.Symbols ([nameSymbol; valueSymbol], None)
+                [nameSymbol; valueSymbol]
             | FunctionBinding (name, pars, body) ->
                 let nameSymbol = Symbol.Atom (name, None)
                 let parSymbols = List.map (fun par -> Symbol.Atom (par, None)) pars
                 let bodySymbol = this.ExprToSymbol body
-                Symbol.Symbols (nameSymbol :: parSymbols @ [bodySymbol], None)
+                nameSymbol :: parSymbols @ [bodySymbol]
+
+        member this.BindingToSymbol binding =
+            Symbol.Symbols (this.BindingToSymbols binding, None)
 
         member this.SymbolsToBindingOpt bindingSymbols =
             match bindingSymbols with
@@ -355,7 +358,7 @@ module Scripting =
                     Symbol.Symbols ([letSymbol; bindingSymbol; bodySymbol], originOpt) :> obj
                 | LetMany (bindings, body, originOpt) ->
                     let letSymbol = Symbol.Atom ("let", None)
-                    let bindingSymbols = Symbol.Symbols (List.map this.BindingToSymbol bindings, None)
+                    let bindingSymbols = Symbol.Symbols (List.map (fun binding -> this.BindingToSymbol binding) bindings, None)
                     let bodySymbol = this.ExprToSymbol body
                     Symbol.Symbols ([letSymbol; bindingSymbols; bodySymbol], originOpt) :> obj
                 | Fun (pars, _, body, _, _, originOpt) ->
@@ -429,7 +432,10 @@ module Scripting =
                     let relationSymbol = this.ExprToSymbol relation
                     Symbol.Symbols ([setSymbol; propertySymbol; valueSymbol; relationSymbol], originOpt) :> obj
                 | Quote _ -> Symbols ([], None) :> obj // TODO: implement
-                | Define _ -> Symbols ([], None) :> obj // TODO: implement
+                | Define (binding, originOpt) ->
+                    let defineSymbol = Symbol.Atom ("define", None)
+                    let bindingSymbols = this.BindingToSymbols binding
+                    Symbol.Symbols (defineSymbol :: bindingSymbols, originOpt) :> obj
             elif destType = typeof<Expr> then source
             else failconv "Invalid ExprConverter conversion to source." None
 

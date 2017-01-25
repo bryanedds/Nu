@@ -1219,7 +1219,7 @@ module WorldScripting =
             Either.amb evaledEir
 
         and evalBreak expr world =
-            // TODO: write all world bindings to console
+            // TODO: write all procedural bindings to console
             Debugger.Break ()
             eval expr world
 
@@ -1268,7 +1268,6 @@ module WorldScripting =
                 | None -> Right (context, world)
             match simulantAndEnvEir with
             | Right (simulant, world) ->
-                // NOTE: this sucks, having to get the property before setting it just to find out its type...
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some (_, propertyType) ->
                     match Exporters.TryGetValue propertyType.Name with
