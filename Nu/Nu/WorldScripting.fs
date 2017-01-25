@@ -24,23 +24,20 @@ module WorldScripting =
         static member private setLocalDeclaration localDeclaration world =
             World.updateScriptEnv (Scripting.EnvModule.Env.setLocalDeclaration localDeclaration) world
 
-        static member private tryGetDeclarationBinding name world =
-            World.getScriptEnvBy (Scripting.EnvModule.Env.tryGetDeclarationBinding name) world
-
-        static member private tryGetProceduralBinding name world =
-            World.getScriptEnvBy (Scripting.EnvModule.Env.tryGetProceduralBinding name) world
-
         static member private tryGetBinding name cachedBinding world =
             World.getScriptEnvBy (Scripting.EnvModule.Env.tryGetBinding name cachedBinding) world
 
-        static member private tryAddDeclarationBinding name value world =
-            World.tryUpdateScriptEnv (Scripting.EnvModule.Env.tryAddDeclarationBinding name value) world
+        static member private addDeclarationBinding name value world =
+            World.updateScriptEnv (Scripting.EnvModule.Env.addDeclarationBinding name value) world
 
         static member private addProceduralBinding appendType name value world =
             World.updateScriptEnv (EnvModule.Env.addProceduralBinding appendType name value) world
 
         static member private addProceduralBindings appendType bindings world =
             World.updateScriptEnv (EnvModule.Env.addProceduralBindings appendType bindings) world
+
+        static member private addBinding appendType name value world =
+            World.updateScriptEnv (EnvModule.Env.addBinding appendType name value) world
 
         static member private removeProceduralBindings world =
             World.updateScriptEnv EnvModule.Env.removeProceduralBindings world
@@ -1287,11 +1284,10 @@ module WorldScripting =
                 | None -> (Violation ([!!"InvalidProperty"], "Property value could not be set.", originOpt), world)
             | Left error -> error
 
-        and evalDefine name expr originOpt world =
+        and evalDefine name expr _ world =
             let (evaled, world) = eval expr world
-            match World.tryAddDeclarationBinding name evaled world with
-            | Some world -> (Unit, world)
-            | None -> (Violation ([!!"InvalidDefinition"], "Definition '" + name + "' could not be created due to having the same name as another top-level binding.", originOpt), world)
+            let world = World.addDeclarationBinding name evaled world
+            (evaled, world)
 
         and eval expr world : Expr * World =
             match expr with
