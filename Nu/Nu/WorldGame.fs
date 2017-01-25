@@ -122,17 +122,16 @@ module WorldGameModule =
 
         static member private gameOnRegisterChanged _ world =
             let world = World.registerGame world
-            let world = World.unregisterGame world
-            (Cascade, world)
+            World.unregisterGame world
 
         static member private gameScriptOptChanged evt world =
             let game = evt.Subscriber : Game
             match game.GetScriptOpt world with
             | Some script ->
                 match World.assetTagToScriptOpt script world with
-                | (Some script, world) -> (Cascade, game.SetScript script world)
-                | (None, world) -> (Cascade, world)
-            | None -> (Cascade, world)
+                | (Some script, world) -> game.SetScript script world
+                | (None, world) -> world
+            | None -> world
 
         static member internal registerGame world =
             let game = Simulants.Game

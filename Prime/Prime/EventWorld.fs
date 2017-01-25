@@ -155,10 +155,10 @@ module EventWorld =
             "correctly specialize its 's and 'w types for EventWorld.publishEvent calls."
 
     let private boxSubscription<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
-        (subscription : Subscription<'a, 's, 'w>) =
+        (subscription : Event<'a, 's> -> 'w -> Handling * 'w) =
         let boxableSubscription = fun (evtObj : obj) world ->
             match subscription :> obj with
-            | :? Subscription<obj, 's, 'w> as subscriptionDynamic ->
+            | :? (Event<obj, 's> -> 'w -> Handling * 'w) as subscriptionDynamic ->
                 let evt = try evtObj :?> Event<obj, 's> with exn -> debugSubscriptionTypeMismatch (); reraise ()
                 subscriptionDynamic evt world
             | _ ->
@@ -302,8 +302,8 @@ module EventWorld =
         | None -> world
 
     /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
-    let subscribePlus5<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
-        subscriptionKey (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
+    let subscribePlus<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
+        subscriptionKey (subscription : Event<'a, 's> -> 'w -> Handling * 'w) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         if not ^ Address.isEmpty eventAddress then
             let objEventAddress = atooa eventAddress
             let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
@@ -325,40 +325,30 @@ module EventWorld =
             (unsubscribe<'g, 'w> subscriptionKey, world)
         else failwith "Event name cannot be empty."
 
-    /// Subscribe to an event, and be provided with an unsubscription callback.
-    let subscribePlus<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
-        (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
-        subscribePlus5 (makeGuid ()) subscription eventAddress subscriber world
-
-    /// Subscribe to an event using the given subscriptionKey.
-    let subscribe5<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
-        subscriptionKey (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
-        subscribePlus5 subscriptionKey (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) world |> snd
-
     /// Subscribe to an event.
     let subscribe<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
-        (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) world =
-        subscribe5 (makeGuid ()) subscription eventAddress subscriber world
+        (subscription : Event<'a, 's> -> 'w -> 'w) (eventAddress : 'a Address) (subscriber : 's) world =
+        subscribePlus (makeGuid ()) (fun evt world -> (Cascade, subscription evt world)) eventAddress subscriber world |> snd
 
     /// Keep active a subscription for the life span of a participant, and be provided with an unsubscription callback.
     let monitorPlus<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
-        (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
+        (subscription : Event<'a, 's> -> 'w -> Handling * 'w) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         let subscriberAddress = subscriber.ParticipantAddress
         if not ^ Address.isEmpty subscriberAddress then
             let monitorKey = makeGuid ()
             let removalKey = makeGuid ()
-            let world = subscribe5<'a, 's, 'g, 'w> monitorKey subscription eventAddress subscriber world
+            let world = subscribePlus<'a, 's, 'g, 'w> monitorKey subscription eventAddress subscriber world |> snd
             let unsubscribe = fun (world : 'w) ->
                 let world = unsubscribe removalKey world
                 let world = unsubscribe monitorKey world
                 world
             let subscription' = fun _ eventSystem -> (Cascade, unsubscribe eventSystem)
             let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Unregistering"; !!"Event"] ->>- subscriberAddress
-            let world = subscribe5<unit, 's, 'g, 'w> removalKey subscription' removingEventAddress subscriber world
+            let world = subscribePlus<unit, 's, 'g, 'w> removalKey subscription' removingEventAddress subscriber world |> snd
             (unsubscribe, world)
         else failwith "Cannot monitor events with an anonymous subscriber."
 
     /// Keep active a subscription for the life span of a participant.
     let monitor<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
-        (subscription : Subscription<'a, 's, 'w>) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
-        monitorPlus<'a, 's, 'g, 'w> subscription eventAddress subscriber world |> snd
+        (subscription : Event<'a, 's> -> 'w -> 'w) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
+        monitorPlus<'a, 's, 'g, 'w> (fun evt world -> (Cascade, subscription evt world)) eventAddress subscriber world |> snd
