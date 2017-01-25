@@ -133,16 +133,16 @@ module NameModule =
                 Guid.TryParse last36 |> fst
             else false
     
-        /// Join a list of names by a separator string.
-        let join sep names =
+        /// Join a list of names by a '/' character.
+        let join names =
             let nameStrs = Seq.map getNameStr names
-            let namesStr = String.Join (sep, nameStrs)
+            let namesStr = String.Join ("/", nameStrs)
             Name.make namesStr
     
-        /// Split a name on a separator char array.
-        let split sep name =
+        /// Split a name on a '/' character.
+        let split name =
             name.NameStr |>
-            (fun nameStr -> nameStr.Split sep) |>
+            (fun nameStr -> nameStr.Split [|'/'|]) |>
             Array.map Name.make |>
             List.ofArray
     

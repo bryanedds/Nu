@@ -346,17 +346,20 @@ module Scripting =
                     let elemSymbols = List.map this.ExprToSymbol list
                     Symbol.Symbols (Symbol.Atom ("list", None) :: elemSymbols, originOpt) :> obj
                 | Let (binding, body, originOpt) ->
+                    let letSymbol = Symbol.Atom ("let", None)
                     let bindingSymbol = this.BindingToSymbol binding
                     let bodySymbol = this.ExprToSymbol body
-                    Symbol.Symbols ([bindingSymbol; bodySymbol], originOpt) :> obj
+                    Symbol.Symbols ([letSymbol; bindingSymbol; bodySymbol], originOpt) :> obj
                 | LetMany (bindings, body, originOpt) ->
+                    let letSymbol = Symbol.Atom ("let", None)
                     let bindingSymbols = Symbol.Symbols (List.map this.BindingToSymbol bindings, None)
                     let bodySymbol = this.ExprToSymbol body
-                    Symbol.Symbols ([bindingSymbols; bodySymbol], originOpt) :> obj
+                    Symbol.Symbols ([letSymbol; bindingSymbols; bodySymbol], originOpt) :> obj
                 | Fun (pars, _, body, _, _, originOpt) ->
+                    let funSymbol = Symbol.Atom ("fun", None)
                     let parSymbols = List.map (fun par -> Symbol.Atom (par, None)) pars
                     let bodySymbol = this.ExprToSymbol body
-                    Symbol.Symbols (parSymbols @ [bodySymbol], originOpt) :> obj
+                    Symbol.Symbols (funSymbol :: parSymbols @ [bodySymbol], originOpt) :> obj
                 | If (condition, consequent, alternative, originOpt) ->
                     let ifSymbol = Symbol.Atom ("if", None)
                     let conditionSymbol = this.ExprToSymbol condition
@@ -364,6 +367,7 @@ module Scripting =
                     let alternativeSymbol = this.ExprToSymbol alternative
                     Symbol.Symbols ([ifSymbol; conditionSymbol; consequentSymbol; alternativeSymbol], originOpt) :> obj
                 | Match (input, cases, originOpt) ->
+                    let matchSymbol = Symbol.Atom ("match", None)
                     let inputSymbol = this.ExprToSymbol input
                     let caseSymbols =
                         List.map (fun (condition, consequent) ->
@@ -371,16 +375,26 @@ module Scripting =
                             let consequentSymbol = this.ExprToSymbol consequent
                             Symbol.Symbols ([conditionSymbol; consequentSymbol], None))
                             cases
-                    Symbol.Symbols (inputSymbol :: caseSymbols, originOpt) :> obj
+                    Symbol.Symbols (matchSymbol :: inputSymbol :: caseSymbols, originOpt) :> obj
                 | Select (cases, originOpt) ->
+                    let selectSymbol = Symbol.Atom ("select", None)
                     let caseSymbols =
                         List.map (fun (condition, consequent) ->
                             let conditionSymbol = this.ExprToSymbol condition
                             let consequentSymbol = this.ExprToSymbol consequent
                             Symbol.Symbols ([conditionSymbol; consequentSymbol], None))
                             cases
-                    Symbol.Symbols (caseSymbols, originOpt) :> obj
-                | Try _
+                    Symbol.Symbols (selectSymbol :: caseSymbols, originOpt) :> obj
+                | Try (input, cases, originOpt) ->
+                    let trySymbol = Symbol.Atom ("try", None)
+                    let inputSymbol = this.ExprToSymbol input
+                    let caseSymbols =
+                        List.map (fun (tagNames, consequent) ->
+                            let tagSymbol = Symbol.Atom (tagNames |> Name.join |> Name.getNameStr, None)
+                            let consequentSymbol = this.ExprToSymbol consequent
+                            Symbol.Symbols ([tagSymbol; consequentSymbol], None))
+                            cases
+                    Symbol.Symbols (trySymbol :: inputSymbol :: caseSymbols, originOpt) :> obj
                 | Do _
                 | Run _
                 | Break _
@@ -439,11 +453,11 @@ module Scripting =
                             match tail with
                             | [Prime.Atom (tagStr, _)]
                             | [Prime.String (tagStr, _)] ->
-                                try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, "User-defined violation.", originOpt) :> obj
+                                try let tagName = !!tagStr in Violation (Name.split tagName, "User-defined violation.", originOpt) :> obj
                                 with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | [Prime.Atom (tagStr, _); Prime.String (errorMsg, _)]
                             | [Prime.String (tagStr, _); Prime.String (errorMsg, _)] ->
-                                try let tagName = !!tagStr in Violation (Name.split [|'/'|] tagName, errorMsg, originOpt) :> obj
+                                try let tagName = !!tagStr in Violation (Name.split tagName, errorMsg, originOpt) :> obj
                                 with exn -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | _ -> Violation ([!!"InvalidViolationForm"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
                         | "let" ->
@@ -509,7 +523,7 @@ module Scripting =
                                         (fun i handler ->
                                             match handler with
                                             | Prime.Symbols ([Prime.Atom (categoriesStr, _); handlerBody], _) ->
-                                                Right (Name.split [|'/'|] !!categoriesStr, handlerBody)
+                                                Right (Name.split !!categoriesStr, handlerBody)
                                             | _ ->
                                                 Left ("Invalid try handler form for handler #" + scstring (inc i) + ". Requires 1 path and 1 body."))
                                         handlers
@@ -570,7 +584,7 @@ module Scripting =
         match expr with
         | Violation (names, error, optOrigin) ->
             Log.debug ^
-                "Unexpected violation:" + (names |> Name.join "" |> Name.getNameStr) +
+                "Unexpected violation:" + (names |> Name.join |> Name.getNameStr) +
                 "\ndue to:" + error +
                 "\nat: " + scstring optOrigin + "'."
         | _ -> ()
