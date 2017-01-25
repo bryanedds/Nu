@@ -24,9 +24,9 @@ module Scripting =
         | DeclarationBinding of Expr
         | ProceduralBinding of int * int
 
-    and [<NoComparison>] LetBinding =
-        | LetVariable of string * Expr
-        | LetFunction of string * string list * Expr
+    and [<NoComparison>] Binding =
+        | VariableBinding of string * Expr
+        | FunctionBinding of string * string list * Expr
 
     and [<CustomEquality; NoComparison>] Stream =
         // constructed as [variableStream v]
@@ -106,8 +106,8 @@ module Scripting =
         (* Special Forms *)
         | Binding of string * CachedBinding ref * SymbolOrigin option
         | Apply of Expr list * SymbolOrigin option
-        | Let of LetBinding * Expr * SymbolOrigin option
-        | LetMany of LetBinding list * Expr * SymbolOrigin option
+        | Let of Binding * Expr * SymbolOrigin option
+        | LetMany of Binding list * Expr * SymbolOrigin option
         | Fun of string list * int * Expr * bool * obj option * SymbolOrigin option
         | If of Expr * Expr * Expr * SymbolOrigin option
         | Match of Expr * (Expr * Expr) list * SymbolOrigin option
@@ -123,7 +123,7 @@ module Scripting =
         | Quote of string * SymbolOrigin option
 
         (* Declarations - only work at the top level. *)
-        | Define of string * Expr * SymbolOrigin option // constructed as [define c 0]
+        | Define of Binding * SymbolOrigin option // constructed as [define c 0]
 
         static member tryGetOrigin expr =
             match expr with
@@ -161,7 +161,7 @@ module Scripting =
             | Set (_, _, originOpt)
             | SetTo (_, _, _, originOpt)
             | Quote (_, originOpt)
-            | Define (_, _, originOpt) -> originOpt
+            | Define (_, originOpt) -> originOpt
 
         static member equals left right =
             match (left, right) with
@@ -198,7 +198,7 @@ module Scripting =
             | (Set (leftPropertyName, leftInput, _), Set (rightPropertyName, rightInput, _)) -> (leftPropertyName, leftInput) = (rightPropertyName, rightInput)
             | (SetTo (leftPropertyName, leftTarget, leftInput, _), SetTo (rightPropertyName, rightTarget, rightInput, _)) -> (leftPropertyName, leftTarget, leftInput) = (rightPropertyName, rightTarget, rightInput)
             | (Quote (left, _), Quote (right, _)) -> left = right
-            | (Define (leftName, leftValue, _), Define (rightName, rightValue, _)) -> (leftName, leftValue) = (rightName, rightValue)
+            | (Define (left, _), Define (right, _)) -> left = right
             | (_, _) -> false
 
         static member compare left right =
@@ -267,28 +267,28 @@ module Scripting =
         member this.ExprToSymbol (expr : Expr) =
             this.ConvertTo (expr, typeof<Symbol>) :?> Symbol
 
-        member this.BindingToSymbol (binding : LetBinding) =
+        member this.BindingToSymbol (binding : Binding) =
             match binding with
-            | LetVariable (name, value) ->
+            | VariableBinding (name, value) ->
                 let nameSymbol = Symbol.Atom (name, None)
                 let valueSymbol = this.ExprToSymbol value
                 Symbol.Symbols ([nameSymbol; valueSymbol], None)
-            | LetFunction (name, pars, body) ->
+            | FunctionBinding (name, pars, body) ->
                 let nameSymbol = Symbol.Atom (name, None)
                 let parSymbols = List.map (fun par -> Symbol.Atom (par, None)) pars
                 let bodySymbol = this.ExprToSymbol body
                 Symbol.Symbols (nameSymbol :: parSymbols @ [bodySymbol], None)
 
-        member this.SymbolsToLetBindingOpt bindingSymbols =
+        member this.SymbolsToBindingOpt bindingSymbols =
             match bindingSymbols with
             | [Atom (bindingName, _); bindingBody] ->
-                let binding = LetVariable (bindingName, this.SymbolToExpr bindingBody)
+                let binding = VariableBinding (bindingName, this.SymbolToExpr bindingBody)
                 Some binding
             | [Atom (bindingName, _); Symbols (bindingArgs, _); bindingBody] ->
                 let (bindingArgs, bindingErrors) = List.split (function Atom _ -> true | _ -> false) bindingArgs
                 if List.isEmpty bindingErrors then
                     let bindingArgs = List.map (function Atom (arg, _) -> arg | _ -> failwithumf ()) bindingArgs
-                    let binding = LetFunction (bindingName, bindingArgs, this.SymbolToExpr bindingBody)
+                    let binding = FunctionBinding (bindingName, bindingArgs, this.SymbolToExpr bindingBody)
                     Some binding
                 else None
             | _ -> None
@@ -493,7 +493,7 @@ module Scripting =
                             | [binding; body] ->
                                 match binding with
                                 | Symbols (bindingSymbols, _) ->
-                                    match this.SymbolsToLetBindingOpt bindingSymbols with
+                                    match this.SymbolsToBindingOpt bindingSymbols with
                                     | Some binding -> Let (binding, this.SymbolToExpr body, originOpt) :> obj
                                     | None -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
                                 | _ -> Violation ([!!"InvalidLetForm"], "Invalid let form. TODO: more info.", originOpt) :> obj
@@ -502,7 +502,7 @@ module Scripting =
                                 let (bindings, bindingErrors) = List.split (function Symbols ([_; _], _) -> true | _ -> false) bindings
                                 if List.isEmpty bindingErrors then
                                     let bindings = List.map (function Symbols ([_; _] as binding, _) -> binding | _ -> failwithumf ()) bindings
-                                    let bindingOpts = List.map this.SymbolsToLetBindingOpt bindings
+                                    let bindingOpts = List.map this.SymbolsToBindingOpt bindings
                                     let (bindingOpts, bindingErrors) = List.split Option.isSome bindingOpts
                                     if List.isEmpty bindingErrors then
                                         let bindings = List.definitize bindingOpts
@@ -594,6 +594,11 @@ module Scripting =
                             match tail with
                             | [relation] -> Stream (EventStream (this.SymbolToExpr relation), originOpt) :> obj
                             | _ -> Violation ([!!"InvalidEventStreamForm"], "Invalid event stream form. Requires a relation expression.", originOpt) :> obj
+                        | "define" ->
+                            let bindingSymbols = tail
+                            match this.SymbolsToBindingOpt bindingSymbols with
+                            | Some binding -> Define (binding, originOpt) :> obj
+                            | None -> Violation ([!!"InvalidDefineForm"], "Invalid define form. TODO: more info.", originOpt) :> obj
                         | _ -> Apply (List.map this.SymbolToExpr symbols, originOpt) :> obj
                     | _ -> Apply (List.map this.SymbolToExpr symbols, originOpt) :> obj
             | :? Expr -> source
@@ -635,7 +640,7 @@ module Scripting =
                 { LocalDeclaration : bool
                   GlobalFrame : DeclarationFrame
                   LocalFrame : DeclarationFrame
-                  // TODO: consider making this mutating for speed
+                  // TODO: consider making this mutable for speed
                   ProceduralFrames : ProceduralFrame list }
     
         [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -751,7 +756,6 @@ module Scripting =
                 if isTopLevel then addDeclarationBinding name value env
                 else addProceduralBinding appendType name value env
                 
-
             let removeProceduralBindings env =
                 match env.ProceduralFrames with
                 | [] -> failwithumf ()
