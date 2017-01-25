@@ -328,9 +328,7 @@ module WorldModule2 =
                     match Name.getNameStr eventFirstName with
                     | "Change" ->
                         if List.contains (Address.head Events.Wildcard) eventNames then
-                            Log.debug ^
-                                "Subscribing to change events with a wildcard is not supported. " +
-                                "This will cause a bug where some change events are not published."
+                            Log.debug "Subscribing to change events with a wildcard is not supported."
                         world
                     | _ -> world
                 | _ -> world
