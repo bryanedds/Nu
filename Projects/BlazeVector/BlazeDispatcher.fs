@@ -13,15 +13,13 @@ module BlazeDispatcherModule =
 
         // this function handles the selection of the title screen by playing the song "Machinery"
         static let handleSelectTitleScreen _ world =
-            let world = World.playSong 0 1.0f Assets.MachinerySong world
-            (Cascade, world)
+            World.playSong 0 1.0f Assets.MachinerySong world
 
         // this function handles the clicking of the play button on the title screen by playing
         // the game
         static let handleClickTitlePlay _ world =
             let world = World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
-            let world = World.transitionScreen Simulants.Gameplay world
-            (Cascade, world)
+            World.transitionScreen Simulants.Gameplay world
 
         // this function creates the BlazeVector title screen to the world
         static let createTitleScreen world =
@@ -47,7 +45,7 @@ module BlazeDispatcherModule =
 
             // subscribes to the event that is raised when the Title screen's Exit button is clicked,
             // and handles the event by exiting the game
-            World.subscribe World.handleAsExit (Events.Click ->- Simulants.TitleExit) Simulants.Game world
+            World.subscribePlus (makeGuid ()) World.handleAsExit (Events.Click ->- Simulants.TitleExit) Simulants.Game world |> snd
 
         // pretty much the same as above, but for the Credits screen
         static let createCreditsScreen world =

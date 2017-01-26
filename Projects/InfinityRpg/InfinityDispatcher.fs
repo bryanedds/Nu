@@ -16,7 +16,7 @@ type InfinityDispatcher () =
         let world = World.subscribe (World.handleAsScreenTransition Simulants.Credits) (Events.Click ->- Simulants.TitleCredits) Simulants.Game world
         let world = World.subscribe (handleAsScreenTransitionToGameplay false) (Events.Click ->- Simulants.TitleNewGame) Simulants.Game world
         let world = World.subscribe (handleAsScreenTransitionToGameplay true) (Events.Click ->- Simulants.TitleLoadGame) Simulants.Game world
-        World.subscribe World.handleAsExit (Events.Click ->- Simulants.TitleExit) Simulants.Game world
+        World.subscribePlus (makeGuid ()) World.handleAsExit (Events.Click ->- Simulants.TitleExit) Simulants.Game world |> snd
 
     static let createCredits world =
         let world = World.createDissolveScreenFromLayerFile None (Some Simulants.Credits.ScreenName) Constants.InfinityRpg.DissolveData Assets.CreditsLayerFilePath world |> snd
