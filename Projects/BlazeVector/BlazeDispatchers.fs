@@ -23,18 +23,15 @@ module BulletModule =
         static let handleUpdate evt world =
             let bullet = evt.Subscriber : Entity
             let world = bullet.SetAge (bullet.GetAge world + World.getTickRate world) world
-            let world =
-                if bullet.GetAge world > BulletLifetime
-                then World.destroyEntity bullet world
-                else world
-            (Cascade, world)
+            if bullet.GetAge world > BulletLifetime
+            then World.destroyEntity bullet world
+            else world
 
         static let handleCollision evt world =
             let bullet = evt.Subscriber : Entity
-            if World.isTicking world then
-                let world = World.destroyEntity bullet world
-                (Cascade, world)
-            else (Cascade, world)
+            if World.isTicking world
+            then World.destroyEntity bullet world
+            else world
 
         static member PropertyDefinitions =
             [Define? Size ^ Vector2 (20.0f, 20.0f)
@@ -53,9 +50,9 @@ module BulletModule =
              typeof<StaticSpriteFacet>.Name]
 
         override dispatcher.Register (bullet, world) =
-            world |>
-                World.monitor handleUpdate (Events.Update ->- bullet) bullet |>
-                World.monitor handleCollision (Events.Collision ->- bullet) bullet
+            let world = World.monitor handleUpdate (Events.Update ->- bullet) bullet world
+            let world = World.monitor handleCollision (Events.Collision ->- bullet) bullet world
+            world
 
 [<AutoOpen>]
 module EnemyModule =
@@ -85,8 +82,7 @@ module EnemyModule =
         static let handleUpdate evt world =
             let enemy = evt.Subscriber : Entity
             let world = if enemy.IsOnScreen world then move enemy world else world
-            let world = if enemy.GetHealth world <= 0 then die enemy world else world
-            (Cascade, world)
+            if enemy.GetHealth world <= 0 then die enemy world else world
 
         static let handleCollision evt world =
             let enemy = evt.Subscriber : Entity
@@ -96,9 +92,9 @@ module EnemyModule =
                 if isBullet then
                     let world = enemy.SetHealth (enemy.GetHealth world - 1) world
                     let world = World.playSound 1.0f Assets.HitSound world
-                    (Cascade, world)
-                else (Cascade, world)
-            else (Cascade, world)
+                    world
+                else world
+            else world
 
         static member PropertyDefinitions =
             [Define? Size ^ Vector2 (48.0f, 96.0f)
@@ -118,9 +114,9 @@ module EnemyModule =
              typeof<AnimatedSpriteFacet>.Name]
 
         override dispatcher.Register (enemy, world) =
-            world |>
-                World.monitor handleUpdate (Events.Update ->- enemy) enemy |>
-                World.monitor handleCollision (Events.Collision ->- enemy) enemy
+            let world = World.monitor handleUpdate (Events.Update ->- enemy) enemy world
+            let world = World.monitor handleCollision (Events.Collision ->- enemy) enemy world
+            world
 
 [<AutoOpen>]
 module PlayerModule =
@@ -163,12 +159,11 @@ module PlayerModule =
             let player = evt.Subscriber : Entity
             if World.isTicking world then
                 if not ^ player.HasFallen world then
-                    if World.getTickTime world % 5L = 0L then
-                        let world = shootBullet player world
-                        (Cascade, world)
-                    else (Cascade, world)
-                else (Cascade, world)
-            else (Cascade, world)
+                    if World.getTickTime world % 5L = 0L
+                    then shootBullet player world
+                    else world
+                else world
+            else world
 
         static let getLastTimeOnGround (player : Entity) world =
             if not ^ World.isBodyOnGround (player.GetPhysicsId world) world
@@ -188,8 +183,7 @@ module PlayerModule =
                     let vectorForce = Vector2.Multiply (groundTangent, Vector2 (WalkForce, downForce))
                     vectorForce * World.getTickRateF world
                 | None -> Vector2 (WalkForce, FallForce)
-            let world = World.applyBodyForce force physicsId world
-            (Cascade, world)
+            World.applyBodyForce force physicsId world
 
         static let handleJump evt world =
             let player = evt.Subscriber : Entity
@@ -199,15 +193,15 @@ module PlayerModule =
                 let world = player.SetLastTimeJumpNp tickTime world
                 let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 18000.0f)) (player.GetPhysicsId world) world
                 let world = World.playSound 1.0f Assets.JumpSound world
-                (Cascade, world)
-            else (Cascade, world)
+                world
+            else world
 
         static let handleJumpByKeyboardKey evt world =
             if World.isSelectedScreenIdling world then
                 match (enum<SDL.SDL_Scancode> evt.Data.ScanCode, evt.Data.Repeated) with
                 | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump evt world
-                | _ -> (Cascade, world)
-            else (Cascade, world)
+                | _ -> world
+            else world
 
         static member PropertyDefinitions =
             [Define? Size ^ Vector2 (48.0f, 96.0f)
@@ -228,11 +222,11 @@ module PlayerModule =
              typeof<AnimatedSpriteFacet>.Name]
 
         override dispatcher.Register (player, world) =
-            world |>
-                World.monitor handleSpawnBullet (Events.Update ->- player) player |>
-                World.monitor handleMovement (Events.Update ->- player) player |>
-                World.monitor handleJump Events.MouseLeftDown player |>
-                World.monitor handleJumpByKeyboardKey Events.KeyboardKeyDown player
+            let world = World.monitor handleSpawnBullet (Events.Update ->- player) player world
+            let world = World.monitor handleMovement (Events.Update ->- player) player world
+            let world = World.monitor handleJump Events.MouseLeftDown player world
+            let world = World.monitor handleJumpByKeyboardKey Events.KeyboardKeyDown player world
+            world
 
 [<AutoOpen>]
 module PlayerLayerModule =
@@ -249,19 +243,18 @@ module PlayerLayerModule =
             Simulants.Game.SetEyeCenter eyeCenter world
 
         static let handleAdjustCamera _ world =
-            (Cascade, adjustCamera world)
+            adjustCamera world
 
         static let handlePlayerFall _ world =
             if Simulants.Player.HasFallen world && World.isSelectedScreenIdling world then
                 let world = World.playSound 1.0f Assets.DeathSound world
-                let world = World.transitionScreen Simulants.Title world
-                (Cascade, world)
-            else (Cascade, world)
+                World.transitionScreen Simulants.Title world
+            else world
 
         override dispatcher.Register (layer, world) =
-            world |>
-                World.monitor handleAdjustCamera (Events.Update ->- layer) layer |>
-                World.monitor handlePlayerFall (Events.Update ->- layer) layer
+            let world = World.monitor handleAdjustCamera (Events.Update ->- layer) layer world
+            let world = World.monitor handlePlayerFall (Events.Update ->- layer) layer world
+            world
 
 [<AutoOpen>]
 module GameplayScreenModule =
@@ -304,23 +297,20 @@ module GameplayScreenModule =
         static let handleStartPlay _ world =
             let world = createPlayerLayer world
             let world = createSectionLayers world
-            let world = World.playSong 0 1.0f Assets.DeadBlazeSong world
-            (Cascade, world)
+            World.playSong 0 1.0f Assets.DeadBlazeSong world
 
         static let handleStoppingPlay _ world =
-            let world = World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
-            (Cascade, world)
+            World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
 
         static let handleStopPlay evt world =
             let screen = evt.Subscriber : Screen
             let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield !!(SectionNameStr + scstring i)]
             let layerNames = Simulants.GameplayScene.LayerName :: sectionNames
             let layers = List.map (fun layerName -> screen => layerName) layerNames
-            let world = World.destroyLayers layers world
-            (Cascade, world)
+            World.destroyLayers layers world
 
         override dispatcher.Register (screen, world) =
-            world |>
-                World.monitor handleStartPlay (Events.Select ->- screen) screen |>
-                World.monitor handleStoppingPlay (Events.OutgoingStart ->- screen) screen |>
-                World.monitor handleStopPlay (Events.Deselect ->- screen) screen
+            let world = World.monitor handleStartPlay (Events.Select ->- screen) screen world
+            let world = World.monitor handleStoppingPlay (Events.OutgoingStart ->- screen) screen world
+            let world = World.monitor handleStopPlay (Events.Deselect ->- screen) screen world
+            world

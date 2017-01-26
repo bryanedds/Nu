@@ -255,14 +255,14 @@ module Gaia =
 
     let private subscribeToEntityEvents form world =
         let selectedLayer = (World.getUserState world).SelectedLayer
-        world |>
-            World.subscribe5 Constants.SubscriptionKeys.RegisterEntity (handleNuEntityRegister form) (Events.EntityRegister ->- selectedLayer ->- Events.Wildcard) Simulants.Game |>
-            World.subscribe5 Constants.SubscriptionKeys.UnregisteringEntity (handleNuEntityUnregistering form) (Events.EntityUnregistering ->- selectedLayer ->- Events.Wildcard) Simulants.Game
+        let world = World.subscribePlus Constants.SubscriptionKeys.RegisterEntity (handleNuEntityRegister form) (Events.EntityRegister ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
+        let world = World.subscribePlus Constants.SubscriptionKeys.UnregisteringEntity (handleNuEntityUnregistering form) (Events.EntityUnregistering ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
+        world
 
     let private unsubscribeFromEntityEvents world =
-        world |>
-            World.unsubscribe Constants.SubscriptionKeys.RegisterEntity |>
-            World.unsubscribe Constants.SubscriptionKeys.UnregisteringEntity
+        let world = World.unsubscribe Constants.SubscriptionKeys.RegisterEntity world
+        let world = World.unsubscribe Constants.SubscriptionKeys.UnregisteringEntity world
+        world
 
     let private trySaveSelectedLayer filePath world =
         let selectedLayer = (World.getUserState world).SelectedLayer
@@ -857,11 +857,11 @@ module Gaia =
                           PastWorlds = []
                           FutureWorlds = []
                           SelectedLayer = Simulants.DefaultEditorLayer })
-                    let world = World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world
-                    let world = World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world
-                    let world = World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world
-                    let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
-                    let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
+                    let world = World.subscribePlus (makeGuid ()) (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world |> snd
+                    let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world |> snd
+                    let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world |> snd
+                    let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world |> snd
+                    let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world |> snd
                     subscribeToEntityEvents form world
                 else failwith ^ "Cannot attach Gaia to a world with no layers inside the '" + scstring Simulants.EditorScreen + "' screen."
             else failwith ^ "Cannot attach Gaia to a world with a screen selected other than '" + scstring Simulants.EditorScreen + "'."

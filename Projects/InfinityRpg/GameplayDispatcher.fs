@@ -496,18 +496,15 @@ module GameplayDispatcherModule =
 
         static let handlePlayerActivityChange _ world =
             let playerNavigatingPath = isPlayerNavigatingPath world
-            let world = Simulants.HudHalt.SetEnabled playerNavigatingPath world
-            (Cascade, world)
+            Simulants.HudHalt.SetEnabled playerNavigatingPath world
 
         static let handleTouchFeeler evt world =
             let playerInput = TouchInput evt.Data
-            let world = tryRunPlayerTurn playerInput world
-            (Cascade, world)
+            tryRunPlayerTurn playerInput world
 
         static let handleDownDetail direction _ world =
             let playerInput = DetailInput direction
-            let world = tryRunPlayerTurn playerInput world
-            (Cascade, world)
+            tryRunPlayerTurn playerInput world
 
         static let handleNewGame world =
 
@@ -549,8 +546,7 @@ module GameplayDispatcherModule =
             __c ^ createField Simulants.Scene rand world
 
         static let handleSelectTitle _ world =
-            let world = World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Assets.ButterflyGirlSong world
-            (Cascade, world)
+            World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Assets.ButterflyGirlSong world
 
         static let handleSelectGameplay _ world =
             let world =
@@ -559,17 +555,15 @@ module GameplayDispatcherModule =
                 if Simulants.Gameplay.GetShallLoadGame world && File.Exists Assets.SaveFilePath
                 then handleLoadGame world
                 else handleNewGame world
-            let world = World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Assets.HerosVengeanceSong world
-            (Cascade, world)
+            World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Assets.HerosVengeanceSong world
 
         static let handleClickSaveGame evt world =
             let gameplay = evt.Subscriber
             World.writeScreenToFile Assets.SaveFilePath gameplay world
-            (Cascade, world)
+            world
 
         static let handleDeselectGameplay _ world =
-            let world = World.destroyLayer Simulants.Scene world
-            (Cascade, world)
+            World.destroyLayer Simulants.Scene world
 
         static member PropertyDefinitions =
             [Define? ContentRandState Rand.DefaultSeedState
