@@ -747,6 +747,31 @@ module WorldScripting =
             match evaledArgs with
             | [evaledLeft; evaledRight] -> evalBinaryInner fns fnOriginOpt fnName evaledLeft evaledRight world                
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
+
+        let evalSinglet fn fnOriginOpt fnName evaledArgs world =
+            match evaledArgs with
+            | [evaledArg] -> fn fnOriginOpt fnName evaledArg world
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!fnName], "Function '" + fnName + "' requires 1 argument.", fnOriginOpt), world)
+
+        let evalDoublet fn fnOriginOpt fnName evaledArgs world =
+            match evaledArgs with
+            | [evaled; evaled2] -> fn fnOriginOpt fnName evaled evaled2 world
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!fnName], "Function '" + fnName + "' requires 2 arguments.", fnOriginOpt), world)
+
+        let evalTriplet fn fnOriginOpt fnName evaledArgs world =
+            match evaledArgs with
+            | [evaled; evaled2; evaled3] -> fn fnOriginOpt fnName evaled evaled2 evaled3 world
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!fnName], "Function '" + fnName + "' requires 3 arguments.", fnOriginOpt), world)
+
+        let evalQuadlet fn fnOriginOpt fnName evaledArgs world =
+            match evaledArgs with
+            | [evaled; evaled2; evaled3; evaled4] -> fn fnOriginOpt fnName evaled evaled2 evaled3 evaled4 world
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!fnName], "Function '" + fnName + "' requires 4 arguments.", fnOriginOpt), world)
+
+        let evalQuintet fn fnOriginOpt fnName evaledArgs world =
+            match evaledArgs with
+            | [evaled; evaled2; evaled3; evaled4; evaled5] -> fn fnOriginOpt fnName evaled evaled2 evaled3 evaled4 evaled5 world
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!fnName], "Function '" + fnName + "' requires 5 arguments.", fnOriginOpt), world)
         
         let evalV2 fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
@@ -786,7 +811,7 @@ module WorldScripting =
             | [head; foot] ->
                 match head with
                 | Int int -> evalNth5 int fnOriginOpt fnName [foot] world
-                | _ -> (Violation ([!!"InvalidNthArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Application of " + fnName + " requires an int for the first argument.", fnOriginOpt), world)
+                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Application of " + fnName + " requires an int for the first argument.", fnOriginOpt), world)
             | _ ->  (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
             
         let evalSome fnOriginOpt fnName evaledArgs world =
@@ -1034,7 +1059,8 @@ module WorldScripting =
                  ("table", evalTable)
                  ("tryFind", evalTryFind)
                  ("find", evalFind)
-                 ("product", evalProduct)]
+                 ("product", evalProduct)
+                 ("containsEntity", evalSinglet evalContainsEntity)]
 
         and isIntrinsic name =
             Intrinsics.ContainsKey name
@@ -1057,6 +1083,17 @@ module WorldScripting =
                     | Left violation -> (violation, world)
                 | Left violation -> (violation, world)
             | _ -> (Violation ([!!"InvalidArgumentTypes"; !!(String.capitalize name)], "Incorrect types of arguments for application of '" + name + "'; 1 relation and 1 stream required.", originOpt), world)
+
+        and evalContainsEntity fnOriginOpt name evaledArg world =
+            match evaledArg with
+            | String str
+            | Keyword str ->
+                let relation = Relation.makeFromString str
+                let context = World.getScriptContext world
+                let address = Relation.resolve context.SimulantAddress relation
+                let entity = Entity.proxy (atoa address)
+                (Bool (World.containsEntity entity world), world)
+            | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + name + "' requires 1 relation argument.", fnOriginOpt), world)
 
         and evalStream name stream originOpt world =
             match stream with
@@ -1238,10 +1275,6 @@ module WorldScripting =
                 | Left world -> (evaled, world)
             | success -> success
 
-        //and evalRun name args originOpt world =
-        //    match name with
-        //    | "applyBodyAngularImpulse" -> 
-
         and evalDo exprs _ world =
             let evaledEir =
                 List.foldWhileRight (fun (_, world) expr ->
@@ -1358,7 +1391,6 @@ module WorldScripting =
             | Select (exprPairs, originOpt) -> evalSelect exprPairs originOpt world
             | Try (body, handlers, originOpt) -> evalTry body handlers originOpt world
             | Do (exprs, originOpt) -> evalDo exprs originOpt world
-            | Run (_, _, originOpt) -> (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt), world) // TODO evalRun name args originOpt world
             | Break (expr, _) -> evalBreak expr world
             | Get (name, originOpt) -> evalGet name None originOpt world
             | GetFrom (name, expr, originOpt) -> evalGet name (Some expr) originOpt world

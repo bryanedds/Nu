@@ -68,7 +68,7 @@ module Scripting =
                      "list head tail cons empty isEmpty notEmpty filter fold reduce " +
                      "ring add remove " +
                      "table tryFind find " +
-                     "let fun if cond try break get set run do " +
+                     "let fun if cond try break get set do " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
                      "tickRate tickTime updateCount",
@@ -110,7 +110,6 @@ module Scripting =
         | Select of (Expr * Expr) list * SymbolOrigin option
         | Try of Expr * (Name list * Expr) list * SymbolOrigin option
         | Do of Expr list * SymbolOrigin option
-        | Run of string * Expr list * SymbolOrigin option
         | Break of Expr * SymbolOrigin option
         | Get of string * SymbolOrigin option
         | GetFrom of string * Expr * SymbolOrigin option
@@ -150,7 +149,6 @@ module Scripting =
             | Select (_, originOpt)
             | Try (_, _, originOpt)
             | Do (_, originOpt)
-            | Run (_, _, originOpt)
             | Break (_, originOpt)
             | Get (_, originOpt)
             | GetFrom (_, _, originOpt)
@@ -187,7 +185,6 @@ module Scripting =
             | (Select (left, _), Select (right, _)) -> left = right
             | (Try (leftInput, leftCases, _), Try (rightInput, rightCases, _)) -> (leftInput, leftCases) = (rightInput, rightCases)
             | (Do (left, _), Do (right, _)) -> left = right
-            | (Run (leftName, leftArgs, _), Run (rightName, rightArgs, _)) -> (leftName, leftArgs) = (rightName, rightArgs)
             | (Break (left, _), Break (right, _)) -> left = right
             | (Get (left, _), Get (right, _)) -> left = right
             | (GetFrom (leftPropertyName, leftTarget, _), GetFrom (rightPropertyName, rightTarget, _)) -> (leftPropertyName, leftTarget) = (rightPropertyName, rightTarget)
@@ -401,8 +398,6 @@ module Scripting =
                     let doSymbol = Symbol.Atom ("do", None)
                     let exprSymbols = List.map this.ExprToSymbol exprs
                     Symbol.Symbols (doSymbol :: exprSymbols, originOpt) :> obj
-                | Run _ ->
-                    Symbols ([], None) :> obj // TODO: implement
                 | Break (body, originOpt) ->
                     let breakSymbol = Symbol.Atom ("break", None)
                     let bodySymbol = this.ExprToSymbol body

@@ -784,26 +784,30 @@ module WorldTypes =
         override this.GetHashCode () = this.GameAddress.GetHashCode ()
 
         override this.ToString () = scstring this.GameAddress
-    
+
         /// Get the latest value of a game's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewGame Debug.World.Chosen
-    
+
         /// Create a Game proxy from an address.
-        static member proxy address = { GameAddress = address }
-    
+        static member proxy address =
+#if DEBUG
+            if Address.notEmpty address then failwith "Game address must not have any names."
+#endif
+            { GameAddress = address }
+
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (game : Game) = acatf address (atooa game.GameAddress)
         
         /// Concatenate two addresses, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (game : Game) = acatff address game.GameAddress
-    
+
         /// Concatenate two addresses, taking the type of first address.
         static member (->-) (address, game) = Game.acatf address game
-    
+
         /// Concatenate two addresses, forcing the type of first address.
         static member (->>-) (address, game) = acatff address game
-    
+
     /// The screen type that allows transitioning to and from other screens, and also hosts the
     /// currently interactive layers of entities.
     and [<CustomEquality; NoComparison>] Screen =
@@ -831,7 +835,11 @@ module WorldTypes =
         member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
     
         /// Create a Screen proxy from an address.
-        static member proxy address = { ScreenAddress = address }
+        static member proxy address =
+#if DEBUG
+            if Address.length address <> 1 then failwith "Screen address must have 1 name."
+#endif
+            { ScreenAddress = address }
     
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (screen : Screen) = acatf address (atooa screen.ScreenAddress)
@@ -880,7 +888,11 @@ module WorldTypes =
         member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
     
         /// Create a Layer proxy from an address.
-        static member proxy address = { LayerAddress = address }
+        static member proxy address =
+#if DEBUG
+            if Address.length address <> 2 then failwith "Layer address must have 2 names."
+#endif
+            { LayerAddress = address }
     
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (layer : Layer) = acatf address (atooa layer.LayerAddress)
@@ -936,6 +948,9 @@ module WorldTypes =
     
         /// Create an Entity proxy from an address.
         static member proxy address =
+#if DEBUG
+            if Address.length address <> 3 then failwith "Entity address must have 2 names."
+#endif
             { EntityStateOpt = Unchecked.defaultof<EntityState>
               EntityAddress = address
               UpdateAddress = ltoa [!!"Update"; !!"Event"] ->>- address

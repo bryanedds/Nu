@@ -237,6 +237,10 @@ module AddressModule =
         let isEmpty address =
             List.isEmpty address.Names
 
+        /// Check that an address has one or more names.
+        let notEmpty address =
+            List.notEmpty address.Names
+
 [<AutoOpen>]
 module AddressOperators =
 
