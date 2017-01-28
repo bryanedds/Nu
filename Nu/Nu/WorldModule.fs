@@ -99,7 +99,7 @@ module WorldModule =
 #endif
 
         /// Qualify the context of the event system.
-        static member qualifyEventContext address (world : World) =
+        static member internal qualifyEventContext address (world : World) =
             EventWorld.qualifyEventContext address world
 
         /// Sort subscriptions using categorization via the 'by' procedure.
@@ -547,7 +547,7 @@ module WorldModule =
             | Absolute -> World.getViewBoundsAbsolute world
 
         /// Check that the given bounds is within the eye's sight.
-        static member inView viewType (bounds : Vector4) world =
+        static member isBoundsInView viewType (bounds : Vector4) world =
             let viewBounds = World.getViewBounds viewType world
             Math.isBoundsIntersectingBounds bounds viewBounds
 
@@ -1667,12 +1667,12 @@ module WorldModule =
                 finalPropertyDefinitionNameCounts
 
         /// Get an entity's intrinsic facet names.
-        static member getIntrinsicFacetNames entityState =
+        static member getEntityIntrinsicFacetNames entityState =
             let intrinsicFacetNames = entityState.DispatcherNp |> getType |> Reflection.getIntrinsicFacetNames
             Set.ofList intrinsicFacetNames
 
         /// Get an entity's facet names via reflection.
-        static member getFacetNamesReflectively entityState =
+        static member getEntityFacetNamesReflectively entityState =
             let facetNames = List.map getTypeName entityState.FacetsNp
             Set.ofList facetNames
 
@@ -1749,7 +1749,7 @@ module WorldModule =
                 facetNamesToAdd
 
         static member internal trySetFacetNames facetNames entityState entityOpt world =
-            let intrinsicFacetNames = World.getIntrinsicFacetNames entityState
+            let intrinsicFacetNames = World.getEntityIntrinsicFacetNames entityState
             let extrinsicFacetNames = Set.fold (flip Set.remove) facetNames intrinsicFacetNames
             let facetNamesToRemove = Set.difference entityState.FacetNames extrinsicFacetNames
             let facetNamesToAdd = Set.difference extrinsicFacetNames entityState.FacetNames
@@ -1778,7 +1778,7 @@ module WorldModule =
                 match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
                 | Right (entityState, world) ->
                     let oldWorld = world
-                    let facetNames = World.getFacetNamesReflectively entityState
+                    let facetNames = World.getEntityFacetNamesReflectively entityState
                     let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState oldOverlayer overlayer
                     let world = World.setEntityState entityState entity world
                     World.updateEntityInEntityTree entity oldWorld world
@@ -2049,7 +2049,7 @@ module WorldModule =
                 | Some overlayName ->
                     // OPTIMIZATION: apply overlay only when it will change something
                     if dispatcherName <> overlayName then
-                        let facetNames = World.getFacetNamesReflectively entityState
+                        let facetNames = World.getEntityFacetNamesReflectively entityState
                         Overlayer.applyOverlay EntityState.copy dispatcherName overlayName facetNames entityState overlayer
                     else entityState
                 | None -> entityState
@@ -2166,7 +2166,7 @@ module WorldModule =
                 | Some overlayName ->
                     // OPTIMIZATION: applying overlay only when it will change something
                     if dispatcherName <> overlayName then
-                        let facetNames = World.getFacetNamesReflectively entityState
+                        let facetNames = World.getEntityFacetNamesReflectively entityState
                         Overlayer.applyOverlay EntityState.copy dispatcherName overlayName facetNames entityState overlayer
                     else entityState
                 | None -> entityState
@@ -2198,7 +2198,7 @@ module WorldModule =
                     defaultOverlayNameOpt <> (propertyValue :?> string option)
                 else
                     let overlayer = World.getOverlayer world
-                    let facetNames = World.getFacetNamesReflectively entityState
+                    let facetNames = World.getEntityFacetNamesReflectively entityState
                     Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entityState overlayer
             let getEntityProperties = Reflection.writePropertiesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
             { entityDescriptor with EntityProperties = getEntityProperties }
@@ -2237,7 +2237,7 @@ module WorldModule =
                     match World.trySynchronizeFacetsToNames entityState.FacetNames entityState (Some entity) world with
                     | Right (entityState, world) -> (entityState, world)
                     | Left error -> Log.debug error; (entityState, world)
-                let facetNames = World.getFacetNamesReflectively entityState
+                let facetNames = World.getEntityFacetNamesReflectively entityState
                 let entityState = Overlayer.applyOverlay EntityState.copy oldOverlayName overlayName facetNames entityState overlayer
                 let oldWorld = world
                 let world = World.setEntityState entityState entity world

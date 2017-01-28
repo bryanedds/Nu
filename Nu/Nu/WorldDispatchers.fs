@@ -1197,7 +1197,7 @@ module TileMapDispatcherModule =
                                 | Relative -> tileMap.GetParallax world * depth * -World.getEyeCenter world
                             let parallaxPosition = tileMap.GetPosition world + parallaxTranslation
                             let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
-                            if World.inView viewType (Math.makeBounds parallaxPosition size) world then
+                            if World.isBoundsInView viewType (Math.makeBounds parallaxPosition size) world then
                                 World.addRenderMessage
                                     (RenderDescriptorsMessage
                                         [LayerableDescriptor 
