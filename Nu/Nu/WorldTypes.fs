@@ -768,6 +768,7 @@ module WorldTypes =
             end
     
     /// The game type that hosts the various screens used to navigate through a game.
+    /// TODO: make this into a class with address checking in the constructor.
     and [<CustomEquality; NoComparison>] Game =
         { GameAddress : Game Address }
     
@@ -810,6 +811,7 @@ module WorldTypes =
 
     /// The screen type that allows transitioning to and from other screens, and also hosts the
     /// currently interactive layers of entities.
+    /// TODO: make this into a class with address checking in the constructor.
     and [<CustomEquality; NoComparison>] Screen =
         { ScreenAddress : Screen Address }
     
@@ -863,6 +865,7 @@ module WorldTypes =
         static member (=>) (screen : Screen, layerNameStr) = screen => !!layerNameStr
     
     /// Forms a logical layer of entities.
+    /// TODO: make this into a class with address checking in the constructor.
     and [<CustomEquality; NoComparison>] Layer =
         { LayerAddress : Layer Address }
     
@@ -919,6 +922,7 @@ module WorldTypes =
     /// to implement things like buttons, characters, blocks, and things of that sort.
     /// OPTIMIZATION: Includes pre-constructed entity change and update event addresses to avoid
     /// reconstructing new ones for each entity every frame.
+    /// TODO: make this into a class with address checking in the constructor.
     and [<CustomEquality; NoComparison>] Entity =
         { mutable EntityStateOpt : EntityState
           EntityAddress : Entity Address
