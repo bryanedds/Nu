@@ -392,7 +392,7 @@ module WorldModule2 =
             // to instead store past / future worlds only once their current frame has been
             // processed.
             let world = World.clearSubsystemsMessages world
-            let world = World.addPhysicsMessage RebuildPhysicsHackMessage world
+            let world = World.enqueuePhysicsMessage RebuildPhysicsHackMessage world
             let entities = World.getEntities layer world
             Seq.fold (flip World.propagateEntityPhysics) world entities
 
@@ -532,7 +532,7 @@ module WorldModule2 =
                 let color = Vector4 (Vector3.One, alpha)
                 let position = -eyeSize * 0.5f // negation for right-handedness
                 let size = eyeSize
-                World.addRenderMessage
+                World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = Single.MaxValue

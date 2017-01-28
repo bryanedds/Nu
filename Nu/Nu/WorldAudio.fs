@@ -30,14 +30,14 @@ module WorldAudioModule =
 
     type World with
 
-        /// Add an audio message to the world.
-        static member addAudioMessage (message : AudioMessage) world =
+        /// Enqueue an audio message in the world.
+        static member enqueueAudioMessage (message : AudioMessage) world =
             World.updateSubsystem (fun aps _ -> aps.EnqueueMessage message) Constants.Engine.AudioPlayerSubsystemName world
 
         /// Send a message to the audio system to play a song.
         static member playSong timeToFadeOutSongMs volume song world =
             let playSongMessage = PlaySongMessage { TimeToFadeOutSongMs = timeToFadeOutSongMs; Volume = volume; Song = song }
-            World.addAudioMessage playSongMessage world
+            World.enqueueAudioMessage playSongMessage world
 
         /// Send a message to the audio system to play a song.
         static member playSong6 timeToFadeOutSongMs volume songPackageName songAssetName world =
@@ -47,7 +47,7 @@ module WorldAudioModule =
         /// Send a message to the audio system to play a sound.
         static member playSound volume sound world =
             let playSoundMessage = PlaySoundMessage { Sound = sound; Volume = volume }
-            World.addAudioMessage playSoundMessage world
+            World.enqueueAudioMessage playSoundMessage world
 
         /// Send a message to the audio system to play a sound.
         static member playSound5 volume soundPackageName soundAssetName world =
@@ -57,28 +57,28 @@ module WorldAudioModule =
         /// Send a message to the audio system to fade out any current song.
         static member fadeOutSong timeToFadeOutSongMs world =
             let fadeOutSongMessage = FadeOutSongMessage timeToFadeOutSongMs
-            World.addAudioMessage fadeOutSongMessage world
+            World.enqueueAudioMessage fadeOutSongMessage world
 
         /// Send a message to the audio system to stop a song.
         static member stopSong world =
-            World.addAudioMessage StopSongMessage world
+            World.enqueueAudioMessage StopSongMessage world
             
         /// Hint that an audio asset package with the given name should be loaded. Should be used
         /// to avoid loading assets at inconvenient times (such as in the middle of game play!)
         static member hintAudioPackageUse packageName world =
             let hintAudioPackageUseMessage = HintAudioPackageUseMessage { PackageName = packageName }
-            World.addAudioMessage hintAudioPackageUseMessage world
+            World.enqueueAudioMessage hintAudioPackageUseMessage world
             
         /// Hint that an audio package should be unloaded since its assets will not be used again
         /// (or until specified via a HintAudioPackageUseMessage).
         static member hintAudioPackageDisuse packageName world =
             let hintAudioPackageDisuseMessage = HintAudioPackageDisuseMessage { PackageName = packageName }
-            World.addAudioMessage hintAudioPackageDisuseMessage world
+            World.enqueueAudioMessage hintAudioPackageDisuseMessage world
 
         /// Send a message to the audio player to reload its audio assets.
         static member reloadAudioAssets world =
             let reloadAudioAssetsMessage = ReloadAudioAssetsMessage
-            World.addAudioMessage reloadAudioAssetsMessage world
+            World.enqueueAudioMessage reloadAudioAssetsMessage world
 
 /// The subsystem for the world's audio player.
 type AudioPlayerSubsystem = WorldAudioModule.AudioPlayerSubsystem

@@ -210,7 +210,7 @@ module EffectFacetModule =
                     let artifacts = EffectSystem.eval effect effectSlice effectSystem
                     List.fold (fun world artifact ->
                         match artifact with
-                        | Effects.RenderArtifact renderDescriptors -> World.addRenderMessage (RenderDescriptorsMessage renderDescriptors) world
+                        | Effects.RenderArtifact renderDescriptors -> World.enqueueRenderMessage (RenderDescriptorsMessage renderDescriptors) world
                         | Effects.SoundArtifact (volume, sound) -> World.playSound volume sound world
                         | Effects.TagArtifact (name, metadata, slice) ->
                             let effectTags = entity.GetEffectTagsNp world
@@ -241,11 +241,6 @@ module EffectFacetModule =
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
 // TODO: ScriptFacet
-//             Define? OnRegister Scripting.UnitValue
-//             Define? OnUnregister Scripting.UnitValue
-//             Define? OnUpdate Scripting.UnitValue
-//             Define? OnPostUpdate Scripting.UnitValue
-//             Define? OnActualize Scripting.UnitValue
 
 [<AutoOpen>]
 module RigidBodyFacetModule =
@@ -362,6 +357,11 @@ module RigidBodyFacetModule =
             let world = facet.UnregisterPhysics (entity, world)
             facet.RegisterPhysics (entity, world)
 
+        override facet.TryGetCalculatedProperty (name, entity, world) =
+            match name with
+            | "PhysicsId" -> Some (entity.GetPhysicsId world :> obj, typeof<PhysicsId>)
+            | _ -> None
+
 [<AutoOpen>]
 module StaticSpriteFacetModule =
 
@@ -379,7 +379,7 @@ module StaticSpriteFacetModule =
 
         override facet.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.InView world then
-                World.addRenderMessage
+                World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = entity.GetDepthLayered world
@@ -449,7 +449,7 @@ module AnimatedSpriteFacetModule =
 
         override facet.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.InView world then
-                World.addRenderMessage
+                World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = entity.GetDepthLayered world
@@ -605,7 +605,7 @@ module ButtonDispatcherModule =
 
         override dispatcher.Actualize (button, world) =
             if button.GetVisibleLayered world then
-                World.addRenderMessage
+                World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = button.GetDepthLayered world
@@ -646,7 +646,7 @@ module LabelDispatcherModule =
 
         override dispatcher.Actualize (label, world) =
             if label.GetVisibleLayered world then
-                World.addRenderMessage
+                World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = label.GetDepthLayered world
@@ -703,7 +703,7 @@ module TextDispatcherModule =
 
         override dispatcher.Actualize (text, world) =
             if text.GetVisibleLayered world then
-                World.addRenderMessage
+                World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = text.GetDepthLayered world
@@ -813,7 +813,7 @@ module ToggleDispatcherModule =
 
         override dispatcher.Actualize (toggle, world) =
             if toggle.GetVisibleLayered world then
-                World.addRenderMessage
+                World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = toggle.GetDepthLayered world
@@ -928,7 +928,7 @@ module FillBarDispatcherModule =
             if fillBar.GetVisibleLayered world then
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
                 let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
-                World.addRenderMessage
+                World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = fillBar.GetDepthLayered world
@@ -1198,7 +1198,7 @@ module TileMapDispatcherModule =
                             let parallaxPosition = tileMap.GetPosition world + parallaxTranslation
                             let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
                             if World.isBoundsInView viewType (Math.makeBounds parallaxPosition size) world then
-                                World.addRenderMessage
+                                World.enqueueRenderMessage
                                     (RenderDescriptorsMessage
                                         [LayerableDescriptor 
                                             { Depth = depth

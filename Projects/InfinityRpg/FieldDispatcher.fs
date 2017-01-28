@@ -64,7 +64,7 @@ module FieldDispatcherModule =
                             sprite :: sprites)
                         fieldMap.FieldTiles
                         []
-                World.addRenderMessage
+                World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = field.GetDepth world
