@@ -521,7 +521,7 @@ module StreamOperators =
     /// subscriber exists (doing nothing otherwise).
     let [<DebuggerHidden; DebuggerStepThrough>] ( --> ) stream (property : PropertyTag<'a, 'b, 'w>) =
         subscribe (fun a world ->
-            if world.ContainsParticipant a.Subscriber then
+            if world.ParticipantExists a.Subscriber then
                 match property.SetOpt with
                 | Some set -> set a.Data world
                 | None -> world // TODO: log info here about property not being set-able?

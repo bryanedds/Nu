@@ -790,12 +790,17 @@ module WorldTypes =
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewGame Debug.World.Chosen
 
+        /// Try to create a Game proxy from an address.
+        static member tryProxy address =
+            if Address.isEmpty address
+            then Some { GameAddress = address }
+            else None
+
         /// Create a Game proxy from an address.
         static member proxy address =
-#if DEBUG
-            if Address.notEmpty address then failwith "Game address must not have any names."
-#endif
-            { GameAddress = address }
+            match Game.tryProxy address with
+            | Some proxy -> proxy
+            | None -> failwith "Game address must not have any names."
 
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (game : Game) = acatf address (atooa game.GameAddress)
@@ -835,13 +840,18 @@ module WorldTypes =
         /// Get the latest value of a screen's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
-    
+
+        /// Try to create a Screen proxy from an address.
+        static member tryProxy address =
+            if Address.length address = 1
+            then Some { ScreenAddress = address }
+            else None
+
         /// Create a Screen proxy from an address.
         static member proxy address =
-#if DEBUG
-            if Address.length address <> 1 then failwith "Screen address must have 1 name."
-#endif
-            { ScreenAddress = address }
+            match Screen.tryProxy address with
+            | Some proxy -> proxy
+            | None -> failwith "Screen address must have 1 name."
     
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (screen : Screen) = acatf address (atooa screen.ScreenAddress)
@@ -889,13 +899,18 @@ module WorldTypes =
         /// Get the latest value of a layer's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
-    
+
+        /// Try to create a Layer proxy from an address.
+        static member tryProxy address =
+            if Address.length address = 2
+            then Some { LayerAddress = address }
+            else None
+
         /// Create a Layer proxy from an address.
         static member proxy address =
-#if DEBUG
-            if Address.length address <> 2 then failwith "Layer address must have 2 names."
-#endif
-            { LayerAddress = address }
+            match Layer.tryProxy address with
+            | Some proxy -> proxy
+            | None -> failwith "Layer address must have 1 name."
     
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (layer : Layer) = acatf address (atooa layer.LayerAddress)
@@ -949,16 +964,23 @@ module WorldTypes =
         /// Get the latest value of an entity's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
-    
+
+        /// Try to create an Entity proxy from an address.
+        static member tryProxy address =
+            if Address.length address = 3 then
+                let proxy =
+                    { EntityStateOpt = Unchecked.defaultof<EntityState>
+                      EntityAddress = address
+                      UpdateAddress = ltoa [!!"Update"; !!"Event"] ->>- address
+                      PostUpdateAddress = ltoa [!!"PostUpdate"; !!"Event"] ->>- address }
+                Some proxy
+            else None
+
         /// Create an Entity proxy from an address.
         static member proxy address =
-#if DEBUG
-            if Address.length address <> 3 then failwith "Entity address must have 2 names."
-#endif
-            { EntityStateOpt = Unchecked.defaultof<EntityState>
-              EntityAddress = address
-              UpdateAddress = ltoa [!!"Update"; !!"Event"] ->>- address
-              PostUpdateAddress = ltoa [!!"PostUpdate"; !!"Event"] ->>- address }
+            match Entity.tryProxy address with
+            | Some proxy -> proxy
+            | None -> failwith "Entity address must have 3 names."
     
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
@@ -1018,7 +1040,7 @@ module WorldTypes =
             member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
             member this.GetEventSystem () = this.EventSystem
             member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
-            member this.ContainsParticipant participant =
+            member this.ParticipantExists participant =
                 match participant with
                 | :? Entity as entity -> UMap.containsKey entity.EntityAddress this.EntityStates
                 | :? Layer as layer -> UMap.containsKey layer.LayerAddress this.LayerStates

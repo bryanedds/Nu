@@ -1060,7 +1060,10 @@ module WorldScripting =
                  ("tryFind", evalTryFind)
                  ("find", evalFind)
                  ("product", evalProduct)
-                 ("containsEntity", evalSinglet evalContainsEntity)]
+                 ("entityExists", evalSinglet evalSimulantExists)
+                 ("layerExists", evalSinglet evalSimulantExists)
+                 ("screenExists", evalSinglet evalSimulantExists)
+                 ("simulantExists", evalSinglet evalSimulantExists)]
 
         and isIntrinsic name =
             Intrinsics.ContainsKey name
@@ -1084,15 +1087,16 @@ module WorldScripting =
                 | Left violation -> (violation, world)
             | _ -> (Violation ([!!"InvalidArgumentTypes"; !!(String.capitalize name)], "Incorrect types of arguments for application of '" + name + "'; 1 relation and 1 stream required.", originOpt), world)
 
-        and evalContainsEntity fnOriginOpt name evaledArg world =
+        and evalSimulantExists fnOriginOpt name evaledArg world =
             match evaledArg with
             | String str
             | Keyword str ->
                 let relation = Relation.makeFromString str
                 let context = World.getScriptContext world
                 let address = Relation.resolve context.SimulantAddress relation
-                let entity = Entity.proxy (atoa address)
-                (Bool (World.containsEntity entity world), world)
+                match World.tryProxySimulant address with
+                | Some simulant -> (Bool (World.simulantExists simulant world), world)
+                | None -> (Bool false, world)
             | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + name + "' requires 1 relation argument.", fnOriginOpt), world)
 
         and evalStream name stream originOpt world =

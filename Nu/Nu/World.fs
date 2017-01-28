@@ -146,7 +146,7 @@ module WorldModule2 =
         static member tryTransitionScreen destination world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
-                if World.containsScreen selectedScreen world then
+                if World.screenExists selectedScreen world then
                     let subscriptionKey = makeGuid ()
                     let subscription = fun (_ : Event<unit, Screen>) world ->
                         match World.getScreenTransitionDestinationOpt world with
@@ -257,7 +257,7 @@ module WorldModule2 =
             else
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
-                    if World.containsScreen selectedScreen world then
+                    if World.screenExists selectedScreen world then
                         let world = World.setScreenTransitionState OutgoingState selectedScreen world
                         (Cascade, world)
                     else

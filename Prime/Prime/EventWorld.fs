@@ -13,7 +13,7 @@ type EventWorld<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
         abstract member GetLiveness : unit -> Liveness
         abstract member GetEventSystem : unit -> 'w EventSystem
         abstract member UpdateEventSystem : ('w EventSystem -> 'w EventSystem) -> 'w
-        abstract member ContainsParticipant : Participant -> bool
+        abstract member ParticipantExists : Participant -> bool
         abstract member PublishEvent<'a, 'p when 'p :> Participant> : Participant -> 'p -> 'a -> 'a Address -> EventTrace -> obj -> 'w -> Handling * 'w
         end
 
