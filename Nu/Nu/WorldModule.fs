@@ -802,8 +802,8 @@ module WorldModule =
             let world = World.updateScreenStateWithoutEvent updater screen world
             World.publishScreenChange propertyName screen oldWorld world
 
-        /// Check that the world contains the proxied screen.
-        static member containsScreen screen world =
+        /// Check that a screen exists in the world.
+        static member screenExists screen world =
             Option.isSome ^ World.getScreenStateOpt screen world
 
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
@@ -846,7 +846,7 @@ module WorldModule =
         static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing screen world
 
         static member internal tryGetScreenProperty propertyName screen world =
-            if World.containsScreen screen world then
+            if World.screenExists screen world then
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> Some (World.getScreenId screen world :> obj, typeof<Guid>)
                 | "Name" -> Some (World.getScreenName screen world :> obj, typeof<Name>)
@@ -896,7 +896,7 @@ module WorldModule =
             | _ -> ScreenState.getProperty propertyName (World.getScreenState screen world)
 
         static member internal trySetScreenProperty propertyName (property : obj * Type) screen world =
-            if World.containsScreen screen world then
+            if World.screenExists screen world then
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> (false, world)
                 | "Name" -> (false, world)
@@ -997,14 +997,14 @@ module WorldModule =
             World.choose world
 
         static member internal addScreen mayReplace screenState screen world =
-            let isNew = not ^ World.containsScreen screen world
+            let isNew = not ^ World.screenExists screen world
             if isNew || mayReplace then
                 let world = World.addScreenState screenState screen world
                 if isNew then World.registerScreen screen world else world
             else failwith ^ "Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'."
 
         static member internal removeScreen3 removeLayers screen world =
-            if World.containsScreen screen world then
+            if World.screenExists screen world then
                 let world = World.unregisterScreen screen world
                 let world = removeLayers screen world
                 World.removeScreenState screen world
@@ -1045,7 +1045,7 @@ module WorldModule =
             // add the screen's state to the world
             let screen = screenState.Name |> ntoa |> Screen.proxy
             let screenState =
-                if World.containsScreen screen world
+                if World.screenExists screen world
                 then { screenState with EntityTreeNp = World.getScreenEntityTreeNp screen world }
                 else screenState
             let world = World.addScreen true screenState screen world
@@ -1152,8 +1152,8 @@ module WorldModule =
             let world = World.updateLayerStateWithoutEvent updater layer world
             World.publishLayerChange propertyName layer oldWorld world
 
-        /// Check that the world contains a layer.
-        static member containsLayer layer world =
+        /// Check that a layer exists in the world.
+        static member layerExists layer world =
             Option.isSome ^ World.getLayerStateOpt layer world
 
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
@@ -1190,7 +1190,7 @@ module WorldModule =
         static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> { layerState with Visible = value }) Property? Visible layer world
 
         static member internal tryGetLayerProperty propertyName layer world =
-            if World.containsLayer layer world then
+            if World.layerExists layer world then
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> Some (World.getLayerId layer world :> obj, typeof<Guid>)
                 | "Name" -> Some (World.getLayerName layer world :> obj, typeof<Name>)
@@ -1234,7 +1234,7 @@ module WorldModule =
             | _ -> LayerState.getProperty propertyName (World.getLayerState layer world)
 
         static member internal trySetLayerProperty propertyName (property : obj * Type) layer world =
-            if World.containsLayer layer world then
+            if World.layerExists layer world then
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> (false, world)
                 | "Name" -> (false, world)
@@ -1325,14 +1325,14 @@ module WorldModule =
             World.choose world
 
         static member private addLayer mayReplace layerState layer world =
-            let isNew = not ^ World.containsLayer layer world
+            let isNew = not ^ World.layerExists layer world
             if isNew || mayReplace then
                 let world = World.addLayerState layerState layer world
                 if isNew then World.registerLayer layer world else world
             else failwith ^ "Adding a layer that the world already contains at address '" + scstring layer.LayerAddress + "'."
 
         static member internal removeLayer3 removeEntities layer world =
-            if World.containsLayer layer world then
+            if World.layerExists layer world then
                 let world = World.unregisterLayer layer world
                 let world = removeEntities layer world
                 World.removeLayerState layer world
@@ -1541,8 +1541,8 @@ module WorldModule =
             then List.fold (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
             else world
 
-        /// Check that the world contains an entity.
-        static member containsEntity entity world =
+        /// Check that an entity exists in the world.
+        static member entityExists entity world =
             Option.isSome ^ World.getEntityStateOpt entity world
 
         static member private getEntityStateBoundsMax entityState =
@@ -1786,7 +1786,7 @@ module WorldModule =
             | None -> world
 
         static member internal tryGetEntityProperty propertyName entity world =
-            if World.containsEntity entity world then
+            if World.entityExists entity world then
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> Some (World.getEntityId entity world :> obj, typeof<Guid>)
                 | "Name" -> Some (World.getEntityName entity world :> obj, typeof<Name>)
@@ -1842,7 +1842,7 @@ module WorldModule =
             | _ -> EntityState.getProperty propertyName (World.getEntityState entity world)
 
         static member internal trySetEntityProperty propertyName (property : obj * Type) entity world =
-            if World.containsEntity entity world then
+            if World.entityExists entity world then
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> (false, world)
                 | "Name" -> (false, world)
@@ -1937,7 +1937,7 @@ module WorldModule =
                 | Some [] -> failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
                 | Some (_ :: _) -> true
                 | None -> false
-            if World.containsEntity entity world
+            if World.entityExists entity world
             then setFlag publishUpdates entity world
             else world
 
@@ -1955,7 +1955,7 @@ module WorldModule =
         static member private addEntity mayReplace entityState entity world =
 
             // add entity only if it is new or is explicitly able to be replaced
-            let isNew = not ^ World.containsEntity entity world
+            let isNew = not ^ World.entityExists entity world
             if isNew || mayReplace then
 
                 // get old world for entity tree rebuild and change events
@@ -2066,7 +2066,7 @@ module WorldModule =
         static member private removeEntity entity world =
             
             // ensure entity exists in the world
-            if World.containsEntity entity world then
+            if World.entityExists entity world then
                 
                 // publish event and unregister entity
                 let world =
@@ -2274,16 +2274,21 @@ module WorldModule =
 
     type World with
 
-        static member containsSimulant (simulant : Simulant) (world : World) =
-            (world :> EventWorld<Game, World>).ContainsParticipant simulant
+        static member simulantExists (simulant : Simulant) (world : World) =
+            (world :> EventWorld<Game, World>).ParticipantExists simulant
 
         static member tryProxySimulant address =
             match Address.getNames address with
-            | [] -> Some (Game.proxy Address.empty :> Simulant)
-            | [_] -> Some (Screen.proxy (Address.changeType<Simulant, Screen> address) :> Simulant)
-            | [_; _] -> Some (Layer.proxy (Address.changeType<Simulant, Layer> address) :> Simulant)
-            | [_; _; _] -> Some (Entity.proxy (Address.changeType<Simulant, Entity> address) :> Simulant)
+            | [] -> Option.map (fun game -> game :> Simulant) (Game.tryProxy Address.empty)
+            | [_] -> Option.map (fun screen -> screen :> Simulant) (Screen.tryProxy (Address.changeType<Simulant, Screen> address))
+            | [_; _] -> Option.map (fun layer -> layer :> Simulant) (Layer.tryProxy (Address.changeType<Simulant, Layer> address))
+            | [_; _; _] -> Option.map (fun entity -> entity :> Simulant) (Entity.tryProxy (Address.changeType<Simulant, Entity> address))
             | _ -> None
+        
+        static member proxySimulant address =
+            match World.tryProxySimulant address with
+            | Some simulant -> simulant
+            | None -> failwithf "Could not proxy simulant using address '%s'." (scstring address)
 
         static member internal tryGetSimulantProperty name (simulant : Simulant) world =
             match simulant with

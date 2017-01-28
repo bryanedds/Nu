@@ -22,7 +22,7 @@ module EventTests =
             member this.GetLiveness () = Running
             member this.GetEventSystem () = this.TestEventSystem
             member this.UpdateEventSystem updater = { this with TestEventSystem = updater this.TestEventSystem }
-            member this.ContainsParticipant participant = participant.GetType () = typeof<TestParticipant>
+            member this.ParticipantExists participant = participant.GetType () = typeof<TestParticipant>
             member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world =
                 match participant with
                 | :? TestParticipant -> EventWorld.publishEvent<'a, 'p, TestParticipant, TestParticipant, TestWorld> participant publisher eventData eventAddress eventTrace subscription world

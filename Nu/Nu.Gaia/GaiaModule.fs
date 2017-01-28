@@ -143,7 +143,7 @@ module Gaia =
         match form.propertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             entityTds.RefWorld := world // must be set for property grid
-            if World.containsEntity entityTds.DescribedEntity world
+            if World.entityExists entityTds.DescribedEntity world
             then form.propertyGrid.Refresh ()
             else deselectEntity form world
         | _ -> ()
