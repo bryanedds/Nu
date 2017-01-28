@@ -120,7 +120,7 @@ module WorldEntityModule =
         /// Query than an entity is in the camera's view.
         member this.InView world =
             if not ^ this.GetOmnipresent world then
-                World.inView
+                World.isBoundsInView
                     (this.GetViewType world)
                     (this.GetBoundsOverflow world)
                     world

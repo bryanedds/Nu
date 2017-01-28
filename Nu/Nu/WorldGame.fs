@@ -104,7 +104,7 @@ module WorldGameModule =
         member this.GetViewBounds viewType world = World.getViewBounds viewType world
 
         /// Check that the given bounds is within the eye's sight.
-        member this.InView viewType bounds world = World.inView viewType bounds world
+        member this.InView viewType bounds world = World.isBoundsInView viewType bounds world
 
         /// Transform the given mouse position to screen space.
         member this.MouseToScreen mousePosition world = World.mouseToScreen mousePosition world

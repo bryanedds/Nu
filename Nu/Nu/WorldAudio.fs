@@ -54,7 +54,7 @@ module WorldAudioModule =
             let sound = { PackageName = soundPackageName; AssetName = soundAssetName }
             World.playSound volume sound world
 
-        /// Send a message to the audio system to fade out a song.
+        /// Send a message to the audio system to fade out any current song.
         static member fadeOutSong timeToFadeOutSongMs world =
             let fadeOutSongMessage = FadeOutSongMessage timeToFadeOutSongMs
             World.addAudioMessage fadeOutSongMessage world
