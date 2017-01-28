@@ -147,7 +147,7 @@ module EventWorld =
             else getEventAddresses1 eventAddress
         else [eventAddress]
 
-    let debugSubscriptionTypeMismatch () =
+    let private debugSubscriptionTypeMismatch () =
         Log.debug ^
             "If you've reached this exception, then you've probably inadvertantly mixed up an event type " +
             "parameter for some form of EventWorld.publish or subscribe. " +
@@ -228,7 +228,7 @@ module EventWorld =
         subscriptions
 
     /// Publish an event, using the given publishSorter procedures to arrange the order to which subscriptions are published.
-    let publish7<'a, 'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
+    let publishPlus<'a, 'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         (publishSorter : SubscriptionSorter<'w>)
         (eventData : 'a)
         (eventAddress : 'a Address)
@@ -264,15 +264,10 @@ module EventWorld =
                 subscriptions
         world
 
-    /// Publish an event, specifying whether to allow usage of a wildcard subscription.
-    let publish6<'a, 'p, 'g, 'w when 'p :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
-        (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard (world : 'w) =
-        publish7<'a, 'p, 'g, 'w> sortSubscriptionsNone eventData eventAddress eventTrace publisher allowWildcard world
-
     /// Publish an event with no subscription sorting.
     let publish<'a, 'p, 'g, 'w when 'p :> Participant and 'w :> EventWorld<'g, 'w>>
         (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) (world : 'w) =
-        publish6<'a, 'p, 'g, 'w> eventData eventAddress eventTrace publisher true world
+        publishPlus<'a, 'p, 'g, 'w> sortSubscriptionsNone eventData eventAddress eventTrace publisher true world
 
     /// Unsubscribe from an event.
     let unsubscribe<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> subscriptionKey (world : 'w) =

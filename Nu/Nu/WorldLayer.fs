@@ -94,7 +94,7 @@ module WorldLayerModule =
                 let dispatcher = layer.GetDispatcherNp world
                 let world = dispatcher.Update (layer, world)
                 let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
-                World.publish7 World.sortSubscriptionsByHierarchy () (Events.Update ->- layer) eventTrace Simulants.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update ->- layer) eventTrace Simulants.Game true world)
                 layer
                 world
 
@@ -103,7 +103,7 @@ module WorldLayerModule =
                 let dispatcher = layer.GetDispatcherNp world
                 let world = dispatcher.PostUpdate (layer, world)
                 let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty
-                World.publish7 World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- layer) eventTrace Simulants.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- layer) eventTrace Simulants.Game true world)
                 layer
                 world
 
