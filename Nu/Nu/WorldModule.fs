@@ -585,6 +585,11 @@ module WorldModule =
                 | None -> None
             (scriptOpt, world)
 
+        static member internal tryGetGameCalculatedProperty propertyName world =
+            let game = Game.proxy Address.empty
+            let dispatcher = World.getGameDispatcherNp world
+            dispatcher.TryGetCalculatedProperty (propertyName, game, world)
+
         static member internal tryGetGameProperty propertyName world =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> Some (World.getGameId world :> obj, typeof<Guid>)
@@ -604,7 +609,10 @@ module WorldModule =
             | "ScreenTransitionDestinationOpt" -> Some (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
             | "EyeCenter" -> Some (World.getEyeCenter world :> obj, typeof<Vector2>)
             | "EyeSize" -> Some (World.getEyeSize world :> obj, typeof<Vector2>)
-            | _ -> GameState.tryGetProperty propertyName (World.getGameState world)
+            | _ ->
+                match GameState.tryGetProperty propertyName (World.getGameState world) with
+                | None -> World.tryGetGameCalculatedProperty propertyName world
+                | Some _ as propertyOpt -> propertyOpt
 
         static member internal getGameProperty propertyName world =
             match propertyName with // OPTIMIZATION: string match for speed
@@ -624,7 +632,13 @@ module WorldModule =
             | "ScreenTransitionDestinationOpt" -> (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
             | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
             | "EyeSize" -> (World.getEyeSize world :> obj, typeof<Vector2>)
-            | _ -> GameState.getProperty propertyName (World.getGameState world)
+            | _ ->
+                match GameState.tryGetProperty propertyName (World.getGameState world) with
+                | None ->
+                    match World.tryGetGameCalculatedProperty propertyName world with
+                    | None -> failwithf "Could not find property '%s'." propertyName
+                    | Some property -> property
+                | Some property -> property
 
         static member internal trySetGameProperty propertyName (property : obj * Type) world =
             match propertyName with // OPTIMIZATION: string match for speed
@@ -651,10 +665,8 @@ module WorldModule =
                 let world =
                     World.updateGameState (fun gameState ->
                         let (successInner, gameState) = GameState.trySetProperty propertyName property gameState
-                        success <- successInner
-                        gameState)
-                        propertyName
-                        world
+                        success <- successInner; gameState)
+                        propertyName world
                 (success, world)
 
         static member internal setGameProperty propertyName (property : obj * Type) world =
@@ -845,6 +857,10 @@ module WorldModule =
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
         static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing screen world
 
+        static member internal tryGetScreenCalculatedProperty propertyName screen world =
+            let dispatcher = World.getScreenDispatcherNp screen world
+            dispatcher.TryGetCalculatedProperty (propertyName, screen, world)
+
         static member internal tryGetScreenProperty propertyName screen world =
             if World.screenExists screen world then
                 match propertyName with // OPTIMIZATION: string match for speed
@@ -868,7 +884,10 @@ module WorldModule =
                 | "TransitionTicksNp" -> Some (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
                 | "Incoming" -> Some (World.getScreenIncoming screen world :> obj, typeof<Transition>)
                 | "Outgoing" -> Some (World.getScreenOutgoing screen world :> obj, typeof<Transition>)
-                | _ -> ScreenState.tryGetProperty propertyName (World.getScreenState screen world)
+                | _ ->
+                    match ScreenState.tryGetProperty propertyName (World.getScreenState screen world) with
+                    | None -> World.tryGetScreenCalculatedProperty propertyName screen world
+                    | Some _ as propertyOpt -> propertyOpt
             else None
 
         static member internal getScreenProperty propertyName screen world =
@@ -893,7 +912,13 @@ module WorldModule =
             | "TransitionTicksNp" -> (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
             | "Incoming" -> (World.getScreenIncoming screen world :> obj, typeof<Transition>)
             | "Outgoing" -> (World.getScreenOutgoing screen world :> obj, typeof<Transition>)
-            | _ -> ScreenState.getProperty propertyName (World.getScreenState screen world)
+            | _ ->
+                match ScreenState.tryGetProperty propertyName (World.getScreenState screen world) with
+                | None ->
+                    match World.tryGetScreenCalculatedProperty propertyName screen world with
+                    | None -> failwithf "Could not find property '%s'." propertyName
+                    | Some property -> property
+                | Some property -> property
 
         static member internal trySetScreenProperty propertyName (property : obj * Type) screen world =
             if World.screenExists screen world then
@@ -924,11 +949,8 @@ module WorldModule =
                     let world =
                         World.updateScreenState (fun screenState ->
                             let (successInner, screenState) = ScreenState.trySetProperty propertyName property screenState
-                            success <- successInner
-                            screenState)
-                            propertyName
-                            screen
-                            world
+                            success <- successInner; screenState)
+                            propertyName screen world
                     (success, world)
             else (false, world)
 
@@ -1189,6 +1211,10 @@ module WorldModule =
         static member internal getLayerVisible layer world = (World.getLayerState layer world).Visible
         static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> { layerState with Visible = value }) Property? Visible layer world
 
+        static member internal tryGetLayerCalculatedProperty propertyName layer world =
+            let dispatcher = World.getLayerDispatcherNp layer world
+            dispatcher.TryGetCalculatedProperty (propertyName, layer, world)
+
         static member internal tryGetLayerProperty propertyName layer world =
             if World.layerExists layer world then
                 match propertyName with // OPTIMIZATION: string match for speed
@@ -1209,7 +1235,10 @@ module WorldModule =
                 | "OnActualize" -> Some (World.getLayerOnActualize layer world :> obj, typeof<Scripting.Expr>)
                 | "Depth" -> Some (World.getLayerDepth layer world :> obj, typeof<single>)
                 | "Visible" -> Some (World.getLayerVisible layer world :> obj, typeof<single>)
-                | _ -> LayerState.tryGetProperty propertyName (World.getLayerState layer world)
+                | _ ->
+                    match LayerState.tryGetProperty propertyName (World.getLayerState layer world) with
+                    | None -> World.tryGetLayerCalculatedProperty propertyName layer world
+                    | Some _ as propertyOpt -> propertyOpt
             else None
 
         static member internal getLayerProperty propertyName layer world =
@@ -1231,7 +1260,13 @@ module WorldModule =
             | "OnActualize" -> (World.getLayerOnActualize layer world :> obj, typeof<Scripting.Expr>)
             | "Depth" -> (World.getLayerDepth layer world :> obj, typeof<single>)
             | "Visible" -> (World.getLayerVisible layer world :> obj, typeof<single>)
-            | _ -> LayerState.getProperty propertyName (World.getLayerState layer world)
+            | _ ->
+                match LayerState.tryGetProperty propertyName (World.getLayerState layer world) with
+                | None ->
+                    match World.tryGetLayerCalculatedProperty propertyName layer world with
+                    | None -> failwithf "Could not find property '%s'." propertyName
+                    | Some property -> property
+                | Some property -> property
 
         static member internal trySetLayerProperty propertyName (property : obj * Type) layer world =
             if World.layerExists layer world then
@@ -1257,11 +1292,8 @@ module WorldModule =
                     let world =
                         World.updateLayerState (fun layerState ->
                             let (successInner, layerState) = LayerState.trySetProperty propertyName property layerState
-                            success <- successInner
-                            layerState)
-                            propertyName
-                            layer
-                            world
+                            success <- successInner; layerState)
+                            propertyName layer world
                     (success, world)
             else (false, world)
 
@@ -1785,6 +1817,15 @@ module WorldModule =
                 | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
             | None -> world
 
+        static member internal tryGetEntityCalculatedProperty propertyName entity world =
+            let dispatcher = World.getEntityDispatcherNp entity world
+            match dispatcher.TryGetCalculatedProperty (propertyName, entity, world) with
+            | None ->
+                List.tryFindPlus (fun (facet : Facet) ->
+                    facet.TryGetCalculatedProperty (propertyName, entity, world))
+                    (World.getEntityFacetsNp entity world)
+            | Some _ as propertyOpt -> propertyOpt
+
         static member internal tryGetEntityProperty propertyName entity world =
             if World.entityExists entity world then
                 match propertyName with // OPTIMIZATION: string match for speed
@@ -1811,7 +1852,10 @@ module WorldModule =
                 | "PublishPostUpdatesNp" -> Some (World.getEntityPublishPostUpdatesNp entity world :> obj, typeof<bool>)
                 | "FacetNames" -> Some (World.getEntityFacetNames entity world :> obj, typeof<string Set>)
                 | "FacetsNp" -> Some (World.getEntityFacetsNp entity world :> obj, typeof<Facet list>)
-                | _ -> EntityState.tryGetProperty propertyName (World.getEntityState entity world)
+                | _ ->
+                    match EntityState.tryGetProperty propertyName (World.getEntityState entity world) with
+                    | None -> World.tryGetEntityCalculatedProperty propertyName entity world
+                    | Some _ as propertyOpt -> propertyOpt
             else None
 
         static member internal getEntityProperty propertyName entity world =
@@ -1839,7 +1883,13 @@ module WorldModule =
             | "PublishPostUpdatesNp" -> (World.getEntityPublishPostUpdatesNp entity world :> obj, typeof<bool>)
             | "FacetNames" -> (World.getEntityFacetNames entity world :> obj, typeof<string Set>)
             | "FacetsNp" -> (World.getEntityFacetsNp entity world :> obj, typeof<Facet list>)
-            | _ -> EntityState.getProperty propertyName (World.getEntityState entity world)
+            | _ ->
+                match EntityState.tryGetProperty propertyName (World.getEntityState entity world) with
+                | None ->
+                    match World.tryGetEntityCalculatedProperty propertyName entity world with
+                    | None -> failwithf "Could not find property '%s'." propertyName
+                    | Some property -> property
+                | Some property -> property
 
         static member internal trySetEntityProperty propertyName (property : obj * Type) entity world =
             if World.entityExists entity world then
@@ -1872,12 +1922,8 @@ module WorldModule =
                     let world =
                         World.updateEntityState (fun entityState ->
                             let (successInner, entityState) = EntityState.trySetProperty propertyName property entityState
-                            success <- successInner
-                            entityState)
-                            true
-                            propertyName
-                            entity
-                            world
+                            success <- successInner; entityState)
+                            true propertyName entity world
                     (success, world)
             else (false, world)
 

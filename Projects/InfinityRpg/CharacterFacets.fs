@@ -153,7 +153,7 @@ module CharacterAnimationFacetModule =
 
         override facet.Actualize (entity, world) =
             if entity.InView world then
-                World.addRenderMessage
+                World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
                             { Depth = entity.GetDepth world

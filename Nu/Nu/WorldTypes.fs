@@ -135,7 +135,7 @@ module WorldTypes =
 
         /// Determine that this dispatcher has imperative semantics.
         member this.GetImperative () = this :> obj :? Imperative
-    
+
     /// The default dispatcher for games.
     and GameDispatcher () =
         inherit SimulantDispatcher ()
@@ -151,14 +151,18 @@ module WorldTypes =
         /// Update a game.
         abstract Update : Game * World -> World
         default dispatcher.Update (_, world) = world
-    
+
         /// Post-update a game.
         abstract PostUpdate : Game * World -> World
         default dispatcher.PostUpdate (_, world) = world
-    
+
         /// Actualize a game.
         abstract Actualize : Game * World -> World
         default dispatcher.Actualize (_, world) = world
+
+        /// Try to get a calculated property with the given name.
+        abstract TryGetCalculatedProperty : string * Game * World -> (obj * Type) option
+        default dispatcher.TryGetCalculatedProperty (_, _, _) = None
     
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
@@ -183,6 +187,10 @@ module WorldTypes =
         /// Actualize a screen.
         abstract Actualize : Screen * World -> World
         default dispatcher.Actualize (_, world) = world
+
+        /// Try to get a calculated property with the given name.
+        abstract TryGetCalculatedProperty : string * Screen * World -> (obj * Type) option
+        default dispatcher.TryGetCalculatedProperty (_, _, _) = None
     
     /// The default dispatcher for layers.
     and LayerDispatcher () =
@@ -207,6 +215,10 @@ module WorldTypes =
         /// Actualize a layer.
         abstract Actualize : Layer * World -> World
         default dispatcher.Actualize (_, world) = world
+
+        /// Try to get a calculated property with the given name.
+        abstract TryGetCalculatedProperty : string * Layer * World -> (obj * Type) option
+        default dispatcher.TryGetCalculatedProperty (_, _, _) = None
     
     /// The default dispatcher for entities.
     and EntityDispatcher () =
@@ -256,6 +268,10 @@ module WorldTypes =
         abstract GetQuickSize : Entity * World -> Vector2
         default dispatcher.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
+        /// Try to get a calculated property with the given name.
+        abstract TryGetCalculatedProperty : string * Entity * World -> (obj * Type) option
+        default dispatcher.TryGetCalculatedProperty (_, _, _) = None
+
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
     
@@ -294,6 +310,10 @@ module WorldTypes =
         /// Participate in getting the priority with which an entity is picked in the editor.
         abstract GetQuickSize : Entity * World -> Vector2
         default facet.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
+
+        /// Try to get a calculated property with the given name.
+        abstract TryGetCalculatedProperty : string * Entity * World -> (obj * Type) option
+        default dispatcher.TryGetCalculatedProperty (_, _, _) = None
 
     /// A simulant in the world.
     and Simulant =
