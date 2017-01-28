@@ -64,18 +64,6 @@ module WorldModule =
         static member getUnsubscriptions world =
             EventWorld.getUnsubscriptions<Game, World> world
 
-        /// Add event state to the world.
-        static member addEventState key state world =
-            EventWorld.addEventState<'a, Game, World> key state world
-
-        /// Remove event state from the world.
-        static member removeEventState key world =
-            EventWorld.removeEventState<Game, World> key world
-
-        /// Get event state from the world.
-        static member getEventState<'a> key world =
-            EventWorld.getEventState<'a, Game, World> key world
-
         /// Get whether events are being traced.
         static member getEventTracing (world : World) =
             EventWorld.getEventTracing world
@@ -138,17 +126,13 @@ module WorldModule =
             EventWorld.sortSubscriptionsNone subscriptions world
 
         /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
-        static member publish7<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard world =
-            EventWorld.publish7<'a, 'p, Game, World> publishSorter eventData eventAddress eventTrace publisher allowWildcard world
-
-        /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
-        static member publish6<'a, 'p when 'p :> Simulant> (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard world =
-            EventWorld.publish7<'a, 'p, Game, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher allowWildcard world
+        static member publishPlus<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard world =
+            EventWorld.publishPlus<'a, 'p, Game, World> publishSorter eventData eventAddress eventTrace publisher allowWildcard world
 
         /// Publish an event.
         static member publish<'a, 'p when 'p :> Simulant>
             (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-            EventWorld.publish7<'a, 'p, Game, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher true world
+            EventWorld.publishPlus<'a, 'p, Game, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher true world
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionKey world =
@@ -239,14 +223,14 @@ module WorldModule =
         static member getTickRateF world =
             World.getAmbientStateBy AmbientState.getTickRateF world
 
-        /// Set the tick rate at the end of the current update.
+        /// Set the tick rate, starting at the end of the current frame.
         static member setTickRate tickRate world =
             World.updateAmbientState
                 (AmbientState.addTasklet
                     { ScheduledTime = World.getTickTime world
                       Command = { Execute = fun world -> World.updateAmbientState (AmbientState.setTickRateImmediate tickRate) world }}) world
 
-        /// Reset the tick time to 0 at the end of the current update.
+        /// Reset the tick time to 0 at the end of the current frame.
         static member resetTickTime world =
             World.updateAmbientState
                 (AmbientState.addTasklet
@@ -275,7 +259,7 @@ module WorldModule =
         static member getLiveness world =
             World.getAmbientStateBy AmbientState.getLiveness world
 
-        /// Place the engine into a state such that the app will exit at the end of the current update.
+        /// Place the engine into a state such that the app will exit at the end of the current phase.
         static member exit world =
             World.updateAmbientState AmbientState.exit world
 
@@ -337,24 +321,24 @@ module WorldModule =
             World.updateAmbientState (AmbientState.updateSymbolStore updater) world
 
         /// Try to load a symbol store package with the given name.
-        static member tryLoadSymbolStorePackage implicitDlimiters packageName world =
-            World.updateSymbolStore (SymbolStore.tryLoadSymbolStorePackage implicitDlimiters packageName) world
+        static member tryLoadSymbolStorePackage implicitDelimiters packageName world =
+            World.updateSymbolStore (SymbolStore.tryLoadSymbolStorePackage implicitDelimiters packageName) world
 
         /// Unload a symbol store package with the given name.
         static member unloadSymbolStorePackage packageName world =
             World.updateSymbolStore (SymbolStore.unloadSymbolStorePackage packageName) world
 
         /// Try to find a symbol with the given asset tag.
-        static member tryFindSymbol implicitDlimiters assetTag world =
+        static member tryFindSymbol implicitDelimiters assetTag world =
             let symbolStore = World.getSymbolStore world
-            let (symbol, symbolStore) = SymbolStore.tryFindSymbol implicitDlimiters assetTag symbolStore
+            let (symbol, symbolStore) = SymbolStore.tryFindSymbol implicitDelimiters assetTag symbolStore
             let world = World.setSymbolStore symbolStore world
             (symbol, world)
 
         /// Try to find symbols with the given asset tags.
-        static member tryFindSymbols implicitDlimiters assetTags world =
+        static member tryFindSymbols implicitDelimiters assetTags world =
             let symbolStore = World.getSymbolStore world
-            let (symbol, symbolStore) = SymbolStore.tryFindSymbols implicitDlimiters assetTags symbolStore
+            let (symbol, symbolStore) = SymbolStore.tryFindSymbols implicitDelimiters assetTags symbolStore
             let world = World.setSymbolStore symbolStore world
             (symbol, world)
 
@@ -370,8 +354,8 @@ module WorldModule =
         static member updateUserState (updater : 'u -> 'v) world =
             World.updateAmbientState (AmbientState.updateUserState updater) world
 
-        /// TODO: document. 
-        static member dispatchersToOverlayRoutes entityDispatchers =
+        /// TODO: document.
+        static member internal dispatchersToOverlayRoutes entityDispatchers =
             entityDispatchers |>
             Map.toValueListBy getTypeName |>
             List.map (fun typeName -> (typeName, OverlayDescriptor.makeVanilla (Some typeName)))
@@ -426,13 +410,14 @@ module WorldModule =
             let game = Game.proxy Address.empty
             let changeEventAddress = ltoa [!!"Game"; !!"Change"; !!propertyName; !!"Event"] ->>- game.GameAddress
             let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
-            World.publish6 { Participant = game; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace game false world
+            World.publishPlus World.sortSubscriptionsByHierarchy { Participant = game; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace game false world
 
         static member private getGameState world =
             world.GameState
 
         static member private setGameState gameState world =
 #if DEBUG
+            // NOTE: this check will always succeed!
             if not ^ World.qualifyEventContext Address.empty world then
                 failwith ^ "Cannot set the state of a game in an unqualifed event context."
 #endif
@@ -590,8 +575,7 @@ module WorldModule =
             let mousePositionWorld = World.mouseToWorld viewType mousePosition world
             entityPosition - mousePositionWorld
 
-        /// Try to convert an asset tag to a script.
-        static member assetTagToScriptOpt assetTag world =
+        static member internal assetTagToScriptOpt assetTag world =
             let (symbolOpt, world) = World.tryFindSymbol true assetTag world
             let scriptOpt =
                 match symbolOpt with
@@ -795,7 +779,7 @@ module WorldModule =
         static member private publishScreenChange (propertyName : string) (screen : Screen) oldWorld world =
             let changeEventAddress = ltoa [!!"Screen"; !!"Change"; !!propertyName; !!"Event"] ->>- screen.ScreenAddress
             let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
-            World.publish6 { Participant = screen; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen false world
+            World.publishPlus World.sortSubscriptionsByHierarchy { Participant = screen; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen false world
 
         static member private getScreenStateOpt screen world =
              World.screenStateFinder screen world
@@ -1145,7 +1129,7 @@ module WorldModule =
         static member private publishLayerChange (propertyName : string) (layer : Layer) oldWorld world =
             let changeEventAddress = ltoa [!!"Layer"; !!"Change"; !!propertyName; !!"Event"] ->>- layer.LayerAddress
             let eventTrace = EventTrace.record "World" "publishLayerChange" EventTrace.empty
-            World.publish6 { Participant = layer; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace layer false world
+            World.publishPlus World.sortSubscriptionsByHierarchy { Participant = layer; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace layer false world
 
         static member private getLayerStateOpt layer world =
             World.layerStateFinder layer world
@@ -1502,7 +1486,7 @@ module WorldModule =
         static member private publishEntityChange propertyName entity oldWorld world =
             let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName; !!"Event"] ->>- entity.EntityAddress
             let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
-            World.publish6 { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity false world
+            World.publishPlus World.sortSubscriptionsByHierarchy { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity false world
 
         static member private getEntityStateOpt entity world =
             let entityStateOpt = World.entityStateFinder entity world
@@ -2301,7 +2285,7 @@ module WorldModule =
             | [_; _; _] -> Some (Entity.proxy (Address.changeType<Simulant, Entity> address) :> Simulant)
             | _ -> None
 
-        static member tryGetSimulantProperty name (simulant : Simulant) world =
+        static member internal tryGetSimulantProperty name (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.tryGetGameProperty name world
             | :? Screen as screen -> World.tryGetScreenProperty name screen world
@@ -2309,7 +2293,7 @@ module WorldModule =
             | :? Entity as entity -> World.tryGetEntityProperty name entity world
             | _ -> None
 
-        static member getSimulantProperty name (simulant : Simulant) world =
+        static member internal getSimulantProperty name (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.getGameProperty name world
             | :? Screen as screen -> World.getScreenProperty name screen world
@@ -2317,7 +2301,7 @@ module WorldModule =
             | :? Entity as entity -> World.getEntityProperty name entity world
             | _ -> failwithumf ()
 
-        static member trySetSimulantProperty name property (simulant : Simulant) world =
+        static member internal trySetSimulantProperty name property (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.trySetGameProperty name property world
             | :? Screen as screen -> World.trySetScreenProperty name property screen world
@@ -2325,7 +2309,7 @@ module WorldModule =
             | :? Entity as entity -> World.trySetEntityProperty name property entity world
             | _ -> (false, world)
 
-        static member setSimulantProperty name property (simulant : Simulant) world =
+        static member internal setSimulantProperty name property (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.setGameProperty name property world
             | :? Screen as screen -> World.setScreenProperty name property screen world
@@ -2396,26 +2380,26 @@ module WorldModule =
 
     type World with
 
-        static member getScriptEnv world =
+        static member internal getScriptEnv world =
             world.ScriptEnv
 
-        static member getScriptEnvBy by world =
+        static member internal getScriptEnvBy by world =
             by world.ScriptEnv
 
-        static member private setScriptEnv env world =
+        static member internal setScriptEnv env world =
             World.choose { world with ScriptEnv = env }
 
-        static member updateScriptEnv updater world =
+        static member internal updateScriptEnv updater world =
             let env = World.getScriptEnv world
             let env = updater env
             World.setScriptEnv env world
 
         /// Get the context of the script system.
-        static member getScriptContext (world : World) =
+        static member internal getScriptContext (world : World) =
             world.ScriptContext
 
         /// Get the context of the script system.
-        static member setScriptContext context (world : World) =
+        static member internal setScriptContext context (world : World) =
             { world with ScriptContext = context }
 
         /// Evaluate a script expression.

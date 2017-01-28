@@ -443,10 +443,10 @@ module WorldModule2 =
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
                             let eventTrace = EventTrace.record4 "World" "processInput" "MouseDrag" EventTrace.empty
-                            World.publish7 World.sortSubscriptionsByDepth { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Simulants.Game true world
+                            World.publishPlus World.sortSubscriptionsByDepth { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Simulants.Game true world
                         else world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseMove" EventTrace.empty
-                    World.publish7 World.sortSubscriptionsByDepth { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true world
+                    World.publishPlus World.sortSubscriptionsByDepth { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
@@ -454,9 +454,9 @@ module WorldModule2 =
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonDown" EventTrace.empty
-                    let world = World.publish7 World.sortSubscriptionsByDepth eventData mouseButtonDownEvent eventTrace Simulants.Game true world
+                    let world = World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonDownEvent eventTrace Simulants.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publish7 World.sortSubscriptionsByDepth eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
+                    World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
@@ -464,25 +464,25 @@ module WorldModule2 =
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonUp" EventTrace.empty
-                    let world = World.publish7 World.sortSubscriptionsByDepth eventData mouseButtonUpEvent eventTrace Simulants.Game true world
+                    let world = World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonUpEvent eventTrace Simulants.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publish7 World.sortSubscriptionsByDepth eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
+                    World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = true }
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyDown" EventTrace.empty
-                    let world = World.publish7 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDown eventTrace Simulants.Game true world
+                    let world = World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDown eventTrace Simulants.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                    World.publish7 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange eventTrace Simulants.Game true world
+                    World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = false }
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyUp" EventTrace.empty
-                    let world = World.publish7 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp eventTrace Simulants.Game true world
+                    let world = World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp eventTrace Simulants.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                    World.publish7 World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange eventTrace Simulants.Game true world
+                    World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange eventTrace Simulants.Game true world
                 | _ -> world
             (World.getLiveness world, world)
 

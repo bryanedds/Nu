@@ -166,7 +166,7 @@ module WorldGameModule =
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateGame" EventTrace.empty
-                let world = World.publish7 World.sortSubscriptionsByHierarchy () Events.Update eventTrace Simulants.Game true world
+                let world = World.publishPlus World.sortSubscriptionsByHierarchy () Events.Update eventTrace Simulants.Game true world
                 World.choose world)
                 Simulants.Game
                 world
@@ -180,7 +180,7 @@ module WorldGameModule =
 
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateGame" EventTrace.empty
-                let world = World.publish7 World.sortSubscriptionsByHierarchy () Events.PostUpdate eventTrace Simulants.Game true world
+                let world = World.publishPlus World.sortSubscriptionsByHierarchy () Events.PostUpdate eventTrace Simulants.Game true world
                 World.choose world)
                 Simulants.Game
                 world

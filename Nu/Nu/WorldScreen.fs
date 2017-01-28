@@ -106,7 +106,7 @@ module WorldScreenModule =
                 let dispatcher = World.getScreenDispatcherNp screen world
                 let world = dispatcher.Update (screen, world)
                 let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
-                World.publish7 World.sortSubscriptionsByHierarchy () (Events.Update ->- screen) eventTrace Simulants.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update ->- screen) eventTrace Simulants.Game true world)
                 screen
                 world
 
@@ -115,7 +115,7 @@ module WorldScreenModule =
                 let dispatcher = World.getScreenDispatcherNp screen world
                 let world = dispatcher.PostUpdate (screen, world)
                 let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty
-                World.publish7 World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- screen) eventTrace Simulants.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- screen) eventTrace Simulants.Game true world)
                 screen
                 world
 

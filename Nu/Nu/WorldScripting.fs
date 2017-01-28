@@ -199,6 +199,34 @@ module WorldScripting =
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a table.", originOpt) }
 
+        let IncFns =
+            { Bool = fun value _ -> Bool (if value then false else true)
+              Int = fun value _ -> Int (inc value)
+              Int64 = fun value _ -> Int64 (inc value)
+              Single = fun value _ -> Single (inc value)
+              Double = fun value _ -> Double (inc value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (inc value.X, inc value.Y))
+              String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a string.", originOpt)
+              Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a tuple.", originOpt)
+              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a keyphrase.", originOpt)
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a table.", originOpt) }
+
+        let DecFns =
+            { Bool = fun value _ -> Bool (if value then false else true)
+              Int = fun value _ -> Int (dec value)
+              Int64 = fun value _ -> Int64 (dec value)
+              Single = fun value _ -> Single (dec value)
+              Double = fun value _ -> Double (dec value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (dec value.X, dec value.Y))
+              String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a string.", originOpt)
+              Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a tuple.", originOpt)
+              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a keyphrase.", originOpt)
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a table.", originOpt) }
+
         let ExpFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a bool.", originOpt)
               Int = fun value _ -> Int (int ^ Math.Exp (double value))
@@ -953,6 +981,8 @@ module WorldScripting =
                  ("ceiling", evalUnary CeilingFns)
                  ("truncate", evalUnary TruncateFns)
                  ("round", evalUnary RoundFns)
+                 ("inc", evalUnary IncFns)
+                 ("dec", evalUnary DecFns)
                  ("exp", evalUnary ExpFns)
                  ("log", evalUnary LogFns)
                  ("sin", evalUnary SinFns)
@@ -1208,6 +1238,10 @@ module WorldScripting =
                 | Left world -> (evaled, world)
             | success -> success
 
+        //and evalRun name args originOpt world =
+        //    match name with
+        //    | "applyBodyAngularImpulse" -> 
+
         and evalDo exprs _ world =
             let evaledEir =
                 List.foldWhileRight (fun (_, world) expr ->
@@ -1324,7 +1358,7 @@ module WorldScripting =
             | Select (exprPairs, originOpt) -> evalSelect exprPairs originOpt world
             | Try (body, handlers, originOpt) -> evalTry body handlers originOpt world
             | Do (exprs, originOpt) -> evalDo exprs originOpt world
-            | Run (_, originOpt) -> (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt), world) // TODO
+            | Run (_, _, originOpt) -> (Violation ([!!"Unimplemented"], "Unimplemented feature.", originOpt), world) // TODO evalRun name args originOpt world
             | Break (expr, _) -> evalBreak expr world
             | Get (name, originOpt) -> evalGet name None originOpt world
             | GetFrom (name, expr, originOpt) -> evalGet name (Some expr) originOpt world

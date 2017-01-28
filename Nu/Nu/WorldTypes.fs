@@ -330,6 +330,7 @@ module WorldTypes =
           ScriptOpt : AssetTag option
           Script : Scripting.Expr list
           ScriptFrameNp : Scripting.DeclarationFrame
+          ScriptProperties : UMap<string, Scripting.Expr>
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
@@ -387,6 +388,7 @@ module WorldTypes =
               ScriptOpt = None
               Script = []
               ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
+              ScriptProperties = UMap.makeEmpty None
               OnRegister = Scripting.Unit
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
