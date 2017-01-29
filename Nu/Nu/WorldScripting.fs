@@ -978,31 +978,42 @@ module WorldScripting =
     
         let evalMap evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [_; Option opt as option] ->
+            | [fn; Option opt as option] ->
                 match opt with
-                | Some value -> evalApply [value] fnOriginOpt world
+                | Some value -> evalApply [fn; value] fnOriginOpt world
                 | None -> (option, world)
-            | [_; List list] ->
+            | [fn; String str] ->
                 let (list, world) =
-                    List.fold (fun (elems, world) current ->
-                        let (elem, world) = evalApply [current] fnOriginOpt world
+                    str |>
+                    Seq.fold (fun (elems, world) elem ->
+                        let elem = String (string elem)
+                        let (elem, world) = evalApply [fn; elem] fnOriginOpt world
+                        (elem :: elems, world))
+                        ([], world)
+                if List.forall (function String str when String.length str = 1 -> true | _ -> false) list
+                then (String (list |> List.rev |> List.map (function String str -> str.[0] | _ -> failwithumf ()) |> String.implode), world)
+                else (Violation ([!!"InvalidResult"; !!(String.capitalize fnName)], "String map operation must return a string of length 1.", fnOriginOpt), world)
+            | [fn; List list] ->
+                let (list, world) =
+                    List.fold (fun (elems, world) elem ->
+                        let (elem, world) = evalApply [fn; elem] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
                         list
                 (List (List.rev list), world)
-            | [_; Ring set] ->
+            | [fn; Ring set] ->
                 let (set, world) =
-                    Set.fold (fun (elems, world) current ->
-                        let (elem, world) = evalApply [current] fnOriginOpt world
+                    Set.fold (fun (elems, world) elem ->
+                        let (elem, world) = evalApply [fn; elem] fnOriginOpt world
                         (Set.add elem elems, world))
                         (Set.empty, world)
                         set
                 (Ring set, world)
-            | [_; Table map] ->
+            | [fn; Table map] ->
                 let (map, world) =
-                    Map.fold (fun (elems, world) currentKey currentValue ->
-                        let current = Tuple [|currentKey; currentValue|]
-                        let (elem, world) = evalApply [current] fnOriginOpt world
+                    Map.fold (fun (elems, world) key value ->
+                        let elem = Tuple [|key; value|]
+                        let (elem, world) = evalApply [fn; elem] fnOriginOpt world
                         match elem with
                         | Tuple elems' when Array.length elems' = 2 -> ((Map.add elems'.[0] elems'.[1] elems), world)
                         | _ -> (elems, world))
@@ -1017,21 +1028,29 @@ module WorldScripting =
     
         let evalHead fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [List evaledArgs] ->
-                match evaledArgs with
-                | evaledHead :: _ -> (evaledHead, world)
-                | _ -> (Violation ([!!"InvalidArgumentValue"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a list with no members.", fnOriginOpt), world)
-            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), world)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
+            | [String str] ->
+                if String.notEmpty str
+                then (String (string str.[0]), world)
+                else (Violation ([!!"InvalidArgumentValue"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a string with no elements.", fnOriginOpt), world)
+            | [List list] ->
+                match list with
+                | head :: _ -> (head, world)
+                | _ -> (Violation ([!!"InvalidArgumentValue"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a list with no elements.", fnOriginOpt), world)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-sequence.", fnOriginOpt), world)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
     
         let evalTail fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
+            | [String str] ->
+                if String.notEmpty str
+                then (String (str.Substring 1), world)
+                else (Violation ([!!"InvalidArgumentValue"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a string with no elements.", fnOriginOpt), world)
             | [List evaleds] ->
                 match evaleds with
                 | _ :: evaledTail -> (List evaledTail, world)
-                | _ -> (Violation ([!!"InvalidArgumentValue"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a list with no members.", fnOriginOpt), world)
-            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), world)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
+                | _ -> (Violation ([!!"InvalidArgumentValue"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a list with no elements.", fnOriginOpt), world)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-sequence.", fnOriginOpt), world)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
     
         let evalCons fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
@@ -1041,6 +1060,7 @@ module WorldScripting =
     
         let evalIsEmpty fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
+            | [String str] -> (Bool (String.isEmpty str), world)
             | [List list] -> (Bool (List.isEmpty list), world)
             | [Ring set] -> (Bool (Set.isEmpty set), world)
             | [Table map] -> (Bool (Map.isEmpty map), world)
@@ -1049,20 +1069,22 @@ module WorldScripting =
     
         let evalNotEmpty fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [List evaleds] -> (Bool (not ^ List.isEmpty evaleds), world)
-            | [Ring set] -> (Bool (not ^ Set.isEmpty set), world)
-            | [Table map] -> (Bool (not ^ Map.isEmpty map), world)
+            | [String str] -> (Bool (String.notEmpty str), world)
+            | [List list] -> (Bool (List.notEmpty list), world)
+            | [Ring set] -> (Bool (Set.notEmpty set), world)
+            | [Table map] -> (Bool (Map.notEmpty map), world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
     
         let evalFold evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [_; state; List list] -> List.fold (fun (acc, world) current -> evalApply [acc; current] fnOriginOpt world) (state, world) list
-            | [_; state; Ring set] -> Set.fold (fun (acc, world) current -> evalApply [acc; current] fnOriginOpt world) (state, world) set
-            | [_; state; Table map] ->
-                Map.fold (fun (acc, world) currentKey currentValue ->
-                    let current = Tuple [|currentKey; currentValue|]
-                    evalApply [acc; current] fnOriginOpt world)
+            | [fn; state; String str] -> Seq.fold (fun (acc, world) elem -> evalApply [fn; acc; String (string elem)] fnOriginOpt world) (state, world) str
+            | [fn; state; List list] -> List.fold (fun (acc, world) elem -> evalApply [fn; acc; elem] fnOriginOpt world) (state, world) list
+            | [fn; state; Ring set] -> Set.fold (fun (acc, world) elem -> evalApply [fn; acc; elem] fnOriginOpt world) (state, world) set
+            | [fn; state; Table map] ->
+                Map.fold (fun (acc, world) key value ->
+                    let elem = Tuple [|key; value|]
+                    evalApply [fn; acc; elem] fnOriginOpt world)
                     (state, world)
                     map
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
@@ -1070,12 +1092,16 @@ module WorldScripting =
     
         let evalReduce evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [_; List list] ->
+            | [fn; String str] ->
+                if String.notEmpty str
+                then Seq.fold (fun (acc, world) elem -> evalApply [fn; acc; String (string elem)] fnOriginOpt world) (String (string str.[0]), world) (str.Substring 1)
+                else (Violation ([!!"InvalidArgument"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to an empty string.", fnOriginOpt), world)
+            | [fn; List list] ->
                 match list with
-                | head :: tail -> List.fold (fun (acc, world) current -> evalApply [acc; current] fnOriginOpt world) (head, world) tail
-                | _ -> (Violation ([!!"InvalidArgument"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to an empty list.", fnOriginOpt), world)
-            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
+                | head :: tail -> List.fold (fun (acc, world) elem -> evalApply [fn; acc; elem] fnOriginOpt world) (head, world) tail
+                | _ -> (Violation ([!!"InvalidArgument"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to an empty list.", fnOriginOpt), world)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-sequence.", fnOriginOpt), world)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
             
         let evalRing _ (_ : string) evaledArgs world =
             (Ring (Set.ofList evaledArgs), world)

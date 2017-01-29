@@ -9,6 +9,14 @@ open System.Text
 [<RequireQualifiedAccess>]
 module String =
 
+    /// Check that a string is empty.
+    let isEmpty str =
+        String.length str = 0
+
+    /// Check that a string is not empty.
+    let notEmpty str =
+        String.length str > 0
+
     /// Convert a bool to a string that works well in code.
     let boolToCodeString (bool : bool) =
         if bool then "true" else "false"
