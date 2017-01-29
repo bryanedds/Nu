@@ -57,7 +57,11 @@ module Symbol =
     let [<Literal>] OpenQuoteStr = "`"
     let [<Literal>] CloseQuoteChar = '\''
     let [<Literal>] CloseQuoteStr = "\'"
-    let [<Literal>] ReservedChars = "#:" // # reserved for comment syntax, : reserved for pair syntax (expands to [key value])
+    let [<Literal>] LineCommentChar = ';'
+    let [<Literal>] LineCommentStr = ";"
+    let [<Literal>] OpenMultilineCommentStr = "#|"
+    let [<Literal>] CloseMultilineCommentStr = "|#"
+    let [<Literal>] ReservedChars = ":"
     let [<Literal>] StructureCharsNoStr = "[]`\'"
     let [<Literal>] StructureChars = "\"" + StructureCharsNoStr
     let [<Literal>] NumberFormat =
@@ -73,7 +77,15 @@ module Symbol =
     let isExplicit (str : string) = str.StartsWith OpenStringStr && str.EndsWith CloseStringStr
     let distillate (str : string) = (str.Replace (OpenStringStr, "")).Replace (CloseStringStr, "")
     
-    let skipWhitespace = skipAnyOf WhitespaceChars
+    let skipLineComment = skipChar LineCommentChar >>. skipRestOfLine true
+    let skipMultilineComment =
+        // TODO: make multiline comments nest.
+        between
+            (skipString OpenMultilineCommentStr)
+            (skipString CloseMultilineCommentStr)
+            (skipCharsTillString CloseMultilineCommentStr false System.Int32.MaxValue)
+    
+    let skipWhitespace = skipLineComment <|> skipMultilineComment <|> skipAnyOf WhitespaceChars
     let skipWhitespaces = skipMany skipWhitespace
     let followedByWhitespaceOrStructureCharOrAtEof = nextCharSatisfies (fun chr -> isWhitespaceChar chr || isStructureChar chr) <|> eof
     

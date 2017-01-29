@@ -123,8 +123,8 @@ module WorldScripting =
               Double : double -> SymbolOrigin option -> Expr
               Vector2 : Vector2 -> SymbolOrigin option -> Expr
               String : string -> SymbolOrigin option -> Expr
-              Tuple : Map<int, Expr> -> SymbolOrigin option -> Expr
-              Keyphrase : Map<int, Expr> -> SymbolOrigin option -> Expr
+              Tuple : Expr array -> SymbolOrigin option -> Expr
+              Keyphrase : Expr array -> SymbolOrigin option -> Expr
               List : Expr list -> SymbolOrigin option -> Expr
               Ring : Expr Set -> SymbolOrigin option -> Expr
               Table : Map<Expr, Expr> -> SymbolOrigin option -> Expr }
@@ -375,8 +375,8 @@ module WorldScripting =
               Double = fun value _ -> Double (Math.Abs value)
               Vector2 = fun value _ -> Single (value.Length)
               String = fun value _ -> Int (value.Length)
-              Tuple = fun value _ -> Int (Array.length ^ Map.toArray value)
-              Keyphrase = fun value _ -> Int (Array.length ^ Map.toArray value)
+              Tuple = fun value _ -> Int (Array.length value)
+              Keyphrase = fun value _ -> Int (Array.length value)
               List = fun value _ -> Int (List.length value)
               Ring = fun value _ -> Int (value.Count)
               Table = fun value _ -> Int (value.Count) }
@@ -487,8 +487,8 @@ module WorldScripting =
               Double : double -> double -> SymbolOrigin option -> Expr
               Vector2 : Vector2 -> Vector2 -> SymbolOrigin option -> Expr
               String : string -> string -> SymbolOrigin option -> Expr
-              Tuple : Map<int, Expr> -> Map<int, Expr> -> SymbolOrigin option -> Expr
-              Keyphrase : Map<int, Expr> -> Map<int, Expr> -> SymbolOrigin option -> Expr
+              Tuple : Expr array -> Expr array -> SymbolOrigin option -> Expr
+              Keyphrase : Expr array -> Expr array -> SymbolOrigin option -> Expr
               List : Expr list -> Expr list -> SymbolOrigin option -> Expr
               Ring : Expr Set -> Expr Set -> SymbolOrigin option -> Expr
               Table : Map<Expr, Expr> -> Map<Expr, Expr> -> SymbolOrigin option -> Expr }
@@ -797,22 +797,22 @@ module WorldScripting =
 
         let evalPair fnOriginOpt (_ : string) evaledArgs world =
             match evaledArgs with
-            | [_; _] -> (Tuple (evaledArgs |> List.indexed |> Map.ofList), world)
+            | [_; _] -> (Tuple (List.toArray evaledArgs), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Pair"], "Incorrect number of arguments for creation of a pair; 2 arguments required.", fnOriginOpt), world)
 
         let evalTuple _ _ evaledArgs world =
-            (Tuple (evaledArgs |> List.indexed |> Map.ofList), world)
+            (Tuple (List.toArray evaledArgs), world)
     
         let evalNth5 index fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [Tuple evaleds] ->
-                match Map.tryFind index evaleds with
-                | Some evaled -> (evaled, world)
-                | None -> (Violation ([!!"OutOfRange"], "Tuple does not contain element at index " + string index + ".", fnOriginOpt), world)
+                if index >= 0 && index < Array.length evaleds
+                then (evaleds.[index], world)
+                else (Violation ([!!"OutOfRange"], "Tuple does not contain element at index " + string index + ".", fnOriginOpt), world)
             | [Keyphrase (_, evaleds)] ->
-                match Map.tryFind index evaleds with
-                | Some evaled -> (evaled, world)
-                | None -> (Violation ([!!"OutOfRange"], "Keyphrase does not contain element at index " + string index + ".", fnOriginOpt), world)
+                if index >= 0 && index < Array.length evaleds
+                then (evaleds.[index], world)
+                else (Violation ([!!"OutOfRange"], "Keyphrase does not contain element at index " + string index + ".", fnOriginOpt), world)
             | [List evaleds] ->
                 match List.tryFindAt index evaleds with
                 | Some evaled -> (evaled, world)
@@ -870,10 +870,10 @@ module WorldScripting =
             | [_; Table map] ->
                 let (map, world) =
                     Map.fold (fun (elems, world) currentKey currentValue ->
-                        let current = Tuple ([currentKey; currentValue] |> List.indexed |> Map.ofList)
+                        let current = Tuple [|currentKey; currentValue|]
                         let (elem, world) = evalApply [current] fnOriginOpt world
                         match elem with
-                        | Tuple elems' when elems'.Count = 2 -> ((Map.add (Map.find 0 elems') (Map.find 1 elems') elems), world)
+                        | Tuple elems' when Array.length elems' = 2 -> ((Map.add elems'.[0] elems'.[1] elems), world)
                         | _ -> (elems, world))
                         (Map.empty, world)
                         map
@@ -930,7 +930,7 @@ module WorldScripting =
             | [_; state; Ring set] -> Set.fold (fun (acc, world) current -> evalApply [acc; current] fnOriginOpt world) (state, world) set
             | [_; state; Table map] ->
                 Map.fold (fun (acc, world) currentKey currentValue ->
-                    let current = Tuple ([currentKey; currentValue] |> List.indexed |> Map.ofList)
+                    let current = Tuple [|currentKey; currentValue|]
                     evalApply [acc; current] fnOriginOpt world)
                     (state, world)
                     map
@@ -956,7 +956,7 @@ module WorldScripting =
                 | Ring set -> (Ring (Set.add value set), world)
                 | Table map ->
                     match value with
-                    | Tuple map' when map'.Count = 2 -> (Table (Map.add (Map.find 0 map') (Map.find 1 map') map), world)
+                    | Tuple arr when Array.length arr = 2 -> (Table (Map.add arr.[0] arr.[1] map), world)
                     | _ -> (Violation ([!!"InvalidEntry"; !!"Table"; !!(String.capitalize fnName)], "Table entry must consist of a pair.", fnOriginOpt), world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
@@ -990,7 +990,7 @@ module WorldScripting =
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
         let evalTable fnOriginOpt fnName evaledArgs world =
-            if List.forall (function Tuple map when map.Count = 2 -> true | _ -> false) evaledArgs then
+            if List.forall (function Tuple arr when Array.length arr = 2 -> true | _ -> false) evaledArgs then
                 let evaledPairs = List.map (function List [evaledFst; evaledSnd] -> (evaledFst, evaledSnd) | _ -> failwithumf ()) evaledArgs
                 let evaledMap = Map.ofList evaledPairs
                 (Table evaledMap, world)
@@ -1160,7 +1160,7 @@ module WorldScripting =
             | (evaledHead :: evaledTail, world) ->
                 match evaledHead with
                 | Keyword _ as keyword ->
-                    let keyphrase = Keyphrase (keyword, evaledTail |> List.indexed |> Map.ofList)
+                    let keyphrase = Keyphrase (keyword, List.toArray evaledTail)
                     (keyphrase, world)
                 | Binding (name, _, originOpt) ->
                     // NOTE: we can infer we have an intrinsic when evaluation leads here

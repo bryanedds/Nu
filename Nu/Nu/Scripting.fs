@@ -65,13 +65,15 @@ module Scripting =
                      "pair tuple unit fst snd thd fth fif nth " +
                      "some none isNone isSome contains map " +
                      // TODO: "either isLeft isRight left right " +
-                     "list head tail cons empty isEmpty notEmpty filter fold reduce " +
+                     "list head tail cons isEmpty notEmpty filter fold reduce " +
                      "ring add remove " +
                      "table tryFind find " +
                      "let fun if cond try break get set do " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
-                     "tickRate tickTime updateCount",
+                     "tickRate tickTime updateCount " +
+                     "toZero toIdentity toMin toMax toPi toE toList toString " +
+                     "curry compose update updateTo",
                      "");
           TypeConverter (typeof<ExprConverter>);
           CustomEquality;
@@ -91,8 +93,8 @@ module Scripting =
         | Keyword of string
 
         (* Primitive Data Structures *)
-        | Tuple of Map<int, Expr>
-        | Keyphrase of Expr * Map<int, Expr>
+        | Tuple of Expr array
+        | Keyphrase of Expr * Expr array
         | Option of Expr option
         | List of Expr list
         | Ring of Set<Expr>
@@ -307,13 +309,13 @@ module Scripting =
                 | Vector2 v2 -> Symbol.Symbols ([Symbol.Number (String.singleToCodeString v2.X, None); Symbol.Number (String.singleToCodeString v2.Y, None)], None) :> obj
                 | String string -> Symbol.Atom (string, None) :> obj
                 | Keyword string -> Symbol.Atom (string, None) :> obj
-                | Tuple map ->
-                    let headingSymbol = Symbol.Atom ((if map.Count = 2 then "pair" else "tuple"), None)
-                    let elemSymbols = List.map (fun elem -> this.ExprToSymbol elem) (Map.toValueList map)
+                | Tuple arr ->
+                    let headingSymbol = Symbol.Atom ((if Array.length arr = 2 then "pair" else "tuple"), None)
+                    let elemSymbols = arr |> Array.map (fun elem -> this.ExprToSymbol elem) |> List.ofArray
                     Symbol.Symbols (headingSymbol :: elemSymbols, None) :> obj
-                | Keyphrase (keyword, map) ->
+                | Keyphrase (keyword, arr) ->
                     let keywordSymbol = this.ExprToSymbol keyword
-                    let elemSymbols = map |> Map.toValueList |> List.map this.ExprToSymbol
+                    let elemSymbols = arr |> Array.map this.ExprToSymbol |> List.ofArray
                     Symbol.Symbols (keywordSymbol :: elemSymbols, None) :> obj
                 | Option option ->
                     match option with
@@ -443,7 +445,6 @@ module Scripting =
                     | "true" -> Bool true :> obj
                     | "false" -> Bool false :> obj
                     | "none" -> Option None :> obj
-                    | "empty" -> List List.empty :> obj
                     | _ ->
                         let firstChar = str.[0]
                         if firstChar = '.' || Char.IsUpper firstChar
