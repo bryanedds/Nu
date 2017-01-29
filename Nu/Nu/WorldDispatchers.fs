@@ -145,23 +145,11 @@ module EffectFacetModule =
     type EffectFacet () =
         inherit Facet ()
 
-        static let assetTagsToEffectOpts assetTags world =
-            let (symbolOpts, world) = World.tryFindSymbols true assetTags world
-            let effectOpts =
-                List.map
-                    (fun symbolOpt ->
-                        match symbolOpt with
-                        | Some symbol ->
-                            try let effect = valueize<Effect> symbol in Some effect
-                            with exn -> Log.info ^ "Failed to convert symbol '" + scstring symbol + "' to Effect due to: " + scstring exn; None
-                        | None -> None)
-                    symbolOpts
-            (effectOpts, world)
-
         static let setEffect effectsOpt (entity : Entity) world =
             match effectsOpt with
             | Some effectAssetTags ->
-                let (effects, world) = assetTagsToEffectOpts effectAssetTags world |> mapFst List.definitize
+                let (effectOpts, world) = World.assetTagsToValueOpts<Effect> false effectAssetTags world
+                let effects = List.definitize effectOpts
                 let effectCombined = EffectSystem.combineEffects effects
                 entity.SetEffect effectCombined world
             | None -> world
@@ -240,7 +228,88 @@ module EffectFacetModule =
             let world = World.monitor handleEffectsOptChanged (entity.GetChangeEvent Property? EffectsOptPa) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
-// TODO: ScriptFacet
+[<AutoOpen>]
+module ScriptFacetModule =
+
+    type Entity with
+    
+        member this.GetScriptOptPa world : AssetTag option = this.Get Property? ScriptOptPa world
+        member this.SetScriptOptPa (value : AssetTag option) world = this.Set Property? ScriptOptPa value world
+        member this.ScriptOptPa = PropertyTag.make this Property? ScriptOptPa this.GetScriptOptPa this.SetScriptOptPa
+        member this.GetGetScriptPa world : Scripting.Expr list = this.Get Property? GetScriptPa world
+        member this.SetGetScriptPa (value : Scripting.Expr list) world = this.Set Property? GetScriptPa value world
+        member this.GetScriptPa = PropertyTag.make this Property? GetScriptPa this.GetGetScriptPa this.SetGetScriptPa
+        member this.GetScriptFrameNp world : Scripting.DeclarationFrame = this.Get Property? ScriptFrameNp world
+        member this.SetScriptFrameNp (value : Scripting.DeclarationFrame) world = this.Set Property? ScriptFrameNp value world
+        member this.ScriptFrameNp = PropertyTag.make this Property? ScriptFrameNp this.GetScriptFrameNp this.SetScriptFrameNp
+        member this.GetOnRegisterPa world : Scripting.Expr = this.Get Property? OnRegisterPa world
+        member this.SetOnRegisterPa (value : Scripting.Expr) world = this.Set Property? OnRegisterPa value world
+        member this.OnRegisterPa = PropertyTag.make this Property? OnRegisterPa this.GetOnRegisterPa this.SetOnRegisterPa
+        member this.GetOnUnregister world : Scripting.Expr = this.Get Property? OnUnregister world
+        member this.SetOnUnregister (value : Scripting.Expr) world = this.Set Property? OnUnregister value world
+        member this.OnUnregister = PropertyTag.make this Property? OnUnregister this.GetOnUnregister this.SetOnUnregister
+        member this.GetOnUpdate world : Scripting.Expr = this.Get Property? OnUpdate world
+        member this.SetOnUpdate (value : Scripting.Expr) world = this.Set Property? OnUpdate value world
+        member this.OnUpdate = PropertyTag.make this Property? OnUpdate this.GetOnUpdate this.SetOnUpdate
+        member this.GetOnPostUpdate world : Scripting.Expr = this.Get Property? OnPostUpdate world
+        member this.SetOnPostUpdate (value : Scripting.Expr) world = this.Set Property? OnPostUpdate value world
+        member this.OnPostUpdate = PropertyTag.make this Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate
+        member this.GetOnActualize world : Scripting.Expr = this.Get Property? OnActualize world
+        member this.SetOnActualize (value : Scripting.Expr) world = this.Set Property? OnActualize value world
+        member this.OnActualize = PropertyTag.make this Property? OnActualize this.GetOnActualize this.SetOnActualize
+
+    type ScriptFacet () =
+        inherit Facet ()
+
+        static let handleScriptChanged evt world =
+            let entity = evt.Subscriber : Entity
+            let script = entity.GetGetScriptPa world
+            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+            let world = entity.SetScriptFrameNp scriptFrame world
+            evalManyWithLogging script scriptFrame entity world |> snd
+            
+        static let handleOnRegisterChanged evt world =
+            let entity = evt.Subscriber : Entity
+            let world = World.unregisterEntity entity world
+            World.registerEntity entity world
+
+        static member PropertyDefinitions =
+            [Define? ScriptOptPa (None : AssetTag option)
+             Define? ScriptPa ([] : Scripting.Expr list)
+             Define? ScriptFrameNp (Scripting.DeclarationFrame HashIdentity.Structural)
+             Define? OnRegisterPa Scripting.Unit
+             Define? OnUnregister Scripting.Unit
+             Define? OnUpdate Scripting.Unit
+             Define? OnPostUpdate Scripting.Unit
+             Define? OnActualize Scripting.Unit]
+
+        override facet.Register (entity, world) =
+            let onRegister = entity.GetOnRegisterPa world
+            let localFrame = entity.GetScriptFrameNp world
+            let (_, world) = World.evalWithLogging onRegister localFrame entity world
+            let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? ScriptPa) entity world
+            let world = World.monitor handleOnRegisterChanged (entity.GetChangeEvent Property? OnRegisterPa) entity world
+            world
+
+        override facet.Unregister (entity, world) =
+            let onUnregister = entity.GetOnUnregister world
+            let localFrame = entity.GetScriptFrameNp world
+            World.evalWithLogging onUnregister localFrame entity world |> snd
+
+        override facet.Update (entity, world) =
+            let onUpdate = entity.GetOnUpdate world
+            let localFrame = entity.GetScriptFrameNp world
+            World.evalWithLogging onUpdate localFrame entity world |> snd
+
+        override facet.PostUpdate (entity, world) =
+            let onPostUpdate = entity.GetOnPostUpdate world
+            let localFrame = entity.GetScriptFrameNp world
+            World.evalWithLogging onPostUpdate localFrame entity world |> snd
+
+        override facet.Actualize (entity, world) =
+            let onActualize = entity.GetOnActualize world
+            let localFrame = entity.GetScriptFrameNp world
+            World.evalWithLogging onActualize localFrame entity world |> snd
 
 [<AutoOpen>]
 module RigidBodyFacetModule =

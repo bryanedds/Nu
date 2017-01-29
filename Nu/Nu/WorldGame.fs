@@ -121,14 +121,14 @@ module WorldGameModule =
     type World with
 
         static member private gameOnRegisterChanged _ world =
-            let world = World.registerGame world
-            World.unregisterGame world
+            let world = World.unregisterGame world
+            World.registerGame world
 
         static member private gameScriptOptChanged evt world =
             let game = evt.Subscriber : Game
             match game.GetScriptOpt world with
             | Some script ->
-                match World.assetTagToScriptOpt script world with
+                match World.assetTagToValueOpt<Scripting.Expr list> true script world with
                 | (Some script, world) -> game.SetScript script world
                 | (None, world) -> world
             | None -> world
