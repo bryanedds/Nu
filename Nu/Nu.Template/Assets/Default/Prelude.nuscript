@@ -10,9 +10,9 @@ Copyright (C) Bryan Edds, 2012-2017.
 #| The double type indicator.    |# [define -d- 0d]
 #| The v2 type indicator.        |# [define -2- [v2 0f 0f]]
 #| The string type indicator.    |# [define -s- ""]
-#| The keyword type indicator.   |# [define -k- A]
+#| The keyword type indicator.   |# [define -k- nil]
 #| The tuple type indicator.     |# [define -u- [tuple]]
-#| The keyphrase type indicator. |# [define -p- [A]]
+#| The keyphrase type indicator. |# [define -p- [nil]]
 #| The option type indicator.    |# [define -o- none]
 #| The list type indicator.      |# [define -l- [list]]
 #| The ring type indicator.      |# [define -r- [ring]]
@@ -31,29 +31,29 @@ Copyright (C) Bryan Edds, 2012-2017.
  [= x [toZero x]]]
 
 #| Check that a value is the identity. |#
-[define isIdentity [x]
- [= x [toIdentity x]]]
+[define isId [x]
+ [= x [toId x]]]
 
 #| Check that a value is positive. |#
-[define isPositive [x]
+[define isPos [x]
  [>= x [toZero x]]]
 
 #| Check that a value is negative. |#
-[define isNegative [x]
+[define isNeg [x]
  [<= x [toZero x]]]
 
 #| Check that a value is positive infinity. |#
-[define isPositiveInfinity [x]
+[define isPosInf [x]
  [> x [toMax x]]]
 
 #| Check that a value is negative infinity. |#
-[define isNegativeInfinity [x]
+[define isNegInf [x]
  [< x [toMin x]]]
 
-#| Check that a value is 'not a number' as defined by IEEE for floating point values. |#
-[define isNaN [x]
- [| [isPositiveInfinity x]
-    [isNegativeInfinity x]]]
+#| Check that a value is infinity. |#
+[define isInf [x]
+ [| [isPosInfinity x]
+    [isNegInfinity x]]]
 
 #| Select the mininum value. |#
 [define min [x y]
@@ -67,13 +67,13 @@ Copyright (C) Bryan Edds, 2012-2017.
 [define compare [x y]
  [if [< x y] Lt [if [> x y] Gt Eq]]]
 
-#| The sign of a value. Returns Positive, Negative, or Zero. |#
+#| The sign of a value. Returns Pos, Neg, or Zero. |#
 [define sign [x]
- [if [> x [toZero x]] Positive [if [< [toZero x]] Negative Zero]]]
+ [if [> x [toZero x]] Pos [if [< [toZero x]] Neg Zero]]]
 
 #| Compute the absolute value. |#
 [define abs [x]
- [if [isPositive x] x [neg x]]]
+ [if [isPos x] x [neg x]]]
 
 #| Mathematical constant pi as a single value. |#
 [define pi 3.14159f]
@@ -85,7 +85,4 @@ Copyright (C) Bryan Edds, 2012-2017.
 [define v2Zero [toZero -2-]]
 
 #| The unit v2 value. |#
-[define v2Unit [toIdentity -2-]]
-
-#| The one v2 value. |#
-[define v2One [v2 1f 1f]]
+[define v2Id [toId -2-]]
