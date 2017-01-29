@@ -53,7 +53,8 @@ module Scripting =
             | :? Stream as that -> Stream.equals this that
             | _ -> failwithumf ()
 
-    and [<Syntax    ("inc dec" +
+    and [<Syntax    ("not" +
+                     "inc dec" +
                      "pow root sqr sqrt " +
                      "floor ceiling truncate round exp log " +
                      "sin cos tan asin acos atan " +
