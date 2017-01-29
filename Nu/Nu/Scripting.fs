@@ -53,8 +53,8 @@ module Scripting =
             | :? Stream as that -> Stream.equals this that
             | _ -> failwithumf ()
 
-    and [<Syntax    ("toZero toIdentity toMin toMax " +
-                     "neg inc dec " +
+    and [<Syntax    ("toZero toId toMin toMax " +
+                     "inc dec neg " +
                      "pow root sqr sqrt " +
                      "floor ceiling truncate round exp log " +
                      "sin cos tan asin acos atan " +
@@ -72,7 +72,11 @@ module Scripting =
                      "let fun if cond try break get set do " +
                      // TODO: "update curry compose substring tickRate tickTime" +
                      "variableStream eventStream propertyStream " +
-                     "define variable equate handle",
+                     "define variable equate handle " +
+                     // prelude identifiers...
+                     "id flip isZero isId isPos isNeg isPosInf isNegInf isInf " +
+                     "min max compare sign abs pi e v2Zero v2Id " +
+                     "Gt Lt Eq Pos Neg Zero",
                      "");
           TypeConverter (typeof<ExprConverter>);
           CustomEquality;
