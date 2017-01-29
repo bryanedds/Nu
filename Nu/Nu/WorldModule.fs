@@ -575,15 +575,24 @@ module WorldModule =
             let mousePositionWorld = World.mouseToWorld viewType mousePosition world
             entityPosition - mousePositionWorld
 
-        static member internal assetTagToScriptOpt assetTag world =
-            let (symbolOpt, world) = World.tryFindSymbol true assetTag world
+        static member assetTagToValueOpt<'a> implicitDelimiters assetTag world =
+            let (symbolOpt, world) = World.tryFindSymbol implicitDelimiters assetTag world
             let scriptOpt =
                 match symbolOpt with
                 | Some symbol ->
-                    try let script = valueize<Scripting.Expr list> symbol in Some script
-                    with exn -> Log.info ^ "Failed to convert symbol '" + scstring symbol + "' to Script due to: " + scstring exn; None
+                    try let script = valueize<'a> symbol in Some script
+                    with exn -> Log.debug ^ "Failed to convert symbol '" + scstring symbol + "' to value due to: " + scstring exn; None
                 | None -> None
             (scriptOpt, world)
+
+        static member assetTagsToValueOpts<'a> implicitDelimiters assetTags world =
+            let (values, world) =
+                List.fold (fun (values, world) assetTag ->
+                    let (value, world) = World.assetTagToValueOpt<'a> implicitDelimiters assetTag world
+                    (value :: values, world))
+                    ([], world)
+                    assetTags
+            (List.rev values, world)
 
         static member internal tryGetGameCalculatedProperty propertyName world =
             let game = Game.proxy Address.empty
@@ -980,14 +989,14 @@ module WorldModule =
 
         static member private screenOnRegisterChanged evt world =
             let screen = evt.Subscriber : Screen
-            let world = World.registerScreen screen world
-            World.unregisterScreen screen world
+            let world = World.unregisterScreen screen world
+            World.registerScreen screen world
 
         static member private screenScriptOptChanged evt world =
             let screen = evt.Subscriber : Screen
             match World.getScreenScriptOpt screen world with
             | Some script ->
-                match World.assetTagToScriptOpt script world with
+                match World.assetTagToValueOpt<Scripting.Expr list> true script world with
                 | (Some script, world) -> World.setScreenScript script screen world
                 | (None, world) -> world
             | None -> world
@@ -1318,14 +1327,14 @@ module WorldModule =
 
         static member private layerOnRegisterChanged evt world =
             let layer = evt.Subscriber : Layer
-            let world = World.registerLayer layer world
-            World.unregisterLayer layer world
+            let world = World.unregisterLayer layer world
+            World.registerLayer layer world
 
         static member private layerScriptOptChanged evt world =
             let layer = evt.Subscriber : Layer
             match World.getLayerScriptOpt layer world with
             | Some script ->
-                match World.assetTagToScriptOpt script world with
+                match World.assetTagToValueOpt<Scripting.Expr list> true script world with
                 | (Some script, world) -> World.setLayerScript script layer world
                 | (None, world) -> world
             | None -> world
@@ -1998,6 +2007,33 @@ module WorldModule =
             let world = World.updateEntityPublishPostUpdateFlag entity world
             world
 
+        static member internal registerEntity entity world =
+            let world =
+                World.withEventContext (fun world ->
+                    let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
+                    let facets = World.getEntityFacetsNp entity world
+                    let world = dispatcher.Register (entity, world)
+                    let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
+                    let world = World.updateEntityPublishFlags entity world
+                    let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
+                    World.publish () (ltoa<unit> [!!"Entity"; !!"Register"; !!"Event"] ->- entity) eventTrace entity world)
+                    entity
+                    world
+            World.choose world
+
+        static member internal unregisterEntity entity world =
+            let world =
+                World.withEventContext (fun world ->
+                    let eventTrace = EventTrace.record "World" "removeEntity" EventTrace.empty
+                    let world = World.publish () (ltoa<unit> [!!"Entity"; !!"Unregistering"; !!"Event"] ->- entity) eventTrace entity world
+                    let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
+                    let facets = World.getEntityFacetsNp entity world
+                    let world = dispatcher.Unregister (entity, world)
+                    List.fold (fun world (facet : Facet) -> facet.Unregister (entity, world)) world facets)
+                    entity
+                    world
+            World.choose world
+
         static member private addEntity mayReplace entityState entity world =
 
             // add entity only if it is new or is explicitly able to be replaced
@@ -2027,17 +2063,8 @@ module WorldModule =
                 let world = World.setScreenEntityTreeNpNoEvent entityTree screen world
 
                 // register entity if needed
-                if isNew then
-                    World.withEventContext (fun world ->
-                        let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
-                        let facets = World.getEntityFacetsNp entity world
-                        let world = dispatcher.Register (entity, world)
-                        let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
-                        let world = World.updateEntityPublishFlags entity world
-                        let eventTrace = EventTrace.record "World" "addEntity" EventTrace.empty
-                        World.publish () (ltoa<unit> [!!"Entity"; !!"Register"; !!"Event"] ->- entity) eventTrace entity world)
-                        entity
-                        world
+                if isNew
+                then World.registerEntity entity world
                 else world
 
             // handle failure
@@ -2114,17 +2141,8 @@ module WorldModule =
             // ensure entity exists in the world
             if World.entityExists entity world then
                 
-                // publish event and unregister entity
-                let world =
-                    World.withEventContext (fun world ->
-                        let eventTrace = EventTrace.record "World" "removeEntity" EventTrace.empty
-                        let world = World.publish () (ltoa<unit> [!!"Entity"; !!"Unregistering"; !!"Event"] ->- entity) eventTrace entity world
-                        let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
-                        let facets = World.getEntityFacetsNp entity world
-                        let world = dispatcher.Unregister (entity, world)
-                        List.fold (fun world (facet : Facet) -> facet.Unregister (entity, world)) world facets)
-                        entity
-                        world
+                // unregister entity
+                let world = World.unregisterEntity entity world
 
                 // get old world for entity tree rebuild
                 let oldWorld = world
