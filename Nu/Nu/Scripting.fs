@@ -53,8 +53,7 @@ module Scripting =
             | :? Stream as that -> Stream.equals this that
             | _ -> failwithumf ()
 
-    and [<Syntax    ("not" +
-                     "inc dec" +
+    and [<Syntax    ("neg inc dec" +
                      "pow root sqr sqrt " +
                      "floor ceiling truncate round exp log " +
                      "sin cos tan asin acos atan " +
@@ -204,7 +203,7 @@ module Scripting =
             | (Int64 left, Int64 right) -> compare left right
             | (Single left, Single right) -> compare left right
             | (Double left, Double right) -> compare left right
-            | (Vector2 left, Vector2 right) -> compare (left.X, left.Y) (right.X, right.Y) // TODO: intrinsic comparison for OpenTK.Vector2!
+            | (Vector2 left, Vector2 right) -> compare (left.X, left.Y) (right.X, right.Y)
             | (String left, String right) -> compare left right
             | (Keyword left, Keyword right) -> compare left right
             | (Tuple left, Tuple right) -> compare left right
@@ -213,7 +212,7 @@ module Scripting =
             | (List left, List right) -> compare left right
             | (Ring left, Ring right) -> compare left right
             | (Table left, Table right) -> compare left right
-            | (_, _) -> -1 // TODO: ensure this won't break the used sorting algorithms
+            | (_, _) -> -1 // TODO: ensure this won't break any relevant sorting algorithms
 
         // TODO: check if we can trust the hash function to be efficient on value types...
         override this.GetHashCode () =

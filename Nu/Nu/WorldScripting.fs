@@ -129,19 +129,19 @@ module WorldScripting =
               Ring : Expr Set -> SymbolOrigin option -> Expr
               Table : Map<Expr, Expr> -> SymbolOrigin option -> Expr }
 
-        let NotFns =
+        let NegFns =
             { Bool = fun value _ -> Bool (if value then false else true)
               Int = fun value _ -> Int (0 - value)
               Int64 = fun value _ -> Int64 (0L - value)
               Single = fun value _ -> Single (0.0f - value)
               Double = fun value _ -> Double (0.0 - value)
               Vector2 = fun value _ -> Vector2 (OpenTK.Vector2.Zero - value)
-              String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Not"], "Cannot not a string.", originOpt)
-              Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Not"], "Cannot not a tuple.", originOpt)
-              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Not"], "Cannot not a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Not"], "Cannot not a list.", originOpt)
-              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Not"], "Cannot not a ring.", originOpt)
-              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Not"], "Cannot not a table.", originOpt) }
+              String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Negate"], "Cannot negate a string.", originOpt)
+              Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Negate"], "Cannot negate a tuple.", originOpt)
+              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Negate"], "Cannot negate a keyphrase.", originOpt)
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Negate"], "Cannot negate a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Negate"], "Cannot negate a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Negate"], "Cannot negate a table.", originOpt) }
 
         let IncFns =
             { Bool = fun value _ -> Bool (if value then false else true)
@@ -1012,7 +1012,7 @@ module WorldScripting =
                  ("*", evalBinary MulFns)
                  ("/", evalBinary DivFns)
                  ("%", evalBinary ModFns)
-                 ("not", evalUnary NotFns)
+                 ("neg", evalUnary NegFns)
                  ("inc", evalUnary IncFns)
                  ("dec", evalUnary DecFns)
                  ("pow", evalBinary PowFns)
