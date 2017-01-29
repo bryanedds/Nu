@@ -854,9 +854,12 @@ module WorldScripting =
             | Double doubleValue -> ((fns.Double doubleValue fnOriginOpt), world)
             | Vector2 vector2Value -> ((fns.Vector2 vector2Value fnOriginOpt), world)
             | String stringValue -> ((fns.String stringValue fnOriginOpt), world)
+            | Keyword keywordValue -> ((fns.Keyword keywordValue fnOriginOpt), world)
             | Tuple tupleValue -> ((fns.Tuple tupleValue fnOriginOpt), world)
             | Keyphrase (wordValue, phraseValue) -> ((fns.Keyphrase wordValue phraseValue fnOriginOpt), world)
             | List listValue -> ((fns.List listValue fnOriginOpt), world)
+            | Ring ringValue -> ((fns.Ring ringValue fnOriginOpt), world)
+            | Table tableValue -> ((fns.Table tableValue fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", fnOriginOpt), world)
 
         let evalUnary fns fnOriginOpt fnName evaledArgs world =
@@ -873,9 +876,12 @@ module WorldScripting =
             | (Double doubleLeft, Double doubleRight) -> ((fns.Double doubleLeft doubleRight fnOriginOpt), world)
             | (Vector2 vector2Left, Vector2 vector2Right) -> ((fns.Vector2 vector2Left vector2Right fnOriginOpt), world)
             | (String stringLeft, String stringRight) -> ((fns.String stringLeft stringRight fnOriginOpt), world)
+            | (Keyword keywordLeft, Keyword keywordRight) -> ((fns.String keywordLeft keywordRight fnOriginOpt), world)
             | (Tuple tupleLeft, Tuple tupleRight) -> ((fns.Tuple tupleLeft tupleRight fnOriginOpt), world)
             | (Keyphrase (wordLeft, phraseLeft), Keyphrase (wordRight, phraseRight)) -> ((fns.Keyphrase wordLeft phraseLeft wordRight phraseRight fnOriginOpt), world)
             | (List listLeft, List listRight) -> ((fns.List listLeft listRight fnOriginOpt), world)
+            | (Ring ringLeft, Ring ringRight) -> ((fns.Ring ringLeft ringRight fnOriginOpt), world)
+            | (Table tableLeft, Table tableRight) -> ((fns.Table tableLeft tableRight fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a binary function on unlike or incompatible values.", fnOriginOpt), world)
 
         let evalBinary fns fnOriginOpt fnName evaledArgs world =
