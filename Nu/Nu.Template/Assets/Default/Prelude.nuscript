@@ -1,92 +1,90 @@
-#|||||||||||||||||||||||||||||||||||
-Nu Game Engine.
-Copyright (C) Bryan Edds, 2012-2017.
-|||||||||||||||||||||||||||||||||||#
+// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2012-2017.
 
-#| The bool type indicator.      |# [define -b- false]
-#| The int type indicator.       |# [define -i- 0]
-#| The int64 type indicator.     |# [define -L- 0L]
-#| The single type indicator.    |# [define -f- 0f]
-#| The double type indicator.    |# [define -d- 0d]
-#| The v2 type indicator.        |# [define -2- [v2 0f 0f]]
-#| The string type indicator.    |# [define -s- ""]
-#| The keyword type indicator.   |# [define -k- nil]
-#| The tuple type indicator.     |# [define -u- [tuple]]
-#| The keyphrase type indicator. |# [define -p- [nil]]
-#| The option type indicator.    |# [define -o- none]
-#| The list type indicator.      |# [define -l- [list]]
-#| The ring type indicator.      |# [define -r- [ring]]
-#| The table type indicator.     |# [define -t- [table]]
-#| The unit type indicator.      |# [define -u- []]
+(* The bool type indicator.      *) [define -b- false]
+(* The int type indicator.       *) [define -i- 0]
+(* The int64 type indicator.     *) [define -L- 0L]
+(* The single type indicator.    *) [define -f- 0f]
+(* The double type indicator.    *) [define -d- 0d]
+(* The v2 type indicator.        *) [define -2- [v2 0f 0f]]
+(* The string type indicator.    *) [define -s- ""]
+(* The keyword type indicator.   *) [define -k- nil]
+(* The tuple type indicator.     *) [define -u- [tuple]]
+(* The keyphrase type indicator. *) [define -p- [nil]]
+(* The option type indicator.    *) [define -o- none]
+(* The list type indicator.      *) [define -l- [list]]
+(* The ring type indicator.      *) [define -r- [ring]]
+(* The table type indicator.     *) [define -t- [table]]
+(* The unit type indicator.      *) [define -u- []]
 
-#| The identity function. |#
+// The identity function.
 [define id [x] x]
 
-#| Flip a binary function's arguments. |#
+// Flip a binary function's arguments.
 [define flip [f]
  [fun [x y] [f y x]]]
 
-#| Check that a value is zero. |#
+// Check that a value is zero.
 [define isZero [x]
  [= x [toZero x]]]
 
-#| Check that a value is the identity. |#
+// Check that a value is the identity.
 [define isId [x]
  [= x [toId x]]]
 
-#| Check that a value is positive. |#
+// Check that a value is positive.
 [define isPos [x]
  [>= x [toZero x]]]
 
-#| Check that a value is negative. |#
+// Check that a value is negative.
 [define isNeg [x]
  [<= x [toZero x]]]
 
-#| Check that a value is positive infinity. |#
+// Check that a value is positive infinity.
 [define isPosInf [x]
  [> x [toMax x]]]
 
-#| Check that a value is negative infinity. |#
+// Check that a value is negative infinity.
 [define isNegInf [x]
  [< x [toMin x]]]
 
-#| Check that a value is infinity. |#
+// Check that a value is infinity.
 [define isInf [x]
  [|| [isPosInfinity x]
      [isNegInfinity x]]]
 
-#| Select the mininum value. |#
+// Select the mininum value.
 [define min [x y]
  [if [< x y] x y]]
 
-#| Select the maximum value. |#
+// Select the maximum value.
 [define max [x y]
  [if [> x y] x y]]
 
-#| Compare two values. Returns Lt, Gt, or Eq. |#
+// Compare two values. Returns Lt, Gt, or Eq.
 [define compare [x y]
  [if [< x y] Lt [if [> x y] Gt Eq]]]
 
-#| The sign of a value. Returns Pos, Neg, or Zero. |#
+// The sign of a value. Returns Pos, Neg, or Zero.
 [define sign [x]
  [if [> x [toZero x]] Pos [if [< [toZero x]] Neg Zero]]]
 
-#| Compute the absolute value. |#
+// Compute the absolute value.
 [define abs [x]
  [if [isPos x] x [neg x]]]
 
-#| Mathematical constant pi as a single value. |#
-[define pi 3.14159f]
-
-#| Mathematical constant e as a single value. |#
-[define e 2.71828f]
-
-#| The zero v2 value. |#
-[define v2Zero [toZero -2-]]
-
-#| The unit v2 value. |#
-[define v2Id [toId -2-]]
-
-#| Generate an infinite sequence of a given value. |#
+// Generate an infinite sequence of a given value.
 [define genInf [x]
  [gen [fun [i] [some x]]]]
+
+// Mathematical constant pi as a single value.
+[define pi 3.14159f]
+
+// Mathematical constant e as a single value.
+[define e 2.71828f]
+
+// The zero v2 value.
+[define v2Zero [toZero -2-]]
+
+// The unit v2 value.
+[define v2Id [toId -2-]]
