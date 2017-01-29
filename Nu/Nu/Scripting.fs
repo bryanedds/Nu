@@ -61,7 +61,7 @@ module Scripting =
                      "length normal " +
                      "cross dot " +
                      "violation bool int int64 single double string " +
-                     "nil nix " + // the empty keyword / keyphrase
+                     // TODO: "nil nix " + // the empty keyword / keyphrase
                      "v2 xOf yOf xAs yAs " + // vector operations
                      "pair tuple unit fst snd thd fth fif nth " +
                      "some none isNone isSome contains map " +
@@ -70,10 +70,9 @@ module Scripting =
                      "ring add remove " +
                      "table tryFind find " +
                      "let fun if cond try break get set do " +
+                     // TODO: "update curry compose substring tickRate tickTime" +
                      "variableStream eventStream propertyStream " +
-                     "define variable equate handle " +
-                     "tickRate tickTime updateCount " +
-                     "substring curry compose update",
+                     "define variable equate handle",
                      "");
           TypeConverter (typeof<ExprConverter>);
           CustomEquality;
