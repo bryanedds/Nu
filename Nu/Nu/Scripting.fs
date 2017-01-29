@@ -53,7 +53,8 @@ module Scripting =
             | :? Stream as that -> Stream.equals this that
             | _ -> failwithumf ()
 
-    and [<Syntax    ("neg inc dec" +
+    and [<Syntax    ("toZero toIdentity toMin toMax " +
+                     "neg inc dec " +
                      "pow root sqr sqrt " +
                      "floor ceiling truncate round exp log " +
                      "sin cos tan asin acos atan " +
@@ -65,15 +66,14 @@ module Scripting =
                      "pair tuple unit fst snd thd fth fif nth " +
                      "some none isNone isSome contains map " +
                      // TODO: "either isLeft isRight left right " +
-                     "list head tail cons isEmpty notEmpty filter fold reduce " +
+                     "list head tail cons isEmpty notEmpty filter fold reduce reverse " +
                      "ring add remove " +
                      "table tryFind find " +
                      "let fun if cond try break get set do " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
                      "tickRate tickTime updateCount " +
-                     "toZero toIdentity toMin toMax toPi toE toList toString " +
-                     "curry compose update updateTo",
+                     "substring curry compose update",
                      "");
           TypeConverter (typeof<ExprConverter>);
           CustomEquality;

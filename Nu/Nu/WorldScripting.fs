@@ -129,6 +129,62 @@ module WorldScripting =
               Ring : Expr Set -> SymbolOrigin option -> Expr
               Table : Map<Expr, Expr> -> SymbolOrigin option -> Expr }
 
+        let ToZeroFns =
+            { Bool = fun _ _ -> Bool false
+              Int = fun _ _ -> Int 0
+              Int64 = fun _ _ -> Int64 0L
+              Single = fun _ _ -> Single 0.0f
+              Double = fun _ _ -> Double 0.0
+              Vector2 = fun _ _ -> Vector2 OpenTK.Vector2.Zero
+              String = fun _ _ -> String String.Empty
+              Tuple = fun _ _ -> Tuple Array.empty
+              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToZero"], "Cannot convert a keyphrase to a zero representation.", originOpt)
+              List = fun _ _ -> List []
+              Ring = fun _ _ -> Ring Set.empty
+              Table = fun _ _ -> Table Map.empty }
+
+        let ToIdentityFns =
+            { Bool = fun _ _ -> Bool true
+              Int = fun _ _ -> Int 1
+              Int64 = fun _ _ -> Int64 1L
+              Single = fun _ _ -> Single 1.0f
+              Double = fun _ _ -> Double 1.0
+              Vector2 = fun _ _ -> Vector2 (OpenTK.Vector2 1.0f)
+              String = fun _ _ -> String String.Empty
+              Tuple = fun _ _ -> Tuple Array.empty
+              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToIdentity"], "Cannot convert a keyphrase to an identity representation.", originOpt)
+              List = fun _ _ -> List []
+              Ring = fun _ _ -> Ring Set.empty
+              Table = fun _ _ -> Table Map.empty }
+
+        let ToMinFns =
+            { Bool = fun _ _ -> Bool false
+              Int = fun _ _ -> Int Int32.MinValue
+              Int64 = fun _ _ -> Int64 Int64.MinValue
+              Single = fun _ _ -> Single Single.MinValue
+              Double = fun _ _ -> Double Double.MinValue
+              Vector2 = fun _ _ -> Vector2 (OpenTK.Vector2 Single.MinValue)
+              String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMin"], "Cannot convert a string to a minimum representation.", originOpt)
+              Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMin"], "Cannot convert a tuple to a minimum representation.", originOpt)
+              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMin"], "Cannot convert a keyphrase to a minimum representation.", originOpt)
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMin"], "Cannot convert a list to a minimum representation.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMin"], "Cannot convert a ring to a minimum representation.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMin"], "Cannot convert a table to a minimum representation.", originOpt) }
+
+        let ToMaxFns =
+            { Bool = fun _ _ -> Bool true
+              Int = fun _ _ -> Int Int32.MaxValue
+              Int64 = fun _ _ -> Int64 Int64.MaxValue
+              Single = fun _ _ -> Single Single.MaxValue
+              Double = fun _ _ -> Double Double.MaxValue
+              Vector2 = fun _ _ -> Vector2 (OpenTK.Vector2 Single.MaxValue)
+              String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMax"], "Cannot convert a string to a maximum representation.", originOpt)
+              Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMax"], "Cannot convert a tuple to a maximum representation.", originOpt)
+              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMax"], "Cannot convert a keyphrase to a maximum representation.", originOpt)
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMax"], "Cannot convert a list to a maximum representation.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMax"], "Cannot convert a ring to a maximum representation.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMax"], "Cannot convert a table to a maximum representation.", originOpt) }
+
         let NegFns =
             { Bool = fun value _ -> Bool (if value then false else true)
               Int = fun value _ -> Int (0 - value)
@@ -471,13 +527,13 @@ module WorldScripting =
               Int64 = fun value _ -> String (scstring value)
               Single = fun value _ -> String (scstring value)
               Double = fun value _ -> String (scstring value)
-              Vector2 = fun value _ -> String (scstring value)
+              Vector2 = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a v2 to a string.", originOpt)
               String = fun value _ -> String (value)
-              Tuple = fun value _ -> String (scstring value)
-              Keyphrase = fun value _ -> String (scstring value)
-              List = fun value _ -> String (scstring value)
-              Ring = fun value _ -> String (scstring value)
-              Table = fun value _ -> String (scstring value) }
+              Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a tuple to a string.", originOpt)
+              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a keyphrase to a string.", originOpt)
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a list to a string.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a ring to a string.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a table to a string.", originOpt) }
 
         type [<NoEquality; NoComparison>] BinaryFns =
             { Bool : bool -> bool -> SymbolOrigin option -> Expr
@@ -805,6 +861,10 @@ module WorldScripting =
     
         let evalNth5 index fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
+            | [String str] ->
+                if index >= 0 && index < String.length str
+                then (String (string str.[index]), world)
+                else (Violation ([!!"OutOfRange"], "String does not contain element at index " + string index + ".", fnOriginOpt), world)
             | [Tuple evaleds] ->
                 if index >= 0 && index < Array.length evaleds
                 then (evaleds.[index], world)
@@ -1012,6 +1072,10 @@ module WorldScripting =
                  ("*", evalBinary MulFns)
                  ("/", evalBinary DivFns)
                  ("%", evalBinary ModFns)
+                 ("toZero", evalUnary ToZeroFns)
+                 ("toIdentity", evalUnary ToIdentityFns)
+                 ("toMin", evalUnary ToMinFns)
+                 ("toMax", evalUnary ToMaxFns)
                  ("neg", evalUnary NegFns)
                  ("inc", evalUnary IncFns)
                  ("dec", evalUnary DecFns)
@@ -1068,6 +1132,7 @@ module WorldScripting =
                  //("filter", evalFilter evalApply) TODO
                  ("fold", evalFold evalApply)
                  ("reduce", evalReduce evalApply)
+                 //("reverse", evalReverse) TODO
                  ("ring", evalRing)
                  ("add", evalAdd)
                  ("remove", evalRemove)
