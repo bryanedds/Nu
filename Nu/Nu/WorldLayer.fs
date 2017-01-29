@@ -171,7 +171,7 @@ module WorldLayerModule =
             let filePathTmp = filePath + ".tmp"
             let layerDescriptor = World.writeLayer layer LayerDescriptor.empty world
             let layerDescriptorStr = scstring layerDescriptor
-            let layerDescriptorPretty = Symbol.prettyPrint String.Empty layerDescriptorStr
+            let layerDescriptorPretty = Symbol.prettyPrint layerDescriptorStr
             File.WriteAllText (filePathTmp, layerDescriptorPretty)
             File.Delete filePath
             File.Move (filePathTmp, filePath)

@@ -340,7 +340,7 @@ module Gaia =
                     let selectionStart = form.propertyValueTextBox.SelectionStart
                     let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                     let strEscaped = String.escape strUnescaped
-                    let strPretty = Symbol.prettyPrint keywords0 strEscaped
+                    let strPretty = Symbol.prettyPrint strEscaped
                     form.propertyValueTextBox.Text <- strPretty + "\r\n"
                     form.propertyValueTextBox.EmptyUndoBuffer ()
                     form.propertyValueTextBox.Keywords0 <- keywords0
@@ -394,10 +394,9 @@ module Gaia =
     let private tryLoadAssetGraph (form : GaiaForm) world =
         match tryReloadAssets form world with
         | Right (assetGraph, world) ->
-            let keywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             let selectionStart = form.propertyValueTextBox.SelectionStart
             let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
-            form.assetGraphTextBox.Text <- Symbol.prettyPrint keywords0 packageDescriptorsStr + "\r\n"
+            form.assetGraphTextBox.Text <- Symbol.prettyPrint packageDescriptorsStr + "\r\n"
             form.assetGraphTextBox.SelectionStart <- selectionStart
             form.assetGraphTextBox.ScrollCaret ()
             Some world
@@ -410,8 +409,7 @@ module Gaia =
         let assetSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let assetGraphFilePath = Path.Combine (assetSourceDir, Assets.AssetGraphFilePath)
         try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
-            let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-            File.WriteAllText (assetGraphFilePath, Symbol.prettyPrint assetGraphKeywords0 packageDescriptorsStr)
+            File.WriteAllText (assetGraphFilePath, Symbol.prettyPrint packageDescriptorsStr)
             true
         with exn ->
             ignore ^ MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -425,10 +423,9 @@ module Gaia =
     let private tryLoadOverlayer (form : GaiaForm) world =
         match tryReloadOverlays form world with
         | Right (overlayer, world) ->
-            let keywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
             let selectionStart = form.propertyValueTextBox.SelectionStart
             let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
-            form.overlayerTextBox.Text <- Symbol.prettyPrint keywords0 extrinsicOverlaysStr + "\r\n"
+            form.overlayerTextBox.Text <- Symbol.prettyPrint extrinsicOverlaysStr + "\r\n"
             form.overlayerTextBox.SelectionStart <- selectionStart
             form.overlayerTextBox.ScrollCaret ()
             Some world
@@ -441,8 +438,7 @@ module Gaia =
         let overlayerSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let overlayerFilePath = Path.Combine (overlayerSourceDir, Assets.OverlayerFilePath)
         try let overlays = scvalue<Overlay list> ^ form.overlayerTextBox.Text.TrimEnd ()
-            let overlayerKeywords0 = match typeof<Overlayer>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-            File.WriteAllText (overlayerFilePath, Symbol.prettyPrint overlayerKeywords0 (scstring overlays))
+            File.WriteAllText (overlayerFilePath, Symbol.prettyPrint (scstring overlays))
             true
         with exn ->
             ignore ^ MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to save overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -673,8 +669,7 @@ module Gaia =
         addWorldChanger ^ fun world ->
             match tryReloadAssets form world with
             | Right (assetGraph, world) ->
-                let assetGraphKeywords0 = match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-                form.assetGraphTextBox.Text <- Symbol.prettyPrint assetGraphKeywords0 (scstring assetGraph) + "\r\n"
+                form.assetGraphTextBox.Text <- Symbol.prettyPrint (scstring assetGraph) + "\r\n"
                 world
             | Left error ->
                 ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -708,9 +703,8 @@ module Gaia =
     let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             try let eventFilter = scvalue<EventFilter.Filter> form.eventFilterTextBox.Text
-                let eventFilterKeywords0 = match typeof<EventFilter.Filter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
                 let world = World.setEventFilter eventFilter world
-                form.eventFilterTextBox.Text <- Symbol.prettyPrint eventFilterKeywords0 (scstring eventFilter) + "\r\n"
+                form.eventFilterTextBox.Text <- Symbol.prettyPrint (scstring eventFilter) + "\r\n"
                 world
             with exn ->
                 let world = World.choose world
@@ -721,8 +715,7 @@ module Gaia =
         addWorldChanger ^ fun world ->
             let eventFilter = World.getEventFilter world
             let eventFilterStr = scstring eventFilter
-            let eventFilterKeywords0 = match typeof<EventFilter.Filter>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-            let eventFilterPretty = Symbol.prettyPrint eventFilterKeywords0 eventFilterStr
+            let eventFilterPretty = Symbol.prettyPrint eventFilterStr
             form.eventFilterTextBox.Text <- eventFilterPretty + "\r\n"
             form.eventFilterTextBox.EmptyUndoBuffer ()
             world

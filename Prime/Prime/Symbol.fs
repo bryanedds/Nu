@@ -257,10 +257,10 @@ module Symbol =
 
     /// Cascade a symbol string into multiple lines with proper tabbing.
     /// TODO: split up this function.
-    let private cascade keywords str =
+    let private cascade str =
         let rec getCascadeDepth symbol depth =
             match symbol with
-            | Atom (str, _) -> if List.contains str keywords then depth elif List.isEmpty keywords then depth else 0
+            | Atom _ -> depth
             | Symbols (_ :: _ as symbols', _) -> getCascadeDepth (List.head symbols') (depth + 1)
             | _ -> 0
         let symbol = fromString str
@@ -286,9 +286,8 @@ module Symbol =
         string builder
 
     /// Pretty-print a symbol string in the form an symbolic-expression.
-    let prettyPrint (keywords : string) str =
-        let keywordsSplit = keywords.Split ([|' '|], StringSplitOptions.RemoveEmptyEntries) |> List.ofArray
-        let strCascaded = cascade keywordsSplit str
+    let prettyPrint str =
+        let strCascaded = cascade str
         let lines = strCascaded.Split ([|"\r\n"|], StringSplitOptions.None)
         let linesTrimmed = Array.map (fun (str : string) -> str.TrimEnd ()) lines
         let strPretty = String.Join ("\r\n", linesTrimmed)

@@ -1,51 +1,47 @@
-[LayerDispatcher 
- [[Name Layer] 
-  [OptSpecialization None] 
-  [Persistent True] 
-  [PublishChanges True]] 
- [[TileMapDispatcher 
-   [[Depth -4] 
-    [Parallax 0.1] 
-    [Position 
-     [-480 -304]] 
-    [PublishUpdates False] 
-    [TileMapAsset 
-     [Gameplay BackgroundB]]]] 
-  [EnemyDispatcher 
-   [[Depth 4] 
-    [Position 
-     [176 -72]]]] 
-  [EnemyDispatcher 
-   [[Depth 4] 
-    [Position 
-     [1376 -175.68]]]] 
-  [EnemyDispatcher 
-   [[Depth 4] 
-    [Position 
-     [112 48.31998]]]] 
-  [EnemyDispatcher 
-   [[Depth 4] 
-    [Position 
-     [1464 -15.6805]]]] 
-  [EnemyDispatcher 
-   [[Depth 4] 
-    [Position 
-     [1256 112.32]]]] 
-  [EnemyDispatcher 
-   [[Depth 4] 
-    [Position 
-     [928 112.32]]]] 
-  [TileMapDispatcher 
-   [[Depth -8] 
-    [Parallax 0.1] 
-    [Position 
-     [-480 -304]] 
-    [PublishUpdates False] 
-    [TileMapAsset 
-     [Gameplay BackgroundA]]]] 
-  [TileMapDispatcher 
-   [[Position 
-     [-480 -304]] 
-    [PublishUpdates False] 
-    [TileMapAsset 
+[LayerDispatcher
+ [[Depth 0]
+  [Name Layer]
+  [OnActualize []]
+  [OnPostUpdate []]
+  [OnRegister []]
+  [OnUnregister []]
+  [OnUpdate []]
+  [Persistent True]
+  [Script []]
+  [ScriptOpt None]
+  [Specialization Vanilla]
+  [Visible True]]
+ [[TileMapDispatcher
+   [[Depth -4]
+    [Parallax 0.1]
+    [Position [-480 -304]]
+    [TileMapAsset
+     [Gameplay BackgroundB]]]]
+  [EnemyDispatcher
+   [[Depth 4]
+    [Position [176 -72]]]]
+  [EnemyDispatcher
+   [[Depth 4]
+    [Position [1376 -175.68]]]]
+  [EnemyDispatcher
+   [[Depth 4]
+    [Position [112 48.31998]]]]
+  [EnemyDispatcher
+   [[Depth 4]
+    [Position [1464 -15.6805]]]]
+  [EnemyDispatcher
+   [[Depth 4]
+    [Position [1256 112.32]]]]
+  [EnemyDispatcher
+   [[Depth 4]
+    [Position [928 112.32]]]]
+  [TileMapDispatcher
+   [[Depth -8]
+    [Parallax 0.1]
+    [Position [-480 -304]]
+    [TileMapAsset
+     [Gameplay BackgroundA]]]]
+  [TileMapDispatcher
+   [[Position [-480 -304]]
+    [TileMapAsset
      [Gameplay Section0TileMap]]]]]]
