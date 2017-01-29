@@ -129,6 +129,48 @@ module WorldScripting =
               Ring : Expr Set -> SymbolOrigin option -> Expr
               Table : Map<Expr, Expr> -> SymbolOrigin option -> Expr }
 
+        let NotFns =
+            { Bool = fun value _ -> Bool (if value then false else true)
+              Int = fun value _ -> Int (0 - value)
+              Int64 = fun value _ -> Int64 (0L - value)
+              Single = fun value _ -> Single (0.0f - value)
+              Double = fun value _ -> Double (0.0 - value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2.Zero - value)
+              String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Not"], "Cannot not a string.", originOpt)
+              Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Not"], "Cannot not a tuple.", originOpt)
+              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Not"], "Cannot not a keyphrase.", originOpt)
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Not"], "Cannot not a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Not"], "Cannot not a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Not"], "Cannot not a table.", originOpt) }
+
+        let IncFns =
+            { Bool = fun value _ -> Bool (if value then false else true)
+              Int = fun value _ -> Int (inc value)
+              Int64 = fun value _ -> Int64 (inc value)
+              Single = fun value _ -> Single (inc value)
+              Double = fun value _ -> Double (inc value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (inc value.X, inc value.Y))
+              String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a string.", originOpt)
+              Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a tuple.", originOpt)
+              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a keyphrase.", originOpt)
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a table.", originOpt) }
+
+        let DecFns =
+            { Bool = fun value _ -> Bool (if value then false else true)
+              Int = fun value _ -> Int (dec value)
+              Int64 = fun value _ -> Int64 (dec value)
+              Single = fun value _ -> Single (dec value)
+              Double = fun value _ -> Double (dec value)
+              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (dec value.X, dec value.Y))
+              String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a string.", originOpt)
+              Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a tuple.", originOpt)
+              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a keyphrase.", originOpt)
+              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a list.", originOpt)
+              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a ring.", originOpt)
+              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a table.", originOpt) }
+
         let SqrFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a bool.", originOpt)
               Int = fun value _ -> Int (value * value)
@@ -198,34 +240,6 @@ module WorldScripting =
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a table.", originOpt) }
-
-        let IncFns =
-            { Bool = fun value _ -> Bool (if value then false else true)
-              Int = fun value _ -> Int (inc value)
-              Int64 = fun value _ -> Int64 (inc value)
-              Single = fun value _ -> Single (inc value)
-              Double = fun value _ -> Double (inc value)
-              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (inc value.X, inc value.Y))
-              String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a string.", originOpt)
-              Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a tuple.", originOpt)
-              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a list.", originOpt)
-              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a ring.", originOpt)
-              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a table.", originOpt) }
-
-        let DecFns =
-            { Bool = fun value _ -> Bool (if value then false else true)
-              Int = fun value _ -> Int (dec value)
-              Int64 = fun value _ -> Int64 (dec value)
-              Single = fun value _ -> Single (dec value)
-              Double = fun value _ -> Double (dec value)
-              Vector2 = fun value _ -> Vector2 (OpenTK.Vector2 (dec value.X, dec value.Y))
-              String = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a string.", originOpt)
-              Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a tuple.", originOpt)
-              Keyphrase = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a keyphrase.", originOpt)
-              List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a list.", originOpt)
-              Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a ring.", originOpt)
-              Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a table.", originOpt) }
 
         let ExpFns =
             { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a bool.", originOpt)
@@ -998,6 +1012,9 @@ module WorldScripting =
                  ("*", evalBinary MulFns)
                  ("/", evalBinary DivFns)
                  ("%", evalBinary ModFns)
+                 ("not", evalUnary NotFns)
+                 ("inc", evalUnary IncFns)
+                 ("dec", evalUnary DecFns)
                  ("pow", evalBinary PowFns)
                  ("root", evalBinary RootFns)
                  ("sqr", evalUnary SqrFns)
@@ -1006,8 +1023,6 @@ module WorldScripting =
                  ("ceiling", evalUnary CeilingFns)
                  ("truncate", evalUnary TruncateFns)
                  ("round", evalUnary RoundFns)
-                 ("inc", evalUnary IncFns)
-                 ("dec", evalUnary DecFns)
                  ("exp", evalUnary ExpFns)
                  ("log", evalUnary LogFns)
                  ("sin", evalUnary SinFns)
@@ -1241,7 +1256,7 @@ module WorldScripting =
             let resultEir =
                 List.foldUntilRight (fun world (condition, consequent) ->
                     let (evaledInput, world) = eval condition world
-                    match evalBinaryInner EqFns originOpt "match" input evaledInput world with
+                    match evalBinaryInner EqFns originOpt "=" input evaledInput world with
                     | (Violation _, world) -> Right (evaledInput, world)
                     | (Bool true, world) -> Right (eval consequent world)
                     | (Bool false, world) -> Left world
