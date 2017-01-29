@@ -162,10 +162,15 @@ namespace Nu.Gaia.Design
                 lastSelectionPos = selectionPos;
                 var bracePos1 = -1;
                 var bracePos2 = -1;
-                if (IsBrace(GetCharAt(selectionPos)))
+                if (IsBraceLeft(GetCharAt(selectionPos)))
                 {
                     // Select the brace to the immediate right
                     bracePos1 = selectionPos;
+                }
+                else if (selectionPos > 0 && IsBraceRight(GetCharAt(selectionPos - 1)))
+                {
+                    // Select the brace to the immediate left
+                    bracePos1 = selectionPos - 1;
                 }
 
                 if (bracePos1 >= 0)
@@ -203,15 +208,23 @@ namespace Nu.Gaia.Design
             if (!requireTextInCurrentWord || lenEntered > 0) AutoCShow(lenEntered, AutoCWords);
         }
 
-        private bool IsBrace(int c)
+        private bool IsBraceLeft(int c)
         {
             switch (c)
             {
                 case '(':
-                case ')':
                 case '[':
+                case '{': return true;
+            }
+            return false;
+        }
+
+        private bool IsBraceRight(int c)
+        {
+            switch (c)
+            {
+                case ')':
                 case ']':
-                case '{':
                 case '}': return true;
             }
             return false;
