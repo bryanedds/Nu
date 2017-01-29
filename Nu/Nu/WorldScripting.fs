@@ -913,7 +913,7 @@ module WorldScripting =
             match evaledArgs with
             | [evaled; evaled2; evaled3; evaled4; evaled5] -> fn fnOriginOpt fnName evaled evaled2 evaled3 evaled4 evaled5 world
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!fnName], "Function '" + fnName + "' requires 5 arguments.", fnOriginOpt), world)
-        
+    
         let evalV2 fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [Single x; Single y] -> (Vector2 (OpenTK.Vector2 (x, y)), world)
@@ -1051,13 +1051,13 @@ module WorldScripting =
                 | _ -> (Violation ([!!"InvalidArgumentValue"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a list with no elements.", fnOriginOpt), world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-sequence.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Sequence"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
-    
+
         let evalCons fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [evaled; List evaleds] -> (List (evaled :: evaleds), world)
             | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"List"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"List"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
-    
+
         let evalIsEmpty fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [String str] -> (Bool (String.isEmpty str), world)
@@ -1066,13 +1066,25 @@ module WorldScripting =
             | [Table map] -> (Bool (Map.isEmpty map), world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
-    
+
         let evalNotEmpty fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [String str] -> (Bool (String.notEmpty str), world)
             | [List list] -> (Bool (List.notEmpty list), world)
             | [Ring set] -> (Bool (Set.notEmpty set), world)
             | [Table map] -> (Bool (Map.notEmpty map), world)
+            | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
+
+        let evalContains fnOriginOpt fnName evaledArgs world =
+            match evaledArgs with
+            | [evaledArg; String str] ->
+                match evaledArg with
+                | String str' -> (Bool (str.Contains str'), world)
+                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "First argument to " + fnName + " for a string must also be a string.", fnOriginOpt), world)
+            | [evaledArg; List list] -> (Bool (List.contains evaledArg list), world)
+            | [evaledArg; Ring set] -> (Bool (Set.contains evaledArg set), world)
+            | [evaledArg; Table map] -> (Bool (Map.containsKey evaledArg map), world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
     
@@ -1227,6 +1239,7 @@ module WorldScripting =
                  ("cons", evalCons)
                  ("isEmpty", evalIsEmpty)
                  ("notEmpty", evalNotEmpty)
+                 ("contains", evalContains)
                  //("filter", evalFilter evalApply) TODO
                  ("fold", evalFold evalApply)
                  ("reduce", evalReduce evalApply)
