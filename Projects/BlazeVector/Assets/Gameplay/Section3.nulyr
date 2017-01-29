@@ -1,51 +1,47 @@
-[LayerDispatcher 
- [[Name Layer] 
-  [OptSpecialization None] 
-  [Persistent True] 
-  [PublishChanges True]] 
- [[EnemyDispatcher 
-   [[Depth 4] 
-    [Position 
-     [1256 111.04]]]] 
-  [TileMapDispatcher 
-   [[Position 
-     [-480 -304]] 
-    [PublishUpdates False] 
-    [TileMapAsset 
-     [Gameplay Section3TileMap]]]] 
-  [EnemyDispatcher 
-   [[Depth 1] 
-    [Position 
-     [168 -175.68]]]] 
-  [EnemyDispatcher 
-   [[Depth 1] 
-    [Position 
-     [680 112.32]]]] 
-  [EnemyDispatcher 
-   [[Depth 1] 
-    [Position 
-     [240 47.03999]]]] 
-  [TileMapDispatcher 
-   [[Depth -4] 
-    [Parallax 0.1] 
-    [Position 
-     [-480 -304]] 
-    [PublishUpdates False] 
-    [TileMapAsset 
-     [Gameplay BackgroundB]]]] 
-  [EnemyDispatcher 
-   [[Depth 1] 
-    [Position 
-     [96 48.31998]]]] 
-  [TileMapDispatcher 
-   [[Depth -8] 
-    [Parallax 0.1] 
-    [Position 
-     [-480 -304]] 
-    [PublishUpdates False] 
-    [TileMapAsset 
-     [Gameplay BackgroundA]]]] 
-  [EnemyDispatcher 
-   [[Depth 1] 
-    [Position 
-     [-415.7759 -175.68]]]]]]
+[LayerDispatcher
+ [[Depth 0]
+  [Name Layer]
+  [OnActualize []]
+  [OnPostUpdate []]
+  [OnRegister []]
+  [OnUnregister []]
+  [OnUpdate []]
+  [Persistent True]
+  [Script []]
+  [ScriptOpt None]
+  [Specialization Vanilla]
+  [Visible True]]
+ [[EnemyDispatcher
+   [[Depth 4]
+    [Position [1256 111.04]]]]
+  [TileMapDispatcher
+   [[Position [-480 -304]]
+    [TileMapAsset
+     [Gameplay Section3TileMap]]]]
+  [EnemyDispatcher
+   [[Depth 1]
+    [Position [168 -175.68]]]]
+  [EnemyDispatcher
+   [[Depth 1]
+    [Position [680 112.32]]]]
+  [EnemyDispatcher
+   [[Depth 1]
+    [Position [240 47.03999]]]]
+  [TileMapDispatcher
+   [[Depth -4]
+    [Parallax 0.1]
+    [Position [-480 -304]]
+    [TileMapAsset
+     [Gameplay BackgroundB]]]]
+  [EnemyDispatcher
+   [[Depth 1]
+    [Position [96 48.31998]]]]
+  [TileMapDispatcher
+   [[Depth -8]
+    [Parallax 0.1]
+    [Position [-480 -304]]
+    [TileMapAsset
+     [Gameplay BackgroundA]]]]
+  [EnemyDispatcher
+   [[Depth 1]
+    [Position [-415.7759 -175.68]]]]]]

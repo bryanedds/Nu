@@ -458,8 +458,7 @@ module EffectSystemModule =
                 let effectSystem = { effectSystem with EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions }
                 try evalContent effect.Content slice effectSystem
                 with exn ->
-                    let effectKeywords0 = match typeof<Effect>.GetCustomAttribute<SyntaxAttribute> true with null -> "" | syntax -> syntax.Keywords0
-                    let effectStr = Symbol.prettyPrint effectKeywords0 ^ scstring effect
+                    let effectStr = Symbol.prettyPrint (scstring effect)
                     Log.debug ^ "Error in effect:\r\n" + effectStr + "\r\ndue to: " + scstring exn
                     []
             else []

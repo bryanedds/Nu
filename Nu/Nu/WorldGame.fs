@@ -245,7 +245,7 @@ module WorldGameModule =
             let filePathTmp = filePath + ".tmp"
             let gameDescriptor = World.writeGame GameDescriptor.empty world
             let gameDescriptorStr = scstring gameDescriptor
-            let gameDescriptorPretty = Symbol.prettyPrint String.Empty gameDescriptorStr
+            let gameDescriptorPretty = Symbol.prettyPrint gameDescriptorStr
             File.WriteAllText (filePathTmp, gameDescriptorPretty)
             File.Delete filePath
             File.Move (filePathTmp, filePath)
