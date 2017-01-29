@@ -1108,9 +1108,8 @@ module WorldScripting =
 
         let rec Intrinsics =
             dictPlus
-                [("!", evalBoolUnary not)
-                 ("&", evalBoolBinary (&&))
-                 ("|", evalBoolBinary (||))
+                [("&&", evalBoolBinary (&&))
+                 ("||", evalBoolBinary (||))
                  ("=", evalBinary EqFns)
                  ("<>", evalBinary NotEqFns)
                  ("<", evalBinary LtFns)
@@ -1126,6 +1125,7 @@ module WorldScripting =
                  ("toId", evalUnary ToIdFns)
                  ("toMin", evalUnary ToMinFns)
                  ("toMax", evalUnary ToMaxFns)
+                 ("not", evalBoolUnary not)
                  ("inc", evalUnary IncFns)
                  ("dec", evalUnary DecFns)
                  ("neg", evalUnary NegFns)
@@ -1182,13 +1182,16 @@ module WorldScripting =
                  //("filter", evalFilter evalApply) TODO
                  ("fold", evalFold evalApply)
                  ("reduce", evalReduce evalApply)
-                 //("reverse", evalReverse) TODO
+                 //("rev", evalRev) TODO
+                 //("toList", evalToList) TODO
                  ("ring", evalRing)
                  ("add", evalAdd)
                  ("remove", evalRemove)
+                 //("toRing", evalToRing) TODO
                  ("table", evalTable)
                  ("tryFind", evalTryFind)
                  ("find", evalFind)
+                 //("toTable", evalToTable) TODO
                  ("product", evalProduct)
                  ("entityExists", evalSinglet evalSimulantExists)
                  ("layerExists", evalSinglet evalSimulantExists)

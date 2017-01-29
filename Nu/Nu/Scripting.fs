@@ -54,7 +54,7 @@ module Scripting =
             | _ -> failwithumf ()
 
     and [<Syntax    ("toZero toId toMin toMax " +
-                     "inc dec neg " +
+                     "not inc dec neg " +
                      "pow root sqr sqrt " +
                      "floor ceiling truncate round exp log " +
                      "sin cos tan asin acos atan " +
@@ -66,11 +66,12 @@ module Scripting =
                      "pair tuple unit fst snd thd fth fif nth " +
                      "some none isNone isSome contains map " +
                      // TODO: "either isLeft isRight left right " +
-                     "list head tail cons isEmpty notEmpty filter fold reduce reverse " +
-                     "ring add remove " +
-                     "table tryFind find " +
+                     // TODO: "gen next isDone take skip " +
+                     "list head tail cons isEmpty notEmpty filter fold reduce rev toList " +
+                     "ring add remove toRing " +
+                     "table tryFind find toTable " +
                      "let fun if cond try break get set do " +
-                     // TODO: "update curry compose substring tickRate tickTime" +
+                     // TODO: "substring tickRate tickTime update curry compose " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
                      // prelude identifiers...
