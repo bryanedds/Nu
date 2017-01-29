@@ -57,10 +57,10 @@ module Symbol =
     let [<Literal>] OpenQuoteStr = "`"
     let [<Literal>] CloseQuoteChar = '\''
     let [<Literal>] CloseQuoteStr = "\'"
-    let [<Literal>] LineCommentChar = ';'
-    let [<Literal>] LineCommentStr = ";"
-    let [<Literal>] OpenMultilineCommentStr = "#|"
-    let [<Literal>] CloseMultilineCommentStr = "|#"
+    let [<Literal>] LineCommentChar = '/'
+    let [<Literal>] LineCommentStr = "/"
+    let [<Literal>] OpenMultilineCommentStr = "/*"
+    let [<Literal>] CloseMultilineCommentStr = "*/"
     let [<Literal>] ReservedChars = ":"
     let [<Literal>] StructureCharsNoStr = "[]`\'"
     let [<Literal>] StructureChars = "\"" + StructureCharsNoStr
@@ -77,7 +77,7 @@ module Symbol =
     let isExplicit (str : string) = str.StartsWith OpenStringStr && str.EndsWith CloseStringStr
     let distillate (str : string) = (str.Replace (OpenStringStr, "")).Replace (CloseStringStr, "")
     
-    let skipLineComment = skipChar LineCommentChar >>. skipRestOfLine true
+    let skipLineComment = skipChar LineCommentChar >>. skipChar LineCommentChar >>. skipRestOfLine true
     let skipMultilineComment =
         // TODO: make multiline comments nest.
         between
