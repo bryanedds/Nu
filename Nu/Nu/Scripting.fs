@@ -67,7 +67,7 @@ module Scripting =
                      "some none isNone isSome contains map " +
                      // TODO: "either isLeft isRight left right " +
                      // TODO: "gen next isDone take skip " +
-                     "list head tail cons isEmpty notEmpty filter fold reduce rev toList " +
+                     "list head tail cons isEmpty notEmpty contains filter fold reduce rev toList " +
                      "ring add remove toRing " +
                      "table tryFind find toTable " +
                      "let fun if cond try break get set do " +
