@@ -61,8 +61,8 @@ module Scripting =
                      "length normal " +
                      "cross dot " +
                      "violation bool int int64 single double string " +
-                     // TODO: "nil nix " + // the empty keyword / keyphrase
-                     "v2 xOf yOf xAs yAs " + // vector operations
+                     "nil " +
+                     "v2 xOf yOf xAs yAs " +
                      "pair tuple unit fst snd thd fth fif nth " +
                      "some none isNone isSome contains map " +
                      // TODO: "either isLeft isRight left right " +
@@ -307,7 +307,7 @@ module Scripting =
                 | Double double -> Symbol.Number (String.doubleToCodeString double, None) :> obj
                 | Vector2 v2 -> Symbol.Symbols ([Symbol.Number (String.singleToCodeString v2.X, None); Symbol.Number (String.singleToCodeString v2.Y, None)], None) :> obj
                 | String string -> Symbol.Atom (string, None) :> obj
-                | Keyword string -> Symbol.Atom (string, None) :> obj
+                | Keyword string -> Symbol.Atom ((if String.IsNullOrEmpty string then "nil" else string), None) :> obj
                 | Tuple arr ->
                     let headingSymbol = Symbol.Atom ((if Array.length arr = 2 then "pair" else "tuple"), None)
                     let elemSymbols = arr |> Array.map (fun elem -> this.ExprToSymbol elem) |> List.ofArray
@@ -444,6 +444,7 @@ module Scripting =
                     | "true" -> Bool true :> obj
                     | "false" -> Bool false :> obj
                     | "none" -> Option None :> obj
+                    | "nil" -> Keyword String.Empty :> obj
                     | _ ->
                         let firstChar = str.[0]
                         if firstChar = '.' || Char.IsUpper firstChar
