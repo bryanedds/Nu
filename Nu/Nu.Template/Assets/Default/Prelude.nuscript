@@ -52,8 +52,8 @@ Copyright (C) Bryan Edds, 2012-2017.
 
 #| Check that a value is infinity. |#
 [define isInf [x]
- [| [isPosInfinity x]
-    [isNegInfinity x]]]
+ [|| [isPosInfinity x]
+     [isNegInfinity x]]]
 
 #| Select the mininum value. |#
 [define min [x y]
@@ -86,3 +86,7 @@ Copyright (C) Bryan Edds, 2012-2017.
 
 #| The unit v2 value. |#
 [define v2Id [toId -2-]]
+
+#| Generate an infinite sequence of a given value. |#
+[define genInf [x]
+ [gen [fun [i] [some x]]]]
