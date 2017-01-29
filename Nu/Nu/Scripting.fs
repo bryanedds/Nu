@@ -312,7 +312,7 @@ module Scripting =
                 | Double double -> Symbol.Number (String.doubleToCodeString double, None) :> obj
                 | Vector2 v2 -> Symbol.Symbols ([Symbol.Number (String.singleToCodeString v2.X, None); Symbol.Number (String.singleToCodeString v2.Y, None)], None) :> obj
                 | String string -> Symbol.Atom (string, None) :> obj
-                | Keyword string -> Symbol.Atom ((if String.IsNullOrEmpty string then "nil" else string), None) :> obj
+                | Keyword string -> Symbol.Atom ((if String.isEmpty string then "nil" else string), None) :> obj
                 | Tuple arr ->
                     let headingSymbol = Symbol.Atom ((if Array.length arr = 2 then "pair" else "tuple"), None)
                     let elemSymbols = arr |> Array.map (fun elem -> this.ExprToSymbol elem) |> List.ofArray
