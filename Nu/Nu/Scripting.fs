@@ -54,7 +54,7 @@ module Scripting =
             | _ -> failwithumf ()
 
     and [<Syntax    ("toZero toId toMin toMax " +
-                     "not inc dec neg " +
+                     "not inc dec neg hash " +
                      "pow root sqr sqrt " +
                      "floor ceiling truncate round exp log " +
                      "sin cos tan asin acos atan " +
