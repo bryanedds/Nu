@@ -256,7 +256,7 @@ module Reflection =
         let targetType = target.GetType ()
         match targetType.GetProperty "Xtension" with
         | null ->
-            Log.debug "Target does not support xtensions due to missing Xtension property."
+            Log.debug "Target does not support Xtensions due to missing Xtension property."
             target
         | xtensionProperty ->
             match xtensionProperty.GetValue target with

@@ -58,6 +58,7 @@ module WorldModule2 =
             Map.ofList
                 [(typeof<MountFacet>.Name, MountFacet () :> Facet)
                  (typeof<EffectFacet>.Name, EffectFacet () :> Facet)
+                 (typeof<ScriptFacet>.Name, ScriptFacet () :> Facet)
                  (typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
                  (typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
                  (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
