@@ -611,7 +611,7 @@ module Scripting =
     let log expr =
         match expr with
         | Violation (names, error, optOrigin) ->
-            Log.debug ^
+            Log.info ^
                 "Unexpected violation:" + (names |> Name.join |> Name.getNameStr) +
                 "\ndue to:" + error +
                 "\nat: " + scstring optOrigin + "'."
