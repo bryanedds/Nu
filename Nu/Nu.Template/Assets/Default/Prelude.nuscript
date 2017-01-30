@@ -91,7 +91,7 @@
 
 // Generate an infinite sequence of a given value.
 [define unfoldConst [k]
- [gen [fun [state] [some [pair k state]]]]]
+ [gen [fun [state] [some [pair k state]]]] k]
 
 (*
 TODO: exists in terms of map and contains

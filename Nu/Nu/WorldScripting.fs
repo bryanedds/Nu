@@ -126,6 +126,7 @@ module WorldScripting =
               Keyword : string -> SymbolOrigin option -> Expr
               Tuple : Expr array -> SymbolOrigin option -> Expr
               Keyphrase : Expr -> Expr array -> SymbolOrigin option -> Expr
+              Gen : Gen -> SymbolOrigin option -> Expr
               List : Expr list -> SymbolOrigin option -> Expr
               Ring : Expr Set -> SymbolOrigin option -> Expr
               Table : Map<Expr, Expr> -> SymbolOrigin option -> Expr }
@@ -141,6 +142,7 @@ module WorldScripting =
               Keyword = fun _ _ -> Keyword String.Empty
               Tuple = fun _ _ -> Tuple Array.empty
               Keyphrase = fun _ _ _ -> Keyphrase (Keyword String.Empty, Array.empty)
+              Gen = fun _ _ -> Gen Empty
               List = fun _ _ -> List []
               Ring = fun _ _ -> Ring Set.empty
               Table = fun _ _ -> Table Map.empty }
@@ -156,6 +158,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToIdentity"], "Cannot convert a keyword to an identity representation.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToIdentity"], "Cannot convert a tuple to an identity representation.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToIdentity"], "Cannot convert a keyphrase to an identity representation.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToIdentity"], "Cannot convert a generator to an identity representation.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToIdentity"], "Cannot convert a list to an identity representation.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToIdentity"], "Cannot convert a ring to an identity representation.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToIdentity"], "Cannot convert a table to an identity representation.", originOpt) }
@@ -171,6 +174,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMin"], "Cannot convert a keyword to a minimum representation.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMin"], "Cannot convert a tuple to a minimum representation.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMin"], "Cannot convert a keyphrase to a minimum representation.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMin"], "Cannot convert a generator to a minimum representation.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMin"], "Cannot convert a list to a minimum representation.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMin"], "Cannot convert a ring to a minimum representation.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMin"], "Cannot convert a table to a minimum representation.", originOpt) }
@@ -186,6 +190,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMax"], "Cannot convert a keyword to a maximum representation.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMax"], "Cannot convert a tuple to a maximum representation.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMax"], "Cannot convert a keyphrase to a maximum representation.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMax"], "Cannot convert a generate to a maximum representation.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMax"], "Cannot convert a list to a maximum representation.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMax"], "Cannot convert a ring to a maximum representation.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"ToMax"], "Cannot convert a table to a maximum representation.", originOpt) }
@@ -201,6 +206,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Inc"], "Cannot increment a table.", originOpt) }
@@ -216,6 +222,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a table.", originOpt) }
@@ -231,6 +238,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Negate"], "Cannot negate a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Negate"], "Cannot negate a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Negate"], "Cannot negate a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Negate"], "Cannot negate a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Negate"], "Cannot negate a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Negate"], "Cannot negate a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Negate"], "Cannot negate a table.", originOpt) }
@@ -246,6 +254,7 @@ module WorldScripting =
               Keyword = fun value _ -> Int (hash value)
               Tuple = fun value _ -> Int (hash value)
               Keyphrase = fun word phrase _ -> Int (hash (word, phrase))
+              Gen = fun value _ -> Int (hash value)
               List = fun value _ -> Int (hash value)
               Ring = fun value _ -> Int (hash value)
               Table = fun value _ -> Int (hash value) }
@@ -261,6 +270,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqr"], "Cannot square a table.", originOpt) }
@@ -276,6 +286,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqrt"], "Cannot square root a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sqtr"], "Cannot square root a table.", originOpt) }
@@ -291,6 +302,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Floor"], "Cannot floor a table.", originOpt) }
@@ -306,6 +318,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Ceiling"], "Cannot ceiling a table.", originOpt) }
@@ -321,6 +334,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Truncate"], "Cannot truncate a table.", originOpt) }
@@ -336,6 +350,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Exp"], "Cannot exponentiate a table.", originOpt) }
@@ -351,6 +366,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Round"], "Cannot round a table.", originOpt) }
@@ -366,6 +382,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Log"], "Cannot log a table.", originOpt) }
@@ -381,6 +398,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Sin"], "Cannot sin a table.", originOpt) }
@@ -396,6 +414,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Cos"], "Cannot cos a table.", originOpt) }
@@ -411,6 +430,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Tan"], "Cannot tan a table.", originOpt) }
@@ -426,6 +446,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Asin"], "Cannot asin a table.", originOpt) }
@@ -441,6 +462,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Acos"], "Cannot acos a table.", originOpt) }
@@ -456,12 +478,13 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Atan"], "Cannot atan a table.", originOpt) }
 
         let LengthFns =
-            { Bool = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"length"], "Cannot get length of a bool.", originOpt)
+            { Bool = fun value _ -> Int (if value then 1 else 0)
               Int = fun value _ -> Int (Math.Abs value)
               Int64 = fun value _ -> Int64 (Math.Abs value)
               Single = fun value _ -> Single (Math.Abs value)
@@ -471,6 +494,7 @@ module WorldScripting =
               Keyword = fun value _ -> Int (value.Length)
               Tuple = fun value _ -> Int (Array.length value)
               Keyphrase = fun _ phrase _ -> Int (Array.length phrase)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Length"], "Cannot get length of a generator.", originOpt)
               List = fun value _ -> Int (List.length value)
               Ring = fun value _ -> Int (value.Count)
               Table = fun value _ -> Int (value.Count) }
@@ -486,6 +510,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a keyword.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a tuple.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a keyphrase.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a generator.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a list.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Normal"], "Cannot normalize a table.", originOpt) }
@@ -501,6 +526,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a keyword to a bool.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a tuple to a bool.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a keyphrase to a bool.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a generator to a bool.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a list to a bool.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a ring to a bool.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Bool"], "Cannot convert a table to a bool.", originOpt) }
@@ -516,6 +542,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a keyword to an int.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a tuple to an int.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a keyphrase to an int.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a generator to an int.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a list to an int.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a ring to an int.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int"], "Cannot convert a table to an int.", originOpt) }
@@ -531,6 +558,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a keyword to a 64-bit int.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a tuple to a 64-bit int.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a keyphrase to a 64-bit int.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a generator to a 64-bit int.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a list to a 64-bit int.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a ring to a 64-bit int.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Int64"], "Cannot convert a table to a 64-bit int.", originOpt) }
@@ -546,6 +574,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a keyword to a single.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a tuple to a single.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a keyphrase to a single.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a generator to a single.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a list to a single.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a ring to a single.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Single"], "Cannot convert a table to a single.", originOpt) }
@@ -561,6 +590,7 @@ module WorldScripting =
               Keyword = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a keyword to a double.", originOpt)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a tuple to a double.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a keyphrase to a double.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a generator to a double.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a list to a double.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a ring to a double.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"Double"], "Cannot convert a table to a double.", originOpt) }
@@ -576,6 +606,7 @@ module WorldScripting =
               Keyword = fun value _ -> String (value)
               Tuple = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a tuple to a string.", originOpt)
               Keyphrase = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a keyphrase to a string.", originOpt)
+              Gen = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a generator to a string.", originOpt)
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a list to a string.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a ring to a string.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a table to a string.", originOpt) }
@@ -591,6 +622,7 @@ module WorldScripting =
               Keyword : string -> string -> SymbolOrigin option -> Expr
               Tuple : Expr array -> Expr array -> SymbolOrigin option -> Expr
               Keyphrase : Expr -> Expr array -> Expr -> Expr array -> SymbolOrigin option -> Expr
+              Gen : Gen -> Gen -> SymbolOrigin option -> Expr
               List : Expr list -> Expr list -> SymbolOrigin option -> Expr
               Ring : Expr Set -> Expr Set -> SymbolOrigin option -> Expr
               Table : Map<Expr, Expr> -> Map<Expr, Expr> -> SymbolOrigin option -> Expr }
@@ -606,6 +638,7 @@ module WorldScripting =
               Keyword = fun left right _ -> Bool (left = right)
               Tuple = fun left right _ -> Bool (left = right)
               Keyphrase = fun wordLeft phraseLeft wordRight phraseRight _ -> Bool ((wordLeft, phraseLeft) = (wordRight, phraseRight))
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Eq"], "Cannot determine equality of generators.", originOpt)
               List = fun left right _ -> Bool (left = right)
               Ring = fun left right _ -> Bool (left = right)
               Table = fun left right _ -> Bool (left = right) }
@@ -621,6 +654,7 @@ module WorldScripting =
               Keyword = fun left right _ -> Bool (left <> right)
               Tuple = fun left right _ -> Bool (left <> right)
               Keyphrase = fun wordLeft phraseLeft wordRight phraseRight _ -> Bool ((wordLeft, phraseLeft) <> (wordRight, phraseRight))
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"NotEq"], "Cannot determine inequality of generators.", originOpt)
               List = fun left right _ -> Bool (left <> right)
               Ring = fun left right _ -> Bool (left <> right)
               Table = fun left right _ -> Bool (left <> right) }
@@ -636,6 +670,7 @@ module WorldScripting =
               Keyword = fun left right _ -> Bool (left < right)
               Tuple = fun left right _ -> Bool (left < right)
               Keyphrase = fun wordLeft phraseLeft wordRight phraseRight _ -> Bool ((wordLeft, phraseLeft) < (wordRight, phraseRight))
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Lt"], "Cannot compare generators.", originOpt)
               List = fun left right _ -> Bool (left < right)
               Ring = fun left right _ -> Bool (left < right)
               Table = fun left right _ -> Bool (left < right) }
@@ -651,6 +686,7 @@ module WorldScripting =
               Keyword = fun left right _ -> Bool (left > right)
               Tuple = fun left right _ -> Bool (left > right)
               Keyphrase = fun wordLeft phraseLeft wordRight phraseRight _ -> Bool ((wordLeft, phraseLeft) > (wordRight, phraseRight))
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Gt"], "Cannot compare generators.", originOpt)
               List = fun left right _ -> Bool (left > right)
               Ring = fun left right _ -> Bool (left > right)
               Table = fun left right _ -> Bool (left > right) }
@@ -666,6 +702,7 @@ module WorldScripting =
               Keyword = fun left right _ -> Bool (left <= right)
               Tuple = fun left right _ -> Bool (left <= right)
               Keyphrase = fun wordLeft phraseLeft wordRight phraseRight _ -> Bool ((wordLeft, phraseLeft) <= (wordRight, phraseRight))
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"LtEq"], "Cannot compare generators.", originOpt)
               List = fun left right _ -> Bool (left <= right)
               Ring = fun left right _ -> Bool (left <= right)
               Table = fun left right _ -> Bool (left <= right) }
@@ -681,6 +718,7 @@ module WorldScripting =
               Keyword = fun left right _ -> Bool (left >= right)
               Tuple = fun left right _ -> Bool (left >= right)
               Keyphrase = fun wordLeft phraseLeft wordRight phraseRight _ -> Bool ((wordLeft, phraseLeft) >= (wordRight, phraseRight))
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"GtEq"], "Cannot compare generators.", originOpt)
               List = fun left right _ -> Bool (left >= right)
               Ring = fun left right _ -> Bool (left >= right)
               Table = fun left right _ -> Bool (left >= right) }
@@ -700,6 +738,7 @@ module WorldScripting =
                     if wordLeft = wordRight
                     then Keyphrase (wordLeft, Array.append phraseLeft phraseRight)
                     else Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Add"], "Cannot add keywords.", originOpt)
+              Gen = fun left right _ -> Gen (Add (left, right))
               List = fun left right _ -> List (left @ right)
               Ring = fun left right _ -> Ring (Set.union left right)
               Table = fun left right _ -> Table (left @@ right) }
@@ -715,6 +754,7 @@ module WorldScripting =
               Keyword = fun left right _ -> String (left.Replace (right, String.Empty))
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract tuples.", originOpt)
               Keyphrase = fun _ _ _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract keyphrases.", originOpt)
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract generators.", originOpt)
               List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract lists.", originOpt)
               Ring = fun left right _ -> Ring (Set.difference left right)
               Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Sub"], "Cannot subtract tables.", originOpt) }
@@ -730,6 +770,7 @@ module WorldScripting =
               Keyword = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply keyword.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply tuples.", originOpt)
               Keyphrase = fun _ _ _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply keyphrases.", originOpt)
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply generators.", originOpt)
               List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply lists.", originOpt)
               Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply rings.", originOpt)
               Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mul"], "Cannot multiply tables.", originOpt) }
@@ -745,6 +786,7 @@ module WorldScripting =
               Keyword = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide keywords.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide tuples.", originOpt)
               Keyphrase = fun _ _ _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide keyphrases.", originOpt)
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide generators.", originOpt)
               List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide lists.", originOpt)
               Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide rings.", originOpt)
               Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Div"], "Cannot divide tables.", originOpt) }
@@ -760,6 +802,7 @@ module WorldScripting =
               Keyword = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate keywords.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate tuples.", originOpt)
               Keyphrase = fun _ _ _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate keyphrases.", originOpt)
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate generators.", originOpt)
               List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate lists.", originOpt)
               Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate rings.", originOpt)
               Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Mod"], "Cannot modulate tables.", originOpt) }
@@ -775,6 +818,7 @@ module WorldScripting =
               Keyword = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power keywords.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power tuples.", originOpt)
               Keyphrase = fun _ _ _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power keyphrases.", originOpt)
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power generators.", originOpt)
               List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power lists.", originOpt)
               Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power rings.", originOpt)
               Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Pow"], "Cannot power tables.", originOpt) }
@@ -790,6 +834,7 @@ module WorldScripting =
               Keyword = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root keywords.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root tuples.", originOpt)
               Keyphrase = fun _ _ _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root keyphrases.", originOpt)
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root generators.", originOpt)
               List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root lists.", originOpt)
               Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root rings.", originOpt)
               Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Root"], "Cannot root tables.", originOpt) }
@@ -805,6 +850,7 @@ module WorldScripting =
               Keyword = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply keywords.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply tuples.", originOpt)
               Keyphrase = fun _ _ _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiple keyphrases.", originOpt)
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply generators.", originOpt)
               List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply lists.", originOpt)
               Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply rings.", originOpt)
               Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Cross"], "Cannot cross multiply tables.", originOpt) }
@@ -820,6 +866,7 @@ module WorldScripting =
               Keyword = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply keywords.", originOpt)
               Tuple = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply tuples.", originOpt)
               Keyphrase = fun _ _ _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply keyphrases.", originOpt)
+              Gen = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply generators.", originOpt)
               List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply lists.", originOpt)
               Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply rings.", originOpt)
               Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply tables.", originOpt) }
@@ -857,6 +904,7 @@ module WorldScripting =
             | Keyword keywordValue -> ((fns.Keyword keywordValue fnOriginOpt), world)
             | Tuple tupleValue -> ((fns.Tuple tupleValue fnOriginOpt), world)
             | Keyphrase (wordValue, phraseValue) -> ((fns.Keyphrase wordValue phraseValue fnOriginOpt), world)
+            | Gen genValue -> ((fns.Gen genValue fnOriginOpt), world)
             | List listValue -> ((fns.List listValue fnOriginOpt), world)
             | Ring ringValue -> ((fns.Ring ringValue fnOriginOpt), world)
             | Table tableValue -> ((fns.Table tableValue fnOriginOpt), world)
@@ -879,6 +927,7 @@ module WorldScripting =
             | (Keyword keywordLeft, Keyword keywordRight) -> ((fns.String keywordLeft keywordRight fnOriginOpt), world)
             | (Tuple tupleLeft, Tuple tupleRight) -> ((fns.Tuple tupleLeft tupleRight fnOriginOpt), world)
             | (Keyphrase (wordLeft, phraseLeft), Keyphrase (wordRight, phraseRight)) -> ((fns.Keyphrase wordLeft phraseLeft wordRight phraseRight fnOriginOpt), world)
+            | (Gen genLeft, Gen genRight) -> ((fns.Gen genLeft genRight fnOriginOpt), world)
             | (List listLeft, List listRight) -> ((fns.List listLeft listRight fnOriginOpt), world)
             | (Ring ringLeft, Ring ringRight) -> ((fns.Ring ringLeft ringRight fnOriginOpt), world)
             | (Table tableLeft, Table tableRight) -> ((fns.Table tableLeft tableRight fnOriginOpt), world)
@@ -983,6 +1032,21 @@ module WorldScripting =
             | [Option evaled] -> (Bool (Option.isSome evaled), world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Option"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-option.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Option"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
+
+        let evalGen fnOriginOpt fnName evaled evaled2 world =
+            match evaled with
+            | Binding _ as binding -> (Gen (Unfold (binding, evaled2)), world) // evaled expr to binding implies built-in function
+            | Fun _ as fn -> (Gen (Unfold (fn, evaled2)), world)
+            | _ -> (Violation ([!!"InvalidArgumentType"; !!"Gen"; !!(String.capitalize fnName)], "First argument to " + fnName + " must be a function.", fnOriginOpt), world)
+
+        let evalToGen fnOriginOpt fnName evaled world =
+            match evaled with
+            | Option opt -> (Gen (Conversion (List (match opt with Some value -> [value] | None -> []))), world)
+            | Gen _ -> (evaled, world)
+            | List _ as list -> (Gen (Conversion list), world)
+            | Ring set -> (Gen (Conversion (List (Set.toList set))), world)
+            | Table map -> (Gen (Conversion (List (Map.toListBy (fun (key, value) -> Tuple [|key; value|]) map))), world)
+            | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Canot apply " + fnName + " to a non-container.", fnOriginOpt), world)
     
         let evalMap evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
@@ -1275,6 +1339,8 @@ module WorldScripting =
                  ("isSome", evalIsSome)
                  //("contains", evalContains) TODO
                  ("map", evalMap evalApply)
+                 ("gen", evalDoublet evalGen)
+                 ("toGen", evalSinglet evalToGen)
                  ("list", evalList)
                  ("head", evalHead)
                  ("tail", evalTail)
@@ -1617,6 +1683,7 @@ module WorldScripting =
             | Tuple _ -> (expr, world)
             | Keyphrase _ -> (expr, world)
             | Option _ -> (expr, world)
+            | Gen _ -> (expr, world)
             | List _ -> (expr, world)
             | Ring _ -> (expr, world)
             | Table _ -> (expr, world)

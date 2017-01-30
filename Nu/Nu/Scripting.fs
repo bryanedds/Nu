@@ -23,6 +23,14 @@ module Scripting =
         | VariableBinding of string * Expr
         | FunctionBinding of string * string list * Expr
 
+    and Gen =
+        | Empty
+        | Add of Gen * Gen
+        | Map of Expr * Gen // Expr is always Fun
+        | Unfold of Expr * Expr // left Expr is always Fun
+        | Conversion of Expr // Expr is always List
+
+    // TODO: implement comparison!
     and [<CustomEquality; NoComparison>] Stream =
         // constructed as [variableStream v]
         | VariableStream of string
@@ -66,8 +74,8 @@ module Scripting =
                      "pair tuple unit fst snd thd fth fif nth " +
                      "some none isNone isSome map " +
                      // TODO: "either isLeft isRight left right " +
-                     // TODO: "gen isDone takeWhile take skipWhile skip " +
-                     "list head tail cons isEmpty notEmpty contains foldWhile fold filter rev toList " +
+                     "gen empty isEmpty takeWhile take skipWhile skip toGen " +
+                     "list head tail cons notEmpty contains foldWhile fold filter rev toList " +
                      "ring add remove toRing " +
                      "table tryFind find toTable " +
                      "let fun if cond try break get set do " +
@@ -100,6 +108,7 @@ module Scripting =
         | Tuple of Expr array
         | Keyphrase of Expr * Expr array
         | Option of Expr option
+        | Gen of Gen
         | List of Expr list
         | Ring of Set<Expr>
         | Table of Map<Expr, Expr>
@@ -141,6 +150,7 @@ module Scripting =
             | Tuple _
             | Keyphrase _
             | Option _
+            | Gen _
             | List _
             | Ring _
             | Table _ -> None
@@ -178,6 +188,7 @@ module Scripting =
             | (Tuple left, Tuple right) -> left = right
             | (Keyphrase (leftKeyword, leftExprs), Keyphrase (rightKeyword, rightExprs)) -> (leftKeyword, leftExprs) = (rightKeyword, rightExprs)
             | (Option left, Option right) -> left = right
+            | (Gen left, Gen right) -> left = right
             | (List left, List right) -> left = right
             | (Ring left, Ring right) -> left = right
             | (Stream (left, _), Stream (right, _)) -> left = right
@@ -215,6 +226,7 @@ module Scripting =
             | (Tuple left, Tuple right) -> compare left right
             | (Keyphrase (leftKeyword, leftExprs), Keyphrase (rightKeyword, rightExprs)) -> compare (leftKeyword, leftExprs) (rightKeyword, rightExprs)
             | (Option left, Option right) -> compare left right
+            | (Gen left, Gen right) -> compare left right
             | (List left, List right) -> compare left right
             | (Ring left, Ring right) -> compare left right
             | (Table left, Table right) -> compare left right
@@ -236,6 +248,7 @@ module Scripting =
             | Tuple value -> hash value
             | Keyphrase (valueKeyword, valueExprs) -> hash (valueKeyword, valueExprs)
             | Option value -> hash value
+            | Gen value -> hash value
             | List value -> hash value
             | Ring value -> hash value
             | Table value -> hash value
@@ -263,9 +276,6 @@ module Scripting =
         member this.SymbolToExpr (symbol : Symbol) =
             this.ConvertFrom symbol :?> Expr
 
-        member this.ExprToSymbol (expr : Expr) =
-            this.ConvertTo (expr, typeof<Symbol>) :?> Symbol
-
         member this.BindingToSymbols (binding : Binding) =
             match binding with
             | VariableBinding (name, value) ->
@@ -280,6 +290,17 @@ module Scripting =
 
         member this.BindingToSymbol binding =
             Symbol.Symbols (this.BindingToSymbols binding, None)
+
+        member this.GenToSymbol gen =
+            match gen with
+            | Empty -> Symbol.Atom ("empty", None)
+            | Add (left, right) -> Symbol.Symbols ([Symbol.Atom ("+", None); this.GenToSymbol left; this.GenToSymbol right], None)
+            | Map (mapper, gen2) -> Symbol.Symbols ([Symbol.Atom ("map", None); this.ExprToSymbol mapper; this.GenToSymbol gen2], None)
+            | Unfold (unfolder, state) -> Symbol.Symbols ([Symbol.Atom ("gen", None); this.ExprToSymbol unfolder; this.ExprToSymbol state], None)
+            | Conversion source -> Symbol.Symbols ([Symbol.Atom ("toGen", None); this.ExprToSymbol source], None)
+
+        member this.ExprToSymbol (expr : Expr) =
+            this.ConvertTo (expr, typeof<Symbol>) :?> Symbol
 
         member this.SymbolsToBindingOpt bindingSymbols =
             match bindingSymbols with
@@ -325,6 +346,8 @@ module Scripting =
                     match option with
                     | Some value -> Symbol.Symbols ([Symbol.Atom ("some", None); this.ExprToSymbol value], None) :> obj
                     | None -> Symbol.Atom ("none", None) :> obj
+                | Gen gen ->
+                    this.GenToSymbol gen :> obj
                 | List elems -> 
                     let listSymbol = Symbol.Atom ("list", None)
                     let elemSymbols = List.map this.ExprToSymbol elems
@@ -450,6 +473,7 @@ module Scripting =
                     | "false" -> Bool false :> obj
                     | "none" -> Option None :> obj
                     | "nil" -> Keyword String.Empty :> obj
+                    | "empty" -> Gen Empty :> obj
                     | _ ->
                         let firstChar = str.[0]
                         if firstChar = '.' || Char.IsUpper firstChar
