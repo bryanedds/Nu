@@ -53,8 +53,8 @@ module Scripting =
             | :? Stream as that -> Stream.equals this that
             | _ -> failwithumf ()
 
-    and [<Syntax    ("toZero toId toMin toMax " +
-                     "not inc dec neg hash " +
+    and [<Syntax    ("toZero toIdentity toMin toMax " +
+                     "not inc dec negate hash " +
                      "pow root sqr sqrt " +
                      "floor ceiling truncate round exp log " +
                      "sin cos tan asin acos atan " +
@@ -64,10 +64,10 @@ module Scripting =
                      "nil " +
                      "v2 xOf yOf xAs yAs " +
                      "pair tuple unit fst snd thd fth fif nth " +
-                     "some none isNone isSome contains map " +
+                     "some none isNone isSome map " +
                      // TODO: "either isLeft isRight left right " +
-                     // TODO: "gen next isDone take skip " +
-                     "list head tail cons isEmpty notEmpty contains filter fold reduce rev toList " +
+                     // TODO: "gen isDone takeWhile take skipWhile skip " +
+                     "list head tail cons isEmpty notEmpty contains foldWhile fold filter rev toList " +
                      "ring add remove toRing " +
                      "table tryFind find toTable " +
                      "let fun if cond try break get set do " +
@@ -75,9 +75,9 @@ module Scripting =
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
                      // prelude identifiers...
-                     "id flip isZero isId isPos isNeg isPosInf isNegInf isInf " +
-                     "min max compare sign abs pi e v2Zero v2Id " +
-                     "Gt Lt Eq Pos Neg Zero",
+                     "id flip isZero isIdentity isPositive isNegative isPositiveInf isNegitiveInf isNaN " +
+                     "min max compare sign abs pi e v2Zero v2Identity unfold unfoldConst exists reduceWhile reduce " +
+                     "Gt Lt Eq Positive Negative Zero",
                      "");
           TypeConverter (typeof<ExprConverter>);
           CustomEquality;

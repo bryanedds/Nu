@@ -18,64 +18,60 @@
 (* The unit type indicator.      *) [define -u- []]
 
 // The identity function.
-[define id [x] x]
+[define id [a] a]
 
 // Flip a binary function's arguments.
 [define flip [f]
- [fun [x y] [f y x]]]
+ [fun [a b] [f b a]]]
 
 // Check that a value is zero.
-[define isZero [x]
- [= x [toZero x]]]
+[define isZero [a]
+ [= a [toZero a]]]
 
 // Check that a value is the identity.
-[define isId [x]
- [= x [toId x]]]
+[define isIdentity [a]
+ [= a [toId a]]]
 
 // Check that a value is positive.
-[define isPos [x]
- [>= x [toZero x]]]
+[define isPositive [a]
+ [>= a [toZero a]]]
 
 // Check that a value is negative.
-[define isNeg [x]
- [<= x [toZero x]]]
+[define isNegative [a]
+ [<= a [toZero a]]]
 
 // Check that a value is positive infinity.
-[define isPosInf [x]
- [> x [toMax x]]]
+[define isPositiveInf [a]
+ [> a [toMax a]]]
 
 // Check that a value is negative infinity.
-[define isNegInf [x]
- [< x [toMin x]]]
+[define isNegativeInf [a]
+ [< a [toMin a]]]
 
-// Check that a value is infinity.
-[define isInf [x]
- [|| [isPosInfinity x]
-     [isNegInfinity x]]]
+// Check that a value is NaN.
+[define isNaN [a]
+ [|| [isPositiveInf a]
+     [isNegativeInf a]]]
 
 // Select the mininum value.
-[define min [x y]
- [if [< x y] x y]]
+[define min [a b]
+ [if [< a b] a b]]
 
 // Select the maximum value.
-[define max [x y]
- [if [> x y] x y]]
+[define max [a b]
+ [if [> a b] a b]]
 
 // Compare two values. Returns Lt, Gt, or Eq.
-[define compare [x y]
- [if [< x y] Lt [if [> x y] Gt Eq]]]
+[define compare [a b]
+ [if [< a b] Lt [if [> a b] Gt Eq]]]
 
-// The sign of a value. Returns Pos, Neg, or Zero.
-[define sign [x]
- [if [> x [toZero x]] Pos [if [< [toZero x]] Neg Zero]]]
+// The sign of a value. Returns Positive, Negative, or Zero.
+[define sign [a]
+ [if [> a [toZero a]] Positive [if [< [toZero a]] Negative Zero]]]
 
 // Compute the absolute value.
-[define abs [x]
- [if [isPos x] x [neg x]]]
-
-// Generate an infinite sequence of a given value.
-[define genInf [x]
- [gen [fun [i] [some x]]]]
+[define abs [a]
+ [if [isPositive a] a [negate a]]]
 
 // Mathematical constant pi as a single value.
 [define pi 3.14159f]
@@ -86,5 +82,88 @@
 // The zero v2 value.
 [define v2Zero [toZero -2-]]
 
-// The unit v2 value.
-[define v2Id [toId -2-]]
+// The identity / unit v2 value.
+[define v2Identity [toId -2-]]
+
+// Perform a functional unfold over a value.
+[define unfold [unfolder state]
+ [gen unfolder state]]
+
+// Generate an infinite sequence of a given value.
+[define unfoldConst [k]
+ [gen [fun [state] [some [pair k state]]]]]
+
+(*
+TODO: exists in terms of map and contains
+
+TODO: reduceWhile in terms of foldWhile
+
+TODO: reduce in terms of fold
+
+[def sliceWhen [pred seq] where: [[fun pred] [sequence seq]]
+    doc: "Slice elements of a sequence in two parts, slicing at the first element that satisfies the predicate."
+    (if (isDone seq)
+        (pair (list) (list))
+        (let (value (peek seq))
+             (if (pred value)
+                 (pair (list) (sequenceToList seq))
+                 (let (nextSeq (next seq))
+                      (nextResult (sliceWhen pred nextSeq))
+                      (pair (cons value nextResult.first)
+                            nextResult.second)))))]
+    
+[def slice [count seq] where: [[int count] [sequence seq]]
+    doc: "Slice elements of a sequence in two parts, staring at the count'th element."
+    pre: (isPositive count)
+    (if (or (isZero count) (isDone seq))
+        (pair (list) (sequenceToList seq))
+        (let (value (peek seq))
+             (nextSeq (next seq))
+             (nextCount (dec count))
+             (nextResult (slice nextCount nextSeq))
+             (pair (cons value nextResult.first)
+                   nextResult.second)))]
+    
+[def zipWith [zipper seq seq2] where: [[fun zipper] [sequence seq] [sequence seq2]]
+    doc: "Zip two sequences with a given function."
+    (if (or (isDone seq) (isDone seq2))
+        (list)
+        (let (value (peek seq))
+             (value2 (peek seq2))
+             (nextSeq (next seq))
+             (nextSeq2 (next seq2))
+             (cons (zipper value value2)
+                   (zipWith zipper nextSeq nextSeq2))))]
+    
+[def zip [seq seq2] where: [[sequence seq] [sequence seq2]]
+    doc: "Zip two sequences into a sequence of pairs."
+    (zipWith
+        (fun (first second) (pair first second))
+        seq
+        seq2)]
+    
+[def unzip [seq] where: [[sequence seq]]
+    doc: "Unzip a sequence of pairs into a pair of sequences."
+    (let
+        (prRev
+            (fold
+                (fun (state current)
+                    (pair (cons current.first state.first)
+                          (cons current.second state.second)))
+                (pair (list) (list))
+                seq))
+        (pair (reverse prRev.first) (reverse prRev.second)))]
+    
+[def partition [pred seq] where: [[fun pred] [sequence seq]]
+    doc: "Parition a sequence into a pair of sequences."
+    (if (isDone seq)
+        (pair (list) (list))
+        (let (value (peek seq))
+             (nextSeq (next seq))
+             (nextResult (partition pred nextSeq))
+             (nextResultFirst nextResult.first)
+             (nextResultSecond nextResult.second)
+             (if (pred value)
+                 (pair (cons value nextResultFirst) nextResultSecond)
+                 (pair nextResultFirst (cons value nextResultSecond)))))]
+*)
