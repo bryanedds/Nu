@@ -62,6 +62,10 @@ let fornone pred seq =
 let tryTake (n : int) (seq : _ seq) =
     System.Linq.Enumerable.Take (seq, n)
 
+/// A more tolerant and open-minded skip.
+let trySkip (n : int) (seq : _ seq) =
+    System.Linq.Enumerable.Skip (seq, n)
+
 /// Project the first sequence onto the second.
 let project projector (seq_ : 'a seq) (seq2 : 'b option seq) =
     use enr = seq_.GetEnumerator ()

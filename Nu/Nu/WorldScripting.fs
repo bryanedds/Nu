@@ -1234,17 +1234,25 @@ module WorldScripting =
             | Right (Left world) -> (Violation ([!!"InvalidArgumentValue"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a sequence with no elements.", fnOriginOpt), world)
             | Left (violation, world) -> (violation, world)
 
-        let evalSkip fnOriginOpt fnName evaled world =
+        let evalTake fnOriginOpt fnName evaled evaled2 world =
             match evaled with
-            //| Option opt -> (Gen (Conversion (List (match opt with Some value -> [value] | None -> []))), world)
-            | Gen gen ->
-                match gen with
-                | Empty -> (evaled, world)
-                | _ -> failwithnie () // TODO: GEN: implement
-            //| List _ as list -> (Gen (Conversion list), world)
-            //| Ring set -> (Gen (Conversion (List (Set.toList set))), world)
-            //| Table map -> (Gen (Conversion (List (Map.toListBy (fun (key, value) -> Tuple [|key; value|]) map))), world)
-            | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Canot apply " + fnName + " to a non-container.", fnOriginOpt), world)
+            | Int count ->
+                match evaled2 with
+                | String str -> (String (if str.Length <= count then str else str.Substring (0, count)), world)
+                | Gen _ -> failwithnie ()
+                | List list -> (List (List.tryTake count list), world)
+                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Canot apply " + fnName + " to a non-sequence.", fnOriginOpt), world)
+            | _ -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Canot apply " + fnName + " non-int count.", fnOriginOpt), world)
+
+        let evalSkip fnOriginOpt fnName evaled evaled2 world =
+            match evaled with
+            | Int count ->
+                match evaled2 with
+                | String str -> (String (if str.Length <= count then String.Empty else str.Substring count), world)
+                | Gen _ -> failwithnie ()
+                | List list -> (List (List.trySkip count list), world)
+                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-sequence.", fnOriginOpt), world)
+            | _ -> (Violation ([!!"InvalidArgumentType"; !!"Sequence"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " non-int count.", fnOriginOpt), world)
 
         let evalToGen fnOriginOpt fnName evaled world =
             match evaled with
@@ -1455,8 +1463,8 @@ module WorldScripting =
                  ("isSome", evalIsSome)
                  ("map", evalMap evalApply)
                  ("gen", evalDoublet evalGen)
-                 //("take", evalSinglet evalTake) TODO
-                 ("skip", evalSinglet evalSkip)
+                 ("take", evalDoublet evalTake)
+                 ("skip", evalDoublet evalSkip)
                  ("toGen", evalSinglet evalToGen)
                  ("list", evalList)
                  ("tryHead", evalTryHead evalApply)
