@@ -87,7 +87,7 @@
 
 // Perform a functional unfold over a value.
 [define unfold [unfolder state]
- [gen unfolder state]]
+ [map ! [[takeWhile isSome [gen unfolder state]]]]]
 
 // Generate an infinite sequence of a given value.
 [define unfoldConst [k]

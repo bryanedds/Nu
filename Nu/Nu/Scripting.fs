@@ -25,9 +25,11 @@ module Scripting =
 
     and Gen =
         | Empty
+        | Take of int * int * Gen
         | Add of Gen * Gen
         | Map of Expr * Gen // Expr is always Fun
-        | Unfold of Expr * Expr // left Expr is always Fun
+        | Filter of Expr * Gen // Expr is always Fun
+        | Infinity of Expr * Expr // left Expr is always Fun
         | Conversion of Expr // Expr is always List
 
     // TODO: implement comparison!
@@ -74,8 +76,8 @@ module Scripting =
                      "pair tuple unit fst snd thd fth fif nth " +
                      "some none isNone isSome map " +
                      // TODO: "either isLeft isRight left right " +
-                     "gen empty isEmpty takeWhile take skipWhile skip toGen " +
-                     "list head tail cons notEmpty contains foldWhile fold filter rev toList " +
+                     "gen empty isEmpty notEmpty tryHead head tryTail tail takeWhile take skipWhile skip toGen " +
+                     "list cons contains foldWhile fold filter rev toList " +
                      "ring add remove toRing " +
                      "table tryFind find toTable " +
                      "let fun if cond try break get set do " +
@@ -294,9 +296,11 @@ module Scripting =
         member this.GenToSymbol gen =
             match gen with
             | Empty -> Symbol.Atom ("empty", None)
+            | Take (attempt, actual, gen) -> Symbol.Symbols ([Symbol.Atom ("take", None); Symbol.Number (string attempt, None); Symbol.Number (string actual, None); this.GenToSymbol gen], None)
             | Add (left, right) -> Symbol.Symbols ([Symbol.Atom ("+", None); this.GenToSymbol left; this.GenToSymbol right], None)
-            | Map (mapper, gen2) -> Symbol.Symbols ([Symbol.Atom ("map", None); this.ExprToSymbol mapper; this.GenToSymbol gen2], None)
-            | Unfold (unfolder, state) -> Symbol.Symbols ([Symbol.Atom ("gen", None); this.ExprToSymbol unfolder; this.ExprToSymbol state], None)
+            | Map (mapper, gen) -> Symbol.Symbols ([Symbol.Atom ("map", None); this.ExprToSymbol mapper; this.GenToSymbol gen], None)
+            | Filter (filter, gen) -> Symbol.Symbols ([Symbol.Atom ("filter", None); this.ExprToSymbol filter; this.GenToSymbol gen], None)
+            | Infinity (fn, state) -> Symbol.Symbols ([Symbol.Atom ("gen", None); this.ExprToSymbol fn; this.ExprToSymbol state], None)
             | Conversion source -> Symbol.Symbols ([Symbol.Atom ("toGen", None); this.ExprToSymbol source], None)
 
         member this.ExprToSymbol (expr : Expr) =
