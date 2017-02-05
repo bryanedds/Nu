@@ -81,6 +81,22 @@
 // The identity / unit v2 value.
 [define v2Identity [toIdentity -2-]]
 
+[define takeWhile [pred ctr]
+    [let [takeWhileInner [pred ctr]
+            [let [opt [trySplit ctr]]]
+                [if [&& [isSome opt] [pred [fst opt]]]
+                    [cons [fst opt] [takeWhile pred [snd opt]]]
+                    [toEmpty ctr]]]]
+         [christen [takeWhileInner pred ctr]]]
+
+[define take [count ctr]
+    [let [takeInner [current count ctr]
+            [let [opt [trySplit ctr]]]
+                 [if [&& [isSome opt] [< current count]]
+                     [cons [fst opt] [takeInner [inc current] count [snd opt]]]
+                     [toEmpty ctr]]]]]
+         [christen [takeInner 0 count ctr]]]]
+
 (*
 TODO: exists in terms of map and contains
 
