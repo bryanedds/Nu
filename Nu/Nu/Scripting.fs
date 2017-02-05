@@ -23,7 +23,7 @@ module Scripting =
         | VariableBinding of string * Expr
         | FunctionBinding of string * string list * Expr
 
-    and Codata =
+    and [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Codata =
         | Empty
         | Add of Codata * Codata
         | Unfold of Expr * Expr
@@ -60,7 +60,7 @@ module Scripting =
             | :? Stream as that -> Stream.equals this that
             | _ -> failwithumf ()
 
-    and [<Syntax    ("toZero toIdentity toMin toMax " +
+    and [<Syntax    ("toEmpty toIdentity toMin toMax " +
                      "not inc dec negate hash " +
                      "pow root sqr sqrt " +
                      "floor ceiling truncate round exp log " +
@@ -71,19 +71,21 @@ module Scripting =
                      "nil " +
                      "v2 xOf yOf xAs yAs " +
                      "pair tuple unit fst snd thd fth fif nth " +
-                     "some none isNone isSome map " +
+                     "some none isSome isNone isEmpty notEmpty trySplit split tryHead head tryTail tail " +
+                     "scanWhile scani scan foldWhile foldi fold takeWhile take skipWhile skip " +
+                     "mapWhile mapi map filterWhile filteri filter contains build " +
                      // TODO: "either isLeft isRight left right " +
-                     "codata empty isEmpty notEmpty tryHead head tryTail tail takeWhile take skipWhile skip toCodata " +
-                     "list cons contains foldWhile fold filter rev toList " +
+                     "codata empty toCodata " +
+                     "list cons toList " +
                      "ring add remove toRing " +
                      "table tryFind find toTable " +
                      "let fun if cond try break get set do " +
-                     // TODO: "substring tickRate tickTime update curry compose " +
+                     // TODO: "keyphraseName substring takeWhile skipWhile scan tickRate tickTime update curry compose " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
                      // prelude identifiers...
                      "id flip isZero isIdentity isPositive isNegative isPositiveInf isNegitiveInf isNaN " +
-                     "min max compare sign abs pi e v2Zero v2Identity unfold unfoldConst exists reduceWhile reduce " +
+                     "min max compare sign abs pi e v2Zero v2Identity exists reduceWhile reduce " +
                      "Gt Lt Eq Positive Negative Zero",
                      "");
           TypeConverter (typeof<ExprConverter>);
@@ -118,7 +120,7 @@ module Scripting =
         | Apply of Expr list * SymbolOrigin option
         | Let of Binding * Expr * SymbolOrigin option
         | LetMany of Binding list * Expr * SymbolOrigin option
-        | Fun of string list * int * Expr * bool * obj option * SymbolOrigin option
+        | Fun of string list * int * Expr * bool * obj option * SymbolOrigin option // TODO: make pars an array?
         | If of Expr * Expr * Expr * SymbolOrigin option
         | Match of Expr * (Expr * Expr) list * SymbolOrigin option
         | Select of (Expr * Expr) list * SymbolOrigin option
@@ -638,6 +640,9 @@ module Scripting =
     
     /// The false value in scripting.
     let FalseValue = Bool false
+    
+    /// The none value in scripting.
+    let NoneValue = Option None
 
     /// Log a violation if an expression is one.
     let log expr =

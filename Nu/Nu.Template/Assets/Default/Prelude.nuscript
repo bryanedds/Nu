@@ -24,21 +24,17 @@
 [define flip [f]
  [fun [a b] [f b a]]]
 
-// Check that a value is zero.
-[define isZero [a]
- [= a [toZero a]]]
-
 // Check that a value is the identity.
 [define isIdentity [a]
- [= a [toId a]]]
+ [= a [toIdentity a]]]
 
 // Check that a value is positive.
 [define isPositive [a]
- [>= a [toZero a]]]
+ [>= a [toEmpty a]]]
 
 // Check that a value is negative.
 [define isNegative [a]
- [<= a [toZero a]]]
+ [<= a [toEmpty a]]]
 
 // Check that a value is positive infinity.
 [define isPositiveInf [a]
@@ -67,7 +63,7 @@
 
 // The sign of a value. Returns Positive, Negative, or Zero.
 [define sign [a]
- [if [> a [toZero a]] Positive [if [< [toZero a]] Negative Zero]]]
+ [if [> a [toEmpty a]] Positive [if [< [toEmpty a]] Negative Zero]]]
 
 // Compute the absolute value.
 [define abs [a]
@@ -80,18 +76,10 @@
 [define e 2.71828f]
 
 // The zero v2 value.
-[define v2Zero [toZero -2-]]
+[define v2Zero [toEmpty -2-]]
 
 // The identity / unit v2 value.
-[define v2Identity [toId -2-]]
-
-// Perform a functional unfold over a value.
-[define unfold [unfolder state]
- [map ! [[takeWhile isSome [gen unfolder state]]]]]
-
-// Generate an infinite sequence of a given value.
-[define unfoldConst [k]
- [gen [fun [state] [some [pair k state]]]] k]
+[define v2Identity [toIdentity -2-]]
 
 (*
 TODO: exists in terms of map and contains
