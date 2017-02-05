@@ -70,22 +70,23 @@ module Scripting =
                      "violation bool int int64 single double string " +
                      "nil " +
                      "v2 xOf yOf xAs yAs " +
-                     "pair tuple unit fst snd thd fth fif nth " +
+                     "tuple pair unit fst snd thd fth fif nth " +
                      "some none isSome isNone isEmpty notEmpty trySplit split tryHead head tryTail tail " +
-                     "scanWhile scani scan foldWhile foldi fold takeWhile take skipWhile skip " +
-                     "mapWhile mapi map filterWhile filteri filter contains build " +
+                     "scanWhile scani scan foldWhile foldi fold " +
+                     "mapi map filteri filter " +
+                     "cons christen contains " + // TODO: christen
                      // TODO: "either isLeft isRight left right " +
-                     "codata empty toCodata " +
-                     "list cons toList " +
-                     "ring add remove toRing " +
-                     "table tryFind find toTable " +
+                     "codata toCodata empty " +
+                     "list toList rev " + // TODO: rev
+                     "ring toRing add remove " +
+                     "table toTable tryFind find " +
                      "let fun if cond try break get set do " +
                      // TODO: "keyphraseName substring takeWhile skipWhile scan tickRate tickTime update curry compose " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
                      // prelude identifiers...
                      "id flip isZero isIdentity isPositive isNegative isPositiveInf isNegitiveInf isNaN " +
-                     "min max compare sign abs pi e v2Zero v2Identity exists reduceWhile reduce " +
+                     "min max compare sign abs pi e v2Zero v2Identity exists takeWhile take skipWhile skip reduceWhile reduce " +
                      "Gt Lt Eq Positive Negative Zero",
                      "");
           TypeConverter (typeof<ExprConverter>);
