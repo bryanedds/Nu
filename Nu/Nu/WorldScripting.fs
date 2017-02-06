@@ -1109,6 +1109,14 @@ module WorldScripting =
                 match list with
                 | [] -> Right (Left world)
                 | head :: tail -> Right (Right (head, List tail, world))
+            | [Ring set] ->
+                match Seq.tryHead set with
+                | Some head -> Right (Right (head, Ring (Set.remove head set), world))
+                | None -> Right (Left world)
+            | [Table map] ->
+                match Seq.tryHead map with
+                | Some kvp -> Right (Right (Tuple [|kvp.Key; kvp.Value|], Table (Map.remove kvp.Key map), world))
+                | None -> Right (Left world)
             | [Violation _ as violation] -> Left (violation, world)
             | [_] -> Left (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> Left (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
