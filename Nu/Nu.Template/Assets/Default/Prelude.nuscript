@@ -132,7 +132,7 @@
     []]
 
 (*
-TODO: sort, replace, slice (subsequence), chop
+TODO: fstAs - nthAs, sort, replace, slice (subsequence), chop
 
 TODO [def zip [seq seq2] where: [[sequence seq] [sequence seq2]]
     doc: "Zip two sequences into a sequence of pairs."
