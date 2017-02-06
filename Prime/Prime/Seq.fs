@@ -59,12 +59,12 @@ let fornone pred seq =
     Seq.forall notPred seq
 
 /// A more tolerant and open-minded take.
-let tryTake (n : int) (seq : _ seq) =
-    System.Linq.Enumerable.Take (seq, n)
+let tryTake (count : int) (seq : _ seq) =
+    System.Linq.Enumerable.Take (seq, count)
 
 /// A more tolerant and open-minded skip.
-let trySkip (n : int) (seq : _ seq) =
-    System.Linq.Enumerable.Skip (seq, n)
+let trySkip (count : int) (seq : _ seq) =
+    System.Linq.Enumerable.Skip (seq, count)
 
 /// Project the first sequence onto the second.
 let project projector (seq_ : 'a seq) (seq2 : 'b option seq) =
