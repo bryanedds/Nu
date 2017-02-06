@@ -1218,37 +1218,65 @@ module WorldScripting =
                     (Right (state, [], world))
                     list
 
-        let rec evalScaniCodata evalApply fnOriginOpt fnName i count scanner state codata world =
-            if i < count then
-                match codata with
-                | Empty ->
-                    Right (i, state, [], world)
-                | Add (left, right) ->
-                    match evalScaniCodata evalApply fnOriginOpt fnName (inc i) count scanner state left world with
-                    | Right (i, state, statesLeft, world) ->
-                        match evalScaniCodata evalApply fnOriginOpt fnName (inc i) count scanner state right world with
-                        | Right (i, state, statesRight, world) -> Right (i, state, statesRight @ statesLeft, world)
-                        | error -> error
+        let rec evalScaniCodata evalApply fnOriginOpt fnName i scanner state codata world =
+            match codata with
+            | Empty ->
+                Right (i, state, [], world)
+            | Add (left, right) ->
+                match evalScaniCodata evalApply fnOriginOpt fnName (inc i) scanner state left world with
+                | Right (i, state, statesLeft, world) ->
+                    match evalScaniCodata evalApply fnOriginOpt fnName (inc i) scanner state right world with
+                    | Right (i, state, statesRight, world) -> Right (i, state, statesRight @ statesLeft, world)
                     | error -> error
-                | Unfold (unfolder, costate) ->
-                    match evalApply [unfolder; costate] fnOriginOpt world with
-                    | (Option (Some costate), world) ->
-                        match evalApply [scanner; Int i; state; costate] fnOriginOpt world with
-                        | (Violation _, _) as error -> Left error
-                        | (state, world) -> evalScaniCodata evalApply fnOriginOpt fnName (inc i) count scanner state (Unfold (unfolder, costate)) world
-                    | (Option None, world) -> Right (i, state, [], world)
+                | error -> error
+            | Unfold (unfolder, costate) ->
+                match evalApply [unfolder; costate] fnOriginOpt world with
+                | (Option (Some costate), world) ->
+                    match evalApply [scanner; Int i; state; costate] fnOriginOpt world with
                     | (Violation _, _) as error -> Left error
-                    | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
-                | Conversion list ->
-                    Seq.foldWhileRight (fun (i, state, states, world) elem ->
-                        match evalApply [scanner; Int i; state; elem] fnOriginOpt world with
-                        | (Option (Some state), world) -> (Right (inc i, state, state :: states, world))
-                        | (Option None, world) -> Left (List states, world)
-                        | (Violation _, _) as error -> Left error
-                        | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
-                        (Right (i, state, [], world))
-                        list
-            else Right (i, state, [], world)
+                    | (state, world) -> evalScaniCodata evalApply fnOriginOpt fnName (inc i) scanner state (Unfold (unfolder, costate)) world
+                | (Option None, world) -> Right (i, state, [], world)
+                | (Violation _, _) as error -> Left error
+                | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
+            | Conversion list ->
+                Seq.foldWhileRight (fun (i, state, states, world) elem ->
+                    match evalApply [scanner; Int i; state; elem] fnOriginOpt world with
+                    | (Option (Some state), world) -> (Right (inc i, state, state :: states, world))
+                    | (Option None, world) -> Left (List states, world)
+                    | (Violation _, _) as error -> Left error
+                    | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
+                    (Right (i, state, [], world))
+                    list
+
+        let rec evalScanCodata evalApply fnOriginOpt fnName scanner state codata world =
+            match codata with
+            | Empty ->
+                Right (state, [], world)
+            | Add (left, right) ->
+                match evalScanCodata evalApply fnOriginOpt fnName scanner state left world with
+                | Right (state, statesLeft, world) ->
+                    match evalScanCodata evalApply fnOriginOpt fnName scanner state right world with
+                    | Right (state, statesRight, world) -> Right (state, statesRight @ statesLeft, world)
+                    | error -> error
+                | error -> error
+            | Unfold (unfolder, costate) ->
+                match evalApply [unfolder; costate] fnOriginOpt world with
+                | (Option (Some costate), world) ->
+                    match evalApply [scanner; state; costate] fnOriginOpt world with
+                    | (Violation _, _) as error -> Left error
+                    | (state, world) -> evalScanCodata evalApply fnOriginOpt fnName scanner state (Unfold (unfolder, costate)) world
+                | (Option None, world) -> Right (state, [], world)
+                | (Violation _, _) as error -> Left error
+                | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
+            | Conversion list ->
+                Seq.foldWhileRight (fun (state, states, world) elem ->
+                    match evalApply [scanner; state; elem] fnOriginOpt world with
+                    | (Option (Some state), world) -> (Right (state, state :: states, world))
+                    | (Option None, world) -> Left (List states, world)
+                    | (Violation _, _) as error -> Left error
+                    | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
+                    (Right (state, [], world))
+                    list
 
         let evalScanWhile evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
@@ -1321,6 +1349,10 @@ module WorldScripting =
                         (state, [], world)
                         str
                 (List (List.rev states), world)
+            | [scanner; state; Codata codata] ->
+                match evalScaniCodata evalApply fnOriginOpt fnName 0 scanner state codata world with
+                | Right (_, _, states, world) -> (List (List.rev states), world)
+                | Left error -> error
             | [scanner; state; List list] ->
                 let (_, states, world) =
                     Seq.foldi (fun i (state, states, world) elem ->
@@ -1362,6 +1394,10 @@ module WorldScripting =
                         (state, [], world)
                         str
                 (List (List.rev states), world)
+            | [scanner; state; Codata codata] ->
+                match evalScanCodata evalApply fnOriginOpt fnName scanner state codata world with
+                | Right (_, states, world) -> (List (List.rev states), world)
+                | Left error -> error
             | [scanner; state; List list] ->
                 let (_, states, world) =
                     Seq.fold (fun (state, states, world) elem ->
@@ -1422,6 +1458,66 @@ module WorldScripting =
                     (Right (state, world))
                     list
 
+        let rec evalFoldiCodata evalApply fnOriginOpt fnName i folder state codata world =
+            match codata with
+            | Empty ->
+                Right (i, state, world)
+            | Add (left, right) ->
+                match evalFoldiCodata evalApply fnOriginOpt fnName (inc i) folder state left world with
+                | Right (i, state, world) ->
+                    match evalFoldiCodata evalApply fnOriginOpt fnName (inc i) folder state right world with
+                    | Right (i, state, world) -> Right (i, state, world)
+                    | error -> error
+                | error -> error
+            | Unfold (unfolder, costate) ->
+                match evalApply [unfolder; costate] fnOriginOpt world with
+                | (Option (Some costate), world) ->
+                    match evalApply [folder; Int i; state; costate] fnOriginOpt world with
+                    | (Violation _, _) as error -> Left error
+                    | (state, world) -> evalFoldiCodata evalApply fnOriginOpt fnName (inc i) folder state (Unfold (unfolder, costate)) world
+                | (Option None, world) -> Right (i, state, world)
+                | (Violation _, _) as error -> Left error
+                | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
+            | Conversion list ->
+                Seq.foldWhileRight (fun (i, state, world) elem ->
+                    match evalApply [folder; Int i; state; elem] fnOriginOpt world with
+                    | (Option (Some state), world) -> (Right (inc i, state, world))
+                    | (Option None, world) -> Left (state, world)
+                    | (Violation _, _) as error -> Left error
+                    | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s folder must return an option.", fnOriginOpt), world))
+                    (Right (i, state, world))
+                    list
+
+        let rec evalFoldCodata evalApply fnOriginOpt fnName folder state codata world =
+            match codata with
+            | Empty ->
+                Right (state, world)
+            | Add (left, right) ->
+                match evalFoldCodata evalApply fnOriginOpt fnName folder state left world with
+                | Right (state, world) ->
+                    match evalFoldCodata evalApply fnOriginOpt fnName folder state right world with
+                    | Right (state, world) -> Right (state, world)
+                    | error -> error
+                | error -> error
+            | Unfold (unfolder, costate) ->
+                match evalApply [unfolder; costate] fnOriginOpt world with
+                | (Option (Some costate), world) ->
+                    match evalApply [folder; state; costate] fnOriginOpt world with
+                    | (Violation _, _) as error -> Left error
+                    | (state, world) -> evalFoldCodata evalApply fnOriginOpt fnName folder state (Unfold (unfolder, costate)) world
+                | (Option None, world) -> Right (state, world)
+                | (Violation _, _) as error -> Left error
+                | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
+            | Conversion list ->
+                Seq.foldWhileRight (fun (state, world) elem ->
+                    match evalApply [folder; state; elem] fnOriginOpt world with
+                    | (Option (Some state), world) -> (Right (state, world))
+                    | (Option None, world) -> Left (state, world)
+                    | (Violation _, _) as error -> Left error
+                    | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s folder must return an option.", fnOriginOpt), world))
+                    (Right (state, world))
+                    list
+
         let evalFoldWhile evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [folder; state; String str] ->
@@ -1478,6 +1574,10 @@ module WorldScripting =
         let evalFoldi evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [folder; state; String str] -> Seq.foldi (fun i (state, world) elem -> evalApply [folder; Int i; state; String (string elem)] fnOriginOpt world) (state, world) str
+            | [folder; state; Codata codata] ->
+                match evalFoldiCodata evalApply fnOriginOpt fnName 0 folder state codata world with
+                | Right (_, state, world) -> (state, world)
+                | Left error -> error
             | [folder; state; List list] -> Seq.foldi (fun i (state, world) elem -> evalApply [folder; Int i; state; elem] fnOriginOpt world) (state, world) list
             | [folder; state; Ring set] -> Seq.foldi (fun i (state, world) elem -> evalApply [folder; Int i; state; elem] fnOriginOpt world) (state, world) set
             | [folder; state; Table map] ->
@@ -1492,6 +1592,10 @@ module WorldScripting =
         let evalFold evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [folder; state; String str] -> Seq.fold (fun (state, world) elem -> evalApply [folder; state; String (string elem)] fnOriginOpt world) (state, world) str
+            | [folder; state; Codata codata] ->
+                match evalFoldCodata evalApply fnOriginOpt fnName folder state codata world with
+                | Right (state, world) -> (state, world)
+                | Left error -> error
             | [folder; state; List list] -> List.fold (fun (state, world) elem -> evalApply [folder; state; elem] fnOriginOpt world) (state, world) list
             | [folder; state; Ring set] -> Set.fold (fun (state, world) elem -> evalApply [folder; state; elem] fnOriginOpt world) (state, world) set
             | [folder; state; Table map] ->
