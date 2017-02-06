@@ -1134,7 +1134,7 @@ module WorldScripting =
             | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
 
-        let evalCert fnOriginOpt fnName evaled world =
+        let evalCommit fnOriginOpt fnName evaled world =
             match evaled with
             | Option _ -> (evaled, world)
             | Codata _ -> (evaled, world)
@@ -1624,7 +1624,7 @@ module WorldScripting =
                  ("tryUncons", evalTryUncons evalApply)
                  ("uncons", evalUncons evalApply)
                  ("cons", evalCons)
-                 ("cert", evalSinglet evalCert)
+                 ("commit", evalSinglet evalCommit)
                  ("tryHead", evalTryHead evalApply)
                  ("head", evalHead evalApply)
                  ("tryTail", evalTryTail evalApply)

@@ -71,7 +71,7 @@ module Scripting =
                      "nil " +
                      "v2 xOf yOf xAs yAs " +
                      "tuple pair unit fst snd thd fth fif nth " +
-                     "some none isSome isNone isEmpty notEmpty tryUncons uncons cons cert tryHead head tryTail tail " +
+                     "some none isSome isNone isEmpty notEmpty tryUncons uncons cons commit tryHead head tryTail tail " +
                      "scanWhile scani scan foldWhile foldi fold mapi map filteri filter contains " +
                      // TODO: "either isLeft isRight left right " +
                      "codata toCodata empty " +
