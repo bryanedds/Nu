@@ -85,7 +85,7 @@
     [let [takeWhileInner [pred ctr]
             [let [opt [tryUncons ctr]]
                  [if [&& [isSome opt] [pred [fst opt]]]
-                     [cons [fst opt] [takeWhile pred [snd opt]]]
+                     [cons [fst opt] [takeWhileInner pred [snd opt]]]
                      [toEmpty ctr]]]]
          [commit [takeWhileInner pred ctr]]]]
 
@@ -97,20 +97,51 @@
                      [toEmpty ctr]]]
          [commit [takeInner 0 count ctr]]]]
 
+[define skipWhile [pred ctr]
+    [let [skipWhileInner [pred ctr]
+            [let [opt [tryUncons ctr]]
+                 [if [&& [isSome opt] [pred [fst opt]]]
+                     [skipWhileInner pred [snd opt]]
+                     ctr]]]
+         [commit [skipWhileInner pred ctr]]]]
+
+[define skip [count ctr]
+    [let [skipInner [current count ctr]]
+            [let [opt [tryUncons ctr]]
+                 [if [&& [isSome opt] [< current count]]
+                     [cons [fst opt] [skipInner [inc current] count [snd opt]]]
+                     ctr]]
+         [commit [skipInner 0 count ctr]]]]
+
+[define reduceWhile [reducer ctr]
+    [let [pr [split ctr]]
+         [foldWhile reducer [fst pr] [snd pr]]]]
+
+[define reduce [reducer ctr]
+    [let [pr [split ctr]]
+         [fold reducer [fst pr] [snd pr]]]
+
 [define tryItem [index ctr]
     [map fst [tryUncons [skip index ctr]]]]
 
-(*
-TODO: sort, exists, reduceWhile, reduce, replace, slice (subsequence), chop, count
+[define exists [by ctr]
+    [let [mapped [map by ctr]]
+         [contains true mapped]]]
 
-[def zip [seq seq2] where: [[sequence seq] [sequence seq2]]
+[define count [by ctr]
+    []]
+
+(*
+TODO: sort, replace, slice (subsequence), chop
+
+TODO [def zip [seq seq2] where: [[sequence seq] [sequence seq2]]
     doc: "Zip two sequences into a sequence of pairs."
     (zipWith
         (fun (first second) (pair first second))
         seq
         seq2)]
     
-[def unzip [seq] where: [[sequence seq]]
+TODO [def unzip [seq] where: [[sequence seq]]
     doc: "Unzip a sequence of pairs into a pair of sequences."
     (let
         (prRev
