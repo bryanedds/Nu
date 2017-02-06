@@ -19,7 +19,7 @@ module Scripting =
         | DeclarationBinding of Expr
         | ProceduralBinding of int * int
 
-    and [<NoComparison>] Binding =
+    and Binding =
         | VariableBinding of string * Expr
         | FunctionBinding of string * string list * Expr
 
@@ -71,22 +71,20 @@ module Scripting =
                      "nil " +
                      "v2 xOf yOf xAs yAs " +
                      "tuple pair unit fst snd thd fth fif nth " +
-                     "some none isSome isNone isEmpty notEmpty trySplit split tryHead head tryTail tail " +
-                     "scanWhile scani scan foldWhile foldi fold " +
-                     "mapi map filteri filter " +
-                     "cons christen contains " + // TODO: christen
+                     "some none isSome isNone isEmpty notEmpty tryUncons uncons cons cert tryHead head tryTail tail " +
+                     "scanWhile scani scan foldWhile foldi fold mapi map filteri filter contains " +
                      // TODO: "either isLeft isRight left right " +
                      "codata toCodata empty " +
-                     "list toList rev " + // TODO: rev
+                     "list toList rev " +
                      "ring toRing add remove " +
                      "table toTable tryFind find " +
                      "let fun if cond try break get set do " +
-                     // TODO: "keyphraseName substring takeWhile skipWhile scan tickRate tickTime update curry compose " +
+                     // TODO: "keyname substring tickRate tickTime update curry compose " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
                      // prelude identifiers...
                      "id flip isZero isIdentity isPositive isNegative isPositiveInf isNegitiveInf isNaN " +
-                     "min max compare sign abs pi e v2Zero v2Identity exists takeWhile take skipWhile skip reduceWhile reduce " +
+                     "min max compare sign abs pi e v2Zero v2Identity takeWhile take skipWhile skip reduceWhile reduce tryItem item exists " +
                      "Gt Lt Eq Positive Negative Zero",
                      "");
           TypeConverter (typeof<ExprConverter>);
@@ -119,6 +117,8 @@ module Scripting =
         (* Special Forms *)
         | Binding of string * CachedBinding ref * SymbolOrigin option
         | Apply of Expr list * SymbolOrigin option
+        | ApplyAnd of Expr list * SymbolOrigin option
+        | ApplyOr of Expr list * SymbolOrigin option
         | Let of Binding * Expr * SymbolOrigin option
         | LetMany of Binding list * Expr * SymbolOrigin option
         | Fun of string list * int * Expr * bool * obj option * SymbolOrigin option // TODO: make pars an array?
@@ -159,6 +159,8 @@ module Scripting =
             | Stream (_, originOpt)
             | Binding (_, _, originOpt)
             | Apply (_, originOpt)
+            | ApplyAnd (_, originOpt)
+            | ApplyOr (_, originOpt)
             | Let (_, _, originOpt)
             | LetMany (_, _, originOpt)
             | Fun (_, _, _, _, _, originOpt)
@@ -278,6 +280,9 @@ module Scripting =
         member this.SymbolToExpr (symbol : Symbol) =
             this.ConvertFrom symbol :?> Expr
 
+        member this.SymbolsToExpr (symbols : Symbol list) =
+            List.map this.SymbolToExpr symbols
+
         member this.BindingToSymbols (binding : Binding) =
             match binding with
             | VariableBinding (name, value) ->
@@ -377,6 +382,14 @@ module Scripting =
                 | Apply (exprs, originOpt) ->
                     let exprSymbols = List.map this.ExprToSymbol exprs
                     Symbol.Symbols (exprSymbols, originOpt) :> obj
+                | ApplyAnd (exprs, originOpt) ->
+                    let logicSymbol = Symbol.Atom ("&&", None)
+                    let exprSymbols = List.map this.ExprToSymbol exprs
+                    Symbol.Symbols (logicSymbol :: exprSymbols, originOpt) :> obj
+                | ApplyOr (exprs, originOpt) ->
+                    let logicSymbol = Symbol.Atom ("||", None)
+                    let exprSymbols = List.map this.ExprToSymbol exprs
+                    Symbol.Symbols (logicSymbol :: exprSymbols, originOpt) :> obj
                 | Let (binding, body, originOpt) ->
                     let letSymbol = Symbol.Atom ("let", None)
                     let bindingSymbol = this.BindingToSymbol binding
@@ -507,6 +520,12 @@ module Scripting =
                     match symbols with
                     | Atom (name, _) :: tail ->
                         match name with
+                        | "&&" ->
+                            let args = this.SymbolsToExpr tail
+                            ApplyAnd (args, originOpt) :> obj
+                        | "||" ->
+                            let args = this.SymbolsToExpr tail
+                            ApplyOr (args, originOpt) :> obj
                         | "violation" ->
                             match tail with
                             | [Prime.Atom (tagStr, _)]
@@ -594,7 +613,7 @@ module Scripting =
                             match tail with
                             | [] -> Violation ([!!"InvalidForm"; !!"Do"], "Invalid do form. Requires 1 or more sub-expressions.", originOpt) :> obj
                             | symbols ->
-                                let exprs = List.map this.SymbolToExpr symbols
+                                let exprs = this.SymbolsToExpr symbols
                                 Do (exprs, originOpt) :> obj
                         | "break" ->
                             let content = this.SymbolToExpr (Symbols (tail, originOpt))
@@ -631,8 +650,8 @@ module Scripting =
                             match this.SymbolsToBindingOpt bindingSymbols with
                             | Some binding -> Define (binding, originOpt) :> obj
                             | None -> Violation ([!!"InvalidForm"; !!"Define"], "Invalid define form. TODO: more info.", originOpt) :> obj
-                        | _ -> Apply (List.map this.SymbolToExpr symbols, originOpt) :> obj
-                    | _ -> Apply (List.map this.SymbolToExpr symbols, originOpt) :> obj
+                        | _ -> Apply (this.SymbolsToExpr symbols, originOpt) :> obj
+                    | _ -> Apply (this.SymbolsToExpr symbols, originOpt) :> obj
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
 

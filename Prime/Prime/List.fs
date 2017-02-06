@@ -114,12 +114,12 @@ let zipBy by first second =
     List.map by zipped
 
 /// A more tolerant and open-minded take.
-let tryTake (n : int) (list : _ list) =
-    Seq.tryTake n list |> List.ofSeq
+let tryTake (count : int) (list : _ list) =
+    Seq.tryTake count list |> List.ofSeq
 
 /// A more tolerant and open-minded skip.
-let trySkip (n : int) (list : _ list) =
-    Seq.trySkip n list |> List.ofSeq
+let trySkip (count : int) (list : _ list) =
+    Seq.trySkip count list |> List.ofSeq
 
 /// Project the first list onto the second.
 let project pred (list : 'a list) (list2 : 'b option list) =
