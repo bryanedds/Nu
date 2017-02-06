@@ -88,8 +88,8 @@ module WorldScripting =
             | Some data -> data
             | None -> Violation ([!!"InvalidStreamValue"], "Stream value could not be imported into scripting environment.", originOpt)
 
-        let rec private tryExportList (evaled : Expr) (ty : Type) =
-            match evaled with
+        let rec private tryExportList (evaledList : Expr) (ty : Type) =
+            match evaledList with
             | List evaleds ->
                 let garg = ty.GetGenericArguments () |> Array.item 0
                 let itemType = if garg.IsGenericTypeDefinition then garg.GetGenericTypeDefinition () else garg
@@ -881,8 +881,8 @@ module WorldScripting =
 
         let evalBoolUnary fn fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [evaled] ->
-                match evaled with
+            | [evaledArg] ->
+                match evaledArg with
                 | Bool bool -> (Bool (fn bool), world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply a bool function to a non-bool value.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Unary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
@@ -948,22 +948,22 @@ module WorldScripting =
 
         let evalDoublet fn fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [evaled; evaled2] -> fn fnOriginOpt fnName evaled evaled2 world
+            | [evaledArg; evaledArg2] -> fn fnOriginOpt fnName evaledArg evaledArg2 world
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!fnName], "Function '" + fnName + "' requires 2 arguments.", fnOriginOpt), world)
 
         let evalTriplet fn fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [evaled; evaled2; evaled3] -> fn fnOriginOpt fnName evaled evaled2 evaled3 world
+            | [evaledArg; evaledArg2; evaledArg3] -> fn fnOriginOpt fnName evaledArg evaledArg2 evaledArg3 world
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!fnName], "Function '" + fnName + "' requires 3 arguments.", fnOriginOpt), world)
 
         let evalQuadlet fn fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [evaled; evaled2; evaled3; evaled4] -> fn fnOriginOpt fnName evaled evaled2 evaled3 evaled4 world
+            | [evaledArg; evaledArg2; evaledArg3; evaledArg4] -> fn fnOriginOpt fnName evaledArg evaledArg2 evaledArg3 evaledArg4 world
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!fnName], "Function '" + fnName + "' requires 4 arguments.", fnOriginOpt), world)
 
         let evalQuintet fn fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [evaled; evaled2; evaled3; evaled4; evaled5] -> fn fnOriginOpt fnName evaled evaled2 evaled3 evaled4 evaled5 world
+            | [evaledArg; evaledArg2; evaledArg3; evaledArg4; evaledArg5] -> fn fnOriginOpt fnName evaledArg evaledArg2 evaledArg3 evaledArg4 evaledArg5 world
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!fnName], "Function '" + fnName + "' requires 5 arguments.", fnOriginOpt), world)
     
         let evalV2 fnOriginOpt fnName evaledArgs world =
@@ -1020,10 +1020,10 @@ module WorldScripting =
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Option"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-option.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Option"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
-        let evalCodata fnOriginOpt fnName evaled evaled2 world =
-            match evaled with
-            | Binding _ as binding -> (Codata (Unfold (binding, evaled2)), world) // evaled expr to binding implies built-in function
-            | Fun _ as fn -> (Codata (Unfold (fn, evaled2)), world)
+        let evalCodata fnOriginOpt fnName evaledArg evaledArg2 world =
+            match evaledArg with
+            | Binding _ as binding -> (Codata (Unfold (binding, evaledArg2)), world) // evaled expr to binding implies built-in function
+            | Fun _ as fn -> (Codata (Unfold (fn, evaledArg2)), world)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Codata"; !!(String.capitalize fnName)], "First argument to " + fnName + " must be a function.", fnOriginOpt), world)
 
         let rec evalCodataTryUncons evalApply fnOriginOpt fnName codata world =
@@ -1038,7 +1038,7 @@ module WorldScripting =
                 match evalApply [unfolder; state] fnOriginOpt world with
                 | (Option (Some state), world) -> Right (Right (state, Unfold (unfolder, state), world))
                 | (Option None, world) -> Right (Left world)
-                | (_, world) -> Left (Unit, world)
+                | error -> Left error
             | Conversion (head :: []) -> Right (Right (head, Empty, world))
             | Conversion (head :: tail) -> Right (Right (head, Conversion tail, world))
             | Conversion [] -> Right (Left world)
@@ -1113,34 +1113,34 @@ module WorldScripting =
 
         let evalCons fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [evaled; String str] ->
-                match evaled with
+            | [evaledArg; String str] ->
+                match evaledArg with
                 | String str2 when String.length str2 = 1 -> (String (str + str2), world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 string arguments required where the first is of length 1.", fnOriginOpt), world)
-            | [evaled; Option opt] ->
+            | [evaledArg; Option opt] ->
                 match opt with
                 | Some _ -> (Violation ([!!"InvalidArgumentType"; !!"Option"; !!(String.capitalize fnName)], "Cannot cons onto a some value.", fnOriginOpt), world)
-                | None -> (Option (Some evaled), world)
-            | [evaled; List list] ->
-                (List (evaled :: list), world)
-            | [evaled; Codata codata] ->
-                (Codata (Add (codata, Conversion [evaled])), world)
-            | [evaled; Ring set] ->
-                (Ring (Set.add evaled set), world)
-            | [evaled; Table map] ->
-                match evaled with
+                | None -> (Option (Some evaledArg), world)
+            | [evaledArg; List list] ->
+                (List (evaledArg :: list), world)
+            | [evaledArg; Codata codata] ->
+                (Codata (Add (codata, Conversion [evaledArg])), world)
+            | [evaledArg; Ring set] ->
+                (Ring (Set.add evaledArg set), world)
+            | [evaledArg; Table map] ->
+                match evaledArg with
                 | Tuple arr when Array.length arr = 2 -> (Table (Map.add arr.[0] arr.[1] map), world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Table"; !!(String.capitalize fnName)], "Table entry must consist of a pair.", fnOriginOpt), world)
             | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
 
-        let evalCommit fnOriginOpt fnName evaled world =
-            match evaled with
-            | Option _ -> (evaled, world)
-            | Codata _ -> (evaled, world)
+        let evalCommit fnOriginOpt fnName evaledArg world =
+            match evaledArg with
+            | Option _ -> (evaledArg, world)
+            | Codata _ -> (evaledArg, world)
             | List list -> (List (List.rev list), world)
-            | Ring _ -> (evaled, world)
-            | Table _ -> (evaled, world)
+            | Ring _ -> (evaledArg, world)
+            | Table _ -> (evaledArg, world)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
 
         let evalTryHead evalApply fnOriginOpt fnName evaledArgs world =
@@ -1491,23 +1491,47 @@ module WorldScripting =
             | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"Functor"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-functor.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Functor"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
 
-        let evalContains fnOriginOpt fnName evaledArgs world =
+        let rec evalContainsCodata evalApply fnOriginOpt fnName evaledArg codata world =
+            match codata with
+            | Empty -> Right (false, world)
+            | Add (left, right) ->
+                match evalContainsCodata evalApply fnOriginOpt fnName evaledArg left world with
+                | Right (false, world) -> evalContainsCodata evalApply fnOriginOpt fnName evaledArg right world
+                | Right (true, _) as success -> success
+                | Left _ as error -> error
+            | Unfold (unfolder, state) ->
+                match evalApply [unfolder; state] fnOriginOpt world with
+                | (Option (Some state), world) ->
+                    if state <> evaledArg then
+                        let codata = Unfold (unfolder, state)
+                        evalContainsCodata evalApply fnOriginOpt fnName evaledArg codata world
+                    else Right (true, world)
+                | (Option None, world) -> Right (false, world)
+                | error -> Left error
+            | Conversion list ->
+                Right (List.contains evaledArg list, world)
+
+        let evalContains evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [evaledArg; String str] ->
                 match evaledArg with
                 | String str' -> (Bool (str.Contains str'), world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "First argument to " + fnName + " for a string must also be a string.", fnOriginOpt), world)
-            | [_; Codata _] -> failwithnie ()
+            | [evaledArg; Option opt] -> (Bool (match opt with Some value -> value = evaledArg | None -> false), world)
+            | [evaledArg; Codata codata] ->
+                match evalContainsCodata evalApply fnOriginOpt fnName evaledArg codata world with
+                | Right (bool, world) -> (Bool bool, world)
+                | Left error -> error
             | [evaledArg; List list] -> (Bool (List.contains evaledArg list), world)
             | [evaledArg; Ring set] -> (Bool (Set.contains evaledArg set), world)
             | [evaledArg; Table map] -> (Bool (Map.containsKey evaledArg map), world)
             | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
 
-        let evalToCodata fnOriginOpt fnName evaled world =
-            match evaled with
+        let evalToCodata fnOriginOpt fnName evaledArg world =
+            match evaledArg with
             | Option opt -> (Codata (Conversion (match opt with Some value -> [value] | None -> [])), world)
-            | Codata _ -> (evaled, world)
+            | Codata _ -> (evaledArg, world)
             | List list -> (Codata (Conversion list), world)
             | Ring set -> (Codata (Conversion (Set.toList set)), world)
             | Table map -> (Codata (Conversion (Map.toListBy (fun (key, value) -> Tuple [|key; value|]) map)), world)
@@ -1639,8 +1663,7 @@ module WorldScripting =
                  ("map", evalMap evalApply)
                  //("filter", evalFilter evalApply) TODO
                  //("filteri", evalFilteri evalApply) TODO
-                 ("contains", evalContains)
-                 //("christen", evalChristen) TODO
+                 ("contains", evalContains evalApply)
                  ("codata", evalDoublet evalCodata)
                  ("toCodata", evalSinglet evalToCodata)
                  ("list", evalList)
@@ -1797,7 +1820,7 @@ module WorldScripting =
             let world =
                 match binding with
                 | VariableBinding (name, body) ->
-                    let evaled = evalDropEnv body world
+                    let (evaled, world) = eval body world
                     World.addProceduralBinding (AddToNewFrame 1) name evaled world
                 | FunctionBinding (name, args, body) ->
                     let frames = World.getProceduralFrames world :> obj
@@ -1810,7 +1833,7 @@ module WorldScripting =
             let world =
                 match bindingsHead with
                 | VariableBinding (name, body) ->
-                    let bodyValue = evalDropEnv body world
+                    let (bodyValue, world) = eval body world
                     World.addProceduralBinding (AddToNewFrame bindingsCount) name bodyValue world
                 | FunctionBinding (name, args, body) ->
                     let frames = World.getProceduralFrames world :> obj
@@ -1820,7 +1843,7 @@ module WorldScripting =
                 List.foldi (fun i world binding ->
                     match binding with
                     | VariableBinding (name, body) ->
-                        let bodyValue = evalDropEnv body world
+                        let (bodyValue, world) = eval body world
                         World.addProceduralBinding (AddToHeadFrame ^ inc i) name bodyValue world
                     | FunctionBinding (name, args, body) ->
                         let frames = World.getProceduralFrames world :> obj
@@ -1977,7 +2000,7 @@ module WorldScripting =
             let world =
                 match binding with
                 | VariableBinding (name, body) ->
-                    let evaled = evalDropEnv body world
+                    let (evaled, world) = eval body world
                     World.addDeclarationBinding name evaled world
                 | FunctionBinding (name, args, body) ->
                     let frames = World.getProceduralFrames world :> obj
@@ -2034,6 +2057,3 @@ module WorldScripting =
                     ([], world)
                     exprs
             (List.rev evaledsRev, world)
-
-        and evalDropEnv expr world =
-            eval expr world |> fst
