@@ -884,6 +884,7 @@ module WorldScripting =
             | [evaledArg] ->
                 match evaledArg with
                 | Bool bool -> (Bool (fn bool), world)
+                | Violation _ as violation -> (violation, world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply a bool function to a non-bool value.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Unary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
@@ -903,6 +904,7 @@ module WorldScripting =
             | List listValue -> (fns.List listValue fnOriginOpt, world)
             | Ring ringValue -> (fns.Ring ringValue fnOriginOpt, world)
             | Table tableValue -> (fns.Table tableValue fnOriginOpt, world)
+            | Violation _ as violation -> (violation, world)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", fnOriginOpt), world)
 
         let evalUnary fns fnOriginOpt fnName evaledArgs world =
@@ -926,6 +928,8 @@ module WorldScripting =
             | (List listLeft, List listRight) -> (fns.List listLeft listRight fnOriginOpt, world)
             | (Ring ringLeft, Ring ringRight) -> (fns.Ring ringLeft ringRight fnOriginOpt, world)
             | (Table tableLeft, Table tableRight) -> (fns.Table tableLeft tableRight fnOriginOpt, world)
+            | (Violation _ as violation, _) -> (violation, world)
+            | (_, (Violation _ as violation)) -> (violation, world)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a binary function on unlike or incompatible values.", fnOriginOpt), world)
 
         let evalBinary fns fnOriginOpt fnName evaledArgs world =
@@ -939,6 +943,7 @@ module WorldScripting =
                 match opt with
                 | Some value -> (value, world)
                 | None -> (Violation ([!!"InvalidDereference"; !!"Referent"; !!"Option"; !!(String.capitalize fnName)], "Function '" + fnName + "' requires a some value.", fnOriginOpt), world)
+            | Violation _ as violation -> (violation, world)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Referent"; !!(String.capitalize fnName)], "Function '" + fnName + "' requires a referent value.", fnOriginOpt), world)
 
         let evalSinglet fn fnOriginOpt fnName evaledArgs world =
@@ -992,6 +997,7 @@ module WorldScripting =
                 if index >= 0 && index < Array.length evaleds
                 then (evaleds.[index], world)
                 else (Violation ([!!"OutOfRangeArgument"; !!"Indexed"; !!(String.capitalize fnName)], "Keyphrase does not contain element at index " + string index + ".", fnOriginOpt), world)
+            | [Violation _ as violation] -> (violation, world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Indexed"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-indexed value.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Indexed"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
         
@@ -1000,6 +1006,7 @@ module WorldScripting =
             | [head; foot] ->
                 match head with
                 | Int int -> evalNth5 int fnOriginOpt fnName [foot] world
+                | Violation _ as violation -> (violation, world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Indexed"; !!(String.capitalize fnName)], "Application of " + fnName + " requires an int for the first argument.", fnOriginOpt), world)
             | _ ->  (Violation ([!!"InvalidArgumentCount"; !!"Indexed"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
             
@@ -1011,12 +1018,14 @@ module WorldScripting =
         let evalIsNone fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [Option evaled] -> (Bool (Option.isNone evaled), world)
+            | [Violation _ as violation] -> (violation, world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Option"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-option.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Option"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
     
         let evalIsSome fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [Option evaled] -> (Bool (Option.isSome evaled), world)
+            | [Violation _ as violation] -> (violation, world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Option"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-option.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Option"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
@@ -1024,6 +1033,7 @@ module WorldScripting =
             match evaledArg with
             | Binding _ as binding -> (Codata (Unfold (binding, evaledArg2)), world) // evaled expr to binding implies built-in function
             | Fun _ as fn -> (Codata (Unfold (fn, evaledArg2)), world)
+            | Violation _ as violation -> (violation, world)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Codata"; !!(String.capitalize fnName)], "First argument to " + fnName + " must be a function.", fnOriginOpt), world)
 
         let rec evalCodataTryUncons evalApply fnOriginOpt fnName codata world =
@@ -1038,7 +1048,8 @@ module WorldScripting =
                 match evalApply [unfolder; state] fnOriginOpt world with
                 | (Option (Some state), world) -> Right (Right (state, Unfold (unfolder, state), world))
                 | (Option None, world) -> Right (Left world)
-                | error -> Left error
+                | (Violation _, _) as error -> Left error
+                | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Codata"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
             | Conversion (head :: []) -> Right (Right (head, Empty, world))
             | Conversion (head :: tail) -> Right (Right (head, Conversion tail, world))
             | Conversion [] -> Right (Left world)
@@ -1060,6 +1071,7 @@ module WorldScripting =
             | [List list] -> (Bool (List.isEmpty list), world)
             | [Ring set] -> (Bool (Set.isEmpty set), world)
             | [Table map] -> (Bool (Map.isEmpty map), world)
+            | [Violation _ as violation] -> (violation, world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
@@ -1074,6 +1086,7 @@ module WorldScripting =
             | [List list] -> (Bool (List.notEmpty list), world)
             | [Ring set] -> (Bool (Set.notEmpty set), world)
             | [Table map] -> (Bool (Map.notEmpty map), world)
+            | [Violation _ as violation] -> (violation, world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
@@ -1096,6 +1109,7 @@ module WorldScripting =
                 match list with
                 | [] -> Right (Left world)
                 | head :: tail -> Right (Right (head, List tail, world))
+            | [Violation _ as violation] -> Left (violation, world)
             | [_] -> Left (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> Left (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
@@ -1116,6 +1130,7 @@ module WorldScripting =
             | [evaledArg; String str] ->
                 match evaledArg with
                 | String str2 when String.length str2 = 1 -> (String (str + str2), world)
+                | Violation _ as violation -> (violation, world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 string arguments required where the first is of length 1.", fnOriginOpt), world)
             | [evaledArg; Option opt] ->
                 match opt with
@@ -1130,7 +1145,10 @@ module WorldScripting =
             | [evaledArg; Table map] ->
                 match evaledArg with
                 | Tuple arr when Array.length arr = 2 -> (Table (Map.add arr.[0] arr.[1] map), world)
+                | Violation _ as violation -> (violation, world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Table entry must consist of a pair.", fnOriginOpt), world)
+            | [Violation _ as violation; _] -> (violation, world)
+            | [_; Violation _ as violation] -> (violation, world)
             | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-list.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
 
@@ -1141,6 +1159,7 @@ module WorldScripting =
             | List list -> (List (List.rev list), world)
             | Ring _ -> (evaledArg, world)
             | Table _ -> (evaledArg, world)
+            | Violation _ as violation -> (violation, world)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
 
         let evalTryHead evalApply fnOriginOpt fnName evaledArgs world =
@@ -1184,145 +1203,193 @@ module WorldScripting =
                     match evalApply [scanner; state; costate] fnOriginOpt world with
                     | (Option (Some state), world) -> evalScanWhileCodata evalApply fnOriginOpt fnName scanner state (Unfold (unfolder, costate)) world
                     | (Option None, world) -> Right (state, [], world)
+                    | (Violation _, _) as error -> Left error
                     | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world)
                 | (Option None, world) -> Right (state, [], world)
-                | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world)
+                | (Violation _, _) as error -> Left error
+                | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
             | Conversion list ->
                 Seq.foldWhileRight (fun (state, states, world) elem ->
                     match evalApply [scanner; state; elem] fnOriginOpt world with
                     | (Option (Some state), world) -> (Right (state, state :: states, world))
                     | (Option None, world) -> Left (List states, world)
-                    | _ -> Left (Violation ([!!"InvalidResult"; !!"Codata"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
+                    | (Violation _, _) as error -> Left error
+                    | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
                     (Right (state, [], world))
                     list
 
+        let rec evalScaniCodata evalApply fnOriginOpt fnName i count scanner state codata world =
+            if i < count then
+                match codata with
+                | Empty ->
+                    Right (i, state, [], world)
+                | Add (left, right) ->
+                    match evalScaniCodata evalApply fnOriginOpt fnName (inc i) count scanner state left world with
+                    | Right (i, state, statesLeft, world) ->
+                        match evalScaniCodata evalApply fnOriginOpt fnName (inc i) count scanner state right world with
+                        | Right (i, state, statesRight, world) -> Right (i, state, statesRight @ statesLeft, world)
+                        | error -> error
+                    | error -> error
+                | Unfold (unfolder, costate) ->
+                    match evalApply [unfolder; costate] fnOriginOpt world with
+                    | (Option (Some costate), world) ->
+                        match evalApply [scanner; Int i; state; costate] fnOriginOpt world with
+                        | (Violation _, _) as error -> Left error
+                        | (state, world) -> evalScaniCodata evalApply fnOriginOpt fnName (inc i) count scanner state (Unfold (unfolder, costate)) world
+                    | (Option None, world) -> Right (i, state, [], world)
+                    | (Violation _, _) as error -> Left error
+                    | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
+                | Conversion list ->
+                    Seq.foldWhileRight (fun (i, state, states, world) elem ->
+                        match evalApply [scanner; Int i; state; elem] fnOriginOpt world with
+                        | (Option (Some state), world) -> (Right (inc i, state, state :: states, world))
+                        | (Option None, world) -> Left (List states, world)
+                        | (Violation _, _) as error -> Left error
+                        | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
+                        (Right (i, state, [], world))
+                        list
+            else Right (i, state, [], world)
+
         let evalScanWhile evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [fn; state; String str] ->
+            | [scanner; state; String str] ->
                 match
                     Seq.foldWhileRight (fun (state, states, world) elem ->
-                        match evalApply [fn; state; String (string elem)] fnOriginOpt world with
+                        match evalApply [scanner; state; String (string elem)] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, state :: states, world))
                         | (Option None, world) -> Left (List states, world)
+                        | (Violation _, _) as error -> Left error
                         | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
                         (Right (state, [], world))
                         str with
                 | Right (_, states, world) -> (List (List.rev states), world)
                 | Left error -> error
-            | [fn; state; Codata codata] ->
-                match evalScanWhileCodata evalApply fnOriginOpt fnName fn state codata world with
+            | [scanner; state; Codata codata] ->
+                match evalScanWhileCodata evalApply fnOriginOpt fnName scanner state codata world with
                 | Right (_, states, world) -> (List (List.rev states), world)
                 | Left error -> error
-            | [fn; state; List list] ->
+            | [scanner; state; List list] ->
                 match
                     Seq.foldWhileRight (fun (state, states, world) elem ->
-                        match evalApply [fn; state; elem] fnOriginOpt world with
+                        match evalApply [scanner; state; elem] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, state :: states, world))
                         | (Option None, world) -> Left (List states, world)
-                        | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
+                        | (Violation _, _) as error -> Left error
+                        | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
                         (Right (state, [], world))
                         list with
                 | Right (_, states, world) -> (List (List.rev states), world)
                 | Left error -> error
-            | [fn; state; Ring set] ->
+            | [scanner; state; Ring set] ->
                 match
                     Seq.foldWhileRight (fun (state, states, world) elem ->
-                        match evalApply [fn; state; elem] fnOriginOpt world with
+                        match evalApply [scanner; state; elem] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, state :: states, world))
                         | (Option None, world) -> Left (List states, world)
-                        | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
+                        | (Violation _, _) as error -> Left error
+                        | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
                         (Right (state, [], world))
                         set with
                 | Right (_, states, world) -> (List (List.rev states), world)
                 | Left error -> error
-            | [fn; state; Table map] ->
+            | [scanner; state; Table map] ->
                 match
                     Seq.foldWhileRight (fun (state, states, world) (key, value) ->
                         let elem = Tuple [|key; value|]
-                        match evalApply [fn; state; elem] fnOriginOpt world with
+                        match evalApply [scanner; state; elem] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, state :: states, world))
                         | (Option None, world) -> Left (List states, world)
-                        | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
+                        | (Violation _, _) as error -> Left error
+                        | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
                         (Right (state, [], world))
                         (Map.toList map) with
                 | Right (_, states, world) -> (List (List.rev states), world)
                 | Left error -> error
+            | [Violation _ as error; _; _] -> (error, world)
+            | [_; Violation _ as error; _] -> (error, world)
+            | [_; _; Violation _ as error] -> (error, world)
             | [_; _; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 3 arguments required.", fnOriginOpt), world)
 
         let evalScani evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [fn; state; String str] ->
+            | [scanner; state; String str] ->
                 let (_, states, world) =
                     Seq.foldi (fun i (state, states, world) elem ->
-                        let (state, world) = evalApply [fn; Int i; state; String (string elem)] fnOriginOpt world
+                        let (state, world) = evalApply [scanner; Int i; state; String (string elem)] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         str
                 (List (List.rev states), world)
-            | [fn; state; List list] ->
+            | [scanner; state; List list] ->
                 let (_, states, world) =
                     Seq.foldi (fun i (state, states, world) elem ->
-                        let (state, world) = evalApply [fn; Int i; state; elem] fnOriginOpt world
+                        let (state, world) = evalApply [scanner; Int i; state; elem] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         list
                 (List (List.rev states), world)
-            | [fn; state; Ring set] ->
+            | [scanner; state; Ring set] ->
                 let (_, states, world) =
                     Seq.foldi (fun i (state, states, world) elem ->
-                        let (state, world) = evalApply [fn; Int i; state; elem] fnOriginOpt world
+                        let (state, world) = evalApply [scanner; Int i; state; elem] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         set
                 (List (List.rev states), world)
-            | [fn; state; Table map] ->
+            | [scanner; state; Table map] ->
                 let (_, states, world) =
                     Seq.foldi (fun i (state, states, world) (key, value) ->
                         let elem = Tuple [|key; value|]
-                        let (state, world) = evalApply [fn; Int i; state; elem] fnOriginOpt world
+                        let (state, world) = evalApply [scanner; Int i; state; elem] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         (Map.toList map)
                 (List (List.rev states), world)
+            | [Violation _ as error; _; _] -> (error, world)
+            | [_; Violation _ as error; _] -> (error, world)
+            | [_; _; Violation _ as error] -> (error, world)
             | [_; _; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 3 arguments required.", fnOriginOpt), world)
 
         let evalScan evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [fn; state; String str] ->
+            | [scanner; state; String str] ->
                 let (_, states, world) =
                     Seq.fold (fun (state, states, world) elem ->
-                        let (state, world) = evalApply [fn; state; String (string elem)] fnOriginOpt world
+                        let (state, world) = evalApply [scanner; state; String (string elem)] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         str
                 (List (List.rev states), world)
-            | [fn; state; List list] ->
+            | [scanner; state; List list] ->
                 let (_, states, world) =
                     Seq.fold (fun (state, states, world) elem ->
-                        let (state, world) = evalApply [fn; state; elem] fnOriginOpt world
+                        let (state, world) = evalApply [scanner; state; elem] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         list
                 (List (List.rev states), world)
-            | [fn; state; Ring set] ->
+            | [scanner; state; Ring set] ->
                 let (_, states, world) =
                     Seq.fold (fun (state, states, world) elem ->
-                        let (state, world) = evalApply [fn; state; elem] fnOriginOpt world
+                        let (state, world) = evalApply [scanner; state; elem] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         set
                 (List (List.rev states), world)
-            | [fn; state; Table map] ->
+            | [scanner; state; Table map] ->
                 let (_, states, world) =
                     Seq.fold (fun (state, states, world) (key, value) ->
                         let elem = Tuple [|key; value|]
-                        let (state, world) = evalApply [fn; state; elem] fnOriginOpt world
+                        let (state, world) = evalApply [scanner; state; elem] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         (Map.toList map)
                 (List (List.rev states), world)
+            | [Violation _ as error; _; _] -> (error, world)
+            | [_; Violation _ as error; _] -> (error, world)
+            | [_; _; Violation _ as error] -> (error, world)
             | [_; _; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 3 arguments required.", fnOriginOpt), world)
 
@@ -1340,77 +1407,83 @@ module WorldScripting =
                     match evalApply [folder; state; costate] fnOriginOpt world with
                     | (Option (Some state), world) -> evalFoldWhileCodata evalApply fnOriginOpt fnName folder state (Unfold (unfolder, costate)) world
                     | (Option None, world) -> Right (state, world)
-                    | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world)
+                    | (Violation _, _) as error -> Left error
+                    | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s folder must return an option.", fnOriginOpt), world)
                 | (Option None, world) -> Right (state, world)
-                | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world)
+                | (Violation _, _) as error -> Left error
+                | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
             | Conversion list ->
                 Seq.foldWhileRight (fun (state, world) elem ->
                     match evalApply [folder; state; elem] fnOriginOpt world with
                     | (Option (Some state), world) -> Right (state, world)
                     | (Option None, world) -> Left (state, world)
-                    | _ -> Left (Violation ([!!"InvalidResult"; !!"Codata"; !!(String.capitalize fnName)], "Function " + fnName + "'s scanner must return an option.", fnOriginOpt), world))
+                    | (Violation _, _) as error -> Left error
+                    | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s folder must return an option.", fnOriginOpt), world))
                     (Right (state, world))
                     list
 
         let evalFoldWhile evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [fn; state; String str] ->
+            | [folder; state; String str] ->
                 let eir =
                     Seq.foldWhileRight (fun (state, world) elem ->
-                        match evalApply [fn; state; String (string elem)] fnOriginOpt world with
+                        match evalApply [folder; state; String (string elem)] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, world))
                         | (Option None, world) -> Left (state, world)
                         | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s folder must return an option.", fnOriginOpt), world))
                         (Right (state, world))
                         str
                 Either.amb eir
-            | [fn; state; Codata codata] ->
-                match evalFoldWhileCodata evalApply fnOriginOpt fnName fn state codata world with
+            | [folder; state; Codata codata] ->
+                match evalFoldWhileCodata evalApply fnOriginOpt fnName folder state codata world with
                 | Right success -> success
                 | Left error -> error
-            | [fn; state; List list] ->
+            | [folder; state; List list] ->
                 let eir =
                     Seq.foldWhileRight (fun (state, world) elem ->
-                        match evalApply [fn; state; elem] fnOriginOpt world with
+                        match evalApply [folder; state; elem] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, world))
                         | (Option None, world) -> Left (state, world)
                         | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s folder must return an option.", fnOriginOpt), world))
                         (Right (state, world))
                         list
                 Either.amb eir
-            | [fn; state; Ring set] ->
+            | [folder; state; Ring set] ->
                 let eir =
                     Seq.foldWhileRight (fun (state, world) elem ->
-                        match evalApply [fn; state; elem] fnOriginOpt world with
+                        match evalApply [folder; state; elem] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, world))
                         | (Option None, world) -> Left (state, world)
                         | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s folder must return an option.", fnOriginOpt), world))
                         (Right (state, world))
                         set
                 Either.amb eir
-            | [fn; state; Table map] ->
+            | [folder; state; Table map] ->
                 let eir =
                     Seq.foldWhileRight (fun (state, world) (key, value) ->
                         let elem = Tuple [|key; value|]
-                        match evalApply [fn; state; elem] fnOriginOpt world with
+                        match evalApply [folder; state; elem] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, world))
                         | (Option None, world) -> Left (state, world)
                         | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s folder must return an option.", fnOriginOpt), world))
                         (Right (state, world))
                         (Map.toList map)
                 Either.amb eir
+            | [Violation _ as error; _; _] -> (error, world)
+            | [_; Violation _ as error; _] -> (error, world)
+            | [_; _; Violation _ as error] -> (error, world)
             | [_; _; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 3 arguments required.", fnOriginOpt), world)
 
         let evalFoldi evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [fn; state; String str] -> Seq.foldi (fun i (state, world) elem -> evalApply [fn; Int i; state; String (string elem)] fnOriginOpt world) (state, world) str
-            | [fn; state; List list] -> Seq.foldi (fun i (state, world) elem -> evalApply [fn; Int i; state; elem] fnOriginOpt world) (state, world) list
-            | [fn; state; Ring set] -> Seq.foldi (fun i (state, world) elem -> evalApply [fn; Int i; state; elem] fnOriginOpt world) (state, world) set
-            | [fn; state; Table map] ->
+            | [folder; state; String str] -> Seq.foldi (fun i (state, world) elem -> evalApply [folder; Int i; state; String (string elem)] fnOriginOpt world) (state, world) str
+            | [folder; state; List list] -> Seq.foldi (fun i (state, world) elem -> evalApply [folder; Int i; state; elem] fnOriginOpt world) (state, world) list
+            | [folder; state; Ring set] -> Seq.foldi (fun i (state, world) elem -> evalApply [folder; Int i; state; elem] fnOriginOpt world) (state, world) set
+            | [folder; state; Table map] ->
                 Seq.foldi (fun i (state, world) (key, value) ->
                     let elem = Tuple [|key; value|]
-                    evalApply [fn; Int i; state; elem] fnOriginOpt world)
+                    evalApply [folder; Int i; state; elem] fnOriginOpt world)
                     (state, world)
                     (Map.toList map)
             | [_; _; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
@@ -1418,25 +1491,28 @@ module WorldScripting =
 
         let evalFold evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [fn; state; String str] -> Seq.fold (fun (state, world) elem -> evalApply [fn; state; String (string elem)] fnOriginOpt world) (state, world) str
-            | [fn; state; List list] -> List.fold (fun (state, world) elem -> evalApply [fn; state; elem] fnOriginOpt world) (state, world) list
-            | [fn; state; Ring set] -> Set.fold (fun (state, world) elem -> evalApply [fn; state; elem] fnOriginOpt world) (state, world) set
-            | [fn; state; Table map] ->
+            | [folder; state; String str] -> Seq.fold (fun (state, world) elem -> evalApply [folder; state; String (string elem)] fnOriginOpt world) (state, world) str
+            | [folder; state; List list] -> List.fold (fun (state, world) elem -> evalApply [folder; state; elem] fnOriginOpt world) (state, world) list
+            | [folder; state; Ring set] -> Set.fold (fun (state, world) elem -> evalApply [folder; state; elem] fnOriginOpt world) (state, world) set
+            | [folder; state; Table map] ->
                 Map.fold (fun (state, world) key value ->
                     let elem = Tuple [|key; value|]
-                    evalApply [fn; state; elem] fnOriginOpt world)
+                    evalApply [folder; state; elem] fnOriginOpt world)
                     (state, world)
                     map
+            | [Violation _ as error; _; _] -> (error, world)
+            | [_; Violation _ as error; _] -> (error, world)
+            | [_; _; Violation _ as error] -> (error, world)
             | [_; _; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 3 arguments required.", fnOriginOpt), world)
 
-        let rec evalMapCodata evalApply fnOriginOpt fn codata (world : World) : Codata * World =
+        let rec evalMapCodata evalApply fnOriginOpt mapper codata (world : World) : Codata * World =
             match codata with
             | Empty ->
                 (codata, world)
             | Add (left, right) ->
-                let (leftMapped, world) = evalMapCodata evalApply fnOriginOpt fn left world
-                let (rightMapped, world) = evalMapCodata evalApply fnOriginOpt fn right world
+                let (leftMapped, world) = evalMapCodata evalApply fnOriginOpt mapper left world
+                let (rightMapped, world) = evalMapCodata evalApply fnOriginOpt mapper right world
                 (Add (leftMapped, rightMapped), world)
             | Unfold (unfolder, codata) ->
                 let unfolder = Unfold (Fun (["state"], 1, Apply ([unfolder; Binding ("state", ref UncachedBinding, fnOriginOpt)], fnOriginOpt), false, None, fnOriginOpt), codata)
@@ -1444,7 +1520,7 @@ module WorldScripting =
             | Conversion list ->
                 let (mapped, world) =
                     List.fold (fun (elems, world) elem ->
-                        let (elem, world) = evalApply [fn; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [mapper; elem] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
                         list
@@ -1452,101 +1528,105 @@ module WorldScripting =
 
         let evalMapi evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [fn; Option opt as option] ->
+            | [mapper; Option opt as option] ->
                 match opt with
-                | Some value -> evalApply [fn; Int 0; value] fnOriginOpt world
+                | Some value -> evalApply [mapper; Int 0; value] fnOriginOpt world
                 | None -> (option, world)
-            | [fn; String str] ->
+            | [mapper; String str] ->
                 let (list, world) =
                     str |>
                     Seq.foldi (fun i (elems, world) elem ->
                         let elem = String (string elem)
-                        let (elem, world) = evalApply [fn; Int i; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [mapper; Int i; elem] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
                 if List.forall (function String str when String.length str = 1 -> true | _ -> false) list
                 then (String (list |> List.rev |> List.map (function String str -> str.[0] | _ -> failwithumf ()) |> String.implode), world)
                 else (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + " applied to string's mapper must return a string of length 1.", fnOriginOpt), world)
-            | [fn; Codata codata] ->
-                let (codata, world) = evalMapCodata evalApply fnOriginOpt fn codata world
+            | [mapper; Codata codata] ->
+                let (codata, world) = evalMapCodata evalApply fnOriginOpt mapper codata world
                 (Codata codata, world)
-            | [fn; List list] ->
+            | [mapper; List list] ->
                 let (list, world) =
                     Seq.foldi (fun i (elems, world) elem ->
-                        let (elem, world) = evalApply [fn; Int i; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [mapper; Int i; elem] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
                         list
                 (List (List.rev list), world)
-            | [fn; Ring set] ->
+            | [mapper; Ring set] ->
                 let (set, world) =
                     Seq.foldi (fun i (elems, world) elem ->
-                        let (elem, world) = evalApply [fn; Int i; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [mapper; Int i; elem] fnOriginOpt world
                         (Set.add elem elems, world))
                         (Set.empty, world)
                         set
                 (Ring set, world)
-            | [fn; Table map] ->
+            | [mapper; Table map] ->
                 let (map, world) =
                     Seq.foldi (fun i (elems, world) (key, value) ->
                         let elem = Tuple [|key; value|]
-                        let (elem, world) = evalApply [fn; Int i; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [mapper; Int i; elem] fnOriginOpt world
                         match elem with
                         | Tuple elems' when Array.length elems' = 2 -> ((Map.add elems'.[0] elems'.[1] elems), world)
                         | _ -> (elems, world))
                         (Map.empty, world)
                         (Map.toList map)
                 (Table map, world)
+            | [Violation _ as error; _] -> (error, world)
+            | [_; Violation _ as error] -> (error, world)
             | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
 
         let evalMap evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [fn; Option opt as option] ->
+            | [mapper; Option opt as option] ->
                 match opt with
-                | Some value -> evalApply [fn; value] fnOriginOpt world
+                | Some value -> evalApply [mapper; value] fnOriginOpt world
                 | None -> (option, world)
-            | [fn; String str] ->
+            | [mapper; String str] ->
                 let (list, world) =
                     str |>
                     Seq.fold (fun (elems, world) elem ->
                         let elem = String (string elem)
-                        let (elem, world) = evalApply [fn; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [mapper; elem] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
                 if List.forall (function String str when String.length str = 1 -> true | _ -> false) list
                 then (String (list |> List.rev |> List.map (function String str -> str.[0] | _ -> failwithumf ()) |> String.implode), world)
                 else (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + " applied to string's mapper must return a string of length 1.", fnOriginOpt), world)
-            | [fn; Codata codata] ->
-                let (codata, world) = evalMapCodata evalApply fnOriginOpt fn codata world
+            | [mapper; Codata codata] ->
+                let (codata, world) = evalMapCodata evalApply fnOriginOpt mapper codata world
                 (Codata codata, world)
-            | [fn; List list] ->
+            | [mapper; List list] ->
                 let (list, world) =
                     List.fold (fun (elems, world) elem ->
-                        let (elem, world) = evalApply [fn; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [mapper; elem] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
                         list
                 (List (List.rev list), world)
-            | [fn; Ring set] ->
+            | [mapper; Ring set] ->
                 let (set, world) =
                     Set.fold (fun (elems, world) elem ->
-                        let (elem, world) = evalApply [fn; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [mapper; elem] fnOriginOpt world
                         (Set.add elem elems, world))
                         (Set.empty, world)
                         set
                 (Ring set, world)
-            | [fn; Table map] ->
+            | [mapper; Table map] ->
                 let (map, world) =
                     Map.fold (fun (elems, world) key value ->
                         let elem = Tuple [|key; value|]
-                        let (elem, world) = evalApply [fn; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [mapper; elem] fnOriginOpt world
                         match elem with
                         | Tuple elems' when Array.length elems' = 2 -> ((Map.add elems'.[0] elems'.[1] elems), world)
                         | _ -> (elems, world))
                         (Map.empty, world)
                         map
                 (Table map, world)
+            | [Violation _ as error; _] -> (error, world)
+            | [_; Violation _ as error] -> (error, world)
             | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
 
@@ -1584,6 +1664,8 @@ module WorldScripting =
             | [evaledArg; List list] -> (Bool (List.contains evaledArg list), world)
             | [evaledArg; Ring set] -> (Bool (Set.contains evaledArg set), world)
             | [evaledArg; Table map] -> (Bool (Map.containsKey evaledArg map), world)
+            | [Violation _ as error; _] -> (error, world)
+            | [_; Violation _ as error] -> (error, world)
             | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
 
@@ -1594,6 +1676,7 @@ module WorldScripting =
             | List list -> (Codata (Conversion list), world)
             | Ring set -> (Codata (Conversion (Set.toList set)), world)
             | Table map -> (Codata (Conversion (Map.toListBy (fun (key, value) -> Tuple [|key; value|]) map)), world)
+            | Violation _ as error -> (error, world)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Canot apply " + fnName + " to a non-container.", fnOriginOpt), world)
 
         let evalList _ _ evaledArgs world =
@@ -1608,6 +1691,7 @@ module WorldScripting =
                 match container with
                 | Ring set -> (Ring (Set.remove value set), world)
                 | Table map -> (Table (Map.remove value map), world)
+                | Violation _ as error -> (error, world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
@@ -1616,6 +1700,7 @@ module WorldScripting =
             | [key; container] ->
                 match container with
                 | Table map -> (Option (Map.tryFind key map), world)
+                | Violation _ as error -> (error, world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
@@ -1627,6 +1712,7 @@ module WorldScripting =
                     match Map.tryFind key map with
                     | Some value -> (value, world)
                     | None -> (Violation ([!!"InvalidKey"; !!"Table"; !!(String.capitalize fnName)], "Key not found in table.", fnOriginOpt), world)
+                | Violation _ as error -> (error, world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
 
@@ -1774,6 +1860,7 @@ module WorldScripting =
                 match World.tryProxySimulant address with
                 | Some simulant -> (Bool (World.simulantExists simulant world), world)
                 | None -> (Bool false, world)
+            | Violation _ as error -> (error, world)
             | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + name + "' requires 1 relation argument.", fnOriginOpt), world)
 
         and evalStream name stream originOpt world =
@@ -1848,6 +1935,7 @@ module WorldScripting =
                         let world = World.setProceduralFrames framesCurrent world
                         (evaled, world)
                     | None -> (evaled, world)
+                | Violation _ as error -> (error, world)
                 | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), world)
             | ([], _) -> (Unit, world)
 
@@ -1859,7 +1947,9 @@ module WorldScripting =
                 | (Bool true, world) ->
                     match eval right world with
                     | (Bool _, _) as result -> result
+                    | (Violation _, _) as error -> error
                     | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+                | (Violation _, _) as error -> error
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!"&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
 
@@ -1871,7 +1961,9 @@ module WorldScripting =
                 | (Bool false, world) ->
                     match eval right world with
                     | (Bool _, _) as result -> result
+                    | (Violation _, _) as error -> error
                     | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+                | (Violation _, _) as error -> error
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!"&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
 
@@ -1933,8 +2025,8 @@ module WorldScripting =
 
         and evalIf condition consequent alternative originOpt world =
             match eval condition world with
-            | (Violation _ as evaled, world) -> (evaled, world)
             | (Bool bool, world) -> if bool then eval consequent world else eval alternative world
+            | (Violation _ as evaled, world) -> (evaled, world)
             | (_, world) -> (Violation ([!!"InvalidIfCondition"], "Must provide an expression that evaluates to a bool in an if condition.", originOpt), world)
 
         and evalMatch input (cases : (Expr * Expr) list) originOpt world =
@@ -1943,9 +2035,9 @@ module WorldScripting =
                 List.foldUntilRight (fun world (condition, consequent) ->
                     let (evaledInput, world) = eval condition world
                     match evalBinaryInner EqFns originOpt "=" input evaledInput world with
-                    | (Violation _, world) -> Right (evaledInput, world)
                     | (Bool true, world) -> Right (eval consequent world)
                     | (Bool false, world) -> Left world
+                    | (Violation _, world) -> Right (evaledInput, world)
                     | _ -> failwithumf ())
                     (Left world)
                     cases
@@ -1957,8 +2049,8 @@ module WorldScripting =
             let resultEir =
                 List.foldUntilRight (fun world (condition, consequent) ->
                     match eval condition world with
-                    | (Violation _ as evaled, world) -> Right (evaled, world)
                     | (Bool bool, world) -> if bool then Right (eval consequent world) else Left world
+                    | (Violation _ as evaled, world) -> Right (evaled, world)
                     | (_, world) -> Right ((Violation ([!!"InvalidSelectCondition"], "Must provide an expression that evaluates to a bool in a case condition.", originOpt), world)))
                     (Left world)
                     exprPairs
@@ -1969,13 +2061,12 @@ module WorldScripting =
         and evalTry body handlers _ world =
             match eval body world with
             | (Violation (categories, _, _) as evaled, world) ->
-                let resultEir =
+                match
                     List.foldUntilRight (fun world (handlerCategories, handlerBody) ->
                         let categoriesTrunc = List.truncate (List.length handlerCategories) categories
                         if categoriesTrunc = handlerCategories then Right (eval handlerBody world) else Left world)
                         (Left world)
-                        handlers
-                match resultEir with
+                        handlers with
                 | Right success -> success
                 | Left world -> (evaled, world)
             | success -> success
@@ -2008,6 +2099,7 @@ module WorldScripting =
                         match World.tryProxySimulant address with
                         | Some simulant -> Right (simulant, world)
                         | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 names.", originOpt), world)
+                    | (Violation _, _) as error -> Left error
                     | (_, world) -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or a keyword.", originOpt), world)
                 | None -> Right (context, world)
             match simulantAndEnvEir with
@@ -2036,6 +2128,7 @@ module WorldScripting =
                         match World.tryProxySimulant address with
                         | Some simulant -> Right (simulant, world)
                         | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 parts.", originOpt), world)
+                    | (Violation _, _) as error -> Left error
                     | (_, world) -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or a keyword.", originOpt), world)
                 | None -> Right (context, world)
             match simulantAndEnvEir with
