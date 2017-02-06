@@ -87,7 +87,7 @@
                  [if [&& [isSome opt] [pred [fst opt]]]
                      [cons [fst opt] [takeWhile pred [snd opt]]]
                      [toEmpty ctr]]]]
-         [cert [takeWhileInner pred ctr]]]]
+         [commit [takeWhileInner pred ctr]]]]
 
 [define take [count ctr]
     [let [takeInner [current count ctr]]
@@ -95,7 +95,7 @@
                  [if [&& [isSome opt] [< current count]]
                      [cons [fst opt] [takeInner [inc current] count [snd opt]]]
                      [toEmpty ctr]]]
-         [cert [takeInner 0 count ctr]]]]
+         [commit [takeInner 0 count ctr]]]]
 
 [define tryItem [index ctr]
     [map fst [tryUncons [skip index ctr]]]]
