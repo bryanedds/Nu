@@ -84,7 +84,7 @@ module Scripting =
                      "define variable equate handle " +
                      // prelude identifiers...
                      "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegitiveInfinity isNaN " +
-                     "min max compare sign abs pi e v2Zero v2Identity takeWhile take skipWhile skip reduceWhile reduce tryItem item exists " +
+                     "min max compare sign abs fst! snd! reduceWhile reducei reduce takeWhile take skipWhile skip count exists zipBy zip pi e v2Zero v2Identity " +
                      "Gt Lt Eq Positive Negative Zero",
                      "");
           TypeConverter (typeof<ExprConverter>);
