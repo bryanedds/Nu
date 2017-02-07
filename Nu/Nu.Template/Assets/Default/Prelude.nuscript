@@ -24,7 +24,6 @@
 [define flip [f]
  [fun [a b] [f b a]]]
 
-// Check that a value is the identity.
 [define isIdentity [a]
  [= a [toIdentity a]]]
 
@@ -89,86 +88,85 @@
 // The identity / unit v2 value.
 [define v2Identity [toIdentity -2-]]
 
+// Build a container of elements taken from the given container while a predicate succeeds.
 [define takeWhile [pred ctr]
     [let [takeWhileInner [pred ctr]
-            [let [prOpt [tryUncons ctr]]
-                 [if [&& [isSome prOpt] [pred [fst! prOpt]]]
-                     [cons [fst! prOpt] [takeWhileInner pred [snd! prOpt]]]
+            [let [opt [tryUncons ctr]]
+                 [if [&& [isSome opt] [pred [fst! opt]]]
+                     [cons [fst! opt] [takeWhileInner pred [snd! opt]]]
                      [toEmpty ctr]]]]
          [commit [takeWhileInner pred ctr]]]]
 
-[define take [count ctr]
-    [let [takeInner [current count ctr]]
-            [let [prOpt [tryUncons ctr]]
-                 [if [&& [isSome prOpt] [< current count]]
-                     [cons [fst! prOpt] [takeInner [inc current] count [snd! prOpt]]]
+// Build a container of n elements taken from the given container, skipping n elements.
+[define take [n ctr]
+    [let [takeInner [current n ctr]]
+            [let [opt [tryUncons ctr]]
+                 [if [&& [isSome opt] [< current n]]
+                     [cons [fst! opt] [takeInner [inc current] n [snd! opt]]]
                      [toEmpty ctr]]]
-         [commit [takeInner 0 count ctr]]]]
+         [commit [takeInner 0 n ctr]]]]
 
+// Build a container of elements taken from the given container, skipping elements while a predicate succeeds.
 [define skipWhile [pred ctr]
     [let [skipWhileInner [pred ctr]
-            [let [prOpt [tryUncons ctr]]
-                 [if [&& [isSome prOpt] [pred [fst! prOpt]]]
-                     [skipWhileInner pred [snd! prOpt]]
+            [let [opt [tryUncons ctr]]
+                 [if [&& [isSome opt] [pred [fst! opt]]]
+                     [skipWhileInner pred [snd! opt]]
                      ctr]]]
          [commit [skipWhileInner pred ctr]]]]
 
-[define skip [count ctr]
-    [let [skipInner [current count ctr]]
-            [let [prOpt [tryUncons ctr]]
-                 [if [&& [isSome prOpt] [< current count]]
-                     [cons [fst! prOpt] [skipInner [inc current] count [snd! prOpt]]]
+// Build a container of elements taken from the given container, skipping n elements.
+[define skip [n ctr]
+    [let [skipInner [current n ctr]]
+            [let [opt [tryUncons ctr]]
+                 [if [&& [isSome opt] [< current n]]
+                     [cons [fst! opt] [skipInner [inc current] n [snd! opt]]]
                      ctr]]
-         [commit [skipInner 0 count ctr]]]]
+         [commit [skipInner 0 n ctr]]]]
 
+// Reduce a container with at least one element while the reducer function returns some.
 [define reduceWhile [reducer ctr]
     [let [pr [split ctr]]
          [foldWhile reducer [fst pr] [snd pr]]]]
 
+// Reduce a container with at least one element.
 [define reduce [reducer ctr]
     [let [pr [split ctr]]
          [fold reducer [fst pr] [snd pr]]]
 
-[define tryItem [index ctr]
-    [map fst [tryUncons [skip index ctr]]]]
-
-[define exists [by ctr]
-    [let [prOpt [tryUncons ctr]]
-         [if [isSome prOpt]
-             [if [by [fst! prOpt]]
+// Determine whether a container holds an element that satisfies the given predicate.
+[define exists [pred ctr]
+    [let [opt [tryUncons ctr]]
+         [if [isSome opt]
+             [if [pred [fst! opt]]
                  true
-                 [exists by [snd! prOpt]]]
+                 [exists pred [snd! opt]]]
              false]]]
 
-[define count [by ctr]
-    [let [countInner [count by ctr]]
-         [let [prOpt [tryUncons ctr]]
-              [if [isSome prOpt]
-                  [if [by [fst! prOpt]]
-                      count
-                      [countInner [inc count] by [snd! prOpt]]]
+// Count the number of a container's element that satisfies the given predicate.
+[define count [pred ctr]
+    [let [countInner [n pred ctr]]
+         [let [opt [tryUncons ctr]]
+              [if [isSome opt]
+                  [if [pred [fst! opt]]
+                      n
+                      [countInner [inc n] pred [snd! opt]]]
                   false]]
-         [countInner 0 by ctr]]]
-
-(*
-TODO: fstAs - nthAs, itemAs, sort, replace, slice (subsequence), chop
-
-TODO [def zip [seq seq2] where: [[sequence seq] [sequence seq2]]
-    doc: "Zip two sequences into a sequence of pairs."
-    (zipWith
-        (fun (first second) (pair first second))
-        seq
-        seq2)]
+         [countInner 0 pred ctr]]]
     
-TODO [def unzip [seq] where: [[sequence seq]]
-    doc: "Unzip a sequence of pairs into a pair of sequences."
-    (let
-        (prRev
-            (fold
-                (fun (state current)
-                    (pair (cons current.first state.first)
-                          (cons current.second state.second)))
-                (pair (list) (list))
-                seq))
-        (pair (reverse prRev.first) (reverse prRev.second)))]
-*)
+// Zip two containers by the given zipper function.
+[def zipBy [zipper ctr ctr2]
+    [let [zipByInner [zipper ctr ctr2]
+         [let [opt [tryUncons ctr]]
+              [opt2 [tryUncons ctr2]] 
+              [if [|| [isNone opt] [isNone opt2]]
+                  [toEmpty ctr]
+                  [cons [zipper [fst! opt] [fst! opt2]]
+                        [zipWith zipper [snd! opt] [snd! opt2]]]]]]]
+    [commit [zipByInner zipper ctr ctr2]]]
+
+// Zip two containers into a container of pairs.
+[def zip [ctr ctr2]
+    [zipWith pair ctr ctr2]]
+
+(* TODO: fstAs - nthAs, tryItem, itemAs, sort, replace, slice (subsequence), chop *)
