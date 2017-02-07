@@ -69,6 +69,14 @@
 [define abs [a]
  [if [isPositive a] a [negate a]]]
 
+// Dereference a structure, then get its first item.
+[define fst! a
+    [fst [! a]]]
+
+// Dereference a structure, then get its second item.
+[define snd! [a]
+    [snd [! a]]]
+
 // Mathematical constant pi as a single value.
 [define pi 3.14159f]
 
@@ -83,33 +91,33 @@
 
 [define takeWhile [pred ctr]
     [let [takeWhileInner [pred ctr]
-            [let [opt [tryUncons ctr]]
-                 [if [&& [isSome opt] [pred [fst opt]]]
-                     [cons [fst opt] [takeWhileInner pred [snd opt]]]
+            [let [prOpt [tryUncons ctr]]
+                 [if [&& [isSome prOpt] [pred [fst! prOpt]]]
+                     [cons [fst! prOpt] [takeWhileInner pred [snd! prOpt]]]
                      [toEmpty ctr]]]]
          [commit [takeWhileInner pred ctr]]]]
 
 [define take [count ctr]
     [let [takeInner [current count ctr]]
-            [let [opt [tryUncons ctr]]
-                 [if [&& [isSome opt] [< current count]]
-                     [cons [fst opt] [takeInner [inc current] count [snd opt]]]
+            [let [prOpt [tryUncons ctr]]
+                 [if [&& [isSome prOpt] [< current count]]
+                     [cons [fst! prOpt] [takeInner [inc current] count [snd! prOpt]]]
                      [toEmpty ctr]]]
          [commit [takeInner 0 count ctr]]]]
 
 [define skipWhile [pred ctr]
     [let [skipWhileInner [pred ctr]
-            [let [opt [tryUncons ctr]]
-                 [if [&& [isSome opt] [pred [fst opt]]]
-                     [skipWhileInner pred [snd opt]]
+            [let [prOpt [tryUncons ctr]]
+                 [if [&& [isSome prOpt] [pred [fst! prOpt]]]
+                     [skipWhileInner pred [snd! prOpt]]
                      ctr]]]
          [commit [skipWhileInner pred ctr]]]]
 
 [define skip [count ctr]
     [let [skipInner [current count ctr]]
-            [let [opt [tryUncons ctr]]
-                 [if [&& [isSome opt] [< current count]]
-                     [cons [fst opt] [skipInner [inc current] count [snd opt]]]
+            [let [prOpt [tryUncons ctr]]
+                 [if [&& [isSome prOpt] [< current count]]
+                     [cons [fst! prOpt] [skipInner [inc current] count [snd! prOpt]]]
                      ctr]]
          [commit [skipInner 0 count ctr]]]]
 
@@ -125,14 +133,25 @@
     [map fst [tryUncons [skip index ctr]]]]
 
 [define exists [by ctr]
-    [let [mapped [map by ctr]]
-         [contains true mapped]]]
+    [let [prOpt [tryUncons ctr]]
+         [if [isSome prOpt]
+             [if [by [fst! prOpt]]
+                 true
+                 [exists by [snd! prOpt]]]
+             false]]]
 
 [define count [by ctr]
-    []]
+    [let [countInner [count by ctr]]
+         [let [prOpt [tryUncons ctr]]
+              [if [isSome prOpt]
+                  [if [by [fst! prOpt]]
+                      count
+                      [countInner [inc count] by [snd! prOpt]]]
+                  false]]
+         [countInner 0 by ctr]]]
 
 (*
-TODO: fstAs - nthAs, sort, replace, slice (subsequence), chop
+TODO: fstAs - nthAs, itemAs, sort, replace, slice (subsequence), chop
 
 TODO [def zip [seq seq2] where: [[sequence seq] [sequence seq2]]
     doc: "Zip two sequences into a sequence of pairs."
