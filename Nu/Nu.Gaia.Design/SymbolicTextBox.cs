@@ -20,6 +20,11 @@ namespace Nu.Gaia.Design
             // Lisp lexer
             Lexer = Lexer.Lisp;
 
+            // Add comment styles. NOTE: this currently doesn't work.
+            Styles[Style.Lisp.Comment].ForeColor = Color.ForestGreen;
+            Styles[Style.Lisp.MultiComment].ForeColor = Color.ForestGreen;
+            SetKeywords(2, "// (* *)");
+
             // Add keyword styles (keywords 0 are reserved for DSL-specific use)
             Styles[Style.Lisp.Keyword].ForeColor = Color.DarkBlue;
             Styles[Style.Lisp.KeywordKw].ForeColor = Color.FromArgb(0xFF, 0x60, 0x00, 0x70);
