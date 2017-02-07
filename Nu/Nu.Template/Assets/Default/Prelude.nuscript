@@ -1,100 +1,100 @@
-// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2012-2017.
+; Nu Game Engine.
+; Copyright (C) Bryan Edds, 2012-2017.
 
-(* The bool type indicator.      *) [define -b- false]
-(* The int type indicator.       *) [define -i- 0]
-(* The int64 type indicator.     *) [define -L- 0L]
-(* The single type indicator.    *) [define -f- 0f]
-(* The double type indicator.    *) [define -d- 0d]
-(* The v2 type indicator.        *) [define -2- [v2 0f 0f]]
-(* The string type indicator.    *) [define -s- ""]
-(* The keyword type indicator.   *) [define -k- nil]
-(* The tuple type indicator.     *) [define -u- [tuple]]
-(* The keyphrase type indicator. *) [define -p- [nil]]
-(* The option type indicator.    *) [define -o- none]
-(* The list type indicator.      *) [define -l- [list]]
-(* The ring type indicator.      *) [define -r- [ring]]
-(* The table type indicator.     *) [define -t- [table]]
-(* The unit type indicator.      *) [define -u- []]
+#| The bool type indicator.      |# [define -b- false]
+#| The int type indicator.       |# [define -i- 0]
+#| The int64 type indicator.     |# [define -L- 0L]
+#| The single type indicator.    |# [define -f- 0f]
+#| The double type indicator.    |# [define -d- 0d]
+#| The v2 type indicator.        |# [define -2- [v2 0f 0f]]
+#| The string type indicator.    |# [define -s- ""]
+#| The keyword type indicator.   |# [define -k- nil]
+#| The tuple type indicator.     |# [define -u- [tuple]]
+#| The keyphrase type indicator. |# [define -p- [nil]]
+#| The option type indicator.    |# [define -o- none]
+#| The list type indicator.      |# [define -l- [list]]
+#| The ring type indicator.      |# [define -r- [ring]]
+#| The table type indicator.     |# [define -t- [table]]
+#| The unit type indicator.      |# [define -u- []]
 
-// The identity function.
+; The identity function.
 [define id [a] a]
 
-// Flip a binary function's arguments.
+; Flip a binary function's arguments.
 [define flip [f]
     [fun [a b] [f b a]]]
 
 [define isIdentity [a]
     [= a [toIdentity a]]]
 
-// Check that a value is positive.
+; Check that a value is positive.
 [define isPositive [a]
     [>= a [toEmpty a]]]
 
-// Check that a value is negative.
+; Check that a value is negative.
 [define isNegative [a]
     [<= a [toEmpty a]]]
 
-// Check that a value is positive infinity.
+; Check that a value is positive infinity.
 [define isPositiveInfinity [a]
     [> a [toMax a]]]
 
-// Check that a value is negative infinity.
+; Check that a value is negative infinity.
 [define isNegativeInfinity [a]
     [< a [toMin a]]]
 
-// Check that a value is IEEE not-a-number.
+; Check that a value is IEEE not-a-number.
 [define isNaN [a]
     [|| [isPositiveInfinity a]
         [isNegativeInfinity a]]]
 
-// Select the mininum value.
+; Select the mininum value.
 [define min [a b]
     [if [< a b] a b]]
 
-// Select the maximum value.
+; Select the maximum value.
 [define max [a b]
     [if [> a b] a b]]
 
-// Compare two values. Returns Lt, Gt, or Eq.
+; Compare two values. Returns Lt, Gt, or Eq.
 [define compare [a b]
     [if [< a b]
         Lt
         [if [> a b] Gt Eq]]]
 
-// The sign of a value. Returns Positive, Negative, or Zero.
+; The sign of a value. Returns Positive, Negative, or Zero.
 [define sign [a]
     [if [> a [toEmpty a]]
         Positive
         [if [< a [toEmpty a]] Negative Zero]]]
 
-// Compute the absolute value.
+; Compute the absolute value.
 [define abs [a]
     [if [isNegative a]
         [negate a]
         a]]
 
-// Dereference a structure, then get its first item.
+; Dereference a structure, then get its first item.
 [define fst! [a]
     [fst [! a]]]
 
-// Dereference a structure, then get its second item.
+; Dereference a structure, then get its second item.
 [define snd! [a]
     [snd [! a]]]
 
-// Mathematical constant pi as a single value.
+; Mathematical constant pi as a single value.
 [define pi 3.14159f]
 
-// Mathematical constant e as a single value.
+; Mathematical constant e as a single value.
 [define e 2.71828f]
 
-// The zero v2 value.
+; The zero v2 value.
 [define v2Zero [toEmpty -2-]]
 
-// The identity / unit v2 value.
+; The identity / unit v2 value.
 [define v2Identity [toIdentity -2-]]
 
-// Build a container of elements taken from the given container while a predicate succeeds.
+; Build a container of elements taken from the given container while a predicate succeeds.
 [define takeWhile [pred ctr]
     [let [takeWhileInner [pred ctr]
             [let [opt [tryUncons ctr]]
@@ -103,7 +103,7 @@
                      [toEmpty ctr]]]]
          [commit [takeWhileInner pred ctr]]]]
 
-// Build a container of n elements taken from the given container, skipping n elements.
+; Build a container of n elements taken from the given container, skipping n elements.
 [define take [n ctr]
     [let [takeInner [current n ctr]]
             [let [opt [tryUncons ctr]]
@@ -112,7 +112,7 @@
                      [toEmpty ctr]]]
          [commit [takeInner 0 n ctr]]]]
 
-// Build a container of elements taken from the given container, skipping elements while a predicate succeeds.
+; Build a container of elements taken from the given container, skipping elements while a predicate succeeds.
 [define skipWhile [pred ctr]
     [let [skipWhileInner [pred ctr]
             [let [opt [tryUncons ctr]]
@@ -121,7 +121,7 @@
                      ctr]]]
          [commit [skipWhileInner pred ctr]]]]
 
-// Build a container of elements taken from the given container, skipping n elements.
+; Build a container of elements taken from the given container, skipping n elements.
 [define skip [n ctr]
     [let [skipInner [current n ctr]]
             [let [opt [tryUncons ctr]]
@@ -130,17 +130,17 @@
                      ctr]]
          [commit [skipInner 0 n ctr]]]]
 
-// Reduce a container with at least one element while the reducer function returns some.
+; Reduce a container with at least one element while the reducer function returns some.
 [define reduceWhile [reducer ctr]
     [let [pr [split ctr]]
          [foldWhile reducer [fst pr] [snd pr]]]]
 
-// Reduce a container with at least one element.
+; Reduce a container with at least one element.
 [define reduce [reducer ctr]
     [let [pr [split ctr]]
          [fold reducer [fst pr] [snd pr]]]
 
-// Determine whether a container holds an element that satisfies the given predicate.
+; Determine whether a container holds an element that satisfies the given predicate.
 [define exists [pred ctr]
     [let [opt [tryUncons ctr]]
          [if [isSome opt]
@@ -149,7 +149,7 @@
                  [exists pred [snd! opt]]]
              false]]]
 
-// Count the number of a container's element that satisfies the given predicate.
+; Count the number of a container's element that satisfies the given predicate.
 [define count [pred ctr]
     [let [countInner [n pred ctr]]
          [let [opt [tryUncons ctr]]
@@ -160,7 +160,7 @@
                   false]]
          [countInner 0 pred ctr]]]
     
-// Zip two containers by the given zipper function.
+; Zip two containers by the given zipper function.
 [def zipBy [zipper ctr ctr2]
     [let [zipByInner [zipper ctr ctr2]
          [let [opt [tryUncons ctr]]
@@ -171,8 +171,8 @@
                         [zipWith zipper [snd! opt] [snd! opt2]]]]]]]
     [commit [zipByInner zipper ctr ctr2]]]
 
-// Zip two containers into a container of pairs.
+; Zip two containers into a container of pairs.
 [def zip [ctr ctr2]
     [zipWith pair ctr ctr2]]
 
-(* TODO: fstAs - nthAs, tryItem, itemAs, sort, replace, slice (subsequence), split *)
+#| TODO: fstAs - nthAs, tryItem, itemAs, sort, replace, slice (subsequence), split |#
