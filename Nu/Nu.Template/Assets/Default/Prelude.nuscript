@@ -133,17 +133,21 @@
 [define skip [n ctr]
     [skip3 0 n ctr]]
 
-[define count3 [n pred ctr]
+[define countBy3 [n pred ctr]
      [let [opt [tryUncons ctr]]
           [if [isSome opt]
               [if [pred [fst! opt]]
-                  n
-                  [count3 [inc n] pred [snd! opt]]]
-              false]]]
+                  [countBy3 [inc n] pred [snd! opt]]
+                  [countBy3 n pred [snd! opt]]]
+              n]]]
 
 ; Count the number of a container's element that satisfies the given predicate.
-[define count [pred ctr]
-    [count3 0 pred ctr]]
+[define countBy [pred ctr]
+    [countBy3 0 pred ctr]]
+
+; Count the number of a container's element that equal the value.
+[define count [a ctr]
+    [countBy3 0 [fun [b] [= a b]] ctr]]
 
 ; Determine whether a container holds an element that satisfies the given predicate.
 [define exists [pred ctr]
