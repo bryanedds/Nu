@@ -210,24 +210,12 @@ namespace Nu.Gaia.Design
 
         private bool IsBraceLeft(int c)
         {
-            switch (c)
-            {
-                case '(':
-                case '[':
-                case '{': return true;
-            }
-            return false;
+            return c == '[';
         }
 
         private bool IsBraceRight(int c)
         {
-            switch (c)
-            {
-                case ')':
-                case ']':
-                case '}': return true;
-            }
-            return false;
+            return c == ']';
         }
 
         private string keywords0 = string.Empty;

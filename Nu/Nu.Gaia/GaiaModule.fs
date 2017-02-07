@@ -766,7 +766,10 @@ module Gaia =
             let exprs = scvalue<Scripting.Expr list> exprStr
             let localFrame = Simulants.Game.GetScriptFrameNp world
             let (evaled, world) = World.evalMany exprs localFrame Simulants.Game world
-            form.replOutputTextBox.Text <- scstring evaled
+            form.replOutputTextBox.Text <-
+                if String.notEmpty form.replOutputTextBox.Text
+                then form.replOutputTextBox.Text + "\n" + scstring evaled
+                else scstring evaled
             RefWorld := world
         with exn -> Log.debug ("Could not evaluate repl expr due to:\n" + scstring exn)
 
@@ -994,6 +997,15 @@ module Gaia =
         | syntax ->
             form.assetGraphTextBox.Keywords0 <- syntax.Keywords0
             form.assetGraphTextBox.Keywords1 <- syntax.Keywords1
+
+        // populate repl keywords
+        match typeof<Scripting.Expr>.GetCustomAttribute<SyntaxAttribute> true with
+        | null -> ()
+        | syntax ->
+            form.replInputTextBox.Keywords0 <- syntax.Keywords0
+            form.replInputTextBox.Keywords1 <- syntax.Keywords1
+            form.replOutputTextBox.Keywords0 <- syntax.Keywords0
+            form.replOutputTextBox.Keywords1 <- syntax.Keywords1
 
         // finally, show form
         form.Show ()
