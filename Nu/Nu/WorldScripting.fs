@@ -1149,7 +1149,7 @@ module WorldScripting =
             match evaledArgs with
             | [evaledArg; String str] ->
                 match evaledArg with
-                | String str2 when String.length str2 = 1 -> (String (str + str2), world)
+                | String head when String.length head = 1 -> (String (head + str), world)
                 | Violation _ as violation -> (violation, world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 string arguments required where the first is of length 1.", fnOriginOpt), world)
             | [evaledArg; Option opt] ->
@@ -1159,7 +1159,7 @@ module WorldScripting =
             | [evaledArg; List list] ->
                 (List (evaledArg :: list), world)
             | [evaledArg; Codata codata] ->
-                (Codata (Add (codata, Conversion [evaledArg])), world)
+                (Codata (Add (Conversion [evaledArg], codata)), world)
             | [evaledArg; Ring set] ->
                 (Ring (Set.add evaledArg set), world)
             | [evaledArg; Table map] ->
