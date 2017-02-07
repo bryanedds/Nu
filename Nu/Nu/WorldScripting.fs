@@ -1847,6 +1847,24 @@ module WorldScripting =
                 (Table evaledMap, world)
             else (Violation ([!!"InvalidEntries"; !!"Table"; !!(String.capitalize fnName)], "Table entries must consist of 1 or more pairs.", fnOriginOpt), world)
 
+        let evalSubscribe3 subscription eventAddress subscriber world =
+            World.subscribe (fun event world ->
+                match World.tryGetSimulantScriptFrame subscriber world with
+                | Some scriptFrame ->
+                    match Importers.TryGetValue event.DataType.Name with
+                    | (true, tryImport) ->
+                        match tryImport event.Data event.DataType with
+                        | Some dataImported ->
+                            let eventBindings = [|("data", dataImported); ("subscriber", String (scstring subscriber)); ("publisher", String (scstring event.Publisher))|]
+                            let world = World.addProceduralBindings (AddType.AddToNewFrame 3) eventBindings world
+                            World.evalWithLogging subscription scriptFrame subscriber world |> snd
+                        | None -> Log.info "Property value could not be imported into scripting environment."; world
+                    | (false, _) -> Log.info "Property value could not be imported into scripting environment."; world
+                | None -> world)
+                eventAddress
+                subscriber
+                world
+
         let evalSubscribe fnOriginOpt fnName evaledArg evaledArg2 evaledArg3 world =
             match evaledArg with
             | Binding _
@@ -1859,24 +1877,8 @@ module WorldScripting =
                     match evaledArg3 with
                     | String str
                     | Keyword str ->
-                        let world =
-                            let subscriber = World.proxySimulant (Relation.resolve context.SimulantAddress (Relation.makeFromString str))
-                            World.subscribe (fun event world ->
-                                match World.tryGetSimulantScriptFrame subscriber world with
-                                | Some scriptFrame ->
-                                    match Importers.TryGetValue event.DataType.Name with
-                                    | (true, tryImport) ->
-                                        match tryImport event.Data event.DataType with
-                                        | Some dataImported ->
-                                            let eventBindings = [("data", dataImported); ("subscriber", String (scstring subscriber)); ("publisher", String (scstring event.Publisher))]
-                                            let world = World.addProceduralBindings (AddType.AddToNewFrame 3) eventBindings world
-                                            World.evalWithLogging evaledArg scriptFrame subscriber world |> snd
-                                        | None -> Log.info "Property value could not be imported into scripting environment."; world
-                                    | (false, _) -> Log.info "Property value could not be imported into scripting environment."; world
-                                | None -> world)
-                                eventAddress
-                                subscriber
-                                world
+                        let subscriber = World.proxySimulant (Relation.resolve context.SimulantAddress (Relation.makeFromString str))
+                        let world = evalSubscribe3 evaledArg eventAddress subscriber world
                         (Unit, world)
                     | Violation _ as error -> (error, world)
                     | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + fnName + "' requires a relation for its 3rd argument.", fnOriginOpt), world)
