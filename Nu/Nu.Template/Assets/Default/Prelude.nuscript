@@ -82,13 +82,20 @@
 [define snd! [a]
     [snd [! a]]]
 
-[define count3 [n pred ctr]
-     [let [opt [tryUncons ctr]]
-          [if [isSome opt]
-              [if [pred [fst! opt]]
-                  n
-                  [count3 [inc n] pred [snd! opt]]]
-              false]]]
+; Reduce a container with at least one element while the reducer function returns some.
+[define reduceWhile [reducer ctr]
+    [let [pr [split ctr]]
+         [foldWhile reducer [fst pr] [snd pr]]]]
+
+; Reduce a container with at least one element, providing the index of each element.
+[define reducei [reducer ctr]
+    [let [pr [split ctr]]
+         [foldi reducer [fst pr] [snd pr]]]]
+
+; Reduce a container with at least one element.
+[define reduce [reducer ctr]
+    [let [pr [split ctr]]
+         [fold reducer [fst pr] [snd pr]]]]
 
 ; Build a container of elements taken from the given container while a predicate succeeds.
 [define takeWhile [pred ctr]
@@ -97,12 +104,15 @@
              [cons [fst! opt] [takeWhile pred [snd! opt]]]
              [toEmpty ctr]]]]
 
-; Build a container of n elements taken from the given container, skipping n elements.
-[define take [n ctr]
+[define take3 [current n ctr]
     [let [opt [tryUncons ctr]]
          [if [&& [isSome opt] [< current n]]
-             [cons [fst! opt] [take [inc current] n [snd! opt]]]
+             [cons [fst! opt] [take3 [inc current] n [snd! opt]]]
              [toEmpty ctr]]]]
+
+; Build a container of n elements taken from the given container, skipping n elements.
+[define take [n ctr]
+    [take3 0 n ctr]]
 
 ; Build a container of elements taken from the given container, skipping elements while a predicate succeeds.
 [define skipWhile [pred ctr]
@@ -111,22 +121,29 @@
              [skipWhile pred [snd! opt]]
              ctr]]]
 
-; Build a container of elements taken from the given container, skipping n elements.
-[define skip [n ctr]
+[define skip3 [current n ctr]
     [let [opt [tryUncons ctr]]
-         [if [&& [isSome opt] [< current n]]
-             [cons [fst! opt] [skip [inc current] n [snd! opt]]]
+         [if [isSome opt]
+             [if [< current n]
+                 [skip3 [inc current] n [snd! opt]]
+                 [cons [fst! opt] [skip3 current n [snd! opt]]]]
              ctr]]]
 
-; Reduce a container with at least one element while the reducer function returns some.
-[define reduceWhile [reducer ctr]
-    [let [pr [split ctr]]
-         [foldWhile reducer [fst pr] [snd pr]]]]
+; Build a container of elements taken from the given container, skipping n elements.
+[define skip [n ctr]
+    [skip3 0 n ctr]]
 
-; Reduce a container with at least one element.
-[define reduce [reducer ctr]
-    [let [pr [split ctr]]
-         [fold reducer [fst pr] [snd pr]]]]
+[define count3 [n pred ctr]
+     [let [opt [tryUncons ctr]]
+          [if [isSome opt]
+              [if [pred [fst! opt]]
+                  n
+                  [count3 [inc n] pred [snd! opt]]]
+              false]]]
+
+; Count the number of a container's element that satisfies the given predicate.
+[define count [pred ctr]
+    [count3 0 pred ctr]]
 
 ; Determine whether a container holds an element that satisfies the given predicate.
 [define exists [pred ctr]
@@ -136,10 +153,6 @@
                  true
                  [exists pred [snd! opt]]]
              false]]]
-
-; Count the number of a container's element that satisfies the given predicate.
-[define count [pred ctr]
-    [count3 0 pred ctr]]
     
 ; Zip two containers by the given zipper function.
 [define zipBy [zipper ctr ctr2]
@@ -154,6 +167,8 @@
 [define zip [ctr ctr2]
     [zipBy pair ctr ctr2]]
 
+#| TODO: fstAs - nthAs, tryItem, itemAs, sort, replace, slice (subsequence), split |#
+
 ; Mathematical constant pi as a single value.
 [define pi 3.14159f]
 
@@ -165,5 +180,3 @@
 
 ; The identity / unit v2 value.
 [define v2Identity [toIdentity -2-]]
-
-#| TODO: fstAs - nthAs, tryItem, itemAs, sort, replace, slice (subsequence), split |#
