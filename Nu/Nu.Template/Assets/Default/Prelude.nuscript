@@ -22,51 +22,57 @@
 
 // Flip a binary function's arguments.
 [define flip [f]
- [fun [a b] [f b a]]]
+    [fun [a b] [f b a]]]
 
 [define isIdentity [a]
- [= a [toIdentity a]]]
+    [= a [toIdentity a]]]
 
 // Check that a value is positive.
 [define isPositive [a]
- [>= a [toEmpty a]]]
+    [>= a [toEmpty a]]]
 
 // Check that a value is negative.
 [define isNegative [a]
- [<= a [toEmpty a]]]
+    [<= a [toEmpty a]]]
 
 // Check that a value is positive infinity.
 [define isPositiveInf [a]
- [> a [toMax a]]]
+    [> a [toMax a]]]
 
 // Check that a value is negative infinity.
 [define isNegativeInf [a]
- [< a [toMin a]]]
+    [< a [toMin a]]]
 
-// Check that a value is NaN.
+// Check that a value is IEEE not-a-number.
 [define isNaN [a]
- [|| [isPositiveInf a]
-     [isNegativeInf a]]]
+    [|| [isPositiveInf a]
+        [isNegativeInf a]]]
 
 // Select the mininum value.
 [define min [a b]
- [if [< a b] a b]]
+    [if [< a b] a b]]
 
 // Select the maximum value.
 [define max [a b]
- [if [> a b] a b]]
+    [if [> a b] a b]]
 
 // Compare two values. Returns Lt, Gt, or Eq.
 [define compare [a b]
- [if [< a b] Lt [if [> a b] Gt Eq]]]
+    [if [< a b]
+        Lt
+        [if [> a b] Gt Eq]]]
 
 // The sign of a value. Returns Positive, Negative, or Zero.
 [define sign [a]
- [if [> a [toEmpty a]] Positive [if [< [toEmpty a]] Negative Zero]]]
+    [if [> a [toEmpty a]]
+        Positive
+        [if [< [toEmpty a]] Negative Zero]]]
 
 // Compute the absolute value.
 [define abs [a]
- [if [isPositive a] a [negate a]]]
+    [if [isNegative a]
+        [negate a]
+        a]]
 
 // Dereference a structure, then get its first item.
 [define fst! a
