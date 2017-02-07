@@ -75,7 +75,7 @@
         a]]
 
 // Dereference a structure, then get its first item.
-[define fst! a
+[define fst! [a]
     [fst [! a]]]
 
 // Dereference a structure, then get its second item.
@@ -175,4 +175,4 @@
 [def zip [ctr ctr2]
     [zipWith pair ctr ctr2]]
 
-(* TODO: fstAs - nthAs, tryItem, itemAs, sort, replace, slice (subsequence), chop *)
+(* TODO: fstAs - nthAs, tryItem, itemAs, sort, replace, slice (subsequence), split *)

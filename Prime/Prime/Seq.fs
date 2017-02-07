@@ -137,4 +137,5 @@ let split pred seq =
             then splitInner pred (head :: left) right (Seq.tail seq)
             else splitInner pred left (head :: right) (Seq.tail seq)
         | None -> (left, right)
-    splitInner pred [] [] seq
+    let (list, list2) = splitInner pred [] [] seq
+    (List.rev list, List.rev list2)
