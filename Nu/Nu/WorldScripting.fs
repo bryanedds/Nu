@@ -227,7 +227,7 @@ module WorldScripting =
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a ring.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Dec"], "Cannot decrement a table.", originOpt) }
 
-        let NegFns =
+        let NegateFns =
             { Bool = fun value _ -> Bool (if value then false else true)
               Int = fun value _ -> Int (0 - value)
               Int64 = fun value _ -> Int64 (0L - value)
@@ -1868,7 +1868,7 @@ module WorldScripting =
                  ("not", evalBoolUnary not)
                  ("inc", evalUnary IncFns)
                  ("dec", evalUnary DecFns)
-                 ("neg", evalUnary NegFns)
+                 ("negate", evalUnary NegateFns)
                  ("hash", evalUnary HashFns)
                  ("pow", evalBinary PowFns)
                  ("root", evalBinary RootFns)

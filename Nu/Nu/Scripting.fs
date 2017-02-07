@@ -83,7 +83,7 @@ module Scripting =
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
                      // prelude identifiers...
-                     "id flip isZero isIdentity isPositive isNegative isPositiveInf isNegitiveInf isNaN " +
+                     "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegitiveInfinity isNaN " +
                      "min max compare sign abs pi e v2Zero v2Identity takeWhile take skipWhile skip reduceWhile reduce tryItem item exists " +
                      "Gt Lt Eq Positive Negative Zero",
                      "");
