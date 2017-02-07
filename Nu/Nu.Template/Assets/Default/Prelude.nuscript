@@ -82,53 +82,61 @@
 [define snd! [a]
     [snd [! a]]]
 
-; Mathematical constant pi as a single value.
-[define pi 3.14159f]
+[define takeWhile_ [pred ctr]
+    [let [opt [tryUncons ctr]]
+         [if [&& [isSome opt] [pred [fst! opt]]]
+             [cons [fst! opt] [takeWhile_ pred [snd! opt]]]
+             [toEmpty ctr]]]]
 
-; Mathematical constant e as a single value.
-[define e 2.71828f]
+[define take_ [current n ctr]
+    [let [opt [tryUncons ctr]]
+         [if [&& [isSome opt] [< current n]]
+             [cons [fst! opt] [take_ [inc current] n [snd! opt]]]
+             [toEmpty ctr]]]]
+    
+[define skipWhile_ [pred ctr]
+    [let [opt [tryUncons ctr]]
+         [if [&& [isSome opt] [pred [fst! opt]]]
+             [skipWhile_ pred [snd! opt]]
+             ctr]]]
 
-; The zero v2 value.
-[define v2Zero [toEmpty -2-]]
+[define skip_ [current n ctr]
+    [let [opt [tryUncons ctr]]
+         [if [&& [isSome opt] [< current n]]
+             [cons [fst! opt] [skip_ [inc current] n [snd! opt]]]
+             ctr]]]
 
-; The identity / unit v2 value.
-[define v2Identity [toIdentity -2-]]
+[define count_ [n pred ctr]
+     [let [opt [tryUncons ctr]]
+          [if [isSome opt]
+              [if [pred [fst! opt]]
+                  n
+                  [count_ [inc n] pred [snd! opt]]]
+              false]]]
+
+[define zipBy_ [zipper ctr ctr2]
+     [let [opt [tryUncons ctr]]
+          [opt2 [tryUncons ctr2]] 
+          [if [|| [isNone opt] [isNone opt2]]
+              [toEmpty ctr]
+              [cons [zipper [fst! opt] [fst! opt2]]
+                    [zipBy_ zipper [snd! opt] [snd! opt2]]]]]]
 
 ; Build a container of elements taken from the given container while a predicate succeeds.
 [define takeWhile [pred ctr]
-    [let [takeWhileInner [pred ctr]
-            [let [opt [tryUncons ctr]]
-                 [if [&& [isSome opt] [pred [fst! opt]]]
-                     [cons [fst! opt] [takeWhileInner pred [snd! opt]]]
-                     [toEmpty ctr]]]]
-         [commit [takeWhileInner pred ctr]]]]
+    [commit [takeWhile2 pred ctr]]]
 
 ; Build a container of n elements taken from the given container, skipping n elements.
 [define take [n ctr]
-    [let [takeInner [current n ctr]]
-            [let [opt [tryUncons ctr]]
-                 [if [&& [isSome opt] [< current n]]
-                     [cons [fst! opt] [takeInner [inc current] n [snd! opt]]]
-                     [toEmpty ctr]]]
-         [commit [takeInner 0 n ctr]]]]
+    [commit [take_ 0 n ctr]]]
 
 ; Build a container of elements taken from the given container, skipping elements while a predicate succeeds.
 [define skipWhile [pred ctr]
-    [let [skipWhileInner [pred ctr]
-            [let [opt [tryUncons ctr]]
-                 [if [&& [isSome opt] [pred [fst! opt]]]
-                     [skipWhileInner pred [snd! opt]]
-                     ctr]]]
-         [commit [skipWhileInner pred ctr]]]]
+    [commit [skipWhile_ pred ctr]]]
 
 ; Build a container of elements taken from the given container, skipping n elements.
 [define skip [n ctr]
-    [let [skipInner [current n ctr]]
-            [let [opt [tryUncons ctr]]
-                 [if [&& [isSome opt] [< current n]]
-                     [cons [fst! opt] [skipInner [inc current] n [snd! opt]]]
-                     ctr]]
-         [commit [skipInner 0 n ctr]]]]
+    [commit [skip_ 0 n ctr]]]
 
 ; Reduce a container with at least one element while the reducer function returns some.
 [define reduceWhile [reducer ctr]
@@ -138,7 +146,7 @@
 ; Reduce a container with at least one element.
 [define reduce [reducer ctr]
     [let [pr [split ctr]]
-         [fold reducer [fst pr] [snd pr]]]
+         [fold reducer [fst pr] [snd pr]]]]
 
 ; Determine whether a container holds an element that satisfies the given predicate.
 [define exists [pred ctr]
@@ -151,28 +159,26 @@
 
 ; Count the number of a container's element that satisfies the given predicate.
 [define count [pred ctr]
-    [let [countInner [n pred ctr]]
-         [let [opt [tryUncons ctr]]
-              [if [isSome opt]
-                  [if [pred [fst! opt]]
-                      n
-                      [countInner [inc n] pred [snd! opt]]]
-                  false]]
-         [countInner 0 pred ctr]]]
+    [count_ 0 pred ctr]]
     
 ; Zip two containers by the given zipper function.
-[def zipBy [zipper ctr ctr2]
-    [let [zipByInner [zipper ctr ctr2]
-         [let [opt [tryUncons ctr]]
-              [opt2 [tryUncons ctr2]] 
-              [if [|| [isNone opt] [isNone opt2]]
-                  [toEmpty ctr]
-                  [cons [zipper [fst! opt] [fst! opt2]]
-                        [zipWith zipper [snd! opt] [snd! opt2]]]]]]]
-    [commit [zipByInner zipper ctr ctr2]]]
+[define zipBy [zipper ctr ctr2]
+    [commit [zipBy_ zipper ctr ctr2]]]
 
 ; Zip two containers into a container of pairs.
-[def zip [ctr ctr2]
-    [zipWith pair ctr ctr2]]
+[define zip [ctr ctr2]
+    [commit [zipBy_ pair ctr ctr2]]]
+
+; Mathematical constant pi as a single value.
+[define pi 3.14159f]
+
+; Mathematical constant e as a single value.
+[define e 2.71828f]
+
+; The zero v2 value.
+[define v2Zero [toEmpty -2-]]
+
+; The identity / unit v2 value.
+[define v2Identity [toIdentity -2-]]
 
 #| TODO: fstAs - nthAs, tryItem, itemAs, sort, replace, slice (subsequence), split |#

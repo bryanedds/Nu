@@ -1085,7 +1085,7 @@
             // 
             this.terminal.Panel2.Controls.Add(this.splitContainer10);
             this.terminal.Size = new System.Drawing.Size(919, 174);
-            this.terminal.SplitterDistance = 433;
+            this.terminal.SplitterDistance = 557;
             this.terminal.TabIndex = 0;
             // 
             // replInputTextBox
@@ -1098,7 +1098,7 @@
             this.replInputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.replInputTextBox.Location = new System.Drawing.Point(0, 0);
             this.replInputTextBox.Name = "replInputTextBox";
-            this.replInputTextBox.Size = new System.Drawing.Size(433, 174);
+            this.replInputTextBox.Size = new System.Drawing.Size(557, 174);
             this.replInputTextBox.TabIndex = 0;
             this.replInputTextBox.UseTabs = false;
             // 
@@ -1119,7 +1119,7 @@
             // splitContainer10.Panel2
             // 
             this.splitContainer10.Panel2.Controls.Add(this.replOutputTextBox);
-            this.splitContainer10.Size = new System.Drawing.Size(482, 174);
+            this.splitContainer10.Size = new System.Drawing.Size(358, 174);
             this.splitContainer10.SplitterDistance = 44;
             this.splitContainer10.TabIndex = 1;
             // 
@@ -1161,7 +1161,7 @@
             this.replOutputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
             this.replOutputTextBox.Location = new System.Drawing.Point(0, 0);
             this.replOutputTextBox.Name = "replOutputTextBox";
-            this.replOutputTextBox.Size = new System.Drawing.Size(434, 174);
+            this.replOutputTextBox.Size = new System.Drawing.Size(310, 174);
             this.replOutputTextBox.TabIndex = 0;
             this.replOutputTextBox.UseTabs = false;
             // 
