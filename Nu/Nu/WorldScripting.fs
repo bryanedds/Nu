@@ -1847,6 +1847,44 @@ module WorldScripting =
                 (Table evaledMap, world)
             else (Violation ([!!"InvalidEntries"; !!"Table"; !!(String.capitalize fnName)], "Table entries must consist of 1 or more pairs.", fnOriginOpt), world)
 
+        let evalSubscribe fnOriginOpt fnName evaledArg evaledArg2 evaledArg3 world =
+            match evaledArg with
+            | Binding _
+            | Fun _ ->
+                match evaledArg2 with
+                | String str
+                | Keyword str ->
+                    let context = World.getScriptContext world
+                    let eventAddress = Relation.resolve context.SimulantAddress (Relation.makeFromString str)
+                    match evaledArg3 with
+                    | String str
+                    | Keyword str ->
+                        let world =
+                            let subscriber = World.proxySimulant (Relation.resolve context.SimulantAddress (Relation.makeFromString str))
+                            World.subscribe (fun event world ->
+                                match World.tryGetSimulantScriptFrame subscriber world with
+                                | Some scriptFrame ->
+                                    match Importers.TryGetValue event.DataType.Name with
+                                    | (true, tryImport) ->
+                                        match tryImport event.Data event.DataType with
+                                        | Some dataImported ->
+                                            let eventBindings = [("data", dataImported); ("subscriber", String (scstring subscriber)); ("publisher", String (scstring event.Publisher))]
+                                            let world = World.addProceduralBindings (AddType.AddToNewFrame 3) eventBindings world
+                                            World.evalWithLogging evaledArg scriptFrame subscriber world |> snd
+                                        | None -> Log.info "Property value could not be imported into scripting environment."; world
+                                    | (false, _) -> Log.info "Property value could not be imported into scripting environment."; world
+                                | None -> world)
+                                eventAddress
+                                subscriber
+                                world
+                        (Unit, world)
+                    | Violation _ as error -> (error, world)
+                    | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + fnName + "' requires a relation for its 3rd argument.", fnOriginOpt), world)
+                | Violation _ as error -> (error, world)
+                | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + fnName + "' requires a relation for its 2nd argument.", fnOriginOpt), world)
+            | Violation _ as error -> (error, world)
+            | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + fnName + "' requires a function for its 1st argument.", fnOriginOpt), world)
+
         let rec Intrinsics =
             dictPlus
                 [("=", evalBinary EqFns)
@@ -1946,6 +1984,7 @@ module WorldScripting =
                  //("toTable", evalToTable) TODO
                  ("tryFind", evalTryFind)
                  ("find", evalFind)
+                 ("subscribe", evalTriplet evalSubscribe)
                  ("product", evalProduct)
                  ("entityExists", evalSinglet evalSimulantExists)
                  ("layerExists", evalSinglet evalSimulantExists)
@@ -1978,8 +2017,8 @@ module WorldScripting =
             match evaledArg with
             | String str
             | Keyword str ->
-                let relation = Relation.makeFromString str
                 let context = World.getScriptContext world
+                let relation = Relation.makeFromString str
                 let address = Relation.resolve context.SimulantAddress relation
                 match World.tryProxySimulant address with
                 | Some simulant -> (Bool (World.simulantExists simulant world), world)
@@ -2234,8 +2273,8 @@ module WorldScripting =
                     | (true, tryImport) ->
                         match tryImport propertyValue propertyType with
                         | Some propertyValue -> (propertyValue, world)
-                        | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting worldironment.", originOpt), world)
-                    | (false, _) -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting worldironment.", originOpt), world)
+                        | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting environment.", originOpt), world)
+                    | (false, _) -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting environment.", originOpt), world)
                 | None -> (Violation ([!!"InvalidProperty"], "Simulant or property value could not be found.", originOpt), world)
             | Left error -> error
 

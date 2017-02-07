@@ -2386,6 +2386,18 @@ module WorldModule =
             | :? Entity as entity -> World.setEntityProperty name property entity world
             | _ -> failwithumf ()
 
+        static member internal tryGetSimulantScriptFrame (simulant : Simulant) world =
+            match simulant with
+            | :? Game -> Some (World.getGameScriptFrameNp world)
+            | :? Screen as screen -> Some (World.getScreenScriptFrameNp screen world)
+            | :? Layer as layer -> Some (World.getLayerScriptFrameNp layer world)
+            | :? Entity as entity ->
+                match World.tryGetEntityProperty Property? ScriptFrameNp entity world with
+                | Some scriptFrameProperty -> Some (fst scriptFrameProperty :?> Scripting.DeclarationFrame)
+                | None -> None
+            | _ -> failwithumf ()
+            
+
     type World with
 
         static member internal updateEntityInEntityTreeImpl entity oldWorld world =

@@ -136,9 +136,10 @@
 [define countBy3 [n pred ctr]
      [let [opt [tryUncons ctr]]
           [if [isSome opt]
-              [if [pred [fst! opt]]
-                  [countBy3 [inc n] pred [snd! opt]]
-                  [countBy3 n pred [snd! opt]]]
+              [countBy3
+                [if [pred [fst! opt]] [inc n] n]
+                pred
+                [snd! opt]]]]
               n]]]
 
 ; Count the number of a container's element that satisfies the given predicate.
@@ -171,7 +172,8 @@
 [define zip [ctr ctr2]
     [zipBy pair ctr ctr2]]
 
-#| TODO: fstAs - nthAs, tryItem, itemAs, sort, replace, slice (subsequence), split |#
+#| TODO: fstAs - nthAs, tryItem, itemAs, sort, replace, slice (subsequence), split
+   TODO: subscribe, unsubscribe, monitor, streams, importers / exporters, engine functions |#
 
 ; Mathematical constant pi as a single value.
 [define pi 3.14159f]
