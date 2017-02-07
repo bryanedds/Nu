@@ -1062,6 +1062,12 @@ module WorldScripting =
 
         let evalIsEmpty evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
+            | [Bool bool] -> (Bool (not bool), world)
+            | [Int int] -> (Bool (int = 0), world)
+            | [Int64 int64] -> (Bool (int64 = 0L), world)
+            | [Single single] -> (Bool (single = 0.0f), world)
+            | [Double double] -> (Bool (double = 0.0), world)
+            | [Vector2 v2] -> (Bool (v2 = OpenTK.Vector2.Zero), world)
             | [String str] -> (Bool (String.isEmpty str), world)
             | [Option opt] -> (Bool (Option.isNone opt), world)
             | [Codata codata] ->
@@ -1077,6 +1083,12 @@ module WorldScripting =
 
         let evalNotEmpty evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
+            | [Bool bool] -> (Bool bool, world)
+            | [Int int] -> (Bool (int <> 0), world)
+            | [Int64 int64] -> (Bool (int64 <> 0L), world)
+            | [Single single] -> (Bool (single <> 0.0f), world)
+            | [Double double] -> (Bool (double <> 0.0), world)
+            | [Vector2 v2] -> (Bool (v2 <> OpenTK.Vector2.Zero), world)
             | [String str] -> (Bool (String.notEmpty str), world)
             | [Option opt] -> (Bool (Option.isSome opt), world)
             | [Codata codata] ->
