@@ -23,16 +23,20 @@ module String =
 
     /// Convert a single to a string that works well in code.
     let singleToCodeString (num : single) =
-        let decimaled = num.ToString ("N7")
-        let trimmed = decimaled.TrimEnd('0')
-        let zeroed = if trimmed.EndsWith "." then trimmed + "0" else trimmed
-        zeroed + "f"
+        if not (Single.IsNaN num) then
+            let decimaled = num.ToString ("N7")
+            let cleaned = decimaled.TrimEnd('0').Replace(",","")
+            let zeroed = if cleaned.EndsWith "." then cleaned + "0" else cleaned
+            zeroed + "f"
+        else num.ToString ()
 
     /// Convert a double to a string that works well in code.
     let doubleToCodeString (num : double) =
-        let decimaled = num.ToString ("N15")
-        let trimmed = decimaled.TrimEnd('0')
-        if trimmed.EndsWith "." then trimmed + "0" else trimmed
+        if not (Double.IsNaN num) then
+            let decimaled = num.ToString ("N15")
+            let cleaned = decimaled.TrimEnd('0').Replace(",","")
+            if cleaned.EndsWith "." then cleaned + "0" else cleaned
+        else num.ToString ()
 
     /// Convert a number to a string that works well in code.
     let numberToCodeString (num : obj) =

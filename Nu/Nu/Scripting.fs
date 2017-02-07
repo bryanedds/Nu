@@ -333,7 +333,11 @@ module Scripting =
             if destType = typeof<Symbol> then
                 let expr = source :?> Expr
                 match expr with
-                | Violation (names, error, originOpt) -> Symbol.Symbols ([Symbol.Atom (String.Join ("/", names), None); Symbol.Atom (error, None)], originOpt) :> obj
+                | Violation (names, error, originOpt) ->
+                    let violationSymbol = Symbol.Atom ("violation", None)
+                    let namesSymbol = Symbol.Atom (String.Join ("/", names), None)
+                    let errorSymbol = Symbol.Atom (error, None)
+                    Symbol.Symbols ([violationSymbol; namesSymbol; errorSymbol], originOpt) :> obj
                 | Unit -> Symbol.Symbols ([], None) :> obj
                 | Bool bool -> Symbol.Atom (String.boolToCodeString bool, None) :> obj
                 | Int int -> Symbol.Number (string int, None) :> obj
