@@ -2019,7 +2019,7 @@ module WorldScripting =
                 let context = World.getScriptContext world
                 let relation = Relation.makeFromString str
                 let address = Relation.resolve context.SimulantAddress relation
-                match World.tryProxySimulant address with
+                match World.tryDeriveSimulant address with
                 | Some simulant -> (Bool (World.simulantExists simulant world), world)
                 | None -> (Bool false, world)
             | Violation _ as error -> (error, world)
@@ -2258,7 +2258,7 @@ module WorldScripting =
                     | (Keyword str, world) ->
                         let relation = Relation.makeFromString str
                         let address = Relation.resolve context.SimulantAddress relation
-                        match World.tryProxySimulant address with
+                        match World.tryDeriveSimulant address with
                         | Some simulant -> Right (simulant, world)
                         | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 names.", originOpt), world)
                     | (Violation _, _) as error -> Left error
@@ -2287,7 +2287,7 @@ module WorldScripting =
                     | (Keyword str, world) ->
                         let relation = Relation.makeFromString str
                         let address = Relation.resolve context.SimulantAddress relation
-                        match World.tryProxySimulant address with
+                        match World.tryDeriveSimulant address with
                         | Some simulant -> Right (simulant, world)
                         | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 parts.", originOpt), world)
                     | (Violation _, _) as error -> Left error
