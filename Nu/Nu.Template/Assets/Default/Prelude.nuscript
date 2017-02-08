@@ -183,3 +183,6 @@
 
 ; The zero v2 value.
 [define v2Zero [toEmpty -2-]]
+
+; The game.
+[define game nil]

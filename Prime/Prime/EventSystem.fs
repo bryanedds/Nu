@@ -35,7 +35,7 @@ type 'w SubscriptionSorter =
 
 /// Describes an event subscription that can be boxed / unboxed.
 type internal 'w BoxableSubscription =
-    obj -> 'w -> Handling * 'w
+    obj -> obj -> 'w -> Handling * 'w
 
 /// A map of event subscriptions.
 /// TODO: for efficiency, consider using UList rather than list.

@@ -79,6 +79,7 @@ module Scripting =
                      "ring toRing add remove " +
                      "table toTable tryFind find " +
                      "let fun if cond try break get set do " +
+                     "subscribe unsubscribe monitor " +
                      // TODO: "keyname substring tickRate tickTime update curry compose " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
