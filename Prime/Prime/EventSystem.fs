@@ -19,10 +19,10 @@ type Liveness =
 type [<ReferenceEquality>] Event<'a, 's when 's :> Participant> =
     { Data : 'a
       DataType : Type // here so type can be recovered in a dynamic context
-      Address : 'a Address
-      Trace : EventTrace
+      Subscriber : 's
       Publisher : Participant
-      Subscriber : 's }
+      Address : 'a Address
+      Trace : EventTrace }
 
 /// An entry in the subscription map.
 type SubscriptionEntry =
