@@ -190,8 +190,11 @@
 ; Get data from an event.
 [define getData fst]
 
-; Get publisher from an event.
-[define getPublisher snd]
-
 ; Get subscriber from an event.
-[define getSubscriber thd]
+[define getSubscriber snd]
+
+; Get publisher from an event.
+[define getPublisher thd]
+
+; Get address from an event.
+[define getAddress fth]
