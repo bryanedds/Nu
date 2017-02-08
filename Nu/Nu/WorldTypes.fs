@@ -786,10 +786,14 @@ module WorldTypes =
             end
     
     /// The game type that hosts the various screens used to navigate through a game.
-    /// TODO: make this into a class with address checking in the constructor.
-    and [<CustomEquality; NoComparison>] Game =
-        { GameAddress : Game Address }
-    
+    and Game (gameAddress) =
+
+        // check that address is of correct length for a game
+        do if Address.length gameAddress <> 0 then failwithumf ()
+
+        /// The address of the game.
+        member this.GameAddress = gameAddress
+
         interface Simulant with
             member this.ParticipantAddress = atoa<Game, Participant> this.GameAddress
             member this.SimulantAddress = atoa<Game, Simulant> this.GameAddress
@@ -808,18 +812,6 @@ module WorldTypes =
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewGame Debug.World.Chosen
 
-        /// Try to create a Game proxy from an address.
-        static member tryProxy address =
-            if Address.isEmpty address
-            then Some { GameAddress = address }
-            else None
-
-        /// Create a Game proxy from an address.
-        static member proxy address =
-            match Game.tryProxy address with
-            | Some proxy -> proxy
-            | None -> failwith "Game address must not have any names."
-
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (game : Game) = acatf address (atooa game.GameAddress)
         
@@ -834,10 +826,14 @@ module WorldTypes =
 
     /// The screen type that allows transitioning to and from other screens, and also hosts the
     /// currently interactive layers of entities.
-    /// TODO: make this into a class with address checking in the constructor.
-    and [<CustomEquality; NoComparison>] Screen =
-        { ScreenAddress : Screen Address }
-    
+    and Screen (screenAddress) =
+
+        // check that address is of correct length for a screen
+        do if Address.length screenAddress <> 1 then failwithumf ()
+
+        /// The address of the screen.
+        member this.ScreenAddress = screenAddress
+
         interface Simulant with
             member this.ParticipantAddress = atoa<Screen, Participant> this.ScreenAddress
             member this.SimulantAddress = atoa<Screen, Simulant> this.ScreenAddress
@@ -849,28 +845,16 @@ module WorldTypes =
             | _ -> failwithumf ()
 
         override this.GetHashCode () = this.ScreenAddress.GetHashCode ()
-    
+
         override this.ToString () = scstring this.ScreenAddress
-    
-        /// Get the name of a screen proxy.
+
+        /// Get the name of a screen.
         member this.ScreenName = Address.getName this.ScreenAddress
-    
+
         /// Get the latest value of a screen's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
 
-        /// Try to create a Screen proxy from an address.
-        static member tryProxy address =
-            if Address.length address = 1
-            then Some { ScreenAddress = address }
-            else None
-
-        /// Create a Screen proxy from an address.
-        static member proxy address =
-            match Screen.tryProxy address with
-            | Some proxy -> proxy
-            | None -> failwith "Screen address must have 1 name."
-    
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (screen : Screen) = acatf address (atooa screen.ScreenAddress)
         
@@ -883,19 +867,23 @@ module WorldTypes =
         /// Concatenate two addresses, forcing the type of first address.
         static member (->>-) (address, screen) = acatff address screen
     
-        /// Convert a name string to a screen's proxy.
-        static member (!>) screenNameStr = Screen.proxy ^ ntoa !!screenNameStr
+        /// Derive a screen from a name string.
+        static member (!>) screenNameStr = Screen (ntoa !!screenNameStr)
     
-        /// Convert a screen's proxy to a layer's by appending the layer's name at the end.
-        static member (=>) (screen, layerName) = Layer.proxy ^ atoa<Screen, Layer> screen.ScreenAddress ->- ntoa layerName
+        /// Derive a layer from its screen.
+        static member (=>) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress ->- ntoa layerName)
     
-        /// Convert a screen's proxy to a layer's by appending the layer's name at the end.
+        /// Derive a layer from its screen
         static member (=>) (screen : Screen, layerNameStr) = screen => !!layerNameStr
     
     /// Forms a logical layer of entities.
-    /// TODO: make this into a class with address checking in the constructor.
-    and [<CustomEquality; NoComparison>] Layer =
-        { LayerAddress : Layer Address }
+    and Layer (layerAddress) =
+
+        // check that address is of correct length for a layer
+        do if Address.length layerAddress <> 2 then failwithumf ()
+
+        /// The address of the layer.
+        member this.LayerAddress = layerAddress
     
         interface Simulant with
             member this.ParticipantAddress = atoa<Layer, Participant> this.LayerAddress
@@ -911,38 +899,26 @@ module WorldTypes =
     
         override this.ToString () = scstring this.LayerAddress
     
-        /// Get the name of a layer proxy.
+        /// Get the name of a layer.
         member this.LayerName = Address.getName this.LayerAddress
     
         /// Get the latest value of a layer's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
 
-        /// Try to create a Layer proxy from an address.
-        static member tryProxy address =
-            if Address.length address = 2
-            then Some { LayerAddress = address }
-            else None
-
-        /// Create a Layer proxy from an address.
-        static member proxy address =
-            match Layer.tryProxy address with
-            | Some proxy -> proxy
-            | None -> failwith "Layer address must have 1 name."
-    
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (layer : Layer) = acatf address (atooa layer.LayerAddress)
         
         /// Concatenate two addresses, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (layer : Layer) = acatff address layer.LayerAddress
     
-        /// Convert a layer's proxy to its screen's.
-        static member (!<) layer = Screen.proxy ^ Address.allButLast layer.LayerAddress
+        /// Derive a screen from one of its layers.
+        static member (!<) (layer : Layer) = Screen (Address.allButLast layer.LayerAddress)
     
-        /// Convert a layer's proxy to an entity's by appending the entity's name at the end.
-        static member (=>) (layer, entityName) = Entity.proxy ^ atoa<Layer, Entity> layer.LayerAddress ->- ntoa entityName
+        /// Derive an entity from its layer.
+        static member (=>) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress ->- ntoa entityName)
     
-        /// Convert a layer's proxy to an entity's by appending the entity's name at the end.
+        /// Derive an entity from its layer.
         static member (=>) (layer : Layer, entityNameStr) = layer => !!entityNameStr
     
         /// Concatenate two addresses, taking the type of first address.
@@ -955,13 +931,28 @@ module WorldTypes =
     /// to implement things like buttons, characters, blocks, and things of that sort.
     /// OPTIMIZATION: Includes pre-constructed entity change and update event addresses to avoid
     /// reconstructing new ones for each entity every frame.
-    /// TODO: make this into a class with address checking in the constructor.
-    and [<CustomEquality; NoComparison>] Entity =
-        { mutable EntityStateOpt : EntityState
-          EntityAddress : Entity Address
-          UpdateAddress : unit Address
-          PostUpdateAddress : unit Address }
-    
+    and Entity(entityAddress) =
+
+        // check that address is of correct length for an entity
+        do if Address.length entityAddress <> 3 then failwithumf ()
+        let updateAddress = ltoa<unit> [!!"Update"; !!"Event"] ->>- entityAddress
+        let postUpdateAddress = ltoa<unit> [!!"PostUpdate"; !!"Event"] ->>- entityAddress
+        let mutable entityStateOpt = Unchecked.defaultof<EntityState>
+
+        /// The address of the entity.
+        member this.EntityAddress = entityAddress
+
+        /// The address of the entity's update event.
+        member this.UpdateAddress = updateAddress
+
+        /// The address of the entity's post-update event.
+        member this.PostUpdateAddress = postUpdateAddress
+
+        /// The cached entity state for imperative entities.
+        member this.EntityStateOpt
+            with get () = entityStateOpt
+            and set value = entityStateOpt <- value
+        
         interface Simulant with
             member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress
             member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress
@@ -976,38 +967,21 @@ module WorldTypes =
     
         override this.ToString () = scstring this.EntityAddress
     
-        /// Get the name of an entity proxy.
+        /// Get the name of an entity.
         member this.EntityName = Address.getName this.EntityAddress
     
         /// Get the latest value of an entity's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
 
-        /// Try to create an Entity proxy from an address.
-        static member tryProxy address =
-            if Address.length address = 3 then
-                let proxy =
-                    { EntityStateOpt = Unchecked.defaultof<EntityState>
-                      EntityAddress = address
-                      UpdateAddress = ltoa [!!"Update"; !!"Event"] ->>- address
-                      PostUpdateAddress = ltoa [!!"PostUpdate"; !!"Event"] ->>- address }
-                Some proxy
-            else None
-
-        /// Create an Entity proxy from an address.
-        static member proxy address =
-            match Entity.tryProxy address with
-            | Some proxy -> proxy
-            | None -> failwith "Entity address must have 3 names."
-    
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
         
         /// Concatenate two addresses, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (entity : Entity) = acatff address entity.EntityAddress
     
-        /// Convert an entity's proxy to its layer's.
-        static member (!<) entity = Layer.proxy ^ Address.allButLast entity.EntityAddress
+        /// Derive a layer from one of its entities.
+        static member (!<) (entity : Entity) = Layer (Address.allButLast entity.EntityAddress)
     
         /// Concatenate two addresses, taking the type of first address.
         static member (->-) (address, entity) = Entity.acatf address entity
