@@ -186,3 +186,12 @@
 
 ; The game.
 [define game nil]
+
+; Get data from an event.
+[define getData fst]
+
+; Get publisher from an event.
+[define getPublisher snd]
+
+; Get subscriber from an event.
+[define getSubscriber thd]
