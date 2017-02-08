@@ -147,7 +147,7 @@ let allButLast list =
 let definitize opts =
     List.choose id opts
 
-/// Convert option values to definite values, returning an additional flag to indicate that any were none.
+/// Convert option values to definite values, returning an additional flag to indicate that all value were some.
 let definitizePlus opts =
     let (flag, seq) = Seq.definitizePlus opts
     (flag, List.ofSeq seq)

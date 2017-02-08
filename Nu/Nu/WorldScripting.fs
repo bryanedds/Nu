@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Diagnostics
+open FSharp.Reflection
 open OpenTK
 open Prime
 open Nu
@@ -56,11 +57,45 @@ module WorldScripting =
 
     module Scripting =
 
-        let rec private tryImport value (ty : Type) =
+        let rec private tryImport (value : obj) (ty : Type) =
+
+            // try to import from the custom types
             let ty = if ty.IsGenericTypeDefinition then ty.GetGenericTypeDefinition () else ty
             match Importers.TryGetValue ty.Name with
             | (true, tryImportFn) -> tryImportFn value ty
-            | (false, _) -> None
+            | (false, _) ->
+
+                // failing that, try import as Tuple
+                if FSharpType.IsTuple ty then
+                    let tupleFields = FSharpValue.GetTupleFields value
+                    let tupleElementTypes = FSharpType.GetTupleElements ty
+                    let tupleFieldOpts = Array.mapi (fun i tupleField -> tryImport tupleField tupleElementTypes.[i]) tupleFields
+                    match (Array.definitizePlus tupleFieldOpts) with
+                    | (true, tupleFields) -> Some (Tuple tupleFields)
+                    | (false, _) -> None
+
+                // or as Record
+                elif FSharpType.IsRecord ty then
+                    let recordFields = FSharpValue.GetRecordFields value
+                    let recordFieldTypes = FSharpType.GetRecordFields ty
+                    let recordFieldOpts = Array.mapi (fun i recordField -> tryImport recordField recordFieldTypes.[i].PropertyType) recordFields
+                    match (Array.definitizePlus recordFieldOpts) with
+                    | (true, recordFields) -> Some (Tuple recordFields)
+                    | (false, _) -> None
+
+                // or as Union
+                elif FSharpType.IsUnion ty then
+                    let (unionCase, unionFields) = FSharpValue.GetUnionFields (value, ty)
+                    let unionFieldTypes = unionCase.GetFields ()
+                    if not ^ Array.isEmpty unionFields then
+                        let unionFieldOpts = Array.mapi (fun i unionField -> tryImport unionField unionFieldTypes.[i].PropertyType) unionFields
+                        match (Array.definitizePlus unionFieldOpts) with
+                        | (true, unionFields) -> Some (Tuple (Array.append [|Keyword unionCase.Name|] unionFields))
+                        | (false, _) -> None
+                    else Some (Tuple [|Keyword unionCase.Name|])
+
+                // otherwise, we have no conversion
+                else None
 
         and private tryImportList (value : obj) (ty : Type) =
             try let garg = (ty.GetGenericArguments ()).[0]
@@ -79,6 +114,7 @@ module WorldScripting =
              (typeof<single>.Name, (fun (value : obj) _ -> match value with :? single as single -> Some (Single single) | _ -> None))
              (typeof<double>.Name, (fun (value : obj) _ -> match value with :? double as double -> Some (Double double) | _ -> None))
              (typeof<Vector2>.Name, (fun (value : obj) _ -> match value with :? Vector2 as vector2 -> Some (Vector2 vector2) | _ -> None))
+             // TODO: option importer
              (typedefof<_ list>.Name, (fun value ty -> tryImportList value ty))] |>
              // TODO: remaining importers
             dictPlus
@@ -1846,21 +1882,18 @@ module WorldScripting =
             EventWorld.subscribe<obj, Participant, Game, World> (fun evt world ->
                 match World.tryGetSimulantScriptFrame subscriber world with
                 | Some scriptFrame ->
-                    match Importers.TryGetValue evt.DataType.Name with
-                    | (true, tryImport) ->
-                        match tryImport evt.Data evt.DataType with
-                        | Some dataImported ->
-                            let evtTuple =
-                                Keyphrase
-                                    ("Event",
-                                     [|dataImported
-                                       String (scstring evt.Subscriber)
-                                       String (scstring evt.Publisher)
-                                       String (scstring evt.Address)|])
-                            let application = Apply ([subscription; evtTuple], None)
-                            World.evalWithLogging application scriptFrame subscriber world |> snd
-                        | None -> Log.info "Property value could not be imported into scripting environment."; world
-                    | (false, _) -> Log.info "Property value could not be imported into scripting environment."; world
+                    match tryImport evt.Data evt.DataType with
+                    | Some dataImported ->
+                        let evtTuple =
+                            Keyphrase
+                                ("Event",
+                                    [|dataImported
+                                      String (scstring evt.Subscriber)
+                                      String (scstring evt.Publisher)
+                                      String (scstring evt.Address)|])
+                        let application = Apply ([subscription; evtTuple], None)
+                        World.evalWithLogging application scriptFrame subscriber world |> snd
+                    | None -> Log.info "Property value could not be imported into scripting environment."; world
                 | None -> world)
                 eventAddress
                 subscriber
@@ -2264,12 +2297,9 @@ module WorldScripting =
             | Right (simulant, world) ->
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some (propertyValue, propertyType) ->
-                    match Importers.TryGetValue propertyType.Name with
-                    | (true, tryImport) ->
-                        match tryImport propertyValue propertyType with
-                        | Some propertyValue -> (propertyValue, world)
-                        | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting environment.", originOpt), world)
-                    | (false, _) -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting environment.", originOpt), world)
+                    match tryImport propertyValue propertyType with
+                    | Some propertyValue -> (propertyValue, world)
+                    | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting environment.", originOpt), world)
                 | None -> (Violation ([!!"InvalidProperty"], "Simulant or property value could not be found.", originOpt), world)
             | Left error -> error
 
