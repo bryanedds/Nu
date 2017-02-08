@@ -83,11 +83,6 @@ module WorldScripting =
              // TODO: remaining importers
             dictPlus
 
-        and private tryImportEventData evt originOpt =
-            match tryImport evt.Data evt.DataType with
-            | Some data -> data
-            | None -> Violation ([!!"InvalidStreamValue"], "Stream value could not be imported into scripting environment.", originOpt)
-
         let rec private tryExportList (evaledList : Expr) (ty : Type) =
             match evaledList with
             | List evaleds ->
@@ -125,7 +120,7 @@ module WorldScripting =
               String : string -> SymbolOrigin option -> Expr
               Keyword : string -> SymbolOrigin option -> Expr
               Tuple : Expr array -> SymbolOrigin option -> Expr
-              Keyphrase : Expr -> Expr array -> SymbolOrigin option -> Expr
+              Keyphrase : string -> Expr array -> SymbolOrigin option -> Expr
               Codata : Codata -> SymbolOrigin option -> Expr
               List : Expr list -> SymbolOrigin option -> Expr
               Ring : Expr Set -> SymbolOrigin option -> Expr
@@ -141,7 +136,7 @@ module WorldScripting =
               String = fun _ _ -> String String.Empty
               Keyword = fun _ _ -> Keyword String.Empty
               Tuple = fun _ _ -> Tuple Array.empty
-              Keyphrase = fun _ _ _ -> Keyphrase (Keyword String.Empty, Array.empty)
+              Keyphrase = fun _ _ _ -> Keyphrase (String.Empty, Array.empty)
               Codata = fun _ _ -> Codata Empty
               List = fun _ _ -> List []
               Ring = fun _ _ -> Ring Set.empty
@@ -624,7 +619,7 @@ module WorldScripting =
               String : string -> string -> SymbolOrigin option -> Expr
               Keyword : string -> string -> SymbolOrigin option -> Expr
               Tuple : Expr array -> Expr array -> SymbolOrigin option -> Expr
-              Keyphrase : Expr -> Expr array -> Expr -> Expr array -> SymbolOrigin option -> Expr
+              Keyphrase : string -> Expr array -> string -> Expr array -> SymbolOrigin option -> Expr
               Codata : Codata -> Codata -> SymbolOrigin option -> Expr
               List : Expr list -> Expr list -> SymbolOrigin option -> Expr
               Ring : Expr Set -> Expr Set -> SymbolOrigin option -> Expr
@@ -1856,11 +1851,12 @@ module WorldScripting =
                         match tryImport evt.Data evt.DataType with
                         | Some dataImported ->
                             let evtTuple =
-                                Tuple
-                                    [|dataImported
-                                      String (scstring evt.Subscriber)
-                                      String (scstring evt.Publisher)
-                                      String (scstring evt.Address)|]
+                                Keyphrase
+                                    ("Event",
+                                     [|dataImported
+                                       String (scstring evt.Subscriber)
+                                       String (scstring evt.Publisher)
+                                       String (scstring evt.Address)|])
                             let application = Apply ([subscription; evtTuple], None)
                             World.evalWithLogging application scriptFrame subscriber world |> snd
                         | None -> Log.info "Property value could not be imported into scripting environment."; world
@@ -2070,7 +2066,7 @@ module WorldScripting =
             match evalMany exprs world with
             | (evaledHead :: evaledTail, world) ->
                 match evaledHead with
-                | Keyword _ as keyword ->
+                | Keyword keyword ->
                     let keyphrase = Keyphrase (keyword, List.toArray evaledTail)
                     (keyphrase, world)
                 | Binding (name, _, originOpt) ->
