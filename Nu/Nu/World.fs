@@ -300,7 +300,7 @@ module WorldModule2 =
             let eventNames = Address.getNames eventAddress
             match eventNames with
             | eventFirstName :: _ :: ([_ ;_ ; _] as entityAddress) ->
-                let entity = Entity.proxy ^ ltoa entityAddress
+                let entity = Entity (ltoa entityAddress)
                 match Name.getNameStr eventFirstName with
                 | "Update" ->
                     if List.contains (Address.head Events.Wildcard) eventNames then

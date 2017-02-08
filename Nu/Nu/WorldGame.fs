@@ -206,21 +206,21 @@ module WorldGameModule =
             Seq.concat
 
         /// Determine if an entity is selected by being in a layer of the currently selected screeen.
-        static member isEntitySelected entity world =
+        static member isEntitySelected (entity : Entity) world =
             let screenName = Address.head entity.EntityAddress
             match World.getSelectedScreenOpt world with
             | Some selectedScreen -> screenName = Address.getName selectedScreen.ScreenAddress
             | None -> false
 
         /// Determine if a layer is selected by being in the currently selected screeen.
-        static member isLayerSelected layer world =
+        static member isLayerSelected (layer : Layer) world =
             let screenName = Address.head layer.LayerAddress
             match World.getSelectedScreenOpt world with
             | Some selectedScreen -> screenName = Address.getName selectedScreen.ScreenAddress
             | None -> false
 
         /// Determine if a screen is the currently selected screeen.
-        static member isScreenSelected screen world =
+        static member isScreenSelected (screen : Screen) world =
             World.getSelectedScreenOpt world = Some screen
 
         /// Determine if a simulant is contained by, or is the same as, the currently selected screen.
