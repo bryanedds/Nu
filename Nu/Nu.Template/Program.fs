@@ -15,13 +15,11 @@ type $safeprojectname$Dispatcher () =
     
     override dispatcher.Register (_, world) =
         // TODO: start by creating and wiring up your game's screens in here! For an example, look
-        // at BlazeDispatcher.fs in the BlazeVector project!
+        // at BlazeDispatcher.fs in the BlazeVector project.
         world
 
 // this is a plugin for the Nu game engine by which user-defined dispatchers, facets, and other
-// sorts of types can be obtained by both your application and Gaia. Currently, there are no
-// overrides for its factory methods since there are no user-defined dispatchers, facets, et al
-// defined for this project yet.
+// sorts of types can be obtained by both your application and Gaia.
 type $safeprojectname$Plugin () =
     inherit NuPlugin ()
 
