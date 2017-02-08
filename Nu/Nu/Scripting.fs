@@ -757,10 +757,14 @@ module Scripting =
                     match tryGetProceduralBinding name env with
                     | None ->
                         match tryGetDeclarationBinding name env with
-                        | Some binding ->
+                        | Some binding as bindingOpt ->
+#if DEBUG
+                            ignore binding
+#else
                             let newCachedBinding = DeclarationBinding binding
                             cachedBinding := newCachedBinding
-                            Some binding
+#endif
+                            bindingOpt
                         | None -> None
                     | Some (binding, offset, index) ->
                         let newCachedBinding = ProceduralBinding (offset, index)
