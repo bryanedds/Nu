@@ -182,14 +182,14 @@ module WorldEntityModule =
                 world
 
         /// Get all the entities contained by a layer.
-        static member getEntities layer world =
+        static member getEntities (layer : Layer) world =
             match Address.getNames layer.LayerAddress with
             | [screenName; layerName] ->
                 match UMap.tryFind screenName ^ World.getScreenDirectory world with
                 | Some (_, layerDirectory) ->
                     match UMap.tryFind layerName layerDirectory with
                     | Some (_, entityDirectory) ->
-                        UMap.fold (fun state _ entityAddress -> Entity.proxy entityAddress :: state) [] entityDirectory :> _ seq
+                        UMap.fold (fun state _ entityAddress -> Entity entityAddress :: state) [] entityDirectory :> _ seq
                     | None -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
                 | None -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
             | _ -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
