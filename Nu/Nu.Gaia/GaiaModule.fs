@@ -761,26 +761,26 @@ module Gaia =
             handleLoadOverlayerClick form args
 
     let private handleEvalClick (form : GaiaForm) (_ : EventArgs) =
-        let exprsStr =
-            if String.notEmpty form.replInputTextBox.SelectedText
-            then form.replInputTextBox.SelectedText
-            else form.replInputTextBox.Text
-        let exprsStr = Symbol.OpenSymbolsStr + exprsStr + Symbol.CloseSymbolsStr
-        try let world = !RefWorld
-            let exprs = scvalue<Scripting.Expr list> exprsStr
-            let localFrame = Simulants.Game.GetScriptFrameNp world
-            let (evaled, world) = World.evalMany exprs localFrame Simulants.Game world
-            let evaledStr =
-                let evaledStr = scstring evaled
-                if evaledStr.Length < 2 then evaledStr
-                else evaledStr.Substring (1, evaledStr.Length - 2)
-            form.replOutputTextBox.Text <-
-                if String.notEmpty form.replOutputTextBox.Text
-                then form.replOutputTextBox.Text + "\n" + evaledStr
-                else evaledStr
-            form.replOutputTextBox.GotoPosition form.replOutputTextBox.Text.Length
-            RefWorld := world
-        with exn -> Log.debug ("Could not evaluate repl expr due to:\n" + scstring exn)
+        addWorldChanger ^ fun world ->
+            let exprsStr =
+                if String.notEmpty form.replInputTextBox.SelectedText
+                then form.replInputTextBox.SelectedText
+                else form.replInputTextBox.Text
+            let exprsStr = Symbol.OpenSymbolsStr + exprsStr + Symbol.CloseSymbolsStr
+            try let exprs = scvalue<Scripting.Expr list> exprsStr
+                let localFrame = Simulants.Game.GetScriptFrameNp world
+                let (evaled, world) = World.evalMany exprs localFrame Simulants.Game world
+                let evaledStr =
+                    let evaledStr = scstring evaled
+                    if evaledStr.Length < 2 then evaledStr
+                    else evaledStr.Substring (1, evaledStr.Length - 2)
+                form.replOutputTextBox.Text <-
+                    if String.notEmpty form.replOutputTextBox.Text
+                    then form.replOutputTextBox.Text + "\n" + evaledStr
+                    else evaledStr
+                form.replOutputTextBox.GotoPosition form.replOutputTextBox.Text.Length
+                world
+            with exn -> Log.debug ("Could not evaluate repl input due to:\n" + scstring exn); world
 
     let private handleClearOutputClick (form : GaiaForm) (_ : EventArgs) =
         form.replOutputTextBox.Text <- String.Empty

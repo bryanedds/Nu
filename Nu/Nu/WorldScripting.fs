@@ -1847,16 +1847,16 @@ module WorldScripting =
                 (Table evaledMap, world)
             else (Violation ([!!"InvalidEntries"; !!"Table"; !!(String.capitalize fnName)], "Table entries must consist of 1 or more pairs.", fnOriginOpt), world)
 
-        let evalSubscribe3 subscription eventAddress subscriber world =
-            World.subscribe (fun event world ->
+        let evalSubscribe4 subscription (eventAddress : obj Address) subscriber world =
+            EventWorld.subscribe<obj, Participant, Game, World> (fun evt world ->
                 match World.tryGetSimulantScriptFrame subscriber world with
                 | Some scriptFrame ->
-                    match Importers.TryGetValue event.DataType.Name with
+                    match Importers.TryGetValue evt.DataType.Name with
                     | (true, tryImport) ->
-                        match tryImport event.Data event.DataType with
+                        match tryImport evt.Data evt.DataType with
                         | Some dataImported ->
-                            let eventBindings = [|("data", dataImported); ("subscriber", String (scstring subscriber)); ("publisher", String (scstring event.Publisher))|]
-                            let world = World.addProceduralBindings (AddType.AddToNewFrame 3) eventBindings world
+                            let eventBindings = [|("data", dataImported); ("subscriber", String (scstring subscriber)); ("publisher", String (scstring evt.Publisher))|]
+                            let world = World.addProceduralBindings (AddType.AddToNewFrame eventBindings.Length) eventBindings world
                             World.evalWithLogging subscription scriptFrame subscriber world |> snd
                         | None -> Log.info "Property value could not be imported into scripting environment."; world
                     | (false, _) -> Log.info "Property value could not be imported into scripting environment."; world
@@ -1865,23 +1865,15 @@ module WorldScripting =
                 subscriber
                 world
 
-        let evalSubscribe fnOriginOpt fnName evaledArg evaledArg2 evaledArg3 world =
+        let evalSubscribe fnOriginOpt fnName evaledArg evaledArg2 world =
             match evaledArg with
             | Binding _
             | Fun _ ->
                 match evaledArg2 with
                 | String str
                 | Keyword str ->
-                    let context = World.getScriptContext world
-                    let eventAddress = Relation.resolve context.SimulantAddress (Relation.makeFromString str)
-                    match evaledArg3 with
-                    | String str
-                    | Keyword str ->
-                        let subscriber = World.proxySimulant (Relation.resolve context.SimulantAddress (Relation.makeFromString str))
-                        let world = evalSubscribe3 evaledArg eventAddress subscriber world
-                        (Unit, world)
-                    | Violation _ as error -> (error, world)
-                    | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + fnName + "' requires a relation for its 3rd argument.", fnOriginOpt), world)
+                    let world = evalSubscribe4 (Apply ([evaledArg], None)) (Address.makeFromString str) (World.getScriptContext world) world
+                    (Unit, world)
                 | Violation _ as error -> (error, world)
                 | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + fnName + "' requires a relation for its 2nd argument.", fnOriginOpt), world)
             | Violation _ as error -> (error, world)
@@ -1986,7 +1978,7 @@ module WorldScripting =
                  //("toTable", evalToTable) TODO
                  ("tryFind", evalTryFind)
                  ("find", evalFind)
-                 ("subscribe", evalTriplet evalSubscribe)
+                 ("subscribe", evalDoublet evalSubscribe)
                  ("product", evalProduct)
                  ("entityExists", evalSinglet evalSimulantExists)
                  ("layerExists", evalSinglet evalSimulantExists)
@@ -2102,7 +2094,7 @@ module WorldScripting =
                     | None -> (evaled, world)
                 | Violation _ as error -> (error, world)
                 | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), world)
-            | ([], _) -> (Unit, world)
+            | ([], world) -> (Unit, world)
 
         and evalApplyAnd exprs originOpt world =
             match exprs with
