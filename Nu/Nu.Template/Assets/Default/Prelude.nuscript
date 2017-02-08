@@ -139,7 +139,7 @@
               [countBy3
                 [if [pred [fst! opt]] [inc n] n]
                 pred
-                [snd! opt]]]]
+                [snd! opt]]
               n]]]
 
 ; Count the number of a container's element that satisfies the given predicate.
@@ -183,6 +183,3 @@
 
 ; The zero v2 value.
 [define v2Zero [toEmpty -2-]]
-
-; The identity / unit v2 value.
-[define v2Identity [toIdentity -2-]]
