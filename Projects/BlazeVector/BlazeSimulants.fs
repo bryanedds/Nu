@@ -1,10 +1,8 @@
 ﻿namespace BlazeVector
-open System
-open Prime
 open Nu
 module Simulants =
 
-    // here we derive a screen from its name so that we can interface with it in code
+    // here we derive a screen handle from its name so that we can interface with it in code
     let Splash = !> "Splash"
 
     // same as above, but for the title screen
