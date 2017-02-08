@@ -272,3 +272,28 @@ module WorldScriptingBinary =
               List = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply lists.", originOpt)
               Ring = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply rings.", originOpt)
               Table = fun _ _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"Dot"], "Cannot dot multiply tables.", originOpt) }
+
+        let evalBinaryInner (fns : BinaryFns) fnOriginOpt fnName evaledLeft evaledRight world =
+            match (evaledLeft, evaledRight) with
+            | (Bool boolLeft, Bool boolRight) -> (fns.Bool boolLeft boolRight fnOriginOpt, world)
+            | (Int intLeft, Int intRight) -> (fns.Int intLeft intRight fnOriginOpt, world)
+            | (Int64 int64Left, Int64 int64Right) -> (fns.Int64 int64Left int64Right fnOriginOpt, world)
+            | (Single singleLeft, Single singleRight) -> (fns.Single singleLeft singleRight fnOriginOpt, world)
+            | (Double doubleLeft, Double doubleRight) -> (fns.Double doubleLeft doubleRight fnOriginOpt, world)
+            | (Vector2 vector2Left, Vector2 vector2Right) -> (fns.Vector2 vector2Left vector2Right fnOriginOpt, world)
+            | (String stringLeft, String stringRight) -> (fns.String stringLeft stringRight fnOriginOpt, world)
+            | (Keyword keywordLeft, Keyword keywordRight) -> (fns.String keywordLeft keywordRight fnOriginOpt, world)
+            | (Tuple tupleLeft, Tuple tupleRight) -> (fns.Tuple tupleLeft tupleRight fnOriginOpt, world)
+            | (Keyphrase (nameLeft, phraseLeft), Keyphrase (nameRight, phraseRight)) -> (fns.Keyphrase nameLeft phraseLeft nameRight phraseRight fnOriginOpt, world)
+            | (Codata codataLeft, Codata codataRight) -> (fns.Codata codataLeft codataRight fnOriginOpt, world)
+            | (List listLeft, List listRight) -> (fns.List listLeft listRight fnOriginOpt, world)
+            | (Ring ringLeft, Ring ringRight) -> (fns.Ring ringLeft ringRight fnOriginOpt, world)
+            | (Table tableLeft, Table tableRight) -> (fns.Table tableLeft tableRight fnOriginOpt, world)
+            | (Violation _ as violation, _) -> (violation, world)
+            | (_, (Violation _ as violation)) -> (violation, world)
+            | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!(String.capitalize fnName)], "Cannot apply a binary function on unlike or incompatible values.", fnOriginOpt), world)
+
+        let evalBinary fns fnOriginOpt fnName evaledArgs world =
+            match evaledArgs with
+            | [evaledLeft; evaledRight] -> evalBinaryInner fns fnOriginOpt fnName evaledLeft evaledRight world                
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
