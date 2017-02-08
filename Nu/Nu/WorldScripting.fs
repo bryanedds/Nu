@@ -1855,17 +1855,8 @@ module WorldScripting =
                     | (true, tryImport) ->
                         match tryImport evt.Data evt.DataType with
                         | Some dataImported ->
-                            let application =
-                                let eventBindings = [dataImported; String (scstring subscriber); String (scstring evt.Publisher)]
-                                match subscription with
-                                | Fun (_, parCount, _, _, _, _) ->
-                                    Apply (subscription :: List.take parCount eventBindings, None)
-                                | Binding (name, cachedBinding, _) ->
-                                    match World.tryGetBinding name cachedBinding world with
-                                    | Some (Fun (_, parCount, _, _, _, _)) ->
-                                        Apply (subscription :: List.take parCount eventBindings, None)
-                                    | Some _ | None -> Violation ([], "TODO: more info.", None)
-                                | _ -> Violation ([], "TODO: more info.", None)
+                            let evtTuple = Tuple [|dataImported; String (scstring subscriber); String (scstring evt.Publisher)|]
+                            let application = Apply ([subscription; evtTuple], None)
                             World.evalWithLogging application scriptFrame subscriber world |> snd
                         | None -> Log.info "Property value could not be imported into scripting environment."; world
                     | (false, _) -> Log.info "Property value could not be imported into scripting environment."; world
