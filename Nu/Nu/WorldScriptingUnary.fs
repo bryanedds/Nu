@@ -511,3 +511,36 @@ module WorldScriptingUnary =
               List = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a list to a string.", originOpt)
               Ring = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a ring to a string.", originOpt)
               Table = fun _ originOpt -> Violation ([!!"InvalidArgumentType"; !!"Unary"; !!"Conversion"; !!"String"], "Cannot convert a table to a string.", originOpt) }
+
+        let evalBoolUnary fn fnOriginOpt fnName evaledArgs world =
+            match evaledArgs with
+            | [evaledArg] ->
+                match evaledArg with
+                | Bool bool -> (Bool (fn bool), world)
+                | Violation _ as violation -> (violation, world)
+                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply a bool function to a non-bool value.", fnOriginOpt), world)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Unary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
+
+        let evalUnaryInner (fns : UnaryFns) fnOriginOpt fnName evaledArg world =
+            match evaledArg with
+            | Bool boolValue -> (fns.Bool boolValue fnOriginOpt, world)
+            | Int intValue -> (fns.Int intValue fnOriginOpt, world)
+            | Int64 int64Value -> (fns.Int64 int64Value fnOriginOpt, world)
+            | Single singleValue -> (fns.Single singleValue fnOriginOpt, world)
+            | Double doubleValue -> (fns.Double doubleValue fnOriginOpt, world)
+            | Vector2 vector2Value -> (fns.Vector2 vector2Value fnOriginOpt, world)
+            | String stringValue -> (fns.String stringValue fnOriginOpt, world)
+            | Keyword keywordValue -> (fns.Keyword keywordValue fnOriginOpt, world)
+            | Tuple tupleValue -> (fns.Tuple tupleValue fnOriginOpt, world)
+            | Keyphrase (nameValue, phraseValue) -> (fns.Keyphrase nameValue phraseValue fnOriginOpt, world)
+            | Codata codataValue -> (fns.Codata codataValue fnOriginOpt, world)
+            | List listValue -> (fns.List listValue fnOriginOpt, world)
+            | Ring ringValue -> (fns.Ring ringValue fnOriginOpt, world)
+            | Table tableValue -> (fns.Table tableValue fnOriginOpt, world)
+            | Violation _ as violation -> (violation, world)
+            | _ -> (Violation ([!!"InvalidArgumentType"; !!"Unary"; !!(String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", fnOriginOpt), world)
+
+        let evalUnary fns fnOriginOpt fnName evaledArgs world =
+            match evaledArgs with
+            | [evaledArg] -> evalUnaryInner fns fnOriginOpt fnName evaledArg world
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Unary"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
