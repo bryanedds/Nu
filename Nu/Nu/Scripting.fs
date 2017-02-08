@@ -108,7 +108,7 @@ module Scripting =
 
         (* Primitive Data Structures *)
         | Tuple of Expr array
-        | Keyphrase of Expr * Expr array
+        | Keyphrase of string * Expr array
         | Option of Expr option
         | Codata of Codata
         | List of Expr list
@@ -354,7 +354,7 @@ module Scripting =
                     let elemSymbols = arr |> Array.map (fun elem -> this.ExprToSymbol elem) |> List.ofArray
                     Symbol.Symbols (headingSymbol :: elemSymbols, None) :> obj
                 | Keyphrase (keyword, arr) ->
-                    let keywordSymbol = this.ExprToSymbol keyword
+                    let keywordSymbol = Atom (keyword, None)
                     let elemSymbols = arr |> Array.map this.ExprToSymbol |> List.ofArray
                     Symbol.Symbols (keywordSymbol :: elemSymbols, None) :> obj
                 | Option option ->
