@@ -1855,9 +1855,18 @@ module WorldScripting =
                     | (true, tryImport) ->
                         match tryImport evt.Data evt.DataType with
                         | Some dataImported ->
-                            let eventBindings = [|("data", dataImported); ("subscriber", String (scstring subscriber)); ("publisher", String (scstring evt.Publisher))|]
-                            let world = World.addProceduralBindings (AddType.AddToNewFrame eventBindings.Length) eventBindings world
-                            World.evalWithLogging subscription scriptFrame subscriber world |> snd
+                            let application =
+                                let eventBindings = [dataImported; String (scstring subscriber); String (scstring evt.Publisher)]
+                                match subscription with
+                                | Fun (_, parCount, _, _, _, _) ->
+                                    Apply (subscription :: List.take parCount eventBindings, None)
+                                | Binding (name, cachedBinding, _) ->
+                                    match World.tryGetBinding name cachedBinding world with
+                                    | Some (Fun (_, parCount, _, _, _, _)) ->
+                                        Apply (subscription :: List.take parCount eventBindings, None)
+                                    | Some _ | None -> Violation ([], "TODO: more info.", None)
+                                | _ -> Violation ([], "TODO: more info.", None)
+                            World.evalWithLogging application scriptFrame subscriber world |> snd
                         | None -> Log.info "Property value could not be imported into scripting environment."; world
                     | (false, _) -> Log.info "Property value could not be imported into scripting environment."; world
                 | None -> world)
@@ -1872,7 +1881,7 @@ module WorldScripting =
                 match evaledArg2 with
                 | String str
                 | Keyword str ->
-                    let world = evalSubscribe4 (Apply ([evaledArg], None)) (Address.makeFromString str) (World.getScriptContext world) world
+                    let world = evalSubscribe4 evaledArg (Address.makeFromString str) (World.getScriptContext world) world
                     (Unit, world)
                 | Violation _ as error -> (error, world)
                 | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + fnName + "' requires a relation for its 2nd argument.", fnOriginOpt), world)
