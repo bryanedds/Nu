@@ -95,6 +95,10 @@
     <Compile Include="WorldPhysics.fs" />
     <Compile Include="WorldRender.fs" />
     <Compile Include="WorldAudio.fs" />
+    <Compile Include="WorldScriptingUnary.fs" />
+    <Compile Include="WorldScriptingBinary.fs" />
+    <Compile Include="WorldScriptingMarshalling.fs" />
+    <Compile Include="WorldScriptingPrimitives.fs" />
     <Compile Include="WorldScripting.fs" />
     <Compile Include="WorldDispatchers.fs" />
     <Compile Include="WorldInit.fs" />

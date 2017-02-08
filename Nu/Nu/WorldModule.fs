@@ -407,7 +407,7 @@ module WorldModule =
     type World with
 
         static member private publishGameChange (propertyName : string) oldWorld world =
-            let game = Game.proxy Address.empty
+            let game = Game Address.empty
             let changeEventAddress = ltoa [!!"Game"; !!"Change"; !!propertyName; !!"Event"] ->>- game.GameAddress
             let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
             World.publishPlus World.sortSubscriptionsByHierarchy { Participant = game; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace game false world
@@ -445,7 +445,7 @@ module WorldModule =
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world
             let world = World.setGameScriptFrameNp scriptFrame world
-            evalManyWithLogging value scriptFrame (Game.proxy Address.empty) world |> snd
+            evalManyWithLogging value scriptFrame (Game Address.empty) world |> snd
         static member internal getGameScriptFrameNp world = (World.getGameState world).ScriptFrameNp
         static member internal setGameScriptFrameNp value world = World.updateGameState (fun gameState -> { gameState with ScriptFrameNp = value }) Property? ScriptFrameNp world
         static member internal getGameOnRegister world = (World.getGameState world).OnRegister
@@ -595,7 +595,7 @@ module WorldModule =
             (List.rev values, world)
 
         static member internal tryGetGameCalculatedProperty propertyName world =
-            let game = Game.proxy Address.empty
+            let game = Game Address.empty
             let dispatcher = World.getGameDispatcherNp world
             dispatcher.TryGetCalculatedProperty (propertyName, game, world)
 
@@ -747,18 +747,18 @@ module WorldModule =
             (screenAddress2 : Screen Address, screenStates2 : UMap<Screen Address, ScreenState>) =
             refEq screenAddress screenAddress2 && refEq screenStates screenStates2
 
-        static member private screenGetFreshKeyAndValue screen world =
+        static member private screenGetFreshKeyAndValue (screen : Screen) world =
             let screenStateOpt = UMap.tryFind screen.ScreenAddress world.ScreenStates
             ((screen.ScreenAddress, world.ScreenStates), screenStateOpt)
 
-        static member private screenStateFinder screen world =
+        static member private screenStateFinder (screen : Screen) world =
             KeyedCache.getValue
                 World.screenStateKeyEquality
                 (fun () -> World.screenGetFreshKeyAndValue screen world)
                 (screen.ScreenAddress, world.ScreenStates)
                 (World.getScreenCachedOpt world)
 
-        static member private screenStateAdder screenState screen world =
+        static member private screenStateAdder screenState (screen : Screen) world =
             let screenDirectory =
                 match Address.getNames screen.ScreenAddress with
                 | [screenName] ->
@@ -773,7 +773,7 @@ module WorldModule =
             let screenStates = UMap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
-        static member private screenStateRemover screen world =
+        static member private screenStateRemover (screen : Screen) world =
             let screenDirectory =
                 match Address.getNames screen.ScreenAddress with
                 | [screenName] -> UMap.remove screenName world.ScreenDirectory
@@ -781,7 +781,7 @@ module WorldModule =
             let screenStates = UMap.remove screen.ScreenAddress world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
-        static member private screenStateSetter screenState screen world =
+        static member private screenStateSetter screenState (screen : Screen) world =
 #if DEBUG
             if not ^ UMap.containsKey screen.ScreenAddress world.ScreenStates then
                 failwith ^ "Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'"
@@ -1074,7 +1074,7 @@ module WorldModule =
                 | None -> screenState
 
             // add the screen's state to the world
-            let screen = screenState.Name |> ntoa |> Screen.proxy
+            let screen = Screen (ntoa screenState.Name)
             let screenState =
                 if World.screenExists screen world
                 then { screenState with EntityTreeNp = World.getScreenEntityTreeNp screen world }
@@ -1098,18 +1098,18 @@ module WorldModule =
             (layerAddress2 : Layer Address, layerStates2 : UMap<Layer Address, LayerState>) =
             refEq layerAddress layerAddress2 && refEq layerStates layerStates2
 
-        static member private layerGetFreshKeyAndValue layer world =
+        static member private layerGetFreshKeyAndValue (layer : Layer) world =
             let layerStateOpt = UMap.tryFind layer.LayerAddress world.LayerStates
             ((layer.LayerAddress, world.LayerStates), layerStateOpt)
 
-        static member private layerStateFinder layer world =
+        static member private layerStateFinder (layer : Layer) world =
             KeyedCache.getValue
                 World.layerStateKeyEquality
                 (fun () -> World.layerGetFreshKeyAndValue layer world)
                 (layer.LayerAddress, world.LayerStates)
                 (World.getLayerCachedOpt world)
 
-        static member private layerStateAdder layerState layer world =
+        static member private layerStateAdder layerState (layer : Layer) world =
             let screenDirectory =
                 match Address.getNames layer.LayerAddress with
                 | [screenName; layerName] ->
@@ -1128,7 +1128,7 @@ module WorldModule =
             let layerStates = UMap.add layer.LayerAddress layerState world.LayerStates
             World.choose { world with ScreenDirectory = screenDirectory; LayerStates = layerStates }
 
-        static member private layerStateRemover layer world =
+        static member private layerStateRemover (layer : Layer) world =
             let screenDirectory =
                 match Address.getNames layer.LayerAddress with
                 | [screenName; layerName] ->
@@ -1141,7 +1141,7 @@ module WorldModule =
             let layerStates = UMap.remove layer.LayerAddress world.LayerStates
             World.choose { world with ScreenDirectory = screenDirectory; LayerStates = layerStates }
 
-        static member private layerStateSetter layerState layer world =
+        static member private layerStateSetter layerState (layer : Layer) world =
 #if DEBUG
             if not ^ UMap.containsKey layer.LayerAddress world.LayerStates then
                 failwith ^ "Cannot set the state of a non-existent layer '" + scstring layer.LayerAddress + "'"
@@ -1380,7 +1380,7 @@ module WorldModule =
             else world
 
         /// Create a layer and add it to the world.
-        static member createLayer5 dispatcherName specializationOpt nameOpt screen world =
+        static member createLayer5 dispatcherName specializationOpt nameOpt (screen : Screen) world =
             let dispatchers = World.getLayerDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
@@ -1388,7 +1388,7 @@ module WorldModule =
                 | None -> failwith ^ "Could not find a LayerDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
             let layerState = LayerState.make specializationOpt nameOpt dispatcher
             let layerState = Reflection.attachProperties LayerState.copy dispatcher layerState
-            let layer = screen.ScreenAddress -<<- ntoa<Layer> layerState.Name |> Layer.proxy
+            let layer = Layer (screen.ScreenAddress -<<- ntoa<Layer> layerState.Name)
             let world = World.addLayer false layerState layer world
             (layer, world)
 
@@ -1404,7 +1404,7 @@ module WorldModule =
             let layerDescriptor = { layerDescriptor with LayerProperties = getLayerProperties }
             writeEntities layer layerDescriptor world
 
-        static member internal readLayer5 readEntities layerDescriptor nameOpt screen world =
+        static member internal readLayer5 readEntities layerDescriptor nameOpt (screen : Screen) world =
 
             // create the dispatcher
             let dispatcherName = layerDescriptor.LayerDispatcher
@@ -1429,7 +1429,7 @@ module WorldModule =
                 | None -> layerState
 
             // add the layer's state to the world
-            let layer = screen.ScreenAddress -<<- ntoa<Layer> layerState.Name |> Layer.proxy
+            let layer = Layer (screen.ScreenAddress -<<- ntoa<Layer> layerState.Name)
             let world = World.addLayer true layerState layer world
 
             // read the layer's entities
@@ -1449,11 +1449,11 @@ module WorldModule =
             (entityAddress2 : Entity Address, entityStates2 : UMap<Entity Address, EntityState>) =
             refEq entityAddress entityAddress2 && refEq entityStates entityStates2
 
-        static member private entityGetFreshKeyAndValue entity world =
+        static member private entityGetFreshKeyAndValue (entity : Entity) world =
             let entityStateOpt = UMap.tryFind entity.EntityAddress world.EntityStates
             ((entity.EntityAddress, world.EntityStates), entityStateOpt)
 
-        static member private entityStateFinder entity world =
+        static member private entityStateFinder (entity : Entity) world =
             let entityStateOpt = entity.EntityStateOpt
             if isNull (entityStateOpt :> obj) then
                 let entityStateOpt =
@@ -1474,7 +1474,7 @@ module WorldModule =
                 | None -> Unchecked.defaultof<EntityState>
             else entityStateOpt
 
-        static member private entityStateAdder entityState entity world =
+        static member private entityStateAdder entityState (entity : Entity) world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
                 | [screenName; layerName; entityName] ->
@@ -1491,7 +1491,7 @@ module WorldModule =
             let entityStates = UMap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
-        static member private entityStateRemover entity world =
+        static member private entityStateRemover (entity : Entity) world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
                 | [screenName; layerName; entityName] ->
@@ -1508,7 +1508,7 @@ module WorldModule =
             let entityStates = UMap.remove entity.EntityAddress world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
-        static member private entityStateSetter entityState entity world =
+        static member private entityStateSetter entityState (entity : Entity) world =
 #if DEBUG
             if not ^ UMap.containsKey entity.EntityAddress world.EntityStates then
                 failwith ^ "Cannot set the state of a non-existent entity '" + scstring entity.EntityAddress + "'"
@@ -1518,13 +1518,13 @@ module WorldModule =
             let entityStates = UMap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with EntityStates = entityStates }
 
-        static member private addEntityState entityState entity world =
+        static member private addEntityState entityState (entity : Entity) world =
             World.entityStateAdder entityState entity world
 
-        static member private removeEntityState entity world =
+        static member private removeEntityState (entity : Entity) world =
             World.entityStateRemover entity world
 
-        static member private publishEntityChange propertyName entity oldWorld world =
+        static member private publishEntityChange propertyName (entity : Entity) oldWorld world =
             let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName; !!"Event"] ->>- entity.EntityAddress
             let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
             World.publishPlus World.sortSubscriptionsByHierarchy { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity false world
@@ -2047,7 +2047,7 @@ module WorldModule =
                 let world = World.addEntityState entityState entity world
                 
                 // pulling out screen state
-                let screen = entity.EntityAddress |> Address.head |> ntoa<Screen> |> Screen.proxy
+                let screen = entity.EntityAddress |> Address.head |> ntoa<Screen> |> Screen
                 let screenState = World.getScreenState screen world
 
                 // mutate entity tree
@@ -2076,7 +2076,7 @@ module WorldModule =
             World.removeEntity entity world
 
         /// Create an entity and add it to the world.
-        static member createEntity5 dispatcherName specializationOpt nameOpt layer world =
+        static member createEntity5 dispatcherName specializationOpt nameOpt (layer : Layer) world =
 
             // grab overlay dependencies
             let overlayer = World.getOverlayer world
@@ -2128,7 +2128,7 @@ module WorldModule =
                 | None -> entityState
 
             // add entity's state to world
-            let entity = layer.LayerAddress -<<- ntoa<Entity> entityState.Name |> Entity.proxy
+            let entity = Entity (layer.LayerAddress -<<- ntoa<Entity> entityState.Name)
             let world = World.addEntity false entityState entity world
             (entity, world)
 
@@ -2148,7 +2148,7 @@ module WorldModule =
                 let oldWorld = world
                 
                 // pulling out screen state
-                let screen = entity.EntityAddress |> Address.head |> ntoa<Screen> |> Screen.proxy
+                let screen = entity.EntityAddress |> Address.head |> ntoa<Screen> |> Screen
                 let screenState = World.getScreenState screen world
 
                 // mutate entity tree
@@ -2174,7 +2174,7 @@ module WorldModule =
             else world
 
         /// Read an entity from an entity descriptor.
-        static member readEntity entityDescriptor nameOpt layer world =
+        static member readEntity entityDescriptor nameOpt (layer : Layer) world =
 
             // grab overlay dependencies
             let overlayer = World.getOverlayer world
@@ -2245,7 +2245,7 @@ module WorldModule =
                 | None -> entityState
 
             // add entity state to the world
-            let entity = layer.LayerAddress -<<- ntoa<Entity> entityState.Name |> Entity.proxy
+            let entity = Entity (layer.LayerAddress -<<- ntoa<Entity> entityState.Name)
             let world = World.addEntity true entityState entity world
             (entity, world)
 
@@ -2269,12 +2269,12 @@ module WorldModule =
 
         /// Reassign an entity's identity and / or layer. Note that since this destroys the reassigned entity
         /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
-        static member reassignEntityImmediate entity nameOpt layer world =
+        static member reassignEntityImmediate entity nameOpt (layer : Layer) world =
             let entityState = World.getEntityState entity world
             let world = World.removeEntity entity world
             let (id, name) = Reflection.deriveIdAndName nameOpt
             let entityState = { entityState with Id = id; Name = name }
-            let transmutedEntity = layer.LayerAddress -<<- ntoa<Entity> name |> Entity.proxy
+            let transmutedEntity = Entity (layer.LayerAddress -<<- ntoa<Entity> name)
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
 
@@ -2341,16 +2341,16 @@ module WorldModule =
         static member simulantExists (simulant : Simulant) (world : World) =
             (world :> EventWorld<Game, World>).ParticipantExists simulant
 
-        static member tryProxySimulant address =
+        static member tryDeriveSimulant address =
             match Address.getNames address with
-            | [] -> Option.map (fun game -> game :> Simulant) (Game.tryProxy Address.empty)
-            | [_] -> Option.map (fun screen -> screen :> Simulant) (Screen.tryProxy (Address.changeType<Simulant, Screen> address))
-            | [_; _] -> Option.map (fun layer -> layer :> Simulant) (Layer.tryProxy (Address.changeType<Simulant, Layer> address))
-            | [_; _; _] -> Option.map (fun entity -> entity :> Simulant) (Entity.tryProxy (Address.changeType<Simulant, Entity> address))
+            | [] -> Some (Game Address.empty :> Simulant)
+            | [_] -> Some (Screen (Address.changeType<Simulant, Screen> address) :> Simulant)
+            | [_; _] -> Some (Layer (Address.changeType<Simulant, Layer> address) :> Simulant)
+            | [_; _; _] -> Some (Entity (Address.changeType<Simulant, Entity> address) :> Simulant)
             | _ -> None
         
-        static member proxySimulant address =
-            match World.tryProxySimulant address with
+        static member deriveSimulant address =
+            match World.tryDeriveSimulant address with
             | Some simulant -> simulant
             | None -> failwithf "Could not proxy simulant using address '%s'." (scstring address)
 
@@ -2400,13 +2400,13 @@ module WorldModule =
 
     type World with
 
-        static member internal updateEntityInEntityTreeImpl entity oldWorld world =
+        static member internal updateEntityInEntityTreeImpl (entity : Entity) oldWorld world =
             // OPTIMIZATION: attempts to avoid constructing a screen address on each call to decrease address hashing
             // OPTIMIZATION: assumes a valid entity address with List.head on its names
             let screen =
                 match (World.getGameState world).SelectedScreenOpt with
-                | Some screen when Address.getName screen.ScreenAddress = List.head ^ Address.getNames entity.EntityAddress -> screen
-                | Some _ | None -> entity.EntityAddress |> Address.getNames |> List.head |> ntoa<Screen> |> Screen.proxy
+                | Some screen when Address.getName screen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> screen
+                | Some _ | None -> entity.EntityAddress |> Address.getNames |> List.head |> ntoa<Screen> |> Screen
 
             // proceed with updating entity in entity tree
             let screenState = World.getScreenState screen world
@@ -2440,7 +2440,7 @@ module WorldModule =
             World.destroyEntityImmediate entity world
 
         /// Paste an entity from the clipboard.
-        static member pasteFromClipboard atMouse rightClickPosition positionSnap rotationSnap layer world =
+        static member pasteFromClipboard atMouse rightClickPosition positionSnap rotationSnap (layer : Layer) world =
             match Clipboard with
             | Some entityStateObj ->
                 let entityState = entityStateObj :?> EntityState
@@ -2454,7 +2454,7 @@ module WorldModule =
                 let transform = { EntityState.getTransform entityState with Position = position }
                 let transform = Math.snapTransform positionSnap rotationSnap transform
                 let entityState = EntityState.setTransform transform entityState
-                let entity = layer.LayerAddress -<<- ntoa<Entity> name |> Entity.proxy
+                let entity = Entity (layer.LayerAddress -<<- ntoa<Entity> name)
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
             | None -> (None, world)
@@ -2512,7 +2512,7 @@ module WorldModule =
                   Dispatchers = dispatchers
                   Subsystems = subsystems
                   ScriptEnv = scriptEnv
-                  ScriptContext = Game.proxy Address.empty
+                  ScriptContext = Game Address.empty
                   ScreenCachedOpt = KeyedCache.make (Address.empty<Screen>, screenStates) None
                   LayerCachedOpt = KeyedCache.make (Address.empty<Layer>, layerStates) None
                   EntityCachedOpt = KeyedCache.make (Address.empty<Entity>, entityStates) None

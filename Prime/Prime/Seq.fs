@@ -24,13 +24,13 @@ let inline headOrDefault seq aDefault =
 let inline definitize opts =
     Seq.choose id opts
 
-/// Convert option values to definite values, returning an additional flag to indicate that any were none.
+/// Convert option values to definite values, returning an additional flag to indicate that all values were some.
 let definitizePlus opts =
     let (flag, list) =
         Seq.foldBack
-            (fun opt (anyNone, values) ->
+            (fun opt (allDefinite, values) ->
                 match opt with
-                | Some value -> (anyNone, value :: values)
+                | Some value -> (allDefinite, value :: values)
                 | None -> (false, values))
             opts (true, [])
     (flag, Seq.ofList list)

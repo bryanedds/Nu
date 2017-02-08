@@ -17,3 +17,12 @@ let tryFindIndexRev pred arr =
         if pred arr.[index] then found <- true
         else index <- index - 1
     if found then Some index else None
+
+/// Convert option values to definite values.
+let definitize opts =
+    Array.choose id opts
+
+/// Convert option values to definite values, returning an additional flag to indicate that all values were some.
+let definitizePlus opts =
+    let (flag, seq) = Seq.definitizePlus opts
+    (flag, Array.ofSeq seq)

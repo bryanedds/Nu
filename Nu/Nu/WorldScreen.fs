@@ -129,7 +129,7 @@ module WorldScreenModule =
         /// Get all the world's screens.
         static member getScreens world =
             UMap.fold
-                (fun state _ (screenAddress, _) -> Screen.proxy screenAddress :: state)
+                (fun state _ (screenAddress, _) -> Screen screenAddress :: state)
                 [] (World.getScreenDirectory world) :> _ seq
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the

@@ -179,7 +179,7 @@ module Gaia =
         | None -> (None, world)
 
     let private handleNuEntityRegister (form : GaiaForm) evt world =
-        let entity = Entity.proxy ^ atoa evt.Publisher.ParticipantAddress
+        let entity = Entity (atoa evt.Publisher.ParticipantAddress)
         addTreeViewNode form entity world
         selectEntity form entity world
         (Cascade, world)
@@ -460,7 +460,7 @@ module Gaia =
     let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             if isNotNull form.treeView.SelectedNode then
-                let entity = Entity.proxy ^ Address.makeFromString form.treeView.SelectedNode.Name
+                let entity = Entity (Address.makeFromString form.treeView.SelectedNode.Name)
                 match Address.getNames entity.EntityAddress with
                 | [_; _; _] ->
                     RefWorld := world // must be set for property grid

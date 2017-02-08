@@ -9,28 +9,28 @@ open Nu
 [<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module SimulantOperators =
 
-    /// Convert a name string to a screen's proxy.
-    let (!>) screenNameStr = Screen.proxy ^ ntoa !!screenNameStr
+    /// Derive a screen from a name string.
+    let (!>) screenNameStr = Screen (ntoa !!screenNameStr)
 
-    /// Convert a name to a screen's proxy.
-    let ntos screenName = Screen.proxy ^ ntoa screenName
+    /// Derivce a screen from a name.
+    let ntos screenName = Screen (ntoa screenName)
 
-    /// Convert a layer's proxy to an entity's by appending the entity's name at the end.
-    let ltoe (layer : Layer) entityName = Entity.proxy ^ atoa<Layer, Entity> layer.LayerAddress ->- ntoa entityName
+    /// Derive an entity from its layer.
+    let ltoe (layer : Layer) entityName = Entity (atoa<Layer, Entity> layer.LayerAddress ->- ntoa entityName)
 
-    /// Convert a screen's proxy to a layer's by appending the layer's name at the end.
-    let stol (screen : Screen) layerName = Layer.proxy ^ atoa<Screen, Layer> screen.ScreenAddress ->- ntoa layerName
+    /// Derive layer from its screen.
+    let stol (screen : Screen) layerName = Layer (atoa<Screen, Layer> screen.ScreenAddress ->- ntoa layerName)
 
-    /// Convert an entity's proxy to a layer's by removing the entity's name from the end.
+    /// Derive an entity from its layer.
     let etol (entity : Entity) = !< entity
 
-    /// Convert a layer's proxy to a screen's by removing the layer's name from the end.
-    let ltos layer = Screen.proxy ^ Address.take<Layer, Screen> 1 layer.LayerAddress
+    /// Derive a screen from one of its layers.
+    let ltos (layer : Layer) = Screen (Address.take<Layer, Screen> 1 layer.LayerAddress)
 
 module Simulants =
 
     /// The game. Always exists.
-    let Game = { GameAddress = Address.empty }
+    let Game = Game Address.empty
 
     /// The default screen - may or may not exist.
     let DefaultScreen = !> Constants.Engine.DefaultScreenName
