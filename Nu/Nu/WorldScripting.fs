@@ -1855,7 +1855,12 @@ module WorldScripting =
                     | (true, tryImport) ->
                         match tryImport evt.Data evt.DataType with
                         | Some dataImported ->
-                            let evtTuple = Tuple [|dataImported; String (scstring subscriber); String (scstring evt.Publisher)|]
+                            let evtTuple =
+                                Tuple
+                                    [|dataImported
+                                      String (scstring evt.Subscriber)
+                                      String (scstring evt.Publisher)
+                                      String (scstring evt.Address)|]
                             let application = Apply ([subscription; evtTuple], None)
                             World.evalWithLogging application scriptFrame subscriber world |> snd
                         | None -> Log.info "Property value could not be imported into scripting environment."; world
