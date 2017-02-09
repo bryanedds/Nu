@@ -360,38 +360,30 @@ module WorldTypes =
           EyeCenter : Vector2
           EyeSize : Vector2 }
 
-        /// Try to get a dynamic property and its type information.
+        /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName gameState =
             match Xtension.tryGetProperty propertyName gameState.Xtension with
             | Some xProperty -> Some (xProperty.PropertyValue, xProperty.PropertyType)
             | None -> None
 
-        /// Get a dynamic property and its type information.
+        /// Get an xtension property and its type information.
         static member getProperty propertyName gameState =
             let xProperty = Xtension.getProperty propertyName gameState.Xtension
             (xProperty.PropertyValue, xProperty.PropertyType)
 
-        /// Try to set a dynamic property with explicit type information.
+        /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property gameState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
             match Xtension.trySetProperty propertyName xProperty gameState.Xtension with
             | (true, xtension) -> (true, { gameState with Xtension = xtension })
             | (false, _) -> (false, gameState)
 
-        /// Set a dynamic property with explicit type information.
+        /// Set an xtension property with explicit type information.
         static member setProperty propertyName property gameState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
             { gameState with GameState.Xtension = Xtension.setProperty propertyName xProperty gameState.Xtension }
 
-        /// The dynamic look-up operator.
-        static member get propertyName gameState : 'a =
-            Xtension.(?) (gameState.Xtension, propertyName)
-
-        /// The dynamic assignment operator.
-        static member set propertyName (value : 'a) gameState =
-            { gameState with GameState.Xtension = Xtension.(?<-) (gameState.Xtension, propertyName, value) }
-
-        /// Attach a dynamic property.
+        /// Attach an xtension property.
         static member attachProperty name value gameState =
             { gameState with GameState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } gameState.Xtension }
     
@@ -448,38 +440,30 @@ module WorldTypes =
           Incoming : Transition
           Outgoing : Transition }
 
-        /// Get a dynamic property and its type information.
+        /// Get an xtension property and its type information.
         static member getProperty propertyName screenState =
             let xProperty = Xtension.getProperty propertyName screenState.Xtension
             (xProperty.PropertyValue, xProperty.PropertyType)
 
-        /// Try to get a dynamic property and its type information.
+        /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName screenState =
             match Xtension.tryGetProperty propertyName screenState.Xtension with
             | Some xProperty -> Some (xProperty.PropertyValue, xProperty.PropertyType)
             | None -> None
 
-        /// Try to set a dynamic property with explicit type information.
+        /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property screenState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
             match Xtension.trySetProperty propertyName xProperty screenState.Xtension with
             | (true, xtension) -> (true, { screenState with Xtension = xtension })
             | (false, _) -> (false, screenState)
 
-        /// Set a dynamic property with explicit type information.
+        /// Set an xtension property with explicit type information.
         static member setProperty propertyName property screenState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
             { screenState with ScreenState.Xtension = Xtension.setProperty propertyName xProperty screenState.Xtension }
 
-        /// The dynamic look-up operator.
-        static member get propertyName screenState : 'a =
-            Xtension.(?) (screenState.Xtension, propertyName)
-
-        /// The dynamic assignment operator.
-        static member set propertyName (value : 'a) screenState =
-            { screenState with ScreenState.Xtension = Xtension.(?<-) (screenState.Xtension, propertyName, value) }
-
-        /// Attach a dynamic property.
+        /// Attach an xtension property.
         static member attachProperty name value screenState =
             { screenState with ScreenState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } screenState.Xtension }
     
@@ -538,38 +522,30 @@ module WorldTypes =
           Depth : single
           Visible : bool }
 
-        /// Try to get a dynamic property and its type information.
+        /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName layerState =
             match Xtension.tryGetProperty propertyName layerState.Xtension with
             | Some xProperty -> Some (xProperty.PropertyValue, xProperty.PropertyType)
             | None -> None
 
-        /// Get a dynamic property and its type information.
+        /// Get an xtension property and its type information.
         static member getProperty propertyName layerState =
             let xProperty = Xtension.getProperty propertyName layerState.Xtension
             (xProperty.PropertyValue, xProperty.PropertyType)
 
-        /// Try to set a dynamic property with explicit type information.
+        /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property layerState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
             match Xtension.trySetProperty propertyName xProperty layerState.Xtension with
             | (true, xtension) -> (true, { layerState with Xtension = xtension })
             | (false, _) -> (false, layerState)
 
-        /// Set a dynamic property with explicit type information.
+        /// Set an xtension property with explicit type information.
         static member setProperty propertyName property layerState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
             { layerState with LayerState.Xtension = Xtension.setProperty propertyName xProperty layerState.Xtension }
 
-        /// The dynamic look-up operator.
-        static member get propertyName layerState : 'a =
-            Xtension.(?) (layerState.Xtension, propertyName)
-
-        /// The dynamic assignment operator.
-        static member set propertyName (value : 'a) layerState =
-            { layerState with LayerState.Xtension = Xtension.(?<-) (layerState.Xtension, propertyName, value) }
-
-        /// Attach a dynamic property.
+        /// Attach an xtension property.
         static member attachProperty name value layerState =
             { layerState with LayerState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } layerState.Xtension }
     
@@ -628,48 +604,38 @@ module WorldTypes =
           mutable FacetNames : string Set
           mutable FacetsNp : Facet list }
 
-        /// Try to get a dynamic property and its type information.
+        /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName entityState =
             match Xtension.tryGetProperty propertyName entityState.Xtension with
             | Some xProperty -> Some (xProperty.PropertyValue, xProperty.PropertyType)
             | None -> None
 
-        /// Get a dynamic property and its type information.
+        /// Get an xtension property and its type information.
         static member getProperty propertyName entityState =
             let xProperty = Xtension.getProperty propertyName entityState.Xtension
             (xProperty.PropertyValue, xProperty.PropertyType)
 
-        /// Try to set a dynamic property with explicit type information.
+        /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property entityState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
             match Xtension.trySetProperty propertyName xProperty entityState.Xtension with
             | (true, xtension) -> (true, { entityState with Xtension = xtension })
             | (false, _) -> (false, entityState)
 
-        /// Set a dynamic property with explicit type information.
+        /// Set an xtension property with explicit type information.
         static member setProperty propertyName property entityState =
             let xProperty = { PropertyValue = fst property; PropertyType = snd property }
             let xtension = Xtension.setProperty propertyName xProperty entityState.Xtension
             if Xtension.getImperative entityState.Xtension then entityState
             else { entityState with EntityState.Xtension = xtension }
 
-        /// The dynamic look-up operator.
-        static member get propertyName entityState : 'a =
-            Xtension.(?) (entityState.Xtension, propertyName)
-
-        /// The dynamic assignment operator.
-        static member set propertyName (value : 'a) entityState =
-            let xtension = Xtension.(?<-) (entityState.Xtension, propertyName, value)
-            if Xtension.getImperative entityState.Xtension then entityState
-            else { entityState with EntityState.Xtension = xtension }
-
-        /// Attach a dynamic property.
+        /// Attach an xtension property.
         static member attachProperty name value entityState =
             let xtension = Xtension.attachProperty name value entityState.Xtension
             if Xtension.getImperative entityState.Xtension then entityState.Xtension <- xtension; entityState
             else { entityState with EntityState.Xtension = xtension }
 
-        /// Detach a dynamic property.
+        /// Detach an xtension property.
         static member detachProperty name entityState =
             let xtension = Xtension.detachProperty name entityState.Xtension
             if Xtension.getImperative entityState.Xtension then entityState.Xtension <- xtension; entityState
