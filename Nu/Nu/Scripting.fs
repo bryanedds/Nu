@@ -21,7 +21,7 @@ module Scripting =
 
     and Binding =
         | VariableBinding of string * Expr
-        | FunctionBinding of string * string list * Expr
+        | FunctionBinding of string * string array * Expr
 
     and [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Codata =
         | Empty
@@ -118,15 +118,15 @@ module Scripting =
 
         (* Special Forms *)
         | Binding of string * CachedBinding ref * SymbolOrigin option
-        | Apply of Expr list * SymbolOrigin option
-        | ApplyAnd of Expr list * SymbolOrigin option
-        | ApplyOr of Expr list * SymbolOrigin option
+        | Apply of Expr array * SymbolOrigin option
+        | ApplyAnd of Expr array * SymbolOrigin option
+        | ApplyOr of Expr array * SymbolOrigin option
         | Let of Binding * Expr * SymbolOrigin option
         | LetMany of Binding list * Expr * SymbolOrigin option
-        | Fun of string list * int * Expr * bool * obj option * SymbolOrigin option // TODO: make pars an array?
+        | Fun of string array * int * Expr * bool * obj option * SymbolOrigin option
         | If of Expr * Expr * Expr * SymbolOrigin option
-        | Match of Expr * (Expr * Expr) list * SymbolOrigin option
-        | Select of (Expr * Expr) list * SymbolOrigin option
+        | Match of Expr * (Expr * Expr) array * SymbolOrigin option
+        | Select of (Expr * Expr) array * SymbolOrigin option
         | Try of Expr * (Name list * Expr) list * SymbolOrigin option
         | Do of Expr list * SymbolOrigin option
         | Break of Expr * SymbolOrigin option
@@ -293,9 +293,9 @@ module Scripting =
                 [nameSymbol; valueSymbol]
             | FunctionBinding (name, pars, body) ->
                 let nameSymbol = Symbol.Atom (name, None)
-                let parSymbols = List.map (fun par -> Symbol.Atom (par, None)) pars
+                let parSymbols = Array.map (fun par -> Symbol.Atom (par, None)) pars
                 let bodySymbol = this.ExprToSymbol body
-                nameSymbol :: parSymbols @ [bodySymbol]
+                nameSymbol :: List.ofArray parSymbols @ [bodySymbol]
 
         member this.BindingToSymbol binding =
             Symbol.Symbols (this.BindingToSymbols binding, None)
@@ -322,7 +322,7 @@ module Scripting =
                 let (bindingArgs, bindingErrors) = List.split (function Atom _ -> true | _ -> false) bindingArgs
                 if List.isEmpty bindingErrors then
                     let bindingArgs = List.map (function Atom (arg, _) -> arg | _ -> failwithumf ()) bindingArgs
-                    let binding = FunctionBinding (bindingName, bindingArgs, this.SymbolToExpr bindingBody)
+                    let binding = FunctionBinding (bindingName, Array.ofList bindingArgs, this.SymbolToExpr bindingBody)
                     Some binding
                 else None
             | _ -> None
@@ -386,15 +386,15 @@ module Scripting =
                 | Binding (name, _, originOpt) ->
                     Symbol.Atom (name, originOpt) :> obj
                 | Apply (exprs, originOpt) ->
-                    let exprSymbols = List.map this.ExprToSymbol exprs
-                    Symbol.Symbols (exprSymbols, originOpt) :> obj
+                    let exprSymbols = Array.map this.ExprToSymbol exprs
+                    Symbol.Symbols (List.ofArray exprSymbols, originOpt) :> obj
                 | ApplyAnd (exprs, originOpt) ->
                     let logicSymbol = Symbol.Atom ("&&", None)
-                    let exprSymbols = List.map this.ExprToSymbol exprs
+                    let exprSymbols = List.map this.ExprToSymbol (List.ofArray exprs)
                     Symbol.Symbols (logicSymbol :: exprSymbols, originOpt) :> obj
                 | ApplyOr (exprs, originOpt) ->
                     let logicSymbol = Symbol.Atom ("||", None)
-                    let exprSymbols = List.map this.ExprToSymbol exprs
+                    let exprSymbols = List.map this.ExprToSymbol (List.ofArray exprs)
                     Symbol.Symbols (logicSymbol :: exprSymbols, originOpt) :> obj
                 | Let (binding, body, originOpt) ->
                     let letSymbol = Symbol.Atom ("let", None)
@@ -408,9 +408,9 @@ module Scripting =
                     Symbol.Symbols ([letSymbol; bindingSymbols; bodySymbol], originOpt) :> obj
                 | Fun (pars, _, body, _, _, originOpt) ->
                     let funSymbol = Symbol.Atom ("fun", None)
-                    let parSymbols = List.map (fun par -> Symbol.Atom (par, None)) pars
+                    let parSymbols = Array.map (fun par -> Symbol.Atom (par, None)) pars
                     let bodySymbol = this.ExprToSymbol body
-                    Symbol.Symbols (funSymbol :: parSymbols @ [bodySymbol], originOpt) :> obj
+                    Symbol.Symbols (funSymbol :: List.ofArray parSymbols @ [bodySymbol], originOpt) :> obj
                 | If (condition, consequent, alternative, originOpt) ->
                     let ifSymbol = Symbol.Atom ("if", None)
                     let conditionSymbol = this.ExprToSymbol condition
@@ -425,7 +425,7 @@ module Scripting =
                             let conditionSymbol = this.ExprToSymbol condition
                             let consequentSymbol = this.ExprToSymbol consequent
                             Symbol.Symbols ([conditionSymbol; consequentSymbol], None))
-                            cases
+                            (List.ofArray cases)
                     Symbol.Symbols (matchSymbol :: inputSymbol :: caseSymbols, originOpt) :> obj
                 | Select (cases, originOpt) ->
                     let selectSymbol = Symbol.Atom ("select", None)
@@ -434,7 +434,7 @@ module Scripting =
                             let conditionSymbol = this.ExprToSymbol condition
                             let consequentSymbol = this.ExprToSymbol consequent
                             Symbol.Symbols ([conditionSymbol; consequentSymbol], None))
-                            cases
+                            (List.ofArray cases)
                     Symbol.Symbols (selectSymbol :: caseSymbols, originOpt) :> obj
                 | Try (input, cases, originOpt) ->
                     let trySymbol = Symbol.Atom ("try", None)
@@ -528,10 +528,10 @@ module Scripting =
                         match name with
                         | "&&" ->
                             let args = this.SymbolsToExpr tail
-                            ApplyAnd (args, originOpt) :> obj
+                            ApplyAnd (Array.ofList args, originOpt) :> obj
                         | "||" ->
                             let args = this.SymbolsToExpr tail
-                            ApplyOr (args, originOpt) :> obj
+                            ApplyOr (Array.ofList args, originOpt) :> obj
                         | "violation" ->
                             match tail with
                             | [Prime.Atom (tagStr, _)]
@@ -572,8 +572,8 @@ module Scripting =
                                 match args with
                                 | Symbols (args, _) ->
                                     if List.forall (function Atom _ -> true | _ -> false) args then
-                                        let args = List.map (function Atom (arg, _) -> arg | _ -> failwithumf ()) args
-                                        Fun (args, List.length args, this.SymbolToExpr body, false, None, originOpt) :> obj
+                                        let args = Array.map (function Atom (arg, _) -> arg | _ -> failwithumf ()) (Array.ofList args)
+                                        Fun (args, Array.length args, this.SymbolToExpr body, false, None, originOpt) :> obj
                                     else Violation ([!!"InvalidForm"; !!"Fun"], "Invalid fun form. TODO: more info.", originOpt) :> obj
                                 | _ -> Violation ([!!"InvalidForm"; !!"Fun"], "Invalid fun form. TODO: more info.", originOpt) :> obj
                             | _ -> Violation ([!!"InvalidForm"; !!"Fun"], "Invalid fun form. TODO: more info.", originOpt) :> obj
@@ -588,7 +588,7 @@ module Scripting =
                                 if List.forall (function Symbols ([_; _], _) -> true | _ -> false) cases then
                                     let cases = List.map (function Symbols ([condition; consequent], _) -> (condition, consequent) | _ -> failwithumf ()) cases
                                     let cases = List.map (fun (condition, consequent) -> (this.SymbolToExpr condition, this.SymbolToExpr consequent)) cases
-                                    Match (input, cases, originOpt) :> obj
+                                    Match (input, Array.ofList cases, originOpt) :> obj
                                 else Violation ([!!"InvalidForm"; !!"Match"], "Invalid match form. Requires 1 or more cases.", originOpt) :> obj
                             | _ -> Violation ([!!"InvalidForm"; !!"Match"], "Invalid match form. Requires 1 input and 1 or more cases.", originOpt) :> obj
                         | "select" ->
@@ -596,7 +596,7 @@ module Scripting =
                             if List.forall (function Symbols ([_; _], _) -> true | _ -> false) cases then
                                 let cases = List.map (function Symbols ([condition; consequent], _) -> (condition, consequent) | _ -> failwithumf ()) cases
                                 let cases = List.map (fun (condition, consequent) -> (this.SymbolToExpr condition, this.SymbolToExpr consequent)) cases
-                                Select (cases, originOpt) :> obj
+                                Select (Array.ofList cases, originOpt) :> obj
                             else Violation ([!!"InvalidForm"; !!"Select"], "Invalid select form. Requires 1 or more cases.", originOpt) :> obj
                         | "try" ->
                             match tail with
@@ -656,8 +656,8 @@ module Scripting =
                             match this.SymbolsToBindingOpt bindingSymbols with
                             | Some binding -> Define (binding, originOpt) :> obj
                             | None -> Violation ([!!"InvalidForm"; !!"Define"], "Invalid define form. TODO: more info.", originOpt) :> obj
-                        | _ -> Apply (this.SymbolsToExpr symbols, originOpt) :> obj
-                    | _ -> Apply (this.SymbolsToExpr symbols, originOpt) :> obj
+                        | _ -> Apply (Array.ofList (this.SymbolsToExpr symbols), originOpt) :> obj
+                    | _ -> Apply (Array.ofList (this.SymbolsToExpr symbols), originOpt) :> obj
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
 
