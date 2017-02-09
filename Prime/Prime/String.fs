@@ -28,7 +28,7 @@ module String =
             let cleaned = decimaled.TrimEnd('0').Replace(",","")
             let zeroed = if cleaned.EndsWith "." then cleaned + "0" else cleaned
             zeroed + "f"
-        else num.ToString ()
+        else string num
 
     /// Convert a double to a string that works well in code.
     let doubleToCodeString (num : double) =
@@ -36,15 +36,15 @@ module String =
             let decimaled = num.ToString ("N15")
             let cleaned = decimaled.TrimEnd('0').Replace(",","")
             if cleaned.EndsWith "." then cleaned + "0" else cleaned
-        else num.ToString ()
+        else string num
 
     /// Convert a number to a string that works well in code.
     let numberToCodeString (num : obj) =
         match num with
         | :? bool as bool -> boolToCodeString bool
-        | :? char as char -> char.ToString ()
-        | :? int as int -> int.ToString ()
-        | :? int64 as int64 -> int64.ToString ()
+        | :? char as char -> string char
+        | :? int as int -> string int
+        | :? int64 as int64 -> string int64
         | :? single as single -> singleToCodeString single
         | :? double as double -> doubleToCodeString double
         | _ -> failwithumf ()

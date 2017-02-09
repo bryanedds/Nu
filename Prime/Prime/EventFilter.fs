@@ -14,10 +14,10 @@ type RexprConverter () =
 
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<string> then
-            source.ToString () :> obj
+            string source :> obj
         elif destType = typeof<Symbol> then
             let rexpr = source :?> Rexpr
-            Symbol.String (rexpr.ToString (), None) :> obj
+            Symbol.String (string rexpr, None) :> obj
         elif destType = typeof<Rexpr> then source
         else failconv "Invalid RexprConverter conversion to source." None
 

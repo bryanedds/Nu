@@ -59,7 +59,7 @@ type SymbolicConverter (pointType : Type) =
 
             // symbolize string
             elif sourceType = typeof<string> then
-                let sourceStr = source.ToString ()
+                let sourceStr = string source
                 if Symbol.isNumber sourceStr then Number (sourceStr, None)
                 elif Symbol.shouldBeExplicit sourceStr then String (sourceStr, None)
                 else Atom (sourceStr, None)
@@ -146,7 +146,7 @@ type SymbolicConverter (pointType : Type) =
                 match typeConverter with
                 | :? DateTimeConverter ->
                     // HACK: we do not want to use this converter here as it strips the time when converting to string!
-                    let dateTimeStr = source.ToString ()
+                    let dateTimeStr = string source
                     String (dateTimeStr, None)
                 | _ ->
                     if typeConverter.CanConvertTo typeof<Symbol>

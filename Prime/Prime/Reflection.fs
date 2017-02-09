@@ -49,12 +49,11 @@ module Reflection =
         KeyValuePair (key, value)
 
     let objToOption (source : obj) =
-        let kvpType = source.GetType ()
-        match (kvpType.GetProperty "IsSome").GetValue (source, null) :?> bool with
-        | true ->
-            let value = (kvpType.GetProperty "Value").GetValue (source, null)
+        if isNotNull source then
+            let optType = source.GetType ()
+            let value = (optType.GetProperty "Value").GetValue (source, null)
             Some value
-        | false -> None
+        else None
 
     let objToComparableSet (source : obj) =
         let iEnumerable = source :?> IEnumerable
