@@ -60,14 +60,37 @@ module WorldScriptingMarshalling =
                 // otherwise, we have no conversion
                 else None
 
+        //and tryImportKvp (value : obj) (ty : Type) =
+        //    let gargs = ty.GetGenericArguments ()
+        //    let kvp = Reflection.objToKeyValuePair value
+        //    let keySymbol = toSymbol gargs.[0] kvp.Key
+        //    let valueSymbol = toSymbol gargs.[1] kvp.Value
+        //    Symbols ([keySymbol; valueSymbol], None)
+
         and tryImportList (value : obj) (ty : Type) =
-            try let garg = (ty.GetGenericArguments ()).[0]
-                let objList = Reflection.objToObjList value
-                let evaledListOpts = List.map (fun item -> tryImport item garg) objList
-                match List.definitizePlus evaledListOpts with
-                | (true, evaledList) -> Some (List evaledList)
-                | (false, _) -> None
-            with _ -> None
+            let itemType = (ty.GetGenericArguments ()).[0]
+            let objList = Reflection.objToObjList value
+            let itemOpts = List.map (fun item -> tryImport item itemType) objList
+            match List.definitizePlus itemOpts with
+            | (true, items) -> Some (List items)
+            | (false, _) -> None
+
+        and tryImportSet (value : obj) (ty : Type) =
+            let itemType = (ty.GetGenericArguments ()).[0]
+            let items = Reflection.objToComparableSet value
+            let itemOpts = Seq.map (fun item -> tryImport item itemType) items
+            match Seq.definitizePlus itemOpts with
+            | (true, items) -> Some (Ring (Set.ofSeq items))
+            | (false, _) -> None
+
+        and tryImportMap (value : obj) (ty : Type) =
+            let gargs = ty.GetGenericArguments ()
+            let itemType = typedefof<KeyValuePair<_, _>>.MakeGenericType [|gargs.[0]; gargs.[1]|]
+            let items = Reflection.objToObjList value
+            let itemOpts = List.map (fun item -> tryImport item itemType) items
+            match Seq.definitizePlus itemOpts with
+            | (true, items) -> Some (Ring (Set.ofSeq items))
+            | (false, _) -> None
 
         and Importers : Dictionary<string, obj -> Type -> Expr option> =
             [(typeof<unit>.Name, (fun _ _ -> Unit |> Some))
@@ -77,7 +100,10 @@ module WorldScriptingMarshalling =
              (typeof<single>.Name, (fun (value : obj) _ -> match value with :? single as single -> Some (Single single) | _ -> None))
              (typeof<double>.Name, (fun (value : obj) _ -> match value with :? double as double -> Some (Double double) | _ -> None))
              (typeof<Vector2>.Name, (fun (value : obj) _ -> match value with :? Vector2 as vector2 -> Some (Vector2 vector2) | _ -> None))
-             (typedefof<_ list>.Name, (fun value ty -> tryImportList value ty))] |>
+             (typeof<string>.Name, (fun (value : obj) _ -> match value with :? string as str -> Some (String str) | _ -> None))
+             (typedefof<_ list>.Name, (fun value ty -> tryImportList value ty))
+             (typedefof<_ Set>.Name, (fun value ty -> tryImportSet value ty))
+             (typedefof<Map<_, _>>.Name, (fun value ty -> tryImportMap value ty))] |>
              // TODO: remaining importers
             dictPlus
 
@@ -132,15 +158,38 @@ module WorldScriptingMarshalling =
                 // otherwise, we have no conversion
                 else None
 
-        and tryExportList (evaledList : Expr) (ty : Type) =
-            match evaledList with
+        and tryExportList (list : Expr) (ty : Type) =
+            match list with
             | List list ->
                 let garg = ty.GetGenericArguments () |> Array.item 0
                 let itemType = if garg.IsGenericTypeDefinition then garg.GetGenericTypeDefinition () else garg
-                let itemOpts = List.map (fun evaledItem -> tryExport evaledItem itemType) list
+                let itemOpts = List.map (fun item -> tryExport item itemType) list
                 match List.definitizePlus itemOpts with
                 | (true, items) -> Some (Reflection.objsToList ty items)
                 | (false, _) -> None
+            | _ -> None
+
+        and tryExportSet (ring : Expr) (ty : Type) =
+            match ring with
+            | Ring set ->
+                let elementType = (ty.GetGenericArguments ()).[0]
+                let elementOpts = Seq.map (fun item -> tryImport item elementType) set
+                match Seq.definitizePlus elementOpts with
+                | (true, elements) -> Some (Reflection.objsToSet ty elements)
+                | (false, _) -> None
+            | _ -> None
+
+        and tryExportMap (table : Expr) (ty : Type) =
+            match table with
+            | Table map ->
+                match ty.GetGenericArguments () with
+                | [|fstType; sndType|] ->
+                    let pairType = typedefof<Tuple<_, _>>.MakeGenericType [|fstType; sndType|]
+                    let pairOpts = Seq.map (fun entry -> tryImport entry pairType) map
+                    match Seq.definitizePlus pairOpts with
+                    | (true, pairs) -> Some (Reflection.pairsToMap ty pairs)
+                    | (false, _) -> None
+                | _ -> failwithumf ()
             | _ -> None
 
         and Exporters : Dictionary<string, Expr -> Type -> obj option> =
@@ -151,6 +200,9 @@ module WorldScriptingMarshalling =
              (typeof<single>.Name, (fun evaled _ -> match evaled with Single value -> value :> obj |> Some | _ -> None))
              (typeof<double>.Name, (fun evaled _ -> match evaled with Double value -> value :> obj |> Some | _ -> None))
              (typeof<Vector2>.Name, (fun evaled _ -> match evaled with Vector2 value -> value :> obj |> Some | _ -> None))
-             (typedefof<_ list>.Name, tryExportList)] |>
+             (typeof<string>.Name, (fun evaled _ -> match evaled with String value -> value :> obj |> Some | _ -> None))
+             (typedefof<_ list>.Name, tryExportList)
+             (typedefof<_ Set>.Name, tryExportSet)
+             (typedefof<Map<_, _>>.Name, tryExportMap)] |>
              // TODO: remaining exporters
             dictPlus
