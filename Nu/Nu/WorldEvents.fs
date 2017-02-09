@@ -6,7 +6,7 @@ open System
 open OpenTK
 open Prime
 open Nu
-    
+
 /// The data for a mouse move event.
 type [<StructuralEquality; NoComparison>] MouseMoveData =
     { Position : Vector2 }
