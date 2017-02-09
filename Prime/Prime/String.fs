@@ -42,9 +42,9 @@ module String =
     let numberToCodeString (num : obj) =
         match num with
         | :? bool as bool -> boolToCodeString bool
-        | :? char as char -> string char
-        | :? int as int -> string int
-        | :? int64 as int64 -> string int64
+        | :? char as char -> char.ToString ()
+        | :? int as int -> int.ToString ()
+        | :? int64 as int64 -> int64.ToString ()
         | :? single as single -> singleToCodeString single
         | :? double as double -> doubleToCodeString double
         | _ -> failwithumf ()
@@ -62,7 +62,7 @@ module String =
     let implode chars =
         let sb = StringBuilder ()
         List.iter (fun (chr : char) -> ignore (sb.Append chr)) chars
-        string sb
+        sb.ToString ()
 
     /// Capitalize a string.
     let capitalize (str : string) =

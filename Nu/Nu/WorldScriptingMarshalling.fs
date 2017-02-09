@@ -60,15 +60,15 @@ module WorldScriptingMarshalling =
                 // otherwise, we have no conversion
                 else None
 
-        //and tryImportOption (value : obj) (ty : Type) =
-        //    let valueType = (ty.GetGenericArguments ()).[0]
-        //    let opt = Reflection.objToOption value
-        //    match opt with
-        //    | Some value ->
-        //        match tryImport value valueType with
-        //        | Some value -> Some (Option (Some value))
-        //        | None -> None
-        //    | None -> Some (Option None)
+        and tryImportOption (value : obj) (ty : Type) =
+            let valueType = (ty.GetGenericArguments ()).[0]
+            let opt = Reflection.objToOption value
+            match opt with
+            | Some value ->
+                match tryImport value valueType with
+                | Some value -> Some (Option (Some value))
+                | None -> None
+            | None -> Some (Option None)
 
         and tryImportKeyValuePair (value : obj) (ty : Type) =
             let gargs = ty.GetGenericArguments ()
@@ -112,12 +112,13 @@ module WorldScriptingMarshalling =
              (typeof<single>.Name, (fun (value : obj) _ -> match value with :? single as single -> Some (Single single) | _ -> None))
              (typeof<double>.Name, (fun (value : obj) _ -> match value with :? double as double -> Some (Double double) | _ -> None))
              (typeof<Vector2>.Name, (fun (value : obj) _ -> match value with :? Vector2 as vector2 -> Some (Vector2 vector2) | _ -> None))
+             (typeof<char>.Name, (fun (value : obj) _ -> match value with :? char as char -> Some (String (char.ToString ())) | _ -> None))
              (typeof<string>.Name, (fun (value : obj) _ -> match value with :? string as str -> Some (String str) | _ -> None))
              (typedefof<KeyValuePair<_, _>>.Name, (fun value ty -> tryImportKeyValuePair value ty))
+             (typedefof<_ option>.Name, (fun value ty -> tryImportOption value ty))
              (typedefof<_ list>.Name, (fun value ty -> tryImportList value ty))
              (typedefof<_ Set>.Name, (fun value ty -> tryImportSet value ty))
              (typedefof<Map<_, _>>.Name, (fun value ty -> tryImportMap value ty))] |>
-             // TODO: remaining importers
             dictPlus
 
         let rec tryExport (value : Expr) (ty : Type) =
@@ -227,6 +228,7 @@ module WorldScriptingMarshalling =
              (typeof<single>.Name, (fun evaled _ -> match evaled with Single value -> value :> obj |> Some | _ -> None))
              (typeof<double>.Name, (fun evaled _ -> match evaled with Double value -> value :> obj |> Some | _ -> None))
              (typeof<Vector2>.Name, (fun evaled _ -> match evaled with Vector2 value -> value :> obj |> Some | _ -> None))
+             (typeof<char>.Name, (fun evaled _ -> match evaled with String value when value.Length = 1 -> value.[0] :> obj |> Some | _ -> None))
              (typeof<string>.Name, (fun evaled _ -> match evaled with String value -> value :> obj |> Some | _ -> None))
              (typedefof<KeyValuePair<_, _>>.Name, tryExportKvp)
              (typedefof<_ list>.Name, tryExportList)

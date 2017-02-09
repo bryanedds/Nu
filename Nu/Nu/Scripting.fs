@@ -342,8 +342,8 @@ module Scripting =
                     Symbol.Symbols ([violationSymbol; namesSymbol; errorSymbol], originOpt) :> obj
                 | Unit -> Symbol.Symbols ([], None) :> obj
                 | Bool bool -> Symbol.Atom (String.boolToCodeString bool, None) :> obj
-                | Int int -> Symbol.Number (string int, None) :> obj
-                | Int64 int64 -> Symbol.Number (string int64, None) :> obj
+                | Int int -> Symbol.Number (int.ToString (), None) :> obj
+                | Int64 int64 -> Symbol.Number (int64.ToString (), None) :> obj
                 | Single single -> Symbol.Number (String.singleToCodeString single, None) :> obj
                 | Double double -> Symbol.Number (String.doubleToCodeString double, None) :> obj
                 | Vector2 v2 -> Symbol.Symbols ([Symbol.Number (String.singleToCodeString v2.X, None); Symbol.Number (String.singleToCodeString v2.Y, None)], None) :> obj

@@ -71,11 +71,11 @@ module WorldScriptingPrimitives =
             | [Tuple evaleds] ->
                 if index >= 0 && index < Array.length evaleds
                 then (evaleds.[index], world)
-                else (Violation ([!!"OutOfRangeArgument"; !!"Indexed"; !!(String.capitalize fnName)], "Tuple does not contain element at index " + string index + ".", fnOriginOpt), world)
+                else (Violation ([!!"OutOfRangeArgument"; !!"Indexed"; !!(String.capitalize fnName)], "Tuple does not contain element at index " + index.ToString () + ".", fnOriginOpt), world)
             | [Keyphrase (_, evaleds)] ->
                 if index >= 0 && index < Array.length evaleds
                 then (evaleds.[index], world)
-                else (Violation ([!!"OutOfRangeArgument"; !!"Indexed"; !!(String.capitalize fnName)], "Keyphrase does not contain element at index " + string index + ".", fnOriginOpt), world)
+                else (Violation ([!!"OutOfRangeArgument"; !!"Indexed"; !!(String.capitalize fnName)], "Keyphrase does not contain element at index " + index.ToString () + ".", fnOriginOpt), world)
             | [Violation _ as violation] -> (violation, world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Indexed"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-indexed value.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Indexed"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
@@ -382,7 +382,7 @@ module WorldScriptingPrimitives =
             | [scanner; state; String str] ->
                 match
                     Seq.foldWhileRight (fun (state, states, world) elem ->
-                        match evalApply [scanner; state; String (string elem)] fnOriginOpt world with
+                        match evalApply [scanner; state; String (elem.ToString ())] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, state :: states, world))
                         | (Option None, world) -> Left (List states, world)
                         | (Violation _, _) as error -> Left error
@@ -443,7 +443,7 @@ module WorldScriptingPrimitives =
             | [scanner; state; String str] ->
                 let (_, states, world) =
                     Seq.foldi (fun i (state, states, world) elem ->
-                        let (state, world) = evalApply [scanner; Int i; state; String (string elem)] fnOriginOpt world
+                        let (state, world) = evalApply [scanner; Int i; state; String (elem.ToString ())] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         str
@@ -488,7 +488,7 @@ module WorldScriptingPrimitives =
             | [scanner; state; String str] ->
                 let (_, states, world) =
                     Seq.fold (fun (state, states, world) elem ->
-                        let (state, world) = evalApply [scanner; state; String (string elem)] fnOriginOpt world
+                        let (state, world) = evalApply [scanner; state; String (elem.ToString ())] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         str
@@ -622,7 +622,7 @@ module WorldScriptingPrimitives =
             | [folder; state; String str] ->
                 let eir =
                     Seq.foldWhileRight (fun (state, world) elem ->
-                        match evalApply [folder; state; String (string elem)] fnOriginOpt world with
+                        match evalApply [folder; state; String (elem.ToString ())] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, world))
                         | (Option None, world) -> Left (state, world)
                         | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s folder must return an option.", fnOriginOpt), world))
@@ -672,7 +672,7 @@ module WorldScriptingPrimitives =
 
         let evalFoldi evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [folder; state; String str] -> Seq.foldi (fun i (state, world) elem -> evalApply [folder; Int i; state; String (string elem)] fnOriginOpt world) (state, world) str
+            | [folder; state; String str] -> Seq.foldi (fun i (state, world) elem -> evalApply [folder; Int i; state; String (elem.ToString ())] fnOriginOpt world) (state, world) str
             | [folder; state; Codata codata] ->
                 match evalFoldiCodata evalApply fnOriginOpt fnName 0 folder state codata world with
                 | Right (_, state, world) -> (state, world)
@@ -690,7 +690,7 @@ module WorldScriptingPrimitives =
 
         let evalFold evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [folder; state; String str] -> Seq.fold (fun (state, world) elem -> evalApply [folder; state; String (string elem)] fnOriginOpt world) (state, world) str
+            | [folder; state; String str] -> Seq.fold (fun (state, world) elem -> evalApply [folder; state; String (elem.ToString ())] fnOriginOpt world) (state, world) str
             | [folder; state; Codata codata] ->
                 match evalFoldCodata evalApply fnOriginOpt fnName folder state codata world with
                 | Right (state, world) -> (state, world)
@@ -739,7 +739,7 @@ module WorldScriptingPrimitives =
                 let (list, world) =
                     str |>
                     Seq.foldi (fun i (elems, world) elem ->
-                        let elem = String (string elem)
+                        let elem = String (elem.ToString ())
                         let (elem, world) = evalApply [mapper; Int i; elem] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
@@ -791,7 +791,7 @@ module WorldScriptingPrimitives =
                 let (list, world) =
                     str |>
                     Seq.fold (fun (elems, world) elem ->
-                        let elem = String (string elem)
+                        let elem = String (elem.ToString ())
                         let (elem, world) = evalApply [mapper; elem] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
