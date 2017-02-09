@@ -29,37 +29,6 @@ module Scripting =
         | Unfold of Expr * Expr
         | Conversion of Expr list
 
-    // TODO: implement comparison!
-    and [<CustomEquality; NoComparison>] Stream =
-        // constructed as [variableStream v]
-        | VariableStream of string
-        // constructed as [eventStream X/Y/Z]
-        | EventStream of Expr
-        // constructed as [propertyStream P] or [propertyStream P ././.]
-        | PropertyStream of string * Expr
-        // constructed as [propertyStream P ././@ EntityDispatcher] or [propertyStream P ././@ EntityDispatcher Vanilla]
-        // does not allow for wildcards in the relation
-        | PropertyStreamMany of string * Expr * Classification
-        // not constructable by user. Weakly-typed to simplify type declarations
-        | ComputedStream of obj // actual type is Prime.Stream<'p, 'w when 'p :> Participant and 'w :> 'w EventWorld>
-        
-        static member equals left right =
-            match (left, right) with
-            | (VariableStream left, VariableStream right) -> left = right
-            | (EventStream left, EventStream right) -> left = right
-            | (PropertyStream (leftPropertyName, leftTarget), PropertyStream (rightPropertyName, rightTarget)) -> (leftPropertyName, leftTarget) = (rightPropertyName, rightTarget)
-            | (PropertyStreamMany (leftPropertyName, leftTarget, leftClassn), PropertyStreamMany (rightPropertyName, rightTarget, rightClassn)) -> (leftPropertyName, leftTarget, leftClassn) = (rightPropertyName, rightTarget, rightClassn)
-            | (_, _) -> false
-
-        override this.GetHashCode () =
-            // TODO: implement
-            failwithnie ()
-
-        override this.Equals that =
-            match that with
-            | :? Stream as that -> Stream.equals this that
-            | _ -> failwithumf ()
-
     and [<Syntax    ("toEmpty toIdentity toMin toMax " +
                      "not inc dec negate hash " +
                      "pow root sqr sqrt " +
@@ -114,7 +83,6 @@ module Scripting =
         | List of Expr list
         | Ring of Set<Expr>
         | Table of Map<Expr, Expr>
-        | Stream of Stream * SymbolOrigin option
 
         (* Special Forms *)
         | Binding of string * CachedBinding ref * SymbolOrigin option
@@ -158,7 +126,6 @@ module Scripting =
             | List _
             | Ring _
             | Table _ -> None
-            | Stream (_, originOpt)
             | Binding (_, _, originOpt)
             | Apply (_, originOpt)
             | ApplyAnd (_, originOpt)
@@ -197,7 +164,6 @@ module Scripting =
             | (Codata left, Codata right) -> left = right
             | (List left, List right) -> left = right
             | (Ring left, Ring right) -> left = right
-            | (Stream (left, _), Stream (right, _)) -> left = right
             | (Binding (left, _, _), Binding (right, _, _)) -> left = right
             | (Apply (left, _), Apply (right, _)) -> left = right
             | (Let (leftBinding, leftBody, _), Let (rightBinding, rightBody, _)) -> (leftBinding, leftBody) = (rightBinding, rightBody)
@@ -381,8 +347,6 @@ module Scripting =
                             Symbol.Symbols ([pairSymbol; keySymbol; valueSymbol], None))
                             (Map.toList map)
                     Symbol.Symbols (tableSymbol :: elemSymbols, None) :> obj
-                | Stream _ ->
-                    Symbols ([], None) :> obj // TODO: implement
                 | Binding (name, _, originOpt) ->
                     Symbol.Atom (name, originOpt) :> obj
                 | Apply (exprs, originOpt) ->
@@ -642,15 +606,6 @@ module Scripting =
                                 | [relation] -> SetTo (nameStr, this.SymbolToExpr value, this.SymbolToExpr relation, originOpt) :> obj
                                 | _ -> Violation ([!!"InvalidForm"; !!"Set"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", originOpt) :> obj
                             | _ -> Violation ([!!"InvalidForm"; !!"Set"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", originOpt) :> obj
-                        | "variableStream" ->
-                            match tail with
-                            | [Prime.Atom (nameStr, _)]
-                            | [Prime.String (nameStr, _)] -> Stream (VariableStream nameStr, originOpt) :> obj
-                            | _ -> Violation ([!!"InvalidForm"; !!"VariableStream"], "Invalid variable stream form. Requires a name.", originOpt) :> obj
-                        | "eventStream" ->
-                            match tail with
-                            | [relation] -> Stream (EventStream (this.SymbolToExpr relation), originOpt) :> obj
-                            | _ -> Violation ([!!"InvalidForm"; !!"EventStream"], "Invalid event stream form. Requires a relation expression.", originOpt) :> obj
                         | "define" ->
                             let bindingSymbols = tail
                             match this.SymbolsToBindingOpt bindingSymbols with
