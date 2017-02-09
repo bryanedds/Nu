@@ -44,16 +44,24 @@ module Reflection =
 
     let objToKeyValuePair (source : obj) =
         let kvpType = source.GetType ()
-        let key = (kvpType.GetProperty "Key").GetValue (source, null)
+        let key = (kvpType.GetProperty "IsSome").GetValue (source, null)
         let value = (kvpType.GetProperty "Value").GetValue (source, null)
         KeyValuePair (key, value)
 
-    let objsToKeyValuePair fst snd (pairType : Type) =
-        Activator.CreateInstance (pairType, [|fst; snd|])
+    let objToOption (source : obj) =
+        let kvpType = source.GetType ()
+        match (kvpType.GetProperty "IsSome").GetValue (source, null) :?> bool with
+        | true ->
+            let value = (kvpType.GetProperty "Value").GetValue (source, null)
+            Some value
+        | false -> None
 
     let objToComparableSet (source : obj) =
         let iEnumerable = source :?> IEnumerable
         Set.ofSeq ^ enumerable<IComparable> iEnumerable
+
+    let objsToKeyValuePair fst snd (pairType : Type) =
+        Activator.CreateInstance (pairType, [|fst; snd|])
 
     let objsToCollection collectionTypeName (sequenceType : Type) (objs : _ seq) =
         let gargs = if sequenceType.IsArray then [|sequenceType.GetElementType ()|] else (sequenceType.GetGenericArguments ())
