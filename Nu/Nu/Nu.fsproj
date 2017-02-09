@@ -85,7 +85,11 @@
     <Compile Include="AmbientState.fs" />
     <Compile Include="WorldTypes.fs" />
     <Compile Include="WorldModule.fs" />
-    <Compile Include="WorldModules.fs" />
+    <Compile Include="WorldModuleGame.fs" />
+    <Compile Include="WorldModuleScreen.fs" />
+    <Compile Include="WorldModuleLayer.fs" />
+    <Compile Include="WorldModuleEntity.fs" />
+    <Compile Include="WorldModuleSimulant.fs" />
     <Compile Include="WorldEvents.fs" />
     <Compile Include="WorldEntity.fs" />
     <Compile Include="WorldLayer.fs" />
