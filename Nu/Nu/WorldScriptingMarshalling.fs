@@ -60,12 +60,24 @@ module WorldScriptingMarshalling =
                 // otherwise, we have no conversion
                 else None
 
-        //and tryImportKvp (value : obj) (ty : Type) =
-        //    let gargs = ty.GetGenericArguments ()
-        //    let kvp = Reflection.objToKeyValuePair value
-        //    let keySymbol = toSymbol gargs.[0] kvp.Key
-        //    let valueSymbol = toSymbol gargs.[1] kvp.Value
-        //    Symbols ([keySymbol; valueSymbol], None)
+        //and tryImportOption (value : obj) (ty : Type) =
+        //    let valueType = (ty.GetGenericArguments ()).[0]
+        //    let opt = Reflection.objToOption value
+        //    match opt with
+        //    | Some value ->
+        //        match tryImport value valueType with
+        //        | Some value -> Some (Option (Some value))
+        //        | None -> None
+        //    | None -> Some (Option None)
+
+        and tryImportKeyValuePair (value : obj) (ty : Type) =
+            let gargs = ty.GetGenericArguments ()
+            let kvp = Reflection.objToKeyValuePair value
+            let keyOpt = tryImport kvp.Key gargs.[0]
+            let valueOpt = tryImport kvp.Value gargs.[1]
+            match (keyOpt, valueOpt) with
+            | (Some key, Some value) -> Some (Tuple [|key; value|])
+            | (_, _) -> None
 
         and tryImportList (value : obj) (ty : Type) =
             let itemType = (ty.GetGenericArguments ()).[0]
@@ -101,6 +113,7 @@ module WorldScriptingMarshalling =
              (typeof<double>.Name, (fun (value : obj) _ -> match value with :? double as double -> Some (Double double) | _ -> None))
              (typeof<Vector2>.Name, (fun (value : obj) _ -> match value with :? Vector2 as vector2 -> Some (Vector2 vector2) | _ -> None))
              (typeof<string>.Name, (fun (value : obj) _ -> match value with :? string as str -> Some (String str) | _ -> None))
+             (typedefof<KeyValuePair<_, _>>.Name, (fun value ty -> tryImportKeyValuePair value ty))
              (typedefof<_ list>.Name, (fun value ty -> tryImportList value ty))
              (typedefof<_ Set>.Name, (fun value ty -> tryImportSet value ty))
              (typedefof<Map<_, _>>.Name, (fun value ty -> tryImportMap value ty))] |>
@@ -158,6 +171,20 @@ module WorldScriptingMarshalling =
                 // otherwise, we have no conversion
                 else None
 
+        and tryExportKvp (tuple : Expr) (ty : Type) =
+            match tuple with
+            | Tuple [|fst; snd|] ->
+                match ty.GetGenericArguments () with
+                | [|fstType; sndType|] ->
+                    let pairType = typedefof<KeyValuePair<_, _>>.MakeGenericType [|fstType; sndType|]
+                    let fstOpt = tryExport fst fstType
+                    let sndOpt = tryExport snd sndType
+                    match (fstOpt, sndOpt) with
+                    | (Some fst, Some snd) -> Some (Reflection.objsToKeyValuePair fst snd pairType)
+                    | (_, _) -> None
+                | _ -> None
+            | _ -> None
+
         and tryExportList (list : Expr) (ty : Type) =
             match list with
             | List list ->
@@ -189,7 +216,7 @@ module WorldScriptingMarshalling =
                     match Seq.definitizePlus pairOpts with
                     | (true, pairs) -> Some (Reflection.pairsToMap ty pairs)
                     | (false, _) -> None
-                | _ -> failwithumf ()
+                | _ -> None
             | _ -> None
 
         and Exporters : Dictionary<string, Expr -> Type -> obj option> =
@@ -201,6 +228,7 @@ module WorldScriptingMarshalling =
              (typeof<double>.Name, (fun evaled _ -> match evaled with Double value -> value :> obj |> Some | _ -> None))
              (typeof<Vector2>.Name, (fun evaled _ -> match evaled with Vector2 value -> value :> obj |> Some | _ -> None))
              (typeof<string>.Name, (fun evaled _ -> match evaled with String value -> value :> obj |> Some | _ -> None))
+             (typedefof<KeyValuePair<_, _>>.Name, tryExportKvp)
              (typedefof<_ list>.Name, tryExportList)
              (typedefof<_ Set>.Name, tryExportSet)
              (typedefof<Map<_, _>>.Name, tryExportMap)] |>
