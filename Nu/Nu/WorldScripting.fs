@@ -159,7 +159,6 @@ module WorldScripting =
                  ("tryFind", evalTryFind)
                  ("find", evalFind)
                  ("subscribe", evalDoublet evalSubscribe)
-                 ("product", evalProduct)
                  ("entityExists", evalSinglet evalSimulantExists)
                  ("layerExists", evalSinglet evalSimulantExists)
                  ("screenExists", evalSinglet evalSimulantExists)
@@ -173,20 +172,6 @@ module WorldScripting =
             | (true, intrinsic) -> intrinsic originOpt name evaledArgs world
             | (false, _) -> (Violation ([!!"InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), world)
 
-        // TODO: ensure these origins are sensible
-        and evalProduct originOpt name evaledArgs world =
-            match evaledArgs with
-            | [Stream (streamLeft, originLeftOpt); Stream (streamRight, originRightOpt)] ->
-                match evalStream name streamLeft originLeftOpt world with
-                | Right (streamLeft, world) ->
-                    match evalStream name streamRight originRightOpt world with
-                    | Right (streamRight, world) ->
-                        let computedStream = Stream.product streamLeft streamRight
-                        (Stream (ComputedStream computedStream, originOpt), world)
-                    | Left violation -> (violation, world)
-                | Left violation -> (violation, world)
-            | _ -> (Violation ([!!"InvalidArgumentTypes"; !!(String.capitalize name)], "Incorrect types of arguments for application of '" + name + "'; 1 relation and 1 stream required.", originOpt), world)
-
         and evalSimulantExists fnOriginOpt name evaledArg world =
             match evaledArg with
             | String str
@@ -199,40 +184,6 @@ module WorldScripting =
                 | None -> (Bool false, world)
             | Violation _ as error -> (error, world)
             | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + name + "' requires 1 relation argument.", fnOriginOpt), world)
-
-        and evalStream name stream originOpt world =
-            match stream with
-            | VariableStream variableName ->
-                let context = World.getScriptContext world
-                let variableAddress = ltoa [!!"Stream"; !!variableName; !!"Event"] ->>- context.SimulantAddress
-                let variableStream = Stream.stream variableAddress
-                Right (variableStream, world)
-            | EventStream eventAddress ->
-                let (eventAddressEvaled, world) = eval eventAddress world
-                match eventAddressEvaled with
-                | String eventAddressStr
-                | Keyword eventAddressStr ->
-                    try let eventAddress = Address.makeFromString eventAddressStr
-                        let eventStream = Stream.stream eventAddress
-                        Right (eventStream, world)
-                    with exn -> Left (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be created due to invalid event stream address '" + eventAddressStr + "'.", originOpt))
-                | _ -> Left (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidEventStreamAddress"], "Variable '" + name + "' could not be created due to invalid event stream address. Address must be either a string or a keyword", originOpt))
-            | PropertyStream (propertyName, propertyRelation) ->
-                let (propertyRelationEvaled, world) = eval propertyRelation world
-                match propertyRelationEvaled with
-                | String propertyRelationStr
-                | Keyword propertyRelationStr ->
-                    try let context = World.getScriptContext world
-                        let propertyRelation = Relation.makeFromString propertyRelationStr
-                        let propertyAddress = Relation.resolve context.SimulantAddress propertyRelation -<<- Address.makeFromName !!propertyName
-                        let propertyStream = Stream.stream propertyAddress
-                        Right (propertyStream, world)
-                    with exn -> Left (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidPropertyStreamRelation"], "Variable '" + name + "' could not be created due to invalid property stream relation '" + propertyRelationStr + "'.", originOpt))
-                | _ -> Left (Violation ([!!"InvalidVariableDeclaration"; !!"InvalidPropertyStreamRelation"], "Variable '" + name + "' could not be created due to invalid property stream relation. Relation must be either a string or a keyword", originOpt))
-            | PropertyStreamMany _ ->
-                failwithnie ()
-            | ComputedStream computedStream ->
-                Right (computedStream :?> Prime.Stream<obj, Game, World>, world)
 
         and evalBinding expr name cachedBinding originOpt world =
             match World.tryGetBinding name cachedBinding world with
@@ -510,7 +461,6 @@ module WorldScripting =
             | List _ -> (expr, world)
             | Ring _ -> (expr, world)
             | Table _ -> (expr, world)
-            | Stream _ -> (expr, world)
             | Binding (name, cachedBinding, originOpt) as expr -> evalBinding expr name cachedBinding originOpt world
             | Apply (exprs, originOpt) -> evalApply exprs originOpt world
             | ApplyAnd (exprs, originOpt) -> evalApplyAnd exprs originOpt world
