@@ -193,9 +193,9 @@ module WorldScriptingMarshalling =
                 | Some value ->
                     let valueType = (ty.GetGenericArguments ()).[0]
                     match tryExport value valueType with
-                    | Some value -> Some (Some value)
+                    | Some value -> Some (Some value :> obj)
                     | None -> None
-                | None -> Some None
+                | None -> Some (None :> obj)
             | _ -> None
 
         and tryExportList (list : Expr) (ty : Type) =
@@ -242,6 +242,7 @@ module WorldScriptingMarshalling =
              (typeof<Vector2>.Name, (fun evaled _ -> match evaled with Vector2 value -> value :> obj |> Some | _ -> None))
              (typeof<char>.Name, (fun evaled _ -> match evaled with String value when value.Length = 1 -> value.[0] :> obj |> Some | _ -> None))
              (typeof<string>.Name, (fun evaled _ -> match evaled with String value -> value :> obj |> Some | _ -> None))
+             (typedefof<_ option>.Name, tryExportOption)
              (typedefof<KeyValuePair<_, _>>.Name, tryExportKvp)
              (typedefof<_ list>.Name, tryExportList)
              (typedefof<_ Set>.Name, tryExportSet)
