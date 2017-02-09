@@ -247,5 +247,4 @@ module WorldScriptingMarshalling =
              (typedefof<_ list>.Name, tryExportList)
              (typedefof<_ Set>.Name, tryExportSet)
              (typedefof<Map<_, _>>.Name, tryExportMap)] |>
-             // TODO: remaining exporters
             dictPlus

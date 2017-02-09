@@ -241,7 +241,7 @@ module WorldScripting =
                 else (Violation ([!!"NonexistentBinding"], "Non-existent binding '" + name + "' ", originOpt), world)
             | Some binding -> (binding, world)
 
-        and evalApply exprs originOpt world =
+        and evalApply (exprs : Expr array) originOpt world =
             match evalMany exprs world with
             | (evaledHead :: evaledTail, world) ->
                 match evaledHead with
@@ -260,9 +260,9 @@ module WorldScripting =
                             (Some framesCurrent, world)
                         | None -> (None, world)
                     let (evaled, world) =
-                        let evaledArgs = evaledTail
-                        if List.hasExactly parsCount evaledArgs then
-                            let bindings = List.map2 (fun par evaledArg -> (par, evaledArg)) pars evaledArgs
+                        let evaledArgs = Array.ofList evaledTail
+                        if evaledArgs.Length = parsCount then
+                            let bindings = Array.map2 (fun par evaledArg -> (par, evaledArg)) pars evaledArgs
                             let world = World.addProceduralBindings (AddToNewFrame parsCount) bindings world
                             let (evaled, world) = eval body world
                             (evaled, World.removeProceduralBindings world)
@@ -278,7 +278,7 @@ module WorldScripting =
 
         and evalApplyAnd exprs originOpt world =
             match exprs with
-            | [left; right] ->
+            | [|left; right|] ->
                 match eval left world with
                 | (Bool false, world) -> (Bool false, world)
                 | (Bool true, world) ->
@@ -292,7 +292,7 @@ module WorldScripting =
 
         and evalApplyOr exprs originOpt world =
             match exprs with
-            | [left; right] ->
+            | [|left; right|] ->
                 match eval left world with
                 | (Bool true, world) -> (Bool true, world)
                 | (Bool false, world) ->
@@ -312,7 +312,7 @@ module WorldScripting =
                     World.addProceduralBinding (AddToNewFrame 1) name evaled world
                 | FunctionBinding (name, args, body) ->
                     let frames = World.getProceduralFrames world :> obj
-                    let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
+                    let fn = Fun (args, args.Length, body, true, Some frames, originOpt)
                     World.addProceduralBinding (AddToNewFrame 1) name fn world
             let (evaled, world) = eval body world
             (evaled, World.removeProceduralBindings world)
@@ -325,7 +325,7 @@ module WorldScripting =
                     World.addProceduralBinding (AddToNewFrame bindingsCount) name bodyValue world
                 | FunctionBinding (name, args, body) ->
                     let frames = World.getProceduralFrames world :> obj
-                    let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
+                    let fn = Fun (args, args.Length, body, true, Some frames, originOpt)
                     World.addProceduralBinding (AddToNewFrame bindingsCount) name fn world
             let world =
                 List.foldi (fun i world binding ->
@@ -335,7 +335,7 @@ module WorldScripting =
                         World.addProceduralBinding (AddToHeadFrame ^ inc i) name bodyValue world
                     | FunctionBinding (name, args, body) ->
                         let frames = World.getProceduralFrames world :> obj
-                        let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
+                        let fn = Fun (args, args.Length, body, true, Some frames, originOpt)
                         World.addProceduralBinding (AddToHeadFrame ^ inc i) name fn world)
                     world
                     bindingsTail
@@ -366,10 +366,10 @@ module WorldScripting =
             | (Violation _ as evaled, world) -> (evaled, world)
             | (_, world) -> (Violation ([!!"InvalidIfCondition"], "Must provide an expression that evaluates to a bool in an if condition.", originOpt), world)
 
-        and evalMatch input (cases : (Expr * Expr) list) originOpt world =
+        and evalMatch input (cases : (Expr * Expr) array) originOpt world =
             let (input, world) = eval input world
             let resultEir =
-                List.foldUntilRight (fun world (condition, consequent) ->
+                Seq.foldUntilRight (fun world (condition, consequent) ->
                     let (evaledInput, world) = eval condition world
                     match evalBinaryInner EqFns originOpt "=" input evaledInput world with
                     | (Bool true, world) -> Right (eval consequent world)
@@ -384,7 +384,7 @@ module WorldScripting =
 
         and evalSelect exprPairs originOpt world =
             let resultEir =
-                List.foldUntilRight (fun world (condition, consequent) ->
+                Seq.foldUntilRight (fun world (condition, consequent) ->
                     match eval condition world with
                     | (Bool bool, world) -> if bool then Right (eval consequent world) else Left world
                     | (Violation _ as evaled, world) -> Right (evaled, world)
@@ -487,7 +487,7 @@ module WorldScripting =
                     World.addDeclarationBinding name evaled world
                 | FunctionBinding (name, args, body) ->
                     let frames = World.getProceduralFrames world :> obj
-                    let fn = Fun (args, List.length args, body, true, Some frames, originOpt)
+                    let fn = Fun (args, args.Length, body, true, Some frames, originOpt)
                     World.addDeclarationBinding name fn world
             (Unit, world)
 
@@ -531,9 +531,9 @@ module WorldScripting =
             | Quote _ -> failwithnie ()
             | Define (binding, originOpt) -> evalDefine binding originOpt world
 
-        and evalMany exprs world =
+        and evalMany (exprs : Expr seq) world =
             let (evaledsRev, world) =
-                List.fold
+                Seq.fold
                     (fun (evaleds, world) expr ->
                         let (evaled, world) = eval expr world
                         (evaled :: evaleds, world))

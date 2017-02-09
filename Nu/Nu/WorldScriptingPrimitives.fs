@@ -124,7 +124,7 @@ module WorldScriptingPrimitives =
                 | Right (Left world) -> evalCodataTryUncons evalApply fnOriginOpt fnName right world
                 | Left _ as error -> error
             | Unfold (unfolder, state) ->
-                match evalApply [unfolder; state] fnOriginOpt world with
+                match evalApply [|unfolder; state|] fnOriginOpt world with
                 | (Option (Some state), world) -> Right (Right (state, Unfold (unfolder, state), world))
                 | (Option None, world) -> Right (Left world)
                 | (Violation _, _) as error -> Left error
@@ -297,9 +297,9 @@ module WorldScriptingPrimitives =
                     | error -> error
                 | error -> error
             | Unfold (unfolder, costate) ->
-                match evalApply [unfolder; costate] fnOriginOpt world with
+                match evalApply [|unfolder; costate|] fnOriginOpt world with
                 | (Option (Some costate), world) ->
-                    match evalApply [scanner; state; costate] fnOriginOpt world with
+                    match evalApply [|scanner; state; costate|] fnOriginOpt world with
                     | (Option (Some state), world) -> evalScanWhileCodata evalApply fnOriginOpt fnName scanner state (Unfold (unfolder, costate)) world
                     | (Option None, world) -> Right (state, [], world)
                     | (Violation _, _) as error -> Left error
@@ -309,7 +309,7 @@ module WorldScriptingPrimitives =
                 | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
             | Conversion list ->
                 Seq.foldWhileRight (fun (state, states, world) elem ->
-                    match evalApply [scanner; state; elem] fnOriginOpt world with
+                    match evalApply [|scanner; state; elem|] fnOriginOpt world with
                     | (Option (Some state), world) -> (Right (state, state :: states, world))
                     | (Option None, world) -> Left (List states, world)
                     | (Violation _, _) as error -> Left error
@@ -329,9 +329,9 @@ module WorldScriptingPrimitives =
                     | error -> error
                 | error -> error
             | Unfold (unfolder, costate) ->
-                match evalApply [unfolder; costate] fnOriginOpt world with
+                match evalApply [|unfolder; costate|] fnOriginOpt world with
                 | (Option (Some costate), world) ->
-                    match evalApply [scanner; Int i; state; costate] fnOriginOpt world with
+                    match evalApply [|scanner; Int i; state; costate|] fnOriginOpt world with
                     | (Violation _, _) as error -> Left error
                     | (state, world) -> evalScaniCodata evalApply fnOriginOpt fnName (inc i) scanner state (Unfold (unfolder, costate)) world
                 | (Option None, world) -> Right (i, state, [], world)
@@ -339,7 +339,7 @@ module WorldScriptingPrimitives =
                 | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
             | Conversion list ->
                 Seq.foldWhileRight (fun (i, state, states, world) elem ->
-                    match evalApply [scanner; Int i; state; elem] fnOriginOpt world with
+                    match evalApply [|scanner; Int i; state; elem|] fnOriginOpt world with
                     | (Option (Some state), world) -> (Right (inc i, state, state :: states, world))
                     | (Option None, world) -> Left (List states, world)
                     | (Violation _, _) as error -> Left error
@@ -359,9 +359,9 @@ module WorldScriptingPrimitives =
                     | error -> error
                 | error -> error
             | Unfold (unfolder, costate) ->
-                match evalApply [unfolder; costate] fnOriginOpt world with
+                match evalApply [|unfolder; costate|] fnOriginOpt world with
                 | (Option (Some costate), world) ->
-                    match evalApply [scanner; state; costate] fnOriginOpt world with
+                    match evalApply [|scanner; state; costate|] fnOriginOpt world with
                     | (Violation _, _) as error -> Left error
                     | (state, world) -> evalScanCodata evalApply fnOriginOpt fnName scanner state (Unfold (unfolder, costate)) world
                 | (Option None, world) -> Right (state, [], world)
@@ -369,7 +369,7 @@ module WorldScriptingPrimitives =
                 | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
             | Conversion list ->
                 Seq.foldWhileRight (fun (state, states, world) elem ->
-                    match evalApply [scanner; state; elem] fnOriginOpt world with
+                    match evalApply [|scanner; state; elem|] fnOriginOpt world with
                     | (Option (Some state), world) -> (Right (state, state :: states, world))
                     | (Option None, world) -> Left (List states, world)
                     | (Violation _, _) as error -> Left error
@@ -382,7 +382,7 @@ module WorldScriptingPrimitives =
             | [scanner; state; String str] ->
                 match
                     Seq.foldWhileRight (fun (state, states, world) elem ->
-                        match evalApply [scanner; state; String (string elem)] fnOriginOpt world with
+                        match evalApply [|scanner; state; String (string elem)|] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, state :: states, world))
                         | (Option None, world) -> Left (List states, world)
                         | (Violation _, _) as error -> Left error
@@ -398,7 +398,7 @@ module WorldScriptingPrimitives =
             | [scanner; state; List list] ->
                 match
                     Seq.foldWhileRight (fun (state, states, world) elem ->
-                        match evalApply [scanner; state; elem] fnOriginOpt world with
+                        match evalApply [|scanner; state; elem|] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, state :: states, world))
                         | (Option None, world) -> Left (List states, world)
                         | (Violation _, _) as error -> Left error
@@ -410,7 +410,7 @@ module WorldScriptingPrimitives =
             | [scanner; state; Ring set] ->
                 match
                     Seq.foldWhileRight (fun (state, states, world) elem ->
-                        match evalApply [scanner; state; elem] fnOriginOpt world with
+                        match evalApply [|scanner; state; elem|] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, state :: states, world))
                         | (Option None, world) -> Left (List states, world)
                         | (Violation _, _) as error -> Left error
@@ -423,7 +423,7 @@ module WorldScriptingPrimitives =
                 match
                     Seq.foldWhileRight (fun (state, states, world) (key, value) ->
                         let elem = Tuple [|key; value|]
-                        match evalApply [scanner; state; elem] fnOriginOpt world with
+                        match evalApply [|scanner; state; elem|] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, state :: states, world))
                         | (Option None, world) -> Left (List states, world)
                         | (Violation _, _) as error -> Left error
@@ -443,7 +443,7 @@ module WorldScriptingPrimitives =
             | [scanner; state; String str] ->
                 let (_, states, world) =
                     Seq.foldi (fun i (state, states, world) elem ->
-                        let (state, world) = evalApply [scanner; Int i; state; String (string elem)] fnOriginOpt world
+                        let (state, world) = evalApply [|scanner; Int i; state; String (string elem)|] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         str
@@ -455,7 +455,7 @@ module WorldScriptingPrimitives =
             | [scanner; state; List list] ->
                 let (_, states, world) =
                     Seq.foldi (fun i (state, states, world) elem ->
-                        let (state, world) = evalApply [scanner; Int i; state; elem] fnOriginOpt world
+                        let (state, world) = evalApply [|scanner; Int i; state; elem|] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         list
@@ -463,7 +463,7 @@ module WorldScriptingPrimitives =
             | [scanner; state; Ring set] ->
                 let (_, states, world) =
                     Seq.foldi (fun i (state, states, world) elem ->
-                        let (state, world) = evalApply [scanner; Int i; state; elem] fnOriginOpt world
+                        let (state, world) = evalApply [|scanner; Int i; state; elem|] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         set
@@ -472,7 +472,7 @@ module WorldScriptingPrimitives =
                 let (_, states, world) =
                     Seq.foldi (fun i (state, states, world) (key, value) ->
                         let elem = Tuple [|key; value|]
-                        let (state, world) = evalApply [scanner; Int i; state; elem] fnOriginOpt world
+                        let (state, world) = evalApply [|scanner; Int i; state; elem|] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         (Map.toList map)
@@ -488,7 +488,7 @@ module WorldScriptingPrimitives =
             | [scanner; state; String str] ->
                 let (_, states, world) =
                     Seq.fold (fun (state, states, world) elem ->
-                        let (state, world) = evalApply [scanner; state; String (string elem)] fnOriginOpt world
+                        let (state, world) = evalApply [|scanner; state; String (string elem)|] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         str
@@ -500,7 +500,7 @@ module WorldScriptingPrimitives =
             | [scanner; state; List list] ->
                 let (_, states, world) =
                     Seq.fold (fun (state, states, world) elem ->
-                        let (state, world) = evalApply [scanner; state; elem] fnOriginOpt world
+                        let (state, world) = evalApply [|scanner; state; elem|] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         list
@@ -508,7 +508,7 @@ module WorldScriptingPrimitives =
             | [scanner; state; Ring set] ->
                 let (_, states, world) =
                     Seq.fold (fun (state, states, world) elem ->
-                        let (state, world) = evalApply [scanner; state; elem] fnOriginOpt world
+                        let (state, world) = evalApply [|scanner; state; elem|] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         set
@@ -517,7 +517,7 @@ module WorldScriptingPrimitives =
                 let (_, states, world) =
                     Seq.fold (fun (state, states, world) (key, value) ->
                         let elem = Tuple [|key; value|]
-                        let (state, world) = evalApply [scanner; state; elem] fnOriginOpt world
+                        let (state, world) = evalApply [|scanner; state; elem|] fnOriginOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         (Map.toList map)
@@ -537,9 +537,9 @@ module WorldScriptingPrimitives =
                 | Right (state, world) -> evalFoldWhileCodata evalApply fnOriginOpt fnName folder state right world
                 | error -> error
             | Unfold (unfolder, costate) ->
-                match evalApply [unfolder; costate] fnOriginOpt world with
+                match evalApply [|unfolder; costate|] fnOriginOpt world with
                 | (Option (Some costate), world) ->
-                    match evalApply [folder; state; costate] fnOriginOpt world with
+                    match evalApply [|folder; state; costate|] fnOriginOpt world with
                     | (Option (Some state), world) -> evalFoldWhileCodata evalApply fnOriginOpt fnName folder state (Unfold (unfolder, costate)) world
                     | (Option None, world) -> Right (state, world)
                     | (Violation _, _) as error -> Left error
@@ -549,7 +549,7 @@ module WorldScriptingPrimitives =
                 | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
             | Conversion list ->
                 Seq.foldWhileRight (fun (state, world) elem ->
-                    match evalApply [folder; state; elem] fnOriginOpt world with
+                    match evalApply [|folder; state; elem|] fnOriginOpt world with
                     | (Option (Some state), world) -> Right (state, world)
                     | (Option None, world) -> Left (state, world)
                     | (Violation _, _) as error -> Left error
@@ -569,9 +569,9 @@ module WorldScriptingPrimitives =
                     | error -> error
                 | error -> error
             | Unfold (unfolder, costate) ->
-                match evalApply [unfolder; costate] fnOriginOpt world with
+                match evalApply [|unfolder; costate|] fnOriginOpt world with
                 | (Option (Some costate), world) ->
-                    match evalApply [folder; Int i; state; costate] fnOriginOpt world with
+                    match evalApply [|folder; Int i; state; costate|] fnOriginOpt world with
                     | (Violation _, _) as error -> Left error
                     | (state, world) -> evalFoldiCodata evalApply fnOriginOpt fnName (inc i) folder state (Unfold (unfolder, costate)) world
                 | (Option None, world) -> Right (i, state, world)
@@ -579,7 +579,7 @@ module WorldScriptingPrimitives =
                 | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
             | Conversion list ->
                 Seq.foldWhileRight (fun (i, state, world) elem ->
-                    match evalApply [folder; Int i; state; elem] fnOriginOpt world with
+                    match evalApply [|folder; Int i; state; elem|] fnOriginOpt world with
                     | (Option (Some state), world) -> (Right (inc i, state, world))
                     | (Option None, world) -> Left (state, world)
                     | (Violation _, _) as error -> Left error
@@ -599,9 +599,9 @@ module WorldScriptingPrimitives =
                     | error -> error
                 | error -> error
             | Unfold (unfolder, costate) ->
-                match evalApply [unfolder; costate] fnOriginOpt world with
+                match evalApply [|unfolder; costate|] fnOriginOpt world with
                 | (Option (Some costate), world) ->
-                    match evalApply [folder; state; costate] fnOriginOpt world with
+                    match evalApply [|folder; state; costate|] fnOriginOpt world with
                     | (Violation _, _) as error -> Left error
                     | (state, world) -> evalFoldCodata evalApply fnOriginOpt fnName folder state (Unfold (unfolder, costate)) world
                 | (Option None, world) -> Right (state, world)
@@ -609,7 +609,7 @@ module WorldScriptingPrimitives =
                 | (_, world) -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s unfolder must return an option.", fnOriginOpt), world)
             | Conversion list ->
                 Seq.foldWhileRight (fun (state, world) elem ->
-                    match evalApply [folder; state; elem] fnOriginOpt world with
+                    match evalApply [|folder; state; elem|] fnOriginOpt world with
                     | (Option (Some state), world) -> (Right (state, world))
                     | (Option None, world) -> Left (state, world)
                     | (Violation _, _) as error -> Left error
@@ -622,7 +622,7 @@ module WorldScriptingPrimitives =
             | [folder; state; String str] ->
                 let eir =
                     Seq.foldWhileRight (fun (state, world) elem ->
-                        match evalApply [folder; state; String (string elem)] fnOriginOpt world with
+                        match evalApply [|folder; state; String (string elem)|] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, world))
                         | (Option None, world) -> Left (state, world)
                         | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s folder must return an option.", fnOriginOpt), world))
@@ -636,7 +636,7 @@ module WorldScriptingPrimitives =
             | [folder; state; List list] ->
                 let eir =
                     Seq.foldWhileRight (fun (state, world) elem ->
-                        match evalApply [folder; state; elem] fnOriginOpt world with
+                        match evalApply [|folder; state; elem|] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, world))
                         | (Option None, world) -> Left (state, world)
                         | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s folder must return an option.", fnOriginOpt), world))
@@ -646,7 +646,7 @@ module WorldScriptingPrimitives =
             | [folder; state; Ring set] ->
                 let eir =
                     Seq.foldWhileRight (fun (state, world) elem ->
-                        match evalApply [folder; state; elem] fnOriginOpt world with
+                        match evalApply [|folder; state; elem|] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, world))
                         | (Option None, world) -> Left (state, world)
                         | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s folder must return an option.", fnOriginOpt), world))
@@ -657,7 +657,7 @@ module WorldScriptingPrimitives =
                 let eir =
                     Seq.foldWhileRight (fun (state, world) (key, value) ->
                         let elem = Tuple [|key; value|]
-                        match evalApply [folder; state; elem] fnOriginOpt world with
+                        match evalApply [|folder; state; elem|] fnOriginOpt world with
                         | (Option (Some state), world) -> (Right (state, world))
                         | (Option None, world) -> Left (state, world)
                         | _ -> Left (Violation ([!!"InvalidResult"; !!"Container"; !!(String.capitalize fnName)], "Function " + fnName + "'s folder must return an option.", fnOriginOpt), world))
@@ -672,17 +672,17 @@ module WorldScriptingPrimitives =
 
         let evalFoldi evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [folder; state; String str] -> Seq.foldi (fun i (state, world) elem -> evalApply [folder; Int i; state; String (string elem)] fnOriginOpt world) (state, world) str
+            | [folder; state; String str] -> Seq.foldi (fun i (state, world) elem -> evalApply [|folder; Int i; state; String (string elem)|] fnOriginOpt world) (state, world) str
             | [folder; state; Codata codata] ->
                 match evalFoldiCodata evalApply fnOriginOpt fnName 0 folder state codata world with
                 | Right (_, state, world) -> (state, world)
                 | Left error -> error
-            | [folder; state; List list] -> Seq.foldi (fun i (state, world) elem -> evalApply [folder; Int i; state; elem] fnOriginOpt world) (state, world) list
-            | [folder; state; Ring set] -> Seq.foldi (fun i (state, world) elem -> evalApply [folder; Int i; state; elem] fnOriginOpt world) (state, world) set
+            | [folder; state; List list] -> Seq.foldi (fun i (state, world) elem -> evalApply [|folder; Int i; state; elem|] fnOriginOpt world) (state, world) list
+            | [folder; state; Ring set] -> Seq.foldi (fun i (state, world) elem -> evalApply [|folder; Int i; state; elem|] fnOriginOpt world) (state, world) set
             | [folder; state; Table map] ->
                 Seq.foldi (fun i (state, world) (key, value) ->
                     let elem = Tuple [|key; value|]
-                    evalApply [folder; Int i; state; elem] fnOriginOpt world)
+                    evalApply [|folder; Int i; state; elem|] fnOriginOpt world)
                     (state, world)
                     (Map.toList map)
             | [_; _; _] -> (Violation ([!!"InvalidArgumentType"; !!"Container"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-container.", fnOriginOpt), world)
@@ -690,17 +690,17 @@ module WorldScriptingPrimitives =
 
         let evalFold evalApply fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [folder; state; String str] -> Seq.fold (fun (state, world) elem -> evalApply [folder; state; String (string elem)] fnOriginOpt world) (state, world) str
+            | [folder; state; String str] -> Seq.fold (fun (state, world) elem -> evalApply [|folder; state; String (string elem)|] fnOriginOpt world) (state, world) str
             | [folder; state; Codata codata] ->
                 match evalFoldCodata evalApply fnOriginOpt fnName folder state codata world with
                 | Right (state, world) -> (state, world)
                 | Left error -> error
-            | [folder; state; List list] -> List.fold (fun (state, world) elem -> evalApply [folder; state; elem] fnOriginOpt world) (state, world) list
-            | [folder; state; Ring set] -> Set.fold (fun (state, world) elem -> evalApply [folder; state; elem] fnOriginOpt world) (state, world) set
+            | [folder; state; List list] -> List.fold (fun (state, world) elem -> evalApply [|folder; state; elem|] fnOriginOpt world) (state, world) list
+            | [folder; state; Ring set] -> Set.fold (fun (state, world) elem -> evalApply [|folder; state; elem|] fnOriginOpt world) (state, world) set
             | [folder; state; Table map] ->
                 Map.fold (fun (state, world) key value ->
                     let elem = Tuple [|key; value|]
-                    evalApply [folder; state; elem] fnOriginOpt world)
+                    evalApply [|folder; state; elem|] fnOriginOpt world)
                     (state, world)
                     map
             | [Violation _ as error; _; _] -> (error, world)
@@ -718,12 +718,12 @@ module WorldScriptingPrimitives =
                 let (rightMapped, world) = evalMapCodata evalApply fnOriginOpt mapper right world
                 (Add (leftMapped, rightMapped), world)
             | Unfold (unfolder, codata) ->
-                let unfolder = Unfold (Fun (["state"], 1, Apply ([unfolder; Binding ("state", ref UncachedBinding, fnOriginOpt)], fnOriginOpt), false, None, fnOriginOpt), codata)
+                let unfolder = Unfold (Fun ([|"state"|], 1, Apply ([|unfolder; Binding ("state", ref UncachedBinding, fnOriginOpt)|], fnOriginOpt), false, None, fnOriginOpt), codata)
                 (unfolder, world)
             | Conversion list ->
                 let (mapped, world) =
                     List.fold (fun (elems, world) elem ->
-                        let (elem, world) = evalApply [mapper; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [|mapper; elem|] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
                         list
@@ -733,14 +733,14 @@ module WorldScriptingPrimitives =
             match evaledArgs with
             | [mapper; Option opt as option] ->
                 match opt with
-                | Some value -> evalApply [mapper; Int 0; value] fnOriginOpt world
+                | Some value -> evalApply [|mapper; Int 0; value|] fnOriginOpt world
                 | None -> (option, world)
             | [mapper; String str] ->
                 let (list, world) =
                     str |>
                     Seq.foldi (fun i (elems, world) elem ->
                         let elem = String (string elem)
-                        let (elem, world) = evalApply [mapper; Int i; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [|mapper; Int i; elem|] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
                 if List.forall (function String str when String.length str = 1 -> true | _ -> false) list
@@ -752,7 +752,7 @@ module WorldScriptingPrimitives =
             | [mapper; List list] ->
                 let (list, world) =
                     Seq.foldi (fun i (elems, world) elem ->
-                        let (elem, world) = evalApply [mapper; Int i; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [|mapper; Int i; elem|] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
                         list
@@ -760,7 +760,7 @@ module WorldScriptingPrimitives =
             | [mapper; Ring set] ->
                 let (set, world) =
                     Seq.foldi (fun i (elems, world) elem ->
-                        let (elem, world) = evalApply [mapper; Int i; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [|mapper; Int i; elem|] fnOriginOpt world
                         (Set.add elem elems, world))
                         (Set.empty, world)
                         set
@@ -769,7 +769,7 @@ module WorldScriptingPrimitives =
                 let (map, world) =
                     Seq.foldi (fun i (elems, world) (key, value) ->
                         let elem = Tuple [|key; value|]
-                        let (elem, world) = evalApply [mapper; Int i; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [|mapper; Int i; elem|] fnOriginOpt world
                         match elem with
                         | Tuple elems' when Array.length elems' = 2 -> ((Map.add elems'.[0] elems'.[1] elems), world)
                         | _ -> (elems, world))
@@ -785,14 +785,14 @@ module WorldScriptingPrimitives =
             match evaledArgs with
             | [mapper; Option opt as option] ->
                 match opt with
-                | Some value -> evalApply [mapper; value] fnOriginOpt world
+                | Some value -> evalApply [|mapper; value|] fnOriginOpt world
                 | None -> (option, world)
             | [mapper; String str] ->
                 let (list, world) =
                     str |>
                     Seq.fold (fun (elems, world) elem ->
                         let elem = String (string elem)
-                        let (elem, world) = evalApply [mapper; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [|mapper; elem|] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
                 if List.forall (function String str when String.length str = 1 -> true | _ -> false) list
@@ -804,7 +804,7 @@ module WorldScriptingPrimitives =
             | [mapper; List list] ->
                 let (list, world) =
                     List.fold (fun (elems, world) elem ->
-                        let (elem, world) = evalApply [mapper; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [|mapper; elem|] fnOriginOpt world
                         (elem :: elems, world))
                         ([], world)
                         list
@@ -812,7 +812,7 @@ module WorldScriptingPrimitives =
             | [mapper; Ring set] ->
                 let (set, world) =
                     Set.fold (fun (elems, world) elem ->
-                        let (elem, world) = evalApply [mapper; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [|mapper; elem|] fnOriginOpt world
                         (Set.add elem elems, world))
                         (Set.empty, world)
                         set
@@ -821,7 +821,7 @@ module WorldScriptingPrimitives =
                 let (map, world) =
                     Map.fold (fun (elems, world) key value ->
                         let elem = Tuple [|key; value|]
-                        let (elem, world) = evalApply [mapper; elem] fnOriginOpt world
+                        let (elem, world) = evalApply [|mapper; elem|] fnOriginOpt world
                         match elem with
                         | Tuple elems' when Array.length elems' = 2 -> ((Map.add elems'.[0] elems'.[1] elems), world)
                         | _ -> (elems, world))
@@ -842,7 +842,7 @@ module WorldScriptingPrimitives =
                 | Right (true, _) as success -> success
                 | Left _ as error -> error
             | Unfold (unfolder, state) ->
-                match evalApply [unfolder; state] fnOriginOpt world with
+                match evalApply [|unfolder; state|] fnOriginOpt world with
                 | (Option (Some state), world) ->
                     if state <> evaledArg then
                         let codata = Unfold (unfolder, state)
@@ -939,7 +939,7 @@ module WorldScriptingPrimitives =
                                       String (scstring evt.Subscriber)
                                       String (scstring evt.Publisher)
                                       String (scstring evt.Address)|])
-                        let application = Apply ([subscription; evtTuple], None)
+                        let application = Apply ([|subscription; evtTuple|], None)
                         World.evalWithLogging application scriptFrame subscriber world |> snd
                     | None -> Log.info "Property value could not be imported into scripting environment."; world
                 | None -> world)
