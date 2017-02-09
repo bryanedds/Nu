@@ -104,14 +104,6 @@ type SymbolicConverter (pointType : Type) =
                 let symbols = List.map (toSymbol itemType) items
                 Symbols (symbols, None)
 
-            // symbolize HMap
-            elif sourceType.Name = typedefof<HMap<_, _>>.Name then
-                let gargs = sourceType.GetGenericArguments ()
-                let itemType = typedefof<Tuple<_, _>>.MakeGenericType [|gargs.[0]; gargs.[1]|]
-                let items = Reflection.objToObjList source
-                let symbols = List.map (toSymbol itemType) items
-                Symbols (symbols, None)
-
             // symbolize SymbolicCompression
             elif sourceType.Name = typedefof<SymbolicCompression<_, _>>.Name then
                 let (unionCase, unionFields) = FSharpValue.GetUnionFields (source, sourceType)
@@ -241,26 +233,12 @@ type SymbolicConverter (pointType : Type) =
                         match gargs with
                         | [|fstType; sndType|] ->
                             let pairType = typedefof<Tuple<_, _>>.MakeGenericType [|fstType; sndType|]
-                            let pairList = List.map (fromSymbol pairType) symbols
-                            Reflection.pairsToMap destType pairList
+                            let pairs = List.map (fromSymbol pairType) symbols
+                            Reflection.pairsToMap destType pairs
                         | _ -> failwithumf ()
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
                         failconv "Expected Symbols for conversion to Map." ^ Some symbol
 
-                // desymbolize HMap
-                elif destType.Name = typedefof<HMap<_, _>>.Name then
-                    match symbol with
-                    | Symbols (symbols, _) ->
-                        let gargs = destType.GetGenericArguments ()
-                        match gargs with
-                        | [|fstType; sndType|] ->
-                            let pairType = typedefof<Tuple<_, _>>.MakeGenericType [|fstType; sndType|]
-                            let pairList = List.map (fromSymbol pairType) symbols
-                            Reflection.pairsToHMap destType pairList
-                        | _ -> failwithumf ()
-                    | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
-                        failconv "Expected Symbols for conversion to HMap." ^ Some symbol
-                    
                 // desymbolize SymbolicCompression
                 elif destType.Name = typedefof<SymbolicCompression<_, _>>.Name then
                     match symbol with
