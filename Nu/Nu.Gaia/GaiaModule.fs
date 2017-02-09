@@ -622,7 +622,7 @@ module Gaia =
         addWorldChanger ^ fun world ->
             match form.propertyGrid.SelectedObject with
             | null -> world
-            | :? EntityTypeDescriptorSource as entityTds -> World.copyToClipboard entityTds.DescribedEntity world; world
+            | :? EntityTypeDescriptorSource as entityTds -> World.copyEntityToClipboard entityTds.DescribedEntity world; world
             | _ -> Log.trace ^ "Invalid copy operation (likely a code issue in Gaia)."; world
 
     let private handleFormCut (form : GaiaForm) (_ : EventArgs) =
@@ -631,7 +631,7 @@ module Gaia =
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = pushPastWorld world world
-                let world = World.cutToClipboard entityTds.DescribedEntity world
+                let world = World.cutEntityToClipboard entityTds.DescribedEntity world
                 deselectEntity form world
                 world
             | _ -> Log.trace ^ "Invalid cut operation (likely a code issue in Gaia)."; world
@@ -642,7 +642,7 @@ module Gaia =
             let selectedLayer = (World.getUserState world).SelectedLayer
             let (positionSnap, rotationSnap) = getSnaps form
             let editorState = World.getUserState world
-            let (entityOpt, world) = World.pasteFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap selectedLayer world
+            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap selectedLayer world
             match entityOpt with
             | Some entity -> selectEntity form entity world; world
             | None -> world
