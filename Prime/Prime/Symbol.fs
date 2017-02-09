@@ -295,7 +295,7 @@ module Symbol =
                 | _ -> ()
             | None -> failwithumf ()
         advance 0 -1 symbol
-        builder.ToString ()
+        string builder
 
     /// Pretty-print a symbol string in the form an symbolic-expression.
     let prettyPrint str =

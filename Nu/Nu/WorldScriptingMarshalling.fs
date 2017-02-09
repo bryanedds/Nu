@@ -112,7 +112,7 @@ module WorldScriptingMarshalling =
              (typeof<single>.Name, (fun (value : obj) _ -> match value with :? single as single -> Some (Single single) | _ -> None))
              (typeof<double>.Name, (fun (value : obj) _ -> match value with :? double as double -> Some (Double double) | _ -> None))
              (typeof<Vector2>.Name, (fun (value : obj) _ -> match value with :? Vector2 as vector2 -> Some (Vector2 vector2) | _ -> None))
-             (typeof<char>.Name, (fun (value : obj) _ -> match value with :? char as char -> Some (String (char.ToString ())) | _ -> None))
+             (typeof<char>.Name, (fun (value : obj) _ -> match value with :? char as char -> Some (String (string char)) | _ -> None))
              (typeof<string>.Name, (fun (value : obj) _ -> match value with :? string as str -> Some (String str) | _ -> None))
              (typedefof<KeyValuePair<_, _>>.Name, (fun value ty -> tryImportKeyValuePair value ty))
              (typedefof<_ option>.Name, (fun value ty -> tryImportOption value ty))
@@ -184,6 +184,18 @@ module WorldScriptingMarshalling =
                     | (Some fst, Some snd) -> Some (Reflection.objsToKeyValuePair fst snd pairType)
                     | (_, _) -> None
                 | _ -> None
+            | _ -> None
+
+        and tryExportOption (opt : Expr) (ty : Type) =
+            match opt with
+            | Option opt ->
+                match opt with
+                | Some value ->
+                    let valueType = (ty.GetGenericArguments ()).[0]
+                    match tryExport value valueType with
+                    | Some value -> Some (Some value)
+                    | None -> None
+                | None -> Some None
             | _ -> None
 
         and tryExportList (list : Expr) (ty : Type) =

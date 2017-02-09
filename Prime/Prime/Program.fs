@@ -25,7 +25,7 @@ module Program =
     let runMapTimings make lookup name =
         printfn "%s timings..." name
         let rand = Random 1
-        let entries = [|for _ in 0 .. 524280 do yield let n = rand.Next () in (n.ToString (), (n.ToString (), n.ToString ()))|]
+        let entries = [|for _ in 0 .. 524280 do yield let n = rand.Next () in (string n, (string n, string n))|]
         for _ in 1 .. Samples do
             GC.Collect ()
             let watch = Stopwatch.StartNew ()

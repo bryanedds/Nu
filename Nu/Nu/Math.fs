@@ -34,7 +34,7 @@ type Vector2Converter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let v2 = source :?> Vector2
-            Symbols ([Number (v2.X.ToString (), None); Number (v2.Y.ToString (), None)], None) :> obj
+            Symbols ([Number (string v2.X, None); Number (string v2.Y, None)], None) :> obj
         elif destType = typeof<Vector2> then source
         else failconv "Invalid Vector2Converter conversion to source." None
 
@@ -62,7 +62,7 @@ type Vector3Converter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let v3 = source :?> Vector3
-            Symbols ([Number (v3.X.ToString (), None); Number (v3.Y.ToString (), None); Number (v3.Z.ToString (), None)], None) :> obj
+            Symbols ([Number (string v3.X, None); Number (string v3.Y, None); Number (string v3.Z, None)], None) :> obj
         elif destType = typeof<Vector3> then source
         else failconv "Invalid Vector3Converter conversion to source." None
 
@@ -90,7 +90,7 @@ type Vector4Converter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let v4 = source :?> Vector4
-            Symbols ([Number (v4.X.ToString (), None); Number (v4.Y.ToString (), None); Number (v4.Z.ToString (), None); Number (v4.W.ToString (), None)], None) :> obj
+            Symbols ([Number (string v4.X, None); Number (string v4.Y, None); Number (string v4.Z, None); Number (string v4.W, None)], None) :> obj
         elif destType = typeof<Vector4> then source
         else failconv "Invalid Vector4Converter conversion to source." None
 
@@ -118,7 +118,7 @@ type Vector2iConverter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let v2i = source :?> Vector2i
-            Symbols ([Number (v2i.X.ToString (), None); Number (v2i.Y.ToString (), None)], None) :> obj
+            Symbols ([Number (string v2i.X, None); Number (string v2i.Y, None)], None) :> obj
         elif destType = typeof<Vector2i> then source
         else failconv "Invalid Vector2iConverter conversion to source." None
 
