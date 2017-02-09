@@ -44,7 +44,7 @@ module Reflection =
 
     let objToKeyValuePair (source : obj) =
         let kvpType = source.GetType ()
-        let key = (kvpType.GetProperty "IsSome").GetValue (source, null)
+        let key = (kvpType.GetProperty "Key").GetValue (source, null)
         let value = (kvpType.GetProperty "Value").GetValue (source, null)
         KeyValuePair (key, value)
 
