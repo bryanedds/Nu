@@ -47,7 +47,7 @@ type SymbolicConverter (pointType : Type) =
             if not ^ typeConverter.CanConvertTo typeof<Symbol>
             then failconv ("Cannot convert type '" + getTypeName source + "' to Prime.Symbol.") None
             else typeConverter.ConvertTo (source, typeof<Symbol>) :?> Symbol
-        
+
         | None ->
 
             // symbolize .NET primitive

@@ -48,6 +48,9 @@ module Reflection =
         let value = (kvpType.GetProperty "Value").GetValue (source, null)
         KeyValuePair (key, value)
 
+    let objsToKeyValuePair fst snd (pairType : Type) =
+        Activator.CreateInstance (pairType, [|fst; snd|])
+
     let objToComparableSet (source : obj) =
         let iEnumerable = source :?> IEnumerable
         Set.ofSeq ^ enumerable<IComparable> iEnumerable
