@@ -125,6 +125,7 @@ module WorldScripting =
                  ("single", evalUnary SingleFns)
                  ("double", evalUnary DoubleFns)
                  ("string", evalUnary StringFns)
+                 // ("keyname", evalKeyname) TODO
                  ("v2", evalV2)
                  //("xOf", evalNOf 0) TODO
                  //("yOf", evalNOf 1) TODO
@@ -176,6 +177,7 @@ module WorldScripting =
                  ("tryFind", evalTryFind)
                  ("find", evalFind)
                  ("subscribe", evalDoublet evalSubscribe)
+                 ("monitor", evalDoublet evalMonitor)
                  ("entityExists", evalSinglet evalSimulantExists)
                  ("layerExists", evalSinglet evalSimulantExists)
                  ("screenExists", evalSinglet evalSimulantExists)

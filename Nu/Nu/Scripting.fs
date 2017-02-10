@@ -37,7 +37,7 @@ module Scripting =
                      "length normal " +
                      "cross dot " +
                      "violation bool int int64 single double string " +
-                     "nil " +
+                     "nil keyname " +
                      "v2 xOf yOf xAs yAs " +
                      "tuple pair unit fst snd thd fth fif nth " +
                      "some none isSome isNone isEmpty notEmpty tryUncons uncons cons commit tryHead head tryTail tail " +
@@ -48,8 +48,8 @@ module Scripting =
                      "ring toRing add remove " +
                      "table toTable tryFind find " +
                      "let fun if cond try break get set do " +
-                     "subscribe unsubscribe monitor " +
-                     // TODO: "keyname substring tickRate tickTime update curry compose " +
+                     "subscribe monitor " +
+                     // TODO: "substring tickRate tickTime update curry compose " +
                      "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
                      // prelude identifiers...
