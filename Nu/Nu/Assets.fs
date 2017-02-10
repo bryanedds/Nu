@@ -15,3 +15,4 @@ module Assets =
     let [<Literal>] DefaultSongString = "[Default Song]"
     let [<Literal>] AssetGraphFilePath = "AssetGraph.nuag"
     let [<Literal>] OverlayerFilePath = "Overlayer.nuol"
+    let [<Literal>] PreludeFilePath = "Prelude.nuscript"

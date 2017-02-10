@@ -355,12 +355,21 @@ module WorldModule2 =
                     Right (overlayer, world)
 
                 // propagate errors
-                | Left error -> Left error
-            with exn -> let _ = World.choose world in Left ^ scstring exn
+                | Left error -> Left (error, world)
+            with exn -> Left (scstring exn, World.choose world)
 
-        /// Attempt to reload the assets in use by the world. Currently does not support reloading
-        /// of song assets, and possibly others that are locked by the engine's subsystems.
-        static member tryReloadAssets inputDirectory outputDirectory refinementDirectory world =
+        /// Try to reload the prelude currently in use by the world.
+        static member tryReloadPrelude inputDirectory outputDirectory world =
+            let inputPreludeFilePath = Path.Combine (inputDirectory, Assets.PreludeFilePath)
+            let outputPreludeFilePath = Path.Combine (outputDirectory, Assets.PreludeFilePath)
+            try File.Copy (inputPreludeFilePath, outputPreludeFilePath, true)
+                World.tryEvalPrelude world
+            with exn -> Left (scstring exn, World.choose world)
+
+        /// Attempt to reload the asset graph.
+        /// Currently does not support reloading of song assets, and possibly others that are
+        /// locked by the engine's subsystems.
+        static member tryReloadAssetGraph inputDirectory outputDirectory refinementDirectory world =
             
             // attempt to reload asset graph file
             try File.Copy
@@ -382,8 +391,8 @@ module WorldModule2 =
                     Right (assetGraph, world)
         
                 // propagate errors
-                | Left error -> Left error
-            with exn -> let _ = World.choose world in Left ^ scstring exn
+                | Left error -> Left (error, world)
+            with exn -> Left (scstring exn, World.choose world)
 
         /// A hack for the physics subsystem that allows an old world value to displace the current
         /// one and have its physics values propagated to the imperative physics subsystem.
@@ -774,13 +783,13 @@ module WorldModule2 =
                     let subsystemMap = Map.addMany userSubsystems defaultSubsystemMap
                     Subsystems.make subsystemMap
 
-                // make the world's script environment
-                let scriptEnv = Scripting.EnvModule.Env.make ()
-
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
                 match Overlayer.tryMakeFromFile intrinsicOverlays Assets.OverlayerFilePath with
                 | Right overlayer ->
+
+                    // make the world's script environment
+                    let scriptEnv = Scripting.EnvModule.Env.make ()
             
                     // make the world's ambient state
                     let ambientState =
@@ -798,9 +807,13 @@ module WorldModule2 =
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Simulants.Game world
 
-                    // finally, register the game
+                    // register the game
                     let world = World.registerGame world
-                    Right world
+
+                    // finally, try to load the prelude for the scripting language
+                    match World.tryEvalPrelude world with
+                    | Right world -> Right world
+                    | Left (error, _) -> Left error
 
                 // forward error messages
                 | Left error -> Left error
