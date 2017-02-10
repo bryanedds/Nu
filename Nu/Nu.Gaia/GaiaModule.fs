@@ -385,24 +385,30 @@ module Gaia =
                 | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
         | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
 
-    let private tryReloadAssets (_ : GaiaForm) world =
+    let private tryReloadPrelude (_ : GaiaForm) world =
         let editorState = World.getUserState world
         let targetDir = editorState.TargetDir
         let assetSourceDir = Path.Combine (targetDir, "..\\..")
-        World.tryReloadAssets assetSourceDir targetDir RefinementDir world
+        World.tryReloadPrelude assetSourceDir targetDir world
+
+    let private tryReloadAssetGraph (_ : GaiaForm) world =
+        let editorState = World.getUserState world
+        let targetDir = editorState.TargetDir
+        let assetSourceDir = Path.Combine (targetDir, "..\\..")
+        World.tryReloadAssetGraph assetSourceDir targetDir RefinementDir world
 
     let private tryLoadAssetGraph (form : GaiaForm) world =
-        match tryReloadAssets form world with
+        match tryReloadAssetGraph form world with
         | Right (assetGraph, world) ->
             let selectionStart = form.propertyValueTextBox.SelectionStart
             let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
             form.assetGraphTextBox.Text <- Symbol.prettyPrint packageDescriptorsStr + "\r\n"
             form.assetGraphTextBox.SelectionStart <- selectionStart
             form.assetGraphTextBox.ScrollCaret ()
-            Some world
-        | Left error ->
+            world
+        | Left (error, world) ->
             ignore ^ MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to load asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error)
-            None
+            world
 
     let private trySaveAssetGraph (form : GaiaForm) world =
         let editorState = World.getUserState world
@@ -428,10 +434,10 @@ module Gaia =
             form.overlayerTextBox.Text <- Symbol.prettyPrint extrinsicOverlaysStr + "\r\n"
             form.overlayerTextBox.SelectionStart <- selectionStart
             form.overlayerTextBox.ScrollCaret ()
-            Some world
-        | Left error ->
+            world
+        | Left (error, world) ->
             ignore ^ MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to reload overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error)
-            None
+            world
 
     let private trySaveOverlayer (form : GaiaForm) world =
         let editorState = World.getUserState world
@@ -667,11 +673,15 @@ module Gaia =
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            match tryReloadAssets form world with
+            match tryReloadAssetGraph form world with
             | Right (assetGraph, world) ->
                 form.assetGraphTextBox.Text <- Symbol.prettyPrint (scstring assetGraph) + "\r\n"
-                world
-            | Left error ->
+                match tryReloadPrelude form world with
+                | Right world -> world
+                | Left (error, world) ->
+                    ignore ^ MessageBox.Show (error, "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    world
+            | Left (error, world) ->
                 ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 world
 
@@ -723,34 +733,30 @@ module Gaia =
     let private handleSaveAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             if trySaveAssetGraph form world then
-                match tryReloadAssets form world with
+                match tryReloadAssetGraph form world with
                 | Right (_, world) -> world
-                | Left error ->
+                | Left (error, world) ->
                     ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                     world
             else World.choose world
 
     let private handleLoadAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            match tryLoadAssetGraph form world with
-            | Some world -> world
-            | None -> World.choose world
+            tryLoadAssetGraph form world
 
     let private handleSaveOverlayerClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             if trySaveOverlayer form world then
                 match tryReloadOverlays form world with
                 | Right (_, world) -> world
-                | Left error ->
+                | Left (error, world) ->
                     ignore ^ MessageBox.Show ("Overlayer reload error due to: " + error + "'.", "Overlayer reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
                     world
             else World.choose world
 
     let private handleLoadOverlayerClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            match tryLoadOverlayer form world with
-            | Some world -> world
-            | None -> World.choose world
+            tryLoadOverlayer form world
 
     let private handleRolloutTabSelectedIndexChanged (form : GaiaForm) (args : EventArgs) =
         if form.rolloutTabControl.SelectedTab = form.eventTracingTabPage then
@@ -780,7 +786,7 @@ module Gaia =
                     else evaledStr
                 form.replOutputTextBox.GotoPosition form.replOutputTextBox.Text.Length
                 world
-            with exn -> Log.debug ("Could not evaluate repl input due to:\n" + scstring exn); world
+            with exn -> Log.debug ("Could not evaluate repl input due to: " + scstring exn); world
 
     let private handleClearOutputClick (form : GaiaForm) (_ : EventArgs) =
         form.replOutputTextBox.Text <- String.Empty

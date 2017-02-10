@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Diagnostics
+open System.IO
 open OpenTK
 open Prime
 open Nu
@@ -51,11 +52,27 @@ module WorldScripting =
         static member private setProceduralFrames proceduralFrames world =
             World.updateScriptEnv (EnvModule.Env.setProceduralFrames proceduralFrames) world
 
+        static member private getGlobalFrame world =
+            World.getScriptEnvBy EnvModule.Env.getGlobalFrame world
+
         static member internal getLocalFrame world =
             World.getScriptEnvBy EnvModule.Env.getLocalFrame world
 
         static member internal setLocalFrame localFrame world =
             World.updateScriptEnv (EnvModule.Env.setLocalFrame localFrame) world
+
+        /// Attempt to evaluate the scripting prelude.
+        static member tryEvalPrelude world =
+            try let prelude =
+                    File.ReadAllText Assets.PreludeFilePath |>
+                    String.unescape |>
+                    (fun str -> Symbol.OpenSymbolsStr + str + Symbol.CloseSymbolsStr) |>
+                    scvalue<Scripting.Expr list>
+                let globalFrame = World.getGlobalFrame world
+                let (_, world) = World.evalManyWithLogging prelude globalFrame Simulants.Game world
+                Right world
+            with exn ->
+                Left ("Could not evaluate due to: " + scstring exn, World.choose world)
 
     module Scripting =
 

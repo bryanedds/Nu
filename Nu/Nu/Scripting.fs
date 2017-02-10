@@ -676,6 +676,9 @@ module Scripting =
             let setLocalFrame localFrame env =
                 { env with LocalFrame = localFrame }
 
+            let getGlobalFrame env =
+                env.GlobalFrame
+
             let private makeProceduralFrame size =
                 Array.create size BottomBinding
 
