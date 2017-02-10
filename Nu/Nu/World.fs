@@ -696,7 +696,7 @@ module WorldModule2 =
             // select the first game dispatcher as active
             let activeGameDispatcher = dispatchers.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
 
-            // make and choose the world for debugging
+            // make the world
             let world = World.make eventSystem dispatchers subsystems scriptEnv ambientState None activeGameDispatcher
             
             // subscribe to subscribe and unsubscribe events
@@ -800,21 +800,22 @@ module WorldModule2 =
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         AmbientState.make tickRate assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
-                    // make and choose the world for debugging
+                    // make the world
                     let world = World.make eventSystem dispatchers subsystems scriptEnv ambientState gameSpecializationOpt activeGameDispatcher
 
                     // subscribe to subscribe and unsubscribe events
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Simulants.Game world
 
-                    // register the game
-                    let world = World.registerGame world
-
-                    // finally, try to load the prelude for the scripting language
+                    // try to load the prelude for the scripting language
                     match World.tryEvalPrelude world with
-                    | Right world -> Right world
-                    | Left (error, _) -> Left error
+                    | Right world ->
+                        
+                        // finally, register the game
+                        let world = World.registerGame world
+                        Right world
 
-                // forward error messages
+                    // forward error messages
+                    | Left (error, _) -> Left error
                 | Left error -> Left error
             | Left error -> Left error
