@@ -106,7 +106,7 @@ module Scripting =
         | Quote of Expr * SymbolOrigin option
 
         (* Declarations - only work at the top level. *)
-        | Define of Binding * SymbolOrigin option // constructed as [define c 0]
+        | Define of Binding * SymbolOrigin option
 
         static member tryGetOrigin expr =
             match expr with
@@ -310,7 +310,7 @@ module Scripting =
                 | Unit -> Symbol.Symbols ([], None) :> obj
                 | Bool bool -> Symbol.Atom (String.boolToCodeString bool, None) :> obj
                 | Int int -> Symbol.Number (string int, None) :> obj
-                | Int64 int64 -> Symbol.Number (string int64, None) :> obj
+                | Int64 int64 -> Symbol.Number (String.int64ToCodeString int64, None) :> obj
                 | Single single -> Symbol.Number (String.singleToCodeString single, None) :> obj
                 | Double double -> Symbol.Number (String.doubleToCodeString double, None) :> obj
                 | Vector2 v2 -> Symbol.Symbols ([Symbol.Number (String.singleToCodeString v2.X, None); Symbol.Number (String.singleToCodeString v2.Y, None)], None) :> obj
@@ -471,7 +471,7 @@ module Scripting =
                 | Prime.Number (str, originOpt) ->
                     match Int32.TryParse str with
                     | (false, _) ->
-                        // TODO: allow ending with 'l' / 'L' for long
+                        let str = if str.EndsWith "l" || str.EndsWith "L" then str.Substring(0, str.Length - 1) else str
                         match Int64.TryParse str with
                         | (false, _) ->
                             if str.EndsWith "f" || str.EndsWith "F" then
