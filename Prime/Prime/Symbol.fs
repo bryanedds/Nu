@@ -35,7 +35,7 @@ type Symbol =
     | Atom of string * SymbolOrigin option
     | Number of string * SymbolOrigin option
     | String of string * SymbolOrigin option
-    | Quote of string * SymbolOrigin option
+    | Quote of Symbol * SymbolOrigin option
     | Symbols of Symbol list * SymbolOrigin option
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -53,16 +53,14 @@ module Symbol =
     let [<Literal>] OpenStringStr = "\""
     let [<Literal>] CloseStringChar = '\"'
     let [<Literal>] CloseStringStr = "\""
-    let [<Literal>] OpenQuoteChar = '`'
-    let [<Literal>] OpenQuoteStr = "`"
-    let [<Literal>] CloseQuoteChar = '\''
-    let [<Literal>] CloseQuoteStr = "\'"
+    let [<Literal>] QuoteChar = '`'
+    let [<Literal>] QuoteStr = "`"
     let [<Literal>] LineCommentChar = ';'
     let [<Literal>] LineCommentStr = ";"
     let [<Literal>] OpenMultilineCommentStr = "#|"
     let [<Literal>] CloseMultilineCommentStr = "|#"
-    let [<Literal>] ReservedChars = ":"
-    let [<Literal>] StructureCharsNoStr = "[]`\'"
+    let [<Literal>] ReservedChars = ":,"
+    let [<Literal>] StructureCharsNoStr = "[]`"
     let [<Literal>] StructureChars = "\"" + StructureCharsNoStr
     let [<Literal>] NumberFormat =
         NumberLiteralOptions.AllowMinusSign |||
@@ -93,24 +91,15 @@ module Symbol =
     let closeSymbols = skipChar CloseSymbolsChar
     let openString = skipChar OpenStringChar
     let closeString = skipChar CloseStringChar
-    let openQuote = skipChar OpenQuoteChar
-    let closeQuote = skipChar CloseQuoteChar
+    let startQuote = skipChar QuoteChar
     
     let isNumberParser = numberLiteral NumberFormat "number" >>. eof
     let isNumber str = match run isNumberParser str with Success (_, _, position) -> position.Index = int64 str.Length | Failure _ -> false
     let shouldBeExplicit str = Seq.exists (fun chr -> Char.IsWhiteSpace chr || Seq.contains chr StructureCharsNoStr) str
-
+    
     let readAtomChars = many1 (noneOf (StructureChars + WhitespaceChars))
     let readStringChars = many (noneOf [CloseStringChar])
-    let readQuoteChars = many (noneOf [CloseQuoteChar])
-    let readContentChars =
-        many1
-            ((attempt (openQuote >>. skipWhitespaces >>. readQuoteChars .>> closeQuote .>> skipWhitespaces)) <|>
-             (attempt (openString >>. skipWhitespaces >>. readStringChars .>> closeString .>> skipWhitespaces)) <|>
-             (readAtomChars .>> skipWhitespaces))
-
-    let (readSymbol : Parser<Symbol, SymbolState>, private refReadSymbol : Parser<Symbol, SymbolState> ref) =
-        createParserForwardedToRef ()
+    let (readSymbol : Parser<Symbol, SymbolState>, private refReadSymbol : Parser<Symbol, SymbolState> ref) = createParserForwardedToRef ()
 
     let readAtom =
         parse {
@@ -157,15 +146,12 @@ module Symbol =
         parse {
             let! userState = getUserState
             let! start = getPosition
-            do! openQuote
-            do! skipWhitespaces
-            let! quoteChars = readQuoteChars
-            do! closeQuote
+            do! startQuote
+            let! quoted = readSymbol
             let! stop = getPosition
             do! skipWhitespaces
-            let str = quoteChars |> String.implode
             let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
-            return Quote (str, origin) }
+            return Quote (quoted, origin) }
 
     let readSymbols =
         parse {
@@ -197,7 +183,7 @@ module Symbol =
             else str
         | Number (str, _) -> distillate str
         | String (str, _) -> OpenStringStr + distillate str + CloseStringStr
-        | Quote (str, _) -> OpenQuoteStr + distillate str + CloseQuoteStr
+        | Quote (symbol, _) -> QuoteStr + writeSymbol symbol
         | Symbols (symbols, _) -> OpenSymbolsStr + String.Join (" ", List.map writeSymbol symbols) + CloseSymbolsStr
 
     /// Convert a string to a symbol, with the following parses:
