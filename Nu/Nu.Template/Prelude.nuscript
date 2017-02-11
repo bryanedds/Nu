@@ -82,6 +82,10 @@
 [define snd! [a]
     [snd [! a]]]
 
+; Reverse the elemens in a container.
+[define rev [ctr]
+    [fold [flip cons] [toEmpty ctr] ctr]]
+
 ; Reduce a container with at least one element while the reducer function returns some.
 [define reduceWhile [reducer ctr]
     [let [pr [split ctr]]
@@ -96,10 +100,6 @@
 [define reduce [reducer ctr]
     [let [pr [split ctr]]
          [fold reducer [fst pr] [snd pr]]]]
-
-; Reverse the elemens in a container.
-[define rev [ctr]
-    [fold [flip cons] [toEmpty ctr] ctr]]
 
 ; Build a container of elements taken from the given container while a predicate succeeds.
 [define takeWhile [pred ctr]
@@ -189,16 +189,16 @@
 [define game nil]
 
 ; Get data from an event.
-[define getData fst]
+[define dataOf fst]
 
 ; Get subscriber from an event.
-[define getSubscriber snd]
+[define subscriberOf snd]
 
 ; Get publisher from an event.
-[define getPublisher thd]
+[define publisherOf thd]
 
 ; Get address from an event.
-[define getAddress fth]
+[define addressOf fth]
 
-#| TODO: tryItem, itemAs, sort, replace, slice (subsequence), split
+#| TODO: itemOf, tryItemOf, itemAs, sort, replace, slice (subsequence), split
    TODO: streams, engine functions |#

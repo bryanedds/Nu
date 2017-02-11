@@ -44,7 +44,7 @@ module Scripting =
                      "scanWhile scani scan foldWhile foldi fold mapi map filteri filter contains " +
                      // TODO: "either isLeft isRight left right " +
                      "codata toCodata empty " +
-                     "list toList rev " +
+                     "list toList " +
                      "ring toRing add remove " +
                      "table toTable tryFind find " +
                      "let fun if cond try break get set do " +
@@ -54,8 +54,9 @@ module Scripting =
                      "define variable equate handle " +
                      // prelude identifiers...
                      "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegitiveInfinity isNaN " +
-                     "min max compare sign abs fst! snd! reduceWhile reducei reduce takeWhile take skipWhile skip " +
-                     "countBy count exists zipBy zip pi e v2Zero v2Identity " +
+                     "min max compare sign abs fst! snd! rev reduceWhile reducei reduce takeWhile take skipWhile skip " +
+                     "countBy count exists zipBy zip pi e v2Zero v2Identity game " +
+                     "dataOf subscriberOf publisherOf addressOf " +
                      "Gt Lt Eq Positive Negative Zero",
                      "");
           TypeConverter (typeof<ExprConverter>);
