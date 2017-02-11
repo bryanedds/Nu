@@ -272,28 +272,41 @@ module Gaia =
             ignore ^ MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error)
 
     let private tryLoadSelectedLayer (form : GaiaForm) filePath world =
-
+        
+        // old world in case we need to rewind
+        let oldWorld = world
+        
         try // destroy current layer
             let selectedLayer = (World.getUserState world).SelectedLayer
             let world = unsubscribeFromEntityEvents world
             let world = World.destroyLayerImmediate selectedLayer world
 
             // load and add layer, updating tab and selected layer in the process
-            let (layer, world) = World.readLayerFromFile filePath None Simulants.EditorScreen world
-            let layerNameStr = Name.getNameStr (layer.GetName world)
-            form.layerTabs.SelectedTab.Text <- layerNameStr
-            form.layerTabs.SelectedTab.Name <- layerNameStr
-            let world = World.updateUserState (fun editorState -> { editorState with SelectedLayer = layer }) world
-            let world = subscribeToEntityEvents form world
+            let layerDescriptorStr = File.ReadAllText filePath
+            let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
+            let layerName = match layerDescriptor.LayerProperties.TryFind "Name" with Some (Atom (name, _)) -> name | _ -> failwithumf ()
+            if not (World.layerExists (Simulants.EditorScreen => layerName) world) then
+                let (layer, world) = World.readLayer layerDescriptor None Simulants.EditorScreen world
+                let layerNameStr = Name.getNameStr (layer.GetName world)
+                form.layerTabs.SelectedTab.Text <- layerNameStr
+                form.layerTabs.SelectedTab.Name <- layerNameStr
+                let world = World.updateUserState (fun editorState -> { editorState with SelectedLayer = layer }) world
+                let world = subscribeToEntityEvents form world
 
-            // refresh tree view
-            refreshTreeView form world
-            world
+                // refresh tree view
+                refreshTreeView form world
+                world
+            
+            // handle load failure
+            else
+                let world = World.choose oldWorld
+                ignore ^ MessageBox.Show ("Could not load layer file with same name as an existing layer", "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                world
 
         // handle load failure
         with exn ->
-            let world = World.choose world
-            ignore ^ MessageBox.Show ("Could not load file due to: " + scstring exn, "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            let world = World.choose oldWorld
+            ignore ^ MessageBox.Show ("Could not load layer file due to: " + scstring exn, "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error)
             world
 
     let private handleFormExit (form : GaiaForm) (_ : EventArgs) =
