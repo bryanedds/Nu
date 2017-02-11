@@ -97,6 +97,10 @@
     [let [pr [split ctr]]
          [fold reducer [fst pr] [snd pr]]]]
 
+; Reverse the elemens in a container.
+[define rev [ctr]
+    [fold [flip cons] [toEmpty ctr] ctr]]
+
 ; Build a container of elements taken from the given container while a predicate succeeds.
 [define takeWhile [pred ctr]
     [let [opt [tryUncons ctr]]
@@ -172,9 +176,6 @@
 [define zip [ctr ctr2]
     [zipBy pair ctr ctr2]]
 
-#| TODO: fstAs - nthAs, tryItem, itemAs, sort, replace, slice (subsequence), split
-   TODO: subscribe, unsubscribe, monitor, streams, importers / exporters, engine functions |#
-
 ; Mathematical constant pi as a single value.
 [define pi 3.14159f]
 
@@ -198,3 +199,6 @@
 
 ; Get address from an event.
 [define getAddress fth]
+
+#| TODO: tryItem, itemAs, sort, replace, slice (subsequence), split
+   TODO: streams, engine functions |#
