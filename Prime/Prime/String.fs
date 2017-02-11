@@ -21,6 +21,11 @@ module String =
     let boolToCodeString (bool : bool) =
         if bool then "true" else "false"
 
+    /// Convert an int64 to a string that works well in code.
+    let int64ToCodeString (num : int64) =
+        let numStr = string num
+        numStr + "L"
+
     /// Convert a single to a string that works well in code.
     let singleToCodeString (num : single) =
         if not (Single.IsNaN num) then
@@ -44,7 +49,7 @@ module String =
         | :? bool as bool -> boolToCodeString bool
         | :? char as char -> string char
         | :? int as int -> string int
-        | :? int64 as int64 -> string int64
+        | :? int64 as int64 -> int64ToCodeString int64
         | :? single as single -> singleToCodeString single
         | :? double as double -> doubleToCodeString double
         | _ -> failwithumf ()
