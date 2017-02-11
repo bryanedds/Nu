@@ -18,13 +18,6 @@ open Nu
 [<RequireQualifiedAccess>]
 module Gaia =
 
-    // TODO: move these into Constants
-    let private DefaultPositionSnap = 8
-    let private DefaultRotationSnap = 5
-    let private DefaultCreationDepth = 0.0f
-    let private CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
-    let private RefinementDir = "refinement"
-
     // globals needed to sync Nu with WinForms
     let private RefWorld = ref Unchecked.defaultof<World>
     let private WorldChangers = WorldChangers ()
@@ -408,7 +401,7 @@ module Gaia =
         let editorState = World.getUserState world
         let targetDir = editorState.TargetDir
         let assetSourceDir = Path.Combine (targetDir, "..\\..")
-        World.tryReloadAssetGraph assetSourceDir targetDir RefinementDir world
+        World.tryReloadAssetGraph assetSourceDir targetDir Constants.Editor.RefinementDir world
 
     let private tryLoadAssetGraph (form : GaiaForm) world =
         match tryReloadAssetGraph form world with
@@ -840,7 +833,7 @@ module Gaia =
         | DragCameraPosition (pickOffset, mousePositionScreenOrig) ->
             let mousePosition = World.getMousePositionF world
             let mousePositionScreen = World.mouseToScreen mousePosition world
-            let eyeCenter = (pickOffset - mousePositionScreenOrig) + -CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
+            let eyeCenter = (pickOffset - mousePositionScreenOrig) + -Constants.Editor.CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
             let world = World.setEyeCenter eyeCenter world
             World.updateUserState (fun editorState ->
                 { editorState with DragCameraState = DragCameraPosition (pickOffset, mousePositionScreenOrig) })
@@ -961,9 +954,9 @@ module Gaia =
 
         // configure controls
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        form.positionSnapTextBox.Text <- scstring DefaultPositionSnap
-        form.rotationSnapTextBox.Text <- scstring DefaultRotationSnap
-        form.createDepthTextBox.Text <- scstring DefaultCreationDepth
+        form.positionSnapTextBox.Text <- scstring Constants.Editor.DefaultPositionSnap
+        form.rotationSnapTextBox.Text <- scstring Constants.Editor.DefaultRotationSnap
+        form.createDepthTextBox.Text <- scstring Constants.Editor.DefaultCreationDepth
         form.specializationTextBox.Text <- Constants.Engine.VanillaSpecialization
 
         // sort tree view nodes with a bias against guids
