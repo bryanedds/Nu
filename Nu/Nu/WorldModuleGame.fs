@@ -62,8 +62,6 @@ module WorldModuleGame =
         static member internal setGameOnUpdate value world = World.updateGameState (fun gameState -> { gameState with OnUpdate = value }) Property? OnUpdate world
         static member internal getGameOnPostUpdate world = (World.getGameState world).OnPostUpdate
         static member internal setGameOnPostUpdate value world = World.updateGameState (fun gameState -> { gameState with OnPostUpdate = value }) Property? OnPostUpdate world
-        static member internal getGameOnActualize world = (World.getGameState world).OnActualize
-        static member internal setGameOnActualize value world = World.updateGameState (fun gameState -> { gameState with OnActualize = value }) Property? OnActualize world
 
         /// Get the current eye center.
         static member getEyeCenter world =
@@ -219,7 +217,6 @@ module WorldModuleGame =
             | "OnUnregister" -> Some (World.getGameOnUnregister world :> obj, typeof<Scripting.Expr>)
             | "OnUpdate" -> Some (World.getGameOnUpdate world :> obj, typeof<Scripting.Expr>)
             | "OnPostUpdate" -> Some (World.getGameOnPostUpdate world :> obj, typeof<Scripting.Expr>)
-            | "OnActualize" -> Some (World.getGameOnActualize world :> obj, typeof<Scripting.Expr>)
             | "SelectedScreenOpt" -> Some (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
             | "ScreenTransitionDestinationOpt" -> Some (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
             | "EyeCenter" -> Some (World.getEyeCenter world :> obj, typeof<Vector2>)
@@ -242,7 +239,6 @@ module WorldModuleGame =
             | "OnUnregister" -> (World.getGameOnUnregister world :> obj, typeof<Scripting.Expr>)
             | "OnUpdate" -> (World.getGameOnUpdate world :> obj, typeof<Scripting.Expr>)
             | "OnPostUpdate" -> (World.getGameOnPostUpdate world :> obj, typeof<Scripting.Expr>)
-            | "OnActualize" -> (World.getGameOnActualize world :> obj, typeof<Scripting.Expr>)
             | "SelectedScreenOpt" -> (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
             | "ScreenTransitionDestinationOpt" -> (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
             | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
@@ -269,7 +265,6 @@ module WorldModuleGame =
             | "OnUnregister" -> (false, world)
             | "OnUpdate" -> (false, world)
             | "OnPostUpdate" -> (false, world)
-            | "OnActualize" -> (false, world)
             | "SelectedScreenOpt" -> (true, World.setSelectedScreenOpt (property |> fst :?> Screen option) world)
             | "ScreenTransitionDestinationOpt" -> (true, World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world)
             | "EyeCenter" -> (true, World.setEyeCenter (property |> fst :?> Vector2) world)
@@ -298,7 +293,6 @@ module WorldModuleGame =
             | "OnUnregister" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "OnUpdate" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "OnPostUpdate" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
-            | "OnActualize" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "SelectedScreenOpt" -> World.setSelectedScreenOpt (property |> fst :?> Screen option) world
             | "ScreenTransitionDestinationOpt" -> World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world
             | "EyeCenter" -> World.setEyeCenter (property |> fst :?> Vector2) world

@@ -254,9 +254,6 @@ module ScriptFacetModule =
         member this.GetOnPostUpdate world : Scripting.Expr = this.Get Property? OnPostUpdate world
         member this.SetOnPostUpdate (value : Scripting.Expr) world = this.Set Property? OnPostUpdate value world
         member this.OnPostUpdate = PropertyTag.make this Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate
-        member this.GetOnActualize world : Scripting.Expr = this.Get Property? OnActualize world
-        member this.SetOnActualize (value : Scripting.Expr) world = this.Set Property? OnActualize value world
-        member this.OnActualize = PropertyTag.make this Property? OnActualize this.GetOnActualize this.SetOnActualize
 
     type ScriptFacet () =
         inherit Facet ()
@@ -280,8 +277,7 @@ module ScriptFacetModule =
              Define? OnRegisterPa Scripting.Unit
              Define? OnUnregister Scripting.Unit
              Define? OnUpdate Scripting.Unit
-             Define? OnPostUpdate Scripting.Unit
-             Define? OnActualize Scripting.Unit]
+             Define? OnPostUpdate Scripting.Unit]
 
         override facet.Register (entity, world) =
             let onRegister = entity.GetOnRegisterPa world
@@ -305,11 +301,6 @@ module ScriptFacetModule =
             let onPostUpdate = entity.GetOnPostUpdate world
             let localFrame = entity.GetScriptFrameNp world
             World.evalWithLogging onPostUpdate localFrame entity world |> snd
-
-        override facet.Actualize (entity, world) =
-            let onActualize = entity.GetOnActualize world
-            let localFrame = entity.GetScriptFrameNp world
-            World.evalWithLogging onActualize localFrame entity world |> snd
 
 [<AutoOpen>]
 module RigidBodyFacetModule =

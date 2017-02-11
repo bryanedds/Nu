@@ -354,7 +354,6 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnActualize : Scripting.Expr
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
           EyeCenter : Vector2
@@ -403,7 +402,6 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnActualize = Scripting.Unit
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
               EyeCenter = eyeCenter
@@ -433,7 +431,6 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnActualize : Scripting.Expr
           EntityTreeNp : Entity SpatialTree MutantCache
           TransitionStateNp : TransitionState
           TransitionTicksNp : int64
@@ -485,7 +482,6 @@ module WorldTypes =
                   OnUnregister = Scripting.Unit
                   OnUpdate = Scripting.Unit
                   OnPostUpdate = Scripting.Unit
-                  OnActualize = Scripting.Unit
                   EntityTreeNp = Unchecked.defaultof<Entity SpatialTree MutantCache>
                   TransitionStateNp = IdlingState
                   TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
@@ -518,7 +514,6 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnActualize : Scripting.Expr
           Depth : single
           Visible : bool }
 
@@ -566,7 +561,6 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnActualize = Scripting.Unit
               Depth = 0.0f
               Visible = true }
 
