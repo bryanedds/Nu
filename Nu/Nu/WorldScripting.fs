@@ -126,11 +126,11 @@ module WorldScripting =
                  ("double", evalUnary DoubleFns)
                  ("string", evalUnary StringFns)
                  // ("keyname", evalKeyname) TODO
-                 ("v2", evalV2)
-                 //("xOf", evalNOf 0) TODO
-                 //("yOf", evalNOf 1) TODO
-                 //("xAs", evalNAs 0) TODO
-                 //("yAs", evalNAs 1) TODO
+                 ("v2", evalDoublet evalV2)
+                 ("xOf", evalNth5 0)
+                 ("yOf", evalNth5 1)
+                 ("xAs", evalNthAs5 0)
+                 ("yAs", evalNthAs5 1)
                  ("tuple", evalTuple)
                  ("pair", evalTuple)
                  ("fst", evalNth5 0)
@@ -139,6 +139,12 @@ module WorldScripting =
                  ("fth", evalNth5 3)
                  ("fif", evalNth5 4)
                  ("nth", evalNth)
+                 ("fstAs", evalNthAs5 0)
+                 ("sndAs", evalNthAs5 1)
+                 ("thdAs", evalNthAs5 2)
+                 ("fthAs", evalNthAs5 3)
+                 ("fifAs", evalNthAs5 4)
+                 ("nthAs", evalNthAs)
                  ("some", evalSome)
                  ("isNone", evalIsNone)
                  ("isSome", evalIsSome)

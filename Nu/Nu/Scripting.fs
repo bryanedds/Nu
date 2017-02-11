@@ -39,7 +39,7 @@ module Scripting =
                      "violation bool int int64 single double string " +
                      "nil keyname " +
                      "v2 xOf yOf xAs yAs " +
-                     "tuple pair unit fst snd thd fth fif nth " +
+                     "tuple pair unit fst snd thd fth fif nth fstAs sndAs thdAs fthAs fifAs nthAs " +
                      "some none isSome isNone isEmpty notEmpty tryUncons uncons cons commit tryHead head tryTail tail " +
                      "scanWhile scani scan foldWhile foldi fold mapi map filteri filter contains " +
                      // TODO: "either isLeft isRight left right " +

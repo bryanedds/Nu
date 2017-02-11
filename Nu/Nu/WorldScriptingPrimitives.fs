@@ -50,7 +50,14 @@ module WorldScriptingPrimitives =
             | Violation _ as violation -> (violation, world)
             | _ -> (Violation ([!!"InvalidArgumentType"; !!"Referent"; !!(String.capitalize fnName)], "Function '" + fnName + "' requires a referent value.", fnOriginOpt), world)
 
-        let evalV2 fnOriginOpt fnName evaledArgs world =
+        let evalV2 fnOriginOpt fnName evaledArg evaledArg2 world =
+            match (evaledArg, evaledArg2) with
+            | (Single x, Single y) -> (Vector2 (OpenTK.Vector2 (x, y)), world)
+            | (Violation _ as violation, _) -> (violation, world)
+            | (_, (Violation _ as violation)) -> (violation, world)
+            | (_, _) -> (Violation ([!!"InvalidArgumentType"; !!"V2"; !!(String.capitalize fnName)], "Application of " + fnName + " requires a single for the both arguments.", fnOriginOpt), world)
+
+        let evalNOf fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [Single x; Single y] -> (Vector2 (OpenTK.Vector2 (x, y)), world)
             | [Violation _ as violation; _] -> (violation, world)
@@ -65,21 +72,50 @@ module WorldScriptingPrimitives =
             match evaledArgs with
             | [_; _] -> (Tuple (List.toArray evaledArgs), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Pair"], "Incorrect number of arguments for creation of a pair; 2 arguments required.", fnOriginOpt), world)
-    
+
         let evalNth5 index fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
-            | [Tuple evaleds] ->
-                if index >= 0 && index < Array.length evaleds
-                then (evaleds.[index], world)
+            | [Vector2 v2] ->
+                match index with
+                | 0 -> (Single v2.X, world)
+                | 1 -> (Single v2.Y, world)
+                | _ -> (Violation ([!!"OutOfRangeArgument"; !!"Indexed"; !!(String.capitalize fnName)], "Vector2 does not contain element at index " + string index + ".", fnOriginOpt), world)
+            | [Tuple arr] ->
+                if index >= 0 && index < Array.length arr
+                then (arr.[index], world)
                 else (Violation ([!!"OutOfRangeArgument"; !!"Indexed"; !!(String.capitalize fnName)], "Tuple does not contain element at index " + string index + ".", fnOriginOpt), world)
-            | [Keyphrase (_, evaleds)] ->
-                if index >= 0 && index < Array.length evaleds
-                then (evaleds.[index], world)
+            | [Keyphrase (_, arr)] ->
+                if index >= 0 && index < Array.length arr
+                then (arr.[index], world)
                 else (Violation ([!!"OutOfRangeArgument"; !!"Indexed"; !!(String.capitalize fnName)], "Keyphrase does not contain element at index " + string index + ".", fnOriginOpt), world)
             | [Violation _ as violation] -> (violation, world)
             | [_] -> (Violation ([!!"InvalidArgumentType"; !!"Indexed"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-indexed value.", fnOriginOpt), world)
             | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Indexed"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
-        
+
+        let evalNthAs5 index fnOriginOpt fnName evaledArgs world =
+            match evaledArgs with
+            | [Single s; Vector2 v2] ->
+                match index with
+                | 0 -> (Vector2 (OpenTK.Vector2 (s, v2.Y)), world)
+                | 1 -> (Vector2 (OpenTK.Vector2 (v2.X, s)), world)
+                | _ -> (Violation ([!!"OutOfRangeArgument"; !!"Indexed"; !!(String.capitalize fnName)], "Vector2 does not contain element at index " + string index + ".", fnOriginOpt), world)
+            | [value; Tuple arr] ->
+                if index >= 0 && index < Array.length arr then
+                    let arr = Array.copy arr
+                    arr.[index] <- value
+                    (Tuple arr, world)
+                else (Violation ([!!"OutOfRangeArgument"; !!"Indexed"; !!(String.capitalize fnName)], "Tuple does not contain element at index " + string index + ".", fnOriginOpt), world)
+            | [value; Keyphrase (_, arr)] ->
+                if index >= 0 && index < Array.length arr then
+                    let arr = Array.copy arr
+                    arr.[index] <- value
+                    (Tuple arr, world)
+                else (Violation ([!!"OutOfRangeArgument"; !!"Indexed"; !!(String.capitalize fnName)], "Keyphrase does not contain element at index " + string index + ".", fnOriginOpt), world)
+            | [Violation _ as violation; _] -> (violation, world)
+            | [_; Violation _ as violation] -> (violation, world)
+            | [_; _] -> (Violation ([!!"InvalidArgumentType"; !!"Indexed"; !!(String.capitalize fnName)], "Cannot apply " + fnName + " to a non-indexed value.", fnOriginOpt), world)
+            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Indexed"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", fnOriginOpt), world)
+
         let evalNth fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [head; foot] ->
@@ -88,7 +124,16 @@ module WorldScriptingPrimitives =
                 | Violation _ as violation -> (violation, world)
                 | _ -> (Violation ([!!"InvalidArgumentType"; !!"Indexed"; !!(String.capitalize fnName)], "Application of " + fnName + " requires an int for the first argument.", fnOriginOpt), world)
             | _ ->  (Violation ([!!"InvalidArgumentCount"; !!"Indexed"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
-            
+
+        let evalNthAs fnOriginOpt fnName evaledArgs world =
+            match evaledArgs with
+            | head :: tail ->
+                match head with
+                | Int int -> evalNthAs5 int fnOriginOpt fnName tail world
+                | Violation _ as violation -> (violation, world)
+                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Indexed"; !!(String.capitalize fnName)], "Application of " + fnName + " requires an int for the first argument.", fnOriginOpt), world)
+            | _ ->  (Violation ([!!"InvalidArgumentCount"; !!"Indexed"; !!(String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", fnOriginOpt), world)
+
         let evalSome fnOriginOpt fnName evaledArgs world =
             match evaledArgs with
             | [evaledArg] -> (Option (Some evaledArg), world)
