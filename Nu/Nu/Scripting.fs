@@ -439,7 +439,8 @@ module Scripting =
                     let valueSymbol = this.ExprToSymbol value
                     let relationSymbol = this.ExprToSymbol relation
                     Symbol.Symbols ([setSymbol; propertySymbol; valueSymbol; relationSymbol], originOpt) :> obj
-                | Quote _ -> Symbols ([], None) :> obj // TODO: implement
+                | Quote (expr, originOpt) ->
+                    Symbol.Quote (this.ExprToSymbol expr, originOpt) :> obj
                 | Define (binding, originOpt) ->
                     let defineSymbol = Symbol.Atom ("define", None)
                     let bindingSymbols = this.BindingToSymbols binding
