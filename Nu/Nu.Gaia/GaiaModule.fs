@@ -25,9 +25,9 @@ module Gaia =
     let private CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
     let private RefinementDir = "refinement"
 
-    // unfortunate globals!
-    let private WorldChangers = WorldChangers ()
+    // globals needed to sync Nu with WinForms
     let private RefWorld = ref Unchecked.defaultof<World>
+    let private WorldChangers = WorldChangers ()
 
     let addWorldChanger worldChanger =
         ignore ^ WorldChangers.Add worldChanger
@@ -789,14 +789,13 @@ module Gaia =
             try let exprs = scvalue<Scripting.Expr list> exprsStr
                 let localFrame = Simulants.Game.GetScriptFrameNp world
                 let (evaled, world) = World.evalMany exprs localFrame Simulants.Game world
-                let evaledStr =
-                    let evaledStr = scstring evaled
-                    if evaledStr.Length < 2 then evaledStr
-                    else evaledStr.Substring (1, evaledStr.Length - 2)
+                let evaledStr = scstring evaled
+                let evaledStrPacked = if evaledStr.Length < 2 then evaledStr else evaledStr.Substring (1, evaledStr.Length - 2)
+                let evaledStrPretty = Symbol.prettyPrint evaledStrPacked
                 form.replOutputTextBox.Text <-
                     if String.notEmpty form.replOutputTextBox.Text
-                    then form.replOutputTextBox.Text + "\n" + evaledStr
-                    else evaledStr
+                    then form.replOutputTextBox.Text + "\n" + evaledStrPretty
+                    else evaledStrPretty
                 form.replOutputTextBox.GotoPosition form.replOutputTextBox.Text.Length
                 world
             with exn -> Log.debug ("Could not evaluate repl input due to: " + scstring exn); world
@@ -905,23 +904,35 @@ module Gaia =
         | :? EditorState -> world // NOTE: conclude world is already attached
         | _ -> failwith "Cannot attach Gaia to a world that has a user state of a type other than unit or EditorState."
 
-    let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
-        let world = World.choose !RefWorld
-        let world = attachToWorld targetDir form world
-        populateCreateComboBox form world
-        populateTreeViewLayers form world
-        populateLayerTabs form world
-        form.tickingButton.CheckState <- CheckState.Unchecked
-        let world =
-            World.runWithoutCleanUp
+    let rec private tryRun3 runWhile sdlDeps (form : GaiaForm) world =
+        try World.runWithoutCleanUp
                 runWhile
                 (fun world -> let world = updateEditorWorld form world in (RefWorld := world; world))
                 (fun world -> form.displayPanel.Invalidate (); world)
                 sdlDeps
                 Running
                 world
+        with exn ->
+            match MessageBox.Show
+                ("Unexpected exception due to: " + scstring exn + "\nWould you like to undo the last operator to try to keep Gaia running?",
+                 "Unexpected Exception",
+                 MessageBoxButtons.YesNo,
+                 MessageBoxIcon.Error) with
+            | DialogResult.Yes ->
+                let world = World.choose world
+                handleFormUndo form (EventArgs ())
+                tryRun3 runWhile sdlDeps form world
+            | _ -> World.choose world
+
+    let private run3 runWhile targetDir sdlDeps (form : GaiaForm) world =
         RefWorld := world
-        world
+        WorldChangers.Clear ()
+        let world = attachToWorld targetDir form world
+        populateCreateComboBox form world
+        populateTreeViewLayers form world
+        populateLayerTabs form world
+        form.tickingButton.CheckState <- CheckState.Unchecked
+        tryRun3 runWhile sdlDeps (form : GaiaForm) world
 
     /// Select a target directory for the desired plugin and its assets from the give file path.
     let selectTargetDirAndMakeNuPluginFromFilePath filePath =
@@ -1070,11 +1081,9 @@ module Gaia =
 
     /// Run Gaia from the F# repl.
     let runFromRepl runWhile targetDir sdlDeps form world =
-        WorldChangers.Clear ()
-        RefWorld := world
-        run3 runWhile targetDir sdlDeps form
+        run3 runWhile targetDir sdlDeps form world
 
-    /// Run the Gaia in isolation.
+    /// Run Gaia in isolation.
     let run () =
         let (targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
         use form = createForm ()
@@ -1082,8 +1091,7 @@ module Gaia =
         | Right sdlDeps ->
             match attemptMakeWorld plugin sdlDeps with
             | Right world ->
-                RefWorld := world
-                run3 tautology targetDir sdlDeps form |> ignore
+                let _ = run3 tautology targetDir sdlDeps form world
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error
         | Left error -> failwith error
