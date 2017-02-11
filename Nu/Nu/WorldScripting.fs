@@ -173,7 +173,6 @@ module WorldScripting =
                  ("toCodata", evalSinglet evalToCodata)
                  ("list", evalList)
                  //("toList", evalToList) TODO
-                 //("rev", evalRev) TODO
                  ("ring", evalRing)
                  //("toRing", evalToRing) TODO
                  ("add", evalCons)
