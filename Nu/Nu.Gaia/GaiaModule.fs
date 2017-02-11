@@ -925,8 +925,6 @@ module Gaia =
             | _ -> World.choose world
 
     let private run3 runWhile targetDir sdlDeps (form : GaiaForm) world =
-        RefWorld := world
-        WorldChangers.Clear ()
         let world = attachToWorld targetDir form world
         populateCreateComboBox form world
         populateTreeViewLayers form world
@@ -1081,6 +1079,8 @@ module Gaia =
 
     /// Run Gaia from the F# repl.
     let runFromRepl runWhile targetDir sdlDeps form world =
+        RefWorld := world
+        WorldChangers.Clear ()
         run3 runWhile targetDir sdlDeps form world
 
     /// Run Gaia in isolation.
@@ -1091,6 +1091,8 @@ module Gaia =
         | Right sdlDeps ->
             match attemptMakeWorld plugin sdlDeps with
             | Right world ->
+                RefWorld := world
+                WorldChangers.Clear ()
                 let _ = run3 tautology targetDir sdlDeps form world
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error
