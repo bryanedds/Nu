@@ -132,8 +132,6 @@ module WorldModuleLayer =
         static member internal setLayerOnUpdate value layer world = World.updateLayerState (fun layerState -> { layerState with OnUpdate = value }) Property? OnUpdate layer world
         static member internal getLayerOnPostUpdate layer world = (World.getLayerState layer world).OnPostUpdate
         static member internal setLayerOnPostUpdate value layer world = World.updateLayerState (fun layerState -> { layerState with OnPostUpdate = value }) Property? OnPostUpdate layer world
-        static member internal getLayerOnActualize layer world = (World.getLayerState layer world).OnActualize
-        static member internal setLayerOnActualize value layer world = World.updateLayerState (fun layerState -> { layerState with OnActualize = value }) Property? OnActualize layer world
         static member internal getLayerDepth layer world = (World.getLayerState layer world).Depth
         static member internal setLayerDepth value layer world = World.updateLayerState (fun layerState -> { layerState with Depth = value }) Property? Depth layer world
         static member internal getLayerVisible layer world = (World.getLayerState layer world).Visible
@@ -160,7 +158,6 @@ module WorldModuleLayer =
                 | "OnUnregister" -> Some (World.getLayerOnUnregister layer world :> obj, typeof<Scripting.Expr>)
                 | "OnUpdate" -> Some (World.getLayerOnUpdate layer world :> obj, typeof<Scripting.Expr>)
                 | "OnPostUpdate" -> Some (World.getLayerOnPostUpdate layer world :> obj, typeof<Scripting.Expr>)
-                | "OnActualize" -> Some (World.getLayerOnActualize layer world :> obj, typeof<Scripting.Expr>)
                 | "Depth" -> Some (World.getLayerDepth layer world :> obj, typeof<single>)
                 | "Visible" -> Some (World.getLayerVisible layer world :> obj, typeof<single>)
                 | _ ->
@@ -185,7 +182,6 @@ module WorldModuleLayer =
             | "OnUnregister" -> (World.getLayerOnUnregister layer world :> obj, typeof<Scripting.Expr>)
             | "OnUpdate" -> (World.getLayerOnUpdate layer world :> obj, typeof<Scripting.Expr>)
             | "OnPostUpdate" -> (World.getLayerOnPostUpdate layer world :> obj, typeof<Scripting.Expr>)
-            | "OnActualize" -> (World.getLayerOnActualize layer world :> obj, typeof<Scripting.Expr>)
             | "Depth" -> (World.getLayerDepth layer world :> obj, typeof<single>)
             | "Visible" -> (World.getLayerVisible layer world :> obj, typeof<single>)
             | _ ->
@@ -213,7 +209,6 @@ module WorldModuleLayer =
                 | "OnUnregister" -> (false, world)
                 | "OnUpdate" -> (false, world)
                 | "OnPostUpdate" -> (false, world)
-                | "OnActualize" -> (false, world)
                 | _ ->
                     // HACK: needed to mutate a flag to get the success state out of an updateLayerState callback...
                     let mutable success = false
@@ -241,7 +236,6 @@ module WorldModuleLayer =
             | "OnUnregister" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
             | "OnUpdate" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
             | "OnPostUpdate" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
-            | "OnActualize" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
             | _ -> World.updateLayerState (LayerState.setProperty propertyName property) propertyName layer world
 
         static member private layerOnRegisterChanged evt world =

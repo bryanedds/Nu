@@ -123,8 +123,6 @@ module WorldModuleScreen =
         static member internal setScreenOnUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnUpdate = value }) Property? OnUpdate screen world
         static member internal getScreenOnPostUpdate screen world = (World.getScreenState screen world).OnPostUpdate
         static member internal setScreenOnPostUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnPostUpdate = value }) Property? OnPostUpdate screen world
-        static member internal getScreenOnActualize screen world = (World.getScreenState screen world).OnActualize
-        static member internal setScreenOnActualize value screen world = World.updateScreenState (fun screenState -> { screenState with OnActualize = value }) Property? OnActualize screen world
         static member internal getScreenEntityTreeNp screen world = (World.getScreenState screen world).EntityTreeNp
         static member internal setScreenEntityTreeNpNoEvent value screen world = World.updateScreenStateWithoutEvent (fun screenState -> { screenState with EntityTreeNp = value }) screen world
         static member internal getScreenTransitionStateNp screen world = (World.getScreenState screen world).TransitionStateNp
@@ -157,7 +155,6 @@ module WorldModuleScreen =
                 | "OnUnregister" -> Some (World.getScreenOnUnregister screen world :> obj, typeof<Scripting.Expr>)
                 | "OnUpdate" -> Some (World.getScreenOnUpdate screen world :> obj, typeof<Scripting.Expr>)
                 | "OnPostUpdate" -> Some (World.getScreenOnPostUpdate screen world :> obj, typeof<Scripting.Expr>)
-                | "OnActualize" -> Some (World.getScreenOnActualize screen world :> obj, typeof<Scripting.Expr>)
                 | "EntityTreeNp" -> Some (World.getScreenEntityTreeNp screen world :> obj, typeof<Entity SpatialTree MutantCache>)
                 | "TransitionStateNp" -> Some (World.getScreenTransitionStateNp screen world :> obj, typeof<TransitionState>)
                 | "TransitionTicksNp" -> Some (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
@@ -185,7 +182,6 @@ module WorldModuleScreen =
             | "OnUnregister" -> (World.getScreenOnUnregister screen world :> obj, typeof<Scripting.Expr>)
             | "OnUpdate" -> (World.getScreenOnUpdate screen world :> obj, typeof<Scripting.Expr>)
             | "OnPostUpdate" -> (World.getScreenOnPostUpdate screen world :> obj, typeof<Scripting.Expr>)
-            | "OnActualize" -> (World.getScreenOnActualize screen world :> obj, typeof<Scripting.Expr>)
             | "EntityTreeNp" -> (World.getScreenEntityTreeNp screen world :> obj, typeof<Entity SpatialTree MutantCache>)
             | "TransitionStateNp" -> (World.getScreenTransitionStateNp screen world :> obj, typeof<TransitionState>)
             | "TransitionTicksNp" -> (World.getScreenTransitionTicksNp screen world :> obj, typeof<int64>)
@@ -216,7 +212,6 @@ module WorldModuleScreen =
                 | "OnUnregister" -> (false, world)
                 | "OnUpdate" -> (false, world)
                 | "OnPostUpdate" -> (false, world)
-                | "OnActualize" -> (false, world)
                 | "EntityTreeNp" -> (false, world)
                 | "TransitionStateNp" -> (true, World.setScreenTransitionStateNp (property |> fst :?> TransitionState) screen world)
                 | "TransitionTicksNp" -> (true, World.setScreenTransitionTicksNp (property |> fst :?> int64) screen world)
@@ -249,7 +244,6 @@ module WorldModuleScreen =
             | "OnUnregister" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "OnUpdate" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "OnPostUpdate" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
-            | "OnActualize" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "EntityTreeNp" -> failwith ^ "Cannot change screen entity tree."
             | "TransitionStateNp" -> World.setScreenTransitionStateNp (property |> fst :?> TransitionState) screen world
             | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (property |> fst :?> int64) screen world
