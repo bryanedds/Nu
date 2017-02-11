@@ -577,8 +577,8 @@ module GameplayDispatcherModule =
             let world = stream (Events.Down ->- Simulants.HudDetailRight) |> isSimulantSelected Simulants.HudDetailRight |> monitor (handleDownDetail Rightward) gameplay <| world
             let world = stream (Events.Down ->- Simulants.HudDetailDown) |> isSimulantSelected Simulants.HudDetailDown |> monitor (handleDownDetail Downward) gameplay <| world
             let world = stream (Events.Down ->- Simulants.HudDetailLeft) |> isSimulantSelected Simulants.HudDetailLeft |> monitor (handleDownDetail Leftward) gameplay <| world
-            let world = World.subscribe handleSelectTitle (Events.Select ->- Simulants.Title) gameplay world
-            let world = World.subscribe handleSelectGameplay (Events.Select ->- gameplay) gameplay world
-            let world = World.subscribe handleClickSaveGame (Events.Click ->- Simulants.HudSaveGame) gameplay world
-            let world = World.subscribe handleDeselectGameplay (Events.Deselect ->- gameplay) gameplay world
+            let world = World.monitor handleSelectTitle (Events.Select ->- Simulants.Title) gameplay world
+            let world = World.monitor handleSelectGameplay (Events.Select ->- gameplay) gameplay world
+            let world = World.monitor handleClickSaveGame (Events.Click ->- Simulants.HudSaveGame) gameplay world
+            let world = World.monitor handleDeselectGameplay (Events.Deselect ->- gameplay) gameplay world
             world

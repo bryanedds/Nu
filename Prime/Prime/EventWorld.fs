@@ -336,19 +336,17 @@ module EventWorld =
     let monitorPlus<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         (subscription : Event<'a, 's> -> 'w -> Handling * 'w) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
         let subscriberAddress = subscriber.ParticipantAddress
-        if not ^ Address.isEmpty subscriberAddress then
-            let monitorKey = makeGuid ()
-            let removalKey = makeGuid ()
-            let world = subscribePlus<'a, 's, 'g, 'w> monitorKey subscription eventAddress subscriber world |> snd
-            let unsubscribe = fun (world : 'w) ->
-                let world = unsubscribe removalKey world
-                let world = unsubscribe monitorKey world
-                world
-            let subscription' = fun _ eventSystem -> (Cascade, unsubscribe eventSystem)
-            let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Unregistering"; !!"Event"] ->>- subscriberAddress
-            let world = subscribePlus<unit, 's, 'g, 'w> removalKey subscription' removingEventAddress subscriber world |> snd
-            (unsubscribe, world)
-        else failwith "Cannot monitor events with an anonymous subscriber."
+        let monitorKey = makeGuid ()
+        let removalKey = makeGuid ()
+        let world = subscribePlus<'a, 's, 'g, 'w> monitorKey subscription eventAddress subscriber world |> snd
+        let unsubscribe = fun (world : 'w) ->
+            let world = unsubscribe removalKey world
+            let world = unsubscribe monitorKey world
+            world
+        let subscription' = fun _ eventSystem -> (Cascade, unsubscribe eventSystem)
+        let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Unregistering"; !!"Event"] ->>- subscriberAddress
+        let world = subscribePlus<unit, 's, 'g, 'w> removalKey subscription' removingEventAddress subscriber world |> snd
+        (unsubscribe, world)
 
     /// Keep active a subscription for the life span of a participant.
     let monitor<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
