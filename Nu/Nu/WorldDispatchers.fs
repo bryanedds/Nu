@@ -1096,20 +1096,22 @@ module TileMapDispatcherModule =
         member this.SetParallax (value : single) world = this.Set Property? Parallax value world
         member this.Parallax = PropertyTag.make this Property? Parallax this.GetParallax this.SetParallax
 
-        static member makeTileMapData (tileMapAsset : AssetTag) world =
+        static member tryMakeTileMapData (tileMapAsset : AssetTag) world =
             let metadataMap = World.getAssetMetadataMap world
-            let map = __c ^ Metadata.getTileMapMetadata tileMapAsset metadataMap
-            let mapSize = Vector2i (map.Width, map.Height)
-            let tileSize = Vector2i (map.TileWidth, map.TileHeight)
-            let tileSizeF = Vector2 (single tileSize.X, single tileSize.Y)
-            let tileMapSize = Vector2i (mapSize.X * tileSize.X, mapSize.Y * tileSize.Y)
-            let tileMapSizeF = Vector2 (single tileMapSize.X, single tileMapSize.Y)
-            let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
-            let tileSetSize =
-                let tileSetWidthOpt = tileSet.Image.Width
-                let tileSetHeightOpt = tileSet.Image.Height
-                Vector2i (tileSetWidthOpt.Value / tileSize.X, tileSetHeightOpt.Value / tileSize.Y)
-            { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
+            match Metadata.tryGetTileMapMetadata tileMapAsset metadataMap with
+            | Some (_, _, map) ->
+                let mapSize = Vector2i (map.Width, map.Height)
+                let tileSize = Vector2i (map.TileWidth, map.TileHeight)
+                let tileSizeF = Vector2 (single tileSize.X, single tileSize.Y)
+                let tileMapSize = Vector2i (mapSize.X * tileSize.X, mapSize.Y * tileSize.Y)
+                let tileMapSizeF = Vector2 (single tileMapSize.X, single tileMapSize.Y)
+                let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
+                let tileSetSize =
+                    let tileSetWidthOpt = tileSet.Image.Width
+                    let tileSetHeightOpt = tileSet.Image.Height
+                    Vector2i (tileSetWidthOpt.Value / tileSize.X, tileSetHeightOpt.Value / tileSize.Y)
+                Some { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
+            | None -> None
 
         static member makeTileData (tm : Entity) tmd (tl : TmxLayer) tileIndex world =
             let mapRun = tmd.MapSize.X
@@ -1188,11 +1190,15 @@ module TileMapDispatcherModule =
 
         let registerTileMapPhysics (tileMap : Entity) world =
             let tileMapAsset = tileMap.GetTileMapAsset world
-            let tileMapData = Entity.makeTileMapData tileMapAsset world
-            Seq.foldi
-                (registerTileLayerPhysics tileMap tileMapData)
+            match Entity.tryMakeTileMapData tileMapAsset world with
+            | Some tileMapData ->
+                Seq.foldi
+                    (registerTileLayerPhysics tileMap tileMapData)
+                    world
+                    tileMapData.Map.Layers
+            | None ->
+                Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
                 world
-                tileMapData.Map.Layers
 
         let getTileLayerPhysicsIds (tileMap : Entity) tileMapData tileLayer tileLayerIndex world =
             Seq.foldi
@@ -1210,15 +1216,19 @@ module TileMapDispatcherModule =
 
         let unregisterTileMapPhysics (tileMap : Entity) world =
             let tileMapAsset = tileMap.GetTileMapAsset world
-            let tileMapData = Entity.makeTileMapData tileMapAsset world
-            Seq.foldi
-                (fun tileLayerIndex world (tileLayer : TmxLayer) ->
-                    if tileLayer.Properties.ContainsKey Constants.Physics.CollisionProperty then
-                        let physicsIds = getTileLayerPhysicsIds tileMap tileMapData tileLayer tileLayerIndex world
-                        World.destroyBodies physicsIds world
-                    else world)
+            match Entity.tryMakeTileMapData tileMapAsset world with
+            | Some tileMapData ->
+                Seq.foldi
+                    (fun tileLayerIndex world (tileLayer : TmxLayer) ->
+                        if tileLayer.Properties.ContainsKey Constants.Physics.CollisionProperty then
+                            let physicsIds = getTileLayerPhysicsIds tileMap tileMapData tileLayer tileLayerIndex world
+                            World.destroyBodies physicsIds world
+                        else world)
+                    world
+                    tileMapData.Map.Layers
+            | None ->
+                Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
                 world
-                tileMapData.Map.Layers
 
         static member PropertyDefinitions =
             [Define? Omnipresent true
