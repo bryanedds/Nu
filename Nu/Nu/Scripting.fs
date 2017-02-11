@@ -205,7 +205,6 @@ module Scripting =
             | (Table left, Table right) -> compare left right
             | (_, _) -> -1 // TODO: ensure this won't break any relevant sorting algorithms
 
-        // TODO: check if we can trust the hash function to be efficient on value types...
         override this.GetHashCode () =
             match this with
             | Violation (names, error, _) -> hash names ^^^ hash error
@@ -657,7 +656,6 @@ module Scripting =
                 { LocalDeclaration : bool
                   GlobalFrame : DeclarationFrame
                   LocalFrame : DeclarationFrame
-                  // TODO: consider making this mutable for speed
                   ProceduralFrames : ProceduralFrame list }
     
         [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
