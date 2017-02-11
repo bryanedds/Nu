@@ -103,7 +103,7 @@ module Scripting =
         | GetFrom of string * Expr * SymbolOrigin option
         | Set of string * Expr * SymbolOrigin option
         | SetTo of string * Expr * Expr * SymbolOrigin option
-        | Quote of string * SymbolOrigin option
+        | Quote of Expr * SymbolOrigin option
 
         (* Declarations - only work at the top level. *)
         | Define of Binding * SymbolOrigin option // constructed as [define c 0]
@@ -486,7 +486,7 @@ module Scripting =
                         | (true, int64) -> Int64 int64 :> obj
                     | (true, int) -> Int int :> obj
                 | Prime.String (str, _) -> String str :> obj
-                | Prime.Quote (str, originOpt) -> Quote (str, originOpt) :> obj
+                | Prime.Quote (quoted, originOpt) -> Quote (this.SymbolToExpr quoted, originOpt) :> obj
                 | Prime.Symbols (symbols, originOpt) ->
                     match symbols with
                     | Atom (name, _) :: tail ->

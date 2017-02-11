@@ -502,7 +502,7 @@ module WorldScripting =
             | GetFrom (name, expr, originOpt) -> evalGet name (Some expr) originOpt world
             | Set (name, expr, originOpt) -> evalSet name None expr originOpt world
             | SetTo (name, expr, expr2, originOpt) -> evalSet name (Some expr) expr2 originOpt world
-            | Quote _ -> failwithnie ()
+            | Quote _ as quote -> (quote, world)
             | Define (binding, originOpt) -> evalDefine binding originOpt world
 
         and evalMany (exprs : Expr seq) world =
