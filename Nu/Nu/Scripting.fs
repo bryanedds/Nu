@@ -48,9 +48,8 @@ module Scripting =
                      "ring toRing add remove " +
                      "table toTable tryFind find " +
                      "let fun if cond try break get set do " +
-                     "subscribe monitor " +
+                     "monitor " +
                      // TODO: "substring tickRate tickTime update curry compose " +
-                     "variableStream eventStream propertyStream " +
                      "define variable equate handle " +
                      // prelude identifiers...
                      "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegitiveInfinity isNaN " +
