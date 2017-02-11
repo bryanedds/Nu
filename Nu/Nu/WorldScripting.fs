@@ -181,7 +181,6 @@ module WorldScripting =
                  //("toTable", evalToTable) TODO
                  ("tryFind", evalTryFind)
                  ("find", evalFind)
-                 ("subscribe", evalDoublet evalSubscribe)
                  ("monitor", evalDoublet evalMonitor)
                  ("entityExists", evalSinglet evalSimulantExists)
                  ("layerExists", evalSinglet evalSimulantExists)

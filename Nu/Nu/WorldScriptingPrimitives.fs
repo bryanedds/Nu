@@ -971,8 +971,8 @@ module WorldScriptingPrimitives =
                 (Table evaledMap, world)
             else (Violation ([!!"InvalidEntries"; !!"Table"; !!(String.capitalize fnName)], "Table entries must consist of 1 or more pairs.", fnOriginOpt), world)
 
-        let evalSubscribe5 fnSubscribe subscription (eventAddress : obj Address) subscriber world =
-            (fnSubscribe : (Event<obj, Participant> -> World -> World) -> obj Address -> Participant -> World -> World) (fun evt world ->
+        let evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
+            EventWorld.subscribe (fun evt world ->
                 match World.tryGetSimulantScriptFrame subscriber world with
                 | Some scriptFrame ->
                     match tryImport evt.Data evt.DataType with
@@ -992,22 +992,19 @@ module WorldScriptingPrimitives =
                 (subscriber :> Participant)
                 world
 
-        let evalSubscribe6 fnSubscribe fnOriginOpt fnName evaledArg evaledArg2 world =
+        let evalMonitor6 fnOriginOpt fnName evaledArg evaledArg2 world =
             match evaledArg with
             | Binding _
             | Fun _ ->
                 match evaledArg2 with
                 | String str
                 | Keyword str ->
-                    let world = evalSubscribe5 fnSubscribe evaledArg (Address.makeFromString str) (World.getScriptContext world) world
+                    let world = evalMonitor5 evaledArg (Address.makeFromString str) (World.getScriptContext world) world
                     (Unit, world)
                 | Violation _ as error -> (error, world)
                 | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + fnName + "' requires a relation for its 2nd argument.", fnOriginOpt), world)
             | Violation _ as error -> (error, world)
             | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + fnName + "' requires a function for its 1st argument.", fnOriginOpt), world)
 
-        let evalSubscribe fnOriginOpt fnName evaledArg evaledArg2 world =
-            evalSubscribe6 EventWorld.subscribe fnOriginOpt fnName evaledArg evaledArg2 world
-
         let evalMonitor fnOriginOpt fnName evaledArg evaledArg2 world =
-            evalSubscribe6 EventWorld.monitor fnOriginOpt fnName evaledArg evaledArg2 world
+            evalMonitor6 fnOriginOpt fnName evaledArg evaledArg2 world
