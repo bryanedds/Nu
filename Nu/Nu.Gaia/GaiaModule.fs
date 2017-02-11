@@ -904,14 +904,15 @@ module Gaia =
         | :? EditorState -> world // NOTE: conclude world is already attached
         | _ -> failwith "Cannot attach Gaia to a world that has a user state of a type other than unit or EditorState."
 
-    let rec private tryRun3 runWhile sdlDeps (form : GaiaForm) world =
+    let rec private tryRun3 runWhile sdlDeps (form : GaiaForm) =
         try World.runWithoutCleanUp
                 runWhile
                 (fun world -> let world = updateEditorWorld form world in (RefWorld := world; world))
                 (fun world -> form.displayPanel.Invalidate (); world)
                 sdlDeps
                 Running
-                world
+                !RefWorld |>
+                ignore
         with exn ->
             match MessageBox.Show
                 ("Unexpected exception due to: " + scstring exn + "\nWould you like to undo the last operator to try to keep Gaia running?",
@@ -919,18 +920,18 @@ module Gaia =
                  MessageBoxButtons.YesNo,
                  MessageBoxIcon.Error) with
             | DialogResult.Yes ->
-                let world = World.choose world
-                handleFormUndo form (EventArgs ())
-                tryRun3 runWhile sdlDeps form world
-            | _ -> World.choose world
+                form.undoButton.PerformClick ()
+                RefWorld := World.choose !RefWorld
+                tryRun3 runWhile sdlDeps form
+            | _ -> RefWorld := World.choose !RefWorld
 
-    let private run3 runWhile targetDir sdlDeps (form : GaiaForm) world =
-        let world = attachToWorld targetDir form world
-        populateCreateComboBox form world
-        populateTreeViewLayers form world
-        populateLayerTabs form world
+    let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
+        RefWorld := attachToWorld targetDir form !RefWorld
+        populateCreateComboBox form !RefWorld
+        populateTreeViewLayers form !RefWorld
+        populateLayerTabs form !RefWorld
         form.tickingButton.CheckState <- CheckState.Unchecked
-        tryRun3 runWhile sdlDeps (form : GaiaForm) world
+        tryRun3 runWhile sdlDeps (form : GaiaForm)
 
     /// Select a target directory for the desired plugin and its assets from the give file path.
     let selectTargetDirAndMakeNuPluginFromFilePath filePath =
@@ -1081,7 +1082,8 @@ module Gaia =
     let runFromRepl runWhile targetDir sdlDeps form world =
         RefWorld := world
         WorldChangers.Clear ()
-        run3 runWhile targetDir sdlDeps form world
+        run3 runWhile targetDir sdlDeps form
+        !RefWorld
 
     /// Run Gaia in isolation.
     let run () =
@@ -1093,7 +1095,7 @@ module Gaia =
             | Right world ->
                 RefWorld := world
                 WorldChangers.Clear ()
-                let _ = run3 tautology targetDir sdlDeps form world
+                let _ = run3 tautology targetDir sdlDeps form
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error
         | Left error -> failwith error

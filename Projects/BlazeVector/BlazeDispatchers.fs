@@ -144,6 +144,7 @@ module PlayerModule =
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetDepth playerTransform.Depth world
             let world = World.propagateEntityPhysics bullet world
+            let _ = 1 / 0
             (bullet, world)
 
         static let propelBullet (bullet : Entity) world =
