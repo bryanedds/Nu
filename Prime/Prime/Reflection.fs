@@ -132,8 +132,7 @@ module TypeExtension =
         /// Never returns null.
         member this.GetDefaultValue () =
             if this.IsPrimitive then Activator.CreateInstance this
-            elif this = typeof<string> then "" :> obj
-            elif this = typeof<Name> then Name.empty :> obj
+            elif this = typeof<string> then String.Empty :> obj
             elif this.Name = typedefof<_ array>.Name then Reflection.objsToArray this [||]
             elif this.Name = typedefof<_ list>.Name then Reflection.objsToList this []
             elif this.Name = typedefof<_ Set>.Name then Reflection.objsToSet this Set.empty

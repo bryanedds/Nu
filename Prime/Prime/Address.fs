@@ -35,16 +35,16 @@ type AddressConverter (targetType : Type) =
 
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? string as fullNameStr ->
+        | :? string as fullName ->
             let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
             let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
-            makeFromStringFunctionGeneric.Invoke (null, [|fullNameStr|])
+            makeFromStringFunctionGeneric.Invoke (null, [|fullName|])
         | :? Symbol as addressSymbol ->
             match addressSymbol with
-            | Atom (fullNameStr, _) | String (fullNameStr, _) ->
+            | Atom (fullName, _) | String (fullName, _) ->
                 let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
                 let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
-                makeFromStringFunctionGeneric.Invoke (null, [|fullNameStr|])
+                makeFromStringFunctionGeneric.Invoke (null, [|fullName|])
             | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
                 failconv "Expected Symbol or String for conversion to Address." ^ Some addressSymbol
         | _ ->
@@ -58,15 +58,15 @@ module AddressModule =
     /// TODO: have an Address constructor to check if multiple wildcards exist in a given address, and throw if so.
     type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
         private
-            { Names : Name list
+            { Names : string list
               HashCode : int // OPTIMIZATION: hash cached for speed
               TypeCarrier : 'a -> unit }
     
         /// Make an address from a '/' delimited string.
         /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
         static member makeFromString<'a> (addressStr : string) =
-            let names = addressStr.Split '/' |> List.ofArray |> List.map Name.make
-            { Names = names; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
+            let names = List.ofArray (addressStr.Split '/')
+            { Names = names; HashCode = String.hashMany names; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Hash an Address.
         static member hash (address : 'a Address) =
@@ -75,20 +75,20 @@ module AddressModule =
         /// Equate Addresses.
         static member equals address address2 =
             let hashesSame = address.HashCode = address2.HashCode // OPTIMIZATION: first check hash equality
-            let namesSame = Name.equateNames address.Names address2.Names
+            let namesSame = String.equateMany address.Names address2.Names
             hashesSame && namesSame
 
         /// Compare Addresses.
         static member compare address address2 =
-            Name.compareNames address.Names address2.Names
+            String.compareMany address.Names address2.Names
 
         /// Convert a string into an address.
         static member stoa<'a> str =
             Address<'a>.makeFromString<'a> str
 
         /// Convert a names list into an address.
-        static member ltoa<'a> (names : Name list) =
-            { Names = names; HashCode = Name.hashNames names; TypeCarrier = fun (_ : 'a) -> () }
+        static member ltoa<'a> (names : string list) =
+            { Names = names; HashCode = String.hashMany names; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Convert a single name into an address.
         static member ntoa<'a> name : 'a Address =
@@ -171,7 +171,7 @@ module AddressModule =
 
         /// The empty address.
         let empty<'a> =
-            { Names = []; HashCode = Name.hashNames []; TypeCarrier = fun (_ : 'a) -> () }
+            { Names = []; HashCode = String.hashMany []; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Make an address from a list of names.
         let makeFromList<'a> names : 'a Address =

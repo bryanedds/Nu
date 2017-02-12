@@ -64,7 +64,7 @@ module Scripting =
         Expr =
 
         (* Primitive Value Types *)
-        | Violation of Name list * string * SymbolOrigin option
+        | Violation of string list * string * SymbolOrigin option
         | Unit
         | Bool of bool
         | Int of int
@@ -95,7 +95,7 @@ module Scripting =
         | If of Expr * Expr * Expr * SymbolOrigin option
         | Match of Expr * (Expr * Expr) array * SymbolOrigin option
         | Select of (Expr * Expr) array * SymbolOrigin option
-        | Try of Expr * (Name list * Expr) list * SymbolOrigin option
+        | Try of Expr * (string list * Expr) list * SymbolOrigin option
         | Do of Expr list * SymbolOrigin option
         | Break of Expr * SymbolOrigin option
         | Get of string * SymbolOrigin option
@@ -403,8 +403,8 @@ module Scripting =
                     let trySymbol = Symbol.Atom ("try", None)
                     let inputSymbol = this.ExprToSymbol input
                     let caseSymbols =
-                        List.map (fun (tagNames, consequent) ->
-                            let tagSymbol = Symbol.Atom (tagNames |> Name.join |> Name.getNameStr, None)
+                        List.map (fun ((tagNames : string list), consequent) ->
+                            let tagSymbol = Symbol.Atom (String.Join ("/", tagNames), None)
                             let consequentSymbol = this.ExprToSymbol consequent
                             Symbol.Symbols ([tagSymbol; consequentSymbol], None))
                             cases
@@ -476,12 +476,12 @@ module Scripting =
                                 let str = str.Substring(0, str.Length - 1)
                                 match Single.TryParse str with
                                 | (true, single) -> Single single :> obj
-                                | (false, _) -> Violation ([!!"InvalidForm"; !!"Number"], "Unexpected number parse failure.", originOpt) :> obj
+                                | (false, _) -> Violation (["InvalidForm"; "Number"], "Unexpected number parse failure.", originOpt) :> obj
                             else
                                 let str = if str.EndsWith "d" || str.EndsWith "D" then str.Substring(0, str.Length - 1) else str
                                 match Double.TryParse (str, Globalization.NumberStyles.Float, Globalization.CultureInfo.CurrentCulture) with
                                 | (true, double) -> Double double :> obj
-                                | (false, _) -> Violation ([!!"InvalidForm"; !!"Number"], "Unexpected number parse failure.", originOpt) :> obj
+                                | (false, _) -> Violation (["InvalidForm"; "Number"], "Unexpected number parse failure.", originOpt) :> obj
                         | (true, int64) -> Int64 int64 :> obj
                     | (true, int) -> Int int :> obj
                 | Prime.String (str, _) -> String str :> obj
@@ -500,24 +500,24 @@ module Scripting =
                             match tail with
                             | [Prime.Atom (tagStr, _)]
                             | [Prime.String (tagStr, _)] ->
-                                try let tagName = !!tagStr in Violation (Name.split tagName, "User-defined violation.", originOpt) :> obj
-                                with exn -> Violation ([!!"InvalidForm"; !!"Violation"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
+                                try let tagName = tagStr in Violation (tagName.Split [|'/'|] |> List.ofArray, "User-defined violation.", originOpt) :> obj
+                                with exn -> Violation (["InvalidForm"; "Violation"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | [Prime.Atom (tagStr, _); Prime.String (errorMsg, _)]
                             | [Prime.String (tagStr, _); Prime.String (errorMsg, _)] ->
-                                try let tagName = !!tagStr in Violation (Name.split tagName, errorMsg, originOpt) :> obj
-                                with exn -> Violation ([!!"InvalidForm"; !!"Violation"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
-                            | _ -> Violation ([!!"InvalidForm"; !!"Violation"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
+                                try let tagName = tagStr in Violation (tagName.Split [|'/'|] |> List.ofArray, errorMsg, originOpt) :> obj
+                                with exn -> Violation (["InvalidForm"; "Violation"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
+                            | _ -> Violation (["InvalidForm"; "Violation"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
                         | "let" ->
                             match tail with
-                            | [] -> Violation ([!!"InvalidForm"; !!"Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
-                            | [_] -> Violation ([!!"InvalidForm"; !!"Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                            | [] -> Violation (["InvalidForm"; "Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                            | [_] -> Violation (["InvalidForm"; "Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
                             | [binding; body] ->
                                 match binding with
                                 | Symbols (bindingSymbols, _) ->
                                     match this.SymbolsToBindingOpt bindingSymbols with
                                     | Some binding -> Let (binding, this.SymbolToExpr body, originOpt) :> obj
-                                    | None -> Violation ([!!"InvalidForm"; !!"Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
-                                | _ -> Violation ([!!"InvalidForm"; !!"Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                                    | None -> Violation (["InvalidForm"; "Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                                | _ -> Violation (["InvalidForm"; "Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
                             | bindingsAndBody ->
                                 let (bindings, body) = (List.allButLast bindingsAndBody, List.last bindingsAndBody)
                                 let (bindings, bindingErrors) = List.split (function Symbols ([_; _], _) -> true | _ -> false) bindings
@@ -528,8 +528,8 @@ module Scripting =
                                     if List.isEmpty bindingErrors then
                                         let bindings = List.definitize bindingOpts
                                         LetMany (bindings, this.SymbolToExpr body, originOpt) :> obj
-                                    else Violation ([!!"InvalidForm"; !!"Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
-                                else Violation ([!!"InvalidForm"; !!"Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                                    else Violation (["InvalidForm"; "Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                                else Violation (["InvalidForm"; "Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
                         | "fun" ->
                             match tail with
                             | [args; body] ->
@@ -538,13 +538,13 @@ module Scripting =
                                     if List.forall (function Atom _ -> true | _ -> false) args then
                                         let args = Array.map (function Atom (arg, _) -> arg | _ -> failwithumf ()) (Array.ofList args)
                                         Fun (args, Array.length args, this.SymbolToExpr body, false, None, originOpt) :> obj
-                                    else Violation ([!!"InvalidForm"; !!"Fun"], "Invalid fun form. TODO: more info.", originOpt) :> obj
-                                | _ -> Violation ([!!"InvalidForm"; !!"Fun"], "Invalid fun form. TODO: more info.", originOpt) :> obj
-                            | _ -> Violation ([!!"InvalidForm"; !!"Fun"], "Invalid fun form. TODO: more info.", originOpt) :> obj
+                                    else Violation (["InvalidForm"; "Fun"], "Invalid fun form. TODO: more info.", originOpt) :> obj
+                                | _ -> Violation (["InvalidForm"; "Fun"], "Invalid fun form. TODO: more info.", originOpt) :> obj
+                            | _ -> Violation (["InvalidForm"; "Fun"], "Invalid fun form. TODO: more info.", originOpt) :> obj
                         | "if" ->
                             match tail with
                             | [condition; consequent; alternative] -> If (this.SymbolToExpr condition, this.SymbolToExpr consequent, this.SymbolToExpr alternative, originOpt) :> obj
-                            | _ -> Violation ([!!"InvalidForm"; !!"If"], "Invalid if form. Requires 3 arguments.", originOpt) :> obj
+                            | _ -> Violation (["InvalidForm"; "If"], "Invalid if form. Requires 3 arguments.", originOpt) :> obj
                         | "match" ->
                             match tail with
                             | input :: cases ->
@@ -553,15 +553,15 @@ module Scripting =
                                     let cases = List.map (function Symbols ([condition; consequent], _) -> (condition, consequent) | _ -> failwithumf ()) cases
                                     let cases = List.map (fun (condition, consequent) -> (this.SymbolToExpr condition, this.SymbolToExpr consequent)) cases
                                     Match (input, Array.ofList cases, originOpt) :> obj
-                                else Violation ([!!"InvalidForm"; !!"Match"], "Invalid match form. Requires 1 or more cases.", originOpt) :> obj
-                            | _ -> Violation ([!!"InvalidForm"; !!"Match"], "Invalid match form. Requires 1 input and 1 or more cases.", originOpt) :> obj
+                                else Violation (["InvalidForm"; "Match"], "Invalid match form. Requires 1 or more cases.", originOpt) :> obj
+                            | _ -> Violation (["InvalidForm"; "Match"], "Invalid match form. Requires 1 input and 1 or more cases.", originOpt) :> obj
                         | "select" ->
                             let cases = tail
                             if List.forall (function Symbols ([_; _], _) -> true | _ -> false) cases then
                                 let cases = List.map (function Symbols ([condition; consequent], _) -> (condition, consequent) | _ -> failwithumf ()) cases
                                 let cases = List.map (fun (condition, consequent) -> (this.SymbolToExpr condition, this.SymbolToExpr consequent)) cases
                                 Select (Array.ofList cases, originOpt) :> obj
-                            else Violation ([!!"InvalidForm"; !!"Select"], "Invalid select form. Requires 1 or more cases.", originOpt) :> obj
+                            else Violation (["InvalidForm"; "Select"], "Invalid select form. Requires 1 or more cases.", originOpt) :> obj
                         | "try" ->
                             match tail with
                             | [body; Prime.Symbols (handlers, _)] ->
@@ -570,18 +570,18 @@ module Scripting =
                                         (fun i handler ->
                                             match handler with
                                             | Prime.Symbols ([Prime.Atom (categoriesStr, _); handlerBody], _) ->
-                                                Right (Name.split !!categoriesStr, handlerBody)
+                                                Right (categoriesStr.Split [|'/'|] |> List.ofArray, handlerBody)
                                             | _ ->
                                                 Left ("Invalid try handler form for handler #" + scstring (inc i) + ". Requires 1 path and 1 body."))
                                         handlers
                                 let (errors, handlers) = Either.split handlerEirs
                                 match errors with
                                 | [] -> Try (this.SymbolToExpr body, List.map (mapSnd this.SymbolToExpr) handlers, originOpt) :> obj
-                                | error :: _ -> Violation ([!!"InvalidForm"; !!"Try"], error, originOpt) :> obj
-                            | _ -> Violation ([!!"InvalidForm"; !!"Try"], "Invalid try form. Requires 1 body and a handler list.", originOpt) :> obj
+                                | error :: _ -> Violation (["InvalidForm"; "Try"], error, originOpt) :> obj
+                            | _ -> Violation (["InvalidForm"; "Try"], "Invalid try form. Requires 1 body and a handler list.", originOpt) :> obj
                         | "do" ->
                             match tail with
-                            | [] -> Violation ([!!"InvalidForm"; !!"Do"], "Invalid do form. Requires 1 or more sub-expressions.", originOpt) :> obj
+                            | [] -> Violation (["InvalidForm"; "Do"], "Invalid do form. Requires 1 or more sub-expressions.", originOpt) :> obj
                             | symbols ->
                                 let exprs = this.SymbolsToExpr symbols
                                 Do (exprs, originOpt) :> obj
@@ -595,8 +595,8 @@ module Scripting =
                                 match tail2 with
                                 | [] -> Get (nameStr, originOpt) :> obj
                                 | [relation] -> GetFrom (nameStr, this.SymbolToExpr relation, originOpt) :> obj
-                                | _ -> Violation ([!!"InvalidForm"; !!"Get"], "Invalid get form. Requires a name and an optional relation expression.", originOpt) :> obj
-                            | _ -> Violation ([!!"InvalidForm"; !!"Get"], "Invalid get form. Requires a name and an optional relation expression.", originOpt) :> obj
+                                | _ -> Violation (["InvalidForm"; "Get"], "Invalid get form. Requires a name and an optional relation expression.", originOpt) :> obj
+                            | _ -> Violation (["InvalidForm"; "Get"], "Invalid get form. Requires a name and an optional relation expression.", originOpt) :> obj
                         | "set" ->
                             match tail with
                             | Prime.Atom (nameStr, _) :: value :: tail2
@@ -604,13 +604,13 @@ module Scripting =
                                 match tail2 with
                                 | [] -> Set (nameStr, this.SymbolToExpr value, originOpt) :> obj
                                 | [relation] -> SetTo (nameStr, this.SymbolToExpr value, this.SymbolToExpr relation, originOpt) :> obj
-                                | _ -> Violation ([!!"InvalidForm"; !!"Set"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", originOpt) :> obj
-                            | _ -> Violation ([!!"InvalidForm"; !!"Set"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", originOpt) :> obj
+                                | _ -> Violation (["InvalidForm"; "Set"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", originOpt) :> obj
+                            | _ -> Violation (["InvalidForm"; "Set"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", originOpt) :> obj
                         | "define" ->
                             let bindingSymbols = tail
                             match this.SymbolsToBindingOpt bindingSymbols with
                             | Some binding -> Define (binding, originOpt) :> obj
-                            | None -> Violation ([!!"InvalidForm"; !!"Define"], "Invalid define form. TODO: more info.", originOpt) :> obj
+                            | None -> Violation (["InvalidForm"; "Define"], "Invalid define form. TODO: more info.", originOpt) :> obj
                         | _ -> Apply (Array.ofList (this.SymbolsToExpr symbols), originOpt) :> obj
                     | _ -> Apply (Array.ofList (this.SymbolsToExpr symbols), originOpt) :> obj
             | :? Expr -> source
@@ -630,7 +630,7 @@ module Scripting =
         match expr with
         | Violation (names, error, optOrigin) ->
             Log.info ^
-                "Unexpected violation:" + (names |> Name.join |> Name.getNameStr) +
+                "Unexpected violation:" + String.Join ("/", names) +
                 "\ndue to:" + error +
                 "\nat: " + scstring optOrigin + "'."
         | _ -> ()
@@ -661,7 +661,7 @@ module Scripting =
         module Env =
     
             let private BottomBinding =
-                (String.Empty, Violation ([!!"BottomAccess"], "Accessed a bottom value.", None))
+                (String.Empty, Violation (["BottomAccess"], "Accessed a bottom value.", None))
 
             let getLocalDeclaration env =
                 env.LocalDeclaration

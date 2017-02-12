@@ -49,7 +49,7 @@ type internal UnsubscriptionEntries =
 module Events =
 
     /// Represents a wildcard in an event.
-    let Wildcard = ntoa<obj> !!"@"
+    let Wildcard = ntoa<obj> "@"
 
 [<AutoOpen>]
 module EventSystemModule =

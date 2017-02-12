@@ -96,7 +96,7 @@ module WorldModuleEntity =
             World.entityStateRemover entity world
 
         static member private publishEntityChange propertyName (entity : Entity) oldWorld world =
-            let changeEventAddress = ltoa [!!"Entity"; !!"Change"; !!propertyName; !!"Event"] ->>- entity.EntityAddress
+            let changeEventAddress = ltoa ["Entity"; "Change"; propertyName; "Event"] ->>- entity.EntityAddress
             let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
             World.publishPlus World.sortSubscriptionsByHierarchy { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity false world
 
@@ -410,7 +410,7 @@ module WorldModuleEntity =
             if World.entityExists entity world then
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> Some (World.getEntityId entity world :> obj, typeof<Guid>)
-                | "Name" -> Some (World.getEntityName entity world :> obj, typeof<Name>)
+                | "Name" -> Some (World.getEntityName entity world :> obj, typeof<string>)
                 | "DispatcherNp" -> Some (World.getEntityDispatcherNp entity world :> obj, typeof<EntityDispatcher>)
                 | "Persistent" -> Some (World.getEntityPersistent entity world :> obj, typeof<bool>)
                 | "Specialization" -> Some (World.getEntitySpecialization entity world :> obj, typeof<string>)
@@ -441,7 +441,7 @@ module WorldModuleEntity =
         static member internal getEntityProperty propertyName entity world =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> (World.getEntityId entity world :> obj, typeof<Guid>)
-            | "Name" -> (World.getEntityName entity world :> obj, typeof<Name>)
+            | "Name" -> (World.getEntityName entity world :> obj, typeof<string>)
             | "DispatcherNp" -> (World.getEntityDispatcherNp entity world :> obj, typeof<EntityDispatcher>)
             | "Persistent" -> (World.getEntityPersistent entity world :> obj, typeof<bool>)
             | "Specialization" -> (World.getEntitySpecialization entity world :> obj, typeof<string>)
@@ -587,7 +587,7 @@ module WorldModuleEntity =
                     let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
                     let world = World.updateEntityPublishFlags entity world
                     let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
-                    World.publish () (ltoa<unit> [!!"Entity"; !!"Register"; !!"Event"] ->- entity) eventTrace entity world)
+                    World.publish () (ltoa<unit> ["Entity"; "Register"; "Event"] ->- entity) eventTrace entity world)
                     entity
                     world
             World.choose world
@@ -596,7 +596,7 @@ module WorldModuleEntity =
             let world =
                 World.withEventContext (fun world ->
                     let eventTrace = EventTrace.record "World" "removeEntity" EventTrace.empty
-                    let world = World.publish () (ltoa<unit> [!!"Entity"; !!"Unregistering"; !!"Event"] ->- entity) eventTrace entity world
+                    let world = World.publish () (ltoa<unit> ["Entity"; "Unregistering"; "Event"] ->- entity) eventTrace entity world
                     let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
                     let facets = World.getEntityFacetsNp entity world
                     let world = dispatcher.Unregister (entity, world)
@@ -950,7 +950,7 @@ module WorldModuleEntity =
             | Some entityStateObj ->
                 let entityState = entityStateObj :?> EntityState
                 let id = makeGuid ()
-                let name = !!(scstring id)
+                let name = (scstring id)
                 let entityState = { entityState with Id = id; Name = name }
                 let position =
                     if atMouse

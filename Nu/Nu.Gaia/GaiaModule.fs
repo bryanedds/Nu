@@ -71,7 +71,7 @@ module Gaia =
         let treeCategory = form.treeView.Nodes.[entityCategoryName]
         let treeCategoryNodeName = scstring entity.EntityAddress
         if not ^ treeCategory.Nodes.ContainsKey treeCategoryNodeName then
-            let treeCategoryNode = TreeNode (Name.getNameStr ^ entity.GetName world)
+            let treeCategoryNode = TreeNode (entity.GetName world)
             treeCategoryNode.Name <- treeCategoryNodeName
             treeCategory.Nodes.Add treeCategoryNode |> ignore
         else () // when changing an entity name, entity will be added twice - once from win forms, once from world
@@ -102,13 +102,13 @@ module Gaia =
         let layers = World.getLayers Simulants.EditorScreen world
         let layerTabPages = form.layerTabs.TabPages
         for layer in layers do
-            let layerNameStr = Name.getNameStr layer.LayerName
-            if not ^ layerTabPages.ContainsKey layerNameStr then
-                layerTabPages.Add (layerNameStr, layerNameStr)
+            let layerName = layer.LayerName
+            if not ^ layerTabPages.ContainsKey layerName then
+                layerTabPages.Add (layerName, layerName)
     
         // remove layers imperatively to preserve existing layer tabs 
         for layerTabPage in layerTabPages do
-            if Seq.notExists (fun (layer : Layer) -> Name.getNameStr layer.LayerName = layerTabPage.Name) layers then
+            if Seq.notExists (fun (layer : Layer) -> layer.LayerName = layerTabPage.Name) layers then
                 layerTabPages.RemoveByKey layerTabPage.Name
 
     let private setTreeViewSelectionToPropertyGridSelection (form : GaiaForm) =
@@ -280,9 +280,9 @@ module Gaia =
             let layerName = match layerDescriptor.LayerProperties.TryFind "Name" with Some (Atom (name, _)) -> name | _ -> failwithumf ()
             if not (World.layerExists (Simulants.EditorScreen => layerName) world) then
                 let (layer, world) = World.readLayer layerDescriptor None Simulants.EditorScreen world
-                let layerNameStr = Name.getNameStr (layer.GetName world)
-                form.layerTabs.SelectedTab.Text <- layerNameStr
-                form.layerTabs.SelectedTab.Name <- layerNameStr
+                let layerName = layer.GetName world
+                form.layerTabs.SelectedTab.Text <- layerName
+                form.layerTabs.SelectedTab.Name <- layerName
                 let world = World.updateUserState (fun editorState -> { editorState with SelectedLayer = layer }) world
                 let world = subscribeToEntityEvents form world
 
@@ -471,7 +471,8 @@ module Gaia =
 
     let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            if isNotNull form.treeView.SelectedNode then
+            if  isNotNull form.treeView.SelectedNode &&
+                form.treeView.SelectedNode.Level = 1 then
                 let entity = Entity (Address.makeFromString form.treeView.SelectedNode.Name)
                 match Address.getNames entity.EntityAddress with
                 | [_; _; _] ->
@@ -528,16 +529,15 @@ module Gaia =
         layerCreationForm.okButton.Click.Add ^ fun _ ->
             addWorldChanger ^ fun world ->
                 let world = pushPastWorld world world
-                let layerNameStr = layerCreationForm.nameTextBox.Text
-                let layerName = !!layerNameStr
+                let layerName = layerCreationForm.nameTextBox.Text
                 let layerDispatcher = layerCreationForm.dispatcherTextBox.Text
                 let layerSpecialization = layerCreationForm.specializationTextBox.Text
-                try if Name.length layerName = 0 then failwith "Layer name cannot be empty in Gaia due to WinForms limitations."
+                try if String.length layerName = 0 then failwith "Layer name cannot be empty in Gaia due to WinForms limitations."
                     let layerDepth = Single.Parse layerCreationForm.depthTextBox.Text
                     let (layer, world) = World.createLayer5 layerDispatcher (Some layerSpecialization) (Some layerName) Simulants.EditorScreen world
                     let world = layer.SetDepth layerDepth world
                     refreshLayerTabs form world
-                    form.layerTabs.SelectTab (form.layerTabs.TabPages.IndexOfKey layerNameStr)
+                    form.layerTabs.SelectTab (form.layerTabs.TabPages.IndexOfKey layerName)
                     world
                 with exn ->
                     let world = World.choose world
@@ -549,8 +549,8 @@ module Gaia =
 
     let private handleFormSave (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            let layerNameStr = Name.getNameStr (World.getUserState world).SelectedLayer.LayerName
-            form.saveFileDialog.Title <- "Save '" + layerNameStr + "' As"
+            let layerName = (World.getUserState world).SelectedLayer.LayerName
+            form.saveFileDialog.Title <- "Save '" + layerName + "' As"
             form.saveFileDialog.FileName <- String.Empty
             let saveFileResult = form.saveFileDialog.ShowDialog form
             match saveFileResult with
@@ -580,11 +580,11 @@ module Gaia =
                 let layer = (World.getUserState world).SelectedLayer
                 let world = World.destroyLayerImmediate layer world
                 deselectEntity form world
-                form.layerTabs.TabPages.RemoveByKey ^ Name.getNameStr layer.LayerName
+                form.layerTabs.TabPages.RemoveByKey layer.LayerName
                 World.updateUserState (fun editorState ->
                     let layerTabs = form.layerTabs
                     let layerTab = layerTabs.SelectedTab
-                    { editorState with SelectedLayer = stol Simulants.EditorScreen !!layerTab.Text })
+                    { editorState with SelectedLayer = stol Simulants.EditorScreen layerTab.Text })
                     world
 
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
@@ -705,7 +705,7 @@ module Gaia =
                 World.updateUserState (fun editorState ->
                     let layerTabs = form.layerTabs
                     let layerTab = layerTabs.SelectedTab
-                    { editorState with SelectedLayer = stol Simulants.EditorScreen !!layerTab.Text })
+                    { editorState with SelectedLayer = stol Simulants.EditorScreen layerTab.Text })
                     world
             let world = subscribeToEntityEvents form world
             refreshPropertyGrid form world

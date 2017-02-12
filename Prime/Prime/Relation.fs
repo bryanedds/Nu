@@ -35,16 +35,16 @@ type RelationConverter (targetType : Type) =
         
     override this.ConvertFrom (_, _, source) =
         match source with
-        | :? string as fullNameStr ->
+        | :? string as fullName ->
             let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
             let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
-            makeFromStringFunctionGeneric.Invoke (null, [|fullNameStr|])
+            makeFromStringFunctionGeneric.Invoke (null, [|fullName|])
         | :? Symbol as relationSymbol ->
             match relationSymbol with
-            | Atom (fullNameStr, _) | String (fullNameStr, _) ->
+            | Atom (fullName, _) | String (fullName, _) ->
                 let makeFromStringFunction = targetType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
                 let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
-                makeFromStringFunctionGeneric.Invoke (null, [|fullNameStr|])
+                makeFromStringFunctionGeneric.Invoke (null, [|fullName|])
             | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
                 failconv "Expected Symbol or String for conversion to Relation." ^ Some relationSymbol
         | _ ->
@@ -57,14 +57,14 @@ module RelationModule =
     /// A relation that can be resolved to an address via projection.
     type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>] 'a Relation =
         private
-            { NameOpts : Name option list
+            { NameOpts : string option list
               TypeCarrier : 'a -> unit }
     
         /// Make a relation from a '/' delimited string where '.' are empty.
         /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
         static member makeFromString<'a> (relationStr : string) =
             let nameOptList = relationStr.Split '/' |> List.ofSeq
-            let nameOpts = List.map (fun name -> match name with "." -> None | _ -> Some !!name) nameOptList
+            let nameOpts = List.map (fun name -> match name with "." -> None | _ -> Some name) nameOptList
             { NameOpts = nameOpts; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Hash a Relation.
@@ -93,7 +93,7 @@ module RelationModule =
             Relation<'a>.hash this
         
         override this.ToString () =
-            let names = List.map (fun nameOpt -> match nameOpt with Some name -> Name.getNameStr name | None -> ".") this.NameOpts
+            let names = List.map (fun nameOpt -> match nameOpt with Some name -> name | None -> ".") this.NameOpts
             String.Join ("/", names)
 
     [<RequireQualifiedAccess>]

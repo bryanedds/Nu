@@ -10,7 +10,7 @@ open Nu
 module SimulantOperators =
 
     /// Derive a screen from a name string.
-    let (!>) screenNameStr = Screen (ntoa !!screenNameStr)
+    let (!>) screenName = Screen (ntoa screenName)
 
     /// Derivce a screen from a name.
     let ntos screenName = Screen (ntoa screenName)

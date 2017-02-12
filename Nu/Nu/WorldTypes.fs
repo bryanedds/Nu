@@ -485,7 +485,7 @@ module WorldTypes =
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
         { Id : Guid
-          Name : Name
+          Name : string
           Xtension : Xtension
           DispatcherNp : ScreenDispatcher
           Specialization : string
@@ -568,7 +568,7 @@ module WorldTypes =
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     and [<CLIMutable; NoEquality; NoComparison>] LayerState =
         { Id : Guid
-          Name : Name
+          Name : string
           Xtension : Xtension
           DispatcherNp : LayerDispatcher
           Specialization : string
@@ -642,7 +642,7 @@ module WorldTypes =
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     and [<CLIMutable; NoEquality; NoComparison>] EntityState =
         { Id : Guid
-          Name : Name
+          Name : string
           mutable Xtension : Xtension
           DispatcherNp : EntityDispatcher
           Specialization : string
@@ -675,7 +675,7 @@ module WorldTypes =
               Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
-              CachableNp = Name.endsWithGuid name
+              CachableNp = String.endsWithGuid name
               OverlayNameOpt = overlayNameOpt
               Position = Vector2.Zero
               Size = Constants.Engine.DefaultEntitySize
@@ -849,13 +849,10 @@ module WorldTypes =
         static member (->>-) (address, screen) = acatff address screen
     
         /// Derive a screen from a name string.
-        static member (!>) screenNameStr = Screen (ntoa !!screenNameStr)
+        static member (!>) screenName = Screen (ntoa screenName)
     
         /// Derive a layer from its screen.
         static member (=>) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress ->- ntoa layerName)
-    
-        /// Derive a layer from its screen
-        static member (=>) (screen : Screen, layerNameStr) = screen => !!layerNameStr
     
     /// Forms a logical layer of entities.
     and Layer (layerAddress) =
@@ -899,9 +896,6 @@ module WorldTypes =
         /// Derive an entity from its layer.
         static member (=>) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress ->- ntoa entityName)
     
-        /// Derive an entity from its layer.
-        static member (=>) (layer : Layer, entityNameStr) = layer => !!entityNameStr
-    
         /// Concatenate two addresses, taking the type of first address.
         static member (->-) (address, layer) = Layer.acatf address layer
     
@@ -916,8 +910,8 @@ module WorldTypes =
 
         // check that address is of correct length for an entity
         do if Address.length entityAddress <> 3 then failwithumf ()
-        let updateAddress = ltoa<unit> [!!"Update"; !!"Event"] ->>- entityAddress
-        let postUpdateAddress = ltoa<unit> [!!"PostUpdate"; !!"Event"] ->>- entityAddress
+        let updateAddress = ltoa<unit> ["Update"; "Event"] ->>- entityAddress
+        let postUpdateAddress = ltoa<unit> ["PostUpdate"; "Event"] ->>- entityAddress
         let mutable entityStateOpt = Unchecked.defaultof<EntityState>
 
         /// The address of the entity.
@@ -1002,7 +996,7 @@ module WorldTypes =
               ScreenCachedOpt : KeyedCache<Screen Address * UMap<Screen Address, ScreenState>, ScreenState option>
               LayerCachedOpt : KeyedCache<Layer Address * UMap<Layer Address, LayerState>, LayerState option>
               EntityCachedOpt : KeyedCache<Entity Address * UMap<Entity Address, EntityState>, EntityState option>
-              ScreenDirectory : UMap<Name, Screen Address * UMap<Name, Layer Address * UMap<Name, Entity Address>>>
+              ScreenDirectory : UMap<string, Screen Address * UMap<string, Layer Address * UMap<string, Entity Address>>>
               AmbientState : World AmbientState
               GameState : GameState
               ScreenStates : UMap<Screen Address, ScreenState>

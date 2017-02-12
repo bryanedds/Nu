@@ -31,9 +31,9 @@ module WorldTests =
         let oldWorld = world
         World.writeGameToFile TestFilePath world
         let world = World.readGameFromFile TestFilePath world
-        Assert.Equal<Name> (DefaultScreen.GetName oldWorld, DefaultScreen.GetName world)
-        Assert.Equal<Name> (DefaultLayer.GetName oldWorld, DefaultLayer.GetName world)
-        Assert.Equal<Name> (DefaultEntity.GetName oldWorld, DefaultEntity.GetName world)
+        Assert.Equal<string> (DefaultScreen.GetName oldWorld, DefaultScreen.GetName world)
+        Assert.Equal<string> (DefaultLayer.GetName oldWorld, DefaultLayer.GetName world)
+        Assert.Equal<string> (DefaultEntity.GetName oldWorld, DefaultEntity.GetName world)
 
     let [<Fact>] iterativeFrpWorks () =
         let world = World.makeDefault ()

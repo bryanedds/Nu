@@ -282,8 +282,8 @@ module WorldModule2 =
         static member createSplashScreen<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt splashData destination world =
             let cameraEyeSize = World.getEyeSize world
             let (splashScreen, world) = World.createDissolveScreen<'d> splashData.DissolveData specializationOpt nameOpt world
-            let (splashLayer, world) = World.createLayer<LayerDispatcher> None (Some !!"SplashLayer") splashScreen world
-            let (splashLabel, world) = World.createEntity<LabelDispatcher> None (Some !!"SplashLabel") splashLayer world
+            let (splashLayer, world) = World.createLayer<LayerDispatcher> None (Some "SplashLayer") splashScreen world
+            let (splashLabel, world) = World.createEntity<LabelDispatcher> None (Some "SplashLabel") splashLayer world
             let world = splashLabel.SetSize cameraEyeSize world
             let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
             let world = splashLabel.SetLabelImage splashData.SplashImage world
@@ -301,7 +301,7 @@ module WorldModule2 =
             match eventNames with
             | eventFirstName :: _ :: ([_ ;_ ; _] as entityAddress) ->
                 let entity = Entity (ltoa entityAddress)
-                match Name.getNameStr eventFirstName with
+                match eventFirstName with
                 | "Update" ->
                     if List.contains (Address.head Events.Wildcard) eventNames then
                         Log.debug ^
@@ -316,7 +316,7 @@ module WorldModule2 =
                     World.updateEntityPublishPostUpdateFlag entity world
                 | _ -> world
             | eventFirstName :: _ :: _ :: _ ->
-                match Name.getNameStr eventFirstName with
+                match eventFirstName with
                 | "Change" ->
                     if List.contains (Address.head Events.Wildcard) eventNames then
                         Log.debug "Subscribing to change events with a wildcard is not supported."
