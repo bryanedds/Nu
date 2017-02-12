@@ -235,6 +235,7 @@ module WorldModuleGame =
             | "Imperative" -> (World.getGameImperative world :> obj, typeof<bool>)
             | "ScriptOpt" -> (World.getGameScriptOpt world :> obj, typeof<AssetTag option>)
             | "Script" -> (World.getGameScript world :> obj, typeof<Scripting.Expr list>)
+            | "ScriptFrameNp" -> (World.getGameScriptFrameNp world :> obj, typeof<Scripting.ProceduralFrame list>)
             | "OnRegister" -> (World.getGameOnRegister world :> obj, typeof<Scripting.Expr>)
             | "OnUnregister" -> (World.getGameOnUnregister world :> obj, typeof<Scripting.Expr>)
             | "OnUpdate" -> (World.getGameOnUpdate world :> obj, typeof<Scripting.Expr>)
