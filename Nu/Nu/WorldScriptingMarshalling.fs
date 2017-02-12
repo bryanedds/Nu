@@ -60,6 +60,12 @@ module WorldScriptingMarshalling =
                 // otherwise, we have no conversion
                 else None
 
+        and tryImportAddress (value : obj) (ty : Type) =
+            Some (String ((AddressConverter ty).ConvertToString value))
+
+        and tryImportRelation (value : obj) (ty : Type) =
+            Some (String ((RelationConverter ty).ConvertToString value))
+
         and tryImportOption (value : obj) (ty : Type) =
             let valueType = (ty.GetGenericArguments ()).[0]
             let opt = Reflection.objToOption value
@@ -115,6 +121,8 @@ module WorldScriptingMarshalling =
              (typeof<char>.Name, (fun (value : obj) _ -> match value with :? char as char -> Some (String (string char)) | _ -> None))
              (typeof<string>.Name, (fun (value : obj) _ -> match value with :? string as str -> Some (String str) | _ -> None))
              (typedefof<KeyValuePair<_, _>>.Name, (fun value ty -> tryImportKeyValuePair value ty))
+             (typedefof<_ Address>.Name, (fun value ty -> tryImportAddress value ty))
+             (typedefof<_ Relation>.Name, (fun value ty -> tryImportRelation value ty))
              (typedefof<_ option>.Name, (fun value ty -> tryImportOption value ty))
              (typedefof<_ list>.Name, (fun value ty -> tryImportList value ty))
              (typedefof<_ Set>.Name, (fun value ty -> tryImportSet value ty))
@@ -186,6 +194,16 @@ module WorldScriptingMarshalling =
                 | _ -> None
             | _ -> None
 
+        and tryExportAddress (address : Expr) (ty : Type) =
+            match address with
+            | String str | Keyword str -> Some ((AddressConverter ty).ConvertFromString str)
+            | _ -> None
+
+        and tryExportRelation (relation : Expr) (ty : Type) =
+            match relation with
+            | String str | Keyword str -> Some ((RelationConverter ty).ConvertFromString str)
+            | _ -> None
+
         and tryExportOption (opt : Expr) (ty : Type) =
             match opt with
             | Option opt ->
@@ -242,6 +260,8 @@ module WorldScriptingMarshalling =
              (typeof<Vector2>.Name, (fun evaled _ -> match evaled with Vector2 value -> value :> obj |> Some | _ -> None))
              (typeof<char>.Name, (fun evaled _ -> match evaled with String value when value.Length = 1 -> value.[0] :> obj |> Some | _ -> None))
              (typeof<string>.Name, (fun evaled _ -> match evaled with String value -> value :> obj |> Some | _ -> None))
+             (typedefof<_ Address>.Name, tryExportAddress)
+             (typedefof<_ Relation>.Name, tryExportRelation)
              (typedefof<_ option>.Name, tryExportOption)
              (typedefof<KeyValuePair<_, _>>.Name, tryExportKvp)
              (typedefof<_ list>.Name, tryExportList)
