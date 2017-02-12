@@ -315,6 +315,73 @@ module WorldTypes =
         abstract TryGetCalculatedProperty : string * Entity * World -> (obj * Type) option
         default dispatcher.TryGetCalculatedProperty (_, _, _) = None
 
+    /// A marker interface for simulant descriptors.
+    and SimulantDescriptor =
+        interface
+            abstract Children : SimulantDescriptor list
+            end
+
+    /// Describes a game value independent of the engine.
+    and [<NoComparison>] GameDescriptor =
+        { GameDispatcher : string
+          GameProperties : Map<string, Symbol>
+          Screens : ScreenDescriptor list }
+
+        /// The empty game descriptor.
+        static member empty =
+            { GameDispatcher = String.Empty
+              GameProperties = Map.empty
+              Screens = [] }
+
+        interface SimulantDescriptor with
+            member this.Children =
+                this.Screens |> enumerable<SimulantDescriptor> |> List.ofSeq
+
+    /// Describes a screen value independent of the engine.
+    and [<NoComparison>] ScreenDescriptor =
+        { ScreenDispatcher : string
+          ScreenProperties : Map<string, Symbol>
+          Layers : LayerDescriptor list }
+
+        /// The empty screen descriptor.
+        static member empty =
+            { ScreenDispatcher = String.Empty
+              ScreenProperties = Map.empty
+              Layers = [] }
+              
+        interface SimulantDescriptor with
+            member this.Children =
+                this.Layers |> enumerable<SimulantDescriptor> |> List.ofSeq
+
+    /// Describes a layer value independent of the engine.
+    and [<NoComparison>] LayerDescriptor =
+        { LayerDispatcher : string
+          LayerProperties : Map<string, Symbol>
+          Entities : EntityDescriptor list }
+
+        /// The empty layer descriptor.
+        static member empty =
+            { LayerDispatcher = String.Empty
+              LayerProperties = Map.empty
+              Entities = [] }
+
+        interface SimulantDescriptor with
+            member this.Children =
+                this.Entities |> enumerable<SimulantDescriptor> |> List.ofSeq
+
+    /// Describes an entity value independent of the engine.
+    and [<NoComparison>] EntityDescriptor =
+        { EntityDispatcher : string
+          EntityProperties : Map<string, Symbol> }
+
+        /// The empty entity descriptor.
+        static member empty =
+            { EntityDispatcher = String.Empty
+              EntityProperties = Map.empty }
+
+        interface SimulantDescriptor with
+            member this.Children = []
+
     /// A simulant in the world.
     and Simulant =
         interface
@@ -359,6 +426,27 @@ module WorldTypes =
           EyeCenter : Vector2
           EyeSize : Vector2 }
 
+        /// Make a game state value.
+        static member make specializationOpt (dispatcher : GameDispatcher) =
+            let eyeCenter = Vector2.Zero
+            let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
+            { Id = makeGuid ()
+              Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.safe
+              DispatcherNp = dispatcher
+              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
+              CreationTimeStampNp = Core.getTimeStamp ()
+              ScriptOpt = None
+              Script = []
+              ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
+              OnRegister = Scripting.Unit
+              OnUnregister = Scripting.Unit
+              OnUpdate = Scripting.Unit
+              OnPostUpdate = Scripting.Unit
+              SelectedScreenOpt = None
+              ScreenTransitionDestinationOpt = None
+              EyeCenter = eyeCenter
+              EyeSize = eyeSize }
+
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName gameState =
             match Xtension.tryGetProperty propertyName gameState.Xtension with
@@ -385,27 +473,6 @@ module WorldTypes =
         /// Attach an xtension property.
         static member attachProperty name value gameState =
             { gameState with GameState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } gameState.Xtension }
-    
-        /// Make a game state value.
-        static member make specializationOpt (dispatcher : GameDispatcher) =
-            let eyeCenter = Vector2.Zero
-            let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
-            { Id = makeGuid ()
-              Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.safe
-              DispatcherNp = dispatcher
-              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
-              CreationTimeStampNp = Core.getTimeStamp ()
-              ScriptOpt = None
-              Script = []
-              ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
-              OnRegister = Scripting.Unit
-              OnUnregister = Scripting.Unit
-              OnUpdate = Scripting.Unit
-              OnPostUpdate = Scripting.Unit
-              SelectedScreenOpt = None
-              ScreenTransitionDestinationOpt = None
-              EyeCenter = eyeCenter
-              EyeSize = eyeSize }
 
         /// Copy a game such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
@@ -436,6 +503,32 @@ module WorldTypes =
           TransitionTicksNp : int64
           Incoming : Transition
           Outgoing : Transition }
+          
+        /// Make a screen state value.
+        static member make specializationOpt nameOpt (dispatcher : ScreenDispatcher) =
+            let (id, name) = Reflection.deriveIdAndName nameOpt
+            let screenState =
+                { Id = id
+                  Name = name
+                  Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.safe
+                  DispatcherNp = dispatcher
+                  Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
+                  Persistent = true
+                  CreationTimeStampNp = Core.getTimeStamp ()
+                  ScriptOpt = None
+                  Script = []
+                  ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
+                  OnRegister = Scripting.Unit
+                  OnUnregister = Scripting.Unit
+                  OnUpdate = Scripting.Unit
+                  OnPostUpdate = Scripting.Unit
+                  EntityTreeNp = Unchecked.defaultof<Entity SpatialTree MutantCache>
+                  TransitionStateNp = IdlingState
+                  TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
+                  Incoming = Transition.make Incoming
+                  Outgoing = Transition.make Outgoing }
+            let spatialTree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
+            { screenState with EntityTreeNp = MutantCache.make Operators.id spatialTree }
 
         /// Get an xtension property and its type information.
         static member getProperty propertyName screenState =
@@ -463,32 +556,6 @@ module WorldTypes =
         /// Attach an xtension property.
         static member attachProperty name value screenState =
             { screenState with ScreenState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } screenState.Xtension }
-    
-        /// Make a screen state value.
-        static member make specializationOpt nameOpt (dispatcher : ScreenDispatcher) =
-            let (id, name) = Reflection.deriveIdAndName nameOpt
-            let screenState =
-                { Id = id
-                  Name = name
-                  Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.safe
-                  DispatcherNp = dispatcher
-                  Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
-                  Persistent = true
-                  CreationTimeStampNp = Core.getTimeStamp ()
-                  ScriptOpt = None
-                  Script = []
-                  ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
-                  OnRegister = Scripting.Unit
-                  OnUnregister = Scripting.Unit
-                  OnUpdate = Scripting.Unit
-                  OnPostUpdate = Scripting.Unit
-                  EntityTreeNp = Unchecked.defaultof<Entity SpatialTree MutantCache>
-                  TransitionStateNp = IdlingState
-                  TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
-                  Incoming = Transition.make Incoming
-                  Outgoing = Transition.make Outgoing }
-            let spatialTree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
-            { screenState with EntityTreeNp = MutantCache.make Operators.id spatialTree }
 
         /// Copy a screen such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
@@ -517,6 +584,26 @@ module WorldTypes =
           Depth : single
           Visible : bool }
 
+        /// Make a layer state value.
+        static member make specializationOpt nameOpt (dispatcher : LayerDispatcher) =
+            let (id, name) = Reflection.deriveIdAndName nameOpt
+            { LayerState.Id = id
+              Name = name
+              Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.safe
+              DispatcherNp = dispatcher
+              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
+              Persistent = true
+              CreationTimeStampNp = Core.getTimeStamp ()
+              ScriptOpt = None
+              Script = []
+              ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
+              OnRegister = Scripting.Unit
+              OnUnregister = Scripting.Unit
+              OnUpdate = Scripting.Unit
+              OnPostUpdate = Scripting.Unit
+              Depth = 0.0f
+              Visible = true }
+
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName layerState =
             match Xtension.tryGetProperty propertyName layerState.Xtension with
@@ -543,26 +630,6 @@ module WorldTypes =
         /// Attach an xtension property.
         static member attachProperty name value layerState =
             { layerState with LayerState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } layerState.Xtension }
-    
-        /// Make a layer state value.
-        static member make specializationOpt nameOpt (dispatcher : LayerDispatcher) =
-            let (id, name) = Reflection.deriveIdAndName nameOpt
-            { LayerState.Id = id
-              Name = name
-              Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.safe
-              DispatcherNp = dispatcher
-              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
-              Persistent = true
-              CreationTimeStampNp = Core.getTimeStamp ()
-              ScriptOpt = None
-              Script = []
-              ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
-              OnRegister = Scripting.Unit
-              OnUnregister = Scripting.Unit
-              OnUpdate = Scripting.Unit
-              OnPostUpdate = Scripting.Unit
-              Depth = 0.0f
-              Visible = true }
 
         /// Copy a layer such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
@@ -597,6 +664,33 @@ module WorldTypes =
           mutable PublishPostUpdatesNp : bool
           mutable FacetNames : string Set
           mutable FacetsNp : Facet list }
+
+        /// Make an entity state value.
+        static member make specializationOpt nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+            let (id, name) = Reflection.deriveIdAndName nameOpt
+            { Id = id
+              Name = name
+              Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.safe
+              DispatcherNp = dispatcher
+              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
+              Persistent = true
+              CreationTimeStampNp = Core.getTimeStamp ()
+              CachableNp = Name.endsWithGuid name
+              OverlayNameOpt = overlayNameOpt
+              Position = Vector2.Zero
+              Size = Constants.Engine.DefaultEntitySize
+              Rotation = 0.0f
+              Depth = 0.0f
+              Overflow = Vector2.Zero
+              ViewType = Relative
+              Visible = true
+              Enabled = true
+              Omnipresent = false
+              PublishChanges = true
+              PublishUpdatesNp = false
+              PublishPostUpdatesNp = false
+              FacetNames = Set.empty
+              FacetsNp = [] }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName entityState =
@@ -657,33 +751,6 @@ module WorldTypes =
                     Rotation = value.Rotation
                     Depth = value.Depth }
 
-        /// Make an entity state value.
-        static member make specializationOpt nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
-            let (id, name) = Reflection.deriveIdAndName nameOpt
-            { Id = id
-              Name = name
-              Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.safe
-              DispatcherNp = dispatcher
-              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
-              Persistent = true
-              CreationTimeStampNp = Core.getTimeStamp ()
-              CachableNp = Name.endsWithGuid name
-              OverlayNameOpt = overlayNameOpt
-              Position = Vector2.Zero
-              Size = Constants.Engine.DefaultEntitySize
-              Rotation = 0.0f
-              Depth = 0.0f
-              Overflow = Vector2.Zero
-              ViewType = Relative
-              Visible = true
-              Enabled = true
-              Omnipresent = false
-              PublishChanges = true
-              PublishUpdatesNp = false
-              PublishPostUpdatesNp = false
-              FacetNames = Set.empty
-              FacetsNp = [] }
-
         /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
             if Xtension.getImperative this.Xtension then this
@@ -692,59 +759,13 @@ module WorldTypes =
         interface SimulantState with
             member this.GetXtension () = this.Xtension
 
-    /// Describes a game value independent of the engine.
-    and [<NoComparison>] GameDescriptor =
-        { GameDispatcher : string
-          GameProperties : Map<string, Symbol>
-          Screens : ScreenDescriptor list }
-
-        /// The empty game descriptor.
-        static member empty =
-            { GameDispatcher = String.Empty
-              GameProperties = Map.empty
-              Screens = [] }
-
-    /// Describes a screen value independent of the engine.
-    and [<NoComparison>] ScreenDescriptor =
-        { ScreenDispatcher : string
-          ScreenProperties : Map<string, Symbol>
-          Layers : LayerDescriptor list }
-
-        /// The empty screen descriptor.
-        static member empty =
-            { ScreenDispatcher = String.Empty
-              ScreenProperties = Map.empty
-              Layers = [] }
-
-    /// Describes a layer value independent of the engine.
-    and [<NoComparison>] LayerDescriptor =
-        { LayerDispatcher : string
-          LayerProperties : Map<string, Symbol>
-          Entities : EntityDescriptor list }
-
-        /// The empty layer descriptor.
-        static member empty =
-            { LayerDispatcher = String.Empty
-              LayerProperties = Map.empty
-              Entities = [] }
-
-    /// Describes an entity value independent of the engine.
-    and [<NoComparison>] EntityDescriptor =
-        { EntityDispatcher : string
-          EntityProperties : Map<string, Symbol> }
-
-        /// The empty entity descriptor.
-        static member empty =
-            { EntityDispatcher = String.Empty
-              EntityProperties = Map.empty }
-
     /// The null simulant.
     and private NullSimulant () =
         interface Simulant with
             member this.ParticipantAddress = Address.empty
             member this.SimulantAddress = Address.empty
             end
-    
+
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =
 
