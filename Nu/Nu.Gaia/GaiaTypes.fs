@@ -86,7 +86,7 @@ and EntityPropertyDescriptor (property, attributes) =
             let world = pushPastWorld world world
             match propertyName with
             | "Name" ->
-                let name = value :?> Name
+                let name = value :?> string
                 let entity = entityTds.DescribedEntity
                 let world = World.reassignEntity entity (Some name) (etol entity) world
                 entityTds.RefWorld := world // must be set for property grid

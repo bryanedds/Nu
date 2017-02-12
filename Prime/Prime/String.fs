@@ -136,3 +136,38 @@ module String =
             .Replace("\r", "\\r")
             .Replace("\t", "\\t")
             .Replace("\v", "\\v")
+
+    /// Check that a name ends with a Guid.
+    let endsWithGuid str =
+        if String.length str >= 36 then
+            let last36 = str.Substring (str.Length - 36, 36)
+            Guid.TryParse last36 |> fst
+        else false
+    
+    /// Query for equality a list of string lexicographically.
+    let rec equateMany (strs : string list) (strs2 : string list) =
+        match (strs, strs2) with
+        | ([], []) -> true
+        | (_ :: _, []) -> false
+        | ([], _ :: _) -> false
+        | (head :: tail, head2 :: tail2) ->
+            let result = strEq head head2
+            if result then equateMany tail tail2
+            else result
+    
+    /// Compare a list of string lexicographically.
+    let rec compareMany (strs : string list) (strs2 : string list) =
+        match (strs, strs2) with
+        | ([], []) -> 0
+        | (_ :: _, []) -> 1
+        | ([], _ :: _) -> -1
+        | (head :: tail, head2 :: tail2) ->
+            let result = strCmp head head2
+            if result = 0 then compareMany tail tail2
+            else result
+    
+    /// Hash a list of names.
+    let hashMany (strs : string list) =
+        let mutable hashValue = 0 // OPTIMIZATION: mutation for speed
+        for name in strs do hashValue <- hashValue ^^^ hash name
+        hashValue

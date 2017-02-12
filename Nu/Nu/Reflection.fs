@@ -94,7 +94,7 @@ module Reflection =
     let deriveName nameOpt id =
         match nameOpt with
         | Some name -> name
-        | None -> !!(scstring<Guid> id)
+        | None -> scstring<Guid> id
 
     /// Derive a simulant id and name from an optional name.
     let deriveIdAndName nameOpt =
@@ -113,8 +113,8 @@ module Reflection =
         isPropertyPersistentByName property.Name &&
         not
             (property.Name = Constants.Engine.NamePropertyName &&
-             property.PropertyType = typeof<Name> &&
-             fst ^ Guid.TryParse (property.GetValue target :?> Name |> Name.getNameStr))
+             property.PropertyType = typeof<string> &&
+             fst ^ Guid.TryParse (property.GetValue target :?> string))
 
     /// Check that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) (dispatcher : 'a) =

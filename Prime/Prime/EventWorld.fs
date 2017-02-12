@@ -135,7 +135,7 @@ module EventWorld =
                 | (false, _) ->
                     let eventAddressNames = Address.getNames eventAddress
                     let eventAddresses = getEventAddresses1 eventAddress
-                    let eventTargetIndex = List.findIndex (fun name -> Name.getNameStr name = "Event") eventAddressNames + 1
+                    let eventTargetIndex = List.findIndex (fun name -> name = "Event") eventAddressNames + 1
                     if eventTargetIndex < List.length eventAddressNames then
                         let eventTarget = eventAddressNames |> List.skip eventTargetIndex |> Address.makeFromList
                         match EventAddressListCache.TryGetValue eventTarget with
@@ -296,7 +296,7 @@ module EventWorld =
                 let world = setUnsubscriptions unsubscriptions world
                 publish<_, _, 'g, 'w>
                     eventAddress
-                    (ltoa<obj Address> [!!"Unsubscribe"; !!"Event"])
+                    (ltoa<obj Address> ["Unsubscribe"; "Event"])
                     (EventTrace.record "EventWorld" "unsubscribe" EventTrace.empty)
                     (EventSystem.getGlobalPariticipant (world.GetEventSystem ()))
                     world
@@ -320,7 +320,7 @@ module EventWorld =
             let world =
                 publish
                     objEventAddress
-                    (ltoa<obj Address> [!!"Subscribe"; !!"Event"])
+                    (ltoa<obj Address> ["Subscribe"; "Event"])
                     (EventTrace.record "EventWorld" "subscribePlus5" EventTrace.empty)
                     (EventSystem.getGlobalPariticipant (world.GetEventSystem ()))
                     world
@@ -344,7 +344,7 @@ module EventWorld =
             let world = unsubscribe monitorKey world
             world
         let subscription' = fun _ eventSystem -> (Cascade, unsubscribe eventSystem)
-        let removingEventAddress = ltoa<unit> [!!typeof<'s>.Name; !!"Unregistering"; !!"Event"] ->>- subscriberAddress
+        let removingEventAddress = ltoa<unit> [typeof<'s>.Name; "Unregistering"; "Event"] ->>- subscriberAddress
         let world = subscribePlus<unit, 's, 'g, 'w> removalKey subscription' removingEventAddress subscriber world |> snd
         (unsubscribe, world)
 

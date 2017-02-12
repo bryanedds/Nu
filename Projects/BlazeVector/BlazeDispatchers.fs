@@ -262,7 +262,7 @@ module GameplayScreenModule =
     type GameplayScreenDispatcher () =
         inherit ScreenDispatcher ()
 
-        static let [<Literal>] SectionNameStr = "Section"
+        static let [<Literal>] SectionName = "Section"
         static let [<Literal>] SectionXShift = 2048.0f
 
         static let shiftEntities xShift entities world =
@@ -285,7 +285,7 @@ module GameplayScreenModule =
                 (fun world i ->
                     let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
                     let sectionFilePath = sectionFilePaths.[sectionFilePathIndex]
-                    let sectionName = !!(SectionNameStr + scstring i)
+                    let sectionName = SectionName + scstring i
                     let sectionXShift = SectionXShift * single i
                     createSectionFromFile sectionFilePath sectionName sectionXShift world)
                 world
@@ -304,7 +304,7 @@ module GameplayScreenModule =
 
         static let handleStopPlay evt world =
             let screen = evt.Subscriber : Screen
-            let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield !!(SectionNameStr + scstring i)]
+            let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield SectionName + scstring i]
             let layerNames = Simulants.GameplayScene.LayerName :: sectionNames
             let layers = List.map (fun layerName -> screen => layerName) layerNames
             World.destroyLayers layers world

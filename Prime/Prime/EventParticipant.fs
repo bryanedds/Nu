@@ -55,7 +55,7 @@ type [<NoEquality; NoComparison>] PropertyTag<'s, 'a, 'w when 's :> Participant>
           SetOpt = None }
 
     member this.Change =
-        let changeEventAddress = Address<ParticipantChangeData<'s, 'w>>.ltoa [!!typeof<'s>.Name; !!"Change"; !!this.Name; !!"Event"]
+        let changeEventAddress = Address<ParticipantChangeData<'s, 'w>>.ltoa [typeof<'s>.Name; "Change"; this.Name; "Event"]
         let changeEvent = changeEventAddress ->>- this.This.ParticipantAddress
         changeEvent
 

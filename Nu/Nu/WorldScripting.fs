@@ -193,7 +193,7 @@ module WorldScripting =
         and evalIntrinsic originOpt name evaledArgs world =
             match Intrinsics.TryGetValue name with
             | (true, intrinsic) -> intrinsic originOpt name evaledArgs world
-            | (false, _) -> (Violation ([!!"InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), world)
+            | (false, _) -> (Violation (["InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), world)
 
         and evalSimulantExists fnOriginOpt name evaledArg world =
             match evaledArg with
@@ -206,13 +206,13 @@ module WorldScripting =
                 | Some simulant -> (Bool (World.simulantExists simulant world), world)
                 | None -> (Bool false, world)
             | Violation _ as error -> (error, world)
-            | _ -> (Violation ([!!"InvalidArgumentType"], "Function '" + name + "' requires 1 relation argument.", fnOriginOpt), world)
+            | _ -> (Violation (["InvalidArgumentType"], "Function '" + name + "' requires 1 relation argument.", fnOriginOpt), world)
 
         and evalBinding expr name cachedBinding originOpt world =
             match World.tryGetBinding name cachedBinding world with
             | None ->
                 if isIntrinsic name then (expr, world)
-                else (Violation ([!!"NonexistentBinding"], "Non-existent binding '" + name + "' ", originOpt), world)
+                else (Violation (["NonexistentBinding"], "Non-existent binding '" + name + "' ", originOpt), world)
             | Some binding -> (binding, world)
 
         and evalApply (exprs : Expr array) originOpt world =
@@ -240,14 +240,14 @@ module WorldScripting =
                             let world = World.addProceduralBindings (AddToNewFrame parsCount) bindings world
                             let (evaled, world) = eval body world
                             (evaled, World.removeProceduralBindings world)
-                        else (Violation ([!!"MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), world)
+                        else (Violation (["MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), world)
                     match framesCurrentOpt with
                     | Some framesCurrent ->
                         let world = World.setProceduralFrames framesCurrent world
                         (evaled, world)
                     | None -> (evaled, world)
                 | Violation _ as error -> (error, world)
-                | _ -> (Violation ([!!"TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), world)
+                | _ -> (Violation (["TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), world)
             | ([], world) -> (Unit, world)
 
         and evalApplyAnd exprs originOpt world =
@@ -259,10 +259,10 @@ module WorldScripting =
                     match eval right world with
                     | (Bool _, _) as result -> result
                     | (Violation _, _) as error -> error
-                    | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+                    | _ -> (Violation (["InvalidArgumentType"; "Binary"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
                 | (Violation _, _) as error -> error
-                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!"&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
+                | _ -> (Violation (["InvalidArgumentType"; "Binary"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+            | _ -> (Violation (["InvalidArgumentCount"; "Binary"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
 
         and evalApplyOr exprs originOpt world =
             match exprs with
@@ -273,10 +273,10 @@ module WorldScripting =
                     match eval right world with
                     | (Bool _, _) as result -> result
                     | (Violation _, _) as error -> error
-                    | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+                    | _ -> (Violation (["InvalidArgumentType"; "Binary"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
                 | (Violation _, _) as error -> error
-                | _ -> (Violation ([!!"InvalidArgumentType"; !!"Binary"; !!"&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
-            | _ -> (Violation ([!!"InvalidArgumentCount"; !!"Binary"; !!"&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
+                | _ -> (Violation (["InvalidArgumentType"; "Binary"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+            | _ -> (Violation (["InvalidArgumentCount"; "Binary"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
 
         and evalLet4 binding body originOpt world =
             let world =
@@ -324,7 +324,7 @@ module WorldScripting =
             | bindingsHead :: bindingsTail ->
                 let bindingsCount = List.length bindingsTail + 1
                 evalLetMany4 bindingsHead bindingsTail bindingsCount body originOpt world
-            | [] -> (Violation ([!!"MalformedLetOperation"], "Let operation must have at least 1 binding.", originOpt), world)
+            | [] -> (Violation (["MalformedLetOperation"], "Let operation must have at least 1 binding.", originOpt), world)
 
         and evalFun fn pars parsCount body framesPushed framesOpt originOpt world =
             if not framesPushed then
@@ -338,7 +338,7 @@ module WorldScripting =
             match eval condition world with
             | (Bool bool, world) -> if bool then eval consequent world else eval alternative world
             | (Violation _ as evaled, world) -> (evaled, world)
-            | (_, world) -> (Violation ([!!"InvalidIfCondition"], "Must provide an expression that evaluates to a bool in an if condition.", originOpt), world)
+            | (_, world) -> (Violation (["InvalidIfCondition"], "Must provide an expression that evaluates to a bool in an if condition.", originOpt), world)
 
         and evalMatch input (cases : (Expr * Expr) array) originOpt world =
             let (input, world) = eval input world
@@ -354,7 +354,7 @@ module WorldScripting =
                     cases
             match resultEir with
             | Right success -> success
-            | Left world -> (Violation ([!!"InexhaustiveMatch"], "A match expression failed to meet any of its cases.", originOpt), world)
+            | Left world -> (Violation (["InexhaustiveMatch"], "A match expression failed to meet any of its cases.", originOpt), world)
 
         and evalSelect exprPairs originOpt world =
             let resultEir =
@@ -362,12 +362,12 @@ module WorldScripting =
                     match eval condition world with
                     | (Bool bool, world) -> if bool then Right (eval consequent world) else Left world
                     | (Violation _ as evaled, world) -> Right (evaled, world)
-                    | (_, world) -> Right ((Violation ([!!"InvalidSelectCondition"], "Must provide an expression that evaluates to a bool in a case condition.", originOpt), world)))
+                    | (_, world) -> Right ((Violation (["InvalidSelectCondition"], "Must provide an expression that evaluates to a bool in a case condition.", originOpt), world)))
                     (Left world)
                     exprPairs
             match resultEir with
             | Right success -> success
-            | Left world -> (Violation ([!!"InexhaustiveSelect"], "A select expression failed to meet any of its cases.", originOpt), world)
+            | Left world -> (Violation (["InexhaustiveSelect"], "A select expression failed to meet any of its cases.", originOpt), world)
 
         and evalTry body handlers _ world =
             match eval body world with
@@ -409,9 +409,9 @@ module WorldScripting =
                         let address = Relation.resolve context.SimulantAddress relation
                         match World.tryDeriveSimulant address with
                         | Some simulant -> Right (simulant, world)
-                        | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 names.", originOpt), world)
+                        | None -> Left (Violation (["InvalidPropertyRelation"], "Relation must have 0 to 3 names.", originOpt), world)
                     | (Violation _, _) as error -> Left error
-                    | (_, world) -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or a keyword.", originOpt), world)
+                    | (_, world) -> Left (Violation (["InvalidPropertyRelation"], "Relation must be either a string or a keyword.", originOpt), world)
                 | None -> Right (context, world)
             match simulantAndEnvEir with
             | Right (simulant, world) ->
@@ -419,8 +419,8 @@ module WorldScripting =
                 | Some (propertyValue, propertyType) ->
                     match tryImport propertyValue propertyType with
                     | Some propertyValue -> (propertyValue, world)
-                    | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be imported into scripting environment.", originOpt), world)
-                | None -> (Violation ([!!"InvalidProperty"], "Simulant or property value could not be found.", originOpt), world)
+                    | None -> (Violation (["InvalidPropertyValue"], "Property value could not be imported into scripting environment.", originOpt), world)
+                | None -> (Violation (["InvalidProperty"], "Simulant or property value could not be found.", originOpt), world)
             | Left error -> error
 
         and evalSet propertyName relationExprOpt propertyValueExpr originOpt world =
@@ -435,9 +435,9 @@ module WorldScripting =
                         let address = Relation.resolve context.SimulantAddress relation
                         match World.tryDeriveSimulant address with
                         | Some simulant -> Right (simulant, world)
-                        | None -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must have 0 to 3 parts.", originOpt), world)
+                        | None -> Left (Violation (["InvalidPropertyRelation"], "Relation must have 0 to 3 parts.", originOpt), world)
                     | (Violation _, _) as error -> Left error
-                    | (_, world) -> Left (Violation ([!!"InvalidPropertyRelation"], "Relation must be either a string or a keyword.", originOpt), world)
+                    | (_, world) -> Left (Violation (["InvalidPropertyRelation"], "Relation must be either a string or a keyword.", originOpt), world)
                 | None -> Right (context, world)
             match simulantAndEnvEir with
             | Right (simulant, world) ->
@@ -448,9 +448,9 @@ module WorldScripting =
                     | Some propertyValue ->
                         match World.trySetSimulantProperty propertyName (propertyValue, propertyType) simulant world with
                         | (true, world) -> (Unit, world)
-                        | (false, world) -> (Violation ([!!"InvalidProperty"], "Property value could not be set.", originOpt), world)
-                    | None -> (Violation ([!!"InvalidPropertyValue"], "Property value could not be exported into simulant property.", originOpt), world)
-                | None -> (Violation ([!!"InvalidProperty"], "Property value could not be set.", originOpt), world)
+                        | (false, world) -> (Violation (["InvalidProperty"], "Property value could not be set.", originOpt), world)
+                    | None -> (Violation (["InvalidPropertyValue"], "Property value could not be exported into simulant property.", originOpt), world)
+                | None -> (Violation (["InvalidProperty"], "Property value could not be set.", originOpt), world)
             | Left error -> error
 
         and evalDefine binding originOpt world =
