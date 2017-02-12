@@ -31,7 +31,7 @@ module WorldModule =
         List.iter Scripting.log evaleds
         (evaleds, world)
 
-    type World with
+    type World with // Construction
 
         /// Choose a world to be used for debugging. Call this whenever the most recently constructed
         /// world value is to be discarded in favor of the given world value.
@@ -64,17 +64,7 @@ module WorldModule =
                   EntityStates = entityStates }
             World.choose world
 
-    type World with
-
-        /// Update an entity in the entity tree.
-        static member internal updateEntityInEntityTree entity oldWorld world =
-            world.Dispatchers.UpdateEntityInEntityTree entity oldWorld world
-
-        /// Rebuild the entity tree if needed.
-        static member internal rebuildEntityTree screen world =
-            world.Dispatchers.RebuildEntityTree screen world
-
-    type World with
+    type World with // EventSystem
 
         /// Get event subscriptions.
         static member getSubscriptions world =
@@ -178,7 +168,7 @@ module WorldModule =
             (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
             EventWorld.monitor<'a, 's, Game, World> subscription eventAddress subscriber world
 
-    type World with
+    type World with // Dispatchers
 
         /// Get the game dispatchers of the world.
         static member getGameDispatchers world =
@@ -200,7 +190,7 @@ module WorldModule =
         static member getFacets world =
             world.Dispatchers.Facets
 
-    type World with
+    type World with // Subsystems
 
         static member internal getSubsystemMap world =
             Subsystems.getSubsystemMap world.Subsystems
@@ -224,7 +214,7 @@ module WorldModule =
         static member internal clearSubsystemsMessages world =
             World.choose { world with Subsystems = Subsystems.clearSubsystemsMessages world.Subsystems world }
 
-    type World with
+    type World with // AmbientState
 
         static member internal getAmbientState world =
             world.AmbientState
@@ -380,7 +370,11 @@ module WorldModule =
             Map.toValueListBy getTypeName |>
             List.map (fun typeName -> (typeName, OverlayDescriptor.makeVanilla (Some typeName)))
 
-    type World with
+    type World with // Caching
+
+        /// Get the screen directory.
+        static member internal getScreenDirectory world =
+            world.ScreenDirectory
 
         /// Get the optional cached screen.
         static member internal getScreenCachedOpt world =
@@ -394,37 +388,15 @@ module WorldModule =
         static member internal getEntityCachedOpt world =
             world.EntityCachedOpt
 
-    type World with
+        /// Update an entity in the entity tree.
+        static member internal updateEntityInEntityTree entity oldWorld world =
+            world.Dispatchers.UpdateEntityInEntityTree entity oldWorld world
 
-        /// Get the screen directory.
-        static member internal getScreenDirectory world =
-            world.ScreenDirectory
+        /// Rebuild the entity tree if needed.
+        static member internal rebuildEntityTree screen world =
+            world.Dispatchers.RebuildEntityTree screen world
 
-    type World with
-
-        /// View the member properties of some SimulantState.
-        static member internal getMemberProperties (state : SimulantState) =
-            state |>
-            getType |>
-            getProperties |>
-            Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) |>
-            Array.toList
-
-        /// View the xtension properties of some SimulantState.
-        static member internal getXProperties (state : SimulantState) =
-            state.GetXtension () |>
-            Xtension.toSeq |>
-            List.ofSeq |>
-            List.sortBy fst |>
-            List.map (fun (name, property) -> (name, property.PropertyValue))
-
-        /// Provides a full view of all the properties of some SimulantState.
-        static member internal getProperties state =
-            List.append
-                (World.getMemberProperties state)
-                (World.getXProperties state)
-
-    type World with
+    type World with // Scripting
 
         static member internal getScriptEnv world =
             world.ScriptEnv
@@ -464,7 +436,31 @@ module WorldModule =
         static member evalManyWithLogging exprs localFrame simulant world =
             evalManyWithLogging exprs localFrame simulant world
 
-    type World with
+    type World with // Debugging
+
+        /// View the member properties of some SimulantState.
+        static member internal getMemberProperties (state : SimulantState) =
+            state |>
+            getType |>
+            getProperties |>
+            Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) |>
+            Array.toList
+
+        /// View the xtension properties of some SimulantState.
+        static member internal getXProperties (state : SimulantState) =
+            state.GetXtension () |>
+            Xtension.toSeq |>
+            List.ofSeq |>
+            List.sortBy fst |>
+            List.map (fun (name, property) -> (name, property.PropertyValue))
+
+        /// Provides a full view of all the properties of some SimulantState.
+        static member internal getProperties state =
+            List.append
+                (World.getMemberProperties state)
+                (World.getXProperties state)
+
+    type World with // Handlers
 
         /// Ignore all handled events.
         static member handleAsPass<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
@@ -477,3 +473,29 @@ module WorldModule =
         /// Handle event by exiting app.
         static member handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
             (Resolve, World.exit world)
+
+// TODO: consider putting this in its own WorldModuleDescriptors.fs file once we can sensibly use folders in F#.
+module Descriptors =
+
+    /// Describe a game with the given properties values and contained screens.
+    let Game<'d when 'd :> GameDispatcher> properties screens =
+        { GameDispatcher = typeof<'d>.Name
+          GameProperties = Map.ofSeq properties
+          Screens = List.ofSeq screens }
+
+    /// Describe a screen with the given properties values and contained layers.
+    let Screen<'d when 'd :> ScreenDispatcher> properties layers =
+        { ScreenDispatcher = typeof<'d>.Name
+          ScreenProperties = Map.ofSeq properties
+          Layers = List.ofSeq layers }
+
+    /// Describe a layer with the given properties values and contained entities.
+    let Layer<'d when 'd :> LayerDispatcher> properties entities =
+        { LayerDispatcher = typeof<'d>.Name
+          LayerProperties = Map.ofSeq properties
+          Entities = List.ofSeq entities }
+
+    /// Describe an entity with the given properties values.
+    let Entity<'d when 'd :> EntityDispatcher> properties =
+        { EntityDispatcher = typeof<'d>.Name
+          EntityProperties = Map.ofSeq properties }

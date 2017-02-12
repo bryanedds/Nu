@@ -1061,31 +1061,6 @@ module WorldTypes =
         abstract MakeOverlayRoutes : unit -> (string * OverlayDescriptor) list
         default this.MakeOverlayRoutes () = []
 
-module Descriptors =
-
-    /// Describe a game with the given properties values and contained screens.
-    let Game<'d when 'd :> GameDispatcher> properties screens =
-        { GameDispatcher = typeof<'d>.Name
-          GameProperties = Map.ofSeq properties
-          Screens = List.ofSeq screens }
-
-    /// Describe a screen with the given properties values and contained layers.
-    let Screen<'d when 'd :> ScreenDispatcher> properties layers =
-        { ScreenDispatcher = typeof<'d>.Name
-          ScreenProperties = Map.ofSeq properties
-          Layers = List.ofSeq layers }
-
-    /// Describe a layer with the given properties values and contained entities.
-    let Layer<'d when 'd :> LayerDispatcher> properties entities =
-        { LayerDispatcher = typeof<'d>.Name
-          LayerProperties = Map.ofSeq properties
-          Entities = List.ofSeq entities }
-
-    /// Describe an entity with the given properties values.
-    let Entity<'d when 'd :> EntityDispatcher> properties =
-        { EntityDispatcher = typeof<'d>.Name
-          EntityProperties = Map.ofSeq properties }
-
 /// The data for a change in the world's ambient state.
 type AmbientChangeData = WorldTypes.AmbientChangeData
 
