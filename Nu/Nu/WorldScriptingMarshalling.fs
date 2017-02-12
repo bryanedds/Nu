@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.ComponentModel
 open System.Diagnostics
 open FSharp.Reflection
 open OpenTK
@@ -60,6 +61,18 @@ module WorldScriptingMarshalling =
                 // otherwise, we have no conversion
                 else None
 
+        and tryImportGuid (value : obj) (_ : Type) =
+            Some (String ((GuidConverter ()).ConvertToString value))
+
+        and tryImportKeyValuePair (value : obj) (ty : Type) =
+            let gargs = ty.GetGenericArguments ()
+            let kvp = Reflection.objToKeyValuePair value
+            let keyOpt = tryImport kvp.Key gargs.[0]
+            let valueOpt = tryImport kvp.Value gargs.[1]
+            match (keyOpt, valueOpt) with
+            | (Some key, Some value) -> Some (Tuple [|key; value|])
+            | (_, _) -> None
+
         and tryImportAddress (value : obj) (ty : Type) =
             Some (String ((AddressConverter ty).ConvertToString value))
 
@@ -75,15 +88,6 @@ module WorldScriptingMarshalling =
                 | Some value -> Some (Option (Some value))
                 | None -> None
             | None -> Some (Option None)
-
-        and tryImportKeyValuePair (value : obj) (ty : Type) =
-            let gargs = ty.GetGenericArguments ()
-            let kvp = Reflection.objToKeyValuePair value
-            let keyOpt = tryImport kvp.Key gargs.[0]
-            let valueOpt = tryImport kvp.Value gargs.[1]
-            match (keyOpt, valueOpt) with
-            | (Some key, Some value) -> Some (Tuple [|key; value|])
-            | (_, _) -> None
 
         and tryImportList (value : obj) (ty : Type) =
             let itemType = (ty.GetGenericArguments ()).[0]
@@ -120,6 +124,7 @@ module WorldScriptingMarshalling =
              (typeof<Vector2>.Name, (fun (value : obj) _ -> match value with :? Vector2 as vector2 -> Some (Vector2 vector2) | _ -> None))
              (typeof<char>.Name, (fun (value : obj) _ -> match value with :? char as char -> Some (String (string char)) | _ -> None))
              (typeof<string>.Name, (fun (value : obj) _ -> match value with :? string as str -> Some (String str) | _ -> None))
+             (typedefof<Guid>.Name, (fun value ty -> tryImportGuid value ty))
              (typedefof<KeyValuePair<_, _>>.Name, (fun value ty -> tryImportKeyValuePair value ty))
              (typedefof<_ Address>.Name, (fun value ty -> tryImportAddress value ty))
              (typedefof<_ Relation>.Name, (fun value ty -> tryImportRelation value ty))
@@ -179,6 +184,11 @@ module WorldScriptingMarshalling =
 
                 // otherwise, we have no conversion
                 else None
+
+        and tryExportGuid (address : Expr) (_ : Type) =
+            match address with
+            | String str | Keyword str -> Some ((GuidConverter ()).ConvertFromString str)
+            | _ -> None
 
         and tryExportKvp (tuple : Expr) (ty : Type) =
             match tuple with
@@ -260,10 +270,11 @@ module WorldScriptingMarshalling =
              (typeof<Vector2>.Name, (fun evaled _ -> match evaled with Vector2 value -> value :> obj |> Some | _ -> None))
              (typeof<char>.Name, (fun evaled _ -> match evaled with String value when value.Length = 1 -> value.[0] :> obj |> Some | _ -> None))
              (typeof<string>.Name, (fun evaled _ -> match evaled with String value -> value :> obj |> Some | _ -> None))
+             (typedefof<Guid>.Name, tryExportGuid)
+             (typedefof<KeyValuePair<_, _>>.Name, tryExportKvp)
              (typedefof<_ Address>.Name, tryExportAddress)
              (typedefof<_ Relation>.Name, tryExportRelation)
              (typedefof<_ option>.Name, tryExportOption)
-             (typedefof<KeyValuePair<_, _>>.Name, tryExportKvp)
              (typedefof<_ list>.Name, tryExportList)
              (typedefof<_ Set>.Name, tryExportSet)
              (typedefof<Map<_, _>>.Name, tryExportMap)] |>
