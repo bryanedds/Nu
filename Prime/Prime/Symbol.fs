@@ -62,6 +62,8 @@ module Symbol =
     let [<Literal>] ReservedChars = ":,"
     let [<Literal>] StructureCharsNoStr = "[]`"
     let [<Literal>] StructureChars = "\"" + StructureCharsNoStr
+    let (*Literal*) IllegalNameChars = ReservedChars + StructureChars + WhitespaceChars
+    let (*Literal*) IllegalNameCharsArray = Array.ofSeq IllegalNameChars
     let [<Literal>] NumberFormat =
         NumberLiteralOptions.AllowMinusSign |||
         NumberLiteralOptions.AllowPlusSign |||

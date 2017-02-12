@@ -6,6 +6,8 @@ open OpenTK
 open Prime
 open System
 open System.ComponentModel
+open System.Collections.Generic
+open System.Windows.Forms
 open Prime
 open Nu
 open Nu.Gaia
@@ -13,7 +15,7 @@ open Nu.Gaia.Design
 
 type WorldChanger = World -> World
 
-type WorldChangers = WorldChanger Collections.Generic.List
+type WorldChangers = WorldChanger List
 
 type DragEntityState =
     | DragEntityPosition of Vector2 * Vector2 * Entity
@@ -87,10 +89,18 @@ and EntityPropertyDescriptor (property, attributes) =
             match propertyName with
             | "Name" ->
                 let name = value :?> string
-                let entity = entityTds.DescribedEntity
-                let world = World.reassignEntity entity (Some name) (etol entity) world
-                entityTds.RefWorld := world // must be set for property grid
-                world
+                if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
+                    let entity = entityTds.DescribedEntity
+                    let world = World.reassignEntity entity (Some name) (etol entity) world
+                    entityTds.RefWorld := world // must be set for property grid
+                    world
+                else
+                    MessageBox.Show
+                        ("Invalid name '" + name + "'; must have no whitespace and none of the following characters: '" + Symbol.IllegalNameChars + "'.",
+                         "Invalid Name",
+                         MessageBoxButtons.OK) |>
+                        ignore
+                    world
 
             // TODO: comment
             | "FacetNames" ->
