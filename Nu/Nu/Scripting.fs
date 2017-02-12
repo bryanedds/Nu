@@ -590,20 +590,20 @@ module Scripting =
                             Break (content, originOpt) :> obj
                         | "get" ->
                             match tail with
-                            | Prime.Atom (nameStr, _) :: tail2
-                            | Prime.String (nameStr, _) :: tail2 ->
+                            | Prime.Atom (propertyName, _) :: tail2
+                            | Prime.String (propertyName, _) :: tail2 ->
                                 match tail2 with
-                                | [] -> Get (nameStr, originOpt) :> obj
-                                | [relation] -> GetFrom (nameStr, this.SymbolToExpr relation, originOpt) :> obj
+                                | [] -> Get (propertyName, originOpt) :> obj
+                                | [relation] -> GetFrom (propertyName, this.SymbolToExpr relation, originOpt) :> obj
                                 | _ -> Violation (["InvalidForm"; "Get"], "Invalid get form. Requires a name and an optional relation expression.", originOpt) :> obj
                             | _ -> Violation (["InvalidForm"; "Get"], "Invalid get form. Requires a name and an optional relation expression.", originOpt) :> obj
                         | "set" ->
                             match tail with
-                            | Prime.Atom (nameStr, _) :: value :: tail2
-                            | Prime.String (nameStr, _) :: value :: tail2 ->
+                            | Prime.Atom (propertyName, _) :: value :: tail2
+                            | Prime.String (propertyName, _) :: value :: tail2 ->
                                 match tail2 with
-                                | [] -> Set (nameStr, this.SymbolToExpr value, originOpt) :> obj
-                                | [relation] -> SetTo (nameStr, this.SymbolToExpr value, this.SymbolToExpr relation, originOpt) :> obj
+                                | [] -> Set (propertyName, this.SymbolToExpr value, originOpt) :> obj
+                                | [relation] -> SetTo (propertyName, this.SymbolToExpr value, this.SymbolToExpr relation, originOpt) :> obj
                                 | _ -> Violation (["InvalidForm"; "Set"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", originOpt) :> obj
                             | _ -> Violation (["InvalidForm"; "Set"], "Invalid set form. Requires a name, a value expression, and an optional relation expression.", originOpt) :> obj
                         | "define" ->
