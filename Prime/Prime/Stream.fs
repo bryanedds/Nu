@@ -10,7 +10,7 @@ open Prime
 type [<ReferenceEquality>] Stream<'a, 'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
     { Subscribe : 'w -> 'a Address * ('w -> 'w) * 'w }
 
-// TODO: document track functions
+// TODO: document track functions.
 module Stream =
 
     (* Event-Based Combinators *)

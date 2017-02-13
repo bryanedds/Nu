@@ -35,7 +35,7 @@ module Scripting =
                      "length normal " +
                      "cross dot " +
                      "violation bool int int64 single double string " +
-                     "nil keyname " +
+                     "nil keyname keyfields " +
                      "v2 xOf yOf xAs yAs " +
                      "tuple pair unit fst snd thd fth fif nth fstAs sndAs thdAs fthAs fifAs nthAs " +
                      "some none isSome isNone isEmpty notEmpty tryUncons uncons cons commit tryHead head tryTail tail " +
