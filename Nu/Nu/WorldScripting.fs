@@ -125,7 +125,8 @@ module WorldScripting =
                  ("single", evalUnary SingleFns)
                  ("double", evalUnary DoubleFns)
                  ("string", evalUnary StringFns)
-                 // ("keyname", evalSinglet evalKeyname) TODO
+                 ("keyname", evalSinglet evalKeyname)
+                 ("keyfields", evalSinglet evalKeyfields)
                  ("v2", evalDoublet evalV2)
                  ("xOf", evalSinglet (evalNth5 0))
                  ("yOf", evalSinglet (evalNth5 1))

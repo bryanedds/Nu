@@ -155,9 +155,9 @@ module WorldScriptingMarshalling =
                 // or as Record
                 elif FSharpType.IsRecord ty then
                     match value with
-                    | Keyphrase (_, phrase) ->
+                    | Keyphrase (_, fields) ->
                         let fieldTypes = FSharpType.GetRecordFields ty
-                        let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport fieldSymbol fieldTypes.[i].PropertyType) phrase
+                        let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport fieldSymbol fieldTypes.[i].PropertyType) fields
                         match Array.definitizePlus fieldOpts with
                         | (true, fields) -> Some (FSharpValue.MakeRecord (ty, fields))
                         | (false, _) -> None
@@ -171,11 +171,11 @@ module WorldScriptingMarshalling =
                         match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = name) unionCases with
                         | Some unionCase -> Some (FSharpValue.MakeUnion (unionCase, [||]))
                         | None -> None
-                    | Keyphrase (name, phrase) ->
+                    | Keyphrase (name, fields) ->
                         match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = name) unionCases with
                         | Some unionCase ->
                             let unionFieldTypes = unionCase.GetFields ()
-                            let unionValueOpts = Array.mapi (fun i unionSymbol -> tryExport unionSymbol unionFieldTypes.[i].PropertyType) phrase
+                            let unionValueOpts = Array.mapi (fun i unionSymbol -> tryExport unionSymbol unionFieldTypes.[i].PropertyType) fields
                             match Array.definitizePlus unionValueOpts with
                             | (true, unionValues) -> Some (FSharpValue.MakeUnion (unionCase, unionValues))
                             | (false, _) -> None

@@ -50,6 +50,18 @@ module WorldScriptingPrimitives =
             | Violation _ as violation -> (violation, world)
             | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a referent value.", originOpt), world)
 
+        let evalKeyname fnName originOpt evaledArg world =
+            match evaledArg with
+            | Keyphrase (name, _) -> (String name, world)
+            | Violation _ as violation -> (violation, world)
+            | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a keyphrase value.", originOpt), world)
+
+        let evalKeyfields fnName originOpt evaledArg world =
+            match evaledArg with
+            | Keyphrase (_, fields) -> (Tuple fields, world)
+            | Violation _ as violation -> (violation, world)
+            | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a keyphrase value.", originOpt), world)
+
         let evalV2 fnName originOpt evaledArg evaledArg2 world =
             match (evaledArg, evaledArg2) with
             | (Single x, Single y) -> (Vector2 (OpenTK.Vector2 (x, y)), world)
