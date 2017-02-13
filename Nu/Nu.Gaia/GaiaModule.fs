@@ -781,14 +781,13 @@ module Gaia =
             let exprsStr = Symbol.OpenSymbolsStr + exprsStr + Symbol.CloseSymbolsStr
             try let exprs = scvalue<Scripting.Expr list> exprsStr
                 let localFrame = Simulants.Game.GetScriptFrameNp world
-                let (evaled, world) = World.evalMany exprs localFrame Simulants.Game world
-                let evaledStr = scstring evaled
-                let evaledStrPacked = if evaledStr.Length < 2 then evaledStr else evaledStr.Substring (1, evaledStr.Length - 2)
-                let evaledStrPretty = Symbol.prettyPrint evaledStrPacked
+                let (evaleds, world) = World.evalMany exprs localFrame Simulants.Game world
+                let evaledStrs = List.map (scstring >> Symbol.prettyPrint) evaleds
+                let evaledsStr = String.Join (" ", evaledStrs)
                 form.replOutputTextBox.Text <-
                     if String.notEmpty form.replOutputTextBox.Text
-                    then form.replOutputTextBox.Text + "\n" + evaledStrPretty
-                    else evaledStrPretty
+                    then form.replOutputTextBox.Text + "\n" + evaledsStr
+                    else evaledsStr
                 form.replOutputTextBox.GotoPosition form.replOutputTextBox.Text.Length
                 world
             with exn -> Log.debug ("Could not evaluate repl input due to: " + scstring exn); world

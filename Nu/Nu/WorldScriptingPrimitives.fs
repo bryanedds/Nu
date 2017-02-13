@@ -460,8 +460,8 @@ module WorldScriptingPrimitives =
             | (scanner, state, Table map) ->
                 match
                     Seq.foldWhileRight (fun (state, states, world) (key, value) ->
-                        let elem = Tuple [|key; value|]
-                        match evalApply [|scanner; state; elem|] originOpt world with
+                        let entry = Tuple [|key; value|]
+                        match evalApply [|scanner; state; entry|] originOpt world with
                         | (Option (Some state), world) -> (Right (state, state :: states, world))
                         | (Option None, world) -> Left (List states, world)
                         | (Violation _, _) as error -> Left error
@@ -508,8 +508,8 @@ module WorldScriptingPrimitives =
             | (scanner, state, Table map) ->
                 let (_, states, world) =
                     Seq.foldi (fun i (state, states, world) (key, value) ->
-                        let elem = Tuple [|key; value|]
-                        let (state, world) = evalApply [|scanner; Int i; state; elem|] originOpt world
+                        let entry = Tuple [|key; value|]
+                        let (state, world) = evalApply [|scanner; Int i; state; entry|] originOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         (Map.toList map)
@@ -552,8 +552,8 @@ module WorldScriptingPrimitives =
             | (scanner, state, Table map) ->
                 let (_, states, world) =
                     Seq.fold (fun (state, states, world) (key, value) ->
-                        let elem = Tuple [|key; value|]
-                        let (state, world) = evalApply [|scanner; state; elem|] originOpt world
+                        let entry = Tuple [|key; value|]
+                        let (state, world) = evalApply [|scanner; state; entry|] originOpt world
                         (state, state :: states, world))
                         (state, [], world)
                         (Map.toList map)
@@ -691,8 +691,8 @@ module WorldScriptingPrimitives =
             | (folder, state, Table map) ->
                 let eir =
                     Seq.foldWhileRight (fun (state, world) (key, value) ->
-                        let elem = Tuple [|key; value|]
-                        match evalApply [|folder; state; elem|] originOpt world with
+                        let entry = Tuple [|key; value|]
+                        match evalApply [|folder; state; entry|] originOpt world with
                         | (Option (Some state), world) -> (Right (state, world))
                         | (Option None, world) -> Left (state, world)
                         | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an option.", originOpt), world))
@@ -715,8 +715,8 @@ module WorldScriptingPrimitives =
             | (folder, state, Ring set) -> Seq.foldi (fun i (state, world) elem -> evalApply [|folder; Int i; state; elem|] originOpt world) (state, world) set
             | (folder, state, Table map) ->
                 Seq.foldi (fun i (state, world) (key, value) ->
-                    let elem = Tuple [|key; value|]
-                    evalApply [|folder; Int i; state; elem|] originOpt world)
+                    let entry = Tuple [|key; value|]
+                    evalApply [|folder; Int i; state; entry|] originOpt world)
                     (state, world)
                     (Map.toList map)
             | (_, _, _) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
@@ -732,8 +732,8 @@ module WorldScriptingPrimitives =
             | (folder, state, Ring set) -> Set.fold (fun (state, world) elem -> evalApply [|folder; state; elem|] originOpt world) (state, world) set
             | (folder, state, Table map) ->
                 Map.fold (fun (state, world) key value ->
-                    let elem = Tuple [|key; value|]
-                    evalApply [|folder; state; elem|] originOpt world)
+                    let entry = Tuple [|key; value|]
+                    evalApply [|folder; state; entry|] originOpt world)
                     (state, world)
                     map
             | (Violation _ as error, _, _) -> (error, world)
@@ -777,7 +777,7 @@ module WorldScriptingPrimitives =
                         ([], world)
                 if List.forall (function String str when String.length str = 1 -> true | _ -> false) list
                 then (String (list |> List.rev |> List.map (function String str -> str.[0] | _ -> failwithumf ()) |> String.implode), world)
-                else (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + " applied to string's mapper must return a string of length 1.", originOpt), world)
+                else (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s mapper must return a string of length 1.", originOpt), world)
             | (mapper, Codata codata) ->
                 let (codata, world) = evalMapCodata evalApply originOpt mapper codata world
                 (Codata codata, world)
@@ -800,9 +800,9 @@ module WorldScriptingPrimitives =
             | (mapper, Table map) ->
                 let (map, world) =
                     Seq.foldi (fun i (elems, world) (key, value) ->
-                        let elem = Tuple [|key; value|]
-                        let (elem, world) = evalApply [|mapper; Int i; elem|] originOpt world
-                        match elem with
+                        let entry = Tuple [|key; value|]
+                        let (entry, world) = evalApply [|mapper; Int i; entry|] originOpt world
+                        match entry with
                         | Tuple elems' when Array.length elems' = 2 -> ((Map.add elems'.[0] elems'.[1] elems), world)
                         | _ -> (elems, world))
                         (Map.empty, world)
@@ -828,7 +828,7 @@ module WorldScriptingPrimitives =
                         ([], world)
                 if List.forall (function String str when String.length str = 1 -> true | _ -> false) list
                 then (String (list |> List.rev |> List.map (function String str -> str.[0] | _ -> failwithumf ()) |> String.implode), world)
-                else (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + " applied to string's mapper must return a string of length 1.", originOpt), world)
+                else (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s mapper must return a string of length 1.", originOpt), world)
             | (mapper, Codata codata) ->
                 let (codata, world) = evalMapCodata evalApply originOpt mapper codata world
                 (Codata codata, world)
@@ -851,9 +851,9 @@ module WorldScriptingPrimitives =
             | (mapper, Table map) ->
                 let (map, world) =
                     Map.fold (fun (elems, world) key value ->
-                        let elem = Tuple [|key; value|]
-                        let (elem, world) = evalApply [|mapper; elem|] originOpt world
-                        match elem with
+                        let entry = Tuple [|key; value|]
+                        let (entry, world) = evalApply [|mapper; entry|] originOpt world
+                        match entry with
                         | Tuple elems' when Array.length elems' = 2 -> ((Map.add elems'.[0] elems'.[1] elems), world)
                         | _ -> (elems, world))
                         (Map.empty, world)
