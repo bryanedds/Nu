@@ -160,7 +160,8 @@ module Effects =
             "Expand Enabled Position Translation Offset Size Rotation Depth Color Volume Bone " +
             "Expand StaticSprite AnimatedSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
             "RenderArtifact SoundArtifact TagArtifact",
-            "")>]
+            "",
+            Constants.PrettyPrint.DetailedThreshold)>]
 type [<NoEquality; NoComparison>] Effect =
     { EffectName : string
       LifetimeOpt : int64 option

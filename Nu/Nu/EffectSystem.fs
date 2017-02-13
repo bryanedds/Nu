@@ -457,14 +457,14 @@ module EffectSystemModule =
                 let effectSystem = { effectSystem with EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions }
                 try evalContent effect.Content slice effectSystem
                 with exn ->
-                    let effectStr = Symbol.prettyPrint (scstring effect)
+                    let effectStr = Symbol.strToPrettyStr Constants.PrettyPrint.DetailedThreshold (scstring effect)
                     Log.debug ^ "Error in effect:\r\n" + effectStr + "\r\ndue to: " + scstring exn
                     []
             else []
 
         let combineEffects effects =
             let effectCombined =
-                { EffectName = String.Join ("+", List.map (fun effect -> effect.EffectName) effects)
+                { EffectName = String.concat "+" (List.map (fun effect -> effect.EffectName) effects)
                   LifetimeOpt = None
                   Definitions = List.fold (fun definitions effect -> Map.concat definitions effect.Definitions) Map.empty effects
                   Content = Composite (Shift 0.0f, List.map (fun effect -> effect.Content) effects) }

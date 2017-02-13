@@ -51,13 +51,14 @@ module Scripting =
                      "define variable equate handle " +
                      // prelude identifiers...
                      "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegitiveInfinity isNaN " +
-                     "min max compare sign abs fst! snd! rev reduceWhile reducei reduce filteri filter takeWhile take skipWhile skip " +
+                     "min max compare sign abs fst! snd! rev reduceWhile reducei reduce filter takeWhile take skipWhile skip " +
                      "countBy count exists zipBy zip pi e v2Zero v2Identity game " +
                      "dataOf subscriberOf publisherOf addressOf " +
                      // engine functions
                      // TODO: "tickRate tickTime " +
                      "Gt Lt Eq Positive Negative Zero",
-                     "");
+                     "",
+                     Constants.PrettyPrint.DetailedThreshold);
           TypeConverter (typeof<ExprConverter>);
           CustomEquality;
           CustomComparison>]
@@ -259,8 +260,9 @@ module Scripting =
             | FunctionBinding (name, pars, body) ->
                 let nameSymbol = Symbol.Atom (name, None)
                 let parSymbols = Array.map (fun par -> Symbol.Atom (par, None)) pars
+                let parsSymbol = Symbol.Symbols (List.ofArray parSymbols, None)
                 let bodySymbol = this.ExprToSymbol body
-                nameSymbol :: List.ofArray parSymbols @ [bodySymbol]
+                [nameSymbol; parsSymbol; bodySymbol]
 
         member this.BindingToSymbol binding =
             Symbol.Symbols (this.BindingToSymbols binding, None)
@@ -302,7 +304,7 @@ module Scripting =
                 match expr with
                 | Violation (names, error, originOpt) ->
                     let violationSymbol = Symbol.Atom ("violation", None)
-                    let namesSymbol = Symbol.Atom (String.Join ("/", names), None)
+                    let namesSymbol = Symbol.Atom (String.concat "/" names, None)
                     let errorSymbol = Symbol.Atom (error, None)
                     Symbol.Symbols ([violationSymbol; namesSymbol; errorSymbol], originOpt) :> obj
                 | Unit -> Symbol.Symbols ([], None) :> obj
@@ -366,14 +368,15 @@ module Scripting =
                     Symbol.Symbols ([letSymbol; bindingSymbol; bodySymbol], originOpt) :> obj
                 | LetMany (bindings, body, originOpt) ->
                     let letSymbol = Symbol.Atom ("let", None)
-                    let bindingSymbols = Symbol.Symbols (List.map (fun binding -> this.BindingToSymbol binding) bindings, None)
+                    let bindingSymbols = List.map (fun binding -> this.BindingToSymbol binding) bindings
                     let bodySymbol = this.ExprToSymbol body
-                    Symbol.Symbols ([letSymbol; bindingSymbols; bodySymbol], originOpt) :> obj
+                    Symbol.Symbols (letSymbol :: bindingSymbols @ [bodySymbol], originOpt) :> obj
                 | Fun (pars, _, body, _, _, originOpt) ->
                     let funSymbol = Symbol.Atom ("fun", None)
                     let parSymbols = Array.map (fun par -> Symbol.Atom (par, None)) pars
+                    let parsSymbol = Symbol.Symbols (List.ofArray parSymbols, None)
                     let bodySymbol = this.ExprToSymbol body
-                    Symbol.Symbols (funSymbol :: List.ofArray parSymbols @ [bodySymbol], originOpt) :> obj
+                    Symbol.Symbols ([funSymbol; parsSymbol; bodySymbol], originOpt) :> obj
                 | If (condition, consequent, alternative, originOpt) ->
                     let ifSymbol = Symbol.Atom ("if", None)
                     let conditionSymbol = this.ExprToSymbol condition
@@ -404,7 +407,7 @@ module Scripting =
                     let inputSymbol = this.ExprToSymbol input
                     let caseSymbols =
                         List.map (fun ((tagNames : string list), consequent) ->
-                            let tagSymbol = Symbol.Atom (String.Join ("/", tagNames), None)
+                            let tagSymbol = Symbol.Atom (String.concat "/" tagNames, None)
                             let consequentSymbol = this.ExprToSymbol consequent
                             Symbol.Symbols ([tagSymbol; consequentSymbol], None))
                             cases
@@ -441,8 +444,8 @@ module Scripting =
                     Symbol.Quote (this.ExprToSymbol expr, originOpt) :> obj
                 | Define (binding, originOpt) ->
                     let defineSymbol = Symbol.Atom ("define", None)
-                    let bindingSymbols = this.BindingToSymbols binding
-                    Symbol.Symbols (defineSymbol :: bindingSymbols, originOpt) :> obj
+                    let bindingSymbols = Symbol.Symbols (this.BindingToSymbols binding, None)
+                    Symbol.Symbols ([defineSymbol; bindingSymbols], originOpt) :> obj
             elif destType = typeof<Expr> then source
             else failconv "Invalid ExprConverter conversion to source." None
 
@@ -630,7 +633,7 @@ module Scripting =
         match expr with
         | Violation (names, error, optOrigin) ->
             Log.info ^
-                "Unexpected violation:" + String.Join ("/", names) +
+                "Unexpected violation:" + String.concat "/" names +
                 "\ndue to:" + error +
                 "\nat: " + scstring optOrigin + "'."
         | _ -> ()

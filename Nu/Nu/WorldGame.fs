@@ -239,9 +239,10 @@ module WorldGameModule =
         /// Write a game to a file.
         static member writeGameToFile (filePath : string) world =
             let filePathTmp = filePath + ".tmp"
+            let prettyPrintThreshold = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrintThreshold
             let gameDescriptor = World.writeGame GameDescriptor.empty world
             let gameDescriptorStr = scstring gameDescriptor
-            let gameDescriptorPretty = Symbol.prettyPrint gameDescriptorStr
+            let gameDescriptorPretty = Symbol.strToPrettyStr prettyPrintThreshold gameDescriptorStr
             File.WriteAllText (filePathTmp, gameDescriptorPretty)
             File.Delete filePath
             File.Move (filePathTmp, filePath)
