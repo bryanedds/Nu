@@ -382,8 +382,8 @@ module WorldModule2 =
 
                     // build assets reload asset metadata
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
-                    let assetMetadataMap = Metadata.generateAssetMetadataMap assetGraph
-                    let world = World.setAssetMetadataMap assetMetadataMap world
+                    let metadata = Metadata.make assetGraph
+                    let world = World.setMetadata metadata world
                     let world = World.reloadRenderAssets world
                     let world = World.reloadAudioAssets world
                     let world = World.reloadSymbols world
@@ -691,7 +691,7 @@ module WorldModule2 =
             let ambientState =
                 let overlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
                 let overlayRouter = OverlayRouter.make overlayRoutes
-                AmbientState.make 1L (UMap.makeEmpty None) overlayRouter Overlayer.empty SymbolStore.empty userState
+                AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty SymbolStore.empty userState
 
             // select the first game dispatcher as active
             let activeGameDispatcher = dispatchers.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
@@ -793,7 +793,7 @@ module WorldModule2 =
             
                     // make the world's ambient state
                     let ambientState =
-                        let assetMetadataMap = Metadata.generateAssetMetadataMap assetGraph
+                        let assetMetadataMap = Metadata.make assetGraph
                         let intrinsicOverlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
                         let userOverlayRoutes = plugin.MakeOverlayRoutes ()
                         let overlayRoutes = intrinsicOverlayRoutes @ userOverlayRoutes

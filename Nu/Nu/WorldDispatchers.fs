@@ -458,7 +458,7 @@ module StaticSpriteFacetModule =
             else world
 
         override facet.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (entity.GetStaticImage world) (World.getAssetMetadataMap world) with
+            match Metadata.tryGetTextureSizeAsVector2 (entity.GetStaticImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -684,7 +684,7 @@ module ButtonDispatcherModule =
             else world
 
         override dispatcher.GetQuickSize (button, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (button.GetUpImage world) (World.getAssetMetadataMap world) with
+            match Metadata.tryGetTextureSizeAsVector2 (button.GetUpImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -725,7 +725,7 @@ module LabelDispatcherModule =
             else world
 
         override dispatcher.GetQuickSize (label, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (label.GetLabelImage world) (World.getAssetMetadataMap world) with
+            match Metadata.tryGetTextureSizeAsVector2 (label.GetLabelImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -793,7 +793,7 @@ module TextDispatcherModule =
             else world
 
         override dispatcher.GetQuickSize (text, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (text.GetBackgroundImage world) (World.getAssetMetadataMap world) with
+            match Metadata.tryGetTextureSizeAsVector2 (text.GetBackgroundImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -892,7 +892,7 @@ module ToggleDispatcherModule =
             else world
 
         override dispatcher.GetQuickSize (toggle, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (toggle.GetOffImage world) (World.getAssetMetadataMap world) with
+            match Metadata.tryGetTextureSizeAsVector2 (toggle.GetOffImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -1020,7 +1020,7 @@ module FillBarDispatcherModule =
             else world
 
         override dispatcher.GetQuickSize (fillBar, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (fillBar.GetBorderImage world) (World.getAssetMetadataMap world) with
+            match Metadata.tryGetTextureSizeAsVector2 (fillBar.GetBorderImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -1097,7 +1097,7 @@ module TileMapDispatcherModule =
         member this.Parallax = PropertyTag.make this Property? Parallax this.GetParallax this.SetParallax
 
         static member tryMakeTileMapData (tileMapAsset : AssetTag) world =
-            let metadataMap = World.getAssetMetadataMap world
+            let metadataMap = World.getMetadata world
             match Metadata.tryGetTileMapMetadata tileMapAsset metadataMap with
             | Some (_, _, map) ->
                 let mapSize = Vector2i (map.Width, map.Height)
@@ -1252,7 +1252,7 @@ module TileMapDispatcherModule =
 
         override dispatcher.Actualize (tileMap, world) =
             if tileMap.GetVisible world then
-                match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getAssetMetadataMap world) with
+                match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with
                 | Some (_, images, map) ->
                     let layers = List.ofSeq map.Layers
                     let tileSourceSize = Vector2i (map.TileWidth, map.TileHeight)
@@ -1293,6 +1293,6 @@ module TileMapDispatcherModule =
             else world
 
         override dispatcher.GetQuickSize (tileMap, world) =
-            match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getAssetMetadataMap world) with
+            match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with
             | Some (_, _, map) -> Vector2 (single ^ map.Width * map.TileWidth, single ^ map.Height * map.TileHeight)
             | None -> Constants.Engine.DefaultEntitySize

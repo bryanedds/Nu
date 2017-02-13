@@ -26,7 +26,7 @@ module AmbientStateModule =
               UpdateCount : int64
               Liveness : Liveness
               Tasklets : 'w Tasklet UList
-              AssetMetadataMap : AssetMetadataMap
+              Metadata : Metadata
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter
               SymbolStore : SymbolStore
@@ -99,13 +99,13 @@ module AmbientStateModule =
         let addTasklets tasklets state =
             { state with Tasklets = UList.ofSeq ^ Seq.append (tasklets :> _ seq) (state.Tasklets :> _ seq) }
 
-        /// Get the asset metadata map.
-        let getAssetMetadataMap state =
-            state.AssetMetadataMap
+        /// Get the metadata.
+        let getMetadata state =
+            state.Metadata
     
-        /// Set the asset metadata map.
-        let setAssetMetadataMap assetMetadataMap state =
-            { state with AssetMetadataMap = assetMetadataMap }
+        /// Set the metadata.
+        let setMetadata metadata state =
+            { state with Metadata = metadata }
     
         /// Get the overlayer.
         let getOverlayer state =
@@ -153,7 +153,7 @@ module AmbientStateModule =
               UpdateCount = 0L
               Liveness = Running
               Tasklets = UList.makeEmpty None
-              AssetMetadataMap = assetMetadataMap
+              Metadata = assetMetadataMap
               OverlayRouter = overlayRouter
               Overlayer = overlayer
               SymbolStore = symbolStore

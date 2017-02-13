@@ -291,11 +291,11 @@ module WorldModule =
             World.updateAmbientState (AmbientState.addTasklets tasklets) world
 
         /// Get the asset metadata map.
-        static member getAssetMetadataMap world =
-            AmbientState.getAssetMetadataMap ^ World.getAmbientState world
+        static member getMetadata world =
+            AmbientState.getMetadata ^ World.getAmbientState world
 
-        static member internal setAssetMetadataMap assetMetadataMap world =
-            World.updateAmbientState (AmbientState.setAssetMetadataMap assetMetadataMap) world
+        static member internal setMetadata assetMetadataMap world =
+            World.updateAmbientState (AmbientState.setMetadata assetMetadataMap) world
 
         static member internal getOverlayerBy by world =
             let overlayer = World.getAmbientStateBy AmbientState.getOverlayer world
