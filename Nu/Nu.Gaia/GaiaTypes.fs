@@ -84,9 +84,11 @@ and EntityPropertyDescriptor (property, attributes) =
                 | :? string as str -> str.Replace ("\"", "") :> obj
                 | _ -> value
 
-            // TODO: comment
+            // make property change undo-able
             let world = pushPastWorld world world
             match propertyName with
+            
+            // change the name property
             | "Name" ->
                 let name = value :?> string
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
@@ -102,7 +104,7 @@ and EntityPropertyDescriptor (property, attributes) =
                         ignore
                     world
 
-            // TODO: comment
+            // change facet names
             | "FacetNames" ->
                 let facetNames = value :?> string Set
                 let entity = entityTds.DescribedEntity
@@ -114,7 +116,7 @@ and EntityPropertyDescriptor (property, attributes) =
                 entityTds.Form.propertyGrid.Refresh ()
                 world
 
-            // TODO: comment
+            // change the property dynamically
             | _ ->
                 let entity = entityTds.DescribedEntity
                 let world =

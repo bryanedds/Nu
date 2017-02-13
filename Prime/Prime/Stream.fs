@@ -30,7 +30,7 @@ module Stream =
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe }
 
-    /// TODO: document!
+    /// TODO: document track functions
     let [<DebuggerHidden; DebuggerStepThrough>] trackEvent4
         (tracker : 'c -> Event<'a, 'g> -> 'w -> 'c * bool)
         (transformer : 'c -> 'b)
@@ -63,7 +63,6 @@ module Stream =
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe }
 
-    /// TODO: document!
     let [<DebuggerHidden; DebuggerStepThrough>] trackEvent2
         (tracker : 'a -> Event<'a, 'g> -> 'w -> 'a * bool)
         (stream : Stream<'a, 'g, 'w>) :
@@ -94,7 +93,6 @@ module Stream =
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe }
 
-    /// TODO: document!
     let [<DebuggerHidden; DebuggerStepThrough>] trackEvent
         (tracker : 'b -> 'w -> 'b * bool) (state : 'b) (stream : Stream<'a, 'g, 'w>) : Stream<'a, 'g, 'w> =
         let subscribe = fun (world : 'w) ->
@@ -177,17 +175,14 @@ module Stream =
 
     (* World-Accessing Combinators *)
 
-    /// TODO: document!
     let [<DebuggerHidden; DebuggerStepThrough>] trackWorld4
         (tracker : 'c -> 'a -> 'w -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (stream : Stream<'a, 'g, 'w>) : Stream<'b, 'g, 'w> =
         trackEvent4 (fun c evt world -> tracker c evt.Data world) transformer state stream
 
-    /// TODO: document!
     let [<DebuggerHidden; DebuggerStepThrough>] trackWorld2
         (tracker : 'a -> 'a -> 'w -> 'a * bool) (stream : Stream<'a, 'g, 'w>) : Stream<'a, 'g, 'w> =
         trackEvent2 (fun a evt world -> tracker a evt.Data world) stream
 
-    /// TODO: document!
     let [<DebuggerHidden; DebuggerStepThrough>] trackWorld
         (tracker : 'b -> 'w -> 'b * bool) (state : 'b) (stream : Stream<'a, 'g, 'w>) : Stream<'a, 'g, 'w> =
         trackEvent tracker state stream
@@ -214,17 +209,14 @@ module Stream =
 
     (* Primitive Combinators *)
 
-    /// TODO: document!
     let [<DebuggerHidden; DebuggerStepThrough>] track4
         (tracker : 'c -> 'a -> 'c * bool) (transformer : 'c -> 'b) (state : 'c) (stream : Stream<'a, 'g, 'w>) : Stream<'b, 'g, 'w> =
         trackEvent4 (fun c evt _ -> tracker c evt.Data) transformer state stream
 
-    /// TODO: document!
     let [<DebuggerHidden; DebuggerStepThrough>] track2
         (tracker : 'a -> 'a -> 'a * bool) (stream : Stream<'a, 'g, 'w>) : Stream<'a, 'g, 'w> =
         trackEvent2 (fun a evt _ -> tracker a evt.Data) stream
 
-    /// TODO: document!
     let [<DebuggerHidden; DebuggerStepThrough>] track
         (tracker : 'b -> 'b * bool) (state : 'b) (stream : Stream<'a, 'g, 'w>) : Stream<'a, 'g, 'w> =
         trackEvent (fun b _ -> tracker b) state stream

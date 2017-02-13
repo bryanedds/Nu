@@ -192,18 +192,6 @@ module VsyncModule =
             match v with
             | Sync a -> Sync ^ fun () -> f ^ a ()
             | Async a -> Async ^ Async.Map f a
-    
-        (* TODO: Re-enable this code once we find a good definition of Async.ParallelThrottled.
-        let [<DebuggerHidden; DebuggerStepThrough>] ParallelThrottled i s =
-            if isSync ()
-            then Sync ^ fun () -> Array.ofSeq ^ Seq.map (function Sync a -> a () | Async _ -> failwithumf ()) s
-            else Async ^ Async.ParallelThrottled i ^ Seq.map Extract s*)
-    
-        (* TODO: Re-enable this code once we find a good definition of Async.ParallelIgnore.
-        let [<DebuggerHidden; DebuggerStepThrough>] ParallelIgnore i s =
-            if isSync ()
-            then Sync ^ fun () -> ignore ^ Array.ofSeq ^ Seq.map (function Sync a -> a () | Async _ -> failwithumf ()) s
-            else Async ^ Async.ParallelIgnore i ^ Seq.map Extract s*)
 
 /// The Vsync computation expression builder.
 type [<Sealed>] VsyncBuilder () =
@@ -229,10 +217,6 @@ type [<Sealed>] VsyncBuilder () =
     static member inline Catch v = Vsync.Catch v
     static member inline Parallel s = Vsync.Parallel s
     static member inline Map f v = Vsync.Map f v
-    (* TODO: Re-enable this code once we find a good definition of Async.ParallelThrottled.
-    static member inline ParallelThrottled i s = Vsync.ParallelThrottled i s*)
-    (* TODO: Re-enable this code once we find a good definition of Async.ParallelIgnore.
-    static member inline ParallelIgnore i s = Vsync.ParallelIgnore i s*)
 
 [<AutoOpen>]
 module VsyncBuilderModule =

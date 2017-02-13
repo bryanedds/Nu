@@ -136,7 +136,7 @@ module WorldEntityModule =
             let size = this.GetSize world
             this.SetPosition (center - size * 0.5f) world
 
-        /// TODO: document!
+        /// Set the transform of an entity snapped to the give position and rotation snaps.
         member this.SetTransformSnapped positionSnap rotationSnap transform world =
             let transform = Math.snapTransform positionSnap rotationSnap transform
             this.SetTransform transform world
@@ -226,7 +226,7 @@ module WorldEntityModule =
                 entity
                 world
 
-        /// TODO: document!
+        /// Sort the given entities.
         static member sortEntities entities world =
             /// OPTIMIZATION: using arrays for speed
             entities |>
@@ -237,7 +237,7 @@ module WorldEntityModule =
             Array.ofSeq |>
             Array.map (fun p -> p.SortTarget :?> Entity)
 
-        /// TODO: document!
+        /// Try to pick an entity at the given position.
         static member tryPickEntity position entities world =
             /// OPTIMIZATION: using arrays for speed
             let entitiesSorted = World.sortEntities entities world
@@ -291,11 +291,11 @@ module WorldEntityModule =
                 | EntityPropertyInfo propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)
             World.setEntityProperty propertyName (propertyValue, propertyType) entity world
 
-        // TODO: put this in a better place! And of course, document.
+        /// Get the property descriptors of as constructed from the given function in the given context.
         static member getPropertyDescriptors makePropertyDescriptor contextOpt =
             // OPTIMIZATION: seqs used for speed.
             let properties = typeof<EntityState>.GetProperties ()
-            let typeConverterAttribute = TypeConverterAttribute (typeof<SymbolicConverter>) // TODO: make this static?
+            let typeConverterAttribute = TypeConverterAttribute typeof<SymbolicConverter>
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty ^ property.GetCustomAttributes<ExtensionAttribute> ()) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties

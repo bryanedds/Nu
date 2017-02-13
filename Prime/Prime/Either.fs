@@ -6,6 +6,7 @@ open System
 open Prime
 
 /// Haskell-style Either type.
+/// TODO: define either { } cexpr...
 type Either<'l, 'r> =
     | Right of 'r
     | Left of 'l

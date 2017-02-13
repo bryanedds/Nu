@@ -256,7 +256,6 @@ module Symbol =
         | Symbols (_, originOpt) -> originOpt
 
     /// Cascade a symbol string into multiple lines with proper tabbing.
-    /// TODO: split up this function.
     let private cascade str =
         let rec getCascadeDepth symbol depth =
             match symbol with

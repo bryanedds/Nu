@@ -120,7 +120,7 @@ module EventWorld =
         let eventAddressNames = eventAddress |> Address.getNames |> Array.ofList
         Seq.foldi (fun index eventAddresses _ ->
             let index = eventAddressNames.Length - index - 1
-            let eventAddressNamesAny = Array.zeroCreate eventAddressNames.Length // TODO: use Array.zeroCreateUnchecked if / when it becomes available
+            let eventAddressNamesAny = Array.zeroCreate eventAddressNames.Length // TODO: P1: use Array.zeroCreateUnchecked if / when it becomes available
             Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNames.Length)
             eventAddressNamesAny.[index] <- Address.head Events.Wildcard
             let eventAddressAny = eventAddressNamesAny |> List.ofArray |> Address.ltoa

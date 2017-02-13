@@ -24,13 +24,11 @@ module Map =
             kvps
     
     /// Make a map from a seq by a function.
-    /// TODO: Optimize by program fusion.
     let ofSeqBy by seq =
         let pairs = Seq.map by seq
         Map.ofSeq pairs
     
     /// Convert a map to a seq by a function.
-    /// TODO: Optimize by program fusion.
     let toSeqBy by map =
         let seq = Map.toSeq map
         Seq.map (fun (k, v) -> by k v) seq
@@ -52,13 +50,11 @@ module Map =
         toSeqBy (by << snd) map
     
     /// Make a map from a list by a function.
-    /// TODO: Optimize by program fusion.
     let ofListBy by list =
         let pairs = List.map by list
         Map.ofList pairs
     
     /// Convert a map to a list by a function.
-    /// TODO: Optimize by program fusion.
     let toListBy by map =
         let list = Map.toList map
         List.map by list

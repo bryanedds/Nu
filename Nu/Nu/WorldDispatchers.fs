@@ -120,7 +120,7 @@ module EffectFacetModule =
         member this.GetEffectHistoryMax world : int = this.Get Property? EffectHistoryMax world
         member this.SetEffectHistoryMax (value : int) world = this.Set Property? EffectHistoryMax value world
         member this.EffectHistoryMax = PropertyTag.make this Property? EffectHistoryMax this.GetEffectHistoryMax this.SetEffectHistoryMax
-        member this.GetEffectHistoryNp world : Effects.Slice Deque = this.Get Property? EffectHistoryNp world // TODO: replace this with a Udeque.
+        member this.GetEffectHistoryNp world : Effects.Slice Deque = this.Get Property? EffectHistoryNp world
         member private this.SetEffectHistoryNp (value : Effects.Slice Deque) world = this.Set Property? EffectHistoryNp value world
         member this.EffectHistoryNp = PropertyTag.makeReadOnly this Property? EffectHistoryNp this.GetEffectHistoryNp
         member this.GetEffectPhysicsShapesNp world : unit = this.Get Property? EffectPhysicsShapesNp world // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
@@ -201,8 +201,8 @@ module EffectFacetModule =
                         | Effects.RenderArtifact renderDescriptors -> World.enqueueRenderMessage (RenderDescriptorsMessage renderDescriptors) world
                         | Effects.SoundArtifact (volume, sound) -> World.playSound volume sound world
                         | Effects.TagArtifact (name, metadata, slice) ->
-                            let effectTags = entity.GetEffectTagsNp world
                             let effectTags =
+                                let effectTags = entity.GetEffectTagsNp world
                                 match Map.tryFind name effectTags with
                                 | Some (metadata, slices) -> Map.add name (metadata, slice :: slices) effectTags
                                 | None -> Map.add name (metadata, [slice]) effectTags

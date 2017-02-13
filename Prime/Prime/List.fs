@@ -108,7 +108,6 @@ let rec roll roller state (list : 'a list) =
         else roll roller state rest
 
 /// Zip two lists by a function.
-/// TODO: optimize with program fusion.
 let zipBy by first second =
     let zipped = List.zip first second
     List.map by zipped
@@ -153,13 +152,11 @@ let definitizePlus opts =
     (flag, List.ofSeq seq)
 
 /// Make a list of options an all or nothing proposition.
-/// TODO: optimize with program fusion.
 let allOrEmpty (opts : 'a option list) =
     let definites = definitize opts
     if areSameLength definites opts then definites else []
 
 /// Make a transformed list of options an all or nothing proposition.
-/// TODO: optimize with program fusion.
 let allOrEmptyBy by list =
     let definites = List.choose by list
     if areSameLength definites list then definites else []
@@ -192,7 +189,7 @@ let join sep list =
     else List.reduce (fun acc item -> acc + sep + item) list
 
 /// Join a list into a string separated by sep.
-/// TODO: consider optimizing with a StringBuilder.
+/// TODO: P1: consider optimizing with a StringBuilder.
 let joinBy by sep list =
     if List.isEmpty list then String.Empty
     else
