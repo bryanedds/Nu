@@ -13,8 +13,13 @@ module ScriptingTests =
 
     let evalPartial exprStr =
         let world = World.makeEmpty ()
-        let expr = scvalue<Scripting.Expr> exprStr
-        World.eval expr (Simulants.Game.GetScriptFrameNp world) Simulants.Game world |> fst
+        match World.tryEvalPrelude world with
+        | Right world ->
+            let expr = scvalue<Scripting.Expr> exprStr
+            World.eval expr (Simulants.Game.GetScriptFrameNp world) Simulants.Game world |> fst
+        | Left _ ->
+            Assert.True false
+            Scripting.Unit
 
     let eval exprStr =
         let evaled = evalPartial exprStr
