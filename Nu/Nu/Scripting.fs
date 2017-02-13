@@ -47,13 +47,15 @@ module Scripting =
                      "table toTable tryFind find " +
                      "let fun if cond try break get set do " +
                      "monitor " +
-                     // TODO: "substring tickRate tickTime update curry compose " +
+                     // TODO: "substring update curry compose itemOf tryItemOf itemAs tryItemAs sort replace slice split " +
                      "define variable equate handle " +
                      // prelude identifiers...
                      "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegitiveInfinity isNaN " +
                      "min max compare sign abs fst! snd! rev reduceWhile reducei reduce takeWhile take skipWhile skip " +
                      "countBy count exists zipBy zip pi e v2Zero v2Identity game " +
                      "dataOf subscriberOf publisherOf addressOf " +
+                     // engine functions
+                     // TODO: "tickRate tickTime " +
                      "Gt Lt Eq Positive Negative Zero",
                      "");
           TypeConverter (typeof<ExprConverter>);
