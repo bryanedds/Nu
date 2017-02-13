@@ -49,8 +49,7 @@ module MetadataModule =
                 Log.trace errorMessage
                 InvalidMetadata errorMessage
             else
-                // TODO: find an efficient way to pull metadata from a bitmap file without loading its
-                // actual image buffer.
+                // TODO: P1: find an efficient way to pull metadata from a bitmap file without loading its actual bitmap.
                 try use bitmap = new Bitmap (asset.FilePath)
                     if bitmap.PixelFormat = Imaging.PixelFormat.Format32bppArgb
                     then TextureMetadata ^ Vector2i (bitmap.Width, bitmap.Height)

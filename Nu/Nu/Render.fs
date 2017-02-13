@@ -356,8 +356,7 @@ module RendererModule =
                     renderColor.g <- byte ^ color.Y * 255.0f
                     renderColor.b <- byte ^ color.Z * 255.0f
                     renderColor.a <- byte ^ color.W * 255.0f
-                    // TODO: make the following code exception safe!
-                    // TODO: the resource implications (perf and vram fragmentation?) of creating and destroying a
+                    // NOTE: the resource implications (perf and vram fragmentation?) of creating and destroying a
                     // texture one or more times a frame must be understood! Although, maybe it all happens in software
                     // and vram frag would not be a concern in the first place... perf could still be, however.
                     let textSurface = SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, uint32 sizeView.X)

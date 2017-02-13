@@ -162,7 +162,7 @@ module WorldModuleEntity =
             match entityState.Rotation with
             | 0.0f ->
                 let boundsOverflow = Math.makeBoundsOverflow entityState.Position entityState.Size entityState.Overflow
-                boundsOverflow // no need to transform is unrotated
+                boundsOverflow // no need to transform when unrotated
             | _ ->
                 let boundsOverflow = Math.makeBoundsOverflow entityState.Position entityState.Size entityState.Overflow
                 let position = boundsOverflow.Xy

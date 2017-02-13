@@ -246,7 +246,7 @@ module WorldScripting =
                         (evaled, world)
                     | None -> (evaled, world)
                 | Violation _ as error -> (error, world)
-                | _ -> (Violation (["TODO: proper violation category."], "Cannot apply a non-binding.", originOpt), world)
+                | _ -> (Violation (["MalformedApplication"], "Cannot apply a non-binding.", originOpt), world)
             | ([], world) -> (Unit, world)
 
         and evalApplyAnd exprs originOpt world =
@@ -258,10 +258,10 @@ module WorldScripting =
                     match eval right world with
                     | (Bool _, _) as result -> result
                     | (Violation _, _) as error -> error
-                    | _ -> (Violation (["InvalidArgumentType"; "Binary"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+                    | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
                 | (Violation _, _) as error -> error
-                | _ -> (Violation (["InvalidArgumentType"; "Binary"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
-            | _ -> (Violation (["InvalidArgumentCount"; "Binary"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
+                | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+            | _ -> (Violation (["InvalidArgumentCount"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
 
         and evalApplyOr exprs originOpt world =
             match exprs with
@@ -272,10 +272,10 @@ module WorldScripting =
                     match eval right world with
                     | (Bool _, _) as result -> result
                     | (Violation _, _) as error -> error
-                    | _ -> (Violation (["InvalidArgumentType"; "Binary"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+                    | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
                 | (Violation _, _) as error -> error
-                | _ -> (Violation (["InvalidArgumentType"; "Binary"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
-            | _ -> (Violation (["InvalidArgumentCount"; "Binary"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
+                | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+            | _ -> (Violation (["InvalidArgumentCount"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
 
         and evalLet4 binding body originOpt world =
             let world =

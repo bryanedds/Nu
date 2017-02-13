@@ -233,7 +233,6 @@ module EffectSystemModule =
                     { slice with Volume = applied }
                 else slice
             | Bone ->
-                // TODO: implement bone
                 slice
             | Aspect.Expand (definitionName, _) ->
                 match Map.tryFind definitionName effectSystem.EffectEnv with
@@ -391,7 +390,7 @@ module EffectSystemModule =
                         let emitCount = int emitCountThisFrame - int emitCountLastFrame
                         let effectSystem =
                             let history =
-                                // TODO: emits on emits may still be broken, so fix this if needed!
+                                // TODO: emits on emits are probably still be broken, so fix this if needed!
                                 match content with
                                 | Emit _ ->
                                     Seq.mapi
