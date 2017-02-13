@@ -199,6 +199,3 @@
 
 ; Get address from an event.
 [define addressOf fth]
-
-#| TODO: itemOf, tryItemOf, itemAs, sort, replace, slice (subsequence), split
-   TODO: streams, engine functions |#
