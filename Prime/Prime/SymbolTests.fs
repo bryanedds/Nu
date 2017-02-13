@@ -98,9 +98,9 @@ module SymbolTests =
 
     let [<Fact>] canConvertStringToMapIntInt () =
         let value = scvalue<Map<int, int>> "[[0 1]]"
-        ignore value // TODO: assert for values
+        Assert.Equal (1, Map.find 0 value)
 
     let [<Fact>] canPrettyPrintGuid () =
         let symbolStr = "[5ec8734f-6a3d-4472-b86a-78125d238dc2]"
         let symbolPretty = Symbol.prettyPrint symbolStr
-        Assert.Equal<string> (symbolStr, symbolPretty)
+        Assert.Equal (symbolStr, symbolPretty)
