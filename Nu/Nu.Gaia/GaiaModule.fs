@@ -783,7 +783,7 @@ module Gaia =
                 let localFrame = Simulants.Game.GetScriptFrameNp world
                 let (evaleds, world) = World.evalMany exprs localFrame Simulants.Game world
                 let evaledStrs = List.map (scstring >> Symbol.prettyPrint) evaleds
-                let evaledsStr = String.Join (" ", evaledStrs)
+                let evaledsStr = String.Join ("\n", evaledStrs)
                 form.replOutputTextBox.Text <-
                     if String.notEmpty form.replOutputTextBox.Text
                     then form.replOutputTextBox.Text + "\n" + evaledsStr

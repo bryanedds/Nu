@@ -189,7 +189,7 @@ let join sep list =
     else List.reduce (fun acc item -> acc + sep + item) list
 
 /// Join a list into a string separated by sep.
-/// TODO: P1: consider optimizing with a StringBuilder.
+/// TODO: consider optimizing with a StringBuilder.
 let joinBy by sep list =
     if List.isEmpty list then String.Empty
     else
