@@ -10,6 +10,7 @@ open Prime
 type [<ReferenceEquality>] Stream<'a, 'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
     { Subscribe : 'w -> 'a Address * ('w -> 'w) * 'w }
 
+// TODO: document track functions
 module Stream =
 
     (* Event-Based Combinators *)
@@ -30,7 +31,6 @@ module Stream =
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe }
 
-    /// TODO: document track functions
     let [<DebuggerHidden; DebuggerStepThrough>] trackEvent4
         (tracker : 'c -> Event<'a, 'g> -> 'w -> 'c * bool)
         (transformer : 'c -> 'b)
