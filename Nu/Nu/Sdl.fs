@@ -112,7 +112,6 @@ module SdlDepsModule =
     
         /// Attempt to make an SdlDeps instance.
         let attemptMake sdlConfig =
-            // TODO: define either { } cexpr...
             match attemptPerformSdlInit
                 (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
                 (fun () -> SDL.SDL_Quit ()) with

@@ -364,7 +364,7 @@ module WorldModule =
         static member updateUserState (updater : 'u -> 'v) world =
             World.updateAmbientState (AmbientState.updateUserState updater) world
 
-        /// TODO: document.
+        /// Make vanilla overlay routes from dispatchers.
         static member internal dispatchersToOverlayRoutes entityDispatchers =
             entityDispatchers |>
             Map.toValueListBy getTypeName |>

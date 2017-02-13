@@ -29,7 +29,7 @@ type SubscriptionEntry =
     Guid * Participant * obj
 
 /// Abstracts over a subscription sorting procedure.
-/// TODO: for efficiency, consider using UList rather than list.
+/// TODO: P1: for efficiency, consider using UList rather than list.
 type 'w SubscriptionSorter =
     SubscriptionEntry list -> 'w -> SubscriptionEntry list
 
@@ -38,7 +38,7 @@ type internal 'w BoxableSubscription =
     obj -> obj -> 'w -> Handling * 'w
 
 /// A map of event subscriptions.
-/// TODO: for efficiency, consider using UList rather than list.
+/// TODO: P1: for efficiency, consider using UList rather than list.
 type internal SubscriptionEntries =
     UMap<obj Address, SubscriptionEntry list>
 

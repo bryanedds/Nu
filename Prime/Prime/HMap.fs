@@ -19,9 +19,10 @@ type internal Hkv<'k, 'v when 'k : comparison> =
 [<AutoOpen>]
 module HMapModule =
 
-    /// TODO: there's an F# issue where UseNullAsTrueValue does not work on unions with 4 or more cases
-    /// https://github.com/Microsoft/visualfsharp/issues/711 . Once resolved, should use it and be able
-    /// to make arrays with Array.zeroCreate alone without also copying over the empty array.
+    /// TODO: P1: there's an F# issue where UseNullAsTrueValue does not work on unions with 4 or
+    /// more cases https://github.com/Microsoft/visualfsharp/issues/711 . Once resolved, should use
+    /// it and be able to make arrays with Array.zeroCreate alone without also copying over the
+    /// empty array.
     type [<NoComparison>] private HNode<'k, 'v when 'k : comparison> =
         | Nil
         | Singleton of Hkv<'k, 'v>
@@ -37,7 +38,7 @@ module HMapModule =
         /// OPTIMIZATION: Array.Clone () is not used since it's been profiled to be slower
         let inline cloneArray (arr : HNode<'k, 'v> array) : HNode<'k, 'v> array =
             let arr' = Array.zeroCreate 32  // NOTE: there's an unecessary check against the size here, but that's the only inefficiency
-                                            // TODO: use Array.zeroCreateUnchecked if / when it becomes available
+                                            // TODO: P1: use Array.zeroCreateUnchecked if / when it becomes available
             Array.Copy (arr, 0, arr', 0, 32) // param checks are inefficient, but hopefully there's at least a memcpy underneath...
             arr'
     

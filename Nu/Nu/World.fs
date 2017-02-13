@@ -209,7 +209,6 @@ module WorldModule2 =
             else (false, screen.SetTransitionTicksNp (transitionTicks + World.getTickRate world) world)
 
         static member private updateScreenTransition (selectedScreen : Screen) world =
-            // TODO: split this function up...
             match selectedScreen.GetTransitionStateNp world with
             | IncomingState ->
                 match World.getLiveness world with
@@ -609,7 +608,7 @@ module WorldModule2 =
             let world = World.unregisterGame world
             World.cleanUpSubsystems world |> ignore
 
-        /// TODO: document!
+        /// Run the game without cleaning up the world's resources.
         static member runWithoutCleanUp runWhile handleUpdate handleRender sdlDeps liveness world =
             Sdl.runWithoutCleanUp 
                 runWhile
@@ -621,7 +620,7 @@ module WorldModule2 =
                 liveness
                 world
 
-        /// TODO: document!
+        /// Run the world's game while runWhile succeeds.
         static member run6 runWhile handleUpdate handleRender sdlDeps liveness world =
             Sdl.run9
                 runWhile
@@ -635,11 +634,11 @@ module WorldModule2 =
                 liveness
                 world
 
-        /// TODO: document!
+        /// Run the world's game while runWhile succeeds.
         static member run4 runWhile sdlDeps liveness world =
             World.run6 runWhile id id sdlDeps liveness world
 
-        /// TODO: document!
+        /// Run the world's game unto conclusion.
         static member run attemptMakeWorld handleUpdate handleRender sdlConfig =
             Sdl.run
                 attemptMakeWorld
@@ -655,7 +654,7 @@ module WorldModule2 =
         static member makeEmpty userState =
 
             // ensure game engine is initialized
-            // TODO: parameterize hard-coded boolean
+            // TODO: P1: parameterize hard-coded boolean
             Nu.init false
 
             // make the world's event system
@@ -719,7 +718,7 @@ module WorldModule2 =
         static member attemptMake preferPluginGameDispatcher gameSpecializationOpt tickRate userState (plugin : NuPlugin) sdlDeps =
 
             // ensure game engine is initialized
-            // TODO: parameterize hard-coded boolean
+            // TODO: P1: parameterize hard-coded boolean
             Nu.init false
 
             // attempt to create asset graph

@@ -87,7 +87,6 @@ module WorldTypes =
 
     /// Describes the information needed to sort simulants.
     /// OPTIMIZATION: implemented as a struct and carries related entity to avoid GC pressure.
-    /// TODO: see if there's a better file to place this in.
     and [<CustomEquality; CustomComparison>] SortPriority =
         { SortDepth : single
           SortPositionY : single
@@ -524,7 +523,7 @@ module WorldTypes =
                   OnPostUpdate = Scripting.Unit
                   EntityTreeNp = Unchecked.defaultof<Entity SpatialTree MutantCache>
                   TransitionStateNp = IdlingState
-                  TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
+                  TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutgoingState values
                   Incoming = Transition.make Incoming
                   Outgoing = Transition.make Outgoing }
             let spatialTree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
