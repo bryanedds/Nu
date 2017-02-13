@@ -101,6 +101,15 @@
     [let [pr [split ctr]]
          [fold reducer [fst pr] [snd pr]]]]
 
+; Filter for elements that satifsy the given predicate.
+[define filter [pred ctr]
+    [let [opt [tryUncons ctr]]
+         [if [isSome opt]
+             [if [pred [fst! opt]]
+                 [cons [fst! opt] [filter pred [snd! opt]]]
+                 [filter pred [snd! opt]]]
+             [toEmpty ctr]]]]
+
 ; Build a container of elements taken from the given container while a predicate succeeds.
 [define takeWhile [pred ctr]
     [let [opt [tryUncons ctr]]

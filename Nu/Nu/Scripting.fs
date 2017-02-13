@@ -39,7 +39,7 @@ module Scripting =
                      "v2 xOf yOf xAs yAs " +
                      "tuple pair unit fst snd thd fth fif nth fstAs sndAs thdAs fthAs fifAs nthAs " +
                      "some none isSome isNone isEmpty notEmpty tryUncons uncons cons commit tryHead head tryTail tail " +
-                     "scanWhile scani scan foldWhile foldi fold mapi map filteri filter contains " +
+                     "scanWhile scani scan foldWhile foldi fold mapi map contains " +
                      // TODO: "either isLeft isRight left right " +
                      "codata toCodata empty " +
                      "list toList " +
@@ -51,7 +51,7 @@ module Scripting =
                      "define variable equate handle " +
                      // prelude identifiers...
                      "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegitiveInfinity isNaN " +
-                     "min max compare sign abs fst! snd! rev reduceWhile reducei reduce takeWhile take skipWhile skip " +
+                     "min max compare sign abs fst! snd! rev reduceWhile reducei reduce filteri filter takeWhile take skipWhile skip " +
                      "countBy count exists zipBy zip pi e v2Zero v2Identity game " +
                      "dataOf subscriberOf publisherOf addressOf " +
                      // engine functions

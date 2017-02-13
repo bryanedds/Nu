@@ -167,8 +167,6 @@ module WorldScripting =
                  ("fold", evalTriplet (evalFold evalApply))
                  ("mapi", evalDoublet (evalMapi evalApply))
                  ("map", evalDoublet (evalMap evalApply))
-                 //("filter", evalDoublet (evalFilter evalApply)) TODO
-                 //("filteri", evalDoublet (evalFilteri evalApply)) TODO
                  ("contains", evalDoublet (evalContains evalApply))
                  ("codata", evalDoublet evalCodata)
                  ("toCodata", evalSinglet evalToCodata)
