@@ -190,12 +190,12 @@ module WorldScripting =
         and isIntrinsic name =
             Intrinsics.ContainsKey name
 
-        and evalIntrinsic originOpt name evaledArgs world =
-            match Intrinsics.TryGetValue name with
-            | (true, intrinsic) -> intrinsic originOpt name evaledArgs world
+        and evalIntrinsic fnName originOpt evaledArgs world =
+            match Intrinsics.TryGetValue fnName with
+            | (true, intrinsic) -> intrinsic fnName originOpt evaledArgs world
             | (false, _) -> (Violation (["InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), world)
 
-        and evalSimulantExists fnOriginOpt name evaledArg world =
+        and evalSimulantExists fnName originOpt evaledArg world =
             match evaledArg with
             | String str
             | Keyword str ->
@@ -206,7 +206,7 @@ module WorldScripting =
                 | Some simulant -> (Bool (World.simulantExists simulant world), world)
                 | None -> (Bool false, world)
             | Violation _ as error -> (error, world)
-            | _ -> (Violation (["InvalidArgumentType"], "Function '" + name + "' requires 1 relation argument.", fnOriginOpt), world)
+            | _ -> (Violation (["InvalidArgumentType"], "Function '" + fnName + "' requires 1 relation argument.", originOpt), world)
 
         and evalBinding expr name cachedBinding originOpt world =
             match World.tryGetBinding name cachedBinding world with
@@ -222,9 +222,9 @@ module WorldScripting =
                 | Keyword keyword ->
                     let keyphrase = Keyphrase (keyword, List.toArray evaledTail)
                     (keyphrase, world)
-                | Binding (name, _, originOpt) ->
+                | Binding (fnName, _, originOpt) ->
                     // NOTE: we can infer we have an intrinsic when evaluation leads here
-                    evalIntrinsic originOpt name evaledTail world
+                    evalIntrinsic fnName originOpt evaledTail world
                 | Fun (pars, parsCount, body, _, framesOpt, originOpt) ->
                     let (framesCurrentOpt, world) =
                         match framesOpt with
@@ -345,7 +345,7 @@ module WorldScripting =
             let resultEir =
                 Seq.foldUntilRight (fun world (condition, consequent) ->
                     let (evaledInput, world) = eval condition world
-                    match evalBinaryInner EqFns originOpt "=" input evaledInput world with
+                    match evalBinaryInner EqFns "=" originOpt input evaledInput world with
                     | (Bool true, world) -> Right (eval consequent world)
                     | (Bool false, world) -> Left world
                     | (Violation _, world) -> Right (evaledInput, world)

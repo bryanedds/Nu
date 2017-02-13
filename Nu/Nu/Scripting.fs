@@ -202,7 +202,7 @@ module Scripting =
             | (List left, List right) -> compare left right
             | (Ring left, Ring right) -> compare left right
             | (Table left, Table right) -> compare left right
-            | (_, _) -> -1 // TODO: ensure this won't break any relevant sorting algorithms
+            | (_, _) -> -1
 
         override this.GetHashCode () =
             match this with
@@ -509,27 +509,27 @@ module Scripting =
                             | _ -> Violation (["InvalidForm"; "Violation"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
                         | "let" ->
                             match tail with
-                            | [] -> Violation (["InvalidForm"; "Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
-                            | [_] -> Violation (["InvalidForm"; "Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                            | [] -> Violation (["InvalidForm"; "Let"], "Invalid let form. Requires both a binding and a body.", originOpt) :> obj
+                            | [_] -> Violation (["InvalidForm"; "Let"], "Invalid let form. Requires both a binding and a body.", originOpt) :> obj
                             | [binding; body] ->
                                 match binding with
                                 | Symbols (bindingSymbols, _) ->
                                     match this.SymbolsToBindingOpt bindingSymbols with
                                     | Some binding -> Let (binding, this.SymbolToExpr body, originOpt) :> obj
-                                    | None -> Violation (["InvalidForm"; "Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
-                                | _ -> Violation (["InvalidForm"; "Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                                    | None -> Violation (["InvalidForm"; "Let"], "Invalid let form. Bindings require both a name and an expression.", originOpt) :> obj
+                                | _ -> Violation (["InvalidForm"; "Let"], "Invalid let form. Bindings require both a name and an expression.", originOpt) :> obj
                             | bindingsAndBody ->
                                 let (bindings, body) = (List.allButLast bindingsAndBody, List.last bindingsAndBody)
-                                let (bindings, bindingErrors) = List.split (function Symbols ([_; _], _) -> true | _ -> false) bindings
-                                if List.isEmpty bindingErrors then
+                                let (bindings, bindingsErrored) = List.split (function Symbols ([_; _], _) -> true | _ -> false) bindings
+                                if List.isEmpty bindingsErrored then
                                     let bindings = List.map (function Symbols ([_; _] as binding, _) -> binding | _ -> failwithumf ()) bindings
                                     let bindingOpts = List.map this.SymbolsToBindingOpt bindings
                                     let (bindingOpts, bindingErrors) = List.split Option.isSome bindingOpts
                                     if List.isEmpty bindingErrors then
                                         let bindings = List.definitize bindingOpts
                                         LetMany (bindings, this.SymbolToExpr body, originOpt) :> obj
-                                    else Violation (["InvalidForm"; "Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
-                                else Violation (["InvalidForm"; "Let"], "Invalid let form. TODO: more info.", originOpt) :> obj
+                                    else Violation (["InvalidForm"; "Let"], "Invalid let form. Bindings require both a name and an expression.", originOpt) :> obj
+                                else Violation (["InvalidForm"; "Let"], "Invalid let form. Bindings require both a name and an expression.", originOpt) :> obj
                         | "fun" ->
                             match tail with
                             | [args; body] ->
@@ -538,9 +538,9 @@ module Scripting =
                                     if List.forall (function Atom _ -> true | _ -> false) args then
                                         let args = Array.map (function Atom (arg, _) -> arg | _ -> failwithumf ()) (Array.ofList args)
                                         Fun (args, Array.length args, this.SymbolToExpr body, false, None, originOpt) :> obj
-                                    else Violation (["InvalidForm"; "Fun"], "Invalid fun form. TODO: more info.", originOpt) :> obj
-                                | _ -> Violation (["InvalidForm"; "Fun"], "Invalid fun form. TODO: more info.", originOpt) :> obj
-                            | _ -> Violation (["InvalidForm"; "Fun"], "Invalid fun form. TODO: more info.", originOpt) :> obj
+                                    else Violation (["InvalidForm"; "Fun"], "Invalid fun form. Each argument must be a single name.", originOpt) :> obj
+                                | _ -> Violation (["InvalidForm"; "Fun"], "Invalid fun form. Arguments must be enclosed in brackets.", originOpt) :> obj
+                            | _ -> Violation (["InvalidForm"; "Fun"], "Invalid fun form. Fun requires 1 argument list and 1 body.", originOpt) :> obj
                         | "if" ->
                             match tail with
                             | [condition; consequent; alternative] -> If (this.SymbolToExpr condition, this.SymbolToExpr consequent, this.SymbolToExpr alternative, originOpt) :> obj
@@ -610,7 +610,7 @@ module Scripting =
                             let bindingSymbols = tail
                             match this.SymbolsToBindingOpt bindingSymbols with
                             | Some binding -> Define (binding, originOpt) :> obj
-                            | None -> Violation (["InvalidForm"; "Define"], "Invalid define form. TODO: more info.", originOpt) :> obj
+                            | None -> Violation (["InvalidForm"; "Define"], "Invalid define form. Invalid binding.", originOpt) :> obj
                         | _ -> Apply (Array.ofList (this.SymbolsToExpr symbols), originOpt) :> obj
                     | _ -> Apply (Array.ofList (this.SymbolsToExpr symbols), originOpt) :> obj
             | :? Expr -> source
