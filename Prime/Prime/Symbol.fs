@@ -3,13 +3,24 @@
 
 namespace Prime
 open System
+open System.Text
+open System.Reflection
 open FParsec
 open Prime
 
-type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>] SyntaxAttribute (keywords0 : string, keywords1 : string) =
+type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
+    SyntaxAttribute
+    (keywords0 : string,
+     keywords1 : string,
+     prettyPrintThreshold : int) =
     inherit Attribute ()
     member this.Keywords0 = keywords0
     member this.Keywords1 = keywords1
+    member this.PrettyPrintThreshold = prettyPrintThreshold
+    static member getOrDefault (ty : Type) =
+        match ty.GetCustomAttribute<SyntaxAttribute> true with
+        | null -> SyntaxAttribute ("", "", 1)
+        | syntax -> syntax
 
 type SymbolSource =
     { FileNameOpt : string option
@@ -186,7 +197,7 @@ module Symbol =
         | Number (str, _) -> distillate str
         | String (str, _) -> OpenStringStr + distillate str + CloseStringStr
         | Quote (symbol, _) -> QuoteStr + writeSymbol symbol
-        | Symbols (symbols, _) -> OpenSymbolsStr + String.Join (" ", List.map writeSymbol symbols) + CloseSymbolsStr
+        | Symbols (symbols, _) -> OpenSymbolsStr + String.concat " " (List.map writeSymbol symbols) + CloseSymbolsStr
 
     /// Convert a string to a symbol, with the following parses:
     /// 
@@ -255,42 +266,59 @@ module Symbol =
         | Quote (_, originOpt)
         | Symbols (_, originOpt) -> originOpt
 
-    /// Cascade a symbol string into multiple lines with proper tabbing.
-    let private cascade str =
-        let rec getCascadeDepth symbol depth =
-            match symbol with
-            | Atom _ -> depth
-            | Symbols (_ :: _ as symbols', _) -> getCascadeDepth (List.head symbols') (depth + 1)
-            | _ -> 0
-        let symbol = fromString str
-        let symbolStr = toString symbol
-        let builder = Text.StringBuilder symbolStr
-        let mutable builderIndex = 0
-        let rec advance tabDepth cascadeDepth symbol =
-            match tryGetOrigin symbol with
-            | Some origin ->
-                let cascadeDepth' = getCascadeDepth symbol 0
-                if origin.Start.Index <> 0L && cascadeDepth < 1 && cascadeDepth' > 0 then
-                    let whitespace = "\r\n" + String.replicate tabDepth " "
-                    ignore ^ builder.Insert (int origin.Start.Index + builderIndex, whitespace)
-                    builderIndex <- builderIndex + whitespace.Length
-                match symbol with
-                | Symbols (symbols, _) ->
-                    let tabDepth' = tabDepth + 1
-                    let cascadeDepth'' = if cascadeDepth' > 0 then cascadeDepth' - 1 else cascadeDepth - 1
-                    List.iteri (fun i symbol -> advance tabDepth' (if i = 0 then cascadeDepth'' else 0) symbol) symbols
-                | _ -> ()
-            | None -> failwithumf ()
-        advance 0 -1 symbol
-        string builder
+    type private SymbolPretty =
+        | LiteralPretty of string
+        | QuotePretty of int * SymbolPretty
+        | SymbolsPretty of int * SymbolPretty list
 
-    /// Pretty-print a symbol string in the form an symbolic-expression.
-    let prettyPrint str =
-        let strCascaded = cascade str
-        let lines = strCascaded.Split ([|"\r\n"|], StringSplitOptions.None)
-        let linesTrimmed = Array.map (fun (str : string) -> str.TrimEnd ()) lines
-        let strPretty = String.Join ("\r\n", linesTrimmed)
-        strPretty
+    let rec private getMaxDepth symbolPretty =
+        match symbolPretty with
+        | LiteralPretty _ -> 0
+        | QuotePretty (maxDepth, _) -> maxDepth
+        | SymbolsPretty (maxDepth, _) -> maxDepth
+
+    let rec private symbolToSymbolPretty symbol =
+        match symbol with
+        | Atom (str, _)
+        | Number (str, _)
+        | String (str, _) -> LiteralPretty str
+        | Quote (quoted, _) ->
+            let quotedPretty = symbolToSymbolPretty quoted
+            let maxDepth = getMaxDepth quotedPretty
+            QuotePretty (inc maxDepth, quotedPretty)
+        | Symbols (symbols, _) ->
+            let symbolsPretty = List.map symbolToSymbolPretty symbols
+            let symbolMaxDepths = 0 :: List.map getMaxDepth symbolsPretty
+            let maxDepth = List.max symbolMaxDepths
+            SymbolsPretty (inc maxDepth, symbolsPretty)
+
+    let rec private symbolPrettyToPrettyStr depth threshold symbolPretty =
+        match symbolPretty with
+        | LiteralPretty str -> str
+        | QuotePretty (_, symbolPretty) -> "`" + symbolPrettyToPrettyStr depth threshold symbolPretty
+        | SymbolsPretty (maxDepth, symbolsPretty) ->
+            if maxDepth > threshold then
+                let symbolPrettyStrs =
+                    List.mapi (fun i symbolPretty ->
+                        let whitespace = if i > 0 then String.init depth (fun _ -> " ") else ""
+                        let text = symbolPrettyToPrettyStr (inc depth) threshold symbolPretty
+                        whitespace + text)
+                        symbolsPretty
+                OpenSymbolsStr + String.concat "\n" symbolPrettyStrs + CloseSymbolsStr
+            else
+                let symbolPrettyStrs =
+                    List.map (fun symbolPretty ->
+                        symbolPrettyToPrettyStr (inc depth) threshold symbolPretty)
+                        symbolsPretty
+                OpenSymbolsStr + String.concat " " symbolPrettyStrs + CloseSymbolsStr
+
+    let symbolToPrettyStr threshold symbol =
+        let symbolPretty = symbolToSymbolPretty symbol
+        symbolPrettyToPrettyStr 1 threshold symbolPretty
+
+    let strToPrettyStr threshold str =
+        let symbol = fromString str
+        symbolToPrettyStr threshold symbol
 
 type ConversionException (message : string, symbolOpt : Symbol option) =
     inherit Exception (message)

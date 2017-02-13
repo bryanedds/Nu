@@ -96,7 +96,7 @@ module AddressModule =
 
         /// Convert a string into an address.
         static member atos<'a> (address : 'a Address) =
-            String.Join ("/", address.Names)
+            String.concat "/" address.Names
 
         /// Convert an address of type 'a to an address of type 'b.
         static member atoa<'a, 'b> (address : 'a Address) =

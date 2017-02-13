@@ -94,7 +94,7 @@ module RelationModule =
         
         override this.ToString () =
             let names = List.map (fun nameOpt -> match nameOpt with Some name -> name | None -> ".") this.NameOpts
-            String.Join ("/", names)
+            String.concat "/" names
 
     [<RequireQualifiedAccess>]
     module Relation =

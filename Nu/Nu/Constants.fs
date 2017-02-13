@@ -81,3 +81,9 @@ module Constants =
         let (*Literal*) DegreesToRadians = 1.0 / RadiansToDegrees
         let (*Literal*) RadiansToDegreesF = single RadiansToDegrees
         let (*Literal*) DegreesToRadiansF = single DegreesToRadians
+
+    [<RequireQualifiedAccess>]
+    module PrettyPrint =
+    
+        let [<Literal>] SimpleThreshold = 1
+        let [<Literal>] DetailedThreshold = 2

@@ -71,7 +71,7 @@ type [<StructuralEquality; NoComparison>] BodyPolygon =
       Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
 
 /// The shape of a physics body.
-[<Syntax ("BodyBox BodyCircle BodyCapsule BodyPolygon", "")>]
+[<Syntax ("BodyBox BodyCircle BodyCapsule BodyPolygon", "", Constants.PrettyPrint.DetailedThreshold)>]
 type [<StructuralEquality; NoComparison>] BodyShape =
     | BodyBox of BodyBox
     | BodyCircle of BodyCircle
@@ -79,7 +79,7 @@ type [<StructuralEquality; NoComparison>] BodyShape =
     | BodyPolygon of BodyPolygon
 
 /// The type of a physics body; Static, Kinematic, or Dynamic.
-[<Syntax ("Static Kinematic Dynamic", "")>]
+[<Syntax ("Static Kinematic Dynamic", "", Constants.PrettyPrint.SimpleThreshold)>]
 type BodyType =
     | Static
     | Kinematic

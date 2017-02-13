@@ -292,7 +292,7 @@ type SymbolicConverter (pointType : Type) =
                         match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = unionName) unionCases with
                         | Some unionCase -> FSharpValue.MakeUnion (unionCase, [||])
                         | None ->
-                            let unionNames = unionCases |> Array.map (fun unionCase -> unionCase.Name) |> curry String.Join " | "
+                            let unionNames = unionCases |> Array.map (fun unionCase -> unionCase.Name) |> String.concat " | "
                             failconv ("Expected one of the following Atom values for Union name: '" + unionNames + "'.") ^ Some symbol
                     | Symbols (symbols, _) ->
                         match symbols with
@@ -305,7 +305,7 @@ type SymbolicConverter (pointType : Type) =
                                 let unionValues = padWithDefaults unionFieldTypes unionValues
                                 FSharpValue.MakeUnion (unionCase, unionValues)
                             | None ->
-                                let unionNames = unionCases |> Array.map (fun unionCase -> unionCase.Name) |> curry String.Join " | "
+                                let unionNames = unionCases |> Array.map (fun unionCase -> unionCase.Name) |> String.concat " | "
                                 failconv ("Expected one of the following Atom values for Union name: '" + unionNames + "'.") ^ Some symbol
                         | (Number (_, _) | String (_, _) | Quote (_, _) | Symbols (_, _)) :: _ ->
                             failconv "Expected Atom value for Union name." ^ Some symbol
