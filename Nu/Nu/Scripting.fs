@@ -27,7 +27,8 @@ module Scripting =
         | Unfold of Expr * Expr
         | Conversion of Expr list
 
-    and [<Syntax    ("toEmpty toIdentity toMin toMax " +
+    and [<Syntax    ("true false nil " +
+                     "toEmpty toIdentity toMin toMax " +
                      "not inc dec negate hash " +
                      "pow root sqr sqrt " +
                      "floor ceiling truncate round exp log " +
@@ -35,7 +36,7 @@ module Scripting =
                      "length normal " +
                      "cross dot " +
                      "violation bool int int64 single double string " +
-                     "nil keyname keyfields " +
+                     "keyname keyfields " +
                      "v2 xOf yOf xAs yAs " +
                      "tuple pair unit fst snd thd fth fif nth fstAs sndAs thdAs fthAs fifAs nthAs " +
                      "some none isSome isNone isEmpty notEmpty tryUncons uncons cons commit tryHead head tryTail tail " +
@@ -53,11 +54,10 @@ module Scripting =
                      "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegitiveInfinity isNaN " +
                      "min max compare sign abs fst! snd! rev reduceWhile reducei reduce filter takeWhile take skipWhile skip " +
                      "countBy count exists zipBy zip pi e v2Zero v2Identity game " +
-                     "dataOf subscriberOf publisherOf addressOf " +
+                     "dataOf subscriberOf publisherOf addressOf",
                      // engine functions
-                     // TODO: "tickRate tickTime " +
+                     // TODO: "tickRate tickTime "
                      "Gt Lt Eq Positive Negative Zero",
-                     "",
                      Constants.PrettyPrint.DetailedThreshold);
           TypeConverter (typeof<ExprConverter>);
           CustomEquality;
@@ -459,9 +459,9 @@ module Scripting =
                 match symbol with
                 | Prime.Atom (str, originOpt) ->
                     match str with
-                    | "true" -> Bool true :> obj
-                    | "false" -> Bool false :> obj
-                    | "none" -> Option None :> obj
+                    | "true" | "True" -> Bool true :> obj
+                    | "false" | "False" -> Bool false :> obj
+                    | "none" | "None" -> Option None :> obj
                     | "nil" -> Keyword String.Empty :> obj
                     | "empty" -> Codata Empty :> obj
                     | _ ->

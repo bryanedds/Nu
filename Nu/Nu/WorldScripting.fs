@@ -147,6 +147,7 @@ module WorldScripting =
                  ("fifAs", evalDoublet (evalNthAs5 4))
                  ("nthAs", evalTriplet evalNthAs)
                  ("some", evalSinglet evalSome)
+                 ("Some", evalSinglet evalSome)
                  ("isNone", evalSinglet evalIsNone)
                  ("isSome", evalSinglet evalIsSome)
                  ("isEmpty", evalSinglet (evalIsEmpty evalApply))
