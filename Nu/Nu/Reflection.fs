@@ -90,7 +90,6 @@ module Reflection =
         Dictionary<Type, PropertyDefinition list> HashIdentity.Reference
 
     /// Derive a simulant name from an optional name.
-    /// TODO: see if we can improve the name of this function.
     let deriveName nameOpt id =
         match nameOpt with
         | Some name -> name
