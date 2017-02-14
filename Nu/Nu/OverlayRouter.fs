@@ -15,8 +15,8 @@ type Classification =
         { TypeName = typeName
           Specialization = specialization }
 
-    static member makeVanilla typeName =
-        Classification.make typeName Constants.Engine.VanillaSpecialization
+    static member makeUnspecialized typeName =
+        Classification.make typeName Constants.Engine.EmptySpecialization
 
 type OverlayDescriptor =
     { SpecializedOverlayNameOpts : Map<string, string option>
