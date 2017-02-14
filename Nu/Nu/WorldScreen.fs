@@ -93,13 +93,13 @@ module WorldScreenModule =
             | None -> false
 
         /// Check that a screen exists in the world.
-        member this.Exists world = World.screenExists this world
-
-        /// Resolve a relation in the context of an entity.
-        member this.Resolve relation = Screen (Relation.resolve this.ScreenAddress relation)
+        member this.GetExists world = World.screenExists this world
 
         /// Check that a screen dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
+
+        /// Resolve a relation in the context of an entity.
+        member this.Resolve relation = Screen (Relation.resolve this.ScreenAddress relation)
 
     type World with
 

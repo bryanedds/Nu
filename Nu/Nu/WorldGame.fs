@@ -100,7 +100,7 @@ module WorldGameModule =
         member this.GetViewBounds viewType world = World.getViewBounds viewType world
 
         /// Check that the given bounds is within the eye's sight.
-        member this.InView viewType bounds world = World.isBoundsInView viewType bounds world
+        member this.GetInView viewType bounds world = World.isBoundsInView viewType bounds world
 
         /// Transform the given mouse position to screen space.
         member this.MouseToScreen mousePosition world = World.mouseToScreen mousePosition world
@@ -111,11 +111,11 @@ module WorldGameModule =
         /// Transform the given mouse position to entity space.
         member this.MouseToEntity viewType entityPosition mousePosition world = World.mouseToEntity viewType entityPosition mousePosition world
 
-        /// Resolve a relation in the context of an entity.
-        member this.Resolve relation = Game (Relation.resolve this.GameAddress relation)
-
         /// Check that a layer dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
+
+        /// Resolve a relation in the context of an entity.
+        member this.Resolve relation = Game (Relation.resolve this.GameAddress relation)
 
     type World with
 
