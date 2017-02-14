@@ -59,7 +59,7 @@ module Scripting =
              
              (* Engine Functions *)
              // TODO: "tickRate tickTime getSimulantSelected "
-             "monitor simulantExists " +
+             "monitor getSimulantExists " +
              
              (* Engine Keywords *)
              "Gt Lt Eq Positive Negative Zero",
