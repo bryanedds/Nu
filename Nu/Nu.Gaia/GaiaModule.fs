@@ -345,7 +345,7 @@ module Gaia =
                     let selectionStart = form.propertyValueTextBox.SelectionStart
                     let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                     let strEscaped = String.escape strUnescaped
-                    let strPretty = PrettyPrinter.run strEscaped prettyPrinter
+                    let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
                     form.propertyValueTextBox.Text <- strPretty + "\r\n"
                     form.propertyValueTextBox.EmptyUndoBuffer ()
                     form.propertyValueTextBox.Keywords0 <- keywords0
@@ -408,7 +408,7 @@ module Gaia =
             let selectionStart = form.propertyValueTextBox.SelectionStart
             let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
-            form.assetGraphTextBox.Text <- PrettyPrinter.run packageDescriptorsStr prettyPrinter + "\r\n"
+            form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter + "\r\n"
             form.assetGraphTextBox.SelectionStart <- selectionStart
             form.assetGraphTextBox.ScrollCaret ()
             world
@@ -422,7 +422,7 @@ module Gaia =
         let assetGraphFilePath = Path.Combine (assetSourceDir, Assets.AssetGraphFilePath)
         try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
-            File.WriteAllText (assetGraphFilePath, PrettyPrinter.run packageDescriptorsStr prettyPrinter)
+            File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
             true
         with exn ->
             ignore ^ MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -439,7 +439,7 @@ module Gaia =
             let selectionStart = form.propertyValueTextBox.SelectionStart
             let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Overlay>).PrettyPrinter
-            form.overlayerTextBox.Text <- PrettyPrinter.run extrinsicOverlaysStr prettyPrinter + "\r\n"
+            form.overlayerTextBox.Text <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter + "\r\n"
             form.overlayerTextBox.SelectionStart <- selectionStart
             form.overlayerTextBox.ScrollCaret ()
             world
@@ -453,7 +453,7 @@ module Gaia =
         let overlayerFilePath = Path.Combine (overlayerSourceDir, Assets.OverlayerFilePath)
         try let overlays = scvalue<Overlay list> ^ form.overlayerTextBox.Text.TrimEnd ()
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Overlay>).PrettyPrinter
-            File.WriteAllText (overlayerFilePath, PrettyPrinter.run (scstring overlays) prettyPrinter)
+            File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
             true
         with exn ->
             ignore ^ MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to save overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -685,7 +685,7 @@ module Gaia =
             match tryReloadAssetGraph form world with
             | Right (assetGraph, world) ->
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
-                form.assetGraphTextBox.Text <- PrettyPrinter.run (scstring assetGraph) prettyPrinter + "\r\n"
+                form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter + "\r\n"
                 match tryReloadPrelude form world with
                 | Right world -> world
                 | Left (error, world) ->
@@ -725,7 +725,7 @@ module Gaia =
             try let eventFilter = scvalue<EventFilter.Filter> form.eventFilterTextBox.Text
                 let world = World.setEventFilter eventFilter world
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<EventFilter.Filter>).PrettyPrinter
-                form.eventFilterTextBox.Text <- PrettyPrinter.run (scstring eventFilter) prettyPrinter + "\r\n"
+                form.eventFilterTextBox.Text <- PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter + "\r\n"
                 world
             with exn ->
                 let world = World.choose world
@@ -737,7 +737,7 @@ module Gaia =
             let eventFilter = World.getEventFilter world
             let eventFilterStr = scstring eventFilter
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<EventFilter.Filter>).PrettyPrinter
-            let eventFilterPretty = PrettyPrinter.run eventFilterStr prettyPrinter
+            let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
             form.eventFilterTextBox.Text <- eventFilterPretty + "\r\n"
             form.eventFilterTextBox.EmptyUndoBuffer ()
             world
@@ -789,7 +789,7 @@ module Gaia =
                 let localFrame = Simulants.Game.GetScriptFrameNp world
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
                 let (evaleds, world) = World.evalMany exprs localFrame Simulants.Game world
-                let evaledStrs = List.map (fun evaled -> PrettyPrinter.run (scstring evaled) prettyPrinter) evaleds
+                let evaledStrs = List.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
                 let evaledsStr = String.concat "\n" evaledStrs
                 form.replOutputTextBox.ReadOnly <- false
                 form.replOutputTextBox.Text <-

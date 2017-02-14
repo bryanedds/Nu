@@ -252,13 +252,14 @@ module Symbol =
         | Quote (_, originOpt)
         | Symbols (_, originOpt) -> originOpt
 
+/// Pretty prints Symbols, as well as strings by converting them to Symbols.
 type PrettyPrinter =
     { ThresholdMin : int
       ThresholdMax : int }
 
     static member defaulted =
         { ThresholdMin = Constants.PrettyPrinter.DefaultThresholdMin
-          ThresholdMax = Constants.PrettyPrinter.NormalThresholdMax }
+          ThresholdMax = Constants.PrettyPrinter.DefaultThresholdMax }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module PrettyPrinter =
@@ -316,13 +317,13 @@ module PrettyPrinter =
                         symbolsPretty
                 Symbol.OpenSymbolsStr + String.concat " " symbolPrettyStrs + Symbol.CloseSymbolsStr
 
-    let symbolToPrettyStr symbol prettyPrinter =
+    let prettyPrintSymbol symbol prettyPrinter =
         let symbolPretty = symbolToPrettySymbol symbol
         prettySymbolToPrettyStr 0 symbolPretty prettyPrinter
 
-    let run str prettyPrinter =
+    let prettyPrint str prettyPrinter =
         let symbol = Symbol.fromString str
-        symbolToPrettyStr symbol prettyPrinter
+        prettyPrintSymbol symbol prettyPrinter
 
 type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
     SyntaxAttribute (keywords0 : string, keywords1 : string, prettyPrinterThresholdMin : int, prettyPrinterThresholdMax : int) =

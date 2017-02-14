@@ -72,7 +72,7 @@ module AssetGraphModule =
         ("Asset Assets",
          "PsdToPng OldSchool Render Audio",
          Constants.PrettyPrinter.DefaultThresholdMin,
-         Constants.PrettyPrinter.NormalThresholdMax)>]
+         Constants.PrettyPrinter.DefaultThresholdMax)>]
     type AssetGraph =
         private
             { PackageDescriptors : Map<string, PackageDescriptor> }

@@ -11,7 +11,7 @@ module Constants =
     module PrettyPrinter =
     
         let [<Literal>] DefaultThresholdMin = 0
-        let [<Literal>] StructuralThresholdMin = 3
+        let [<Literal>] StructuredThresholdMin = 3
         let [<Literal>] SimpleThresholdMax = 1
-        let [<Literal>] NormalThresholdMax = 2
+        let [<Literal>] DefaultThresholdMax = 2
         let [<Literal>] DetailedThresholdMax = 3
