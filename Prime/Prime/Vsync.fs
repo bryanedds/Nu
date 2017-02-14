@@ -128,7 +128,7 @@ module VsyncModule =
         /// Creates a potentially asynchronous computation that runs the given computation and ignores its results.
         let [<DebuggerHidden; DebuggerStepThrough>] Ignore v =
             match v with
-            | Sync a -> Sync ^ fun () -> ignore ^ a ()
+            | Sync a -> Sync ^ fun () -> a () |> ignore
             | Async a -> Async ^ Async.Ignore a
     
         /// Creates a potentially asynchronous computation that will sleep for the given time.

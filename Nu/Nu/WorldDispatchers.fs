@@ -577,7 +577,7 @@ module GuiDispatcherModule =
             let gui = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             let handling =
-                if World.isEntitySelected gui world && gui.GetVisibleLayered world then
+                if gui.GetSelected world && gui.GetVisibleLayered world then
                     let mousePositionWorld = World.mouseToWorld (gui.GetViewType world) data.Position world
                     if data.Down &&
                        gui.GetSwallowMouseLeft world &&
@@ -628,7 +628,7 @@ module ButtonDispatcherModule =
         let handleMouseLeftDown evt world =
             let button = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if World.isEntitySelected button world then
+            if button.GetSelected world then
                 let mousePositionWorld = World.mouseToWorld (button.GetViewType world) data.Position world
                 if  button.GetVisibleLayered world &&
                     Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
@@ -644,7 +644,7 @@ module ButtonDispatcherModule =
         let handleMouseLeftUp evt world =
             let button = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if World.isEntitySelected button world then
+            if button.GetSelected world then
                 let wasDown = button.GetDown world
                 let world = button.SetDown false world
                 let mousePositionWorld = World.mouseToWorld (button.GetViewType world) data.Position world
@@ -842,7 +842,7 @@ module ToggleDispatcherModule =
         let handleMouseLeftDown evt world =
             let toggle = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if World.isEntitySelected toggle world then
+            if toggle.GetSelected world then
                 let mousePositionWorld = World.mouseToWorld (toggle.GetViewType world) data.Position world
                 if  toggle.GetVisibleLayered world &&
                     Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
@@ -856,7 +856,7 @@ module ToggleDispatcherModule =
         let handleMouseLeftUp evt world =
             let toggle = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if World.isEntitySelected toggle world then
+            if toggle.GetSelected world then
                 let wasPressed = toggle.GetPressed world
                 let world = toggle.SetPressed false world
                 let mousePositionWorld = World.mouseToWorld (toggle.GetViewType world) data.Position world
@@ -939,7 +939,7 @@ module FeelerDispatcherModule =
         let handleMouseLeftDown evt world =
             let feeler = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if World.isEntitySelected feeler world then
+            if feeler.GetSelected world then
                 let mousePositionWorld = World.mouseToWorld (feeler.GetViewType world) data.Position world
                 if  feeler.GetVisibleLayered world &&
                     Math.isPointInBounds mousePositionWorld (feeler.GetBounds world) then
@@ -956,7 +956,7 @@ module FeelerDispatcherModule =
         let handleMouseLeftUp evt world =
             let feeler = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if World.isEntitySelected feeler world && feeler.GetVisibleLayered world then
+            if feeler.GetSelected world && feeler.GetVisibleLayered world then
                 if feeler.GetEnabled world then
                     let world = feeler.SetTouched false world
                     let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty

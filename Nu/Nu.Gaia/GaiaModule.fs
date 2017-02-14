@@ -23,7 +23,7 @@ module Gaia =
     let private WorldChangers = WorldChangers ()
 
     let addWorldChanger worldChanger =
-        ignore ^ WorldChangers.Add worldChanger
+        WorldChangers.Add worldChanger |> ignore
 
     let pushPastWorld pastWorld world =
         World.updateUserState
@@ -261,8 +261,8 @@ module Gaia =
         let selectedLayer = (World.getUserState world).SelectedLayer
         try World.writeLayerToFile filePath selectedLayer world
         with exn ->
-            ignore ^ World.choose world
-            ignore ^ MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            World.choose world |> ignore
+            MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
 
     let private tryLoadSelectedLayer (form : GaiaForm) filePath world =
         
@@ -294,13 +294,13 @@ module Gaia =
             // handle load failure
             else
                 let world = World.choose oldWorld
-                ignore ^ MessageBox.Show ("Could not load layer file with same name as an existing layer", "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MessageBox.Show ("Could not load layer file with same name as an existing layer", "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
         // handle load failure
         with exn ->
             let world = World.choose oldWorld
-            ignore ^ MessageBox.Show ("Could not load layer file due to: " + scstring exn, "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            MessageBox.Show ("Could not load layer file due to: " + scstring exn, "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private handleFormExit (form : GaiaForm) (_ : EventArgs) =
@@ -414,7 +414,7 @@ module Gaia =
             form.assetGraphTextBox.ScrollCaret ()
             world
         | Left (error, world) ->
-            ignore ^ MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to load asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to load asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private trySaveAssetGraph (form : GaiaForm) world =
@@ -426,7 +426,7 @@ module Gaia =
             File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
             true
         with exn ->
-            ignore ^ MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             false
 
     let private tryReloadOverlays (_ : GaiaForm) world =
@@ -445,7 +445,7 @@ module Gaia =
             form.overlayerTextBox.ScrollCaret ()
             world
         | Left (error, world) ->
-            ignore ^ MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to reload overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to reload overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private trySaveOverlayer (form : GaiaForm) world =
@@ -457,7 +457,7 @@ module Gaia =
             File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
             true
         with exn ->
-            ignore ^ MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to save overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to save overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             false
 
     let private handleFormPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
@@ -511,7 +511,7 @@ module Gaia =
                 world
             with exn ->
                 let world = World.choose world
-                ignore ^ MessageBox.Show (scstring exn, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MessageBox.Show (scstring exn, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
     let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
@@ -545,7 +545,7 @@ module Gaia =
                     world
                 with exn ->
                     let world = World.choose world
-                    ignore ^ MessageBox.Show ("Could not create layer due to: " + scstring exn, "Layer creation error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    MessageBox.Show ("Could not create layer due to: " + scstring exn, "Layer creation error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             layerCreationForm.Close ()
         layerCreationForm.cancelButton.Click.Add (fun _ -> layerCreationForm.Close ())
@@ -577,7 +577,7 @@ module Gaia =
         addWorldChanger ^ fun world ->
             match form.layerTabs.TabPages.Count with
             | 1 ->
-                ignore ^ MessageBox.Show ("Cannot destroy the only remaining layer.", "Layer destruction error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MessageBox.Show ("Cannot destroy the only remaining layer.", "Layer destruction error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
             | _ ->
                 let world = pushPastWorld world world
@@ -670,7 +670,7 @@ module Gaia =
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = pushPastWorld world world
                 let entity = entityTds.DescribedEntity
-                let world = entity.SetSize (World.getEntityQuickSize entity world) world
+                let world = entity.SetSize (entity.GetQuickSize world) world
                 let world = World.propagateEntityPhysics entity world
                 entityTds.RefWorld := world // must be set for property grid
                 form.propertyGrid.Refresh ()
@@ -690,10 +690,10 @@ module Gaia =
                 match tryReloadPrelude form world with
                 | Right world -> world
                 | Left (error, world) ->
-                    ignore ^ MessageBox.Show (error, "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    MessageBox.Show (error, "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             | Left (error, world) ->
-                ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
     let private handleFormLayerTabDeselected (form : GaiaForm) (_ : EventArgs) =
@@ -730,7 +730,7 @@ module Gaia =
                 world
             with exn ->
                 let world = World.choose world
-                ignore ^ MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid event filter", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid event filter", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
     let private handleResetEventFilterClick (form : GaiaForm) (_ : EventArgs) =
@@ -749,7 +749,7 @@ module Gaia =
                 match tryReloadAssetGraph form world with
                 | Right (_, world) -> world
                 | Left (error, world) ->
-                    ignore ^ MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             else World.choose world
 
@@ -763,7 +763,7 @@ module Gaia =
                 match tryReloadOverlays form world with
                 | Right (_, world) -> world
                 | Left (error, world) ->
-                    ignore ^ MessageBox.Show ("Overlayer reload error due to: " + error + "'.", "Overlayer reload error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    MessageBox.Show ("Overlayer reload error due to: " + error + "'.", "Overlayer reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             else World.choose world
 

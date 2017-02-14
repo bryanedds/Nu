@@ -66,7 +66,7 @@ module String =
     /// Converts a list of characters into a string.
     let implode chars =
         let sb = StringBuilder ()
-        List.iter (fun (chr : char) -> ignore (sb.Append chr)) chars
+        List.iter (fun (chr : char) -> sb.Append chr |> ignore) chars
         sb.ToString ()
 
     /// Capitalize a string.

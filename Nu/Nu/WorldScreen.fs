@@ -86,7 +86,13 @@ module WorldScreenModule =
         /// Check that a screen is in an idling state (not transitioning in nor out).
         member this.IsIdling world = this.GetTransitionStateNp world = IdlingState
 
-        /// Check a screen exists in the world.
+        /// Check that a screen is selected.
+        member this.GetSelected world =
+            match (World.getGameState world).SelectedScreenOpt with
+            | Some screen -> Address.head this.ScreenAddress = Address.head screen.ScreenAddress
+            | None -> false
+
+        /// Check that a screen exists in the world.
         member this.Exists world = World.screenExists this world
 
         /// Resolve a relation in the context of an entity.

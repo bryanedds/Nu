@@ -533,12 +533,12 @@ module WorldModuleEntity =
             | _ -> World.updateEntityState (EntityState.setProperty propertyName property) true propertyName entity world
 
         /// Get the maxima bounds of the entity as determined by size, position, rotation, and overflow.
-        static member getEntityBoundsMax entity world =
+        static member internal getEntityBoundsMax entity world =
             let entityState = World.getEntityState entity world
             World.getEntityStateBoundsMax entityState
 
         /// Get the quick size of an entity (the appropriate user-defined size for an entity).
-        static member getEntityQuickSize (entity : Entity) world =
+        static member internal getEntityQuickSize (entity : Entity) world =
             let dispatcher = World.getEntityDispatcherNp entity world
             let facets = World.getEntityFacetsNp entity world
             let quickSize = dispatcher.GetQuickSize (entity, world)
@@ -552,7 +552,7 @@ module WorldModuleEntity =
                 facets
 
         /// Get an entity's sorting priority.
-        static member getEntitySortingPriority entity world =
+        static member internal getEntitySortingPriority entity world =
             let entityState = World.getEntityState entity world
             { SortDepth = entityState.Depth; SortPositionY = entityState.Position.Y; SortTarget = entity }
 

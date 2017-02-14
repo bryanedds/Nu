@@ -35,7 +35,7 @@ module Log =
 #if DEBUG
         if predicate () then debug message
 #else
-        ignore (predicate, message)
+        (predicate, message) |> ignore
 #endif
 
     /// Log a trace message using Trace.Fail and call to info.

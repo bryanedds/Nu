@@ -67,8 +67,8 @@ module WorldModule2 =
             let tree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             let entities = screen |> flip World.getLayers world |> Seq.map (flip World.getEntities world) |> Seq.concat
             for entity in entities do
-                let entityMaxBounds = World.getEntityBoundsMax entity world
-                SpatialTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) entityMaxBounds entity tree
+                let boundsMax = entity.GetBoundsMax world
+                SpatialTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) boundsMax entity tree
             tree
 
         /// Sort subscriptions by their depth priority.
@@ -86,7 +86,7 @@ module WorldModule2 =
                 subscriptions
                 world
 
-        /// Try to query that the selected screen is idling; that is, neither transitioning in or
+        /// Try to check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
         static member tryGetIsSelectedScreenIdling world =
             match World.getSelectedScreenOpt world with
@@ -100,7 +100,7 @@ module WorldModule2 =
             | Some answer -> answer
             | None -> failwith ^ "Cannot query state of non-existent selected screen."
 
-        /// Try to query that the selected screen is transitioning.
+        /// Try to check that the selected screen is transitioning.
         static member tryGetIsSelectedScreenTransitioning world =
             Option.map not ^ World.tryGetIsSelectedScreenIdling world
 

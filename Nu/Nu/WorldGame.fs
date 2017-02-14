@@ -204,24 +204,6 @@ module WorldGameModule =
             Seq.map (fun screen -> World.getLayers screen world) |>
             Seq.concat
 
-        /// Determine if an entity is selected by being in a layer of the currently selected screeen.
-        static member isEntitySelected (entity : Entity) world =
-            let screenName = Address.head entity.EntityAddress
-            match World.getSelectedScreenOpt world with
-            | Some selectedScreen -> screenName = Address.getName selectedScreen.ScreenAddress
-            | None -> false
-
-        /// Determine if a layer is selected by being in the currently selected screeen.
-        static member isLayerSelected (layer : Layer) world =
-            let screenName = Address.head layer.LayerAddress
-            match World.getSelectedScreenOpt world with
-            | Some selectedScreen -> screenName = Address.getName selectedScreen.ScreenAddress
-            | None -> false
-
-        /// Determine if a screen is the currently selected screeen.
-        static member isScreenSelected (screen : Screen) world =
-            World.getSelectedScreenOpt world = Some screen
-
         /// Determine if a simulant is contained by, or is the same as, the currently selected screen.
         /// Game is always considered 'selected' as well.
         static member isSimulantSelected (simulant : Simulant) world =
@@ -258,7 +240,7 @@ module WorldGameModule =
         static member readGameFromFile (filePath : string) world =
             let gameDescriptorStr = File.ReadAllText filePath
             let gameDescriptor = scvalue<GameDescriptor> gameDescriptorStr
-            World.readGame gameDescriptor world
+            World.readGame gameDescriptor world            
 
 namespace Debug
 open Nu
