@@ -280,9 +280,7 @@ module ScriptFacetModule =
              Define? OnPostUpdate Scripting.Unit]
 
         override facet.Register (entity, world) =
-            let onRegister = entity.GetOnRegisterPa world
-            let localFrame = entity.GetScriptFrameNp world
-            let (_, world) = World.evalWithLogging onRegister localFrame entity world
+            let (_, world) = World.evalWithLogging (entity.GetOnRegisterPa world) (entity.GetScriptFrameNp world) entity world
             let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? ScriptPa) entity world
             let world = World.monitor handleOnRegisterChanged (entity.GetChangeEvent Property? OnRegisterPa) entity world
             world
@@ -609,6 +607,9 @@ module ButtonDispatcherModule =
         member this.GetClickSoundOpt world : AssetTag option = this.Get Property? ClickSoundOpt world
         member this.SetClickSoundOpt (value : AssetTag option) world = this.Set Property? ClickSoundOpt value world
         member this.ClickSoundOpt = PropertyTag.make this Property? ClickSoundOpt this.GetClickSoundOpt this.SetClickSoundOpt
+        member this.GetOnClick world : Scripting.Expr = this.Get Property? OnClick world
+        member this.SetOnClick (value : Scripting.Expr) world = this.Set Property? OnClick value world
+        member this.OnClick = PropertyTag.make this Property? OnClick this.GetOnClick this.SetOnClick
 
     type ButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -643,6 +644,7 @@ module ButtonDispatcherModule =
                         let world = World.publish () (Events.Up ->- button) eventTrace button world
                         let eventTrace = EventTrace.record4 "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
                         let world = World.publish () (Events.Click ->- button) eventTrace button world
+                        let (_, world) = World.evalWithLogging (button.GetOnClick world) (button.GetScriptFrameNp world) button world
                         let world =
                             match button.GetClickSoundOpt world with
                             | Some clickSound -> World.playSound 1.0f clickSound world
@@ -657,7 +659,8 @@ module ButtonDispatcherModule =
              Define? Down false
              Define? UpImage { PackageName = Assets.DefaultPackageName; AssetName = "Image" }
              Define? DownImage { PackageName = Assets.DefaultPackageName; AssetName = "Image2" }
-             Define? ClickSoundOpt ^ Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" }]
+             Define? ClickSoundOpt ^ Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" }
+             Define? OnClick Scripting.Unit]
 
         override dispatcher.Register (button, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown button world |> snd
@@ -818,6 +821,9 @@ module ToggleDispatcherModule =
         member this.GetToggleSoundOpt world : AssetTag option = this.Get Property? ToggleSoundOpt world
         member this.SetToggleSoundOpt (value : AssetTag option) world = this.Set Property? ToggleSoundOpt value world
         member this.ToggleSoundOpt = PropertyTag.make this Property? ToggleSoundOpt this.GetToggleSoundOpt this.SetToggleSoundOpt
+        member this.GetOnToggle world : Scripting.Expr = this.Get Property? OnToggle world
+        member this.SetOnToggle (value : Scripting.Expr) world = this.Set Property? OnToggle value world
+        member this.OnToggle = PropertyTag.make this Property? OnToggle this.GetOnToggle this.SetOnToggle
 
     type ToggleDispatcher () =
         inherit GuiDispatcher ()
@@ -848,8 +854,11 @@ module ToggleDispatcherModule =
                     if toggle.GetEnabled world && wasPressed then
                         let world = toggle.SetOn (not ^ toggle.GetOn world) world
                         let eventAddress = if toggle.GetOn world then Events.On else Events.Off
-                        let eventTrace = EventTrace.record "ToggleDispatcher" "handleMouseLeftDown" EventTrace.empty
+                        let eventTrace = EventTrace.record "ToggleDispatcher" "handleMouseLeftUp" EventTrace.empty
                         let world = World.publish () (eventAddress ->- toggle) eventTrace toggle world
+                        let eventTrace = EventTrace.record4 "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
+                        let world = World.publish () (Events.Toggle ->- toggle) eventTrace toggle world
+                        let (_, world) = World.evalWithLogging (toggle.GetOnToggle world) (toggle.GetScriptFrameNp world) toggle world
                         let world =
                             match toggle.GetToggleSoundOpt world with
                             | Some toggleSound -> World.playSound 1.0f toggleSound world
@@ -865,7 +874,8 @@ module ToggleDispatcherModule =
              Define? Pressed false
              Define? OffImage { PackageName = Assets.DefaultPackageName; AssetName = "Image" }
              Define? OnImage { PackageName = Assets.DefaultPackageName; AssetName = "Image2" }
-             Define? ToggleSoundOpt ^ Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" }]
+             Define? ToggleSoundOpt ^ Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" }
+             Define? OnToggle Scripting.Unit]
 
         override dispatcher.Register (toggle, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown toggle world |> snd
@@ -905,6 +915,12 @@ module FeelerDispatcherModule =
         member this.GetTouched world : bool = this.Get Property? Touched world
         member this.SetTouched (value : bool) world = this.Set Property? Touched value world
         member this.Touched = PropertyTag.make this Property? Touched this.GetTouched this.SetTouched
+        member this.GetOnTouch world : Scripting.Expr = this.Get Property? OnTouch world
+        member this.SetOnTouch (value : Scripting.Expr) world = this.Set Property? OnTouch value world
+        member this.OnTouch = PropertyTag.make this Property? OnTouch this.GetOnTouch this.SetOnTouch
+        member this.GetOnUntouch world : Scripting.Expr = this.Get Property? OnUntouch world
+        member this.SetOnUntouch (value : Scripting.Expr) world = this.Set Property? OnUntouch value world
+        member this.OnUntouch = PropertyTag.make this Property? OnUntouch this.GetOnUntouch this.SetOnUntouch
 
     type FeelerDispatcher () =
         inherit GuiDispatcher ()
@@ -920,6 +936,7 @@ module FeelerDispatcherModule =
                         let world = feeler.SetTouched true world
                         let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty
                         let world = World.publish data.Position (Events.Touch ->- feeler) eventTrace feeler world
+                        let (_, world) = World.evalWithLogging (feeler.GetOnTouch world) (feeler.GetScriptFrameNp world) feeler world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -933,13 +950,16 @@ module FeelerDispatcherModule =
                     let world = feeler.SetTouched false world
                     let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty
                     let world = World.publish data.Position (Events.Untouch ->- feeler) eventTrace feeler world
+                    let (_, world) = World.evalWithLogging (feeler.GetOnUntouch world) (feeler.GetScriptFrameNp world) feeler world
                     (Resolve, world)
                 else (Resolve, world)
             else (Cascade, world)
 
         static member PropertyDefinitions =
             [Define? SwallowMouseLeft false
-             Define? Touched false]
+             Define? Touched false
+             Define? OnTouch Scripting.Unit
+             Define? OnUntouch Scripting.Unit]
 
         override dispatcher.Register (feeler, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown feeler world |> snd

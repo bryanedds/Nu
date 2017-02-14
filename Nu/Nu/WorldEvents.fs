@@ -41,6 +41,7 @@ module Events =
     let Click = stoa<unit> "Click/Event"
     let Down = stoa<unit> "Down/Event"
     let Up = stoa<unit> "Up/Event"
+    let Toggle = stoa<unit> "Toggle/Event"
     let On = stoa<unit> "On/Event"
     let Off = stoa<unit> "Off/Event"
     let Touch = stoa<Vector2> "Touch/Event"
