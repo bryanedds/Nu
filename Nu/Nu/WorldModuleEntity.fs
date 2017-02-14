@@ -901,7 +901,7 @@ module WorldModuleEntity =
             | Left error -> Left error
 
         /// View all of the properties of an entity.
-        static member viewEntityProperties entity world =
+        static member internal viewEntityProperties entity world =
             let state = World.getEntityState entity world
             let properties = World.getProperties state
             Array.ofList properties

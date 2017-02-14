@@ -336,7 +336,7 @@ module WorldModuleGame =
             World.choose world
 
         /// View all of the properties of a game.
-        static member viewGameProperties world =
+        static member internal viewGameProperties world =
             let state = World.getGameState world
             let properties = World.getProperties state
             Array.ofList properties
