@@ -136,7 +136,7 @@ module Gaia =
         match form.propertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             entityTds.RefWorld := world // must be set for property grid
-            if World.entityExists entityTds.DescribedEntity world
+            if entityTds.DescribedEntity.Exists world
             then form.propertyGrid.Refresh ()
             else deselectEntity form world
         | _ -> ()
@@ -268,7 +268,7 @@ module Gaia =
         
         // old world in case we need to rewind
         let oldWorld = world
-        
+
         try // destroy current layer
             let selectedLayer = (World.getUserState world).SelectedLayer
             let world = unsubscribeFromEntityEvents world
@@ -278,7 +278,8 @@ module Gaia =
             let layerDescriptorStr = File.ReadAllText filePath
             let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
             let layerName = match layerDescriptor.LayerProperties.TryFind "Name" with Some (Atom (name, _)) -> name | _ -> failwithumf ()
-            if not (World.layerExists (Simulants.EditorScreen => layerName) world) then
+            let layer = Simulants.EditorScreen => layerName            
+            if not (layer.Exists world) then
                 let (layer, world) = World.readLayer layerDescriptor None Simulants.EditorScreen world
                 let layerName = layer.GetName world
                 form.layerTabs.SelectedTab.Text <- layerName

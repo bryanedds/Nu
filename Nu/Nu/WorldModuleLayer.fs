@@ -103,7 +103,7 @@ module WorldModuleLayer =
             World.publishLayerChange propertyName layer oldWorld world
 
         /// Check that a layer exists in the world.
-        static member layerExists layer world =
+        static member internal layerExists layer world =
             Option.isSome ^ World.getLayerStateOpt layer world
 
         static member internal getLayerId layer world = (World.getLayerState layer world).Id

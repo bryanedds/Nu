@@ -94,7 +94,7 @@ module WorldModuleScreen =
             World.publishScreenChange propertyName screen oldWorld world
 
         /// Check that a screen exists in the world.
-        static member screenExists screen world =
+        static member internal screenExists screen world =
             Option.isSome ^ World.getScreenStateOpt screen world
 
         static member internal getScreenId screen world = (World.getScreenState screen world).Id

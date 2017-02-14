@@ -79,7 +79,7 @@ module RelationModule =
         static member resolve<'a, 'b> (address : 'a Address) (relation : 'b Relation) =
             let names = List.project id (Address.getNames address) relation.NameOpts
             Address.makeFromList<'b> names
-    
+
         interface 'a Relation IEquatable with
             member this.Equals that =
                 Relation<'a>.equals this that

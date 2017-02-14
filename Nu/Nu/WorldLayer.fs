@@ -74,6 +74,12 @@ module WorldLayerModule =
         /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world = World.setLayerProperty propertyName (value :> obj, typeof<'a>) this world
 
+        /// Check a layer exists in the world.
+        member this.Exists world = World.layerExists this world
+
+        /// Resolve a relation in the context of an entity.
+        member this.Resolve relation = Layer (Relation.resolve this.LayerAddress relation)
+
         /// Check that a layer dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
