@@ -11,38 +11,6 @@ module WorldSimulant =
 
     type World with
 
-        static member simulantExists (simulant : Simulant) (world : World) =
-            (world :> EventWorld<Game, World>).ParticipantExists simulant
-
-        static member tryGetSimulantParent (simulant : Simulant) (_ : World) =
-            match simulant with
-            | :? Game -> None
-            | :? Screen -> Some (Simulants.Game :> Simulant)
-            | :? Layer as layer -> Some (ltos layer :> Simulant)
-            | :? Entity as entity -> Some (etol entity :> Simulant)
-            | _ -> failwithumf ()
-
-        static member getSimulantChildren (simulant : Simulant) world =
-            match simulant with
-            | :? Game -> enumerable<Simulant> (World.getScreens world)
-            | :? Screen as screen -> enumerable<Simulant> (World.getLayers screen world)
-            | :? Layer as layer -> enumerable<Simulant> (World.getEntities layer world)
-            | :? Entity -> Seq.empty
-            | _ -> failwithumf ()
-
-        static member tryDeriveSimulant address =
-            match Address.getNames address with
-            | [] -> Some (Game Address.empty :> Simulant)
-            | [_] -> Some (Screen (Address.changeType<Simulant, Screen> address) :> Simulant)
-            | [_; _] -> Some (Layer (Address.changeType<Simulant, Layer> address) :> Simulant)
-            | [_; _; _] -> Some (Entity (Address.changeType<Simulant, Entity> address) :> Simulant)
-            | _ -> None
-        
-        static member deriveSimulant address =
-            match World.tryDeriveSimulant address with
-            | Some simulant -> simulant
-            | None -> failwithf "Could not derive simulant from address '%s'." (scstring address)
-
         static member tryGetSimulantProperty name (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.tryGetGameProperty name world
@@ -85,3 +53,35 @@ module WorldSimulant =
                 | Some scriptFrameProperty -> Some (fst scriptFrameProperty :?> Scripting.DeclarationFrame)
                 | None -> None
             | _ -> failwithumf ()
+
+        static member tryGetSimulantParent (simulant : Simulant) (_ : World) =
+            match simulant with
+            | :? Game -> None
+            | :? Screen -> Some (Simulants.Game :> Simulant)
+            | :? Layer as layer -> Some (ltos layer :> Simulant)
+            | :? Entity as entity -> Some (etol entity :> Simulant)
+            | _ -> failwithumf ()
+
+        static member getSimulantChildren (simulant : Simulant) world =
+            match simulant with
+            | :? Game -> enumerable<Simulant> (World.getScreens world)
+            | :? Screen as screen -> enumerable<Simulant> (World.getLayers screen world)
+            | :? Layer as layer -> enumerable<Simulant> (World.getEntities layer world)
+            | :? Entity -> Seq.empty
+            | _ -> failwithumf ()
+
+        static member tryDeriveSimulant address =
+            match Address.getNames address with
+            | [] -> Some (Game Address.empty :> Simulant)
+            | [_] -> Some (Screen (Address.changeType<Simulant, Screen> address) :> Simulant)
+            | [_; _] -> Some (Layer (Address.changeType<Simulant, Layer> address) :> Simulant)
+            | [_; _; _] -> Some (Entity (Address.changeType<Simulant, Entity> address) :> Simulant)
+            | _ -> None
+        
+        static member deriveSimulant address =
+            match World.tryDeriveSimulant address with
+            | Some simulant -> simulant
+            | None -> failwithf "Could not derive simulant from address '%s'." (scstring address)
+
+        static member simulantExists (simulant : Simulant) (world : World) =
+            (world :> EventWorld<Game, World>).ParticipantExists simulant

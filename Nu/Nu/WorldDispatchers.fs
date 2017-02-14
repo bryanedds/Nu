@@ -35,10 +35,7 @@ module MountFacetModule =
         
         member this.ParentExists world =
             match this.GetParentOpt world with
-            | Some parentRelation ->
-                let parentAddress = Relation.resolve this.EntityAddress parentRelation
-                let parent = Entity parentAddress
-                World.entityExists parent world
+            | Some parentRelation -> (this.Resolve parentRelation).Exists world
             | None -> false
 
     type MountFacet () =
@@ -48,8 +45,7 @@ module MountFacetModule =
             let entity = evt.Subscriber : Entity
             match entity.GetParentOpt world with
             | Some parentRelation ->
-                let parentAddress = Relation.resolve entity.EntityAddress parentRelation
-                let parent = Entity parentAddress
+                let parent = entity.Resolve parentRelation
                 if World.entityExists parent world then
                     let world = entity.SetPosition (parent.GetPosition world + entity.GetPositionLocal world) world
                     let world = entity.SetDepth (parent.GetDepth world + entity.GetDepthLocal world) world
@@ -73,7 +69,7 @@ module MountFacetModule =
             let world = (entity.GetMountUnsubscribeNp world) world // NOTE: unsubscribes
             match entity.GetParentOpt world with
             | Some parentRelation ->
-                let parent = Entity (Relation.resolve entity.EntityAddress parentRelation)
+                let parent = entity.Resolve parentRelation
                 let (unsubscribe, world) = World.monitorPlus handleParentPropertyChange parent.Position.Change entity world
                 let (unsubscribe2, world) = World.monitorPlus handleParentPropertyChange parent.Depth.Change entity world
                 let (unsubscribe3, world) = World.monitorPlus handleParentPropertyChange parent.Visible.Change entity world

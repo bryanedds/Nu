@@ -86,6 +86,12 @@ module WorldScreenModule =
         /// Check that a screen is in an idling state (not transitioning in nor out).
         member this.IsIdling world = this.GetTransitionStateNp world = IdlingState
 
+        /// Check a screen exists in the world.
+        member this.Exists world = World.screenExists this world
+
+        /// Resolve a relation in the context of an entity.
+        member this.Resolve relation = Screen (Relation.resolve this.ScreenAddress relation)
+
         /// Check that a screen dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 

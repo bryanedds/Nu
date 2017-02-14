@@ -117,6 +117,12 @@ module WorldEntityModule =
         /// Get an entity's change event address.
         member this.GetChangeEvent propertyName = Events.EntityChange propertyName ->>- this.EntityAddress
 
+        /// Check an entity exists in the world.
+        member this.Exists world = World.entityExists this world
+
+        /// Resolve a relation in the context of an entity.
+        member this.Resolve relation = Entity (Relation.resolve this.EntityAddress relation)
+
         /// Query than an entity is in the camera's view.
         member this.InView world =
             if not ^ this.GetOmnipresent world then
@@ -141,7 +147,7 @@ module WorldEntityModule =
             let transform = Math.snapTransform positionSnap rotationSnap transform
             this.SetTransform transform world
 
-        /// Query the an entity uses a facet of type 'a.
+        /// Check that an entity uses a facet of type 'a.
         member this.HasFacet facetType world =
             let facets = this.GetFacetsNp world
             List.exists (fun facet -> getType facet = facetType) facets

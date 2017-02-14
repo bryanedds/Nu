@@ -153,8 +153,7 @@ module WorldModuleEntity =
             then List.fold (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
             else world
 
-        /// Check that an entity exists in the world.
-        static member entityExists entity world =
+        static member internal entityExists entity world =
             Option.isSome ^ World.getEntityStateOpt entity world
 
         static member private getEntityStateBoundsMax entityState =
