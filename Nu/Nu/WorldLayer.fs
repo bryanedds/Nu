@@ -168,7 +168,7 @@ module WorldLayerModule =
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrinter
             let layerDescriptor = World.writeLayer layer LayerDescriptor.empty world
             let layerDescriptorStr = scstring layerDescriptor
-            let layerDescriptorPretty = PrettyPrinter.run layerDescriptorStr prettyPrinter
+            let layerDescriptorPretty = PrettyPrinter.prettyPrint layerDescriptorStr prettyPrinter
             File.WriteAllText (filePathTmp, layerDescriptorPretty)
             File.Delete filePath
             File.Move (filePathTmp, filePath)

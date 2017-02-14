@@ -458,7 +458,7 @@ module EffectSystemModule =
                 try evalContent effect.Content slice effectSystem
                 with exn ->
                     let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Effect>).PrettyPrinter
-                    let effectStr = PrettyPrinter.run (scstring effect) prettyPrinter
+                    let effectStr = PrettyPrinter.prettyPrint (scstring effect) prettyPrinter
                     Log.debug ^ "Error in effect:\r\n" + effectStr + "\r\ndue to: " + scstring exn
                     []
             else []

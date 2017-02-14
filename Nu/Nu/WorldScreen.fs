@@ -186,7 +186,7 @@ module WorldScreenModule =
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrinter
             let screenDescriptor = World.writeScreen screen ScreenDescriptor.empty world
             let screenDescriptorStr = scstring screenDescriptor
-            let screenDescriptorPretty = PrettyPrinter.run screenDescriptorStr prettyPrinter
+            let screenDescriptorPretty = PrettyPrinter.prettyPrint screenDescriptorStr prettyPrinter
             File.WriteAllText (filePathTmp, screenDescriptorPretty)
             File.Delete filePath
             File.Move (filePathTmp, filePath)
