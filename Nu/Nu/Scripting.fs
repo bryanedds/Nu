@@ -28,7 +28,8 @@ module Scripting =
         | Conversion of Expr list
 
     and [<Syntax
-            ("true false nil " +
+            ((* Built-in Identifiers *)
+             "true false nil " +
              "toEmpty toIdentity toMin toMax " +
              "not inc dec negate hash " +
              "pow root sqr sqrt " +
@@ -48,16 +49,19 @@ module Scripting =
              "ring toRing add remove " +
              "table toTable tryFind find " +
              "let fun if cond try break get set do " +
-             "monitor " +
+             
+             (* Prelude Identifiers *)
              // TODO: "substring update curry compose itemOf tryItemOf itemAs tryItemAs sort replace slice split " +
-             "define variable equate handle " +
-             // prelude identifiers...
              "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegitiveInfinity isNaN " +
              "min max compare sign abs fst! snd! rev reduceWhile reducei reduce filter takeWhile take skipWhile skip " +
              "countBy count exists zipBy zip pi e v2Zero v2Identity game " +
-             "dataOf subscriberOf publisherOf addressOf",
-             // engine functions
-             // TODO: "tickRate tickTime "
+             "dataOf subscriberOf publisherOf addressOf ",
+             
+             (* Engine Functions *)
+             // TODO: "tickRate tickTime getSimulantSelected "
+             "monitor simulantExists " +
+             
+             (* Engine Keywords *)
              "Gt Lt Eq Positive Negative Zero",
              Constants.PrettyPrinter.DefaultThresholdMin,
              Constants.PrettyPrinter.DetailedThresholdMax);

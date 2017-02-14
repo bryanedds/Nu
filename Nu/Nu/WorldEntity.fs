@@ -153,6 +153,16 @@ module WorldEntityModule =
         /// Check that an entity exists in the world.
         member this.GetExists world = World.entityExists this world
 
+        /// Propagate entity physics properties into the physics system.
+        member this.PropagatePhysics world =
+            World.withEventContext (fun world ->
+                let dispatcher = this.GetDispatcherNp world
+                let facets = this.GetFacetsNp world
+                let world = dispatcher.PropagatePhysics (this, world)
+                List.fold (fun world (facet : Facet) -> facet.PropagatePhysics (this, world)) world facets)
+                this
+                world
+
         /// Check that an entity uses a facet of type 'a.
         member this.HasFacet facetType world = List.exists (fun facet -> getType facet = facetType) (this.GetFacetsNp world)
 
@@ -230,16 +240,6 @@ module WorldEntityModule =
                 { ScheduledTime = World.getTickTime world
                   Command = { Execute = fun world -> World.destroyEntitiesImmediate entities world }}
             World.addTasklet tasklet world
-
-        /// Propagate an entity's physics properties to the physics subsystem.
-        static member propagateEntityPhysics (entity : Entity) world =
-            World.withEventContext (fun world ->
-                let dispatcher = entity.GetDispatcherNp world
-                let facets = entity.GetFacetsNp world
-                let world = dispatcher.PropagatePhysics (entity, world)
-                List.fold (fun world (facet : Facet) -> facet.PropagatePhysics (entity, world)) world facets)
-                entity
-                world
 
         /// Sort the given entities.
         static member sortEntities entities world =

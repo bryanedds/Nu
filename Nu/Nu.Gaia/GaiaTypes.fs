@@ -151,7 +151,7 @@ and EntityPropertyDescriptor (property, attributes) =
                         | Right world -> world
                         | Left error -> Log.trace error; world
                     | _ -> EntityPropertyValue.setValue property value entity world
-                let world = World.propagateEntityPhysics entityTds.DescribedEntity world
+                let world = entityTds.DescribedEntity.PropagatePhysics world
                 entityTds.RefWorld := world // must be set for property grid
                 entityTds.Form.propertyGrid.Refresh ()
                 world)

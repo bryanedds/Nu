@@ -403,7 +403,7 @@ module WorldModule2 =
             let world = World.clearSubsystemsMessages world
             let world = World.enqueuePhysicsMessage RebuildPhysicsHackMessage world
             let entities = World.getEntities layer world
-            Seq.fold (flip World.propagateEntityPhysics) world entities
+            Seq.fold (fun world (entity : Entity) -> entity.PropagatePhysics world) world entities
 
         static member private processSubsystems subsystemType world =
             World.getSubsystemMap world |>
