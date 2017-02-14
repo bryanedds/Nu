@@ -321,7 +321,7 @@ module WorldTypes =
             end
 
     /// Describes a game value independent of the engine.
-    and [<NoComparison>] GameDescriptor =
+    and [<NoComparison; Syntax ("", "", Constants.PrettyPrint.DetailedThreshold)>] GameDescriptor =
         { GameDispatcher : string
           GameProperties : Map<string, Symbol>
           Screens : ScreenDescriptor list }
@@ -337,7 +337,7 @@ module WorldTypes =
                 this.Screens |> enumerable<SimulantDescriptor> |> List.ofSeq
 
     /// Describes a screen value independent of the engine.
-    and [<NoComparison>] ScreenDescriptor =
+    and [<NoComparison; Syntax ("", "", Constants.PrettyPrint.DetailedThreshold)>] ScreenDescriptor =
         { ScreenDispatcher : string
           ScreenProperties : Map<string, Symbol>
           Layers : LayerDescriptor list }
@@ -353,7 +353,7 @@ module WorldTypes =
                 this.Layers |> enumerable<SimulantDescriptor> |> List.ofSeq
 
     /// Describes a layer value independent of the engine.
-    and [<NoComparison>] LayerDescriptor =
+    and [<NoComparison; Syntax ("", "", Constants.PrettyPrint.DetailedThreshold)>] LayerDescriptor =
         { LayerDispatcher : string
           LayerProperties : Map<string, Symbol>
           Entities : EntityDescriptor list }
@@ -369,7 +369,7 @@ module WorldTypes =
                 this.Entities |> enumerable<SimulantDescriptor> |> List.ofSeq
 
     /// Describes an entity value independent of the engine.
-    and [<NoComparison>] EntityDescriptor =
+    and [<NoComparison; Syntax ("", "", Constants.PrettyPrint.DetailedThreshold)>] EntityDescriptor =
         { EntityDispatcher : string
           EntityProperties : Map<string, Symbol> }
 

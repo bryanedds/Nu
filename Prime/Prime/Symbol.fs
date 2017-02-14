@@ -267,7 +267,7 @@ module Symbol =
         | Symbols (_, originOpt) -> originOpt
 
     type private SymbolPretty =
-        | LiteralPretty of string
+        | LiteralPretty of bool * string
         | QuotePretty of int * SymbolPretty
         | SymbolsPretty of int * SymbolPretty list
 
@@ -279,9 +279,9 @@ module Symbol =
 
     let rec private symbolToSymbolPretty symbol =
         match symbol with
-        | Atom (str, _)
-        | Number (str, _)
-        | String (str, _) -> LiteralPretty str
+        | Atom (str, _) -> LiteralPretty (isExplicit str, str)
+        | Number (str, _) -> LiteralPretty (false, str)
+        | String (str, _) -> LiteralPretty (true, str)
         | Quote (quoted, _) ->
             let quotedPretty = symbolToSymbolPretty quoted
             let maxDepth = getMaxDepth quotedPretty
@@ -294,7 +294,7 @@ module Symbol =
 
     let rec private symbolPrettyToPrettyStr depth threshold symbolPretty =
         match symbolPretty with
-        | LiteralPretty str -> str
+        | LiteralPretty (isExplicit, str) -> if isExplicit then OpenStringStr + str + CloseStringStr else str
         | QuotePretty (_, symbolPretty) -> "`" + symbolPrettyToPrettyStr depth threshold symbolPretty
         | SymbolsPretty (maxDepth, symbolsPretty) ->
             if maxDepth > threshold then
