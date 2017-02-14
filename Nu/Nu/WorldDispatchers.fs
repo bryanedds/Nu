@@ -32,6 +32,14 @@ module MountFacetModule =
         member private this.GetMountUnsubscribeNp world : World -> World = this.Get Property? MountUnsubscribeNp world
         member private this.SetMountUnsubscribeNp (value : World -> World) world = this.Set Property? MountUnsubscribeNp value world
         member private this.MountUnsubscribeNp = PropertyTag.make this Property? MountUnsubscribeNp this.GetMountUnsubscribeNp this.SetMountUnsubscribeNp
+        
+        member this.ParentExists world =
+            match this.GetParentOpt world with
+            | Some parentRelation ->
+                let parentAddress = Relation.resolve this.EntityAddress parentRelation
+                let parent = Entity parentAddress
+                World.entityExists parent world
+            | None -> false
 
     type MountFacet () =
         inherit Facet ()
@@ -42,11 +50,13 @@ module MountFacetModule =
             | Some parentRelation ->
                 let parentAddress = Relation.resolve entity.EntityAddress parentRelation
                 let parent = Entity parentAddress
-                let world = entity.SetPosition (parent.GetPosition world + entity.GetPositionLocal world) world
-                let world = entity.SetDepth (parent.GetDepth world + entity.GetDepthLocal world) world
-                let world = entity.SetVisible (parent.GetVisible world && entity.GetVisibleLocal world) world
-                let world = entity.SetEnabled (parent.GetEnabled world && entity.GetEnabledLocal world) world
-                (Cascade, world)
+                if World.entityExists parent world then
+                    let world = entity.SetPosition (parent.GetPosition world + entity.GetPositionLocal world) world
+                    let world = entity.SetDepth (parent.GetDepth world + entity.GetDepthLocal world) world
+                    let world = entity.SetVisible (parent.GetVisible world && entity.GetVisibleLocal world) world
+                    let world = entity.SetEnabled (parent.GetEnabled world && entity.GetEnabledLocal world) world
+                    (Cascade, world)
+                else (Cascade, world)
             | None -> (Cascade, world)
 
         static let handleParentPropertyChange evt world =
@@ -90,6 +100,11 @@ module MountFacetModule =
 
         override facet.Unregister (entity, world) =
             (entity.GetMountUnsubscribeNp world) world // NOTE: unsubscribes - not sure if this is necessary.
+
+        override facet.TryGetCalculatedProperty (propertyName, entity, world) =
+            match propertyName with
+            | "ParentExists" -> Some (entity.ParentExists world :> obj, typeof<bool>)
+            | _ -> None
 
 [<AutoOpen>]
 module EffectFacetModule =
