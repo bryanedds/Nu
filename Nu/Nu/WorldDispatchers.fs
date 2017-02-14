@@ -579,7 +579,8 @@ module GuiDispatcherModule =
             (handling, world)
 
         static member IntrinsicFacetNames =
-            [typeof<MountFacet>.Name]
+            [typeof<MountFacet>.Name
+             typeof<ScriptFacet>.Name]
 
         static member PropertyDefinitions =
             [Define? ViewType Absolute
