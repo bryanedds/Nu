@@ -57,7 +57,7 @@ module Scripting =
                      "dataOf subscriberOf publisherOf addressOf",
                      // engine functions
                      // TODO: "tickRate tickTime "
-                     "Nil Gt Lt Eq Positive Negative Zero",
+                     "Gt Lt Eq Positive Negative Zero",
                      Constants.PrettyPrint.DetailedThreshold);
           TypeConverter (typeof<ExprConverter>);
           CustomEquality;
@@ -462,7 +462,7 @@ module Scripting =
                     | "true" | "True" -> Bool true :> obj
                     | "false" | "False" -> Bool false :> obj
                     | "none" | "None" -> Option None :> obj
-                    | "nil" | "Nil" -> Keyword String.Empty :> obj
+                    | "nil" -> Keyword String.Empty :> obj
                     | "empty" -> Codata Empty :> obj
                     | _ ->
                         let firstChar = str.[0]

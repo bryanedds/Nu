@@ -791,11 +791,13 @@ module Gaia =
                 let (evaleds, world) = World.evalMany exprs localFrame Simulants.Game world
                 let evaledStrs = List.map (scstring >> Symbol.strToPrettyStr prettyPrintThreshold) evaleds
                 let evaledsStr = String.concat "\n" evaledStrs
+                form.replOutputTextBox.ReadOnly <- false
                 form.replOutputTextBox.Text <-
                     if String.notEmpty form.replOutputTextBox.Text
-                    then form.replOutputTextBox.Text + "\n" + evaledsStr
-                    else evaledsStr
+                    then form.replOutputTextBox.Text + evaledsStr + "\n"
+                    else evaledsStr + "\n"
                 form.replOutputTextBox.GotoPosition form.replOutputTextBox.Text.Length
+                form.replOutputTextBox.ReadOnly <- true
                 world
             with exn -> Log.debug ("Could not evaluate repl input due to: " + scstring exn); world
 
