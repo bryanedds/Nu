@@ -35,7 +35,7 @@ module MountFacetModule =
         
         member this.ParentExists world =
             match this.GetParentOpt world with
-            | Some parentRelation -> (this.Resolve parentRelation).Exists world
+            | Some parentRelation -> (this.Resolve parentRelation).GetExists world
             | None -> false
 
     type MountFacet () =
@@ -188,7 +188,7 @@ module EffectFacetModule =
              Define? EffectTagsNp (Map.empty : EffectTags)]
 
         override facet.Actualize (entity, world) =
-            if entity.GetVisibleLayered world && entity.InView world then
+            if entity.GetVisibleLayered world && entity.GetInView world then
                 let world = entity.SetEffectTagsNp Map.empty world
                 let effect = entity.GetEffect world
                 let effectTime = entity.GetEffectTime world
@@ -447,7 +447,7 @@ module StaticSpriteFacetModule =
             [Define? StaticImage { PackageName = Assets.DefaultPackageName; AssetName = "Image3" }]
 
         override facet.Actualize (entity, world) =
-            if entity.GetVisibleLayered world && entity.InView world then
+            if entity.GetVisibleLayered world && entity.GetInView world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor
@@ -517,7 +517,7 @@ module AnimatedSpriteFacetModule =
              Define? AnimationSheet { PackageName = Assets.DefaultPackageName; AssetName = "Image7" }]
 
         override facet.Actualize (entity, world) =
-            if entity.GetVisibleLayered world && entity.InView world then
+            if entity.GetVisibleLayered world && entity.GetInView world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [LayerableDescriptor

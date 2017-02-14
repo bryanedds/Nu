@@ -120,17 +120,14 @@ module WorldEntityModule =
         /// Get an entity's bounds maximum.
         member this.GetBoundsMax world = World.getEntityBoundsMax this world
 
-        /// Get an entity's change event address.
-        member this.GetChangeEvent propertyName = Events.EntityChange propertyName ->>- this.EntityAddress
-
         /// Check that an entity is selected.
         member this.GetSelected world =
             match (World.getGameState world).SelectedScreenOpt with
             | Some screen -> Address.head this.EntityAddress = Address.head screen.ScreenAddress
             | None -> false
 
-        /// Query than an entity is in the camera's view.
-        member this.InView world =
+        /// Check that an entity is in the camera's view.
+        member this.GetInView world =
             if not ^ this.GetOmnipresent world then
                 World.isBoundsInView
                     (this.GetViewType world)
@@ -153,20 +150,20 @@ module WorldEntityModule =
             let transform = Math.snapTransform positionSnap rotationSnap transform
             this.SetTransform transform world
 
-        /// Check that an entity uses a facet of type 'a.
-        member this.HasFacet facetType world =
-            let facets = this.GetFacetsNp world
-            List.exists (fun facet -> getType facet = facetType) facets
-
         /// Check that an entity exists in the world.
-        member this.Exists world = World.entityExists this world
+        member this.GetExists world = World.entityExists this world
+
+        /// Check that an entity uses a facet of type 'a.
+        member this.HasFacet facetType world = List.exists (fun facet -> getType facet = facetType) (this.GetFacetsNp world)
+
+        /// Check that an entity dispatches in the same manner as the dispatcher with the target type.
+        member this.DispatchesAs dispatcherTargetType world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
 
         /// Resolve a relation in the context of an entity.
         member this.Resolve relation = Entity (Relation.resolve this.EntityAddress relation)
 
-        /// Check that an entity dispatches in the same manner as the dispatcher with the target type.
-        member this.DispatchesAs dispatcherTargetType world =
-            Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
+        /// Get an entity's change event address.
+        member this.GetChangeEvent propertyName = Events.EntityChange propertyName ->>- this.EntityAddress
 
     type World with
 

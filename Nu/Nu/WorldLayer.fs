@@ -81,13 +81,13 @@ module WorldLayerModule =
             | None -> false
 
         /// Check that a layer exists in the world.
-        member this.Exists world = World.layerExists this world
-
-        /// Resolve a relation in the context of an entity.
-        member this.Resolve relation = Layer (Relation.resolve this.LayerAddress relation)
+        member this.GetExists world = World.layerExists this world
 
         /// Check that a layer dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
+
+        /// Resolve a relation in the context of an entity.
+        member this.Resolve relation = Layer (Relation.resolve this.LayerAddress relation)
 
     type World with
 
