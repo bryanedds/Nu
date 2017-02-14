@@ -7,6 +7,7 @@ open System.ComponentModel
 open System.Diagnostics
 open System.Reflection
 open System.IO
+open Prime
 
 [<AutoOpen>]
 module Operators =
