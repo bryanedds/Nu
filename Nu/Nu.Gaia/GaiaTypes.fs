@@ -55,6 +55,16 @@ and EntityPropertyDescriptor (property, attributes) =
             (fun editorState -> { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = [] })
             world
 
+    override this.Category =
+        // HACK: all of this stuff is a hack until we can get user-defined attributes on simulant properties!
+        let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
+        let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
+        if List.exists (fun def -> propertyName = def.PropertyName) baseProperties then "Entity Properties"
+        elif List.exists (fun def -> propertyName = def.PropertyName) rigidBodyProperties then "Physics Properties"
+        elif propertyName.Length > 2 && propertyName.StartsWith "On" && Char.IsUpper propertyName.[2] then "Events"
+        elif propertyName = "Name" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "Ambient Properties"
+        else "Xtension Properties"
+
     override this.ComponentType = propertyType.DeclaringType
     override this.PropertyType = propertyType
     override this.CanResetValue _ = false
