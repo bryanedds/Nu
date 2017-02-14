@@ -491,6 +491,7 @@ module Scripting =
                 | Prime.Quote (quoted, originOpt) -> Quote (this.SymbolToExpr quoted, originOpt) :> obj
                 | Prime.Symbols (symbols, originOpt) ->
                     match symbols with
+                    | [] -> Unit :> obj
                     | Atom (name, _) :: tail ->
                         match name with
                         | "&&" ->
