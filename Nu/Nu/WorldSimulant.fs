@@ -43,6 +43,14 @@ module WorldSimulant =
             | :? Entity as entity -> World.setEntityProperty name property entity world
             | _ -> failwithumf ()
 
+        static member getSimulantSelected (simulant : Simulant) world =
+            match simulant with
+            | :? Game -> true
+            | :? Screen as screen -> screen.GetSelected world
+            | :? Layer as layer -> layer.GetSelected world
+            | :? Entity as entity -> entity.GetSelected world
+            | _ -> failwithumf ()
+
         static member internal tryGetSimulantScriptFrame (simulant : Simulant) world =
             match simulant with
             | :? Game -> Some (World.getGameScriptFrameNp world)

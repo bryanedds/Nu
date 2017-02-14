@@ -182,9 +182,6 @@ module WorldScripting =
                  ("tryFind", evalDoublet evalTryFind)
                  ("find", evalDoublet evalFind)
                  ("monitor", evalDoublet evalMonitor)
-                 ("entityExists", evalSinglet evalSimulantExists)
-                 ("layerExists", evalSinglet evalSimulantExists)
-                 ("screenExists", evalSinglet evalSimulantExists)
                  ("simulantExists", evalSinglet evalSimulantExists)]
 
         and isIntrinsic name =

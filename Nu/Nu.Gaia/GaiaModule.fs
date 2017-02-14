@@ -504,7 +504,7 @@ module Gaia =
                       Rotation = entity.GetRotation world
                       Depth = getCreationDepth form }
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
-                let world = World.propagateEntityPhysics entity world
+                let world = entity.PropagatePhysics world
                 RefWorld := world // must be set for property grid
                 let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
                 form.propertyGrid.SelectedObject <- entityTds
@@ -671,7 +671,7 @@ module Gaia =
                 let world = pushPastWorld world world
                 let entity = entityTds.DescribedEntity
                 let world = entity.SetSize (entity.GetQuickSize world) world
-                let world = World.propagateEntityPhysics entity world
+                let world = entity.PropagatePhysics world
                 entityTds.RefWorld := world // must be set for property grid
                 form.propertyGrid.Refresh ()
                 world
@@ -826,7 +826,7 @@ module Gaia =
                     if entity.HasFacet typeof<MountFacet> world && entity.ParentExists world
                     then entity.SetPositionLocal entityPositionSnapped world
                     else entity.SetPosition entityPositionSnapped world
-                let world = World.propagateEntityPhysics entity world
+                let world = entity.PropagatePhysics world
                 let world =
                     World.updateUserState (fun editorState ->
                         { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) })
