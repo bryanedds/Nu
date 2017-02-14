@@ -48,7 +48,7 @@ module EventFilter =
     [<Syntax
         ("Any NotAny All Pattern Empty", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
-         Constants.PrettyPrinter.DetailedThresholdMax)>]
+         Constants.PrettyPrinter.DefaultThresholdMax)>]
     type [<NoEquality; NoComparison>] Filter =
         | All of Filter list
         | Any of Filter list
