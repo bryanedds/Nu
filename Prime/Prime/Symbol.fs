@@ -19,7 +19,7 @@ type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
     member this.PrettyPrintThreshold = prettyPrintThreshold
     static member getOrDefault (ty : Type) =
         match ty.GetCustomAttribute<SyntaxAttribute> true with
-        | null -> SyntaxAttribute ("", "", 1)
+        | null -> SyntaxAttribute ("", "", Constants.PrettyPrint.NormalThreshold)
         | syntax -> syntax
 
 type SymbolSource =

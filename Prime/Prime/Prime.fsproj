@@ -68,6 +68,7 @@
     <Error Condition="!Exists('..\..\packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\Packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props'))" />
   </Target>
   <ItemGroup>
+    <Compile Include="Constants.fs" />
     <Compile Include="Operators.fs" />
     <Compile Include="Generics.fs" />
     <Compile Include="Log.fs" />

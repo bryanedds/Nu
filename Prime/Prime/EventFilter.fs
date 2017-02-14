@@ -45,7 +45,7 @@ and [<TypeConverter (typeof<RexprConverter>)>] Rexpr (pattern) =
 module EventFilter =
 
     /// Describes how events are filtered.
-    [<Syntax ("Any NotAny All Pattern Empty", "", 1)>]
+    [<Syntax ("Any NotAny All Pattern Empty", "", Constants.PrettyPrint.DetailedThreshold)>]
     type [<NoEquality; NoComparison>] Filter =
         | All of Filter list
         | Any of Filter list
