@@ -197,7 +197,7 @@ module PlayerModule =
             else world
 
         static let handleJumpByKeyboardKey evt world =
-            if World.isSelectedScreenIdling world then
+            if World.selectedScreenIdling world then
                 match (enum<SDL.SDL_Scancode> evt.Data.ScanCode, evt.Data.Repeated) with
                 | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump evt world
                 | _ -> world
@@ -246,7 +246,7 @@ module PlayerLayerModule =
             adjustCamera world
 
         static let handlePlayerFall _ world =
-            if Simulants.Player.HasFallen world && World.isSelectedScreenIdling world then
+            if Simulants.Player.HasFallen world && World.selectedScreenIdling world then
                 let world = World.playSound 1.0f Assets.DeathSound world
                 World.transitionScreen Simulants.Title world
             else world

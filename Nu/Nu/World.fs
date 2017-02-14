@@ -88,26 +88,26 @@ module WorldModule2 =
 
         /// Try to check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
-        static member tryGetIsSelectedScreenIdling world =
+        static member tryGetSelectedScreenIdling world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen -> Some ^ selectedScreen.IsIdling world
             | None -> None
 
+        /// Try to check that the selected screen is transitioning.
+        static member tryGetSelectedScreenTransitioning world =
+            Option.map not (World.tryGetSelectedScreenIdling world)
+
         /// Check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen (failing with an exception if no screen is selected).
-        static member isSelectedScreenIdling world =
-            match World.tryGetIsSelectedScreenIdling world with
+        static member selectedScreenIdling world =
+            match World.tryGetSelectedScreenIdling world with
             | Some answer -> answer
             | None -> failwith ^ "Cannot query state of non-existent selected screen."
 
-        /// Try to check that the selected screen is transitioning.
-        static member tryGetIsSelectedScreenTransitioning world =
-            Option.map not ^ World.tryGetIsSelectedScreenIdling world
-
         /// Check that the selected screen is transitioning (failing with an exception if no screen
         /// is selected).
-        static member isSelectedScreenTransitioning world =
-            not ^ World.isSelectedScreenIdling world
+        static member selectedScreenTransitioning world =
+            not ^ World.selectedScreenIdling world
 
         static member private setScreenTransitionState state (screen : Screen) world =
             let world = screen.SetTransitionStateNp state world

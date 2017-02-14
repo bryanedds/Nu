@@ -350,7 +350,7 @@ module WorldModuleLayer =
             (layer, world)
 
         /// View all of the properties of a layer.
-        static member viewLayerProperties layer world =
+        static member internal viewLayerProperties layer world =
             let state = World.getLayerState layer world
             let properties = World.getProperties state
             Array.ofList properties
