@@ -64,7 +64,7 @@ and EntityPropertyDescriptor (property, attributes) =
         if  propertyName = "Name" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" ||
             propertyName = "Specialization" || propertyName = "PublishChanges" then
             "Ambient Properties"
-        elif propertyName.Length > 2 && propertyName.StartsWith "On" && Char.IsUpper propertyName.[2] then "X- Events -X"
+        elif propertyName.Length > 2 && propertyName.StartsWith "On" && Char.IsUpper propertyName.[2] then "Z- Events -Z"
         elif List.exists (fun def -> propertyName = def.PropertyName) baseProperties then "Scene Properties"
         elif List.exists (fun def -> propertyName = def.PropertyName) mountProperties then "Scene Properties"
         elif List.exists (fun def -> propertyName = def.PropertyName) scriptProperties then "Script Properties"
