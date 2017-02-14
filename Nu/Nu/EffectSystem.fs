@@ -457,7 +457,8 @@ module EffectSystemModule =
                 let effectSystem = { effectSystem with EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions }
                 try evalContent effect.Content slice effectSystem
                 with exn ->
-                    let effectStr = Symbol.strToPrettyStr Constants.PrettyPrint.DetailedThreshold (scstring effect)
+                    let prettyPrintThreshold = (SyntaxAttribute.getOrDefault typeof<Effect>).PrettyPrintThreshold
+                    let effectStr = Symbol.strToPrettyStr prettyPrintThreshold (scstring effect)
                     Log.debug ^ "Error in effect:\r\n" + effectStr + "\r\ndue to: " + scstring exn
                     []
             else []

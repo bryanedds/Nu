@@ -86,4 +86,5 @@ module Constants =
     module PrettyPrint =
     
         let [<Literal>] SimpleThreshold = 1
-        let [<Literal>] DetailedThreshold = 2
+        let [<Literal>] NormalThreshold = 2
+        let [<Literal>] DetailedThreshold = 3
