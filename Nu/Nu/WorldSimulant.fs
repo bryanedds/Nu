@@ -78,6 +78,9 @@ module WorldSimulant =
             | :? Entity -> Seq.empty
             | _ -> failwithumf ()
 
+        static member getSimulantExists (simulant : Simulant) (world : World) =
+            (world :> EventWorld<Game, World>).ParticipantExists simulant
+
         static member tryDeriveSimulant address =
             match Address.getNames address with
             | [] -> Some (Game Address.empty :> Simulant)
@@ -90,6 +93,3 @@ module WorldSimulant =
             match World.tryDeriveSimulant address with
             | Some simulant -> simulant
             | None -> failwithf "Could not derive simulant from address '%s'." (scstring address)
-
-        static member getSimulantExists (simulant : Simulant) (world : World) =
-            (world :> EventWorld<Game, World>).ParticipantExists simulant
