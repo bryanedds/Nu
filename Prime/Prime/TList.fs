@@ -42,7 +42,7 @@ module TListModule =
             List.foldBack (fun log () ->
                 match log with
                 | Add value -> impListOrigin.Add value
-                | Remove value -> ignore ^ impListOrigin.Remove value
+                | Remove value -> impListOrigin.Remove value |> ignore
                 | Set (index, value) -> impListOrigin.[index] <- value)
                 list.Logs ()
             let impList = List<'a> impListOrigin
@@ -114,7 +114,7 @@ module TListModule =
         let add value list =
             update (fun list ->
                 let list = { list with Logs = Add value :: list.Logs; LogsLength = list.LogsLength + 1 }
-                ignore ^ list.ImpList.Add value
+                list.ImpList.Add value |> ignore
                 list)
                 list
 

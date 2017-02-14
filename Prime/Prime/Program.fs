@@ -57,32 +57,32 @@ module Program =
         // run map timings
         runMapTimings
             (fun entries -> Array.fold (fun map (k, v) -> Map.add k v map) Map.empty entries)
-            (fun entries map -> Array.iter (fun (k, _) -> ignore ^ Map.find k map) entries)
+            (fun entries map -> Array.iter (fun (k, _) -> Map.find k map |> ignore) entries)
             "F# Map"
         
         // run hmap timings
         runMapTimings
             (fun entries -> Array.fold (fun map (k, v) -> HMap.add k v map) (HMap.makeEmpty ()) entries)
-            (fun entries map -> Array.iter (fun (k, _) -> ignore ^ HMap.find k map) entries)
+            (fun entries map -> Array.iter (fun (k, _) -> HMap.find k map |> ignore) entries)
             "HMap"
         
         // run tmap timings with computation expressions
         runMapTimings
             (fun entries -> Array.fold (fun map (k, v) -> TMap.add k v map) (TMap.makeEmpty None) entries)
-            (fun entries map -> entries |> Array.iter (fun (k, _) -> ignore ^ TMap.find k map))
+            (fun entries map -> entries |> Array.iter (fun (k, _) -> TMap.find k map |> ignore))
             "TMap"
         
         // run umap timings without computation expressions
         runMapTimings
             (fun entries -> Array.fold (fun map (k, v) -> UMap.add k v map) (UMap.makeEmpty None) entries)
-            (fun entries map -> Array.iter (fun (k, _) -> ignore ^ UMap.find k map) entries)
+            (fun entries map -> Array.iter (fun (k, _) -> UMap.find k map |> ignore) entries)
             "UMap"
         
         // run dictionary timings
         let dic = Dictionary<string, string * string> ()
         runMapTimings
             (fun entries -> Array.iter (fun (k, v) -> if not ^ dic.ContainsKey k then dic.Add (k, v)) entries)
-            (fun entries () -> Array.iter (fun (k, _) -> ignore ^ dic.[k]) entries)
+            (fun entries () -> Array.iter (fun (k, _) -> dic.[k] |> ignore) entries)
             ".NET Dictionary"
 
         // success

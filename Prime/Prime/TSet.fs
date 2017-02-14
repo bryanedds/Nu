@@ -40,8 +40,8 @@ module TSetModule =
             let hashSetOrigin = HashSet<'a> (set.HashSetOrigin, HashIdentity.Structural)
             List.foldBack (fun log () ->
                 match log with
-                | Add value -> ignore ^ hashSetOrigin.TryAdd value
-                | Remove value -> ignore ^ hashSetOrigin.Remove value)
+                | Add value -> hashSetOrigin.TryAdd value |> ignore
+                | Remove value -> hashSetOrigin.Remove value |> ignore)
                 set.Logs ()
             let hashSet = HashSet<'a> (hashSetOrigin, HashIdentity.Structural)
             let set = { set with HashSet = hashSet; HashSetOrigin = hashSetOrigin; Logs = []; LogsLength = 0 }
@@ -99,7 +99,7 @@ module TSetModule =
         let add value set =
             update (fun set ->
                 let set = { set with Logs = Add value :: set.Logs; LogsLength = set.LogsLength + 1 }
-                ignore ^ set.HashSet.TryAdd value
+                set.HashSet.TryAdd value |> ignore
                 set)
                 set
 

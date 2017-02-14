@@ -133,7 +133,7 @@ module Operators =
 
     /// Add a custom TypeConverter to an existing type.
     let assignTypeConverter<'t, 'c> () =
-        ignore (TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>))
+        TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>) |> ignore
 
     /// Short-hand for linq enumerable cast.
     let inline enumerable<'a> enumeratable =

@@ -61,7 +61,7 @@ module GameplayDispatcherModule =
             let (fieldMap, rand) = FieldMap.make Assets.FieldTileSheetImage (Vector2i 22) pathEdgesM rand
             let (field, world) = World.createEntity<FieldDispatcher> None (Some Simulants.Field.EntityName) scene world
             let world = field.SetFieldMapNp fieldMap world
-            let world = field.SetSize (World.getEntityQuickSize field world) world
+            let world = field.SetSize (field.GetQuickSize world) world
             let world = field.SetPersistent false world
             (field, rand, world)
 

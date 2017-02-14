@@ -105,6 +105,9 @@ module WorldEntityModule =
         /// Set an entity's transform.
         member this.SetTransform value world = World.setEntityTransform value this world
 
+        /// Get an entity's sorting priority.
+        member this.GetSortingPriority world = World.getEntitySortingPriority this world
+
         /// Get an entity's quick size.
         member this.GetQuickSize world = World.getEntityQuickSize this world
 
@@ -114,14 +117,17 @@ module WorldEntityModule =
         /// Get an entity's bounds, taking into account its overflow.
         member this.GetBoundsOverflow world = Math.makeBoundsOverflow (this.GetPosition world) (this.GetSize world) (this.GetOverflow world)
 
+        /// Get an entity's bounds maximum.
+        member this.GetBoundsMax world = World.getEntityBoundsMax this world
+
         /// Get an entity's change event address.
         member this.GetChangeEvent propertyName = Events.EntityChange propertyName ->>- this.EntityAddress
 
-        /// Check an entity exists in the world.
-        member this.Exists world = World.entityExists this world
-
-        /// Resolve a relation in the context of an entity.
-        member this.Resolve relation = Entity (Relation.resolve this.EntityAddress relation)
+        /// Check that an entity is selected.
+        member this.GetSelected world =
+            match (World.getGameState world).SelectedScreenOpt with
+            | Some screen -> Address.head this.EntityAddress = Address.head screen.ScreenAddress
+            | None -> false
 
         /// Query than an entity is in the camera's view.
         member this.InView world =
@@ -151,6 +157,12 @@ module WorldEntityModule =
         member this.HasFacet facetType world =
             let facets = this.GetFacetsNp world
             List.exists (fun facet -> getType facet = facetType) facets
+
+        /// Check that an entity exists in the world.
+        member this.Exists world = World.entityExists this world
+
+        /// Resolve a relation in the context of an entity.
+        member this.Resolve relation = Entity (Relation.resolve this.EntityAddress relation)
 
         /// Check that an entity dispatches in the same manner as the dispatcher with the target type.
         member this.DispatchesAs dispatcherTargetType world =
@@ -238,7 +250,7 @@ module WorldEntityModule =
             entities |>
             Array.ofSeq |>
             Array.rev |>
-            Array.map (fun entity -> World.getEntitySortingPriority entity world) |>
+            Array.map (fun (entity : Entity) -> entity.GetSortingPriority world) |>
             Seq.sortWith SortPriority.compare |> // Seq.sort is stable, unlike Array.sort...
             Array.ofSeq |>
             Array.map (fun p -> p.SortTarget :?> Entity)

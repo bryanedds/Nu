@@ -74,7 +74,13 @@ module WorldLayerModule =
         /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world = World.setLayerProperty propertyName (value :> obj, typeof<'a>) this world
 
-        /// Check a layer exists in the world.
+        /// Check that a layer is selected.
+        member this.GetSelected world =
+            match (World.getGameState world).SelectedScreenOpt with
+            | Some screen -> Address.head this.LayerAddress = Address.head screen.ScreenAddress
+            | None -> false
+
+        /// Check that a layer exists in the world.
         member this.Exists world = World.layerExists this world
 
         /// Resolve a relation in the context of an entity.
