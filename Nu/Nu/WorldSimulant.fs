@@ -91,5 +91,5 @@ module WorldSimulant =
             | Some simulant -> simulant
             | None -> failwithf "Could not derive simulant from address '%s'." (scstring address)
 
-        static member simulantExists (simulant : Simulant) (world : World) =
+        static member getSimulantExists (simulant : Simulant) (world : World) =
             (world :> EventWorld<Game, World>).ParticipantExists simulant

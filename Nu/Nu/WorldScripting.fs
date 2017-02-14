@@ -182,7 +182,7 @@ module WorldScripting =
                  ("tryFind", evalDoublet evalTryFind)
                  ("find", evalDoublet evalFind)
                  ("monitor", evalDoublet evalMonitor)
-                 ("simulantExists", evalSinglet evalSimulantExists)]
+                 ("getSimulantExists", evalSinglet evalSimulantExists)]
 
         and isIntrinsic name =
             Intrinsics.ContainsKey name
@@ -200,7 +200,7 @@ module WorldScripting =
                 let relation = Relation.makeFromString str
                 let address = Relation.resolve context.SimulantAddress relation
                 match World.tryDeriveSimulant address with
-                | Some simulant -> (Bool (World.simulantExists simulant world), world)
+                | Some simulant -> (Bool (World.getSimulantExists simulant world), world)
                 | None -> (Bool false, world)
             | Violation _ as error -> (error, world)
             | _ -> (Violation (["InvalidArgumentType"], "Function '" + fnName + "' requires 1 relation argument.", originOpt), world)
