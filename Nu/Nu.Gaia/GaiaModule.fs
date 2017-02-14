@@ -211,7 +211,7 @@ module Gaia =
                     World.updateUserState (fun editorState ->
                         let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
                         let entityPosition =
-                            if entity.HasFacet typeof<MountFacet> world && entity.ParentExists world
+                            if entity.HasFacet typeof<MountFacet> world && entity.NodeExists world
                             then entity.GetPositionLocal world
                             else entity.GetPosition world
                         { editorState with DragEntityState = DragEntityPosition (entityPosition + mousePositionWorld, mousePositionWorld, entity) })
@@ -823,7 +823,7 @@ module Gaia =
                 let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                 let entityPositionSnapped = Math.snap2F positionSnap entityPosition
                 let world =
-                    if entity.HasFacet typeof<MountFacet> world && entity.ParentExists world
+                    if entity.HasFacet typeof<MountFacet> world && entity.NodeExists world
                     then entity.SetPositionLocal entityPositionSnapped world
                     else entity.SetPosition entityPositionSnapped world
                 let world = entity.PropagatePhysics world
