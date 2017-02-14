@@ -528,7 +528,7 @@ module Gaia =
         use layerCreationForm = new LayerCreationForm ()
         layerCreationForm.StartPosition <- FormStartPosition.CenterParent
         layerCreationForm.dispatcherTextBox.Text <- typeof<LayerDispatcher>.Name
-        layerCreationForm.specializationTextBox.Text <- Constants.Engine.VanillaSpecialization
+        layerCreationForm.specializationTextBox.Text <- Constants.Engine.EmptySpecialization
         layerCreationForm.depthTextBox.Text <- scstring 0.0f
         layerCreationForm.okButton.Click.Add ^ fun _ ->
             addWorldChanger ^ fun world ->
@@ -806,7 +806,7 @@ module Gaia =
         form.replOutputTextBox.Text <- String.Empty
 
     let private handleCreateEntityComboBoxSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
-        form.specializationTextBox.Text <- Constants.Engine.VanillaSpecialization
+        form.specializationTextBox.Text <- Constants.Engine.EmptySpecialization
 
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.YesNo) with
@@ -966,7 +966,7 @@ module Gaia =
         form.positionSnapTextBox.Text <- scstring Constants.Editor.DefaultPositionSnap
         form.rotationSnapTextBox.Text <- scstring Constants.Editor.DefaultRotationSnap
         form.createDepthTextBox.Text <- scstring Constants.Editor.DefaultCreationDepth
-        form.specializationTextBox.Text <- Constants.Engine.VanillaSpecialization
+        form.specializationTextBox.Text <- Constants.Engine.EmptySpecialization
 
         // sort tree view nodes with a bias against guids
         form.treeView.Sorted <- true

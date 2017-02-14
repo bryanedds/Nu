@@ -660,7 +660,7 @@ module WorldModuleEntity =
                 | None -> failwith ^ "Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
 
             // try to compute the routed overlay name
-            let classification = Classification.make dispatcherName ^ Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
+            let classification = Classification.make dispatcherName ^ Option.getOrDefault Constants.Engine.EmptySpecialization specializationOpt
             let overlayNameOpt = OverlayRouter.findOverlayNameOpt classification overlayRouter
 
             // make the bare entity state (with name as id if none is provided)
@@ -766,7 +766,7 @@ module WorldModuleEntity =
                     (dispatcherName, dispatcher)
 
             // try to compute the routed overlay name
-            let classification = Classification.makeVanilla dispatcherName
+            let classification = Classification.makeUnspecialized dispatcherName
             let overlayNameOpt = OverlayRouter.findOverlayNameOpt classification overlayRouter
 
             // make the bare entity state with name as id
@@ -839,20 +839,20 @@ module WorldModuleEntity =
 
         /// Reassign an entity's identity and / or layer. Note that since this destroys the reassigned entity
         /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
-        static member reassignEntityImmediate entity nameOpt (layer : Layer) world =
+        static member reassignEntityImmediate entity specializationOpt nameOpt (layer : Layer) world =
             let entityState = World.getEntityState entity world
             let world = World.removeEntity entity world
-            let (id, name) = Reflection.deriveIdAndName nameOpt
-            let entityState = { entityState with Id = id; Name = name }
+            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
+            let entityState = { entityState with Id = id; Name = name; Specialization = specialization }
             let transmutedEntity = Entity (layer.LayerAddress -<<- ntoa<Entity> name)
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
 
         /// Reassign an entity's identity and / or layer.
-        static member reassignEntity entity nameOpt layer world =
+        static member reassignEntity entity specializationOpt nameOpt layer world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
-                  Command = { Execute = fun world -> World.reassignEntityImmediate entity nameOpt layer world |> snd }}
+                  Command = { Execute = fun world -> World.reassignEntityImmediate entity specializationOpt nameOpt layer world |> snd }}
             World.addTasklet tasklet world
 
         /// Try to set an entity's optional overlay name.

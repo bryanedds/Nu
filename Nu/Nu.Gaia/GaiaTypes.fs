@@ -88,7 +88,7 @@ and EntityPropertyDescriptor (property, attributes) =
 
     override this.IsReadOnly =
         not propertyCanWrite ||
-        not ^ Reflection.isPropertyPersistentByName propertyName
+        not (Reflection.isPropertyPersistentByName propertyName)
 
     override this.GetValue source =
         match source with
@@ -118,7 +118,8 @@ and EntityPropertyDescriptor (property, attributes) =
                 let name = value :?> string
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
                     let entity = entityTds.DescribedEntity
-                    let world = World.reassignEntity entity (Some name) (etol entity) world
+                    let specialization = entity.GetSpecialization world
+                    let world = World.reassignEntity entity (Some specialization) (Some name) (etol entity) world
                     entityTds.RefWorld := world // must be set for property grid
                     world
                 else
@@ -128,6 +129,15 @@ and EntityPropertyDescriptor (property, attributes) =
                          MessageBoxButtons.OK) |>
                         ignore
                     world
+            
+            // change the specialization property
+            | "Specialization" ->
+                let specialization = value :?> string
+                let entity = entityTds.DescribedEntity
+                let name = entity.GetName world
+                let world = World.reassignEntity entity (Some specialization) (Some name) (etol entity) world
+                entityTds.RefWorld := world // must be set for property grid
+                world
 
             // change facet names
             | "FacetNames" ->

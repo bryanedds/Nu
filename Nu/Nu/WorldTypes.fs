@@ -224,7 +224,7 @@ module WorldTypes =
         inherit SimulantDispatcher ()
     
         static member PropertyDefinitions =
-            [Define? Specialization Constants.Engine.VanillaSpecialization
+            [Define? Specialization Constants.Engine.EmptySpecialization
              Define? Persistent true
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
@@ -432,7 +432,7 @@ module WorldTypes =
             { Id = makeGuid ()
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.safe
               DispatcherNp = dispatcher
-              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
+              Specialization = Option.getOrDefault Constants.Engine.EmptySpecialization specializationOpt
               CreationTimeStampNp = Core.getTimeStamp ()
               ScriptOpt = None
               Script = []
@@ -505,13 +505,13 @@ module WorldTypes =
           
         /// Make a screen state value.
         static member make specializationOpt nameOpt (dispatcher : ScreenDispatcher) =
-            let (id, name) = Reflection.deriveIdAndName nameOpt
+            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
             let screenState =
                 { Id = id
                   Name = name
                   Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.safe
                   DispatcherNp = dispatcher
-                  Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
+                  Specialization = specialization
                   Persistent = true
                   CreationTimeStampNp = Core.getTimeStamp ()
                   ScriptOpt = None
@@ -585,12 +585,12 @@ module WorldTypes =
 
         /// Make a layer state value.
         static member make specializationOpt nameOpt (dispatcher : LayerDispatcher) =
-            let (id, name) = Reflection.deriveIdAndName nameOpt
+            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
             { LayerState.Id = id
               Name = name
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.safe
               DispatcherNp = dispatcher
-              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
+              Specialization = specialization
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
               ScriptOpt = None
@@ -666,12 +666,12 @@ module WorldTypes =
 
         /// Make an entity state value.
         static member make specializationOpt nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
-            let (id, name) = Reflection.deriveIdAndName nameOpt
+            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
             { Id = id
               Name = name
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.safe
               DispatcherNp = dispatcher
-              Specialization = Option.getOrDefault Constants.Engine.VanillaSpecialization specializationOpt
+              Specialization = specialization
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
               CachableNp = String.endsWithGuid name

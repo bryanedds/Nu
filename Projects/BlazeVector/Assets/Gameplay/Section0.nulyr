@@ -9,7 +9,7 @@
   [Persistent True]
   [Script []]
   [ScriptOpt None]
-  [Specialization Vanilla]
+  [Specialization ""]
   [Visible True]]
  [[TileMapDispatcher
    [[Depth -4]
