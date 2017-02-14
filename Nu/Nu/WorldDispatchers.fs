@@ -51,10 +51,14 @@ module MountFacetModule =
                 let parentAddress = Relation.resolve entity.EntityAddress parentRelation
                 let parent = Entity parentAddress
                 if World.entityExists parent world then
-                    let world = entity.SetPosition (parent.GetPosition world + entity.GetPositionLocal world) world
-                    let world = entity.SetDepth (parent.GetDepth world + entity.GetDepthLocal world) world
-                    let world = entity.SetVisible (parent.GetVisible world && entity.GetVisibleLocal world) world
-                    let world = entity.SetEnabled (parent.GetEnabled world && entity.GetEnabledLocal world) world
+                    let parentPosition = parent.GetPosition world
+                    let parentDepth = parent.GetDepth world
+                    let parentVisible = parent.GetVisible world
+                    let parentEnabled = parent.GetEnabled world
+                    let world = entity.SetPosition (parentPosition + entity.GetPositionLocal world) world
+                    let world = entity.SetDepth (parentDepth + entity.GetDepthLocal world) world
+                    let world = entity.SetVisible (parentVisible && entity.GetVisibleLocal world) world
+                    let world = entity.SetEnabled (parentEnabled && entity.GetEnabledLocal world) world
                     (Cascade, world)
                 else (Cascade, world)
             | None -> (Cascade, world)
@@ -62,10 +66,14 @@ module MountFacetModule =
         static let handleParentPropertyChange evt world =
             let entity = evt.Subscriber : Entity
             let parent = evt.Publisher :?> Entity
-            let world = entity.SetPosition (parent.GetPosition world + entity.GetPositionLocal world) world
-            let world = entity.SetDepth (parent.GetDepth world + entity.GetDepthLocal world) world
-            let world = entity.SetVisible (parent.GetVisible world && entity.GetVisibleLocal world) world
-            let world = entity.SetEnabled (parent.GetEnabled world && entity.GetEnabledLocal world) world
+            let parentPosition = parent.GetPosition world
+            let parentDepth = parent.GetDepth world
+            let parentVisible = parent.GetVisible world
+            let parentEnabled = parent.GetEnabled world
+            let world = entity.SetPosition (parentPosition + entity.GetPositionLocal world) world
+            let world = entity.SetDepth (parentDepth + entity.GetDepthLocal world) world
+            let world = entity.SetVisible (parentVisible && entity.GetVisibleLocal world) world
+            let world = entity.SetEnabled (parentEnabled && entity.GetEnabledLocal world) world
             (Cascade, world)
 
         static let rec handleParentChange evt world =
