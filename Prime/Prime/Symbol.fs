@@ -65,7 +65,7 @@ module Symbol =
     let [<Literal>] CloseStringChar = '\"'
     let [<Literal>] CloseStringStr = "\""
     let [<Literal>] QuoteChar = '`'
-    let [<Literal>] QuoteStr = "`"
+    let [<Literal>] StartQuoteStr = "`"
     let [<Literal>] LineCommentChar = ';'
     let [<Literal>] LineCommentStr = ";"
     let [<Literal>] OpenMultilineCommentStr = "#|"
@@ -196,7 +196,7 @@ module Symbol =
             else str
         | Number (str, _) -> distillate str
         | String (str, _) -> OpenStringStr + distillate str + CloseStringStr
-        | Quote (symbol, _) -> QuoteStr + writeSymbol symbol
+        | Quote (symbol, _) -> StartQuoteStr + writeSymbol symbol
         | Symbols (symbols, _) -> OpenSymbolsStr + String.concat " " (List.map writeSymbol symbols) + CloseSymbolsStr
 
     /// Convert a string to a symbol, with the following parses:
@@ -267,21 +267,25 @@ module Symbol =
         | Symbols (_, originOpt) -> originOpt
 
     type private SymbolPretty =
-        | LiteralPretty of bool * string
+        | AtomPretty of string * Symbol
+        | NumberPretty of string * Symbol
+        | StringPretty of string * Symbol
         | QuotePretty of int * SymbolPretty
         | SymbolsPretty of int * SymbolPretty list
 
     let rec private getMaxDepth symbolPretty =
         match symbolPretty with
-        | LiteralPretty _ -> 0
+        | AtomPretty _ -> 0
+        | NumberPretty _ -> 0
+        | StringPretty _ -> 0
         | QuotePretty (maxDepth, _) -> maxDepth
         | SymbolsPretty (maxDepth, _) -> maxDepth
 
     let rec private symbolToSymbolPretty symbol =
         match symbol with
-        | Atom (str, _) -> LiteralPretty (isExplicit str, str)
-        | Number (str, _) -> LiteralPretty (false, str)
-        | String (str, _) -> LiteralPretty (true, str)
+        | Atom (str, _) -> AtomPretty (str, symbol)
+        | Number (str, _) -> NumberPretty (str, symbol)
+        | String (str, _) -> StringPretty (str, symbol)
         | Quote (quoted, _) ->
             let quotedPretty = symbolToSymbolPretty quoted
             let maxDepth = getMaxDepth quotedPretty
@@ -294,8 +298,10 @@ module Symbol =
 
     let rec private symbolPrettyToPrettyStr depth threshold symbolPretty =
         match symbolPretty with
-        | LiteralPretty (isExplicit, str) -> if isExplicit then OpenStringStr + str + CloseStringStr else str
-        | QuotePretty (_, symbolPretty) -> "`" + symbolPrettyToPrettyStr depth threshold symbolPretty
+        | AtomPretty (_, symbol)
+        | NumberPretty (_, symbol)
+        | StringPretty (_, symbol) -> writeSymbol symbol
+        | QuotePretty (_, symbolPretty) -> StartQuoteStr + symbolPrettyToPrettyStr depth threshold symbolPretty
         | SymbolsPretty (maxDepth, symbolsPretty) ->
             if maxDepth > threshold then
                 let symbolPrettyStrs =
