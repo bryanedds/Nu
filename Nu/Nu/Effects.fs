@@ -162,7 +162,7 @@ module Effects =
             "RenderArtifact SoundArtifact TagArtifact",
             "",
             Constants.PrettyPrinter.DefaultThresholdMin,
-            Constants.PrettyPrinter.DetailedThresholdMax)>]
+            Constants.PrettyPrinter.CompositionalThresholdMax)>]
 type [<NoEquality; NoComparison>] Effect =
     { EffectName : string
       LifetimeOpt : int64 option

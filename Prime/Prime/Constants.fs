@@ -15,3 +15,4 @@ module Constants =
         let [<Literal>] SimpleThresholdMax = 1
         let [<Literal>] DefaultThresholdMax = 2
         let [<Literal>] DetailedThresholdMax = 3
+        let [<Literal>] CompositionalThresholdMax = 4
