@@ -101,7 +101,7 @@ module SymbolTests =
         Assert.Equal (1, Map.find 0 value)
 
     let [<Fact>] canPrettyPrintGuid () =
-        let prettyPrintThreshold = (SyntaxAttribute.getOrDefault typeof<Guid>).PrettyPrintThreshold
+        let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Guid>).PrettyPrinter
         let symbolStr = "[5ec8734f-6a3d-4472-b86a-78125d238dc2]"
-        let symbolPretty = Symbol.strToPrettyStr prettyPrintThreshold symbolStr
-        Assert.Equal (symbolStr, symbolPretty)
+        let prettyStr = PrettyPrinter.run symbolStr prettyPrinter
+        Assert.Equal (symbolStr, prettyStr)

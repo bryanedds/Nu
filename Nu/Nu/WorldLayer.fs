@@ -165,10 +165,10 @@ module WorldLayerModule =
         /// Write a layer to a file.
         static member writeLayerToFile (filePath : string) layer world =
             let filePathTmp = filePath + ".tmp"
-            let prettyPrintThreshold = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrintThreshold
+            let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrinter
             let layerDescriptor = World.writeLayer layer LayerDescriptor.empty world
             let layerDescriptorStr = scstring layerDescriptor
-            let layerDescriptorPretty = Symbol.strToPrettyStr prettyPrintThreshold layerDescriptorStr
+            let layerDescriptorPretty = PrettyPrinter.run layerDescriptorStr prettyPrinter
             File.WriteAllText (filePathTmp, layerDescriptorPretty)
             File.Delete filePath
             File.Move (filePathTmp, filePath)
