@@ -183,10 +183,10 @@ module WorldScreenModule =
         /// Write a screen to a file.
         static member writeScreenToFile (filePath : string) screen world =
             let filePathTmp = filePath + ".tmp"
-            let prettyPrintThreshold = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrintThreshold
+            let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrinter
             let screenDescriptor = World.writeScreen screen ScreenDescriptor.empty world
             let screenDescriptorStr = scstring screenDescriptor
-            let screenDescriptorPretty = Symbol.strToPrettyStr prettyPrintThreshold screenDescriptorStr
+            let screenDescriptorPretty = PrettyPrinter.run screenDescriptorStr prettyPrinter
             File.WriteAllText (filePathTmp, screenDescriptorPretty)
             File.Delete filePath
             File.Move (filePathTmp, filePath)

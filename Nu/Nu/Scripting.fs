@@ -27,38 +27,40 @@ module Scripting =
         | Unfold of Expr * Expr
         | Conversion of Expr list
 
-    and [<Syntax    ("true false nil " +
-                     "toEmpty toIdentity toMin toMax " +
-                     "not inc dec negate hash " +
-                     "pow root sqr sqrt " +
-                     "floor ceiling truncate round exp log " +
-                     "sin cos tan asin acos atan " +
-                     "length normal " +
-                     "cross dot " +
-                     "violation bool int int64 single double string " +
-                     "keyname keyfields " +
-                     "v2 xOf yOf xAs yAs " +
-                     "tuple pair unit fst snd thd fth fif nth fstAs sndAs thdAs fthAs fifAs nthAs " +
-                     "some none isSome isNone isEmpty notEmpty tryUncons uncons cons commit tryHead head tryTail tail " +
-                     "scanWhile scani scan foldWhile foldi fold mapi map contains " +
-                     // TODO: "either isLeft isRight left right " +
-                     "codata toCodata empty " +
-                     "list toList " +
-                     "ring toRing add remove " +
-                     "table toTable tryFind find " +
-                     "let fun if cond try break get set do " +
-                     "monitor " +
-                     // TODO: "substring update curry compose itemOf tryItemOf itemAs tryItemAs sort replace slice split " +
-                     "define variable equate handle " +
-                     // prelude identifiers...
-                     "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegitiveInfinity isNaN " +
-                     "min max compare sign abs fst! snd! rev reduceWhile reducei reduce filter takeWhile take skipWhile skip " +
-                     "countBy count exists zipBy zip pi e v2Zero v2Identity game " +
-                     "dataOf subscriberOf publisherOf addressOf",
-                     // engine functions
-                     // TODO: "tickRate tickTime "
-                     "Gt Lt Eq Positive Negative Zero",
-                     Constants.PrettyPrint.DetailedThreshold);
+    and [<Syntax
+            ("true false nil " +
+             "toEmpty toIdentity toMin toMax " +
+             "not inc dec negate hash " +
+             "pow root sqr sqrt " +
+             "floor ceiling truncate round exp log " +
+             "sin cos tan asin acos atan " +
+             "length normal " +
+             "cross dot " +
+             "violation bool int int64 single double string " +
+             "keyname keyfields " +
+             "v2 xOf yOf xAs yAs " +
+             "tuple pair unit fst snd thd fth fif nth fstAs sndAs thdAs fthAs fifAs nthAs " +
+             "some none isSome isNone isEmpty notEmpty tryUncons uncons cons commit tryHead head tryTail tail " +
+             "scanWhile scani scan foldWhile foldi fold mapi map contains " +
+             // TODO: "either isLeft isRight left right " +
+             "codata toCodata empty " +
+             "list toList " +
+             "ring toRing add remove " +
+             "table toTable tryFind find " +
+             "let fun if cond try break get set do " +
+             "monitor " +
+             // TODO: "substring update curry compose itemOf tryItemOf itemAs tryItemAs sort replace slice split " +
+             "define variable equate handle " +
+             // prelude identifiers...
+             "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegitiveInfinity isNaN " +
+             "min max compare sign abs fst! snd! rev reduceWhile reducei reduce filter takeWhile take skipWhile skip " +
+             "countBy count exists zipBy zip pi e v2Zero v2Identity game " +
+             "dataOf subscriberOf publisherOf addressOf",
+             // engine functions
+             // TODO: "tickRate tickTime "
+             "Gt Lt Eq Positive Negative Zero",
+             Constants.PrettyPrinter.DefaultThresholdMin,
+             Constants.PrettyPrinter.DetailedThresholdMax);
           TypeConverter (typeof<ExprConverter>);
           CustomEquality;
           CustomComparison>]

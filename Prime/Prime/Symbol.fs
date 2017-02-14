@@ -8,20 +8,6 @@ open System.Reflection
 open FParsec
 open Prime
 
-type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
-    SyntaxAttribute
-    (keywords0 : string,
-     keywords1 : string,
-     prettyPrintThreshold : int) =
-    inherit Attribute ()
-    member this.Keywords0 = keywords0
-    member this.Keywords1 = keywords1
-    member this.PrettyPrintThreshold = prettyPrintThreshold
-    static member getOrDefault (ty : Type) =
-        match ty.GetCustomAttribute<SyntaxAttribute> true with
-        | null -> SyntaxAttribute ("", "", Constants.PrettyPrint.NormalThreshold)
-        | syntax -> syntax
-
 type SymbolSource =
     { FileNameOpt : string option
       Text : string }
@@ -266,65 +252,92 @@ module Symbol =
         | Quote (_, originOpt)
         | Symbols (_, originOpt) -> originOpt
 
-    type private SymbolPretty =
-        | AtomPretty of string * Symbol
-        | NumberPretty of string * Symbol
-        | StringPretty of string * Symbol
-        | QuotePretty of int * SymbolPretty
-        | SymbolsPretty of int * SymbolPretty list
+type PrettyPrinter =
+    { ThresholdMin : int
+      ThresholdMax : int }
+
+    static member defaulted =
+        { ThresholdMin = Constants.PrettyPrinter.DefaultThresholdMin
+          ThresholdMax = Constants.PrettyPrinter.NormalThresholdMax }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module PrettyPrinter =
+
+    type private PrettySymbol =
+        | PrettyAtom of string * Symbol
+        | PrettyNumber of string * Symbol
+        | PrettyString of string * Symbol
+        | PrettyQuote of int * PrettySymbol
+        | PrettySymbols of int * PrettySymbol list
 
     let rec private getMaxDepth symbolPretty =
         match symbolPretty with
-        | AtomPretty _ -> 0
-        | NumberPretty _ -> 0
-        | StringPretty _ -> 0
-        | QuotePretty (maxDepth, _) -> maxDepth
-        | SymbolsPretty (maxDepth, _) -> maxDepth
+        | PrettyAtom _ -> 0
+        | PrettyNumber _ -> 0
+        | PrettyString _ -> 0
+        | PrettyQuote (maxDepth, _) -> maxDepth
+        | PrettySymbols (maxDepth, _) -> maxDepth
 
-    let rec private symbolToSymbolPretty symbol =
+    let rec private symbolToPrettySymbol symbol =
         match symbol with
-        | Atom (str, _) -> AtomPretty (str, symbol)
-        | Number (str, _) -> NumberPretty (str, symbol)
-        | String (str, _) -> StringPretty (str, symbol)
+        | Atom (str, _) -> PrettyAtom (str, symbol)
+        | Number (str, _) -> PrettyNumber (str, symbol)
+        | String (str, _) -> PrettyString (str, symbol)
         | Quote (quoted, _) ->
-            let quotedPretty = symbolToSymbolPretty quoted
+            let quotedPretty = symbolToPrettySymbol quoted
             let maxDepth = getMaxDepth quotedPretty
-            QuotePretty (inc maxDepth, quotedPretty)
+            PrettyQuote (inc maxDepth, quotedPretty)
         | Symbols (symbols, _) ->
-            let symbolsPretty = List.map symbolToSymbolPretty symbols
+            let symbolsPretty = List.map symbolToPrettySymbol symbols
             let symbolMaxDepths = 0 :: List.map getMaxDepth symbolsPretty
             let maxDepth = List.max symbolMaxDepths
-            SymbolsPretty (inc maxDepth, symbolsPretty)
+            PrettySymbols (inc maxDepth, symbolsPretty)
 
-    let rec private symbolPrettyToPrettyStr depth threshold symbolPretty =
+    let rec private prettySymbolToPrettyStr depth symbolPretty prettyPrinter =
         match symbolPretty with
-        | AtomPretty (_, symbol)
-        | NumberPretty (_, symbol)
-        | StringPretty (_, symbol) -> writeSymbol symbol
-        | QuotePretty (_, symbolPretty) -> StartQuoteStr + symbolPrettyToPrettyStr depth threshold symbolPretty
-        | SymbolsPretty (maxDepth, symbolsPretty) ->
-            if maxDepth > threshold then
+        | PrettyAtom (_, symbol)
+        | PrettyNumber (_, symbol)
+        | PrettyString (_, symbol) -> Symbol.writeSymbol symbol
+        | PrettyQuote (_, symbolPretty) -> Symbol.StartQuoteStr + prettySymbolToPrettyStr depth symbolPretty prettyPrinter
+        | PrettySymbols (maxDepth, symbolsPretty) ->
+            if  depth < prettyPrinter.ThresholdMin ||
+                maxDepth > prettyPrinter.ThresholdMax then
                 let symbolPrettyStrs =
                     List.mapi (fun i symbolPretty ->
-                        let whitespace = if i > 0 then String.init depth (fun _ -> " ") else ""
-                        let text = symbolPrettyToPrettyStr (inc depth) threshold symbolPretty
+                        let whitespace = if i > 0 then String.init (inc depth) (fun _ -> " ") else ""
+                        let text = prettySymbolToPrettyStr (inc depth) symbolPretty prettyPrinter
                         whitespace + text)
                         symbolsPretty
-                OpenSymbolsStr + String.concat "\n" symbolPrettyStrs + CloseSymbolsStr
+                Symbol.OpenSymbolsStr + String.concat "\n" symbolPrettyStrs + Symbol.CloseSymbolsStr
             else
                 let symbolPrettyStrs =
                     List.map (fun symbolPretty ->
-                        symbolPrettyToPrettyStr (inc depth) threshold symbolPretty)
+                        prettySymbolToPrettyStr (inc depth) symbolPretty prettyPrinter)
                         symbolsPretty
-                OpenSymbolsStr + String.concat " " symbolPrettyStrs + CloseSymbolsStr
+                Symbol.OpenSymbolsStr + String.concat " " symbolPrettyStrs + Symbol.CloseSymbolsStr
 
-    let symbolToPrettyStr threshold symbol =
-        let symbolPretty = symbolToSymbolPretty symbol
-        symbolPrettyToPrettyStr 1 threshold symbolPretty
+    let symbolToPrettyStr symbol prettyPrinter =
+        let symbolPretty = symbolToPrettySymbol symbol
+        prettySymbolToPrettyStr 0 symbolPretty prettyPrinter
 
-    let strToPrettyStr threshold str =
-        let symbol = fromString str
-        symbolToPrettyStr threshold symbol
+    let run str prettyPrinter =
+        let symbol = Symbol.fromString str
+        symbolToPrettyStr symbol prettyPrinter
+
+type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
+    SyntaxAttribute (keywords0 : string, keywords1 : string, prettyPrinterThresholdMin : int, prettyPrinterThresholdMax : int) =
+    inherit Attribute ()
+    member this.Keywords0 = keywords0
+    member this.Keywords1 = keywords1
+    member this.PrettyPrinter = { ThresholdMin = prettyPrinterThresholdMin; ThresholdMax = prettyPrinterThresholdMax }
+    static member getOrDefault (ty : Type) =
+        match ty.GetCustomAttribute<SyntaxAttribute> true with
+        | null ->
+            SyntaxAttribute
+                ("", "",
+                 PrettyPrinter.defaulted.ThresholdMin,
+                 PrettyPrinter.defaulted.ThresholdMax)
+        | syntax -> syntax
 
 type ConversionException (message : string, symbolOpt : Symbol option) =
     inherit Exception (message)

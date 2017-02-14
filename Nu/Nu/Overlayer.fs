@@ -15,6 +15,11 @@ type internal OverlayState =
     | Overlaid
 
 /// An overlay.
+[<Syntax
+    ("EntityDispatcher GuiDispatcher",
+     "MountFacet EffectFacet ScriptFacet RigidBodyFacet StaticSpriteFacet AnimatedSpriteFacet",
+     Constants.PrettyPrinter.StructuralThresholdMin,
+     Constants.PrettyPrinter.NormalThresholdMax)>]
 type Overlay =
     { OverlayName : string
       OverlayIncludeNames : string list

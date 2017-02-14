@@ -161,7 +161,8 @@ module Effects =
             "Expand StaticSprite AnimatedSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
             "RenderArtifact SoundArtifact TagArtifact",
             "",
-            Constants.PrettyPrint.DetailedThreshold)>]
+            Constants.PrettyPrinter.DefaultThresholdMin,
+            Constants.PrettyPrinter.DetailedThresholdMax)>]
 type [<NoEquality; NoComparison>] Effect =
     { EffectName : string
       LifetimeOpt : int64 option

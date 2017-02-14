@@ -8,8 +8,10 @@ open System
 module Constants =
 
     [<RequireQualifiedAccess>]
-    module PrettyPrint =
+    module PrettyPrinter =
     
-        let [<Literal>] SimpleThreshold = 1
-        let [<Literal>] NormalThreshold = 2
-        let [<Literal>] DetailedThreshold = 3
+        let [<Literal>] DefaultThresholdMin = 0
+        let [<Literal>] StructuralThresholdMin = 3
+        let [<Literal>] SimpleThresholdMax = 1
+        let [<Literal>] NormalThresholdMax = 2
+        let [<Literal>] DetailedThresholdMax = 3

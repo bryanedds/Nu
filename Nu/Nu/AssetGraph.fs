@@ -68,7 +68,11 @@ type PackageDescriptor =
 module AssetGraphModule =
 
     /// A graph of all the assets used in a game.
-    [<Syntax ("Asset Assets", "PsdToPng OldSchool Render Audio", Constants.PrettyPrint.NormalThreshold)>]
+    [<Syntax
+        ("Asset Assets",
+         "PsdToPng OldSchool Render Audio",
+         Constants.PrettyPrinter.DefaultThresholdMin,
+         Constants.PrettyPrinter.NormalThresholdMax)>]
     type AssetGraph =
         private
             { PackageDescriptors : Map<string, PackageDescriptor> }

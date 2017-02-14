@@ -18,7 +18,10 @@ type [<StructuralEquality; NoComparison>] Transform =
 /// Depicts whether a view is purposed to render in relative or absolute space. For
 /// example, Gui entities are rendered in absolute space since they remain still no matter
 /// where the camera moves, and vice versa for non-Gui entities.
-[<Syntax ("Absolute Relative", "", Constants.PrettyPrint.SimpleThreshold)>]
+[<Syntax
+    ("Absolute Relative", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.SimpleThresholdMax)>]
 type ViewType =
     | Absolute
     | Relative
