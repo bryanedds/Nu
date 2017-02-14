@@ -61,14 +61,12 @@ and EntityPropertyDescriptor (property, attributes) =
         // \r character as here - https://bytes.com/topic/c-sharp/answers/214456-q-ordering-sorting-category-text-propertygrid
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
         let mountProperties = Reflection.getPropertyDefinitions typeof<MountFacet>
-        let scriptProperties = Reflection.getPropertyDefinitions typeof<ScriptFacet>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if propertyName.Length > 2 && propertyName.StartsWith "On" && Char.IsUpper propertyName.[2] then "Events"
         elif    propertyName = "Name" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" ||
                 propertyName = "Specialization" || propertyName = "PublishChanges" then "\rAmbient Properties"
         elif List.exists (fun def -> propertyName = def.PropertyName) baseProperties then "\rScene Properties"
         elif List.exists (fun def -> propertyName = def.PropertyName) mountProperties then "\rScene Properties"
-        elif List.exists (fun def -> propertyName = def.PropertyName) scriptProperties then "\rScript Properties"
         elif List.exists (fun def -> propertyName = def.PropertyName) rigidBodyProperties then "\rPhysics Properties"
         else "\rXtension Properties"
 
