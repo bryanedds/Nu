@@ -52,6 +52,7 @@ module Scripting =
              
              (* Prelude Identifiers *)
              // TODO: "substring update curry compose itemOf tryItemOf itemAs tryItemAs sort replace slice split " +
+             "-b- -i- -L- -f- -d- -2- -s- -k- -u- -p- -o- -l- -r- -t- -u- " +
              "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegativeInfinity isNaN " +
              "min max compare sign abs fst! snd! rev reduceWhile reducei reduce filter takeWhile take skipWhile skip " +
              "countBy count exists zipBy zip pi e v2Zero v2Identity game " +

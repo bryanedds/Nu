@@ -1058,13 +1058,6 @@ module Gaia =
             form.eventFilterTextBox.Keywords0 <- syntax.Keywords0
             form.eventFilterTextBox.Keywords1 <- syntax.Keywords1
 
-        // populate asset graph keywords
-        match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with
-        | null -> ()
-        | syntax ->
-            form.assetGraphTextBox.Keywords0 <- syntax.Keywords0
-            form.assetGraphTextBox.Keywords1 <- syntax.Keywords1
-
         // populate repl and prelude keywords
         match typeof<Scripting.Expr>.GetCustomAttribute<SyntaxAttribute> true with
         | null -> ()
@@ -1075,6 +1068,20 @@ module Gaia =
             form.replOutputTextBox.Keywords1 <- syntax.Keywords1
             form.preludeTextBox.Keywords0 <- syntax.Keywords0
             form.preludeTextBox.Keywords1 <- syntax.Keywords1
+
+        // populate asset graph keywords
+        match typeof<AssetGraph>.GetCustomAttribute<SyntaxAttribute> true with
+        | null -> ()
+        | syntax ->
+            form.assetGraphTextBox.Keywords0 <- syntax.Keywords0
+            form.assetGraphTextBox.Keywords1 <- syntax.Keywords1
+
+        // populate overlayer keywords
+        match typeof<Overlay>.GetCustomAttribute<SyntaxAttribute> true with
+        | null -> ()
+        | syntax ->
+            form.overlayerTextBox.Keywords0 <- syntax.Keywords0
+            form.overlayerTextBox.Keywords1 <- syntax.Keywords1
 
         // populate rollout tab texts
         handleResetEventFilterClick form (EventArgs ())
