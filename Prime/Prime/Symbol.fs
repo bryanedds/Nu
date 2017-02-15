@@ -38,28 +38,29 @@ module SymbolOrigin =
                 sourceLines |>
                 Array.trySkip (problemLineIndex - problemLinesStartCount) |>
                 Array.take (inc problemLinesStartCount) |>
-                String.concat "\n"
+                String.concat "\n" |>
+                fun str -> if String.isEmpty str then "" else str + "\n"
             let problemLinesStop =
                 sourceLines |>
                 Array.skip (inc problemLineIndex) |>
                 Array.tryTake 4 |>
-                String.concat "\n"
+                String.concat "\n" |>
+                fun str -> if String.isEmpty str then "" else "\n" + str
             let problemUnderline =
                 String.replicate (int origin.Start.Column - 1) " " +
                 if origin.Start.Line = origin.Stop.Line
                 then String.replicate (int origin.Stop.Column - int origin.Start.Column) "^"
                 else "^^^^^^^"
-            problemLinesStart + "\n" + problemUnderline + "\n" + problemLinesStop
+            problemLinesStart + problemUnderline + problemLinesStop
         with exn ->
-            // and I don't feel like dealing with all the specific.
+            // ...and I don't feel like dealing with all the specifics.
             "Error creating violation context."
 
     let print origin =
         "At location: " + printStart origin + " thru " + printStop origin + "\n" +
         "In context:\n" +
-        "...\n" +
-        printContext origin + "\n" +
-        "..."
+        "\n" +
+        printContext origin
 
     let tryPrint originOpt =
         match originOpt with
