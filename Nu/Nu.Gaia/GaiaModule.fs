@@ -397,6 +397,26 @@ module Gaia =
         let assetSourceDir = Path.Combine (targetDir, "..\\..")
         World.tryReloadPrelude assetSourceDir targetDir world
 
+    let private tryLoadPrelude (form : GaiaForm) world =
+        match tryReloadPrelude form world with
+        | Right (preludeStr, world) ->
+            form.preludeTextBox.Text <- preludeStr + "\r\n"
+            world
+        | Left (error, world) ->
+            MessageBox.Show ("Could not load prelude due to: " + error + "'.", "Failed to load prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            world
+
+    let private trySavePrelude (form : GaiaForm) world =
+        let editorState = World.getUserState world
+        let preludeSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
+        let preludeFilePath = Path.Combine (preludeSourceDir, Assets.PreludeFilePath)
+        try let preludeStr = form.preludeTextBox.Text.TrimEnd ()
+            File.WriteAllText (preludeFilePath, preludeStr)
+            true
+        with exn ->
+            MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            false
+
     let private tryReloadAssetGraph (_ : GaiaForm) world =
         let editorState = World.getUserState world
         let targetDir = editorState.TargetDir
@@ -687,11 +707,7 @@ module Gaia =
             | Right (assetGraph, world) ->
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
                 form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter + "\r\n"
-                match tryReloadPrelude form world with
-                | Right world -> world
-                | Left (error, world) ->
-                    MessageBox.Show (error, "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
+                world
             | Left (error, world) ->
                 MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
@@ -743,6 +759,20 @@ module Gaia =
             form.eventFilterTextBox.EmptyUndoBuffer ()
             world
 
+    let private handleSavePreludeClick (form : GaiaForm) (_ : EventArgs) =
+        addWorldChanger ^ fun world ->
+            if trySavePrelude form world then
+                match tryReloadPrelude form world with
+                | Right (_, world) -> world
+                | Left (error, world) ->
+                    MessageBox.Show ("Prelude reload error due to: " + error + "'.", "Prelude reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    world
+            else World.choose world
+
+    let private handleLoadPreludeClick (form : GaiaForm) (_ : EventArgs) =
+        addWorldChanger ^ fun world ->
+            tryLoadPrelude form world
+
     let private handleSaveAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             if trySaveAssetGraph form world then
@@ -770,14 +800,6 @@ module Gaia =
     let private handleLoadOverlayerClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             tryLoadOverlayer form world
-
-    let private handleRolloutTabSelectedIndexChanged (form : GaiaForm) (args : EventArgs) =
-        if form.rolloutTabControl.SelectedTab = form.eventTracingTabPage then
-            handleResetEventFilterClick form args
-        elif form.rolloutTabControl.SelectedTab = form.assetGraphTabPage then
-            handleLoadAssetGraphClick form args
-        elif form.rolloutTabControl.SelectedTab = form.overlayerTabPage then
-            handleLoadOverlayerClick form args
 
     let private handleEvalClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
@@ -990,6 +1012,8 @@ module Gaia =
         form.traceEventsCheckBox.CheckStateChanged.Add (handleTraceEventsCheckBoxChanged form)
         form.applyEventFilterButton.Click.Add (handleApplyEventFilterClick form)
         form.resetEventFilterButton.Click.Add (handleResetEventFilterClick form)
+        form.savePreludeButton.Click.Add (handleSavePreludeClick form)
+        form.loadPreludeButton.Click.Add (handleLoadPreludeClick form)
         form.saveAssetGraphButton.Click.Add (handleSaveAssetGraphClick form)
         form.loadAssetGraphButton.Click.Add (handleLoadAssetGraphClick form)
         form.saveOverlayerButton.Click.Add (handleSaveOverlayerClick form)
@@ -1022,7 +1046,6 @@ module Gaia =
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
         form.layerTabs.Deselected.Add (handleFormLayerTabDeselected form)
         form.layerTabs.Selected.Add (handleFormLayerTabSelected form)
-        form.rolloutTabControl.SelectedIndexChanged.Add (handleRolloutTabSelectedIndexChanged form)
         form.evalButton.Click.Add (handleEvalClick form)
         form.clearOutputButton.Click.Add (handleClearOutputClick form)
         form.createEntityComboBox.SelectedIndexChanged.Add (handleCreateEntityComboBoxSelectedIndexChanged form)
@@ -1042,7 +1065,7 @@ module Gaia =
             form.assetGraphTextBox.Keywords0 <- syntax.Keywords0
             form.assetGraphTextBox.Keywords1 <- syntax.Keywords1
 
-        // populate repl keywords
+        // populate repl and prelude keywords
         match typeof<Scripting.Expr>.GetCustomAttribute<SyntaxAttribute> true with
         | null -> ()
         | syntax ->
@@ -1050,6 +1073,14 @@ module Gaia =
             form.replInputTextBox.Keywords1 <- syntax.Keywords1
             form.replOutputTextBox.Keywords0 <- syntax.Keywords0
             form.replOutputTextBox.Keywords1 <- syntax.Keywords1
+            form.preludeTextBox.Keywords0 <- syntax.Keywords0
+            form.preludeTextBox.Keywords1 <- syntax.Keywords1
+
+        // populate rollout tab texts
+        handleResetEventFilterClick form (EventArgs ())
+        handleLoadPreludeClick form (EventArgs ())
+        handleLoadAssetGraphClick form (EventArgs ())
+        handleLoadOverlayerClick form (EventArgs ())
 
         // finally, show form
         form.Show ()
@@ -1083,7 +1114,6 @@ module Gaia =
     /// Run Gaia from the F# repl.
     let runFromRepl runWhile targetDir sdlDeps form world =
         RefWorld := world
-        WorldChangers.Clear ()
         run3 runWhile targetDir sdlDeps form
         !RefWorld
 
@@ -1096,7 +1126,6 @@ module Gaia =
             match attemptMakeWorld plugin sdlDeps with
             | Right world ->
                 RefWorld := world
-                WorldChangers.Clear ()
                 let _ = run3 tautology targetDir sdlDeps form
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error

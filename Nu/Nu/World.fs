@@ -808,7 +808,7 @@ module WorldModule2 =
 
                     // try to load the prelude for the scripting language
                     match World.tryEvalPrelude world with
-                    | Right world ->
+                    | Right (_, world) ->
                         
                         // finally, register the game
                         let world = World.registerGame world

@@ -63,14 +63,16 @@ module WorldScripting =
 
         /// Attempt to evaluate the scripting prelude.
         static member tryEvalPrelude world =
-            try let prelude =
-                    File.ReadAllText Assets.PreludeFilePath |>
+            try let preludeStr =
+                    File.ReadAllText Assets.PreludeFilePath
+                let prelude =
+                    preludeStr |>
                     String.unescape |>
                     (fun str -> Symbol.OpenSymbolsStr + str + Symbol.CloseSymbolsStr) |>
                     scvalue<Scripting.Expr list>
                 let globalFrame = World.getGlobalFrame world
                 let (_, world) = World.evalManyWithLogging prelude globalFrame Simulants.Game world
-                Right world
+                Right (preludeStr, world)
             with exn ->
                 Left ("Could not evaluate due to: " + scstring exn, World.choose world)
 
