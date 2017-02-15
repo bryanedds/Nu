@@ -644,7 +644,6 @@ module Scripting =
             Log.info ^
                 "Unexpected violation: " + String.concat "/" names + "\n" +
                 "Due to: " + error + "\n" +
-                "Source: \n" +
                 SymbolOrigin.tryPrint originOpt + "\n"
         | _ -> ()
     
