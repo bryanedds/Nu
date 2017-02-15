@@ -179,8 +179,10 @@ module WorldEntityModule =
 
         static member internal updateEntity (entity : Entity) world =
             World.withEventContext (fun world ->
-                let world = (entity.GetDispatcherNp world).Update (entity, world)
-                let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) (entity.GetFacetsNp world) world
+                let dispatcher = entity.GetDispatcherNp world
+                let facets = entity.GetFacetsNp world
+                let world = dispatcher.Update (entity, world)
+                let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
                 if entity.GetPublishUpdatesNp world then
                     let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
                     World.publishPlus World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game false world
@@ -190,8 +192,10 @@ module WorldEntityModule =
 
         static member internal postUpdateEntity (entity : Entity) world =
             World.withEventContext (fun world ->
-                let world = (entity.GetDispatcherNp world).PostUpdate (entity, world)
-                let world = List.foldBack (fun (facet : Facet) world -> facet.PostUpdate (entity, world)) (entity.GetFacetsNp world) world
+                let dispatcher = entity.GetDispatcherNp world
+                let facets = entity.GetFacetsNp world
+                let world = dispatcher.PostUpdate (entity, world)
+                let world = List.foldBack (fun (facet : Facet) world -> facet.PostUpdate (entity, world)) facets world
                 if entity.GetPublishPostUpdatesNp world then
                     let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
                     World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateAddress eventTrace Simulants.Game false world
@@ -201,8 +205,10 @@ module WorldEntityModule =
 
         static member internal actualizeEntity (entity : Entity) world =
             World.withEventContext (fun world ->
-                let world = (entity.GetDispatcherNp world).Actualize (entity, world)
-                List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) (entity.GetFacetsNp world) world)
+                let dispatcher = entity.GetDispatcherNp world
+                let facets = entity.GetFacetsNp world
+                let world = dispatcher.Actualize (entity, world)
+                List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) facets world)
                 entity
                 world
 
