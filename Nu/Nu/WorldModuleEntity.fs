@@ -867,8 +867,9 @@ module WorldModuleEntity =
             | (Some oldOverlayName, Some overlayName) ->
                 let overlayer = World.getOverlayer world
                 let (entityState, world) =
+                    let oldFacetNames = entityState.FacetNames
                     let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy oldOverlayName overlayName entityState overlayer overlayer
-                    match World.trySynchronizeFacetsToNames entityState.FacetNames entityState (Some entity) world with
+                    match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
                     | Right (entityState, world) -> (entityState, world)
                     | Left error -> Log.debug error; (entityState, world)
                 let facetNames = World.getEntityFacetNamesReflectively entityState
