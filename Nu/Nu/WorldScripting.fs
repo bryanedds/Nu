@@ -22,12 +22,6 @@ module WorldScripting =
 
     type World with
 
-        static member private getLocalDeclaration world =
-            World.getScriptEnvBy EnvModule.Env.getLocalDeclaration world
-
-        static member private setLocalDeclaration localDeclaration world =
-            World.updateScriptEnv (EnvModule.Env.setLocalDeclaration localDeclaration) world
-
         static member private tryGetBinding name cachedBinding world =
             World.getScriptEnvBy (EnvModule.Env.tryGetBinding name cachedBinding) world
 
@@ -211,7 +205,7 @@ module WorldScripting =
             match World.tryGetBinding name cachedBinding world with
             | None ->
                 if isIntrinsic name then (expr, world)
-                else (Violation (["NonexistentBinding"], "Non-existent binding '" + name + "' ", originOpt), world)
+                else (Violation (["NonexistentBinding"], "Non-existent binding '" + name + "'", originOpt), world)
             | Some binding -> (binding, world)
 
         and evalApply (exprs : Expr array) originOpt world =
