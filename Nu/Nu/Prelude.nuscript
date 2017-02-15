@@ -1,0 +1,210 @@
+; Nu Game Engine.
+; Copyright (C) Bryan Edds, 2012-2017.
+
+#| The bool type indicator.      |# [define -b- false]
+#| The int type indicator.       |# [define -i- 0]
+#| The int64 type indicator.     |# [define -L- 0L]
+#| The single type indicator.    |# [define -f- 0f]
+#| The double type indicator.    |# [define -d- 0d]
+#| The v2 type indicator.        |# [define -2- [v2 0f 0f]]
+#| The string type indicator.    |# [define -s- ""]
+#| The keyword type indicator.   |# [define -k- nil]
+#| The tuple type indicator.     |# [define -u- [tuple]]
+#| The keyphrase type indicator. |# [define -p- [nil]]
+#| The option type indicator.    |# [define -o- none]
+#| The list type indicator.      |# [define -l- [list]]
+#| The ring type indicator.      |# [define -r- [ring]]
+#| The table type indicator.     |# [define -t- [table]]
+#| The unit type indicator.      |# [define -u- []]
+
+; The identity function.
+[define id [a] a]
+
+; Flip a binary function's arguments.
+[define flip [f]
+    [fun [a b] [f b a]]]
+
+[define isIdentity [a]
+    [= a [toIdentity a]]]
+
+; Check that a value is positive.
+[define isPositive [a]
+    [>= a [toEmpty a]]]
+
+; Check that a value is negative.
+[define isNegative [a]
+    [<= a [toEmpty a]]]
+
+; Check that a value is positive infinity.
+[define isPositiveInfinity [a]
+    [> a [toMax a]]]
+
+; Check that a value is negative infinity.
+[define isNegativeInfinity [a]
+    [< a [toMin a]]]
+
+; Check that a value is IEEE not-a-number.
+[define isNaN [a]
+    [|| [isPositiveInfinity a]
+        [isNegativeInfinity a]]]
+
+; Select the mininum value.
+[define min [a b]
+    [if [< a b] a b]]
+
+; Select the maximum value.
+[define max [a b]
+    [if [> a b] a b]]
+
+; Compare two values. Returns Lt, Gt, or Eq.
+[define compare [a b]
+    [if [< a b]
+        Lt
+        [if [> a b] Gt Eq]]]
+
+; The sign of a value. Returns Positive, Negative, or Zero.
+[define sign [a]
+    [if [> a [toEmpty a]]
+        Positive
+        [if [< a [toEmpty a]] Negative Zero]]]
+
+; Compute the absolute value.
+[define abs [a]
+    [if [isNegative a]
+        [negate a]
+        a]]
+
+; Dereference a structure, then get its first item.
+[define fst! [a]
+    [fst [! a]]]
+
+; Dereference a structure, then get its second item.
+[define snd! [a]
+    [snd [! a]]]
+
+; Reverse the elemens in a container.
+[define rev [ctr]
+    [fold [flip cons] [toEmpty ctr] ctr]]
+
+; Reduce a container with at least one element while the reducer function returns some.
+[define reduceWhile [reducer ctr]
+    [let [pr [split ctr]]
+         [foldWhile reducer [fst pr] [snd pr]]]]
+
+; Reduce a container with at least one element, providing the index of each element.
+[define reducei [reducer ctr]
+    [let [pr [split ctr]]
+         [foldi reducer [fst pr] [snd pr]]]]
+
+; Reduce a container with at least one element.
+[define reduce [reducer ctr]
+    [let [pr [split ctr]]
+         [fold reducer [fst pr] [snd pr]]]]
+
+; Filter for elements that satifsy the given predicate.
+[define filter [pred ctr]
+    [let [opt [tryUncons ctr]]
+         [if [isSome opt]
+             [if [pred [fst! opt]]
+                 [cons [fst! opt] [filter pred [snd! opt]]]
+                 [filter pred [snd! opt]]]
+             [toEmpty ctr]]]]
+
+; Build a container of elements taken from the given container while a predicate succeeds.
+[define takeWhile [pred ctr]
+    [let [opt [tryUncons ctr]]
+         [if [&& [isSome opt] [pred [fst! opt]]]
+             [cons [fst! opt] [takeWhile pred [snd! opt]]]
+             [toEmpty ctr]]]]
+
+[define take3 [current n ctr]
+    [let [opt [tryUncons ctr]]
+         [if [&& [isSome opt] [< current n]]
+             [cons [fst! opt] [take3 [inc current] n [snd! opt]]]
+             [toEmpty ctr]]]]
+
+; Build a container of n elements taken from the given container, skipping n elements.
+[define take [n ctr]
+    [take3 0 n ctr]]
+
+; Build a container of elements taken from the given container, skipping elements while a predicate succeeds.
+[define skipWhile [pred ctr]
+    [let [opt [tryUncons ctr]]
+         [if [&& [isSome opt] [pred [fst! opt]]]
+             [skipWhile pred [snd! opt]]
+             ctr]]]
+
+[define skip3 [current n ctr]
+    [let [opt [tryUncons ctr]]
+         [if [isSome opt]
+             [if [< current n]
+                 [skip3 [inc current] n [snd! opt]]
+                 [cons [fst! opt] [skip3 current n [snd! opt]]]]
+             ctr]]]
+
+; Build a container of elements taken from the given container, skipping n elements.
+[define skip [n ctr]
+    [skip3 0 n ctr]]
+
+[define countBy3 [n pred ctr]
+     [let [opt [tryUncons ctr]]
+          [if [isSome opt]
+              [countBy3
+                [if [pred [fst! opt]] [inc n] n]
+                pred
+                [snd! opt]]
+              n]]]
+
+; Count the number of a container's element that satisfies the given predicate.
+[define countBy [pred ctr]
+    [countBy3 0 pred ctr]]
+
+; Count the number of a container's element that equal the value.
+[define count [a ctr]
+    [countBy3 0 [fun [b] [= a b]] ctr]]
+
+; Determine whether a container holds an element that satisfies the given predicate.
+[define exists [pred ctr]
+    [let [opt [tryUncons ctr]]
+         [if [isSome opt]
+             [if [pred [fst! opt]]
+                 true
+                 [exists pred [snd! opt]]]
+             false]]]
+    
+; Zip two containers by the given zipper function.
+[define zipBy [zipper ctr ctr2]
+     [let [opt [tryUncons ctr]]
+          [opt2 [tryUncons ctr2]] 
+          [if [|| [isNone opt] [isNone opt2]]
+              [toEmpty ctr]
+              [cons [zipper [fst! opt] [fst! opt2]]
+                    [zipBy zipper [snd! opt] [snd! opt2]]]]]]
+
+; Zip two containers into a container of pairs.
+[define zip [ctr ctr2]
+    [zipBy pair ctr ctr2]]
+
+; Mathematical constant pi as a single value.
+[define pi 3.14159f]
+
+; Mathematical constant e as a single value.
+[define e 2.71828f]
+
+; The zero v2 value.
+[define v2Zero [toEmpty -2-]]
+
+; The game.
+[define game nil]
+
+; Get data from an event.
+[define dataOf fst]
+
+; Get subscriber from an event.
+[define subscriberOf snd]
+
+; Get publisher from an event.
+[define publisherOf thd]
+
+; Get address from an event.
+[define addressOf fth]
