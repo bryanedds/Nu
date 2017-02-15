@@ -117,6 +117,15 @@
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />
+    <Content Include="AssetGraph.nuag">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Overlayer.nuol">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Prelude.nuscript">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <None Include="libfreetype-6.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
