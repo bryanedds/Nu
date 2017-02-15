@@ -109,8 +109,6 @@ module RendererModule =
         static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
             if left.Depth < right.Depth then -1
             elif left.Depth > right.Depth then 1
-            elif left.PositionY < right.PositionY then 1
-            elif left.PositionY > right.PositionY then -1
             else 0
 
         static member private freeRenderAsset renderAsset =
