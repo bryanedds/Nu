@@ -166,15 +166,15 @@ namespace Nu.Gaia.Design
                 lastSelectionPos = selectionPos;
                 var bracePos1 = -1;
                 var bracePos2 = -1;
-                if (IsBraceLeft(GetCharAt(selectionPos)))
-                {
-                    // Select the brace to the immediate right
-                    bracePos1 = selectionPos;
-                }
-                else if (selectionPos > 0 && IsBraceRight(GetCharAt(selectionPos - 1)))
+                if (selectionPos > 0 && IsBraceRight(GetCharAt(selectionPos - 1)))
                 {
                     // Select the brace to the immediate left
                     bracePos1 = selectionPos - 1;
+                }
+                else if (IsBraceLeft(GetCharAt(selectionPos)))
+                {
+                    // Select the brace to the immediate right
+                    bracePos1 = selectionPos;
                 }
 
                 if (bracePos1 >= 0)
