@@ -804,9 +804,9 @@ module Gaia =
     let private handleEvalClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             let exprsStr =
-                if String.notEmpty form.replInputTextBox.SelectedText
-                then form.replInputTextBox.SelectedText
-                else form.replInputTextBox.Text
+                if String.notEmpty form.evalInputTextBox.SelectedText
+                then form.evalInputTextBox.SelectedText
+                else form.evalInputTextBox.Text
             let exprsStr = Symbol.OpenSymbolsStr + "\n" + exprsStr + "\n" + Symbol.CloseSymbolsStr
             try let exprs = scvalue<Scripting.Expr list> exprsStr
                 let localFrame = Simulants.Game.GetScriptFrameNp world
@@ -814,18 +814,18 @@ module Gaia =
                 let (evaleds, world) = World.evalManyWithLogging exprs localFrame Simulants.Game world
                 let evaledStrs = List.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
                 let evaledsStr = String.concat "\n" evaledStrs
-                form.replOutputTextBox.ReadOnly <- false
-                form.replOutputTextBox.Text <-
-                    if String.notEmpty form.replOutputTextBox.Text
-                    then form.replOutputTextBox.Text + evaledsStr + "\n"
+                form.evalOutputTextBox.ReadOnly <- false
+                form.evalOutputTextBox.Text <-
+                    if String.notEmpty form.evalOutputTextBox.Text
+                    then form.evalOutputTextBox.Text + evaledsStr + "\n"
                     else evaledsStr + "\n"
-                form.replOutputTextBox.GotoPosition form.replOutputTextBox.Text.Length
-                form.replOutputTextBox.ReadOnly <- true
+                form.evalOutputTextBox.GotoPosition form.evalOutputTextBox.Text.Length
+                form.evalOutputTextBox.ReadOnly <- true
                 world
-            with exn -> Log.debug ("Could not evaluate repl input due to: " + scstring exn); world
+            with exn -> Log.debug ("Could not evaluate input due to: " + scstring exn); world
 
     let private handleClearOutputClick (form : GaiaForm) (_ : EventArgs) =
-        form.replOutputTextBox.Text <- String.Empty
+        form.evalOutputTextBox.Text <- String.Empty
 
     let private handleCreateEntityComboBoxSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
         form.specializationTextBox.Text <- Constants.Engine.EmptySpecialization
@@ -1058,14 +1058,14 @@ module Gaia =
             form.eventFilterTextBox.Keywords0 <- syntax.Keywords0
             form.eventFilterTextBox.Keywords1 <- syntax.Keywords1
 
-        // populate repl and prelude keywords
+        // populate evaluator and prelude keywords
         match typeof<Scripting.Expr>.GetCustomAttribute<SyntaxAttribute> true with
         | null -> ()
         | syntax ->
-            form.replInputTextBox.Keywords0 <- syntax.Keywords0
-            form.replInputTextBox.Keywords1 <- syntax.Keywords1
-            form.replOutputTextBox.Keywords0 <- syntax.Keywords0
-            form.replOutputTextBox.Keywords1 <- syntax.Keywords1
+            form.evalInputTextBox.Keywords0 <- syntax.Keywords0
+            form.evalInputTextBox.Keywords1 <- syntax.Keywords1
+            form.evalOutputTextBox.Keywords0 <- syntax.Keywords0
+            form.evalOutputTextBox.Keywords1 <- syntax.Keywords1
             form.preludeTextBox.Keywords0 <- syntax.Keywords0
             form.preludeTextBox.Keywords1 <- syntax.Keywords1
 
@@ -1118,7 +1118,7 @@ module Gaia =
               AudioChunkSize = Constants.Audio.DefaultBufferSize }
         SdlDeps.attemptMake sdlConfig
 
-    /// Run Gaia from the F# repl.
+    /// Run Gaia from the F# evaluator.
     let runFromRepl runWhile targetDir sdlDeps form world =
         RefWorld := world
         run3 runWhile targetDir sdlDeps form
