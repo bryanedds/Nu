@@ -820,18 +820,18 @@ module ToggleDispatcherModule =
 
     type Entity with
     
-        member this.GetOn world : bool = this.Get Property? On world
-        member this.SetOn (value : bool) world = this.Set Property? On value world
-        member this.On = PropertyTag.make this Property? On this.GetOn this.SetOn
+        member this.GetOpen world : bool = this.Get Property? Open world
+        member this.SetOpen (value : bool) world = this.Set Property? Open value world
+        member this.Open = PropertyTag.make this Property? Open this.GetOpen this.SetOpen
         member this.GetPressed world : bool = this.Get Property? Pressed world
         member this.SetPressed (value : bool) world = this.Set Property? Pressed value world
         member this.Pressed = PropertyTag.make this Property? Pressed this.GetPressed this.SetPressed
-        member this.GetOffImage world : AssetTag = this.Get Property? OffImage world
-        member this.SetOffImage (value : AssetTag) world = this.Set Property? OffImage value world
-        member this.OffImage = PropertyTag.make this Property? OffImage this.GetOffImage this.SetOffImage
-        member this.GetOnImage world : AssetTag = this.Get Property? OnImage world
-        member this.SetOnImage (value : AssetTag) world = this.Set Property? OnImage value world
-        member this.OnImage = PropertyTag.make this Property? OnImage this.GetOnImage this.SetOnImage
+        member this.GetOpenImage world : AssetTag = this.Get Property? OpenImage world
+        member this.SetOpenImage (value : AssetTag) world = this.Set Property? OpenImage value world
+        member this.OpenImage = PropertyTag.make this Property? OpenImage this.GetOpenImage this.SetOpenImage
+        member this.GetClosedImage world : AssetTag = this.Get Property? ClosedImage world
+        member this.SetClosedImage (value : AssetTag) world = this.Set Property? ClosedImage value world
+        member this.ClosedImage = PropertyTag.make this Property? ClosedImage this.GetClosedImage this.SetClosedImage
         member this.GetToggleSoundOpt world : AssetTag option = this.Get Property? ToggleSoundOpt world
         member this.SetToggleSoundOpt (value : AssetTag option) world = this.Set Property? ToggleSoundOpt value world
         member this.ToggleSoundOpt = PropertyTag.make this Property? ToggleSoundOpt this.GetToggleSoundOpt this.SetToggleSoundOpt
@@ -866,8 +866,8 @@ module ToggleDispatcherModule =
                 if  toggle.GetVisibleLayered world &&
                     Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
                     if toggle.GetEnabled world && wasPressed then
-                        let world = toggle.SetOn (not ^ toggle.GetOn world) world
-                        let eventAddress = if toggle.GetOn world then Events.On else Events.Off
+                        let world = toggle.SetOpen (not ^ toggle.GetOpen world) world
+                        let eventAddress = if toggle.GetOpen world then Events.Open else Events.Closed
                         let eventTrace = EventTrace.record "ToggleDispatcher" "handleMouseLeftUp" EventTrace.empty
                         let world = World.publish () (eventAddress ->- toggle) eventTrace toggle world
                         let eventTrace = EventTrace.record4 "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
@@ -884,10 +884,10 @@ module ToggleDispatcherModule =
 
         static member PropertyDefinitions =
             [Define? SwallowMouseLeft false
-             Define? On false
+             Define? Open true
              Define? Pressed false
-             Define? OffImage { PackageName = Assets.DefaultPackageName; AssetName = "Image" }
-             Define? OnImage { PackageName = Assets.DefaultPackageName; AssetName = "Image2" }
+             Define? OpenImage { PackageName = Assets.DefaultPackageName; AssetName = "Image" }
+             Define? ClosedImage { PackageName = Assets.DefaultPackageName; AssetName = "Image2" }
              Define? ToggleSoundOpt ^ Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" }
              Define? OnToggle Scripting.Unit]
 
@@ -911,13 +911,13 @@ module ToggleDispatcherModule =
                                       Offset = Vector2.Zero
                                       ViewType = Absolute
                                       InsetOpt = None
-                                      Image = if toggle.GetOn world || toggle.GetPressed world then toggle.GetOnImage world else toggle.GetOffImage world
+                                      Image = if toggle.GetOpen world && not (toggle.GetPressed world) then toggle.GetOpenImage world else toggle.GetClosedImage world
                                       Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world }}])
                     world
             else world
 
         override dispatcher.GetQuickSize (toggle, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (toggle.GetOffImage world) (World.getMetadata world) with
+            match Metadata.tryGetTextureSizeAsVector2 (toggle.GetOpenImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
