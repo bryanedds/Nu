@@ -31,14 +31,30 @@ module SymbolOrigin =
 
     let printContext origin =
         let sourceLines = origin.Source.Text.Split '\n'
-        let problemLine = sourceLines.[int origin.Start.Line - 1]
-        let underline = (String.replicate (int origin.Start.Column - 1) " ") + "^"
-        "  " + problemLine + "\n" + "  " + underline
+        let problemLineIndex = int origin.Start.Line - 1
+        let problemLinesStartCount = problemLineIndex - Math.Max (0, problemLineIndex - 3)
+        let problemLinesStart =
+            sourceLines |>
+            Array.trySkip (problemLineIndex - problemLinesStartCount) |>
+            Array.take (inc problemLinesStartCount) |>
+            String.concat "\n"
+        let problemLinesStop =
+            sourceLines |>
+            Array.skip (inc problemLineIndex) |>
+            Array.tryTake 4 |>
+            String.concat "\n"
+        let problemUnderline =
+            String.replicate (int origin.Start.Column - 1) " " +
+            if origin.Start.Line = origin.Stop.Line
+            then String.replicate (int origin.Stop.Column - int origin.Start.Column) "^"
+            else "^^^^^^^"
+        problemLinesStart + "\n" + problemUnderline + "\n" + problemLinesStop
 
     let print origin =
-        " Error:\n" +
+        "...\n" +
         printContext origin + "\n" +
-        " Starting at: " + printStart origin + " and stopping at: " + printStop origin + "."
+        "...\n" +
+        "Starting at " + printStart origin + " and stopping at " + printStop origin + "."
 
     let tryPrint originOpt =
         match originOpt with

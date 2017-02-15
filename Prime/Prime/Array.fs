@@ -26,3 +26,11 @@ let definitize opts =
 let definitizePlus opts =
     let (flag, seq) = Seq.definitizePlus opts
     (flag, Array.ofSeq seq)
+
+/// A more tolerant and open-minded take.
+let tryTake (count : int) (arr : _ array) =
+    Seq.tryTake count arr |> Array.ofSeq
+
+/// A more tolerant and open-minded skip.
+let trySkip (count : int) (arr : _ array) =
+    Seq.trySkip count arr |> Array.ofSeq

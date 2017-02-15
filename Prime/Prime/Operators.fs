@@ -33,25 +33,25 @@ module Operators =
     let absurdity2 _ _ = false
 
     /// Curry up two values.
-    let inline curry f x y = f (x, y)
+    let inline curry f a b = f (a, b)
 
     /// Uncurry two values.
-    let inline uncurry f (x, y) = f x y
+    let inline uncurry f (a, b) = f a b
 
     /// Transforms a function by flipping the order of its arguments.
-    let inline flip f x y = f y x
+    let inline flip f a b = f b a
 
     /// Transforms a function by flipping the order of its arguments.
-    let inline flip3 f x y z = f z x y
+    let inline flip3 f a b c = f c a b
 
     /// Transforms a function by flipping the order of its arguments.
-    let inline flip4 f x y z w = f w x y z
+    let inline flip4 f a b c d = f d a b c
 
     /// Test for null.
-    let inline isNull x = match x with null -> true | _ -> false
+    let inline isNull a = match a with null -> true | _ -> false
 
     /// Test for non-null.
-    let inline isNotNull x = match x with null -> false | _ -> true
+    let inline isNotNull a = match a with null -> false | _ -> true
 
     /// Test that the given type has null as an actual value.
     let isNullTrueValue (ty : Type) =
@@ -60,7 +60,7 @@ module Operators =
         Array.exists (fun attr -> int attr.Flags &&& int CompilationRepresentationFlags.UseNullAsTrueValue <> 0)
 
     /// Convert a nullable value into an option.
-    let inline denull x = match x with null -> None | _ -> Some x
+    let inline denull a = match a with null -> None | _ -> Some a
 
     /// Test for string equality.
     let inline strEq str str2 = String.Equals (str, str2, StringComparison.Ordinal)
@@ -78,30 +78,30 @@ module Operators =
     let inline getFields (t : Type) = t.GetFields (BindingFlags.Instance ||| BindingFlags.Public)
 
     /// Get the value of a field.
-    let inline getFieldValue (f : FieldInfo) (x : obj) = f.GetValue x
+    let inline getFieldValue (f : FieldInfo) (a : obj) = f.GetValue a
 
     /// Get the properties of a type.
     let inline getProperties (t : Type) = t.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
 
     /// Get the value of a property.
-    let inline getPropertyValue indices (p : PropertyInfo) (x : obj) = p.GetValue (x, indices)
+    let inline getPropertyValue indices (p : PropertyInfo) (a : obj) = p.GetValue (a, indices)
 
     /// Test for equality, usually faster than (=).
-    let inline fastEq (x : 'a) (y : 'a) = LanguagePrimitives.GenericEquality x y
+    let inline fastEq (a : 'a) (b : 'a) = LanguagePrimitives.GenericEquality a b
 
     /// Test for reference equality.
-    let inline refEq (x : 'a) (y : 'a) = obj.ReferenceEquals (x, y)
+    let inline refEq (a : 'a) (b : 'a) = obj.ReferenceEquals (a, b)
 
     /// Test just the value parts of a type for equality.
     /// NOTE: This function uses mad reflection, so is extremely slow, and should not be used in tight loops.
-    let rec similar (x : obj) (y : obj) =
-        if isNull x then isNull y
-        elif isNull y then false
-        elif refEq (getType x) (getType y) then
-            let ty = getType x
+    let rec similar (a : obj) (b : obj) =
+        if isNull a then isNull b
+        elif isNull b then false
+        elif refEq (getType a) (getType b) then
+            let ty = getType a
             if  ty.IsValueType ||
                 ty = typeof<string> then
-                x = y
+                a = b
             else if ty.IsSubclassOf typeof<Stream> then
                 // NOTE: Stream has a screwed up contract that its Length property can throw if seeking is not
                 // supported. They should have returned nullable int instead, but nooooo....
@@ -110,12 +110,12 @@ module Operators =
                 let fieldsSimilar =
                     ty
                     |> getFields
-                    |> Array.forall (fun i -> similar (getFieldValue i x) (getFieldValue i y))
+                    |> Array.forall (fun i -> similar (getFieldValue i a) (getFieldValue i b))
                 let propertiesSimilar =
                     ty
                     |> getProperties
                     |> Array.filter (fun p -> (p.GetIndexParameters ()).Length = 0)
-                    |> Array.forall (fun i -> similar (getPropertyValue null i x) (getPropertyValue null i y))
+                    |> Array.forall (fun i -> similar (getPropertyValue null i a) (getPropertyValue null i b))
                 fieldsSimilar && propertiesSimilar
         else false
 
@@ -182,7 +182,7 @@ module Operators =
     let inline (^) f g = f g
 
     /// Test for equality, usually faster than (=).
-    let inline (==) (x : 'a) (y : 'a) = fastEq x y
+    let inline (==) (a : 'a) (b : 'a) = fastEq a b
 
     /// Test just the value parts of a type for equality. Reflective and slow.
-    let inline (===) (x : 'a) (y : 'a) = similar x y
+    let inline (===) (a : 'a) (b : 'a) = similar a b
