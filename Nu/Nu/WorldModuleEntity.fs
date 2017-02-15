@@ -554,7 +554,7 @@ module WorldModuleEntity =
         /// Get an entity's sorting priority.
         static member internal getEntitySortingPriority entity world =
             let entityState = World.getEntityState entity world
-            { SortDepth = entityState.Depth; SortPositionY = entityState.Position.Y; SortTarget = entity }
+            { SortDepth = entityState.Depth; SortTarget = entity }
 
         static member private updateEntityPublishEventFlag setFlag entity eventAddress world =
             let publishUpdates =

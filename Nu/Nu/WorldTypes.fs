@@ -89,23 +89,19 @@ module WorldTypes =
     /// OPTIMIZATION: implemented as a struct and carries related entity to avoid GC pressure.
     and [<CustomEquality; CustomComparison>] SortPriority =
         { SortDepth : single
-          SortPositionY : single
           SortTarget : Simulant }
 
         static member equals left right =
             left.SortDepth = right.SortDepth &&
-            left.SortPositionY = right.SortPositionY &&
             left.SortTarget = right.SortTarget
 
         static member compare left right =
             if left.SortDepth < right.SortDepth then 1
             elif left.SortDepth > right.SortDepth then -1
-            elif left.SortPositionY < right.SortPositionY then -1
-            elif left.SortPositionY > right.SortPositionY then 1
             else 0
 
         override this.GetHashCode () =
-            this.SortDepth.GetHashCode () ^^^ (this.SortPositionY.GetHashCode () * 13)
+            this.SortDepth.GetHashCode ()
 
         override this.Equals that =
             match that with
