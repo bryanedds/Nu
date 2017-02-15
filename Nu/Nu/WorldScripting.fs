@@ -192,7 +192,7 @@ module WorldScripting =
         and evalIntrinsic fnName originOpt evaledArgs world =
             match Intrinsics.TryGetValue fnName with
             | (true, intrinsic) -> intrinsic fnName originOpt evaledArgs world
-            | (false, _) -> (Violation (["InvalidFunctionTargetBinding"], "Cannot apply a non-existent binding.", originOpt), world)
+            | (false, _) -> (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
 
         and evalSimulantExists fnName originOpt evaledArg world =
             match evaledArg with
@@ -246,7 +246,7 @@ module WorldScripting =
                         (evaled, world)
                     | None -> (evaled, world)
                 | Violation _ as error -> (error, world)
-                | _ -> (Violation (["MalformedApplication"], "Cannot apply a non-binding.", originOpt), world)
+                | _ -> (Violation (["MalformedApplication"], "Cannot apply the non-binding '" + scstring evaledHead + "'.", originOpt), world)
             | ([], world) -> (Unit, world)
 
         and evalApplyAnd exprs originOpt world =

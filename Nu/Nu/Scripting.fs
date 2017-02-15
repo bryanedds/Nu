@@ -54,7 +54,8 @@ module Scripting =
              // TODO: "substring update curry compose itemOf tryItemOf itemAs tryItemAs sort replace slice split " +
              "-b- -i- -L- -f- -d- -2- -s- -k- -u- -p- -o- -l- -r- -t- -u- " +
              "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegativeInfinity isNaN " +
-             "min max compare sign abs fst! snd! rev reduceWhile reducei reduce filter takeWhile take skipWhile skip " +
+             "min max compare sign abs fst! snd! rev foldBackWhile foldBacki foldBack " +
+             "reduceWhile reducei reduce definitize filter takeWhile take skipWhile skip " +
              "countBy count exists zipBy zip pi e v2Zero v2Identity game " +
              "dataOf subscriberOf publisherOf addressOf ",
              
@@ -639,11 +640,12 @@ module Scripting =
     /// Log a violation if an expression is one.
     let log expr =
         match expr with
-        | Violation (names, error, optOrigin) ->
+        | Violation (names, error, originOpt) ->
             Log.info ^
-                "Unexpected violation:" + String.concat "/" names +
-                "\ndue to:" + error +
-                "\nat: " + scstring optOrigin + "'."
+                "Unexpected violation:" + String.concat "/" names + "\n" +
+                "due to:" + error + "\n" +
+                "at:" + "\n" +
+                SymbolOrigin.tryPrint originOpt + "\n"
         | _ -> ()
     
     /// A declaration bindings frame in a scripting environment.

@@ -807,11 +807,11 @@ module Gaia =
                 if String.notEmpty form.replInputTextBox.SelectedText
                 then form.replInputTextBox.SelectedText
                 else form.replInputTextBox.Text
-            let exprsStr = Symbol.OpenSymbolsStr + exprsStr + Symbol.CloseSymbolsStr
+            let exprsStr = Symbol.OpenSymbolsStr + "\n" + exprsStr + "\n" + Symbol.CloseSymbolsStr
             try let exprs = scvalue<Scripting.Expr list> exprsStr
                 let localFrame = Simulants.Game.GetScriptFrameNp world
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
-                let (evaleds, world) = World.evalMany exprs localFrame Simulants.Game world
+                let (evaleds, world) = World.evalManyWithLogging exprs localFrame Simulants.Game world
                 let evaledStrs = List.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
                 let evaledsStr = String.concat "\n" evaledStrs
                 form.replOutputTextBox.ReadOnly <- false
