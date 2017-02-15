@@ -21,12 +21,29 @@ type SymbolOrigin =
       Stop : Position }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Origin =
+module SymbolOrigin =
 
-    let printStart origin = "[Ln: " + string origin.Start.Line + ", Col: " + string origin.Start.Column + "]"
-    let printStop origin = "[Ln: " + string origin.Stop.Line + ", Col: " + string origin.Stop.Column + "]"
-    let print origin = "Error found starting at " + printStart origin + " and stopping at " + printStop origin + "."
-    let tryPrint originOpt = match originOpt with Some origin -> print origin | None -> "Error origin unknown or not applicable."
+    let printStart origin =
+        "[Ln: " + string origin.Start.Line + ", Col: " + string origin.Start.Column + "]"
+
+    let printStop origin =
+        "[Ln: " + string origin.Stop.Line + ", Col: " + string origin.Stop.Column + "]"
+
+    let printContext origin =
+        let sourceLines = origin.Source.Text.Split '\n'
+        let problemLine = sourceLines.[int origin.Start.Line - 1]
+        let underline = (String.replicate (int origin.Start.Column - 1) " ") + "^"
+        "  " + problemLine + "\n" + "  " + underline
+
+    let print origin =
+        " Error:\n" +
+        printContext origin + "\n" +
+        " Starting at: " + printStart origin + " and stopping at: " + printStop origin + "."
+
+    let tryPrint originOpt =
+        match originOpt with
+        | Some origin -> print origin
+        | None -> "Error origin unknown or not applicable."
 
 type Symbol =
     | Atom of string * SymbolOrigin option
@@ -345,7 +362,7 @@ type ConversionException (message : string, symbolOpt : Symbol option) =
     member this.SymbolOpt = symbolOpt
     override this.ToString () =
         message + "\r\n" +
-        (match symbolOpt with Some symbol -> Origin.tryPrint (Symbol.tryGetOrigin symbol) + "\r\n" | _ -> "") +
+        (match symbolOpt with Some symbol -> SymbolOrigin.tryPrint (Symbol.tryGetOrigin symbol) + "\r\n" | _ -> "") +
         base.ToString ()
 
 [<AutoOpen>]

@@ -660,6 +660,7 @@ module WorldScriptingPrimitives =
                         match evalApply [|folder; state; String (string elem)|] originOpt world with
                         | (Option (Some state), world) -> (Right (state, world))
                         | (Option None, world) -> Left (state, world)
+                        | (Violation _, _) as error -> Left error
                         | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an option.", originOpt), world))
                         (Right (state, world))
                         str
@@ -674,6 +675,7 @@ module WorldScriptingPrimitives =
                         match evalApply [|folder; state; elem|] originOpt world with
                         | (Option (Some state), world) -> (Right (state, world))
                         | (Option None, world) -> Left (state, world)
+                        | (Violation _, _) as error -> Left error
                         | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an option.", originOpt), world))
                         (Right (state, world))
                         list

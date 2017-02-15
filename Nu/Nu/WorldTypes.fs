@@ -901,7 +901,7 @@ module WorldTypes =
     /// to implement things like buttons, characters, blocks, and things of that sort.
     /// OPTIMIZATION: Includes pre-constructed entity change and update event addresses to avoid
     /// reconstructing new ones for each entity every frame.
-    and Entity(entityAddress) =
+    and Entity (entityAddress) =
 
         // check that address is of correct length for an entity
         do if Address.length entityAddress <> 3 then failwithumf ()
