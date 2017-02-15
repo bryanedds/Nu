@@ -14,7 +14,7 @@ module ScriptingTests =
     let evalPartial exprStr =
         let world = World.makeEmpty ()
         match World.tryEvalPrelude world with
-        | Right world ->
+        | Right (_, world) ->
             let expr = scvalue<Scripting.Expr> exprStr
             World.eval expr (Simulants.Game.GetScriptFrameNp world) Simulants.Game world |> fst
         | Left _ ->
