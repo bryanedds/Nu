@@ -291,25 +291,28 @@ module ScriptFacetModule =
              Define? OnPostUpdate Scripting.Unit]
 
         override facet.Register (entity, world) =
-            let (_, world) = World.evalWithLogging (entity.GetOnRegisterPa world) (entity.GetScriptFrameNp world) entity world
+            let world =
+                match entity.GetOnRegisterPa world with
+                | Scripting.Unit -> world // OPTIMIZATION: don't both evaluating unit
+                | handler -> World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
             let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? ScriptPa) entity world
             let world = World.monitor handleOnRegisterChanged (entity.GetChangeEvent Property? OnRegisterPa) entity world
             world
 
         override facet.Unregister (entity, world) =
-            let onUnregister = entity.GetOnUnregister world
-            let localFrame = entity.GetScriptFrameNp world
-            World.evalWithLogging onUnregister localFrame entity world |> snd
+            match entity.GetOnUnregister world with
+            | Scripting.Unit -> world // OPTIMIZATION: don't both evaluating unit
+            | handler -> World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
 
         override facet.Update (entity, world) =
-            let onUpdate = entity.GetOnUpdate world
-            let localFrame = entity.GetScriptFrameNp world
-            World.evalWithLogging onUpdate localFrame entity world |> snd
+            match entity.GetOnUpdate world with
+            | Scripting.Unit -> world // OPTIMIZATION: don't both evaluating unit
+            | handler -> World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
 
         override facet.PostUpdate (entity, world) =
-            let onPostUpdate = entity.GetOnPostUpdate world
-            let localFrame = entity.GetScriptFrameNp world
-            World.evalWithLogging onPostUpdate localFrame entity world |> snd
+            match entity.GetOnPostUpdate world with
+            | Scripting.Unit -> world // OPTIMIZATION: don't both evaluating unit
+            | handler -> World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
 
 [<AutoOpen>]
 module RigidBodyFacetModule =
