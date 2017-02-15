@@ -452,8 +452,7 @@ module Scripting =
                     Symbol.Quote (this.ExprToSymbol expr, originOpt) :> obj
                 | Define (binding, originOpt) ->
                     let defineSymbol = Symbol.Atom ("define", None)
-                    let bindingSymbols = Symbol.Symbols (this.BindingToSymbols binding, None)
-                    Symbol.Symbols ([defineSymbol; bindingSymbols], originOpt) :> obj
+                    Symbol.Symbols (defineSymbol :: this.BindingToSymbols binding, originOpt) :> obj
             elif destType = typeof<Expr> then source
             else failconv "Invalid ExprConverter conversion to source." None
 
@@ -664,8 +663,7 @@ module Scripting =
         /// The execution environment for scripts.
         type [<NoEquality; NoComparison>] Env =
             private
-                { LocalDeclaration : bool
-                  GlobalFrame : DeclarationFrame
+                { GlobalFrame : DeclarationFrame
                   LocalFrame : DeclarationFrame
                   ProceduralFrames : ProceduralFrame list }
     
@@ -674,12 +672,6 @@ module Scripting =
     
             let private BottomBinding =
                 (String.Empty, Violation (["BottomAccess"], "Accessed a bottom value.", None))
-
-            let getLocalDeclaration env =
-                env.LocalDeclaration
-
-            let setLocalDeclaration localDeclaration env =
-                { env with LocalDeclaration = localDeclaration }
 
             let getLocalFrame env =
                 env.LocalFrame
@@ -747,10 +739,9 @@ module Scripting =
                     Some binding
 
             let addDeclarationBinding name value env =
-                if env.LocalDeclaration
-                then env.LocalFrame.ForceAdd (name, value)
-                else env.GlobalFrame.ForceAdd (name, value)
+                env.LocalFrame.ForceAdd (name, value)
                 env
+
     
             let addProceduralBinding appendType name value env =
                 match appendType with
@@ -801,9 +792,11 @@ module Scripting =
                 { env with ProceduralFrames = proceduralFrames }
     
             let make () =
-                { LocalDeclaration = false
-                  GlobalFrame = DeclarationFrame HashIdentity.Structural
-                  LocalFrame = DeclarationFrame HashIdentity.Structural
+                // NOTE: local frame starts out the same as the global frame so that prelude
+                // functions are defined globally
+                let globalFrame = DeclarationFrame HashIdentity.Structural
+                { GlobalFrame = globalFrame
+                  LocalFrame = globalFrame
                   ProceduralFrames = [] }
 
     /// The execution environment for scripts.
