@@ -56,7 +56,7 @@ module Scripting =
              "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegativeInfinity isNaN " +
              "min max compare sign abs fst! snd! rev foldBackWhile foldBacki foldBack " +
              "reduceWhile reducei reduce definitize filter takeWhile take skipWhile skip " +
-             "countBy count exists zipBy zip pi e v2Zero v2Identity game " +
+             "countBy count notContains exists notExists zipBy zip pi e v2Zero v2Identity game " +
              "dataOf subscriberOf publisherOf addressOf ",
              
              (* Engine Functions *)
@@ -642,9 +642,9 @@ module Scripting =
         match expr with
         | Violation (names, error, originOpt) ->
             Log.info ^
-                "Unexpected violation:" + String.concat "/" names + "\n" +
-                "due to:" + error + "\n" +
-                "at:" + "\n" +
+                "Unexpected violation: " + String.concat "/" names + "\n" +
+                "Due to: " + error + "\n" +
+                "Source: \n" +
                 SymbolOrigin.tryPrint originOpt + "\n"
         | _ -> ()
     
