@@ -749,7 +749,7 @@ module Gaia =
                 MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid event filter", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
-    let private handleResetEventFilterClick (form : GaiaForm) (_ : EventArgs) =
+    let private handleRefreshEventFilterClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             let eventFilter = World.getEventFilter world
             let eventFilterStr = scstring eventFilter
@@ -1011,7 +1011,7 @@ module Gaia =
         form.propertyApplyButton.Click.Add (handleFormPropertyApplyClick form)
         form.traceEventsCheckBox.CheckStateChanged.Add (handleTraceEventsCheckBoxChanged form)
         form.applyEventFilterButton.Click.Add (handleApplyEventFilterClick form)
-        form.resetEventFilterButton.Click.Add (handleResetEventFilterClick form)
+        form.refreshEventFilterButton.Click.Add (handleRefreshEventFilterClick form)
         form.savePreludeButton.Click.Add (handleSavePreludeClick form)
         form.loadPreludeButton.Click.Add (handleLoadPreludeClick form)
         form.saveAssetGraphButton.Click.Add (handleSaveAssetGraphClick form)
@@ -1084,7 +1084,7 @@ module Gaia =
             form.overlayerTextBox.Keywords1 <- syntax.Keywords1
 
         // populate rollout tab texts
-        handleResetEventFilterClick form (EventArgs ())
+        handleRefreshEventFilterClick form (EventArgs ())
         handleLoadPreludeClick form (EventArgs ())
         handleLoadAssetGraphClick form (EventArgs ())
         handleLoadOverlayerClick form (EventArgs ())
