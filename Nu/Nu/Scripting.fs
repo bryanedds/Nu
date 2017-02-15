@@ -48,11 +48,11 @@ module Scripting =
              "list toList " +
              "ring toRing add remove " +
              "table toTable tryFind find " +
-             "let fun if cond try break get set do " +
+             "define let fun if cond try break get set do " +
              
              (* Prelude Identifiers *)
              // TODO: "substring update curry compose itemOf tryItemOf itemAs tryItemAs sort replace slice split " +
-             "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegitiveInfinity isNaN " +
+             "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegativeInfinity isNaN " +
              "min max compare sign abs fst! snd! rev reduceWhile reducei reduce filter takeWhile take skipWhile skip " +
              "countBy count exists zipBy zip pi e v2Zero v2Identity game " +
              "dataOf subscriberOf publisherOf addressOf ",
