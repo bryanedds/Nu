@@ -202,7 +202,7 @@ let joinBy by sep list =
             list
 
 /// Join a list of lists into a list separated by sep.
-let joinList sep list =
+let joinMany sep list =
     if List.isEmpty list then []
     else List.reduce (fun acc item -> acc @ sep @ item) list
 

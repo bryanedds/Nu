@@ -159,8 +159,7 @@ module Effects =
             "Expand Resource " +
             "Expand Enabled Position Translation Offset Size Rotation Depth Color Volume Bone " +
             "Expand StaticSprite AnimatedSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
-            "RenderArtifact SoundArtifact TagArtifact",
-            "",
+            "RenderArtifact SoundArtifact TagArtifact", "", "",
             Constants.PrettyPrinter.DefaultThresholdMin,
             Constants.PrettyPrinter.CompositionalThresholdMax)>]
 type [<NoEquality; NoComparison>] Effect =
