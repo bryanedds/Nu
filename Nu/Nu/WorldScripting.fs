@@ -25,17 +25,14 @@ module WorldScripting =
         static member private tryGetBinding name cachedBinding world =
             World.getScriptEnvBy (EnvModule.Env.tryGetBinding name cachedBinding) world
 
-        static member private addDeclarationBinding name value world =
-            World.updateScriptEnv (EnvModule.Env.addDeclarationBinding name value) world
+        static member private tryAddDeclarationBinding name value world =
+            World.updateScriptEnvPlus (EnvModule.Env.tryAddDeclarationBinding name value) world
 
         static member private addProceduralBinding appendType name value world =
             World.updateScriptEnv (EnvModule.Env.addProceduralBinding appendType name value) world
 
         static member private addProceduralBindings appendType bindings world =
             World.updateScriptEnv (EnvModule.Env.addProceduralBindings appendType bindings) world
-
-        static member private addBinding appendType name value world =
-            World.updateScriptEnv (EnvModule.Env.addBinding appendType name value) world
 
         static member private removeProceduralBindings world =
             World.updateScriptEnv EnvModule.Env.removeProceduralBindings world
@@ -447,16 +444,17 @@ module WorldScripting =
             | Left error -> error
 
         and evalDefine binding originOpt world =
-            let world =
+            let (bound, world) =
                 match binding with
                 | VariableBinding (name, body) ->
                     let (evaled, world) = eval body world
-                    World.addDeclarationBinding name evaled world
+                    World.tryAddDeclarationBinding name evaled world
                 | FunctionBinding (name, args, body) ->
                     let frames = World.getProceduralFrames world :> obj
                     let fn = Fun (args, args.Length, body, true, Some frames, originOpt)
-                    World.addDeclarationBinding name fn world
-            (Unit, world)
+                    World.tryAddDeclarationBinding name fn world
+            if bound then (Unit, world)
+            else (Violation (["InvalidDeclaration"], "Can make declarations only at the top-level.", None), world)
 
         and eval expr world : Expr * World =
             match expr with

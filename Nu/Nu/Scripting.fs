@@ -744,10 +744,12 @@ module Scripting =
                     let (_, binding) = frame.[index]
                     Some binding
 
-            let addDeclarationBinding name value env =
-                env.LocalFrame.ForceAdd (name, value)
-                env
-
+            let tryAddDeclarationBinding name value env =
+                let isTopLevel = List.isEmpty env.ProceduralFrames
+                if isTopLevel then
+                    env.LocalFrame.ForceAdd (name, value)
+                    (true, env)
+                else (false, env)
     
             let addProceduralBinding appendType name value env =
                 match appendType with
@@ -781,11 +783,6 @@ module Scripting =
                         env
                     | [] -> failwithumf ()
 
-            let addBinding appendType name value env =
-                let isTopLevel = List.isEmpty env.ProceduralFrames
-                if isTopLevel then addDeclarationBinding name value env
-                else addProceduralBinding appendType name value env
-                
             let removeProceduralBindings env =
                 match env.ProceduralFrames with
                 | [] -> failwithumf ()
