@@ -359,7 +359,7 @@ module PrettyPrinter =
         | PrettyAtom (_, _, _, symbol)
         | PrettyNumber (_, symbol)
         | PrettyString (_, symbol) -> Symbol.writeSymbol symbol
-        | PrettyQuote (_, symbolPretty) -> Symbol.StartQuoteStr + prettySymbolToPrettyStr depth symbolPretty prettyPrinter
+        | PrettyQuote (_, symbolPretty) -> Symbol.StartQuoteStr + prettySymbolToPrettyStr (inc depth) symbolPretty prettyPrinter
         | PrettySymbols (titled, headered, maxDepth, symbols) ->
             if  depth < prettyPrinter.ThresholdMin ||
                 maxDepth > prettyPrinter.ThresholdMax then
