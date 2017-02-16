@@ -125,9 +125,9 @@ module EffectFacetModule =
         member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
         member this.SetSelfDestruct (value : bool) world = this.Set Property? SelfDestruct value world
         member this.SelfDestruct = PropertyTag.make this Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct
-        member this.GetEffectsOptPa world : AssetTag list option = this.Get Property? EffectsOptPa world
-        member this.SetEffectsOptPa (value : AssetTag list option) world = this.Set Property? EffectsOptPa value world
-        member this.EffectsOptPa = PropertyTag.make this Property? EffectsOptPa this.GetEffectsOptPa this.SetEffectsOptPa
+        member this.GetEffectsOptAp world : AssetTag list option = this.Get Property? EffectsOptAp world
+        member this.SetEffectsOptAp (value : AssetTag list option) world = this.Set Property? EffectsOptAp value world
+        member this.EffectsOptAp = PropertyTag.make this Property? EffectsOptAp this.GetEffectsOptAp this.SetEffectsOptAp
         member this.GetEffectStartTimeOpt world : int64 option = this.Get Property? EffectStartTimeOpt world
         member this.SetEffectStartTimeOpt (value : int64 option) world = this.Set Property? EffectStartTimeOpt value world
         member this.EffectStartTimeOpt = PropertyTag.make this Property? EffectStartTimeOpt this.GetEffectStartTimeOpt this.SetEffectStartTimeOpt
@@ -179,17 +179,17 @@ module EffectFacetModule =
 
         static let handleEffectsOptChanged evt world =
             let entity = evt.Subscriber : Entity
-            let effectsOpt = entity.GetEffectsOptPa world
+            let effectsOpt = entity.GetEffectsOptAp world
             setEffect effectsOpt entity world
 
         static let handleAssetsReload evt world =
             let entity = evt.Subscriber : Entity
-            let effectsOpt = entity.GetEffectsOptPa world
+            let effectsOpt = entity.GetEffectsOptAp world
             setEffect effectsOpt entity world
 
         static member PropertyDefinitions =
             [Define? SelfDestruct false
-             Define? EffectsOptPa (None : AssetTag list option)
+             Define? EffectsOptAp (None : AssetTag list option)
              Define? EffectStartTimeOpt (None : int64 option)
              Define? EffectDefinitions (Map.empty : Effects.Definitions)
              Define? Effect Effect.empty
@@ -248,7 +248,7 @@ module EffectFacetModule =
         override facet.Register (entity, world) =
             let effectStartTime = Option.getOrDefault (World.getTickTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
-            let world = World.monitor handleEffectsOptChanged (entity.GetChangeEvent Property? EffectsOptPa) entity world
+            let world = World.monitor handleEffectsOptChanged (entity.GetChangeEvent Property? EffectsOptAp) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
 [<AutoOpen>]
@@ -256,18 +256,18 @@ module ScriptFacetModule =
 
     type Entity with
     
-        member this.GetScriptOptPa world : AssetTag option = this.Get Property? ScriptOptPa world
-        member this.SetScriptOptPa (value : AssetTag option) world = this.Set Property? ScriptOptPa value world
-        member this.ScriptOptPa = PropertyTag.make this Property? ScriptOptPa this.GetScriptOptPa this.SetScriptOptPa
-        member this.GetGetScriptPa world : Scripting.Expr list = this.Get Property? ScriptPa world
-        member this.SetGetScriptPa (value : Scripting.Expr list) world = this.Set Property? ScriptPa value world
-        member this.GetScriptPa = PropertyTag.make this Property? ScriptPa this.GetGetScriptPa this.SetGetScriptPa
+        member this.GetScriptOptAp world : AssetTag option = this.Get Property? ScriptOptAp world
+        member this.SetScriptOptAp (value : AssetTag option) world = this.Set Property? ScriptOptAp value world
+        member this.ScriptOptAp = PropertyTag.make this Property? ScriptOptAp this.GetScriptOptAp this.SetScriptOptAp
+        member this.GetGetScriptAp world : Scripting.Expr list = this.Get Property? ScriptAp world
+        member this.SetGetScriptAp (value : Scripting.Expr list) world = this.Set Property? ScriptAp value world
+        member this.GetScriptAp = PropertyTag.make this Property? ScriptAp this.GetGetScriptAp this.SetGetScriptAp
         member this.GetScriptFrameNp world : Scripting.DeclarationFrame = this.Get Property? ScriptFrameNp world
         member internal this.SetScriptFrameNp (value : Scripting.DeclarationFrame) world = this.Set Property? ScriptFrameNp value world
         member this.ScriptFrameNp = PropertyTag.makeReadOnly this Property? ScriptFrameNp this.GetScriptFrameNp
-        member this.GetOnRegisterPa world : Scripting.Expr = this.Get Property? OnRegisterPa world
-        member this.SetOnRegisterPa (value : Scripting.Expr) world = this.Set Property? OnRegisterPa value world
-        member this.OnRegisterPa = PropertyTag.make this Property? OnRegisterPa this.GetOnRegisterPa this.SetOnRegisterPa
+        member this.GetOnRegisterAp world : Scripting.Expr = this.Get Property? OnRegisterAp world
+        member this.SetOnRegisterAp (value : Scripting.Expr) world = this.Set Property? OnRegisterAp value world
+        member this.OnRegisterAp = PropertyTag.make this Property? OnRegisterAp this.GetOnRegisterAp this.SetOnRegisterAp
         member this.GetOnUnregister world : Scripting.Expr = this.Get Property? OnUnregister world
         member this.SetOnUnregister (value : Scripting.Expr) world = this.Set Property? OnUnregister value world
         member this.OnUnregister = PropertyTag.make this Property? OnUnregister this.GetOnUnregister this.SetOnUnregister
@@ -283,7 +283,7 @@ module ScriptFacetModule =
 
         static let handleScriptChanged evt world =
             let entity = evt.Subscriber : Entity
-            let script = entity.GetGetScriptPa world
+            let script = entity.GetGetScriptAp world
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = entity.SetScriptFrameNp scriptFrame world
             evalManyWithLogging script scriptFrame entity world |> snd
@@ -294,21 +294,21 @@ module ScriptFacetModule =
             World.registerEntity entity world
 
         static member PropertyDefinitions =
-            [Define? ScriptOptPa (None : AssetTag option)
-             Define? ScriptPa ([] : Scripting.Expr list)
+            [Define? ScriptOptAp (None : AssetTag option)
+             Define? ScriptAp ([] : Scripting.Expr list)
              Define? ScriptFrameNp (Scripting.DeclarationFrame HashIdentity.Structural)
-             Define? OnRegisterPa Scripting.Unit
+             Define? OnRegisterAp Scripting.Unit
              Define? OnUnregister Scripting.Unit
              Define? OnUpdate Scripting.Unit
              Define? OnPostUpdate Scripting.Unit]
 
         override facet.Register (entity, world) =
             let world =
-                match entity.GetOnRegisterPa world with
+                match entity.GetOnRegisterAp world with
                 | Scripting.Unit -> world // OPTIMIZATION: don't both evaluating unit
                 | handler -> World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
-            let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? ScriptPa) entity world
-            let world = World.monitor handleOnRegisterChanged (entity.GetChangeEvent Property? OnRegisterPa) entity world
+            let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? ScriptAp) entity world
+            let world = World.monitor handleOnRegisterChanged (entity.GetChangeEvent Property? OnRegisterAp) entity world
             world
 
         override facet.Unregister (entity, world) =
