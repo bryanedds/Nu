@@ -38,15 +38,15 @@ module SymbolStoreModule =
                 | Right assets ->
                     let symbolOpts = List.map (tryLoadSymbol3 implicitDelimiters packageName) assets
                     let symbols = List.definitize symbolOpts
-                    let symbolMapOpt = Map.tryFind packageName symbolStore.SymbolStorePackageMap
+                    let symbolMapOpt = UMap.tryFind packageName symbolStore.SymbolStorePackageMap
                     match symbolMapOpt with
                     | Some symbolMap ->
-                        let symbolMap = Map.addMany symbols symbolMap
-                        let symbolStore = { symbolStore with SymbolStorePackageMap = Map.add packageName symbolMap symbolStore.SymbolStorePackageMap }
+                        let symbolMap = UMap.addMany symbols symbolMap
+                        let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.add packageName symbolMap symbolStore.SymbolStorePackageMap }
                         symbolStore
                     | None ->
-                        let symbolMap = Map.ofSeq symbols
-                        let symbolStore = { symbolStore with SymbolStorePackageMap = Map.add packageName symbolMap symbolStore.SymbolStorePackageMap }
+                        let symbolMap = UMap.ofSeq symbols
+                        let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.add packageName symbolMap symbolStore.SymbolStorePackageMap }
                         symbolStore
                 | Left error ->
                     Log.info ^ "Symbol store package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'."
@@ -57,23 +57,23 @@ module SymbolStoreModule =
     
         let private tryLoadSymbol implicitDelimiters (assetTag : AssetTag) symbolStore =
             let (assetMapOpt, symbolStore) =
-                match Map.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap with
-                | Some _ -> (Map.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap, symbolStore)
+                match UMap.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap with
+                | Some _ -> (UMap.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap, symbolStore)
                 | None ->
                     Log.info ^ "Loading symbol store package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let symbolStore = tryLoadSymbolStorePackage implicitDelimiters assetTag.PackageName symbolStore
-                    let symbolMap = Map.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap
+                    let symbolMap = UMap.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap
                     (symbolMap, symbolStore)
             match assetMapOpt with
             | Some assetMap ->
-                match Map.tryFind assetTag.AssetName assetMap with
+                match UMap.tryFind assetTag.AssetName assetMap with
                 | Some (_, asset) -> (Some asset, symbolStore)
                 | None -> (None, symbolStore)
             | None -> (None, symbolStore)
     
         /// Unload a symbolStore package with the given name.
         let unloadSymbolStorePackage packageName symbolStore =
-            { symbolStore with SymbolStorePackageMap = Map.remove packageName symbolStore.SymbolStorePackageMap }
+            { symbolStore with SymbolStorePackageMap = UMap.remove packageName symbolStore.SymbolStorePackageMap }
     
         /// Try to find a symbol with the given asset tag.
         let tryFindSymbol implicitDelimiters assetTag symbolStore =
@@ -93,9 +93,9 @@ module SymbolStoreModule =
         /// Reload all the assets in the symbolStore.
         let reloadSymbols symbolStore =
             let oldPackageMap = symbolStore.SymbolStorePackageMap
-            let symbolStore = { symbolStore with SymbolStorePackageMap = Map.empty }
-            Map.fold (fun (symbolStore : SymbolStore) packageName package ->
-                Map.fold (fun (symbolStore : SymbolStore) assetName (implicitDelimiters, _) ->
+            let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.makeEmpty None }
+            UMap.fold (fun (symbolStore : SymbolStore) packageName package ->
+                UMap.fold (fun (symbolStore : SymbolStore) assetName (implicitDelimiters, _) ->
                     let assetTag = { PackageName = packageName; AssetName = assetName }
                     tryLoadSymbol implicitDelimiters assetTag symbolStore |> snd)
                     symbolStore
@@ -105,7 +105,7 @@ module SymbolStoreModule =
     
         /// The empty symbolStore.
         let empty =
-            { SymbolStorePackageMap = Map.empty }
+            { SymbolStorePackageMap = UMap.makeEmpty None }
 
 /// Provides references to Symbols that are loaded from files.
 type SymbolStore = SymbolStoreModule.SymbolStore

@@ -49,18 +49,6 @@ module Program =
     buffer of a static size and then blit that with scaling to the back-buffer. NOTE: this only
     applies to 2D ~ will not apply to 3D once implemented in Nu (for obvious reasons). *)
 
-    (* WISDOM: Performance concerns remain a long-standing subject of interest. However, this can
-    be mitigated in a few ways with approximate speed-ups -
-
-    2x gain - put physics and rendering each in another process.
-    1.?x gain - compile with .NET Native or Mono AOT.
-    1.?x gain - upgrade to F# 4.1.
-    1.?x gain - target x64 instead of x86.
-    1.2x gain - store loaded assets (and asset metadata?) in a Dictionary<string, Dictionary>> rather than a Map<string, Map>>, or...
-    1.2x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
-    1.5x gain - leverage a proper sprite batching system.
-    1.?x gain - avoid rendering clear tiles! *)
-
     (* WISDOM: On avoiding threads where possible...
     
     Beyond the cases where persistent threads are absolutely required or where transient threads
