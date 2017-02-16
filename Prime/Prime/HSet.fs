@@ -60,26 +60,13 @@ module HSetModule =
         let private containedByBucket (v : 'a) (bucket : Hv<'a> array) =
             Array.exists (fun (entry2 : Hv<'a>) -> v.Equals entry2.V) bucket
     
+        let empty =
+            Nil
+    
         let isEmpty node =
             match node with
             | Nil -> true
             | _ -> false
-    
-        let rec fold folder state node =
-            match node with
-            | Nil -> state
-            | Singleton hv -> folder state hv.V
-            | Multiple arr -> Array.fold (fold folder) state arr
-            | Bucket bucket -> Array.fold (fun state (hv : Hv<_>) -> folder state hv.V) state bucket
-    
-        /// NOTE: This function seems to profile as being very slow. I don't know if it's the seq / yields syntax or what.
-        let rec toSeq node =
-            seq {
-                match node with
-                | Nil -> yield! Seq.empty
-                | Singleton hv -> yield hv.V
-                | Multiple arr -> for n in arr do yield! toSeq n
-                | Bucket bucket -> yield! Array.map (fun (hv : Hv<_>) -> hv.V) bucket }
     
         /// OPTIMIZATION: Requires an empty array to use the source of new array clones in order to avoid Array.create.
         let rec add (hv : 'a Hv) (earr : 'a HNode array) (dep : int) (node : 'a HNode) : 'a HNode =
@@ -163,8 +150,21 @@ module HSetModule =
             | Multiple arr -> let idx = hashToIndex h dep in contains h v (dep + 1) arr.[idx]
             | Bucket bucket -> containedByBucket v bucket
     
-        let empty =
-            Nil
+        let rec fold folder state node =
+            match node with
+            | Nil -> state
+            | Singleton hv -> folder state hv.V
+            | Multiple arr -> Array.fold (fold folder) state arr
+            | Bucket bucket -> Array.fold (fun state (hv : Hv<_>) -> folder state hv.V) state bucket
+    
+        /// NOTE: This function seems to profile as being very slow. I don't know if it's the seq / yields syntax or what.
+        let rec toSeq node =
+            seq {
+                match node with
+                | Nil -> yield! Seq.empty
+                | Singleton hv -> yield hv.V
+                | Multiple arr -> for n in arr do yield! toSeq n
+                | Bucket bucket -> yield! Array.map (fun (hv : Hv<_>) -> hv.V) bucket }
 
     /// A fast persistent hash set.
     /// Works in effectively constant-time for look-ups and updates.
