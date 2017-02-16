@@ -42,11 +42,7 @@ module Program =
     The trade-offs for each given domain does seem to be appropriate. While the simulant system
     MUST be run-time in order to be WYSIWYG editable, the interaction system isn't too badly
     affected by the need for program restarts, and benefits proportionately from having an
-    expressive static type system.
-    
-    That being said, I really, really, really, really want Edit and Continue for interaction
-    authoring to get the best of both worlds for interaction authoring -
-    https://www.reddit.com/r/fsharp/comments/3mdklt/can_someone_with_the_requisite_insight_summarize/ *)
+    expressive static type system. *)
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to an off-screen
