@@ -46,7 +46,7 @@ module EventFilter =
 
     /// Describes how events are filtered.
     [<Syntax
-        ("Any NotAny All Pattern Empty", "", "",
+        ("Any NotAny All Pattern Empty", "", "", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
          Constants.PrettyPrinter.DefaultThresholdMax)>]
     type [<NoEquality; NoComparison>] Filter =

@@ -48,7 +48,7 @@ module Scripting =
              "list toList " +
              "ring toRing add remove " +
              "table toTable tryFind find " +
-             "define let fun if cond try break get set do " +
+             "define let fun if match select try break get set do " +
              
              (* Prelude Identifiers *)
              // TODO: "substring update curry compose itemOf tryItemOf itemAs tryItemAs sort replace slice split " +
@@ -66,7 +66,10 @@ module Scripting =
              (* Engine Keywords *)
              "Gt Lt Eq Positive Negative Zero",
 
-             (* Engine Headers *)
+             (* Engine Title Words *)
+             "match",
+
+             (* Engine Header Words *)
              "define fun",
              Constants.PrettyPrinter.DefaultThresholdMin,
              Constants.PrettyPrinter.DefaultThresholdMax);

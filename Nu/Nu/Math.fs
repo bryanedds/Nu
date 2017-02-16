@@ -19,7 +19,7 @@ type [<StructuralEquality; NoComparison>] Transform =
 /// example, Gui entities are rendered in absolute space since they remain still no matter
 /// where the camera moves, and vice versa for non-Gui entities.
 [<Syntax
-    ("Absolute Relative", "", "",
+    ("Absolute Relative", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
 type ViewType =
