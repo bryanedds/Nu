@@ -1,5 +1,5 @@
 ﻿// Prime - A PRIMitivEs code library.
-// Copyright (C) Bryan Edds, 2012-2016.
+// Copyright (C) Bryan Edds, 2013-2017.
 
 #I __SOURCE_DIRECTORY__
 #r "../../Prime/Prime.Dependencies/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
