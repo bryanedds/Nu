@@ -187,34 +187,34 @@ module HSetModule =
             { Node = HNode.empty
               EmptyArray = Array.create 32 HNode.empty }
     
-        /// Check that a HSet is empty.
+        /// Check that an HSet is empty.
         let isEmpty set =
             HNode.isEmpty set.Node
     
-        /// Check that a HSet is empty.
+        /// Check that an HSet is empty.
         let notEmpty set =
             not ^ HNode.isEmpty set.Node
     
-        /// Add a value with the key to a HSet.
+        /// Add a value with the key to an HSet.
         let add (value : 'a) set =
             let hv = Hv (value.GetHashCode (), value)
             let node = HNode.add hv set.EmptyArray 0 set.Node
             { set with Node = node }
     
-        /// Add a list of values with associated keys to a HSet.
+        /// Add a list of values with associated keys to an HSet.
         let addMany entries set =
             Seq.fold (fun set (value : 'a) -> add value set) set entries
     
-        /// Remove a value with the given key from a HSet.
+        /// Remove a value with the given key from an HSet.
         let remove (value : 'a) set =
             let h = value.GetHashCode ()
             { set with HSet.Node = HNode.remove h value 0 set.Node }
     
-        /// Remove all values with the given keys from a HSet.
+        /// Remove all values with the given keys from an HSet.
         let removeMany keys set =
             Seq.fold (fun set (value : 'a) -> remove value set) set keys
     
-        /// Check that a HSet contains a value.
+        /// Check that an HSet contains a value.
         let contains value set =
             let h = value.GetHashCode ()
             HNode.contains h value 0 set.Node
@@ -223,31 +223,31 @@ module HSetModule =
         let concat set set2 =
             Seq.fold (fun set value -> add value set) set set2
     
-        /// Fold over a HSet.
+        /// Fold over an HSet.
         let fold folder state (set : 'a HSet) =
             HNode.fold folder state set.Node
     
-        /// Map over a HSet.
+        /// Map over an HSet.
         let map mapper (set : 'a HSet) =
             fold
                 (fun state value -> add (mapper value) state)
                 (makeEmpty ())
                 set
     
-        /// Filter a HSet.
+        /// Filter an HSet.
         let filter pred (set : 'a HSet) =
             fold
                 (fun state value -> if pred value then add value state else state)
                 (makeEmpty ())
                 set
     
-        /// Convert a HSet to a sequence of pairs of keys and values.
+        /// Convert an HSet to a sequence of pairs of keys and values.
         /// NOTE: This function seems to profile as being very slow. I don't know if it's the seq / yields syntax or what.
         /// Don't use it unless you need its laziness or if performance won't be affected significantly.
         let toSeq (set : 'a HSet) =
             set :> 'a IEnumerable
     
-        /// Convert a sequence of keys and values to a HSet.
+        /// Convert a sequence of keys and values to an HSet.
         let ofSeq pairs =
             Seq.fold
                 (fun set value -> add value set)
