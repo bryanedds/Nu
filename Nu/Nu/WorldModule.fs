@@ -412,6 +412,11 @@ module WorldModule =
             let env = updater env
             World.setScriptEnv env world
 
+        static member internal updateScriptEnvPlus updater world =
+            let env = World.getScriptEnv world
+            let (result, env) = updater env
+            (result, World.setScriptEnv env world)
+
         /// Get the context of the script system.
         static member internal getScriptContext (world : World) =
             world.ScriptContext

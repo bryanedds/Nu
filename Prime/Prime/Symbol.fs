@@ -352,6 +352,7 @@ module PrettyPrinter =
             let headered = match symbolsPretty with head :: _ -> getHeadered head | [] -> false
             let maxDepths = 0 :: List.map getMaxDepth symbolsPretty
             let maxDepth = List.max maxDepths
+            // NOTE: prettier when headered symbols get a depth discount like so -
             let maxDepthWhenHeadered = if headered then maxDepth else maxDepth + 1
             PrettySymbols (titled, headered, maxDepthWhenHeadered, symbolsPretty)
 
