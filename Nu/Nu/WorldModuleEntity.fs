@@ -95,6 +95,10 @@ module WorldModuleEntity =
         static member private removeEntityState (entity : Entity) world =
             World.entityStateRemover entity world
 
+        static member private shouldPublishChange (propertyName : string) entityState  =
+            if propertyName.EndsWith "Np" then false
+            else entityState.PublishChanges || propertyName.EndsWith "Ap"
+
         static member private publishEntityChange propertyName (entity : Entity) oldWorld world =
             let changeEventAddress = ltoa ["Entity"; "Change"; propertyName; "Event"] ->>- entity.EntityAddress
             let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
@@ -135,7 +139,7 @@ module WorldModuleEntity =
             let oldWorld = world
             let entityState = World.getEntityState entity world
             let (entityState, world) = World.updateEntityStateInternal updater mutability entityState entity world
-            if entityState.PublishChanges || propertyName.EndsWith "Pa" then World.publishEntityChange propertyName entity oldWorld world
+            if World.shouldPublishChange propertyName entityState then World.publishEntityChange propertyName entity oldWorld world
             else world
 
         static member private updateEntityStatePlus updater mutability (propertyName : string) entity world =
@@ -143,7 +147,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let (entityState, world) = World.updateEntityStateInternal updater mutability entityState entity world
             let world = World.updateEntityInEntityTree entity oldWorld world
-            if entityState.PublishChanges || propertyName.EndsWith "Pa" then World.publishEntityChange propertyName entity oldWorld world
+            if World.shouldPublishChange propertyName entityState then World.publishEntityChange propertyName entity oldWorld world
             else world
 
         static member private publishEntityChanges entity oldWorld world =
