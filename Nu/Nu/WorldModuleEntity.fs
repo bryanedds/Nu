@@ -245,9 +245,9 @@ module WorldModuleEntity =
             let facetPropertyDefinitions = Reflection.getPropertyDefinitions facetType
             if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entityState then
                 List.notExists
-                    (fun definition ->
-                        match Xtension.tryGetProperty definition.PropertyName entityState.Xtension with
-                        | Some property -> property.PropertyType <> definition.PropertyType
+                    (fun (propertyDefinition : PropertyDefinition) ->
+                        match Xtension.tryGetProperty propertyDefinition.PropertyName entityState.Xtension with
+                        | Some property -> property.PropertyType <> propertyDefinition.PropertyType
                         | None -> false)
                     facetPropertyDefinitions
             else false
@@ -256,12 +256,12 @@ module WorldModuleEntity =
 
             // get the property definition name counts of the current, complete entity
             let propertyDefinitions = Reflection.getReflectivePropertyDefinitionMap entityState
-            let propertyDefinitionNameCounts = Reflection.getPropertyDefinitionNameCounts propertyDefinitions
+            let propertyDefinitionNameCounts = Reflection.getPropertyNameCounts propertyDefinitions
 
             // get the property definition name counts of the facet to remove
             let facetType = facetToRemove.GetType ()
             let facetPropertyDefinitions = Map.singleton facetType.Name ^ Reflection.getPropertyDefinitions facetType
-            let facetPropertyDefinitionNameCounts = Reflection.getPropertyDefinitionNameCounts facetPropertyDefinitions
+            let facetPropertyDefinitionNameCounts = Reflection.getPropertyNameCounts facetPropertyDefinitions
 
             // compute the difference of the counts
             let finalPropertyDefinitionNameCounts =

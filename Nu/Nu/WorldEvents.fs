@@ -29,6 +29,18 @@ type [<StructuralEquality; NoComparison>] CollisionData =
       Speed : single
       Collidee : Entity }
 
+/// Describes how a game changed.
+type GameChangeData = ParticipantChangeData<Game, World>
+
+/// Describes how a screen changed.
+type ScreenChangeData = ParticipantChangeData<Screen, World>
+
+/// Describes how a layer changed.
+type LayerChangeData = ParticipantChangeData<Layer, World>
+
+/// Describes how an entity changed.
+type EntityChangeData = ParticipantChangeData<Entity, World>
+
 module Events =
 
     let Wildcard = Prime.Events.Wildcard
@@ -72,13 +84,13 @@ module Events =
     let OutgoingStart = stoa<unit> "Outgoing/Start/Event"
     let OutgoingFinish = stoa<unit> "Outgoing/Finish/Event"
     let AssetsReload = stoa<unit> "Assets/Reload/Event"
-    let GameChange propertyName = stoa<ParticipantChangeData<Game, World>> ("Game/Change/" + propertyName + "/Event")
+    let GameChange propertyName = stoa<GameChangeData> ("Game/Change/" + propertyName + "/Event")
     let ScreenRegister = stoa<unit> "Screen/Register/Event"
     let ScreenUnregistering = stoa<unit> "Screen/Unregistering/Event"
-    let ScreenChange propertyName = stoa<ParticipantChangeData<Screen, World>> ("Screen/Change/" + propertyName + "/Event")
+    let ScreenChange propertyName = stoa<ScreenChangeData> ("Screen/Change/" + propertyName + "/Event")
     let LayerRegister = stoa<unit> "Layer/Register/Event"
     let LayerUnregistering = stoa<unit> "Layer/Unregistering/Event"
-    let LayerChange propertyName = stoa<ParticipantChangeData<Layer, World>> ("Layer/Change/" + propertyName + "/Event")
+    let LayerChange propertyName = stoa<LayerChangeData> ("Layer/Change/" + propertyName + "/Event")
     let EntityRegister = stoa<unit> "Entity/Register/Event"
     let EntityUnregistering = stoa<unit> "Entity/Unregistering/Event"
-    let EntityChange propertyName = stoa<ParticipantChangeData<Entity, World>> ("Entity/Change/" + propertyName + "/Event")
+    let EntityChange propertyName = stoa<EntityChangeData> ("Entity/Change/" + propertyName + "/Event")

@@ -38,47 +38,51 @@ module MountFacetModule =
             | Some nodeRelation -> (this.Resolve nodeRelation).GetExists world
             | None -> false
 
-    // TODO: remove some of the duplication in here, perhaps with a function similar to Get/SetTransform, but for
-    // mountable properties.
     type MountFacet () =
         inherit Facet ()
+
+        static let updatePropertyFromLocal3 propertyName (entity : Entity) world =
+            match propertyName with
+            | "Position" -> entity.SetPosition (entity.GetPositionLocal world) world
+            | "Depth" -> entity.SetDepth (entity.GetDepthLocal world) world
+            | "Visible" -> entity.SetVisible (entity.GetVisibleLocal world) world
+            | "Enabled" -> entity.SetEnabled (entity.GetEnabledLocal world) world
+            | _ -> world
+
+        static let updatePropertyFromLocal propertyName (node : Entity) (entity : Entity) world =
+            match propertyName with
+            | "PositionLocal" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
+            | "DepthLocal" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
+            | "VisibleLocal" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
+            | "EnabledLocal" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
+            | _ -> world
+
+        static let updatePropertyFromNode propertyName (node : Entity) (entity : Entity) world =
+            match propertyName with
+            | "Position" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
+            | "Depth" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
+            | "Visible" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
+            | "Enabled" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
+            | _ -> world
 
         static let handleLocalPropertyChange evt world =
             let entity = evt.Subscriber : Entity
             match entity.GetNodeOpt world with
             | Some nodeRelation ->
                 let node = entity.Resolve nodeRelation
-                if World.entityExists node world then
-                    let world = entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
-                    let world = entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
-                    let world = entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
-                    let world = entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
-                    (Cascade, world)
-                else
-                    let world = entity.SetPosition (entity.GetPositionLocal world) world
-                    let world = entity.SetDepth (entity.GetDepthLocal world) world
-                    let world = entity.SetVisible (entity.GetVisibleLocal world) world
-                    let world = entity.SetEnabled (entity.GetEnabledLocal world) world
-                    (Cascade, world)
-            | None ->
-                let world = entity.SetPosition (entity.GetPositionLocal world) world
-                let world = entity.SetDepth (entity.GetDepthLocal world) world
-                let world = entity.SetVisible (entity.GetVisibleLocal world) world
-                let world = entity.SetEnabled (entity.GetEnabledLocal world) world
-                (Cascade, world)
+                if World.entityExists node world
+                then (Cascade, updatePropertyFromLocal evt.Data.PropertyName node entity world)
+                else (Cascade, updatePropertyFromLocal3 evt.Data.PropertyName entity world)
+            | None -> (Cascade, updatePropertyFromLocal3 evt.Data.PropertyName entity world)
 
         static let handleNodePropertyChange evt world =
             let entity = evt.Subscriber : Entity
             let node = evt.Publisher :?> Entity
-            let world = entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
-            let world = entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
-            let world = entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
-            let world = entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
-            (Cascade, world)
+            (Cascade, updatePropertyFromNode evt.Data.PropertyName node entity world)
 
         static let rec handleNodeChange evt world =
             let entity = evt.Subscriber : Entity
-            let world = (entity.GetNodeUnsubscribeNp world) world // NOTE: unsubscribes
+            let world = (entity.GetNodeUnsubscribeNp world) world
             match entity.GetNodeOpt world with
             | Some nodeRelation ->
                 let node = entity.Resolve nodeRelation
@@ -107,7 +111,7 @@ module MountFacetModule =
             world
 
         override facet.Unregister (entity, world) =
-            (entity.GetNodeUnsubscribeNp world) world // NOTE: unsubscribes - not sure if this is necessary.
+            (entity.GetNodeUnsubscribeNp world) world // NOTE: not sure if this is necessary.
 
         override facet.TryGetCalculatedProperty (propertyName, entity, world) =
             match propertyName with
