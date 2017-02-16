@@ -52,8 +52,18 @@ module MountFacetModule =
                     let world = entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
                     let world = entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
                     (Cascade, world)
-                else (Cascade, world)
-            | None -> (Cascade, world)
+                else
+                    let world = entity.SetPosition (entity.GetPositionLocal world) world
+                    let world = entity.SetDepth (entity.GetDepthLocal world) world
+                    let world = entity.SetVisible (entity.GetVisibleLocal world) world
+                    let world = entity.SetEnabled (entity.GetEnabledLocal world) world
+                    (Cascade, world)
+            | None ->
+                let world = entity.SetPosition (entity.GetPositionLocal world) world
+                let world = entity.SetDepth (entity.GetDepthLocal world) world
+                let world = entity.SetVisible (entity.GetVisibleLocal world) world
+                let world = entity.SetEnabled (entity.GetEnabledLocal world) world
+                (Cascade, world)
 
         static let handleNodePropertyChange evt world =
             let entity = evt.Subscriber : Entity
