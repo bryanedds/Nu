@@ -67,7 +67,7 @@ module Scripting =
              "Gt Lt Eq Positive Negative Zero",
 
              (* Engine Title Words *)
-             "match",
+             "if match",
 
              (* Engine Header Words *)
              "define fun",
