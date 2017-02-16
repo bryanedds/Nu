@@ -8,11 +8,11 @@ open System.Collections.Generic
 [<AutoOpen>]
 module TMapModule =
 
-    type private Log<'k, 'v when 'k : comparison> =
+    type private Log<'k, 'v when 'k : equality> =
         | Add of 'k * 'v
         | Remove of 'k
 
-    type [<NoEquality; NoComparison>] TMap<'k, 'v when 'k : comparison> =
+    type [<NoEquality; NoComparison>] TMap<'k, 'v when 'k : equality> =
         private
             { mutable TMap : TMap<'k, 'v>
               Dict : Dictionary<'k, 'v>
@@ -30,20 +30,20 @@ module TMapModule =
         static member (.>>.) (map : TMap<'k2, 'v2>, builder : TExpr<'v2, TMap<'k2, 'v2>>) =
             builder map
 
-    let tmap<'k, 'v when 'k : comparison> = TExprBuilder<TMap<'k, 'v>> ()
+    let tmap<'k, 'v when 'k : equality> = TExprBuilder<TMap<'k, 'v>> ()
 
     [<RequireQualifiedAccess>]
     module TMap =
 
         let private commit map =
             let oldMap = map
-            let dictOrigin = Dictionary<'k, 'v> (map.DictOrigin, HashIdentity.Structural)
+            let dictOrigin = Dictionary<'k, 'v> map.DictOrigin (* HashIdentity *)
             List.foldBack (fun log () ->
                 match log with
                 | Add (key, value) -> dictOrigin.ForceAdd (key, value)
                 | Remove key -> dictOrigin.Remove key |> ignore)
                 map.Logs ()
-            let dict = Dictionary<'k, 'v> (dictOrigin, HashIdentity.Structural)
+            let dict = Dictionary<'k, 'v> dictOrigin (* HashIdentity *)
             let map = { map with Dict = dict; DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
             map.TMap <- map
             oldMap.TMap <- map
@@ -51,7 +51,7 @@ module TMapModule =
 
         let private compress map =
             let oldMap = map
-            let dictOrigin = Dictionary<'k, 'v> (map.Dict, HashIdentity.Structural)
+            let dictOrigin = Dictionary<'k, 'v> map.Dict (* HashIdentity *)
             let map = { map with DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
             map.TMap <- map
             oldMap.TMap <- map
@@ -70,7 +70,7 @@ module TMapModule =
             oldMap.TMap <- map
             map
 
-        let makeFromSeq<'k, 'v when 'k : comparison> optBloatFactor entries =
+        let makeFromSeq<'k, 'v when 'k : equality> optBloatFactor entries =
             let map =
                 { TMap = Unchecked.defaultof<TMap<'k, 'v>>
                   Dict = dictPlus entries
@@ -81,7 +81,7 @@ module TMapModule =
             map.TMap <- map
             map
 
-        let makeEmpty<'k, 'v when 'k : comparison> optBloatFactor =
+        let makeEmpty<'k, 'v when 'k : equality> optBloatFactor =
             makeFromSeq<'k, 'v> optBloatFactor Seq.empty
 
         let isEmpty map =
@@ -168,4 +168,4 @@ module TMapModule =
                 (makeEmpty ^ Some map.BloatFactor)
                 map
 
-type TMap<'k, 'v when 'k : comparison> = TMapModule.TMap<'k, 'v>
+type TMap<'k, 'v when 'k : equality> = TMapModule.TMap<'k, 'v>

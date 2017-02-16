@@ -284,7 +284,7 @@ module ScriptFacetModule =
         static let handleScriptChanged evt world =
             let entity = evt.Subscriber : Entity
             let script = entity.GetGetScriptAp world
-            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+            let scriptFrame = Scripting.DeclarationFrame () (* HashIdentity *)
             let world = entity.SetScriptFrameNp scriptFrame world
             evalManyWithLogging script scriptFrame entity world |> snd
             
@@ -296,7 +296,7 @@ module ScriptFacetModule =
         static member PropertyDefinitions =
             [Define? ScriptOptAp (None : AssetTag option)
              Define? ScriptAp ([] : Scripting.Expr list)
-             Define? ScriptFrameNp (Scripting.DeclarationFrame HashIdentity.Structural)
+             Define? ScriptFrameNp (Scripting.DeclarationFrame () (* HashIdentity *))
              Define? OnRegisterAp Scripting.Unit
              Define? OnUnregister Scripting.Unit
              Define? OnUpdate Scripting.Unit

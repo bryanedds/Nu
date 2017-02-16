@@ -8,11 +8,11 @@ open System.Collections.Generic
 [<AutoOpen>]
 module TSetModule =
 
-    type private Log<'a when 'a : comparison> =
+    type private Log<'a when 'a : equality> =
         | Add of 'a
         | Remove of 'a
 
-    type [<NoEquality; NoComparison>] TSet<'a when 'a : comparison> =
+    type [<NoEquality; NoComparison>] TSet<'a when 'a : equality> =
         private
             { mutable TSet : 'a TSet
               HashSet : 'a HashSet
@@ -30,20 +30,20 @@ module TSetModule =
         static member (.>>.) (set : 'a2 TSet, builder : TExpr<'a2, 'a2 TSet>) =
             builder set
 
-    let tset<'a when 'a : comparison> = TExprBuilder<'a TSet> ()
+    let tset<'a when 'a : equality> = TExprBuilder<'a TSet> ()
 
     [<RequireQualifiedAccess>]
     module TSet =
 
         let private commit set =
             let oldSet = set
-            let hashSetOrigin = HashSet<'a> (set.HashSetOrigin, HashIdentity.Structural)
+            let hashSetOrigin = HashSet<'a> set.HashSetOrigin (* HashIdentity *)
             List.foldBack (fun log () ->
                 match log with
                 | Add value -> hashSetOrigin.TryAdd value |> ignore
                 | Remove value -> hashSetOrigin.Remove value |> ignore)
                 set.Logs ()
-            let hashSet = HashSet<'a> (hashSetOrigin, HashIdentity.Structural)
+            let hashSet = HashSet<'a> hashSetOrigin (* HashIdentity *)
             let set = { set with HashSet = hashSet; HashSetOrigin = hashSetOrigin; Logs = []; LogsLength = 0 }
             set.TSet <- set
             oldSet.TSet <- set
@@ -51,7 +51,7 @@ module TSetModule =
 
         let private compress set =
             let oldSet = set
-            let hashSetOrigin = HashSet<'a> (set.HashSet, HashIdentity.Structural)
+            let hashSetOrigin = HashSet<'a> set.HashSet (* HashIdentity *)
             let set = { set with HashSetOrigin = hashSetOrigin; Logs = []; LogsLength = 0 }
             set.TSet <- set
             oldSet.TSet <- set
@@ -70,7 +70,7 @@ module TSetModule =
             oldSet.TSet <- set
             set
 
-        let makeFromSeq<'a when 'a : comparison> optBloatFactor items =
+        let makeFromSeq<'a when 'a : equality> optBloatFactor items =
             let set =
                 { TSet = Unchecked.defaultof<'a TSet>
                   HashSet = hashPlus items
@@ -81,7 +81,7 @@ module TSetModule =
             set.TSet <- set
             set
 
-        let makeEmpty<'a when 'a : comparison> optBloatFactor =
+        let makeEmpty<'a when 'a : equality> optBloatFactor =
             makeFromSeq<'a> optBloatFactor Seq.empty
 
         let isEmpty set =
@@ -152,4 +152,4 @@ module TSetModule =
                 (makeEmpty ^ Some set.BloatFactor)
                 set
 
-type TSet<'a when 'a : comparison> = TSetModule.TSet<'a>
+type TSet<'a when 'a : equality> = TSetModule.TSet<'a>

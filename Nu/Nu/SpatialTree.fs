@@ -70,7 +70,7 @@ module internal SpatialNodeModule =
               Children = Array.map clone node.Children
               // NOTE: it is inefficient to shallow-clone a HashSet like this, but sadly, .NET does not provide a proper
               // Clone method! #ARGH!
-              Elements = HashSet (node.Elements, HashIdentity.Structural) }
+              Elements = HashSet node.Elements (* HashIdentity *) }
 
         let rec internal make<'e when 'e : equality> granularity depth (bounds : Vector4) =
             if granularity < 2 then failwith "Invalid granularity for SpatialNode. Expected value of at least 2."
@@ -87,7 +87,7 @@ module internal SpatialNodeModule =
             { Depth = depth
               Bounds = bounds
               Children = (children : 'e SpatialNode array)
-              Elements = HashSet HashIdentity.Structural }
+              Elements = HashSet () (* HashIdentity *) }
 
 [<AutoOpen>]
 module SpatialTreeModule =
@@ -139,11 +139,11 @@ module SpatialTreeModule =
     
         let clone tree =
             { Node = SpatialNode.clone tree.Node
-              OmnipresentElements = HashSet (tree.OmnipresentElements, HashIdentity.Structural) }
+              OmnipresentElements = HashSet tree.OmnipresentElements (* HashIdentity *) }
     
         let make<'e when 'e : equality> granularity depth bounds =
             { Node = SpatialNode.make<'e> granularity depth bounds
-              OmnipresentElements = HashSet HashIdentity.Structural }
+              OmnipresentElements = HashSet () (* HashIdentity *) }
 
 /// A spatial structure that organizes elements on a 2D plane.
 type SpatialTree<'e when 'e : equality> = SpatialTreeModule.SpatialTree<'e>

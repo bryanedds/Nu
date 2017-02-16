@@ -9,15 +9,6 @@ open Prime
 let rec notEmpty arr =
     not ^ Array.isEmpty arr
 
-/// Try to find an index in reverse.
-let tryFindIndexRev pred arr =
-    let mutable index = Array.length arr - 1
-    let mutable found = false
-    while index >= 0 && not found do
-        if pred arr.[index] then found <- true
-        else index <- index - 1
-    if found then Some index else None
-
 /// Convert option values to definite values.
 let definitize opts =
     Array.choose id opts

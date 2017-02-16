@@ -21,8 +21,8 @@ type EventWorld<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> =
 module EventWorld =
 
     let mutable EventAddressCaching = false
-    let EventAddressCache = Dictionary<obj, obj> HashIdentity.Structural
-    let EventAddressListCache = Dictionary<obj Address, obj List> HashIdentity.Structural
+    let EventAddressCache = Dictionary<obj, obj> () (* HashIdentity *)
+    let EventAddressListCache = Dictionary<obj Address, obj List> () (* HashIdentity *)
 
     /// Get the event system.
     let getEventSystem<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (world : 'w) =

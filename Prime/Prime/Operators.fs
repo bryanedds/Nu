@@ -86,9 +86,6 @@ module Operators =
     /// Get the value of a property.
     let inline getPropertyValue indices (p : PropertyInfo) (a : obj) = p.GetValue (a, indices)
 
-    /// Test for equality, usually faster than (=).
-    let inline fastEq (a : 'a) (b : 'a) = LanguagePrimitives.GenericEquality a b
-
     /// Test for reference equality.
     let inline refEq (a : 'a) (b : 'a) = obj.ReferenceEquals (a, b)
 
@@ -180,9 +177,3 @@ module Operators =
 
     /// Sequences two functions like Haskell ($).
     let inline (^) f g = f g
-
-    /// Test for equality, usually faster than (=).
-    let inline (==) (a : 'a) (b : 'a) = fastEq a b
-
-    /// Test just the value parts of a type for equality. Reflective and slow.
-    let inline (===) (a : 'a) (b : 'a) = similar a b
