@@ -277,7 +277,11 @@ module WorldScriptingPrimitives =
             | (evaledArg, List list) ->
                 (List (evaledArg :: list), world)
             | (evaledArg, Codata codata) ->
-                (Codata (Add (Conversion [evaledArg], codata)), world)
+                match codata with
+                | Empty -> (Codata (Conversion [evaledArg]), world)
+                | Add _ -> (Codata (Add (Conversion [evaledArg], codata)), world)
+                | Unfold _ -> (Codata (Add (Conversion [evaledArg], codata)), world)
+                | Conversion list -> (Codata (Conversion (evaledArg :: list)), world)
             | (evaledArg, Ring set) ->
                 (Ring (Set.add evaledArg set), world)
             | (evaledArg, Table map) ->
