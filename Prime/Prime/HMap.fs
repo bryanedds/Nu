@@ -65,27 +65,14 @@ module HMapModule =
             match Array.tryFindBack (fun (entry2 : Hkv<'k, 'v>) -> entry2.K.Equals k) bucket with
             | Some hkv -> Some hkv.V
             | None -> None
+    
+        let empty =
+            Nil
 
         let isEmpty node =
             match node with
             | Nil -> true
             | _ -> false
-    
-        let rec fold folder state node =
-            match node with
-            | Nil -> state
-            | Singleton hkv -> folder state hkv.K hkv.V
-            | Multiple arr -> Array.fold (fold folder) state arr
-            | Bucket bucket -> Array.fold (fun state (hkv : Hkv<_, _>) -> folder state hkv.K hkv.V) state bucket
-    
-        /// NOTE: This function seems to profile as being very slow. I don't know if it's the seq / yields syntax or what.
-        let rec toSeq node =
-            seq {
-                match node with
-                | Nil -> yield! Seq.empty
-                | Singleton hkv -> yield (hkv.K, hkv.V)
-                | Multiple arr -> for n in arr do yield! toSeq n
-                | Bucket bucket -> yield! Array.map (fun (hkv : Hkv<_, _>) -> (hkv.K, hkv.V)) bucket }
     
         /// OPTIMIZATION: Requires an empty array to use the source of new array clones in order to avoid Array.create.
         let rec add (hkv : Hkv<'k, 'v>) (earr : HNode<'k, 'v> array) (dep : int) (node : HNode<'k, 'v>) : HNode<'k, 'v> =
@@ -176,8 +163,21 @@ module HMapModule =
             | Multiple arr -> let idx = hashToIndex h dep in find h k (dep + 1) arr.[idx]
             | Bucket bucket -> Option.get (tryFindInBucket k bucket)
     
-        let empty =
-            Nil
+        let rec fold folder state node =
+            match node with
+            | Nil -> state
+            | Singleton hkv -> folder state hkv.K hkv.V
+            | Multiple arr -> Array.fold (fold folder) state arr
+            | Bucket bucket -> Array.fold (fun state (hkv : Hkv<_, _>) -> folder state hkv.K hkv.V) state bucket
+    
+        /// NOTE: This function seems to profile as being very slow. I don't know if it's the seq / yields syntax or what.
+        let rec toSeq node =
+            seq {
+                match node with
+                | Nil -> yield! Seq.empty
+                | Singleton hkv -> yield (hkv.K, hkv.V)
+                | Multiple arr -> for n in arr do yield! toSeq n
+                | Bucket bucket -> yield! Array.map (fun (hkv : Hkv<_, _>) -> (hkv.K, hkv.V)) bucket }
 
     /// A fast persistent hash map.
     /// Works in effectively constant-time for look-ups and updates.
