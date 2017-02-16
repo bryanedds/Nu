@@ -82,9 +82,21 @@
 [define snd! [a]
     [snd [! a]]]
 
-; Reverse the elemens in a container.
+; Reverse the elements in a container.
 [define rev [ctr]
     [fold [flip cons] [toEmpty ctr] ctr]]
+
+; Fold over a container backward while state satisfies the given predicate.
+[define foldBackWhile [folder state ctr]
+    [foldWhile folder state [rev ctr]]]
+
+; Fold over a container backward, providing the reverse index of each element.
+[define foldBacki [folder state ctr]
+    [foldi folder state [rev ctr]]]
+
+; Fold over a container backward.
+[define foldBack [folder state ctr]
+    [fold folder state [rev ctr]]]
 
 ; Reduce a container with at least one element while the reducer function returns some.
 [define reduceWhile [reducer ctr]
@@ -101,21 +113,27 @@
     [let [pr [split ctr]]
          [fold reducer [fst pr] [snd pr]]]]
 
+; Get only the some elements of a container.
+[define definitize [ctr]
+    [foldBack
+        [fun [elems elemOpt] [if [isSome elemOpt] [cons [! elemOpt] elems] elems]]
+        [toEmpty ctr]
+        ctr]]
+
 ; Filter for elements that satifsy the given predicate.
 [define filter [pred ctr]
-    [let [opt [tryUncons ctr]]
-         [if [isSome opt]
-             [if [pred [fst! opt]]
-                 [cons [fst! opt] [filter pred [snd! opt]]]
-                 [filter pred [snd! opt]]]
-             [toEmpty ctr]]]]
+    [foldBack
+        [fun [elems elem] [if [pred elem] [cons elem elems] elems]]
+        [toEmpty ctr]
+        ctr]]
 
 ; Build a container of elements taken from the given container while a predicate succeeds.
 [define takeWhile [pred ctr]
-    [let [opt [tryUncons ctr]]
-         [if [&& [isSome opt] [pred [fst! opt]]]
-             [cons [fst! opt] [takeWhile pred [snd! opt]]]
-             [toEmpty ctr]]]]
+    [rev
+        [foldWhile
+            [fun [elems elem] [if [pred elem] [some [cons elem elems]] none]]
+            [toEmpty ctr]
+            ctr]]]
 
 [define take3 [current n ctr]
     [let [opt [tryUncons ctr]]
@@ -124,15 +142,23 @@
              [toEmpty ctr]]]]
 
 ; Build a container of n elements taken from the given container, skipping n elements.
+; NOTE: this can blow the stack when n is very large.
 [define take [n ctr]
     [take3 0 n ctr]]
 
 ; Build a container of elements taken from the given container, skipping elements while a predicate succeeds.
 [define skipWhile [pred ctr]
-    [let [opt [tryUncons ctr]]
-         [if [&& [isSome opt] [pred [fst! opt]]]
-             [skipWhile pred [snd! opt]]
-             ctr]]]
+    [rev [snd [foldWhile
+        [fun [pr elem]
+            [let [taken [fst pr]]
+                 [elems [snd pr]]
+                 [if taken
+                     [some [pair taken [cons elem elems]]]
+                     [if [pred elem]
+                         [some [pair false elems]]
+                         [some [pair true [cons elem elems]]]]]]]
+        [pair false [toEmpty ctr]]
+        ctr]]]]
 
 [define skip3 [current n ctr]
     [let [opt [tryUncons ctr]]
@@ -143,36 +169,35 @@
              ctr]]]
 
 ; Build a container of elements taken from the given container, skipping n elements.
+; NOTE: this can blow the stack when n is very large.
 [define skip [n ctr]
     [skip3 0 n ctr]]
 
-[define countBy3 [n pred ctr]
-     [let [opt [tryUncons ctr]]
-          [if [isSome opt]
-              [countBy3
-                [if [pred [fst! opt]] [inc n] n]
-                pred
-                [snd! opt]]
-              n]]]
-
 ; Count the number of a container's element that satisfies the given predicate.
 [define countBy [pred ctr]
-    [countBy3 0 pred ctr]]
+    [fold [fun [count elem] [if [pred elem] [inc count] count]] 0 ctr]]
 
 ; Count the number of a container's element that equal the value.
 [define count [a ctr]
-    [countBy3 0 [fun [b] [= a b]] ctr]]
+    [fold [fun [count elem] [if [= elem a] [inc count] count]] 0 ctr]]
 
-; Determine whether a container holds an element that satisfies the given predicate.
+; Determine whether a container doesn't hold the given element.
+[define notContains [pred ctr]
+    [not [contains pred ctr]]]
+
+; Determine that a container holds an element that satisfies the given predicate.
 [define exists [pred ctr]
-    [let [opt [tryUncons ctr]]
-         [if [isSome opt]
-             [if [pred [fst! opt]]
-                 true
-                 [exists pred [snd! opt]]]
-             false]]]
-    
+    [fold
+        [fun [exist elem] [|| exist [pred elem]]]
+        false
+        ctr]]
+
+; Determine whether a container doesn't hold an element that satisfies the given predicate.
+[define notExists [pred ctr]
+    [not [exists pred ctr]]]
+
 ; Zip two containers by the given zipper function.
+; NOTE: will blow stack when both containers are very large.
 [define zipBy [zipper ctr ctr2]
      [let [opt [tryUncons ctr]]
           [opt2 [tryUncons ctr2]] 
