@@ -38,6 +38,8 @@ module MountFacetModule =
             | Some nodeRelation -> (this.Resolve nodeRelation).GetExists world
             | None -> false
 
+    // TODO: remove some of the duplication in here, perhaps with a function similar to Get/SetTransform, but for
+    // mountable properties.
     type MountFacet () =
         inherit Facet ()
 
