@@ -72,7 +72,7 @@ type [<StructuralEquality; NoComparison>] BodyPolygon =
 
 /// The shape of a physics body.
 [<Syntax
-    ("BodyBox BodyCircle BodyCapsule BodyPolygon", "", "",
+    ("BodyBox BodyCircle BodyCapsule BodyPolygon", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type [<StructuralEquality; NoComparison>] BodyShape =
@@ -83,7 +83,7 @@ type [<StructuralEquality; NoComparison>] BodyShape =
 
 /// The type of a physics body; Static, Kinematic, or Dynamic.
 [<Syntax
-    ("Static Kinematic Dynamic", "", "",
+    ("Static Kinematic Dynamic", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
 type BodyType =

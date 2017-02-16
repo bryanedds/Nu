@@ -293,12 +293,14 @@ module Symbol =
 
 /// Pretty prints Symbols, as well as strings by converting them to Symbols.
 type PrettyPrinter =
-    { HeaderWords : string Set
+    { TitleWords : string Set
+      HeaderWords : string Set
       ThresholdMin : int
       ThresholdMax : int }
 
     static member defaulted =
-        { HeaderWords = Set.empty
+        { TitleWords = Set.empty
+          HeaderWords = Set.empty
           ThresholdMin = Constants.PrettyPrinter.DefaultThresholdMin
           ThresholdMax = Constants.PrettyPrinter.DefaultThresholdMax }
 
@@ -306,19 +308,21 @@ type PrettyPrinter =
 module PrettyPrinter =
 
     type private PrettySymbol =
-        | PrettyAtom of bool * string * Symbol
+        | PrettyAtom of bool * bool * string * Symbol
         | PrettyNumber of string * Symbol
         | PrettyString of string * Symbol
         | PrettyQuote of int * PrettySymbol
-        | PrettySymbols of bool * int * PrettySymbol list
+        | PrettySymbols of bool * bool * int * PrettySymbol list
+
+    let rec private getTitled symbolPretty =
+        match symbolPretty with
+        | PrettyAtom (titled, _, _, _) -> titled
+        | _ -> false
 
     let rec private getHeadered symbolPretty =
         match symbolPretty with
-        | PrettyAtom (headered, _, _) -> headered
-        | PrettyNumber _ -> false
-        | PrettyString _ -> false
-        | PrettyQuote _ -> false
-        | PrettySymbols _ -> false
+        | PrettyAtom (_, headered, _, _) -> headered
+        | _ -> false
 
     let rec private getMaxDepth symbolPretty =
         match symbolPretty with
@@ -326,11 +330,16 @@ module PrettyPrinter =
         | PrettyNumber _ -> 0
         | PrettyString _ -> 0
         | PrettyQuote (maxDepth, _) -> maxDepth
-        | PrettySymbols (_, maxDepth, _) -> maxDepth
+        | PrettySymbols (_, _, maxDepth, _) -> maxDepth
 
     let rec private symbolToPrettySymbol symbol prettyPrinter =
         match symbol with
-        | Atom (str, _) -> PrettyAtom (Set.contains str prettyPrinter.HeaderWords, str, symbol)
+        | Atom (str, _) ->
+            PrettyAtom
+                (Set.contains str prettyPrinter.TitleWords,
+                 Set.contains str prettyPrinter.HeaderWords,
+                 str,
+                 symbol)
         | Number (str, _) -> PrettyNumber (str, symbol)
         | String (str, _) -> PrettyString (str, symbol)
         | Quote (quoted, _) ->
@@ -339,25 +348,30 @@ module PrettyPrinter =
             PrettyQuote (inc maxDepth, quotedPretty)
         | Symbols (symbols, _) ->
             let symbolsPretty = List.map (flip symbolToPrettySymbol prettyPrinter) symbols
+            let titled = match symbolsPretty with head :: _ -> getTitled head | [] -> false
             let headered = match symbolsPretty with head :: _ -> getHeadered head | [] -> false
             let maxDepths = 0 :: List.map getMaxDepth symbolsPretty
             let maxDepth = List.max maxDepths
-            PrettySymbols (headered, inc maxDepth, symbolsPretty)
+            PrettySymbols (titled, headered, inc maxDepth, symbolsPretty)
 
     let rec private prettySymbolToPrettyStr depth symbolPretty prettyPrinter =
         match symbolPretty with
-        | PrettyAtom (_, _, symbol)
+        | PrettyAtom (_, _, _, symbol)
         | PrettyNumber (_, symbol)
         | PrettyString (_, symbol) -> Symbol.writeSymbol symbol
         | PrettyQuote (_, symbolPretty) -> Symbol.StartQuoteStr + prettySymbolToPrettyStr depth symbolPretty prettyPrinter
-        | PrettySymbols (headered, maxDepth, symbols) ->
+        | PrettySymbols (titled, headered, maxDepth, symbols) ->
             if  depth < prettyPrinter.ThresholdMin ||
                 maxDepth > prettyPrinter.ThresholdMax then
                 let symbolsLength = List.length symbols
                 let prettyStrs =
                     List.mapi (fun i symbolPretty ->
                         let whitespace =
-                            if headered then
+                            if titled then
+                                if i > 1 then "\n" + String.init (inc depth) (fun _ -> " ")
+                                elif i > 0 then " "
+                                else ""
+                            elif headered then
                                 if i = (dec symbolsLength) then "\n" + String.init (inc depth) (fun _ -> " ")
                                 elif i > 0 then " "
                                 else ""
@@ -386,19 +400,26 @@ module PrettyPrinter =
         prettyPrintSymbol symbol prettyPrinter
 
 type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
-    SyntaxAttribute (keywords0 : string, keywords1 : string, headerWordsStr : string, prettyPrinterThresholdMin : int, prettyPrinterThresholdMax : int) =
+    SyntaxAttribute
+        (keywords0 : string,
+         keywords1 : string,
+         titleWordsStr : string,
+         headerWordsStr : string,
+         prettyPrinterThresholdMin : int,
+         prettyPrinterThresholdMax : int) =
     inherit Attribute ()
     member this.Keywords0 = keywords0
     member this.Keywords1 = keywords1
     member this.PrettyPrinter =
-        { HeaderWords = Set.ofArray (headerWordsStr.Split ' ')
+        { TitleWords = Set.ofArray (titleWordsStr.Split ' ')
+          HeaderWords = Set.ofArray (headerWordsStr.Split ' ')
           ThresholdMin = prettyPrinterThresholdMin
           ThresholdMax = prettyPrinterThresholdMax }
     static member getOrDefault (ty : Type) =
         match ty.GetCustomAttribute<SyntaxAttribute> true with
         | null ->
             SyntaxAttribute
-                ("", "", "",
+                ("", "", "", "",
                  PrettyPrinter.defaulted.ThresholdMin,
                  PrettyPrinter.defaulted.ThresholdMax)
         | syntax -> syntax

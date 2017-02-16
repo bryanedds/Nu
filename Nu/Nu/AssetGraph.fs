@@ -72,7 +72,7 @@ module AssetGraphModule =
         ("Asset Assets",
          "nueffect nuscript bmp png ttf tmx wav ogg " +
          "PsdToPng OldSchool Render Audio Symbol",
-         "",
+         "", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
          Constants.PrettyPrinter.DefaultThresholdMax)>]
     type AssetGraph =
