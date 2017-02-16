@@ -48,7 +48,7 @@ module Scripting =
              "list toList " +
              "ring toRing add remove " +
              "table toTable tryFind find " +
-             "define let fun if match select try break get set do " +
+             "let fun if match select try do break get set define " +
              
              (* Prelude Identifiers *)
              // TODO: "substring update curry compose itemOf tryItemOf itemAs tryItemAs sort replace slice split " +
