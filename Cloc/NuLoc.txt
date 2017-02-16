@@ -1,64 +1,64 @@
-     100 files     200 files     263 text files.
-classified 263 filesDuplicate file check 263 files (141 known unique)Unique:      100 files                                               180 unique files.                              
-Counting:  100     281 files ignored.
+     100 files     200 files     260 text files.
+classified 260 filesDuplicate file check 260 files (140 known unique)Unique:      100 files                                               188 unique files.                              
+Counting:  100     280 files ignored.
 
-http://cloc.sourceforge.net v 1.60  T=1.21 s (69.5 files/s, 16895.2 lines/s)
+http://cloc.sourceforge.net v 1.60  T=0.53 s (160.4 files/s, 39291.4 lines/s)
 --------------------------------------------------------------------------------------------------------------------------------
 File                                                                                         blank        comment           code
 --------------------------------------------------------------------------------------------------------------------------------
-..\Nu\Nu\WorldDispatchers.fs                                                                   162              0           1135
-..\Nu\Nu.Gaia.Design\GaiaForm.Designer.cs                                                        7            389            997
-..\Nu\Nu.Gaia\GaiaModule.fs                                                                    111              0            959
-..\Nu\Nu\WorldTypes.fs                                                                         219              0            932
-..\Nu\Nu\WorldScriptingPrimitives.fs                                                            57              0            905
-..\Nu\Nu\WorldModuleEntity.fs                                                                  110              0            822
-..\Nu\Nu\Scripting.fs                                                                           64              0            780
-..\Nu\Nu\World.fs                                                                               93              0            714
+..\Nu\Nu\WorldDispatchers.fs                                                                   163              0           1182
+..\Nu\Nu.Gaia.Design\GaiaForm.Designer.cs                                                        7            410           1062
+..\Nu\Nu.Gaia\GaiaModule.fs                                                                    119              2           1018
+..\Nu\Nu\WorldScriptingPrimitives.fs                                                            63              0            930
+..\Nu\Nu\WorldTypes.fs                                                                         214              0            907
+..\Nu\Nu\WorldModuleEntity.fs                                                                  115              0            854
+..\Nu\Nu\Scripting.fs                                                                           63              0            746
+..\Nu\Nu\World.fs                                                                               95              0            725
+..\Nu\Nu\Physics.fs                                                                             85              0            509
 ..\Nu\Nu\WorldScriptingUnary.fs                                                                 37              0            509
-..\Nu\Nu\Physics.fs                                                                             85              0            503
-..\Nu\Nu\WorldScripting.fs                                                                      42              0            500
 ..\Nu\Nu.SDL2\Matrix3.cs                                                                       131            281            485
 ..\Nu\Nu\Reflection.fs                                                                          59              0            470
+..\Nu\Nu\WorldScripting.fs                                                                      39              0            467
 ..\Nu\Nu\EffectSystem.fs                                                                        51              0            432
-..\Nu\Nu\Render.fs                                                                              40              0            429
-..\Nu\Nu\WorldModule.fs                                                                        107              0            358
-..\Nu\Nu\WorldModuleScreen.fs                                                                   38              0            324
-..\Nu\Nu\WorldModuleLayer.fs                                                                    40              0            322
-..\Nu\Nu\WorldModuleGame.fs                                                                     45              0            302
-..\Nu\Nu\WorldEntity.fs                                                                         42              0            286
+..\Nu\Nu\Render.fs                                                                              40              0            426
+..\Nu\Nu\WorldModule.fs                                                                        115              0            391
+..\Nu\Nu\WorldModuleScreen.fs                                                                   38              0            318
+..\Nu\Nu\WorldModuleLayer.fs                                                                    40              0            316
+..\Nu\Nu\WorldEntity.fs                                                                         47              0            302
+..\Nu\Nu\WorldModuleGame.fs                                                                     45              0            297
 ..\Nu\Nu\WorldScriptingBinary.fs                                                                21              0            278
+..\Nu\Nu\WorldScriptingMarshalling.fs                                                           33              0            248
 ..\Nu\Nu\Audio.fs                                                                               36              0            235
-..\Nu\Nu\WorldGame.fs                                                                           46              0            223
-..\Nu\Nu\Math.fs                                                                                43              0            213
-..\Nu\Nu\AssetGraph.fs                                                                          41              0            208
-..\Nu\Nu\Sdl.fs                                                                                 28              0            203
-..\Nu\Nu\WorldScreen.fs                                                                         31              0            191
+..\Nu\Nu\Math.fs                                                                                43              0            216
+..\Nu\Nu\AssetGraph.fs                                                                          41              0            214
+..\Nu\Nu\WorldGame.fs                                                                           44              0            207
+..\Nu\Nu\Sdl.fs                                                                                 28              0            202
+..\Nu\Nu\WorldScreen.fs                                                                         34              0            197
 ..\Nu\Nu.Gaia.Design\SymbolicTextBox.cs                                                         25             25            181
-..\Nu\Nu\WorldLayer.fs                                                                          29              0            175
-..\Nu\Nu\Overlayer.fs                                                                           24              0            174
-..\Nu\Nu\Effects.fs                                                                             26              0            148
-..\Nu\Nu\WorldModuleMisc.fs                                                                     37              0            143
+..\Nu\Nu\WorldLayer.fs                                                                          32              0            181
+..\Nu\Nu\Overlayer.fs                                                                           24              0            180
+..\Nu\Nu.Gaia\GaiaTypes.fs                                                                      28              0            161
+..\Nu\Nu\Effects.fs                                                                             26              0            150
 ..\Nu\Nu\WorldPhysics.fs                                                                        32              0            139
-..\Nu\Nu\WorldScriptingMarshalling.fs                                                           19              0            137
-..\Nu\Nu\Metadata.fs                                                                            19              0            131
+..\Nu\Nu\Metadata.fs                                                                            22              0            138
 ..\Nu\Nu\AmbientState.fs                                                                        35              0            128
 ..\Nu\Nu\SpatialTree.fs                                                                         26              0            123
-..\Nu\Nu.Gaia\GaiaTypes.fs                                                                      24              0            120
 ..\Nu\Nu.Gaia.Design\LayerCreationForm.Designer.cs                                               6             44            113
-..\Nu\Nu.SDL2\Vector2i.cs                                                                       19              5            110
+..\Nu\Nu.SDL2\Vector2i.cs                                                                       19              4            110
 ..\Nu\Nu.Gaia.Design\Nu.Gaia.Design.csproj                                                       0              7            105
 ..\Nu\Nu\SymbolStore.fs                                                                         13              0             98
 ..\Nu\Nu.AStar\Nu.AStar.cs                                                                       5             10             93
-..\Nu\Nu\Program.fs                                                                             26              0             83
-..\Nu\Nu\WorldEvents.fs                                                                          7              0             76
+..\Nu\Nu\WorldSimulant.fs                                                                       14              0             81
+..\Nu\Nu\Program.fs                                                                             25              0             80
+..\Nu\Nu\WorldEvents.fs                                                                          7              0             77
 ..\Nu\Nu\Subsystems.fs                                                                          17              0             73
 ..\Nu\Nu\WorldAudio.fs                                                                          17              0             67
 ..\Nu\Nu\Constants.fs                                                                           16              0             67
 ..\Nu\Nu\Core.fs                                                                                13              0             64
 ..\Nu\Nu.Template\Program.fs                                                                    14              0             62
-..\Nu\Nu\WorldInit.fs                                                                           14              0             60
+..\Nu\Nu\WorldInit.fs                                                                           15              0             61
+..\Nu\Nu\ScriptingTests.fs                                                                       8              0             58
 ..\Nu\Nu\Input.fs                                                                               10              0             56
-..\Nu\Nu\ScriptingTests.fs                                                                       8              0             53
 ..\Nu\Nu\OverlayRouter.fs                                                                       14              0             48
 ..\Nu\Nu\WorldTests.fs                                                                           7              0             48
 ..\Nu\Nu.SDL2\Nu.SDL2.csproj                                                                     0              7             47
@@ -67,29 +67,30 @@ File                                                                            
 ..\Nu\Nu.AStar\Nu.AStar.csproj                                                                   0              7             45
 ..\Nu\Nu.Gaia.Design\SelectablePanel.cs                                                          6              0             44
 ..\Nu\Nu.Gaia.Design\Properties\Resources.Designer.cs                                            8             22             33
+..\Nu\Nu\WorldModuleSimulant.fs                                                                 13              0             29
 ..\Nu\Nu\SpatialTreeTests.fs                                                                     3              0             29
 ..\Nu\Nu\WorldInput.fs                                                                          10              0             28
 ..\Nu\Nu\ReflectionTests.fs                                                                      6              0             24
 ..\Nu\Nu\EffectTests.fs                                                                          2              0             23
 ..\Nu\Nu.Template\obj\Release\Nu.Template.fsproj.$safeprojectname$.exe.config                    0              0             20
 ..\Nu\Nu.Pipe\Program.fs                                                                         1              0             19
+..\Nu\Nu.Gaia\GaiaConstants.fs                                                                   6              0             19
 ..\Nu\Nu.Dependencies\SDL2#\Release\SDL2#.dll.config                                             4              0             18
+..\Nu\Nu\Assets.fs                                                                               2              0             16
 ..\Nu\Nu.Gaia.Design\Program.cs                                                                  2              4             16
 ..\Nu\Nu.SDL2\Properties\AssemblyInfo.cs                                                         4             17             15
 ..\Nu\Nu.Gaia.Design\Properties\AssemblyInfo.cs                                                  4             17             15
-..\Nu\Nu\Assets.fs                                                                               2              0             15
-..\Nu\Nu\bin\Release\Nu.exe.config                                                               0              0             14
-..\Nu\Nu.Pipe\obj\Release\Nu.Pipe.fsproj.Nu.Pipe.exe.config                                      0              0             14
+..\Nu\Nu\bin\Debug\Nu.exe.config                                                                 0              0             14
+..\Nu\Nu.Pipe\obj\Debug\Nu.Pipe.fsproj.Nu.Pipe.exe.config                                        0              0             14
 ..\Nu\Nu.Gaia\Program.fs                                                                         4              0             13
 ..\Nu\Nu.Gaia.Design\Properties\Settings.Designer.cs                                             5              8             13
 ..\Nu\Nu.Gaia.Design\GaiaForm.cs                                                                 1              0             12
 ..\Nu\Nu.Template\App.config                                                                     0              0             12
-..\Nu\Nu.Gaia\GaiaConstants.fs                                                                   4              0             12
 ..\Nu\Nu.Gaia.Design\LayerCreationForm.cs                                                        1              0             11
 ..\Nu\Nu.Gaia\GaiaSimulants.fs                                                                   2              0             10
 ..\Nu\Nu.Pipe\App.config                                                                         0              0              6
-..\Nu\Nu.Gaia.Design\bin\Release\Nu.Gaia.Design.exe.config                                       0              0              6
+..\Nu\Nu.Gaia.Design\bin\Debug\Nu.Gaia.Design.exe.config                                         0              0              6
 ..\Nu\Nu.Template.Export\Install.bat                                                             0              0              4
 --------------------------------------------------------------------------------------------------------------------------------
-SUM:                                                                                          2380            843          17201
+SUM:                                                                                          2423            865          17533
 --------------------------------------------------------------------------------------------------------------------------------
