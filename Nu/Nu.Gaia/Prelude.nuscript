@@ -1,5 +1,5 @@
 ; Nu Game Engine.
-; Copyright (C) Bryan Edds, 2012-2017.
+; Copyright (C) Bryan Edds, 2013-2017.
 
 #| The bool type indicator.      |# [define -b- false]
 #| The int type indicator.       |# [define -i- 0]
