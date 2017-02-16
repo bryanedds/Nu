@@ -87,7 +87,7 @@ module ReflectionModule =
 module Reflection =
 
     let private PropertyDefinitionsCache =
-        Dictionary<Type, PropertyDefinition list> HashIdentity.Reference
+        Dictionary<Type, PropertyDefinition list> () (* HashIdentity *)
 
     /// Derive a simulant name from an optional name.
     let deriveName nameOpt id =
@@ -485,7 +485,7 @@ module Reflection =
     let createIntrinsicOverlays requiresFacetNames sourceTypes =
 
         // get the unique, decomposed source types
-        let sourceTypeHashSet = HashSet () // wonder if HashIdentity.Reference would work?
+        let sourceTypeHashSet = HashSet () (* HashIdentity *)
         for sourceType in sourceTypes do
             for sourceTypeDecomposed in sourceType :: getBaseTypesExceptObject sourceType do
                 sourceTypeHashSet.Add sourceTypeDecomposed |> ignore

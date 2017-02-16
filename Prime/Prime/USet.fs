@@ -2,13 +2,14 @@
 // Copyright (C) Bryan Edds, 2013-2017.
 
 namespace Prime
+open System
 open System.Collections
 open System.Collections.Generic
 
 [<AutoOpen>]
 module USetModule =
 
-    type [<NoEquality; NoComparison>] USet<'a when 'a : comparison> =
+    type [<NoEquality; NoComparison>] USet<'a when 'a : equality> =
         private
             { RefSet : 'a TSet ref }
     
@@ -25,7 +26,7 @@ module USetModule =
     [<RequireQualifiedAccess>]
     module USet =
 
-        let makeEmpty<'a when 'a : comparison> bloatFactorOpt =
+        let makeEmpty<'a when 'a : equality> bloatFactorOpt =
             { RefSet = ref ^ TSet.makeEmpty<'a> bloatFactorOpt }
 
         let add value set =
@@ -76,4 +77,4 @@ module USetModule =
             set.RefSet := tset
             { RefSet = ref result }
 
-type USet<'a when 'a : comparison> = USetModule.USet<'a>
+type USet<'a when 'a : equality> = USetModule.USet<'a>

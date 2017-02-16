@@ -48,7 +48,7 @@ module WorldModuleGame =
         static member internal setGameScriptOpt value world = World.updateGameState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt world
         static member internal getGameScript world = (World.getGameState world).Script
         static member internal setGameScript value world =
-            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+            let scriptFrame = Scripting.DeclarationFrame () (* HashIdentity *)
             let world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world
             let world = World.setGameScriptFrameNp scriptFrame world
             evalManyWithLogging value scriptFrame (Game Address.empty) world |> snd

@@ -7,44 +7,65 @@ open System.Collections
 open System.Collections.Generic
 open Prime
 
-/// A hash-key-value triple, implemented with a struct for efficiency.
-type internal Hkv<'k, 'v when 'k : comparison> =
-    struct
-        new (h, k, v) = { H = h; K = k; V = v }
-        val H : int
-        val K : 'k
-        val V : 'v
-        end
-
 [<AutoOpen>]
 module HMapModule =
+
+    /// A hash-key-value triple, implemented with a struct for efficiency.
+    type private Hkv<'k, 'v when 'k :> IEquatable<'k>> =
+        struct
+            new (h, k, v) = { H = h; K = k; V = v }
+            val H : int
+            val K : 'k
+            val V : 'v
+            end
 
     /// TODO: P1: there's an F# issue where UseNullAsTrueValue does not work on unions with 4 or
     /// more cases https://github.com/Microsoft/visualfsharp/issues/711 . Once resolved, should use
     /// it and be able to make arrays with Array.zeroCreate alone without also copying over the
     /// empty array.
-    type [<NoComparison>] private HNode<'k, 'v when 'k : comparison> =
+    type [<NoComparison>] private HNode<'k, 'v when 'k :> IEquatable<'k>> =
         | Nil
         | Singleton of Hkv<'k, 'v>
         | Multiple of HNode<'k, 'v> array
-        | Clash of Map<'k, 'v>
+        | Bucket of Hkv<'k, 'v> array
 
     [<RequireQualifiedAccess>]
     module private HNode =
 
         let inline failwithKeyNotFound (k : 'k) =
             raise ^ KeyNotFoundException ^ "Could not find HMap key '" + k.ToString () + "'."
-    
+
         /// OPTIMIZATION: Array.Clone () is not used since it's been profiled to be slower
-        let inline cloneArray (arr : HNode<'k, 'v> array) : HNode<'k, 'v> array =
-            let arr' = Array.zeroCreate 32  // NOTE: there's an unecessary check against the size here, but that's the only inefficiency
-                                            // TODO: P1: use Array.zeroCreateUnchecked if / when it becomes available
+        let inline private cloneArray (arr : HNode<'k, 'v> array) =
+            let arr' = Array.zeroCreate 32 : HNode<'k, 'v> array    // NOTE: there's an unecessary check against the size here, but that's the only inefficiency
+                                                                    // TODO: P1: use Array.zeroCreateUnchecked if / when it becomes available
             Array.Copy (arr, 0, arr', 0, 32) // param checks are inefficient, but hopefully there's at least a memcpy underneath...
             arr'
     
         let inline private hashToIndex h dep =
             (h >>> (dep * 5)) &&& 0x1F
-    
+
+        let private addToBucket (entry : Hkv<'k, 'v>) (bucket : Hkv<'k, 'v> array) =
+            let bucketLength = bucket.Length
+            let bucket2 = Array.zeroCreate (inc bucketLength) : Hkv<'k, 'v> array
+            Array.Copy (bucket, 0, bucket2, 0, bucketLength)
+            bucket2.[bucketLength] <- entry
+            bucket2
+
+        let private removeFromBucket (k : 'k) (bucket : Hkv<'k, 'v> array) =
+            match Array.tryFindIndexBack (fun (entry2 : Hkv<'k, 'v>) -> entry2.K.Equals k) bucket with
+            | Some index ->
+                let bucket2 = Array.zeroCreate (dec bucket.Length) : Hkv<'k, 'v> array
+                Array.Copy (bucket, 0, bucket2, 0, index)
+                Array.Copy (bucket, inc index, bucket2, index, bucket2.Length - index)
+                bucket2
+            | None -> bucket
+
+        let private tryFindInBucket (k : 'k) (bucket : Hkv<'k, 'v> array) =
+            match Array.tryFindBack (fun (entry2 : Hkv<'k, 'v>) -> entry2.K.Equals k) bucket with
+            | Some hkv -> Some hkv.V
+            | None -> None
+
         let isEmpty node =
             match node with
             | Nil -> true
@@ -55,7 +76,7 @@ module HMapModule =
             | Nil -> state
             | Singleton hkv -> folder state hkv.K hkv.V
             | Multiple arr -> Array.fold (fold folder) state arr
-            | Clash clashMap -> Map.fold folder state clashMap
+            | Bucket bucket -> Array.fold (fun state (hkv : Hkv<_, _>) -> folder state hkv.K hkv.V) state bucket
     
         /// NOTE: This function seems to profile as being very slow. I don't know if it's the seq / yields syntax or what.
         let rec toSeq node =
@@ -64,7 +85,7 @@ module HMapModule =
                 | Nil -> yield! Seq.empty
                 | Singleton hkv -> yield (hkv.K, hkv.V)
                 | Multiple arr -> for n in arr do yield! toSeq n
-                | Clash clashMap -> yield! Map.toSeq clashMap }
+                | Bucket bucket -> yield! Array.map (fun (hkv : Hkv<_, _>) -> (hkv.K, hkv.V)) bucket }
     
         /// OPTIMIZATION: Requires an empty array to use the source of new array clones in order to avoid Array.create.
         let rec add (hkv : Hkv<'k, 'v>) (earr : HNode<'k, 'v> array) (dep : int) (node : HNode<'k, 'v>) : HNode<'k, 'v> =
@@ -91,7 +112,7 @@ module HMapModule =
                         Multiple arr
     
                     // if replace entry; remain Singleton
-                    elif hkv.K == hkv'.K then
+                    elif hkv.K.Equals hkv'.K then
                         Singleton hkv
     
                     // if add entry with same idx; add both in new node
@@ -112,7 +133,7 @@ module HMapModule =
                     arr.[idx] <- add hkv earr (dep + 1) entry
                     Multiple arr
     
-                | Clash _ ->
+                | Bucket _ ->
     
                     // logically should never hit here
                     failwithumf ()
@@ -122,45 +143,45 @@ module HMapModule =
                 
                 // handle clash cases
                 match node with
-                | Nil -> Clash ^ Map.singleton hkv.K hkv.V
-                | Singleton hkv' -> Clash ^ Map.add hkv.K hkv.V ^ Map.singleton hkv'.K hkv'.V
+                | Nil -> Bucket (Array.singleton hkv)
+                | Singleton hkv' -> Bucket [|hkv'; hkv|]
                 | Multiple _ -> failwithumf () // should never hit here
-                | Clash clashMap -> Clash ^ Map.add hkv.K hkv.V clashMap
+                | Bucket bucket -> Bucket (addToBucket hkv bucket)
     
         let rec remove (h : int) (k : 'k) (dep : int) (node : HNode<'k, 'v>) : HNode<'k, 'v> =
             match node with
             | Nil -> node
-            | Singleton hkv -> if hkv.K == k then Nil else node
+            | Singleton hkv -> if hkv.K.Equals k then Nil else node
             | Multiple arr ->
                 let idx = hashToIndex h dep
                 let entry = arr.[idx]
                 let arr = cloneArray arr
                 arr.[idx] <- remove h k (dep + 1) entry
                 if Array.forall isEmpty arr then Nil else Multiple arr // does not collapse Multiple to Singleton, tho could?
-            | Clash clashMap ->
-                let clashMap = Map.remove k clashMap
-                if Map.isEmpty clashMap then Nil else Clash clashMap
+            | Bucket bucket ->
+                let bucket = removeFromBucket k bucket
+                if Array.isEmpty bucket then Nil else Bucket bucket
     
         let rec tryFind (h : int) (k : 'k) (dep : int) (node : HNode<'k, 'v>) : 'v option =
             match node with
             | Nil -> None
-            | Singleton hkv -> if hkv.K == k then Some hkv.V else None
+            | Singleton hkv -> if hkv.K.Equals k then Some hkv.V else None
             | Multiple arr -> let idx = hashToIndex h dep in tryFind h k (dep + 1) arr.[idx]
-            | Clash clashMap -> Map.tryFind k clashMap
+            | Bucket bucket -> tryFindInBucket k bucket
     
         let rec find (h : int) (k : 'k) (dep : int) (node : HNode<'k, 'v>) : 'v =
             match node with
             | Nil -> failwithKeyNotFound k
-            | Singleton hkv -> if hkv.K == k then hkv.V else failwithKeyNotFound k
+            | Singleton hkv -> if hkv.K.Equals k then hkv.V else failwithKeyNotFound k
             | Multiple arr -> let idx = hashToIndex h dep in find h k (dep + 1) arr.[idx]
-            | Clash clashMap -> Map.find k clashMap
+            | Bucket bucket -> Option.get (tryFindInBucket k bucket)
     
         let empty =
             Nil
 
     /// A fast persistent hash map.
     /// Works in effectively constant-time for look-ups and updates.
-    type [<NoComparison>] HMap<'k, 'v when 'k : comparison> =
+    type [<NoComparison>] HMap<'k, 'v when 'k :> IEquatable<'k>> =
         private
             { Node : HNode<'k, 'v>
               EmptyArray : HNode<'k, 'v> array }
@@ -261,4 +282,4 @@ module HMapModule =
 
 /// A very fast persistent hash map.
 /// Works in effectively constant-time for look-ups and updates.
-type HMap<'k, 'v when 'k : comparison> = HMapModule.HMap<'k, 'v>
+type HMap<'k, 'v when 'k :> IEquatable<'k>> = HMapModule.HMap<'k, 'v>

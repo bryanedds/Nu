@@ -109,7 +109,7 @@ module WorldModuleScreen =
         static member internal setScreenScriptOpt value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptOpt = value }) Property? ScriptOpt screen world
         static member internal getScreenScript screen world = (World.getScreenState screen world).Script
         static member internal setScreenScript value screen world =
-            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+            let scriptFrame = Scripting.DeclarationFrame () (* HashIdentity *)
             let world = World.updateScreenState (fun screenState -> { screenState with Script = value }) Property? Script screen world
             let world = World.setScreenScriptFrameNp scriptFrame screen world
             evalManyWithLogging value scriptFrame screen world |> snd

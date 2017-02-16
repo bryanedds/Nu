@@ -709,7 +709,7 @@ module Scripting =
                     List.tryFindPlus
                         (fun frame ->
                             refOffset := !refOffset + 1
-                            refOptIndex := Array.tryFindIndexRev (fun (bindingName, _) -> name.Equals bindingName) frame // OPTIMIZATION: faster than (=) here
+                            refOptIndex := Array.tryFindIndexBack (fun (bindingName, _) -> name.Equals bindingName) frame // OPTIMIZATION: faster than (=) here
                             match !refOptIndex with
                             | Some index -> Some frame.[index]
                             | None -> None)
@@ -797,7 +797,7 @@ module Scripting =
             let make () =
                 // NOTE: local frame starts out the same as the global frame so that prelude
                 // functions are defined globally
-                let globalFrame = DeclarationFrame HashIdentity.Structural
+                let globalFrame = DeclarationFrame () (* HashIdentity *)
                 { GlobalFrame = globalFrame
                   LocalFrame = globalFrame
                   ProceduralFrames = [] }

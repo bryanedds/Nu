@@ -28,6 +28,6 @@ module HashSetOperators =
 
     /// Make a concrete HashSet instance populated with the given itesm and using structural hashing.
     let hashPlus items =
-        let hashSet = HashSet HashIdentity.Structural
+        let hashSet = HashSet () // HashIdentity.NormalEquality
         for item in items do hashSet.TryAdd item |> ignore
         hashSet

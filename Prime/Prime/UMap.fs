@@ -2,13 +2,14 @@
 // Copyright (C) Bryan Edds, 2013-2017.
 
 namespace Prime
+open System
 open System.Collections
 open System.Collections.Generic
 
 [<AutoOpen>]
 module UMapModule =
 
-    type [<NoEquality; NoComparison>] UMap<'k, 'v when 'k : comparison> =
+    type [<NoEquality; NoComparison>] UMap<'k, 'v when 'k : equality> =
         private
             { RefMap : TMap<'k, 'v> ref }
     
@@ -25,10 +26,10 @@ module UMapModule =
     [<RequireQualifiedAccess>]
     module UMap =
 
-        let makeFromSeq<'k, 'v when 'k : comparison> bloatFactorOpt entries =
+        let makeFromSeq<'k, 'v when 'k : equality> bloatFactorOpt entries =
             { RefMap = ref ^ TMap.makeFromSeq<'k, 'v> bloatFactorOpt entries }
 
-        let makeEmpty<'k, 'v when 'k : comparison> bloatFactorOpt =
+        let makeEmpty<'k, 'v when 'k : equality> bloatFactorOpt =
             { RefMap = ref ^ TMap.makeEmpty<'k, 'v> bloatFactorOpt }
 
         let add key value map =
@@ -89,4 +90,4 @@ module UMapModule =
             map.RefMap := tmap
             { RefMap = ref result }
 
-type UMap<'k, 'v when 'k : comparison> = UMapModule.UMap<'k, 'v>
+type UMap<'k, 'v when 'k : equality> = UMapModule.UMap<'k, 'v>
