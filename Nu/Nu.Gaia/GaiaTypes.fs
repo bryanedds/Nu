@@ -65,9 +65,9 @@ and EntityPropertyDescriptor (property, attributes) =
         if propertyName.Length > 2 && propertyName.StartsWith "On" && Char.IsUpper propertyName.[2] then "Events"
         elif    propertyName = "Name" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" ||
                 propertyName = "Specialization" || propertyName = "PublishChanges" then "\rAmbient Properties"
-        elif List.exists (fun def -> propertyName = def.PropertyName) baseProperties then "\rScene Properties"
-        elif List.exists (fun def -> propertyName = def.PropertyName) mountProperties then "\rScene Properties"
-        elif List.exists (fun def -> propertyName = def.PropertyName) rigidBodyProperties then "\rPhysics Properties"
+        elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
+        elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) mountProperties then "\rScene Properties"
+        elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "\rPhysics Properties"
         else "\rXtension Properties"
 
     override this.Description =

@@ -9,80 +9,6 @@ open System.Reflection
 open Prime
 open Nu
 
-/// An evaluatable expression for defining a property.
-type [<NoEquality; NoComparison>] PropertyExpr =
-    | DefineExpr of obj
-    | VariableExpr of (unit -> obj)
-
-    /// Evaluate a property expression.
-    static member eval expr =
-        match expr with
-        | DefineExpr value -> value
-        | VariableExpr fn -> fn ()
-
-/// The definition of a data-driven property.
-type [<NoEquality; NoComparison>] PropertyDefinition =
-    { PropertyName : string
-      PropertyType : Type
-      PropertyExpr : PropertyExpr }
-
-    /// Validate a property definition.
-    static member validate propertyDefinition =
-        if propertyDefinition.PropertyName = "FacetNames" then failwith "FacetNames cannot be an intrinsic property."
-        if propertyDefinition.PropertyName = "OverlayNameOpt" then failwith "OverlayNameOpt cannot be an intrinsic property."
-        if Array.exists (fun gta -> gta = typeof<obj>) propertyDefinition.PropertyType.GenericTypeArguments then
-            failwith ^
-                "Generic property definition lacking type information for property '" + propertyDefinition.PropertyName + "'. " +
-                "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options."
-
-    /// Make a property definition.
-    static member make propertyName propertyType propertyExpr =
-        { PropertyName = propertyName; PropertyType = propertyType; PropertyExpr = propertyExpr }
-
-    /// Make a property definition, validating it in the process.
-    static member makeValidated propertyName propertyType propertyExpr =
-        let result = PropertyDefinition.make propertyName propertyType propertyExpr
-        PropertyDefinition.validate result
-        result
-
-/// In tandem with the define literal, grants a nice syntax to define value properties.
-type ValueDefinition =
-    { ValueDefinition : unit }
-    
-    /// Some magic syntax for composing value properties.
-    static member (?) (_, propertyName) =
-        fun (value : 'v) ->
-            PropertyDefinition.makeValidated propertyName typeof<'v> (DefineExpr value)
-
-/// In tandem with the variable literal, grants a nice syntax to define variable properties.
-type VariableDefinition =
-    { VariableDefinition : unit }
-
-    /// Some magic syntax for composing variable properties.
-    static member (?) (_, propertyName) =
-        fun (variable : unit -> 'v) ->
-            PropertyDefinition.makeValidated propertyName typeof<'v> (VariableExpr (fun () -> variable () :> obj))
-
-/// In tandem with the property literal, grants a nice syntax to denote properties.
-type PropertyDescriptor =
-    { PropertyDescriptor : unit }
-    
-    /// Some magic syntax for composing value properties.
-    static member inline (?) (_, propertyName : string) =
-        propertyName
-
-[<AutoOpen>]
-module ReflectionModule =
-
-    /// In tandem with the ValueDefinition type, grants a nice syntax to define value properties.
-    let Define = { ValueDefinition = () }
-
-    /// In tandem with the VariableDefinition type, grants a nice syntax to define variable properties.
-    let Variable = { VariableDefinition = () }
-    
-    /// In tandem with the PropertyDescriptor type, grants a nice syntax to denote properties.
-    let Property = { PropertyDescriptor = () }
-
 [<RequireQualifiedAccess>]
 module Reflection =
 
@@ -138,37 +64,37 @@ module Reflection =
     /// a newly constructed list.
     let getPropertyDefinitionsNoInherit (targetType : Type) =
         match PropertyDefinitionsCache.TryGetValue targetType with
-        | (true, propertyDefinitions) -> propertyDefinitions
+        | (true, definitions) -> definitions
         | (false, _) ->
-            let propertyDefinitions =
+            let definitions =
                 match targetType.GetProperty ("PropertyDefinitions", BindingFlags.Static ||| BindingFlags.Public) with
                 | null -> []
-                | propertyDefinitionsProperty ->
-                    match propertyDefinitionsProperty.GetValue null with
+                | definitionsProperty ->
+                    match definitionsProperty.GetValue null with
                     | :? (obj list) as definitions when List.isEmpty definitions -> []
                     | :? (PropertyDefinition list) as definitions -> definitions
                     | _ -> failwith ^ "PropertyDefinitions property for type '" + targetType.Name + "' must be of type PropertyDefinition list."
-            PropertyDefinitionsCache.Add (targetType, propertyDefinitions)
-            propertyDefinitions
+            PropertyDefinitionsCache.Add (targetType, definitions)
+            definitions
 
     /// Get the property definitions of a target type.
     let getPropertyDefinitions (targetType : Type) =
         let targetTypes = targetType :: getBaseTypesExceptObject targetType
-        let propertyDefinitionLists = List.map (fun ty -> getPropertyDefinitionsNoInherit ty) targetTypes
-        let propertyDefinitionLists = List.rev propertyDefinitionLists
-        List.concat propertyDefinitionLists
+        let definitionLists = List.map (fun ty -> getPropertyDefinitionsNoInherit ty) targetTypes
+        let definitionLists = List.rev definitionLists
+        List.concat definitionLists
 
     /// Get the names of the property definitions of a target type.
-    let getPropertyDefinitionNames (targetType : Type) =
-        let propertyDefinitions = getPropertyDefinitions targetType
-        List.map (fun propertyDefinition -> propertyDefinition.PropertyName) propertyDefinitions
+    let getPropertyNames (targetType : Type) =
+        let definitions = getPropertyDefinitions targetType
+        List.map (fun (definition : PropertyDefinition) -> definition.PropertyName) definitions
 
     /// Get a map of the counts of the property definitions names.
-    let getPropertyDefinitionNameCounts propertyDefinitions =
+    let getPropertyNameCounts definitions =
         Map.fold
             (fun map (_ : string) definitions ->
                 List.fold
-                    (fun map definition ->
+                    (fun map (definition : PropertyDefinition) ->
                         let definitionName = definition.PropertyName
                         match Map.tryFind definitionName map with
                         | Some count -> Map.add definitionName (count + 1) map
@@ -176,7 +102,7 @@ module Reflection =
                     map
                     definitions)
             Map.empty
-            propertyDefinitions
+            definitions
 
     /// Get all the reflective property containers of a target, including dispatcher and / or facets.
     let getReflectivePropertyContainers (target : 'a) =
@@ -212,10 +138,13 @@ module Reflection =
     /// dispatcher and / or facets.
     let getReflectivePropertyDefinitions (target : 'a) =
         let types = getReflectivePropertyContainerTypes target
-        let propertyDefinitionLists = List.map getPropertyDefinitions types
-        let propertyDefinitions = List.concat propertyDefinitionLists
-        let propertyDefinitions = Map.ofListBy (fun property -> (property.PropertyName, property)) propertyDefinitions
-        Map.toValueList propertyDefinitions
+        let definitionLists = List.map getPropertyDefinitions types
+        let definitions = List.concat definitionLists
+        let definitions =
+            Map.ofListBy (fun (definition : PropertyDefinition) ->
+                (definition.PropertyName, definition))
+                definitions
+        Map.toValueList definitions
         
     /// Try to read the target's member property from property descriptors.
     let private tryReadMemberProperty propertyDescriptors (property : PropertyInfo) target =
@@ -228,27 +157,27 @@ module Reflection =
         | None -> ()
         
     /// Read one of a target's xtension properties from property descriptors.
-    let private readXProperty xtension propertyDescriptors (target : 'a) propertyDefinition =
+    let private readXProperty xtension propertyDescriptors (target : 'a) (definition : PropertyDefinition) =
         let targetType = target.GetType ()
         if Seq.notExists
-            (fun (property : PropertyInfo) -> property.Name = propertyDefinition.PropertyName)
+            (fun (property : PropertyInfo) -> property.Name = definition.PropertyName)
             (targetType.GetProperties ()) then
-            match Map.tryFind propertyDefinition.PropertyName propertyDescriptors with
+            match Map.tryFind definition.PropertyName propertyDescriptors with
             | Some (propertySymbol : Symbol) ->
-                let converter = SymbolicConverter propertyDefinition.PropertyType
+                let converter = SymbolicConverter definition.PropertyType
                 if converter.CanConvertFrom typeof<Symbol> then
-                    let xProperty = { PropertyValue = converter.ConvertFrom propertySymbol; PropertyType = propertyDefinition.PropertyType }
-                    Xtension.attachProperty propertyDefinition.PropertyName xProperty xtension
+                    let xProperty = { PropertyValue = converter.ConvertFrom propertySymbol; PropertyType = definition.PropertyType }
+                    Xtension.attachProperty definition.PropertyName xProperty xtension
                 else
-                    Log.debug ^ "Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyDefinition.PropertyType.Name + "'."
+                    Log.debug ^ "Cannot convert property '" + scstring propertySymbol + "' to type '" + definition.PropertyType.Name + "'."
                     xtension
             | None -> xtension
         else xtension
         
     /// Read a target's xtension properties from property descriptors.
     let private readXProperties xtension propertyDescriptors (target : 'a) =
-        let propertyDefinitions = getReflectivePropertyDefinitions target
-        List.fold (fun xtension -> readXProperty xtension propertyDescriptors target) xtension propertyDefinitions
+        let definitions = getReflectivePropertyDefinitions target
+        List.fold (fun xtension -> readXProperty xtension propertyDescriptors target) xtension definitions
         
     /// Read a target's Xtension from property descriptors.
     let private readXtension (copyTarget : 'a -> 'a) propertyDescriptors target =
@@ -376,22 +305,22 @@ module Reflection =
         List.concat intrinsicFacetNamesLists
 
     /// Attach properties from the given definitions to a target.
-    let attachPropertiesViaDefinitions (copyTarget : 'a -> 'a) propertyDefinitions target =
+    let attachPropertiesViaDefinitions (copyTarget : 'a -> 'a) definitions target =
         let target = copyTarget target
         let targetType = target.GetType ()
-        for propertyDefinition in propertyDefinitions do
-            let propertyValue = PropertyExpr.eval propertyDefinition.PropertyExpr
-            match targetType.GetPropertyWritable propertyDefinition.PropertyName with
+        for definition in definitions do
+            let propertyValue = PropertyExpr.eval definition.PropertyExpr
+            match targetType.GetPropertyWritable definition.PropertyName with
             | null ->
                 match targetType.GetPropertyWritable "Xtension" with
-                | null -> failwith ^ "Invalid property '" + propertyDefinition.PropertyName + "' for target type '" + targetType.Name + "'."
+                | null -> failwith ^ "Invalid property '" + definition.PropertyName + "' for target type '" + targetType.Name + "'."
                 | xtensionProperty ->
                     match xtensionProperty.GetValue target with
                     | :? Xtension as xtension ->
-                        let xProperty = { PropertyValue = propertyValue; PropertyType = propertyDefinition.PropertyType }
-                        let xtension = Xtension.attachProperty propertyDefinition.PropertyName xProperty xtension
+                        let xProperty = { PropertyValue = propertyValue; PropertyType = definition.PropertyType }
+                        let xtension = Xtension.attachProperty definition.PropertyName xProperty xtension
                         xtensionProperty.SetValue (target, xtension)
-                    | _ -> failwith ^ "Invalid property '" + propertyDefinition.PropertyName + "' for target type '" + targetType.Name + "'."
+                    | _ -> failwith ^ "Invalid property '" + definition.PropertyName + "' for target type '" + targetType.Name + "'."
             | property -> property.SetValue (target, propertyValue)
         target
 
@@ -416,13 +345,13 @@ module Reflection =
     /// Attach source's properties to a target.
     let attachProperties (copyTarget : 'a -> 'a) (source : 'b) target =
         let sourceType = source.GetType ()
-        let propertyDefinitions = getPropertyDefinitions sourceType
-        attachPropertiesViaDefinitions copyTarget propertyDefinitions target
+        let definitions = getPropertyDefinitions sourceType
+        attachPropertiesViaDefinitions copyTarget definitions target
 
     /// Detach source's properties to a target.
     let detachProperties (copyTarget : 'a -> 'a) (source : 'b) target =
         let sourceType = source.GetType ()
-        let propertyNames = getPropertyDefinitionNames sourceType
+        let propertyNames = getPropertyNames sourceType
         detachPropertiesViaNames copyTarget propertyNames target
 
     /// Check for facet compatibility with the target's dispatcher.
@@ -496,25 +425,25 @@ module Reflection =
             List.map
                 (fun (sourceType : Type) ->
                     let includeNames = if sourceType.BaseType <> typeof<obj> then [sourceType.BaseType.Name] else []
-                    let propertyDefinitions = getPropertyDefinitionsNoInherit sourceType
+                    let definitions = getPropertyDefinitionsNoInherit sourceType
                     let requiresFacetNames = requiresFacetNames sourceType
-                    (sourceType.Name, includeNames, propertyDefinitions, requiresFacetNames))
+                    (sourceType.Name, includeNames, definitions, requiresFacetNames))
                 sourceTypes
 
         // create the intrinsic overlays with the above descriptors
         let overlays =
             List.map
-                (fun (overlayName, includeNames, propertyDefinitions, requiresFacetNames) ->
+                (fun (overlayName, includeNames, definitions, requiresFacetNames) ->
                     let overlayProperties =
                         List.foldBack
-                            (fun propertyDefinition overlayProperties ->
-                                match propertyDefinition.PropertyExpr with
+                            (fun definition overlayProperties ->
+                                match definition.PropertyExpr with
                                 | DefineExpr value ->
-                                    let converter = SymbolicConverter propertyDefinition.PropertyType
+                                    let converter = SymbolicConverter definition.PropertyType
                                     let overlayProperty = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
-                                    Map.add propertyDefinition.PropertyName overlayProperty overlayProperties
+                                    Map.add definition.PropertyName overlayProperty overlayProperties
                                 | VariableExpr _ -> overlayProperties)
-                            propertyDefinitions
+                            definitions
                             Map.empty
                     let overlayProperties =
                         if requiresFacetNames

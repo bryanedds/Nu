@@ -9,25 +9,79 @@ open System.Collections.Generic
 open System.Reflection
 open Microsoft.FSharp.Reflection
 
-/// Along with the Label binding, is used to elaborate the name of a target without using a
-/// string literal.
-type LabelName =
-    { DummyField : unit }
-    static member (?) (_, name) = name
+/// An evaluatable expression for defining a property.
+type [<NoEquality; NoComparison>] PropertyExpr =
+    | DefineExpr of obj
+    | VariableExpr of (unit -> obj)
 
-[<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module LabelName =
+    /// Evaluate a property expression.
+    static member eval expr =
+        match expr with
+        | DefineExpr value -> value
+        | VariableExpr fn -> fn ()
 
-    /// Along with the LabelName type, is used to elaborate the name of a target without
-    /// using a string literal.
-    ///
-    /// Usage:
-    ///     let fieldName = Label?MyFieldName
-    let Label = { DummyField = () }
+/// The definition of a data-driven property.
+type [<NoEquality; NoComparison>] PropertyDefinition =
+    { PropertyName : string
+      PropertyType : Type
+      PropertyExpr : PropertyExpr }
+
+    /// Validate a property definition.
+    static member validate propertyDefinition =
+        if propertyDefinition.PropertyName = "FacetNames" then failwith "FacetNames cannot be an intrinsic property."
+        if propertyDefinition.PropertyName = "OverlayNameOpt" then failwith "OverlayNameOpt cannot be an intrinsic property."
+        if Array.exists (fun gta -> gta = typeof<obj>) propertyDefinition.PropertyType.GenericTypeArguments then
+            failwith ^
+                "Generic property definition lacking type information for property '" + propertyDefinition.PropertyName + "'. " +
+                "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options."
+
+    /// Make a property definition.
+    static member make propertyName propertyType propertyExpr =
+        { PropertyName = propertyName; PropertyType = propertyType; PropertyExpr = propertyExpr }
+
+    /// Make a property definition, validating it in the process.
+    static member makeValidated propertyName propertyType propertyExpr =
+        let result = PropertyDefinition.make propertyName propertyType propertyExpr
+        PropertyDefinition.validate result
+        result
+
+/// In tandem with the define literal, grants a nice syntax to define value properties.
+type ValueDefinition =
+    { ValueDefinition : unit }
     
-    /// Label for module names.
-    /// Needed since we can't utter something like typeof<MyModule>.
-    let Module = Label
+    /// Some magic syntax for composing value properties.
+    static member (?) (_, propertyName) =
+        fun (value : 'v) ->
+            PropertyDefinition.makeValidated propertyName typeof<'v> (DefineExpr value)
+
+/// In tandem with the variable literal, grants a nice syntax to define variable properties.
+type VariableDefinition =
+    { VariableDefinition : unit }
+
+    /// Some magic syntax for composing variable properties.
+    static member (?) (_, propertyName) =
+        fun (variable : unit -> 'v) ->
+            PropertyDefinition.makeValidated propertyName typeof<'v> (VariableExpr (fun () -> variable () :> obj))
+
+/// In tandem with the property literal, grants a nice syntax to denote properties.
+type PropertyDescriptor =
+    { PropertyDescriptor : unit }
+    
+    /// Some magic syntax for composing value properties.
+    static member inline (?) (_, propertyName : string) =
+        propertyName
+
+[<AutoOpen>]
+module ReflectionModule =
+
+    /// In tandem with the ValueDefinition type, grants a nice syntax to define value properties.
+    let Define = { ValueDefinition = () }
+
+    /// In tandem with the VariableDefinition type, grants a nice syntax to define variable properties.
+    let Variable = { VariableDefinition = () }
+    
+    /// In tandem with the PropertyDescriptor type, grants a nice syntax to denote properties.
+    let Property = { PropertyDescriptor = () }
 
 module Reflection =
 

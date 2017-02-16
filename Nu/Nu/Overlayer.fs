@@ -117,7 +117,7 @@ module OverlayerModule =
                 match xtensionProperty.GetValue target with
                 | :? Xtension as xtension ->
                     let nodes =
-                        Seq.foldBack (fun (xPropertyName, xProperty) nodeOpts ->
+                        Seq.foldBack (fun (xPropertyName, xProperty : XProperty) nodeOpts ->
                             match tryFindPropertySymbol newOverlayName xPropertyName newOverlayer with
                             | Some xPropertySymbol -> (xPropertyName, xProperty.PropertyType, xPropertySymbol) :: nodeOpts
                             | None -> nodeOpts)
