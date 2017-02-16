@@ -65,8 +65,11 @@ module Scripting =
              
              (* Engine Keywords *)
              "Gt Lt Eq Positive Negative Zero",
+
+             (* Engine Headers *)
+             "define fun",
              Constants.PrettyPrinter.DefaultThresholdMin,
-             Constants.PrettyPrinter.DetailedThresholdMax);
+             Constants.PrettyPrinter.DefaultThresholdMax);
           TypeConverter (typeof<ExprConverter>);
           CustomEquality;
           CustomComparison>]
