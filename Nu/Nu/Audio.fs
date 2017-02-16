@@ -96,14 +96,14 @@ module AudioPlayerModule =
                 | Right assets ->
                     let audioAssetOpts = List.map AudioPlayer.tryLoadAudioAsset2 assets
                     let audioAssets = List.definitize audioAssetOpts
-                    let audioAssetMapOpt = Map.tryFind packageName audioPlayer.AudioPackageMap
+                    let audioAssetMapOpt = UMap.tryFind packageName audioPlayer.AudioPackageMap
                     match audioAssetMapOpt with
                     | Some audioAssetMap ->
-                        let audioAssetMap = Map.addMany audioAssets audioAssetMap
-                        { audioPlayer with AudioPackageMap = Map.add packageName audioAssetMap audioPlayer.AudioPackageMap }
+                        let audioAssetMap = UMap.addMany audioAssets audioAssetMap
+                        { audioPlayer with AudioPackageMap = UMap.add packageName audioAssetMap audioPlayer.AudioPackageMap }
                     | None ->
-                        let audioAssetMap = Map.ofSeq audioAssets
-                        { audioPlayer with AudioPackageMap = Map.add packageName audioAssetMap audioPlayer.AudioPackageMap }
+                        let audioAssetMap = UMap.ofSeq audioAssets
+                        { audioPlayer with AudioPackageMap = UMap.add packageName audioAssetMap audioPlayer.AudioPackageMap }
                 | Left error ->
                     Log.info ^ "Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'."
                     audioPlayer
@@ -113,13 +113,13 @@ module AudioPlayerModule =
     
         static member private tryLoadAudioAsset (assetTag : AssetTag) audioPlayer =
             let (assetMapOpt, audioPlayer) =
-                match Map.tryFind assetTag.PackageName audioPlayer.AudioPackageMap with
-                | Some _ -> (Map.tryFind assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
+                match UMap.tryFind assetTag.PackageName audioPlayer.AudioPackageMap with
+                | Some _ -> (UMap.tryFind assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
                 | None ->
                     Log.info ^ "Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let audioPlayer = AudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
-                    (Map.tryFind assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
-            (Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) assetMapOpt, audioPlayer)
+                    (UMap.tryFind assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
+            (Option.bind (fun assetMap -> UMap.tryFind assetTag.AssetName assetMap) assetMapOpt, audioPlayer)
     
         static member private playSong playSongMessage audioPlayer =
             let song = playSongMessage.Song
@@ -137,16 +137,16 @@ module AudioPlayerModule =
     
         static member private handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuseMessage) audioPlayer =
             let packageName = hintPackageDisuse.PackageName
-            match Map.tryFind packageName audioPlayer.AudioPackageMap with
+            match UMap.tryFind packageName audioPlayer.AudioPackageMap with
             | Some assets ->
                 // all sounds / music must be halted because one of them might be playing during unload
                 // (which is very bad according to the API docs).
                 AudioPlayer.haltSound ()
-                for asset in assets do
-                    match asset.Value with
+                for (_, asset) in assets do
+                    match asset with
                     | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
                     | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
-                { audioPlayer with AudioPackageMap = Map.remove packageName audioPlayer.AudioPackageMap }
+                { audioPlayer with AudioPackageMap = UMap.remove packageName audioPlayer.AudioPackageMap }
             | None -> audioPlayer
     
         static member private handlePlaySound playSoundMessage audioPlayer =
@@ -187,11 +187,12 @@ module AudioPlayerModule =
     
         static member private handleReloadAudioAssets audioPlayer =
             let oldPackageMap = audioPlayer.AudioPackageMap
-            let audioPlayer = { audioPlayer with AudioPackageMap = Map.empty }
-            List.fold
+            let oldPackageNames = oldPackageMap |> UMap.toSeq |> Seq.map fst
+            let audioPlayer = { audioPlayer with AudioPackageMap = UMap.makeEmpty None }
+            Seq.fold
                 (fun audioPlayer packageName -> AudioPlayer.tryLoadAudioPackage packageName audioPlayer)
                 audioPlayer
-                (Map.toKeyList oldPackageMap)
+                oldPackageNames
     
         static member private handleAudioMessage audioPlayer audioMessage =
             match audioMessage with
@@ -230,7 +231,7 @@ module AudioPlayerModule =
                 failwith "Cannot create an AudioPlayer without SDL audio initialized."
             let audioPlayer =
                 { AudioContext = ()
-                  AudioPackageMap = Map.empty
+                  AudioPackageMap = UMap.makeEmpty None
                   AudioMessages = UList.makeEmpty None
                   CurrentSongOpt = None
                   NextPlaySongOpt = None }
