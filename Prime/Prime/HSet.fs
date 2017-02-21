@@ -27,39 +27,39 @@ module HSetModule =
         | Nil
         | Singleton of 'a Hv
         | Multiple of 'a HNode array
-        | Bucket of Hv<'a> array
+        | Gutter of Hv<'a> array
 
     [<RequireQualifiedAccess>]
     module private HNode =
     
         /// OPTIMIZATION: Array.Clone () is not used since it's been profiled to be slower
         let inline private cloneArray (arr : 'a HNode array) =
-            let arr' = Array.zeroCreate 32 : 'a HNode array // NOTE: there's an unecessary check against the size here, but that's the only inefficiency
+            let arr' = Array.zeroCreate 16 : 'a HNode array // NOTE: there's an unecessary check against the size here, but that's the only inefficiency
                                                             // TODO: use Array.zeroCreateUnchecked if / when it becomes available
-            Array.Copy (arr, 0, arr', 0, 32) // param checks are inefficient, but hopefully there's at least a memcpy underneath...
+            Array.Copy (arr, 0, arr', 0, 16) // param checks are inefficient, but hopefully there's at least a memcpy underneath...
             arr'
     
         let inline private hashToIndex h dep =
-            (h >>> (dep * 5)) &&& 0x1F
+            (h >>> (dep * 4)) &&& 0xF
 
-        let private addToBucket (entry : Hv<'a>) (bucket : Hv<'a> array) =
-            let bucketLength = bucket.Length
-            let bucket2 = Array.zeroCreate (inc bucketLength) : Hv<'a> array
-            Array.Copy (bucket, 0, bucket2, 0, bucketLength)
-            bucket2.[bucketLength] <- entry
-            bucket2
+        let private addToGutter (entry : Hv<'a>) (gutter : Hv<'a> array) =
+            let gutterLength = gutter.Length
+            let gutter2 = Array.zeroCreate 16 : Hv<'a> array
+            Array.Copy (gutter, 0, gutter2, 0, gutterLength)
+            gutter2.[gutterLength] <- entry
+            gutter2
 
-        let private removeFromBucket (v : 'a) (bucket : Hv<'a> array) =
-            match Array.tryFindIndexBack (fun (entry2 : Hv<'a>) -> entry2.B && entry2.V.Equals v) bucket with
+        let private removeFromGutter (v : 'a) (gutter : Hv<'a> array) =
+            match Array.tryFindIndexBack (fun (entry2 : Hv<'a>) -> entry2.B && entry2.V.Equals v) gutter with
             | Some index ->
-                let bucket2 = Array.zeroCreate (dec bucket.Length) : Hv<'a> array
-                Array.Copy (bucket, 0, bucket2, 0, index)
-                Array.Copy (bucket, inc index, bucket2, index, bucket2.Length - index)
-                bucket2
-            | None -> bucket
+                let gutter2 = Array.zeroCreate (dec gutter.Length) : Hv<'a> array
+                Array.Copy (gutter, 0, gutter2, 0, index)
+                Array.Copy (gutter, inc index, gutter2, index, gutter2.Length - index)
+                gutter2
+            | None -> gutter
 
-        let private containedByBucket (v : 'a) (bucket : Hv<'a> array) =
-            Array.exists (fun (entry2 : Hv<'a>) -> entry2.B && v.Equals entry2.V) bucket
+        let private containedByGutter (v : 'a) (gutter : Hv<'a> array) =
+            Array.exists (fun (entry2 : Hv<'a>) -> entry2.B && v.Equals entry2.V) gutter
 
         let empty =
             Nil
@@ -73,7 +73,7 @@ module HSetModule =
         let rec add (hv : 'a Hv) (earr : 'a HNode array) (dep : int) (node : 'a HNode) : 'a HNode =
     
             // lower than max depth, non-clashing
-            if dep < 8 then
+            if dep < 9 then
     
                 // handle non-clash cases
                 match node with
@@ -115,7 +115,7 @@ module HSetModule =
                     arr.[idx] <- add hv earr (dep + 1) entry
                     Multiple arr
     
-                | Bucket _ ->
+                | Gutter _ ->
     
                     // logically should never hit here
                     failwithumf ()
@@ -125,10 +125,10 @@ module HSetModule =
                 
                 // handle clash cases
                 match node with
-                | Nil -> Bucket (Array.singleton hv)
-                | Singleton hv' -> Bucket [|hv'; hv|]
+                | Nil -> Gutter (Array.singleton hv)
+                | Singleton hv' -> Gutter [|hv'; hv|]
                 | Multiple _ -> failwithumf () // should never hit here
-                | Bucket bucket -> Bucket (addToBucket hv bucket)
+                | Gutter gutter -> Gutter (addToGutter hv gutter)
     
         let rec remove (h : int) (v : 'a) (dep : int) (node : 'a HNode) : 'a HNode =
             match node with
@@ -140,23 +140,23 @@ module HSetModule =
                 let arr = cloneArray arr
                 arr.[idx] <- remove h v (dep + 1) entry
                 if Array.forall isEmpty arr then Nil else Multiple arr // does not collapse Multiple to Singleton, tho could?
-            | Bucket bucket ->
-                let bucket = removeFromBucket v bucket
-                if Array.isEmpty bucket then Nil else Bucket bucket
+            | Gutter gutter ->
+                let gutter = removeFromGutter v gutter
+                if Array.isEmpty gutter then Nil else Gutter gutter
 
         let rec contains (h : int) (v : 'a) (dep : int) (node : 'a HNode) =
             match node with
             | Nil -> false
             | Singleton hv -> hv.V.Equals v
             | Multiple arr -> let idx = hashToIndex h dep in contains h v (dep + 1) arr.[idx]
-            | Bucket bucket -> containedByBucket v bucket
+            | Gutter gutter -> containedByGutter v gutter
     
         let rec fold folder state node =
             match node with
             | Nil -> state
             | Singleton hv -> folder state hv.V
             | Multiple arr -> Array.fold (fold folder) state arr
-            | Bucket bucket -> Array.fold (fun state (hv : Hv<_>) -> folder state hv.V) state bucket
+            | Gutter gutter -> Array.fold (fun state (hv : Hv<_>) -> folder state hv.V) state gutter
     
         /// NOTE: This function seems to profile as being very slow. I don't know if it's the seq / yields syntax or what.
         let rec toSeq node =
@@ -165,7 +165,7 @@ module HSetModule =
                 | Nil -> yield! Seq.empty
                 | Singleton hv -> yield hv.V
                 | Multiple arr -> for n in arr do yield! toSeq n
-                | Bucket bucket -> yield! Array.map (fun (hv : Hv<_>) -> hv.V) bucket }
+                | Gutter gutter -> yield! Array.map (fun (hv : Hv<_>) -> hv.V) gutter }
 
     /// A fast persistent hash set.
     /// Works in effectively constant-time for look-ups and updates.
@@ -186,7 +186,7 @@ module HSetModule =
         /// Create an empty HSet.
         let makeEmpty () =
             { Node = HNode.empty
-              EmptyArray = Array.create 32 HNode.empty }
+              EmptyArray = Array.create 16 HNode.empty }
     
         /// Check that an HSet is empty.
         let isEmpty set =
