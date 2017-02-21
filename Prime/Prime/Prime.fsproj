@@ -73,6 +73,7 @@
     <Compile Include="Generics.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Option.fs" />
+    <Compile Include="FOption.fs" />
     <Compile Include="Pair.fs" />
     <Compile Include="Triple.fs" />
     <Compile Include="Either.fs" />
