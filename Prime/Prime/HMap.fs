@@ -28,7 +28,7 @@ module HMapModule =
         | Nil
         | Singleton of Hkv<'k, 'v>
         | Multiple of HNode<'k, 'v> array
-        | Bucket of Hkv<'k, 'v> array
+        | Gutter of Hkv<'k, 'v> array
 
     [<RequireQualifiedAccess>]
     module private HNode =
@@ -38,34 +38,34 @@ module HMapModule =
 
         /// OPTIMIZATION: Array.Clone () is not used since it's been profiled to be slower
         let inline private cloneArray (arr : HNode<'k, 'v> array) =
-            let arr' = Array.zeroCreate 32 : HNode<'k, 'v> array    // NOTE: there's an unecessary check against the size here, but that's the only inefficiency
+            let arr' = Array.zeroCreate 16 : HNode<'k, 'v> array    // NOTE: there's an unecessary check against the size here, but that's the only inefficiency
                                                                     // TODO: P1: use Array.zeroCreateUnchecked if / when it becomes available
-            Array.Copy (arr, 0, arr', 0, 32) // param checks are inefficient, but hopefully there's at least a memcpy underneath...
+            Array.Copy (arr, 0, arr', 0, 16) // param checks are inefficient, but hopefully there's at least a memcpy underneath...
             arr'
     
         let inline private hashToIndex h dep =
-            (h >>> (dep * 5)) &&& 0x1F
+            (h >>> (dep * 4)) &&& 0xF
 
-        let private addToBucket (entry : Hkv<'k, 'v>) (bucket : Hkv<'k, 'v> array) =
-            let bucketLength = bucket.Length
-            let bucket2 = Array.zeroCreate (inc bucketLength) : Hkv<'k, 'v> array
-            Array.Copy (bucket, 0, bucket2, 0, bucketLength)
-            bucket2.[bucketLength] <- entry
-            bucket2
+        let private addToGutter (entry : Hkv<'k, 'v>) (gutter : Hkv<'k, 'v> array) =
+            let gutterLength = gutter.Length
+            let gutter2 = Array.zeroCreate 16 : Hkv<'k, 'v> array
+            Array.Copy (gutter, 0, gutter2, 0, gutterLength)
+            gutter2.[gutterLength] <- entry
+            gutter2
 
-        let private removeFromBucket (k : 'k) (bucket : Hkv<'k, 'v> array) =
-            match Array.FindLastIndex (bucket, fun (entry2 : Hkv<'k, 'v>) -> entry2.B && entry2.K.Equals k) with
-            | -1 -> bucket
+        let private removeFromGutter (k : 'k) (gutter : Hkv<'k, 'v> array) =
+            match Array.FindLastIndex (gutter, fun (entry2 : Hkv<'k, 'v>) -> entry2.B && entry2.K.Equals k) with
+            | -1 -> gutter
             | index ->
-                let bucket2 = Array.zeroCreate (dec bucket.Length) : Hkv<'k, 'v> array
-                Array.Copy (bucket, 0, bucket2, 0, index)
-                Array.Copy (bucket, inc index, bucket2, index, bucket2.Length - index)
-                bucket2
+                let gutter2 = Array.zeroCreate (dec gutter.Length) : Hkv<'k, 'v> array
+                Array.Copy (gutter, 0, gutter2, 0, index)
+                Array.Copy (gutter, inc index, gutter2, index, gutter2.Length - index)
+                gutter2
 
-        let private tryFindInBucket (k : 'k) (bucket : Hkv<'k, 'v> array) =
-            match Array.FindLastIndex (bucket, fun (entry2 : Hkv<'k, 'v>) -> entry2.B && entry2.K.Equals k) with
+        let private tryFindInGutter (k : 'k) (gutter : Hkv<'k, 'v> array) =
+            match Array.FindLastIndex (gutter, fun (entry2 : Hkv<'k, 'v>) -> entry2.B && entry2.K.Equals k) with
             | -1 -> FOption.none ()
-            | index -> FOption.some bucket.[index].V
+            | index -> FOption.some gutter.[index].V
 
         let empty =
             Nil
@@ -79,7 +79,7 @@ module HMapModule =
         let rec add (hkv : Hkv<'k, 'v>) (earr : HNode<'k, 'v> array) (dep : int) (node : HNode<'k, 'v>) : HNode<'k, 'v> =
     
             // lower than max depth, non-clashing
-            if dep < 8 then
+            if dep < 9 then
     
                 // handle non-clash cases
                 match node with
@@ -121,7 +121,7 @@ module HMapModule =
                     arr.[idx] <- add hkv earr (dep + 1) entry
                     Multiple arr
     
-                | Bucket _ ->
+                | Gutter _ ->
     
                     // logically should never hit here
                     failwithumf ()
@@ -131,10 +131,10 @@ module HMapModule =
                 
                 // handle clash cases
                 match node with
-                | Nil -> Bucket (Array.singleton hkv)
-                | Singleton hkv' -> Bucket [|hkv'; hkv|]
+                | Nil -> Gutter (Array.singleton hkv)
+                | Singleton hkv' -> Gutter [|hkv'; hkv|]
                 | Multiple _ -> failwithumf () // should never hit here
-                | Bucket bucket -> Bucket (addToBucket hkv bucket)
+                | Gutter gutter -> Gutter (addToGutter hkv gutter)
     
         let rec remove (h : int) (k : 'k) (dep : int) (node : HNode<'k, 'v>) : HNode<'k, 'v> =
             match node with
@@ -146,30 +146,30 @@ module HMapModule =
                 let arr = cloneArray arr
                 arr.[idx] <- remove h k (dep + 1) entry
                 if Array.forall isEmpty arr then Nil else Multiple arr // does not collapse Multiple to Singleton, tho could?
-            | Bucket bucket ->
-                let bucket = removeFromBucket k bucket
-                if Array.isEmpty bucket then Nil else Bucket bucket
+            | Gutter gutter ->
+                let gutter = removeFromGutter k gutter
+                if Array.isEmpty gutter then Nil else Gutter gutter
     
         let rec tryFindFast (h : int) (k : 'k) (dep : int) (node : HNode<'k, 'v>) : 'v FOption =
             match node with
             | Nil -> FOption.none ()
             | Singleton hkv -> if hkv.K.Equals k then FOption.some hkv.V else FOption.none ()
             | Multiple arr -> let idx = hashToIndex h dep in tryFindFast h k (dep + 1) arr.[idx]
-            | Bucket bucket -> tryFindInBucket k bucket
+            | Gutter gutter -> tryFindInGutter k gutter
     
         let rec find (h : int) (k : 'k) (dep : int) (node : HNode<'k, 'v>) : 'v =
             match node with
             | Nil -> failwithKeyNotFound k
             | Singleton hkv -> if hkv.K.Equals k then hkv.V else failwithKeyNotFound k
             | Multiple arr -> let idx = hashToIndex h dep in find h k (dep + 1) arr.[idx]
-            | Bucket bucket -> FOption.get (tryFindInBucket k bucket)
+            | Gutter gutter -> FOption.get (tryFindInGutter k gutter)
     
         let rec fold folder state node =
             match node with
             | Nil -> state
             | Singleton hkv -> folder state hkv.K hkv.V
             | Multiple arr -> Array.fold (fold folder) state arr
-            | Bucket bucket -> Array.fold (fun state (hkv : Hkv<_, _>) -> folder state hkv.K hkv.V) state bucket
+            | Gutter gutter -> Array.fold (fun state (hkv : Hkv<_, _>) -> folder state hkv.K hkv.V) state gutter
     
         /// NOTE: This function seems to profile as being very slow. I don't know if it's the seq / yields syntax or what.
         let rec toSeq node =
@@ -178,7 +178,7 @@ module HMapModule =
                 | Nil -> yield! Seq.empty
                 | Singleton hkv -> yield (hkv.K, hkv.V)
                 | Multiple arr -> for n in arr do yield! toSeq n
-                | Bucket bucket -> yield! Array.map (fun (hkv : Hkv<_, _>) -> (hkv.K, hkv.V)) bucket }
+                | Gutter gutter -> yield! Array.map (fun (hkv : Hkv<_, _>) -> (hkv.K, hkv.V)) gutter }
 
     /// A fast persistent hash map.
     /// Works in effectively constant-time for look-ups and updates.
@@ -199,8 +199,8 @@ module HMapModule =
         /// Create an empty HMap.
         let makeEmpty () =
             { Node = HNode.empty
-              EmptyArray = Array.create 32 HNode.empty }
-    
+              EmptyArray = Array.create 16 HNode.empty }
+
         /// Check that an HMap is empty.
         let isEmpty map =
             HNode.isEmpty map.Node
