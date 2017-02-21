@@ -13,7 +13,8 @@ module HSetModule =
     /// A hash-value pair, implemented with a struct for efficiency.
     type private Hv<'a when 'a :> IEquatable<'a>> =
         struct
-            new (h, v) = { H = h; V = v }
+            new (b, h, v) = { B = b; H = h; V = v }
+            val B : bool
             val H : int
             val V : 'a
             end
@@ -49,7 +50,7 @@ module HSetModule =
             bucket2
 
         let private removeFromBucket (v : 'a) (bucket : Hv<'a> array) =
-            match Array.tryFindIndexBack (fun (entry2 : Hv<'a>) -> entry2.V.Equals v) bucket with
+            match Array.tryFindIndexBack (fun (entry2 : Hv<'a>) -> entry2.B && entry2.V.Equals v) bucket with
             | Some index ->
                 let bucket2 = Array.zeroCreate (dec bucket.Length) : Hv<'a> array
                 Array.Copy (bucket, 0, bucket2, 0, index)
@@ -58,8 +59,8 @@ module HSetModule =
             | None -> bucket
 
         let private containedByBucket (v : 'a) (bucket : Hv<'a> array) =
-            Array.exists (fun (entry2 : Hv<'a>) -> v.Equals entry2.V) bucket
-    
+            Array.exists (fun (entry2 : Hv<'a>) -> entry2.B && v.Equals entry2.V) bucket
+
         let empty =
             Nil
     
@@ -197,7 +198,7 @@ module HSetModule =
     
         /// Add a value with the key to an HSet.
         let add (value : 'a) set =
-            let hv = Hv (value.GetHashCode (), value)
+            let hv = Hv (true, value.GetHashCode (), value)
             let node = HNode.add hv set.EmptyArray 0 set.Node
             { set with Node = node }
     
