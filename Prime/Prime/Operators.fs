@@ -89,6 +89,10 @@ module Operators =
     /// Test for reference equality.
     let inline refEq (a : 'a) (b : 'a) = obj.ReferenceEquals (a, b)
 
+    /// Test for equality, usually faster than (=).
+    /// TODO: make sure this always generates code equally fast or faster.
+    let inline fastEq (x : 'a) (y : 'a) = LanguagePrimitives.GenericEquality x y
+
     /// Test just the value parts of a type for equality.
     /// NOTE: This function uses mad reflection, so is extremely slow, and should not be used in tight loops.
     let rec similar (a : obj) (b : obj) =
