@@ -13,8 +13,7 @@ module HSetModule =
     /// A hash-value pair, implemented with a struct for efficiency.
     type private Hv<'a when 'a :> IEquatable<'a>> =
         struct
-            new (b, h, v) = { B = b; H = h; V = v }
-            val B : bool
+            new (h, v) = { H = h; V = v }
             val H : int
             val V : 'a
             end
@@ -44,13 +43,13 @@ module HSetModule =
 
         let private addToGutter (entry : Hv<'a>) (gutter : Hv<'a> array) =
             let gutterLength = gutter.Length
-            let gutter2 = Array.zeroCreate 16 : Hv<'a> array
+            let gutter2 = Array.zeroCreate (inc gutterLength) : Hv<'a> array
             Array.Copy (gutter, 0, gutter2, 0, gutterLength)
             gutter2.[gutterLength] <- entry
             gutter2
 
         let private removeFromGutter (v : 'a) (gutter : Hv<'a> array) =
-            match Array.tryFindIndexBack (fun (entry2 : Hv<'a>) -> entry2.B && entry2.V.Equals v) gutter with
+            match Array.tryFindIndexBack (fun (entry2 : Hv<'a>) -> entry2.V.Equals v) gutter with
             | Some index ->
                 let gutter2 = Array.zeroCreate (dec gutter.Length) : Hv<'a> array
                 Array.Copy (gutter, 0, gutter2, 0, index)
@@ -59,7 +58,7 @@ module HSetModule =
             | None -> gutter
 
         let private containedByGutter (v : 'a) (gutter : Hv<'a> array) =
-            Array.exists (fun (entry2 : Hv<'a>) -> entry2.B && v.Equals entry2.V) gutter
+            Array.exists (fun (entry2 : Hv<'a>) -> v.Equals entry2.V) gutter
 
         let empty =
             Nil
@@ -198,7 +197,7 @@ module HSetModule =
     
         /// Add a value with the key to an HSet.
         let add (value : 'a) set =
-            let hv = Hv (true, value.GetHashCode (), value)
+            let hv = Hv (value.GetHashCode (), value)
             let node = HNode.add hv set.EmptyArray 0 set.Node
             { set with Node = node }
     
