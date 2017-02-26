@@ -13,8 +13,7 @@ module HMapModule =
     /// A hash-key-value triple, implemented with a struct for efficiency.
     type private Hkv<'k, 'v when 'k :> IEquatable<'k>> =
         struct
-            new (b, h, k, v) = { B = b; H = h; K = k; V = v }
-            val B : bool
+            new (h, k, v) = { H = h; K = k; V = v }
             val H : int
             val K : 'k
             val V : 'v
@@ -48,13 +47,13 @@ module HMapModule =
 
         let private addToGutter (entry : Hkv<'k, 'v>) (gutter : Hkv<'k, 'v> array) =
             let gutterLength = gutter.Length
-            let gutter2 = Array.zeroCreate 16 : Hkv<'k, 'v> array
+            let gutter2 = Array.zeroCreate (inc gutterLength) : Hkv<'k, 'v> array
             Array.Copy (gutter, 0, gutter2, 0, gutterLength)
             gutter2.[gutterLength] <- entry
             gutter2
 
         let private removeFromGutter (k : 'k) (gutter : Hkv<'k, 'v> array) =
-            match Array.FindLastIndex (gutter, fun (entry2 : Hkv<'k, 'v>) -> entry2.B && entry2.K.Equals k) with
+            match Array.FindLastIndex (gutter, fun (entry2 : Hkv<'k, 'v>) -> entry2.K.Equals k) with
             | -1 -> gutter
             | index ->
                 let gutter2 = Array.zeroCreate (dec gutter.Length) : Hkv<'k, 'v> array
@@ -63,7 +62,7 @@ module HMapModule =
                 gutter2
 
         let private tryFindInGutter (k : 'k) (gutter : Hkv<'k, 'v> array) =
-            match Array.FindLastIndex (gutter, fun (entry2 : Hkv<'k, 'v>) -> entry2.B && entry2.K.Equals k) with
+            match Array.FindLastIndex (gutter, fun (entry2 : Hkv<'k, 'v>) -> entry2.K.Equals k) with
             | -1 -> FOption.none ()
             | index -> FOption.some gutter.[index].V
 
@@ -211,7 +210,7 @@ module HMapModule =
     
         /// Add a value with the key to an HMap.
         let add (key : 'k) (value : 'v) map =
-            let hkv = Hkv (true, key.GetHashCode (), key, value)
+            let hkv = Hkv (key.GetHashCode (), key, value)
             let node = HNode.add hkv map.EmptyArray 0 map.Node
             { map with Node = node }
     
