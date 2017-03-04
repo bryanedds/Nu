@@ -38,7 +38,7 @@ type 'w BoxableSubscription =
     obj -> obj -> 'w -> Handling * 'w
 
 /// A map of event subscriptions.
-/// TODO: P1: for efficiency, consider using UList rather than list.
+/// TODO: P1: for efficiency, consider using UList for storing subscriptions rather than list.
 type SubscriptionEntries =
     UMap<obj Address, SubscriptionEntry list>
 
