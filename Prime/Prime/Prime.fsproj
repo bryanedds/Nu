@@ -100,6 +100,7 @@
     <Compile Include="USet.fs" />
     <Compile Include="HMap.fs" />
     <Compile Include="HSet.fs" />
+    <Compile Include="Vsync.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="SymbolicConverter.fs" />
     <Compile Include="SymbolicDescriptor.fs" />
@@ -112,7 +113,12 @@
     <Compile Include="EventWorld.fs" />
     <Compile Include="Stream.fs" />
     <Compile Include="Chain.fs" />
-    <Compile Include="Vsync.fs" />
+    <Compile Include="Scripting.fs" />
+    <Compile Include="ScriptingUnary.fs" />
+    <Compile Include="ScriptingBinary.fs" />
+    <Compile Include="ScriptingMarshalling.fs" />
+    <Compile Include="ScriptingPrimitives.fs" />
+    <Compile Include="ScriptingWorld.fs" />
     <Compile Include="ListTests.fs" />
     <Compile Include="MapTests.fs" />
     <Compile Include="SetTests.fs" />
