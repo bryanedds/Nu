@@ -34,16 +34,16 @@ type 'w SubscriptionSorter =
     SubscriptionEntry list -> 'w -> SubscriptionEntry list
 
 /// Describes an event subscription that can be boxed / unboxed.
-type internal 'w BoxableSubscription =
+type 'w BoxableSubscription =
     obj -> obj -> 'w -> Handling * 'w
 
 /// A map of event subscriptions.
 /// TODO: P1: for efficiency, consider using UList rather than list.
-type internal SubscriptionEntries =
+type SubscriptionEntries =
     UMap<obj Address, SubscriptionEntry list>
 
 /// A map of subscription keys to unsubscription data.
-type internal UnsubscriptionEntries =
+type UnsubscriptionEntries =
     UMap<Guid, obj Address * Participant>
 
 module Events =
