@@ -28,25 +28,25 @@ type 'w ScriptingWorld =
 [<RequireQualifiedAccess>]
 module ScriptingWorld =
 
-    let private tryGetBinding<'w when 'w :> 'w ScriptingWorld> name cachedBinding (world : 'w) =
+    let tryGetBinding<'w when 'w :> 'w ScriptingWorld> name cachedBinding (world : 'w) =
         EnvModule.Env.tryGetBinding name cachedBinding (world.GetEnv ())
 
-    let private tryAddDeclarationBinding<'w when 'w :> 'w ScriptingWorld> name value (world : 'w) =
+    let tryAddDeclarationBinding<'w when 'w :> 'w ScriptingWorld> name value (world : 'w) =
         world.UpdateEnvPlus (EnvModule.Env.tryAddDeclarationBinding name value)
 
-    let private addProceduralBinding<'w when 'w :> 'w ScriptingWorld> appendType name value (world : 'w) =
+    let addProceduralBinding<'w when 'w :> 'w ScriptingWorld> appendType name value (world : 'w) =
         world.UpdateEnv (EnvModule.Env.addProceduralBinding appendType name value)
 
-    let private addProceduralBindings<'w when 'w :> 'w ScriptingWorld> appendType bindings (world : 'w) =
+    let addProceduralBindings<'w when 'w :> 'w ScriptingWorld> appendType bindings (world : 'w) =
         world.UpdateEnv (EnvModule.Env.addProceduralBindings appendType bindings)
 
-    let private removeProceduralBindings<'w when 'w :> 'w ScriptingWorld> (world : 'w) =
+    let removeProceduralBindings<'w when 'w :> 'w ScriptingWorld> (world : 'w) =
         world.UpdateEnv (EnvModule.Env.removeProceduralBindings)
 
-    let private getProceduralFrames<'w when 'w :> 'w ScriptingWorld> (world : 'w) =
+    let getProceduralFrames<'w when 'w :> 'w ScriptingWorld> (world : 'w) =
         EnvModule.Env.getProceduralFrames (world.GetEnv ())
 
-    let private setProceduralFrames<'w when 'w :> 'w ScriptingWorld> proceduralFrames (world : 'w) =
+    let setProceduralFrames<'w when 'w :> 'w ScriptingWorld> proceduralFrames (world : 'w) =
         world.UpdateEnv (EnvModule.Env.setProceduralFrames proceduralFrames)
 
     let getGlobalFrame<'w when 'w :> 'w ScriptingWorld> (world : 'w) =
@@ -58,7 +58,7 @@ module ScriptingWorld =
     let setLocalFrame<'w when 'w :> 'w ScriptingWorld> localFrame (world : 'w) =
         world.UpdateEnv (EnvModule.Env.setLocalFrame localFrame)
 
-    let private isIntrinsic fnName =
+    let isIntrinsic fnName =
         match fnName with
         | "=" | "<>" | "<" | ">" | "<=" | ">=" | "+" | "-" | "*" | "/" | "%" | "!"
         | "not" | "toEmpty" | "toIdentity" | "toMin" | "toMax"
@@ -80,7 +80,7 @@ module ScriptingWorld =
         | "table" (*| "toTable"*) | "tryFind" | "find" -> true
         | _ -> false
 
-    let rec private evalIntrinsic fnName originOpt evaledArgs world =
+    let rec evalIntrinsic fnName originOpt evaledArgs world =
         match fnName with
         | "=" -> evalBinary EqFns fnName originOpt evaledArgs world
         | "<>" -> evalBinary NotEqFns fnName originOpt evaledArgs world
@@ -186,14 +186,14 @@ module ScriptingWorld =
         | "find" -> evalDoublet evalFind fnName originOpt evaledArgs world
         | _ -> (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
 
-    and private evalBinding expr name cachedBinding originOpt world =
+    and evalBinding expr name cachedBinding originOpt world =
         match tryGetBinding name cachedBinding world with
         | None ->
             if isIntrinsic name then (expr, world)
             else (Violation (["NonexistentBinding"], "Non-existent binding '" + name + "'", originOpt), world)
         | Some binding -> (binding, world)
 
-    and private evalApply (exprs : Expr array) originOpt world =
+    and evalApply (exprs : Expr array) originOpt world =
         match evalMany exprs world with
         | (evaledHead :: evaledTail, world) ->
             match evaledHead with
@@ -228,7 +228,7 @@ module ScriptingWorld =
             | _ -> (Violation (["MalformedApplication"], "Cannot apply the non-binding '" + scstring evaledHead + "'.", originOpt), world)
         | ([], world) -> (Unit, world)
 
-    and private evalApplyAnd exprs originOpt world =
+    and evalApplyAnd exprs originOpt world =
         match exprs with
         | [|left; right|] ->
             match eval left world with
@@ -242,7 +242,7 @@ module ScriptingWorld =
             | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
         | _ -> (Violation (["InvalidArgumentCount"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
 
-    and private evalApplyOr exprs originOpt world =
+    and evalApplyOr exprs originOpt world =
         match exprs with
         | [|left; right|] ->
             match eval left world with
@@ -256,7 +256,7 @@ module ScriptingWorld =
             | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
         | _ -> (Violation (["InvalidArgumentCount"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
 
-    and private evalLet4 binding body originOpt world =
+    and evalLet4 binding body originOpt world =
         let world =
             match binding with
             | VariableBinding (name, body) ->
@@ -269,7 +269,7 @@ module ScriptingWorld =
         let (evaled, world) = eval body world
         (evaled, removeProceduralBindings world)
 
-    and private evalLetMany4 bindingsHead bindingsTail bindingsCount body originOpt world =
+    and evalLetMany4 bindingsHead bindingsTail bindingsCount body originOpt world =
         let world =
             match bindingsHead with
             | VariableBinding (name, body) ->
@@ -294,17 +294,17 @@ module ScriptingWorld =
         let (evaled, world) = eval body world
         (evaled, removeProceduralBindings world)
         
-    and private evalLet binding body originOpt world =
+    and evalLet binding body originOpt world =
         evalLet4 binding body originOpt world
         
-    and private evalLetMany bindings body originOpt world =
+    and evalLetMany bindings body originOpt world =
         match bindings with
         | bindingsHead :: bindingsTail ->
             let bindingsCount = List.length bindingsTail + 1
             evalLetMany4 bindingsHead bindingsTail bindingsCount body originOpt world
         | [] -> (Violation (["MalformedLetOperation"], "Let operation must have at least 1 binding.", originOpt), world)
 
-    and private evalFun fn pars parsCount body framesPushed framesOpt originOpt world =
+    and evalFun fn pars parsCount body framesPushed framesOpt originOpt world =
         if not framesPushed then
             if Option.isNone framesOpt then
                 let frames = getProceduralFrames world :> obj
@@ -312,13 +312,13 @@ module ScriptingWorld =
             else (Fun (pars, parsCount, body, true, framesOpt, originOpt), world)
         else (fn, world)
 
-    and private evalIf condition consequent alternative originOpt world =
+    and evalIf condition consequent alternative originOpt world =
         match eval condition world with
         | (Bool bool, world) -> if bool then eval consequent world else eval alternative world
         | (Violation _ as evaled, world) -> (evaled, world)
         | (_, world) -> (Violation (["InvalidIfCondition"], "Must provide an expression that evaluates to a bool in an if condition.", originOpt), world)
 
-    and private evalMatch input (cases : (Expr * Expr) array) originOpt world =
+    and evalMatch input (cases : (Expr * Expr) array) originOpt world =
         let (input, world) = eval input world
         let resultEir =
             Seq.foldUntilRight (fun world (condition, consequent) ->
@@ -334,7 +334,7 @@ module ScriptingWorld =
         | Right success -> success
         | Left world -> (Violation (["InexhaustiveMatch"], "A match expression failed to meet any of its cases.", originOpt), world)
 
-    and private evalSelect exprPairs originOpt world =
+    and evalSelect exprPairs originOpt world =
         let resultEir =
             Seq.foldUntilRight (fun world (condition, consequent) ->
                 match eval condition world with
@@ -347,7 +347,7 @@ module ScriptingWorld =
         | Right success -> success
         | Left world -> (Violation (["InexhaustiveSelect"], "A select expression failed to meet any of its cases.", originOpt), world)
 
-    and private evalTry body handlers _ world =
+    and evalTry body handlers _ world =
         match eval body world with
         | (Violation (categories, _, _) as evaled, world) ->
             match
@@ -360,7 +360,7 @@ module ScriptingWorld =
             | Left world -> (evaled, world)
         | success -> success
 
-    and private evalDo exprs _ world =
+    and evalDo exprs _ world =
         let evaledEir =
             List.foldWhileRight (fun (_, world) expr ->
                 match eval expr world with
@@ -370,12 +370,12 @@ module ScriptingWorld =
                 exprs
         Either.amb evaledEir
 
-    and private evalBreak expr world =
+    and evalBreak expr world =
         // TODO: write all procedural bindings to console
         Debugger.Break ()
         eval expr world
 
-    and private evalDefine binding originOpt world =
+    and evalDefine binding originOpt world =
         let (bound, world) =
             match binding with
             | VariableBinding (name, body) ->
@@ -434,14 +434,17 @@ module ScriptingWorld =
                 exprs
         (List.rev evaledsRev, world)
 
-    /// Attempt to evaluate the scripting prelude.
-    let tryEvalPrelude preludeStr choose world =
-        try let prelude =
-                preludeStr |>
-                String.unescape |>
+    /// Attempt to evaluate a script.
+    let tryEvalScript choose scriptFilePath world =
+        try let scriptStr =
+                scriptFilePath |>
+                File.ReadAllText |>
+                String.unescape
+            let script =
+                scriptStr |>
                 (fun str -> Symbol.OpenSymbolsStr + str + Symbol.CloseSymbolsStr) |>
                 scvalue<Scripting.Expr list>
-            let (evaleds, world) = evalMany prelude world
-            Right (preludeStr, evaleds, world)
+            let (evaleds, world) = evalMany script world
+            Right (scriptStr, evaleds, world)
         with exn ->
-            Left ("Could not evaluate due to: " + scstring exn, choose world)
+            Left ("Could not evaluate script due to: " + scstring exn, choose world)
