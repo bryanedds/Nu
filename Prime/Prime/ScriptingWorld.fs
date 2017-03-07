@@ -65,8 +65,8 @@ module ScriptingWorld =
 
     let isIntrinsic fnName =
         match fnName with
-        | "=" | "<>" | "<" | ">" | "<=" | ">=" | "+" | "-" | "*" | "/" | "!"
-        | "mod" | "not" | "toEmpty" | "toIdentity" | "toMin" | "toMax"
+        | "=" | "<>" | "<" | ">" | "<=" | ">=" | "+" | "-" | "*" | "/" | "%" | "!"
+        | "not" | "toEmpty" | "toIdentity" | "toMin" | "toMax"
         | "inc" | "dec" | "negate" | "hash"
         | "pow" | "root" | "sqr" | "sqrt"
         | "floor" | "ceiling" | "truncate" | "round" | "exp" | "log"
@@ -98,8 +98,8 @@ module ScriptingWorld =
              | "-" -> evalBinary SubFns fnName originOpt evaledArgs world
              | "*" -> evalBinary MulFns fnName originOpt evaledArgs world
              | "/" -> evalBinary DivFns fnName originOpt evaledArgs world
+             | "%" -> evalBinary ModFns fnName originOpt evaledArgs world
              | "!" -> evalSinglet evalDereference fnName originOpt evaledArgs world
-             | "mod" -> evalBinary ModFns fnName originOpt evaledArgs world
              | "not" -> evalBoolUnary not fnName originOpt evaledArgs world
              | "toEmpty" -> evalUnary ToEmptyFns fnName originOpt evaledArgs world
              | "toIdentity" -> evalUnary ToIdentityFns fnName originOpt evaledArgs world
