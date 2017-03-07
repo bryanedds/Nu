@@ -665,7 +665,7 @@ module Scripting =
                 match optBinding with
                 | Some (_, binding) -> Some (binding, !refOffset, (!refOptIndex).Value)
                 | None -> None
-    
+
             let tryGetBinding name cachedBinding env =
                 match !cachedBinding with
                 | UncachedBinding ->
