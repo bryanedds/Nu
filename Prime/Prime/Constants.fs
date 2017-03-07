@@ -8,6 +8,18 @@ open System
 module Constants =
 
     [<RequireQualifiedAccess>]
+    module Address =
+    
+        let [<Literal>] Separator = '/'
+        let [<Literal>] SeparatorStr = "/"
+
+    [<RequireQualifiedAccess>]
+    module Relation =
+    
+        let [<Literal>] Slot = '.'
+        let [<Literal>] SlotStr = "."
+
+    [<RequireQualifiedAccess>]
     module PrettyPrinter =
     
         let [<Literal>] DefaultThresholdMin = 0

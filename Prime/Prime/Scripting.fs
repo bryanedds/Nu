@@ -437,7 +437,7 @@ module Scripting =
                     | "empty" -> Codata Empty :> obj
                     | _ ->
                         let firstChar = str.[0]
-                        if firstChar = '.' || Char.IsUpper firstChar
+                        if firstChar = Constants.Relation.Slot || Char.IsUpper firstChar
                         then Keyword str :> obj
                         else Binding (str, ref UncachedBinding, originOpt) :> obj
                 | Prime.Number (str, originOpt) ->
