@@ -272,5 +272,5 @@ module ScriptingBinary =
 
     let evalBinary fns fnName originOpt evaledArgs (world : 'w) =
         match evaledArgs with
-        | [evaledLeft; evaledRight] -> evalBinaryInner fns fnName originOpt evaledLeft evaledRight world                
+        | [|evaledLeft; evaledRight|] -> evalBinaryInner fns fnName originOpt evaledLeft evaledRight world                
         | _ -> (Violation (["InvalidArgumentCount"; (String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)

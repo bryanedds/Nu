@@ -474,7 +474,7 @@ module ScriptingUnary =
 
     let evalBoolUnary fn fnName originOpt evaledArgs (world : 'w) =
         match evaledArgs with
-        | [evaledArg] ->
+        | [|evaledArg|] ->
             match evaledArg with
             | Bool bool -> (Bool (fn bool), world)
             | Violation _ as violation -> (violation, world)
@@ -501,5 +501,5 @@ module ScriptingUnary =
 
     let evalUnary fns fnName originOpt evaledArgs (world : 'w) =
         match evaledArgs with
-        | [evaledArg] -> evalUnaryInner fns fnName originOpt evaledArg world
+        | [|evaledArg|] -> evalUnaryInner fns fnName originOpt evaledArg world
         | _ -> (Violation (["InvalidArgumentCount"; (String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", originOpt), world)

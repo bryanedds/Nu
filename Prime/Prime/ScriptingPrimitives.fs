@@ -12,27 +12,27 @@ module ScriptingPrimitives =
 
     let evalSinglet fn fnName originOpt evaledArgs world =
         match evaledArgs with
-        | [evaledArg] -> fn fnName originOpt evaledArg world
+        | [|evaledArg|] -> fn fnName originOpt evaledArg world
         | _ -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Function '" + fnName + "' requires 1 argument.", originOpt), world)
 
     let evalDoublet fn fnName originOpt evaledArgs world =
         match evaledArgs with
-        | [evaledArg; evaledArg2] -> fn fnName originOpt evaledArg evaledArg2 world
+        | [|evaledArg; evaledArg2|] -> fn fnName originOpt evaledArg evaledArg2 world
         | _ -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Function '" + fnName + "' requires 2 arguments.", originOpt), world)
 
     let evalTriplet fn fnName originOpt evaledArgs world =
         match evaledArgs with
-        | [evaledArg; evaledArg2; evaledArg3] -> fn fnName originOpt evaledArg evaledArg2 evaledArg3 world
+        | [|evaledArg; evaledArg2; evaledArg3|] -> fn fnName originOpt evaledArg evaledArg2 evaledArg3 world
         | _ -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Function '" + fnName + "' requires 3 arguments.", originOpt), world)
 
     let evalQuadlet fn fnName originOpt evaledArgs world =
         match evaledArgs with
-        | [evaledArg; evaledArg2; evaledArg3; evaledArg4] -> fn fnName originOpt evaledArg evaledArg2 evaledArg3 evaledArg4 world
+        | [|evaledArg; evaledArg2; evaledArg3; evaledArg4|] -> fn fnName originOpt evaledArg evaledArg2 evaledArg3 evaledArg4 world
         | _ -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Function '" + fnName + "' requires 4 arguments.", originOpt), world)
 
     let evalQuintet fn fnName originOpt evaledArgs world =
         match evaledArgs with
-        | [evaledArg; evaledArg2; evaledArg3; evaledArg4; evaledArg5] -> fn fnName originOpt evaledArg evaledArg2 evaledArg3 evaledArg4 evaledArg5 world
+        | [|evaledArg; evaledArg2; evaledArg3; evaledArg4; evaledArg5|] -> fn fnName originOpt evaledArg evaledArg2 evaledArg3 evaledArg4 evaledArg5 world
         | _ -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Function '" + fnName + "' requires 5 arguments.", originOpt), world)
 
     let evalDereference fnName originOpt evaledArg world =
@@ -57,7 +57,7 @@ module ScriptingPrimitives =
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a keyphrase value.", originOpt), world)
 
     let evalTuple _ _ evaledArgs world =
-        (Tuple (List.toArray evaledArgs), world)
+        (Tuple evaledArgs, world)
 
     let evalPair _ (_ : string) evaledArg evaledArg2 world =
         (Tuple [|evaledArg; evaledArg2|], world)
@@ -886,10 +886,10 @@ module ScriptingPrimitives =
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Canot apply " + fnName + " to a non-container.", originOpt), world)
 
     let evalList _ _ evaledArgs world =
-        (List evaledArgs, world)
+        (List (List.ofArray evaledArgs), world)
 
     let evalRing _ _ evaledArgs world =
-        (Ring (Set.ofList evaledArgs), world)
+        (Ring (Set.ofArray evaledArgs), world)
 
     let evalRemove fnName originOpt evaledArg evaledArg2 world =
         match (evaledArg, evaledArg2) with
@@ -920,8 +920,8 @@ module ScriptingPrimitives =
             | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", originOpt), world)
 
     let evalTable fnName originOpt evaledArgs world =
-        if List.forall (function Tuple arr when Array.length arr = 2 -> true | _ -> false) evaledArgs then
-            let evaledPairs = List.map (function List [evaledFst; evaledSnd] -> (evaledFst, evaledSnd) | _ -> failwithumf ()) evaledArgs
-            let evaledMap = Map.ofList evaledPairs
+        if Array.forall (function Tuple arr when Array.length arr = 2 -> true | _ -> false) evaledArgs then
+            let evaledPairs = Array.map (function List [evaledFst; evaledSnd] -> (evaledFst, evaledSnd) | _ -> failwithumf ()) evaledArgs
+            let evaledMap = Map.ofArray evaledPairs
             (Table evaledMap, world)
         else (Violation (["InvalidEntries"; String.capitalize fnName], "Table entries must consist of 1 or more pairs.", originOpt), world)
