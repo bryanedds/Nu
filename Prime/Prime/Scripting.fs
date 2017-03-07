@@ -8,6 +8,11 @@ open System.ComponentModel
 open Prime
 module Scripting =
 
+    type Pluggable =
+        interface
+            abstract member ToSymbol : unit -> Symbol
+            end
+
     type [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoComparison>] CachedBinding =
         | UncachedBinding
         | DeclarationBinding of Expr
@@ -84,6 +89,7 @@ module Scripting =
         | Double of double
         | String of string
         | Keyword of string
+        | Pluggable of Pluggable
 
         (* Primitive Data Structures *)
         | Tuple of Expr array
@@ -126,6 +132,7 @@ module Scripting =
             | Keyword _
             | Tuple _
             | Keyphrase _
+            | Pluggable _
             | Option _
             | Codata _
             | List _
@@ -308,6 +315,7 @@ module Scripting =
                 | Double double -> Symbol.Number (String.doubleToCodeString double, None) :> obj
                 | String string -> Symbol.Atom (string, None) :> obj
                 | Keyword string -> Symbol.Atom ((if String.isEmpty string then "nil" else string), None) :> obj
+                | Pluggable pluggable -> pluggable.ToSymbol () :> obj
                 | Tuple arr ->
                     let headingSymbol = Symbol.Atom ((if Array.length arr = 2 then "pair" else "tuple"), None)
                     let elemSymbols = arr |> Array.map (fun elem -> this.ExprToSymbol elem) |> List.ofArray
