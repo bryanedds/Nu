@@ -61,8 +61,8 @@ module ScriptingWorld =
 
     let isIntrinsic fnName =
         match fnName with
-        | "=" | "<>" | "<" | ">" | "<=" | ">=" | "+" | "-" | "*" | "/" | "%" | "!"
-        | "not" | "toEmpty" | "toIdentity" | "toMin" | "toMax"
+        | "=" | "<>" | "<" | ">" | "<=" | ">=" | "+" | "-" | "*" | "/" | "!"
+        | "mod" | "not" | "toEmpty" | "toIdentity" | "toMin" | "toMax"
         | "inc" | "dec" | "negate" | "hash"
         | "pow" | "root" | "sqr" | "sqrt"
         | "floor" | "ceiling" | "truncate" | "round" | "exp" | "log"
@@ -94,8 +94,8 @@ module ScriptingWorld =
              | "-" -> evalBinary SubFns fnName originOpt evaledArgs world
              | "*" -> evalBinary MulFns fnName originOpt evaledArgs world
              | "/" -> evalBinary DivFns fnName originOpt evaledArgs world
-             | "%" -> evalBinary ModFns fnName originOpt evaledArgs world
              | "!" -> evalSinglet evalDereference fnName originOpt evaledArgs world
+             | "mod" -> evalBinary ModFns fnName originOpt evaledArgs world
              | "not" -> evalBoolUnary not fnName originOpt evaledArgs world
              | "toEmpty" -> evalUnary ToEmptyFns fnName originOpt evaledArgs world
              | "toIdentity" -> evalUnary ToIdentityFns fnName originOpt evaledArgs world
@@ -433,7 +433,7 @@ module ScriptingWorld =
 
     /// Evaluate a sequence of expressions.
     and evalMany (exprs : Expr array) world =
-        let evaleds = Array.create exprs.Length Unit
+        let evaleds = Array.zeroCreate exprs.Length
         let world =
             Seq.foldi
                 (fun i world expr ->

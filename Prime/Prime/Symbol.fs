@@ -90,12 +90,12 @@ module Symbol =
     let [<Literal>] CloseStringChar = '\"'
     let [<Literal>] CloseStringStr = "\""
     let [<Literal>] QuoteChar = '`'
-    let [<Literal>] StartQuoteStr = "`"
+    let [<Literal>] QuoteStr = "`"
     let [<Literal>] LineCommentChar = ';'
     let [<Literal>] LineCommentStr = ";"
     let [<Literal>] OpenMultilineCommentStr = "#|"
     let [<Literal>] CloseMultilineCommentStr = "|#"
-    let [<Literal>] ReservedChars = ":,"
+    let [<Literal>] ReservedChars = "#%$:,"
     let [<Literal>] StructureCharsNoStr = "[]`"
     let [<Literal>] StructureChars = "\"" + StructureCharsNoStr
     let (*Literal*) IllegalNameChars = ReservedChars + StructureChars + WhitespaceChars
@@ -221,7 +221,7 @@ module Symbol =
             else str
         | Number (str, _) -> distillate str
         | String (str, _) -> OpenStringStr + distillate str + CloseStringStr
-        | Quote (symbol, _) -> StartQuoteStr + writeSymbol symbol
+        | Quote (symbol, _) -> QuoteStr + writeSymbol symbol
         | Symbols (symbols, _) -> OpenSymbolsStr + String.concat " " (List.map writeSymbol symbols) + CloseSymbolsStr
 
     /// Convert a string to a symbol, with the following parses:
@@ -394,7 +394,7 @@ module PrettyPrinter =
             Symbol.writeSymbol symbol
         | PrettyQuote (_, symbolPretty) ->
             let prettyStr = prettySymbolToPrettyStr (inc depth) symbolPretty prettyPrinter
-            Symbol.StartQuoteStr + prettyStr
+            Symbol.QuoteStr + prettyStr
         | PrettySymbols (titled, headered, maxDepth, symbols) ->
             let unfolding = depth < prettyPrinter.ThresholdMin || maxDepth > prettyPrinter.ThresholdMax
             prettySymbolsToPrettyStr titled headered depth unfolding symbols prettyPrinter
