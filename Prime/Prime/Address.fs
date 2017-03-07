@@ -65,7 +65,7 @@ module AddressModule =
         /// Make an address from a '/' delimited string.
         /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
         static member makeFromString<'a> (addressStr : string) =
-            let names = List.ofArray (addressStr.Split '/')
+            let names = List.ofArray (addressStr.Split Constants.Address.Separator)
             { Names = names; HashCode = String.hashMany names; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Hash an Address.
@@ -96,7 +96,7 @@ module AddressModule =
 
         /// Convert a string into an address.
         static member atos<'a> (address : 'a Address) =
-            String.concat "/" address.Names
+            String.concat Constants.Address.SeparatorStr address.Names
 
         /// Convert an address of type 'a to an address of type 'b.
         static member atoa<'a, 'b> (address : 'a Address) =

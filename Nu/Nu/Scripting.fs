@@ -318,7 +318,7 @@ module Scripting =
                 match expr with
                 | Violation (names, error, originOpt) ->
                     let violationSymbol = Symbol.Atom ("violation", None)
-                    let namesSymbol = Symbol.Atom (String.concat "/" names, None)
+                    let namesSymbol = Symbol.Atom (String.concat Constants.Address.SeparatorStr names, None)
                     let errorSymbol = Symbol.Atom (error, None)
                     Symbol.Symbols ([violationSymbol; namesSymbol; errorSymbol], originOpt) :> obj
                 | Unit -> Symbol.Symbols ([], None) :> obj
@@ -479,7 +479,7 @@ module Scripting =
                     | "empty" -> Codata Empty :> obj
                     | _ ->
                         let firstChar = str.[0]
-                        if firstChar = '.' || Char.IsUpper firstChar
+                        if firstChar = Constants.Relation.Slot || Char.IsUpper firstChar
                         then Keyword str :> obj
                         else Binding (str, ref UncachedBinding, originOpt) :> obj
                 | Prime.Number (str, originOpt) ->

@@ -63,8 +63,8 @@ module RelationModule =
         /// Make a relation from a '/' delimited string where '.' are empty.
         /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
         static member makeFromString<'a> (relationStr : string) =
-            let nameOptList = relationStr.Split '/' |> List.ofSeq
-            let nameOpts = List.map (fun name -> match name with "." -> None | _ -> Some name) nameOptList
+            let nameOptList = relationStr.Split Constants.Address.Separator |> List.ofSeq
+            let nameOpts = List.map (fun name -> match name with Constants.Relation.SlotStr -> None | _ -> Some name) nameOptList
             { NameOpts = nameOpts; TypeCarrier = fun (_ : 'a) -> () }
 
         /// Hash a Relation.
@@ -93,8 +93,8 @@ module RelationModule =
             Relation<'a>.hash this
         
         override this.ToString () =
-            let names = List.map (fun nameOpt -> match nameOpt with Some name -> name | None -> ".") this.NameOpts
-            String.concat "/" names
+            let names = List.map (fun nameOpt -> match nameOpt with Some name -> name | None -> Constants.Relation.SlotStr) this.NameOpts
+            String.concat Constants.Address.SeparatorStr names
 
     [<RequireQualifiedAccess>]
     module Relation =
