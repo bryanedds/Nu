@@ -20,6 +20,12 @@ module Constants =
         let [<Literal>] SlotStr = "."
 
     [<RequireQualifiedAccess>]
+    module Scripting =
+    
+        let [<Literal>] ViolationSeparator = '/'
+        let [<Literal>] ViolationSeparatorStr = "/"
+
+    [<RequireQualifiedAccess>]
     module PrettyPrinter =
     
         let [<Literal>] DefaultThresholdMin = 0
