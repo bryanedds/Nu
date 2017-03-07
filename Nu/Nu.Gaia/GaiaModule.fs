@@ -995,8 +995,8 @@ module Gaia =
         form.treeView.TreeViewNodeSorter <-
             { new IComparer with
                 member this.Compare (left, right) =
-                    let leftName = ((left :?> TreeNode).Name.Split [|Constants.Address.Separator.[0]|]) |> Array.last
-                    let rightName = ((right :?> TreeNode).Name.Split [|Constants.Address.Separator.[0]|]) |> Array.last
+                    let leftName = ((left :?> TreeNode).Name.Split Constants.Address.Separator) |> Array.last
+                    let rightName = ((right :?> TreeNode).Name.Split Constants.Address.Separator) |> Array.last
                     let leftNameBiased = if isGuid leftName then "~" + leftName else leftName
                     let rightNameBiased = if isGuid rightName then "~" + rightName else rightName
                     String.CompareOrdinal (leftNameBiased, rightNameBiased) }

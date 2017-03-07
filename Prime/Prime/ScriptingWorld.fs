@@ -211,8 +211,8 @@ module ScriptingWorld =
                 let keyphrase = Keyphrase (keyword, evaledTail)
                 (keyphrase, world)
             | Binding (fnName, _, originOpt) ->
-                // NOTE: we can (and must!) infer we have either an extrinsic or an intrinsic when
-                // evaluation leads here...
+                // NOTE: when evaluation leads here, we can (actually must) infer that we have
+                // either an extrinsic or intrinsic function.
                 if world.IsExtrinsic fnName then
                     let exprsTail = Array.tail exprs
                     world.EvalExtrinsic fnName originOpt exprsTail

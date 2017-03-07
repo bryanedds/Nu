@@ -304,7 +304,7 @@ module Scripting =
                 match expr with
                 | Violation (names, error, originOpt) ->
                     let violationSymbol = Symbol.Atom ("violation", None)
-                    let namesSymbol = Symbol.Atom (String.concat "/" names, None)
+                    let namesSymbol = Symbol.Atom (String.concat Constants.Scripting.ViolationSeparatorStr names, None)
                     let errorSymbol = Symbol.Atom (error, None)
                     Symbol.Symbols ([violationSymbol; namesSymbol; errorSymbol], originOpt) :> obj
                 | Unit -> Symbol.Symbols ([], None) :> obj
@@ -407,7 +407,7 @@ module Scripting =
                     let inputSymbol = this.ExprToSymbol input
                     let caseSymbols =
                         List.map (fun ((tagNames : string list), consequent) ->
-                            let tagSymbol = Symbol.Atom (String.concat "/" tagNames, None)
+                            let tagSymbol = Symbol.Atom (String.concat Constants.Scripting.ViolationSeparatorStr tagNames, None)
                             let consequentSymbol = this.ExprToSymbol consequent
                             Symbol.Symbols ([tagSymbol; consequentSymbol], None))
                             cases
@@ -483,11 +483,11 @@ module Scripting =
                             match tail with
                             | [Prime.Atom (tagStr, _)]
                             | [Prime.String (tagStr, _)] ->
-                                try let tagName = tagStr in Violation (tagName.Split [|'/'|] |> List.ofArray, "User-defined violation.", originOpt) :> obj
+                                try let tagName = tagStr in Violation (tagName.Split Constants.Scripting.ViolationSeparator |> List.ofArray, "User-defined violation.", originOpt) :> obj
                                 with exn -> Violation (["InvalidForm"; "Violation"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | [Prime.Atom (tagStr, _); Prime.String (errorMsg, _)]
                             | [Prime.String (tagStr, _); Prime.String (errorMsg, _)] ->
-                                try let tagName = tagStr in Violation (tagName.Split [|'/'|] |> List.ofArray, errorMsg, originOpt) :> obj
+                                try let tagName = tagStr in Violation (tagName.Split Constants.Scripting.ViolationSeparator |> List.ofArray, errorMsg, originOpt) :> obj
                                 with exn -> Violation (["InvalidForm"; "Violation"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | _ -> Violation (["InvalidForm"; "Violation"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
                         | "let" ->
@@ -553,7 +553,7 @@ module Scripting =
                                         (fun i handler ->
                                             match handler with
                                             | Prime.Symbols ([Prime.Atom (categoriesStr, _); handlerBody], _) ->
-                                                Right (categoriesStr.Split [|'/'|] |> List.ofArray, handlerBody)
+                                                Right (categoriesStr.Split Constants.Scripting.ViolationSeparator |> List.ofArray, handlerBody)
                                             | _ ->
                                                 Left ("Invalid try handler form for handler #" + scstring (inc i) + ". Requires 1 path and 1 body."))
                                         handlers
@@ -595,7 +595,7 @@ module Scripting =
         match expr with
         | Violation (names, error, originOpt) ->
             Log.info ^
-                "Unexpected violation: " + String.concat "/" names + "\n" +
+                "Unexpected violation: " + String.concat Constants.Scripting.ViolationSeparatorStr names + "\n" +
                 "Due to: " + error + "\n" +
                 SymbolOrigin.tryPrint originOpt + "\n"
         | _ -> ()
