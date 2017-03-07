@@ -20,6 +20,7 @@ type 'w ScriptingWorld =
         abstract member GetEnv : unit -> Env
         abstract member UpdateEnv : (Env -> Env) -> 'w
         abstract member UpdateEnvPlus : (Env -> 'a * Env) -> 'a * 'w
+        abstract member IsExtrinsic : string -> bool
         abstract member EvalExtrinsic : string -> SymbolOrigin option -> Expr array -> Expr * 'w
         abstract member EvalIntrinsic : string -> SymbolOrigin option -> Expr array -> Expr * 'w
         abstract member TryImport : obj -> Type -> Expr option
@@ -28,6 +29,9 @@ type 'w ScriptingWorld =
 
 [<RequireQualifiedAccess>]
 module ScriptingWorld =
+
+    let inline annotateWorld<'w when 'w :> 'w ScriptingWorld> (_ : 'w) =
+        () // NOTE: simply infers that a type is a world.
 
     let tryGetBinding<'w when 'w :> 'w ScriptingWorld> name cachedBinding (world : 'w) =
         EnvModule.Env.tryGetBinding name cachedBinding (world.GetEnv ())
@@ -198,20 +202,25 @@ module ScriptingWorld =
         | Some binding -> (binding, world)
 
     and evalApply exprs originOpt world =
-        let (evaleds, world) = evalMany exprs world
-        if Array.notEmpty evaleds then
-            match evaleds.[0] with
+        if Array.notEmpty exprs then
+            let (exprsHead, exprsTail) = (Array.head exprs, Array.tail exprs)
+            let (evaledHead, world) = eval exprsHead world in annotateWorld world // force the type checker to see the world as it is
+            match evaledHead with
             | Keyword keyword ->
-                let evaledTail = Array.tail evaleds
+                let (evaledTail, world) = evalMany exprsTail world
                 let keyphrase = Keyphrase (keyword, evaledTail)
                 (keyphrase, world)
             | Binding (fnName, _, originOpt) ->
-                // NOTE: we can infer we have an intrinsic when evaluation leads here
-                let evaledTail = Array.tail evaleds
-                match evalIntrinsic fnName originOpt evaledTail world with
-                | (Violation _, world) -> world.EvalExtrinsic fnName originOpt evaledTail
-                | success -> success
+                // NOTE: we can (and must!) infer we have either an extrinsic or an intrinsic when
+                // evaluation leads here...
+                if world.IsExtrinsic fnName then
+                    let exprsTail = Array.tail exprs
+                    world.EvalExtrinsic fnName originOpt exprsTail
+                else
+                    let (evaledTail, world) = evalMany exprsTail world
+                    evalIntrinsic fnName originOpt evaledTail world
             | Fun (pars, parsCount, body, _, framesOpt, originOpt) ->
+                let (evaledTail, world) = evalMany exprsTail world
                 let (framesCurrentOpt, world) =
                     match framesOpt with
                     | Some frames ->
@@ -220,9 +229,8 @@ module ScriptingWorld =
                         (Some framesCurrent, world)
                     | None -> (None, world)
                 let (evaled, world) =
-                    let evaledArgs = Array.tail evaleds
-                    if evaledArgs.Length = parsCount then
-                        let bindings = Array.map2 (fun par evaledArg -> (par, evaledArg)) pars evaledArgs
+                    if evaledTail.Length = parsCount then
+                        let bindings = Array.map2 (fun par evaledArg -> (par, evaledArg)) pars evaledTail
                         let world = addProceduralBindings (AddToNewFrame parsCount) bindings world
                         let (evaled, world) = eval body world
                         (evaled, removeProceduralBindings world)
@@ -233,7 +241,7 @@ module ScriptingWorld =
                     (evaled, world)
                 | None -> (evaled, world)
             | Violation _ as error -> (error, world)
-            | _ -> (Violation (["MalformedApplication"], "Cannot apply the non-binding '" + scstring evaleds.[0] + "'.", originOpt), world)
+            | _ -> (Violation (["MalformedApplication"], "Cannot apply the non-binding '" + scstring evaledHead + "'.", originOpt), world)
         else (Unit, world)
 
     and evalApplyAnd exprs originOpt world =
@@ -410,6 +418,7 @@ module ScriptingWorld =
         | Keyword _ -> (expr, world)
         | Tuple _ -> (expr, world)
         | Keyphrase _ -> (expr, world)
+        | Pluggable _ -> (expr, world)
         | Option _ -> (expr, world)
         | Codata _ -> (expr, world)
         | List _ -> (expr, world)
