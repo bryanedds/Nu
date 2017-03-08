@@ -263,8 +263,8 @@ module ScriptFacetModule =
         member this.GetScriptOptAp world : AssetTag option = this.Get Property? ScriptOptAp world
         member this.SetScriptOptAp (value : AssetTag option) world = this.Set Property? ScriptOptAp value world
         member this.ScriptOptAp = PropertyTag.make this Property? ScriptOptAp this.GetScriptOptAp this.SetScriptOptAp
-        member this.GetGetScriptAp world : Scripting.Expr list = this.Get Property? ScriptAp world
-        member this.SetGetScriptAp (value : Scripting.Expr list) world = this.Set Property? ScriptAp value world
+        member this.GetGetScriptAp world : Scripting.Expr array = this.Get Property? ScriptAp world
+        member this.SetGetScriptAp (value : Scripting.Expr array) world = this.Set Property? ScriptAp value world
         member this.GetScriptAp = PropertyTag.make this Property? ScriptAp this.GetGetScriptAp this.SetGetScriptAp
         member this.GetScriptFrameNp world : Scripting.DeclarationFrame = this.Get Property? ScriptFrameNp world
         member internal this.SetScriptFrameNp (value : Scripting.DeclarationFrame) world = this.Set Property? ScriptFrameNp value world
@@ -299,7 +299,7 @@ module ScriptFacetModule =
 
         static member PropertyDefinitions =
             [Define? ScriptOptAp (None : AssetTag option)
-             Define? ScriptAp ([] : Scripting.Expr list)
+             Define? ScriptAp ([||] : Scripting.Expr array)
              Define? ScriptFrameNp (Scripting.DeclarationFrame () (* HashIdentity *))
              Define? OnRegisterAp Scripting.Unit
              Define? OnUnregister Scripting.Unit

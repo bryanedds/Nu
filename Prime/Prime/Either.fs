@@ -121,6 +121,12 @@ module Either =
         | Right value -> value
         | Left value -> value
 
+    /// Pick whichever of the eir values exists.
+    let ambBy pickFst pickSnd (eir : Either<'a, 'b>) =
+        match eir with
+        | Right value -> pickFst value
+        | Left value -> pickSnd value
+
 [<AutoOpen>]
 module EitherOperators =
 

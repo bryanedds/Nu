@@ -9,9 +9,9 @@ open Prime
 module Scripting =
 
     type Pluggable =
-        interface
-            abstract member ToSymbol : unit -> Symbol
-            end
+        inherit IComparable
+        inherit IComparable<Pluggable>
+        abstract member ToSymbol : unit -> Symbol
 
     type [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoComparison>] CachedBinding =
         | UncachedBinding
@@ -66,10 +66,6 @@ module Scripting =
              "reduceWhile reducei reduce definitize filter takeWhile take skipWhile skip " +
              "countBy count notContains exists notExists zipBy zip pi e v2Zero v2Identity game " +
              "dataOf subscriberOf publisherOf addressOf ",
-             
-             (* Engine Functions *)
-             // TODO: "tickRate tickTime getSimulantSelected "
-             "monitor getSimulantExists " +
              
              (* Engine Keywords *)
              "Gt Lt Eq Positive Negative Zero",
@@ -171,6 +167,7 @@ module Scripting =
             | (Double left, Double right) -> left = right
             | (String left, String right) -> left = right
             | (Keyword left, Keyword right) -> left = right
+            | (Pluggable left, Pluggable right) -> left = right
             | (Tuple left, Tuple right) -> left = right
             | (Keyphrase (leftKeyword, leftExprs), Keyphrase (rightKeyword, rightExprs)) -> (leftKeyword, leftExprs) = (rightKeyword, rightExprs)
             | (Option left, Option right) -> left = right
@@ -204,6 +201,7 @@ module Scripting =
             | (Double left, Double right) -> compare left right
             | (String left, String right) -> compare left right
             | (Keyword left, Keyword right) -> compare left right
+            | (Pluggable left, Pluggable right) -> compare left right
             | (Tuple left, Tuple right) -> compare left right
             | (Keyphrase (leftKeyword, leftExprs), Keyphrase (rightKeyword, rightExprs)) -> compare (leftKeyword, leftExprs) (rightKeyword, rightExprs)
             | (Option left, Option right) -> compare left right
@@ -224,6 +222,7 @@ module Scripting =
             | Double value -> hash value
             | String value -> hash value
             | Keyword value -> hash value
+            | Pluggable value -> hash value
             | Tuple value -> hash value
             | Keyphrase (valueKeyword, valueExprs) -> hash (valueKeyword, valueExprs)
             | Option value -> hash value
