@@ -986,8 +986,8 @@ module WorldTypes =
             { EventSystem : World EventSystem
               Dispatchers : Dispatchers
               Subsystems : World Subsystems
-              ScriptingEnv : Scripting.Env // TODO: rename to ScriptingEnv
-              ScriptingContext : Simulant // TODO: rename to ScriptingContext
+              ScriptingEnv : Scripting.Env
+              ScriptingContext : Simulant
               ScreenCachedOpt : KeyedCache<Screen Address * UMap<Screen Address, ScreenState>, ScreenState option>
               LayerCachedOpt : KeyedCache<Layer Address * UMap<Layer Address, LayerState>, LayerState option>
               EntityCachedOpt : KeyedCache<Entity Address * UMap<Entity Address, EntityState>, EntityState option>
