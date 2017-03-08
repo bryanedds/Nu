@@ -11,7 +11,7 @@ open Prime
 module HMapModule =
 
     /// A hash-key-value triple, implemented with a struct for efficiency.
-    type private Hkv<'k, 'v when 'k :> IEquatable<'k>> =
+    type private Hkv<'k, 'v when 'k :> 'k IEquatable> =
         struct
             new (h, k, v) = { H = h; K = k; V = v }
             val H : int
@@ -23,7 +23,7 @@ module HMapModule =
     /// more cases https://github.com/Microsoft/visualfsharp/issues/711 . Once resolved, should use
     /// it and be able to make arrays with Array.zeroCreate alone without also copying over the
     /// empty array.
-    type [<NoComparison>] private HNode<'k, 'v when 'k :> IEquatable<'k>> =
+    type [<NoComparison>] private HNode<'k, 'v when 'k :> 'k IEquatable> =
         | Nil
         | Singleton of Hkv<'k, 'v>
         | Multiple of HNode<'k, 'v> array
@@ -181,7 +181,7 @@ module HMapModule =
 
     /// A fast persistent hash map.
     /// Works in effectively constant-time for look-ups and updates.
-    type [<NoComparison>] HMap<'k, 'v when 'k :> IEquatable<'k>> =
+    type [<NoComparison>] HMap<'k, 'v when 'k :> 'k IEquatable> =
         private
             { Node : HNode<'k, 'v>
               EmptyArray : HNode<'k, 'v> array }
@@ -287,4 +287,4 @@ module HMapModule =
 
 /// A very fast persistent hash map.
 /// Works in effectively constant-time for look-ups and updates.
-type HMap<'k, 'v when 'k :> IEquatable<'k>> = HMapModule.HMap<'k, 'v>
+type HMap<'k, 'v when 'k :> 'k IEquatable> = HMapModule.HMap<'k, 'v>

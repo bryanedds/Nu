@@ -108,14 +108,14 @@ module WorldTypes =
             | :? SortPriority as that -> SortPriority.equals this that
             | _ -> failwithumf ()
 
-        interface IComparable<SortPriority> with
+        interface SortPriority IComparable with
             member this.CompareTo that =
                 SortPriority.compare this that
 
         interface IComparable with
             member this.CompareTo that =
                 match that with
-                | :? SortPriority as that -> (this :> IComparable<SortPriority>).CompareTo that
+                | :? SortPriority as that -> (this :> SortPriority IComparable).CompareTo that
                 | _ -> failwithumf ()
 
     /// Signifies at run-time that a type has imperative semantics.
@@ -1023,12 +1023,27 @@ module WorldTypes =
             member this.UpdateEnvPlus updater = let (result, env) = updater this.ScriptingEnv in (result, { this with ScriptingEnv = env })
             member this.IsExtrinsic fnName =
                 match fnName with
-                | "get" | "set" | "v2" | "xOf" | "yOf" | "xAs" | "yAs"
+                | "get" | "set"
+                | "v2" | "xOf" | "yOf" | "xAs" | "yAs"
                 | "monitor" -> true
                 | _ -> false
-            member this.EvalExtrinsic _ _ _ = failwithnie ()
-            member this.TryImport _ _ = failwithnie ()
-            member this.TryExport _ _ = failwithnie ()
+            
+            member this.EvalExtrinsic _ _ _ =
+                failwithnie ()
+            
+            member this.TryImport value ty =
+                match (value, ty.Name) with
+                | (:? Vector2 as v2, "Vector2") ->
+                    let v2p = { Vector2 = v2 }
+                    v2p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
+                | (_, _) -> None
+            
+            member this.TryExport value ty =
+                match (value, ty.Name) with
+                | (Scripting.Pluggable pluggable, "Vector2") ->
+                    let v2 = pluggable :?> Vector2Pluggable
+                    v2.Vector2 :> obj |> Some
+                | (_, _) -> None
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.

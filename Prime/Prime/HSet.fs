@@ -11,7 +11,7 @@ open Prime
 module HSetModule =
 
     /// A hash-value pair, implemented with a struct for efficiency.
-    type private Hv<'a when 'a :> IEquatable<'a>> =
+    type private Hv<'a when 'a :> 'a IEquatable> =
         struct
             new (h, v) = { H = h; V = v }
             val H : int
@@ -22,7 +22,7 @@ module HSetModule =
     /// more cases https://github.com/Microsoft/visualfsharp/issues/711 . Once resolved, should use
     /// it and be able to make arrays with Array.zeroCreate alone without also copying over the
     /// empty array.
-    type [<NoComparison>] private HNode<'a when 'a :> IEquatable<'a>> =
+    type [<NoComparison>] private HNode<'a when 'a :> 'a IEquatable> =
         | Nil
         | Singleton of 'a Hv
         | Multiple of 'a HNode array
@@ -168,7 +168,7 @@ module HSetModule =
 
     /// A fast persistent hash set.
     /// Works in effectively constant-time for look-ups and updates.
-    type [<NoComparison>] HSet<'a when 'a :> IEquatable<'a>> =
+    type [<NoComparison>] HSet<'a when 'a :> 'a IEquatable> =
         private
             { Node : 'a HNode
               EmptyArray : 'a HNode array }
@@ -256,4 +256,4 @@ module HSetModule =
 
 /// A very fast persistent hash set.
 /// Works in effectively constant-time for look-ups and updates.
-type HSet<'a when 'a :> IEquatable<'a>> = 'a HSetModule.HSet
+type HSet<'a when 'a :> 'a IEquatable> = 'a HSetModule.HSet
