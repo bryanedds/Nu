@@ -38,7 +38,7 @@ module WorldModule =
             world
 
         /// Make the world.
-        static member internal make eventSystem dispatchers subsystems scriptEnv ambientState gameSpecializationOpt activeGameDispatcher =
+        static member internal make eventSystem dispatchers subsystems scriptingEnv ambientState gameSpecializationOpt activeGameDispatcher =
             let gameState = GameState.make gameSpecializationOpt activeGameDispatcher
             let screenStates = UMap.makeEmpty None
             let layerStates = UMap.makeEmpty None
@@ -47,8 +47,8 @@ module WorldModule =
                 { EventSystem = eventSystem
                   Dispatchers = dispatchers
                   Subsystems = subsystems
-                  ScriptEnv = scriptEnv
-                  ScriptContext = Game Address.empty
+                  ScriptingEnv = scriptingEnv
+                  ScriptingContext = Game Address.empty
                   ScreenCachedOpt = KeyedCache.make (Address.empty<Screen>, screenStates) None
                   LayerCachedOpt = KeyedCache.make (Address.empty<Layer>, layerStates) None
                   EntityCachedOpt = KeyedCache.make (Address.empty<Entity>, entityStates) None
@@ -405,11 +405,11 @@ module WorldModule =
 
         /// Get the context of the script system.
         static member internal getScriptContext (world : World) =
-            world.ScriptContext
+            world.ScriptingContext
 
         /// Get the context of the script system.
         static member internal setScriptContext context (world : World) =
-            { world with ScriptContext = context }
+            { world with ScriptingContext = context }
 
         /// Evaluate a script expression.
         static member eval expr localFrame simulant world =
