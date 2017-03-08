@@ -106,11 +106,11 @@ module Scripting =
         | List of Expr list
         | Ring of Set<Expr>
         | Table of Map<Expr, Expr>
-        // TODO: | Composite of string * Map<Expr, int> * Expr array
+        // TODO: | Composite of string * Map<Expr, int> * Expr array - composite interface must be a superset of keyphrase's, save for keyname and keyfields fns
 
         (* Special Forms *)
         | Binding of string * CachedBinding ref * SymbolOrigin option
-        | Apply of Expr array * Breakpoint * SymbolOrigin option // bool ref is breakpoint
+        | Apply of Expr array * Breakpoint * SymbolOrigin option
         | ApplyAnd of Expr array * Breakpoint * SymbolOrigin option
         | ApplyOr of Expr array * Breakpoint * SymbolOrigin option
         | Let of Binding * Expr * SymbolOrigin option
