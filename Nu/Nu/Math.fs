@@ -26,6 +26,41 @@ type ViewType =
     | Absolute
     | Relative
 
+/// The Vector2 value that can be plugged into the scripting language.
+type [<CustomEquality; CustomComparison>] Vector2Pluggable =
+    { Vector2 : Vector2 }
+
+    static member equals left right =
+        left.Vector2 = right.Vector2
+
+    static member compare left right =
+        compare (left.Vector2.X, left.Vector2.Y) (right.Vector2.X, right.Vector2.Y)
+
+    override this.GetHashCode () =
+        hash this.Vector2
+
+    override this.Equals that =
+        match that with
+        | :? Vector2Pluggable as that -> Vector2Pluggable.equals this that
+        | _ -> failwithumf ()
+
+    interface Vector2Pluggable IComparable with
+        member this.CompareTo that =
+            Vector2Pluggable.compare this that
+
+    interface Scripting.Pluggable with
+
+        member this.CompareTo that =
+            match that with
+            | :? Vector2Pluggable as that -> (this :> Vector2Pluggable IComparable).CompareTo that
+            | _ -> failwithumf ()
+
+        member this.ToSymbol () =
+            let v2 = Symbol.Atom ("v2", None)
+            let x = Symbol.Number (String.singleToCodeString this.Vector2.X, None)
+            let y = Symbol.Number (String.singleToCodeString this.Vector2.Y, None)
+            Symbol.Symbols ([v2; x; y], None)
+
 /// Converts Vector2 types.
 type Vector2Converter () =
     inherit TypeConverter ()

@@ -10,7 +10,6 @@ module Scripting =
 
     type Pluggable =
         inherit IComparable
-        inherit IComparable<Pluggable>
         abstract member ToSymbol : unit -> Symbol
 
     type [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoComparison>] CachedBinding =
@@ -237,14 +236,14 @@ module Scripting =
             | :? Expr as that -> Expr.equals this that
             | _ -> failwithumf ()
 
-        interface IComparable<Expr> with
+        interface Expr IComparable with
             member this.CompareTo that =
                 Expr.compare this that
 
         interface IComparable with
             member this.CompareTo that =
                 match that with
-                | :? Expr as that -> (this :> IComparable<Expr>).CompareTo that
+                | :? Expr as that -> (this :> Expr IComparable).CompareTo that
                 | _ -> failwithumf ()
 
     /// Converts Expr types.
