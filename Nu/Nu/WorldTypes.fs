@@ -986,8 +986,8 @@ module WorldTypes =
             { EventSystem : World EventSystem
               Dispatchers : Dispatchers
               Subsystems : World Subsystems
-              ScriptEnv : Scripting.Env // TODO: rename to ScriptingEnv
-              ScriptContext : Simulant // TODO: rename to ScriptingContext
+              ScriptingEnv : Scripting.Env // TODO: rename to ScriptingEnv
+              ScriptingContext : Simulant // TODO: rename to ScriptingContext
               ScreenCachedOpt : KeyedCache<Screen Address * UMap<Screen Address, ScreenState>, ScreenState option>
               LayerCachedOpt : KeyedCache<Layer Address * UMap<Layer Address, LayerState>, LayerState option>
               EntityCachedOpt : KeyedCache<Entity Address * UMap<Entity Address, EntityState>, EntityState option>
@@ -1018,9 +1018,9 @@ module WorldTypes =
                 | _ -> failwithumf ()
 
         interface World ScriptingWorld with
-            member this.GetEnv () = this.ScriptEnv
-            member this.UpdateEnv updater = { this with ScriptEnv = updater this.ScriptEnv }
-            member this.UpdateEnvPlus updater = let (result, env) = updater this.ScriptEnv in (result, { this with ScriptEnv = env })
+            member this.GetEnv () = this.ScriptingEnv
+            member this.UpdateEnv updater = { this with ScriptingEnv = updater this.ScriptingEnv }
+            member this.UpdateEnvPlus updater = let (result, env) = updater this.ScriptingEnv in (result, { this with ScriptingEnv = env })
             member this.IsExtrinsic fnName =
                 match fnName with
                 | "get" | "set" | "v2" | "xOf" | "yOf" | "xAs" | "yAs"

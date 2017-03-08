@@ -127,8 +127,12 @@
     <Compile Include="SymbolTests.fs" />
     <Compile Include="XtensionTests.fs" />
     <Compile Include="EventTests.fs" />
+    <Compile Include="ScriptingTests.fs" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Program.fs" />
+    <Content Include="Prelude.script">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <None Include="Interactive.fsx" />
     <None Include="App.config" />
     <Content Include="packages.config" />

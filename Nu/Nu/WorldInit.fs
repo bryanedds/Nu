@@ -38,44 +38,44 @@ module Nu =
 
             // init eval F# reach-arounds
             // TODO: remove duplicated code with the following 4 functions...
-            WorldModule.eval <- fun expr localFrame scriptContext world ->
+            WorldModule.eval <- fun expr localFrame scriptingContext world ->
                 let oldLocalFrame = World.getLocalFrame world
                 let oldScriptContext = World.getScriptContext world
                 let world = World.setLocalFrame localFrame world
-                let world = World.setScriptContext scriptContext world
+                let world = World.setScriptContext scriptingContext world
                 let (evaled, world) = World.evalInternal expr world
                 let world = World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 (evaled, world)
 
             // init evalMany F# reach-around
-            WorldModule.evalMany <- fun exprs localFrame scriptContext world ->
+            WorldModule.evalMany <- fun exprs localFrame scriptingContext world ->
                 let oldLocalFrame = World.getLocalFrame world
                 let oldScriptContext = World.getScriptContext world
                 let world = World.setLocalFrame localFrame world
-                let world = World.setScriptContext scriptContext world
+                let world = World.setScriptContext scriptingContext world
                 let (evaleds, world) = World.evalManyInternal exprs world
                 let world = World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 (evaleds, world)
 
             // init evalWithLogging F# reach-arounds
-            WorldModule.evalWithLogging <- fun expr localFrame scriptContext world ->
+            WorldModule.evalWithLogging <- fun expr localFrame scriptingContext world ->
                 let oldLocalFrame = World.getLocalFrame world
                 let oldScriptContext = World.getScriptContext world
                 let world = World.setLocalFrame localFrame world
-                let world = World.setScriptContext scriptContext world
+                let world = World.setScriptContext scriptingContext world
                 let (evaled, world) = World.evalWithLoggingInternal expr world
                 let world = World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 (evaled, world)
 
             // init evalMany F# reach-around
-            WorldModule.evalManyWithLogging <- fun exprs localFrame scriptContext world ->
+            WorldModule.evalManyWithLogging <- fun exprs localFrame scriptingContext world ->
                 let oldLocalFrame = World.getLocalFrame world
                 let oldScriptContext = World.getScriptContext world
                 let world = World.setLocalFrame localFrame world
-                let world = World.setScriptContext scriptContext world
+                let world = World.setScriptContext scriptingContext world
                 let (evaleds, world) = World.evalManyWithLoggingInternal exprs world
                 let world = World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world

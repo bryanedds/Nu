@@ -1,22 +1,30 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2017.
 
-namespace Nu.Tests
+namespace Prime.Tests
 open System
 open Xunit
 open Prime
-open Prime.Stream
-open Nu
-open Nu.Simulants
-open OpenTK
 module ScriptingTests =
 
+    type [<ReferenceEquality>] TestWorld =
+        { ScriptingEnv : Scripting.Env }
+        interface TestWorld ScriptingWorld with
+            member this.GetEnv () = this.ScriptingEnv
+            member this.UpdateEnv updater = { this with ScriptingEnv = updater this.ScriptingEnv }
+            member this.UpdateEnvPlus updater = let (result, env) = updater this.ScriptingEnv in (result, { this with ScriptingEnv = env })
+            member this.IsExtrinsic _ = false
+            member this.EvalExtrinsic _ _ _ = failwithumf ()
+            member this.TryImport _ _ = failwithnie ()
+            member this.TryExport _ _ = failwithnie ()
+        static member make () = { ScriptingEnv = Scripting.EnvModule.Env.make () }
+
     let evalPartial exprStr =
-        let world = World.makeEmpty ()
-        match World.tryEvalPrelude world with
-        | Right (_, world) ->
+        let world = TestWorld.make ()
+        match ScriptingWorld.tryEvalScript id Constants.Scripting.PreludeFilePath world with
+        | Right (_, _, world) ->
             let expr = scvalue<Scripting.Expr> exprStr
-            World.eval expr (Simulants.Game.GetScriptFrameNp world) Simulants.Game world |> fst
+            ScriptingWorld.eval expr world |> fst
         | Left _ ->
             Assert.True false
             Scripting.Unit
@@ -57,10 +65,3 @@ module ScriptingTests =
         match evalPartial "[fst empty]" with
         | Scripting.Violation _ -> Assert.True true
         | _ -> Assert.True false
-
-    let [<Fact>] setEyeCenterFromGameScriptWorks () =
-        let world = World.makeEmpty ()
-        let game = Simulants.Game
-        let expr = scvalue<Scripting.Expr> "[set EyeCenter [v2 10f 10f]]"
-        let world = World.eval expr (game.GetScriptFrameNp world) game world |> snd
-        Assert.Equal (Vector2 (10.0f, 10.0f), Game.GetEyeCenter world)

@@ -683,8 +683,8 @@ module WorldModule2 =
                          (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockAudioPlayer.make ()) :> World Subsystem)]
                 Subsystems.make subsystemMap
 
-            // make the world's script environment
-            let scriptEnv = Scripting.EnvModule.Env.make ()
+            // make the world's scripting environment
+            let scriptingEnv = Scripting.EnvModule.Env.make ()
 
             // make the world's ambient state
             let ambientState =
@@ -696,7 +696,7 @@ module WorldModule2 =
             let activeGameDispatcher = dispatchers.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
 
             // make the world
-            let world = World.make eventSystem dispatchers subsystems scriptEnv ambientState None activeGameDispatcher
+            let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState None activeGameDispatcher
             
             // subscribe to subscribe and unsubscribe events
             let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
@@ -787,8 +787,8 @@ module WorldModule2 =
                 match Overlayer.tryMakeFromFile intrinsicOverlays Assets.OverlayerFilePath with
                 | Right overlayer ->
 
-                    // make the world's script environment
-                    let scriptEnv = Scripting.EnvModule.Env.make ()
+                    // make the world's scripting environment
+                    let scriptingEnv = Scripting.EnvModule.Env.make ()
             
                     // make the world's ambient state
                     let ambientState =
@@ -800,7 +800,7 @@ module WorldModule2 =
                         AmbientState.make tickRate assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
                     // make the world
-                    let world = World.make eventSystem dispatchers subsystems scriptEnv ambientState gameSpecializationOpt activeGameDispatcher
+                    let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState gameSpecializationOpt activeGameDispatcher
 
                     // subscribe to subscribe and unsubscribe events
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
