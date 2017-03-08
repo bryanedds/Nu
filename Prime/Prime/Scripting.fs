@@ -28,6 +28,10 @@ module Scripting =
         | Unfold of Expr * Expr
         | Conversion of Expr list
 
+    and Breakpoint =
+        { mutable BreakEnabled : bool
+          mutable BreakCondition : Expr }
+
     and [<Syntax
             ((* Built-in Identifiers *)
              "true false nil " +
@@ -102,9 +106,9 @@ module Scripting =
 
         (* Special Forms *)
         | Binding of string * CachedBinding ref * SymbolOrigin option
-        | Apply of Expr array * SymbolOrigin option
-        | ApplyAnd of Expr array * SymbolOrigin option
-        | ApplyOr of Expr array * SymbolOrigin option
+        | Apply of Expr array * Breakpoint * SymbolOrigin option // bool ref is breakpoint
+        | ApplyAnd of Expr array * Breakpoint * SymbolOrigin option
+        | ApplyOr of Expr array * Breakpoint * SymbolOrigin option
         | Let of Binding * Expr * SymbolOrigin option
         | LetMany of Binding list * Expr * SymbolOrigin option
         | Fun of string array * int * Expr * bool * obj option * SymbolOrigin option
@@ -113,7 +117,6 @@ module Scripting =
         | Select of (Expr * Expr) array * SymbolOrigin option
         | Try of Expr * (string list * Expr) list * SymbolOrigin option
         | Do of Expr list * SymbolOrigin option
-        | Break of Expr * SymbolOrigin option
         | Quote of Expr * SymbolOrigin option
 
         (* Declarations - only work at the top level. *)
@@ -139,9 +142,9 @@ module Scripting =
             | Ring _
             | Table _ -> None
             | Binding (_, _, originOpt)
-            | Apply (_, originOpt)
-            | ApplyAnd (_, originOpt)
-            | ApplyOr (_, originOpt)
+            | Apply (_, _, originOpt)
+            | ApplyAnd (_, _, originOpt)
+            | ApplyOr (_, _, originOpt)
             | Let (_, _, originOpt)
             | LetMany (_, _, originOpt)
             | Fun (_, _, _, _, _, originOpt)
@@ -150,7 +153,6 @@ module Scripting =
             | Select (_, originOpt)
             | Try (_, _, originOpt)
             | Do (_, originOpt)
-            | Break (_, originOpt)
             | Quote (_, originOpt)
             | Define (_, originOpt) -> originOpt
 
@@ -172,7 +174,9 @@ module Scripting =
             | (List left, List right) -> left = right
             | (Ring left, Ring right) -> left = right
             | (Binding (left, _, _), Binding (right, _, _)) -> left = right
-            | (Apply (left, _), Apply (right, _)) -> left = right
+            | (Apply (left, _, _), Apply (right, _, _)) -> left = right
+            | (ApplyAnd (left, _, _), ApplyAnd (right, _, _)) -> left = right
+            | (ApplyOr (left, _, _), ApplyOr (right, _, _)) -> left = right
             | (Let (leftBinding, leftBody, _), Let (rightBinding, rightBody, _)) -> (leftBinding, leftBody) = (rightBinding, rightBody)
             | (LetMany (leftBindings, leftBody, _), LetMany (rightBindings, rightBody, _)) -> (leftBindings, leftBody) = (rightBindings, rightBody)
             | (Fun (leftPars, _, leftBody, _, _, _), Fun (rightPars, _, rightBody, _, _, _)) -> (leftPars, leftBody) = (rightPars, rightBody)
@@ -181,7 +185,6 @@ module Scripting =
             | (Select (left, _), Select (right, _)) -> left = right
             | (Try (leftInput, leftCases, _), Try (rightInput, rightCases, _)) -> (leftInput, leftCases) = (rightInput, rightCases)
             | (Do (left, _), Do (right, _)) -> left = right
-            | (Break (left, _), Break (right, _)) -> left = right
             | (Quote (left, _), Quote (right, _)) -> left = right
             | (Define (left, _), Define (right, _)) -> left = right
             | (_, _) -> false
@@ -350,14 +353,14 @@ module Scripting =
                     Symbol.Symbols (tableSymbol :: elemSymbols, None) :> obj
                 | Binding (name, _, originOpt) ->
                     Symbol.Atom (name, originOpt) :> obj
-                | Apply (exprs, originOpt) ->
+                | Apply (exprs, _, originOpt) ->
                     let exprSymbols = Array.map this.ExprToSymbol exprs
                     Symbol.Symbols (List.ofArray exprSymbols, originOpt) :> obj
-                | ApplyAnd (exprs, originOpt) ->
+                | ApplyAnd (exprs, _, originOpt) ->
                     let logicSymbol = Symbol.Atom ("&&", None)
                     let exprSymbols = List.map this.ExprToSymbol (List.ofArray exprs)
                     Symbol.Symbols (logicSymbol :: exprSymbols, originOpt) :> obj
-                | ApplyOr (exprs, originOpt) ->
+                | ApplyOr (exprs, _, originOpt) ->
                     let logicSymbol = Symbol.Atom ("||", None)
                     let exprSymbols = List.map this.ExprToSymbol (List.ofArray exprs)
                     Symbol.Symbols (logicSymbol :: exprSymbols, originOpt) :> obj
@@ -416,10 +419,6 @@ module Scripting =
                     let doSymbol = Symbol.Atom ("do", None)
                     let exprSymbols = List.map this.ExprToSymbol exprs
                     Symbol.Symbols (doSymbol :: exprSymbols, originOpt) :> obj
-                | Break (body, originOpt) ->
-                    let breakSymbol = Symbol.Atom ("break", None)
-                    let bodySymbol = this.ExprToSymbol body
-                    Symbol.Symbols ([breakSymbol; bodySymbol], originOpt) :> obj
                 | Quote (expr, originOpt) ->
                     Symbol.Quote (this.ExprToSymbol expr, originOpt) :> obj
                 | Define (binding, originOpt) ->
@@ -475,10 +474,12 @@ module Scripting =
                         match name with
                         | "&&" ->
                             let args = this.SymbolsToExpr tail
-                            ApplyAnd (Array.ofList args, originOpt) :> obj
+                            let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
+                            ApplyAnd (Array.ofList args, breakpoint, originOpt) :> obj
                         | "||" ->
                             let args = this.SymbolsToExpr tail
-                            ApplyOr (Array.ofList args, originOpt) :> obj
+                            let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
+                            ApplyOr (Array.ofList args, breakpoint, originOpt) :> obj
                         | "violation" ->
                             match tail with
                             | [Prime.Atom (tagStr, _)]
@@ -568,16 +569,17 @@ module Scripting =
                             | symbols ->
                                 let exprs = this.SymbolsToExpr symbols
                                 Do (exprs, originOpt) :> obj
-                        | "break" ->
-                            let content = this.SymbolToExpr (Symbols (tail, originOpt))
-                            Break (content, originOpt) :> obj
                         | "define" ->
                             let bindingSymbols = tail
                             match this.SymbolsToBindingOpt bindingSymbols with
                             | Some binding -> Define (binding, originOpt) :> obj
                             | None -> Violation (["InvalidForm"; "Define"], "Invalid define form. Invalid binding.", originOpt) :> obj
-                        | _ -> Apply (Array.ofList (this.SymbolsToExpr symbols), originOpt) :> obj
-                    | _ -> Apply (Array.ofList (this.SymbolsToExpr symbols), originOpt) :> obj
+                        | _ ->
+                            let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
+                            Apply (Array.ofList (this.SymbolsToExpr symbols), breakpoint, originOpt) :> obj
+                    | _ ->
+                        let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
+                        Apply (Array.ofList (this.SymbolsToExpr symbols), breakpoint, originOpt) :> obj
             | :? Expr -> source
             | _ -> failconv "Invalid ExprConverter conversion from source." None
 

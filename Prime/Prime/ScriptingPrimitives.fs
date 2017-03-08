@@ -724,7 +724,9 @@ module ScriptingPrimitives =
             let (rightMapped, world) = evalMapCodata evalApply originOpt mapper right world
             (Add (leftMapped, rightMapped), world)
         | Unfold (unfolder, codata) ->
-            let unfolder = Unfold (Fun ([|"state"|], 1, Apply ([|unfolder; Binding ("state", ref UncachedBinding, originOpt)|], originOpt), false, None, originOpt), codata)
+            let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
+            let args = [|unfolder; Binding ("state", ref UncachedBinding, originOpt)|]
+            let unfolder = Unfold (Fun ([|"state"|], 1, Apply (args, breakpoint, originOpt), false, None, originOpt), codata)
             (unfolder, world)
         | Conversion list ->
             let (mapped, world) =

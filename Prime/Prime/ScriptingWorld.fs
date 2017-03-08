@@ -425,9 +425,9 @@ module ScriptingWorld =
         | Ring _ -> (expr, world)
         | Table _ -> (expr, world)
         | Binding (name, cachedBinding, originOpt) as expr -> evalBinding expr name cachedBinding originOpt world
-        | Apply (exprs, originOpt) -> evalApply exprs originOpt world
-        | ApplyAnd (exprs, originOpt) -> evalApplyAnd exprs originOpt world
-        | ApplyOr (exprs, originOpt) -> evalApplyOr exprs originOpt world
+        | Apply (exprs, _, originOpt) -> evalApply exprs originOpt world
+        | ApplyAnd (exprs, _, originOpt) -> evalApplyAnd exprs originOpt world
+        | ApplyOr (exprs, _, originOpt) -> evalApplyOr exprs originOpt world
         | Let (binding, body, originOpt) -> evalLet binding body originOpt world
         | LetMany (bindings, body, originOpt) -> evalLetMany bindings body originOpt world
         | Fun (pars, parsCount, body, framesPushed, framesOpt, originOpt) as fn -> evalFun fn pars parsCount body framesPushed framesOpt originOpt world
@@ -436,7 +436,6 @@ module ScriptingWorld =
         | Select (exprPairs, originOpt) -> evalSelect exprPairs originOpt world
         | Try (body, handlers, originOpt) -> evalTry body handlers originOpt world
         | Do (exprs, originOpt) -> evalDo exprs originOpt world
-        | Break (expr, _) -> evalBreak expr world
         | Quote _ as quote -> (quote, world)
         | Define (binding, originOpt) -> evalDefine binding originOpt world
 
