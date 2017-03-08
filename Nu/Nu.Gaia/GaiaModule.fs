@@ -808,11 +808,11 @@ module Gaia =
                 then form.evalInputTextBox.SelectedText
                 else form.evalInputTextBox.Text
             let exprsStr = Symbol.OpenSymbolsStr + "\n" + exprsStr + "\n" + Symbol.CloseSymbolsStr
-            try let exprs = scvalue<Scripting.Expr list> exprsStr
+            try let exprs = scvalue<Scripting.Expr array> exprsStr
                 let localFrame = Simulants.Game.GetScriptFrameNp world
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Scripting.Expr>).PrettyPrinter
                 let (evaleds, world) = World.evalManyWithLogging exprs localFrame Simulants.Game world
-                let evaledStrs = List.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
+                let evaledStrs = Array.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
                 let evaledsStr = String.concat "\n" evaledStrs
                 form.evalOutputTextBox.ReadOnly <- false
                 form.evalOutputTextBox.Text <-
