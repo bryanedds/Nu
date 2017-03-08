@@ -42,6 +42,7 @@ module Scripting =
              "sin cos tan asin acos atan " +
              "length normal cross dot " +
              "violation bool int int64 single double string " +
+             "typename " +
              "keyname keyfields " +
              "tuple pair unit fst snd thd fth fif nth " +
              "fstAs sndAs thdAs fthAs fifAs nthAs " +
@@ -57,7 +58,9 @@ module Scripting =
              
              (* Prelude Identifiers *)
              // TODO: "substring update curry compose itemOf tryItemOf itemAs tryItemAs sort replace slice split " +
-             "-b- -i- -L- -f- -d- -2- -s- -k- -u- -p- -o- -l- -r- -t- -u- " +
+             "-u- -b- -i- -L- -f- -d- -2- -s- -k- -u- -p- -o- -l- -r- -t- " +
+             "isUnit isBool isInt isInt64 isSingle isDouble isString " +
+             "isKeyword isTuple isKeyphrase isOption isList isRing isTable " +
              "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegativeInfinity isNaN " +
              "min max compare sign abs fst! snd! rev foldBackWhile foldBacki foldBack " +
              "reduceWhile reducei reduce definitize filter takeWhile take skipWhile skip " +
@@ -103,6 +106,7 @@ module Scripting =
         | List of Expr list
         | Ring of Set<Expr>
         | Table of Map<Expr, Expr>
+        // TODO: | Composite of string * Map<Expr, int> * Expr array
 
         (* Special Forms *)
         | Binding of string * CachedBinding ref * SymbolOrigin option

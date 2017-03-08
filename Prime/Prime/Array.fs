@@ -3,7 +3,24 @@
 
 [<RequireQualifiedAccess>]
 module Array
+open System
 open Prime
+
+/// 'Cons' a value to the front of an array.
+let cons elem tail =
+    let tailLength = Array.length tail
+    let arr2 = Array.zeroCreate (inc tailLength)
+    arr2.[0] <- elem
+    Array.Copy (tail, 0, arr2, 1, tailLength)
+    arr2
+
+/// Add a value to the end of an array.
+let add elem arr =
+    let tailLength = Array.length arr
+    let arr2 = Array.zeroCreate (inc tailLength)
+    arr2.[tailLength] <- elem
+    Array.Copy (arr, 0, arr2, 0, tailLength)
+    arr2
 
 /// Check that an array is not empty.
 let rec notEmpty arr =
