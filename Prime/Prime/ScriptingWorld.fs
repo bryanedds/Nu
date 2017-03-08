@@ -22,7 +22,6 @@ type 'w ScriptingWorld =
         abstract member UpdateEnvPlus : (Env -> 'a * Env) -> 'a * 'w
         abstract member IsExtrinsic : string -> bool
         abstract member EvalExtrinsic : string -> SymbolOrigin option -> Expr array -> Expr * 'w
-        abstract member EvalIntrinsic : string -> SymbolOrigin option -> Expr array -> Expr * 'w
         abstract member TryImport : obj -> Type -> Expr option
         abstract member TryExport : Expr -> Type -> obj option
         end
@@ -73,6 +72,7 @@ module ScriptingWorld =
         | "sin" | "cos" | "tan" | "asin" | "acos" | "atan"
         | "length" | "normal" | "cross" | "dot"
         | "bool" | "int" | "int64" | "single" | "double" | "string"
+        (*| "typename"*)
         | "keyname" | "keyfields"
         | "tuple" | "pair" | "fst" | "snd" | "thd" | "fth" | "fif" | "nth"
         | "fstAs" | "sndAs" | "thdAs" | "fthAs" | "fifAs" | "nthAs"
@@ -191,7 +191,17 @@ module ScriptingWorld =
              | "tryFind" -> evalDoublet evalTryFind fnName originOpt evaledArgs world
              | "find" -> evalDoublet evalFind fnName originOpt evaledArgs world
              | _ -> (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)) with
-        | (Violation _, world) -> world.EvalIntrinsic fnName originOpt evaledArgs
+        | (Violation _, world) ->
+            // allows overloading for keyphrases using binding with name = fnName + _ + keyName
+            if Array.notEmpty evaledArgs then
+                match Array.last evaledArgs with
+                | Keyphrase (keyname, _) ->
+                    let xfnName = fnName + "_" + keyname
+                    let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
+                    let evaleds = Array.cons xfnBinding evaledArgs
+                    evalApply evaleds originOpt world
+                | _ -> (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
+            else (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
         | success -> success
 
     and evalBinding expr name cachedBinding originOpt world =
@@ -385,11 +395,6 @@ module ScriptingWorld =
                 (Right (Unit, world))
                 exprs
         Either.amb evaledEir
-
-    and evalBreak expr world =
-        // TODO: write all procedural bindings to console
-        Debugger.Break ()
-        eval expr world
 
     and evalDefine binding originOpt world =
         let (bound, world) =
