@@ -127,7 +127,7 @@ module WorldGameModule =
             let game = evt.Subscriber : Game
             match game.GetScriptOpt world with
             | Some script ->
-                match World.assetTagToValueOpt<Scripting.Expr list> true script world with
+                match World.assetTagToValueOpt<Scripting.Expr array> true script world with
                 | (Some script, world) -> game.SetScript script world
                 | (None, world) -> world
             | None -> world

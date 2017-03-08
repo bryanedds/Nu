@@ -16,20 +16,16 @@ module WorldModule =
         Unchecked.defaultof<Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr * World>
 
     /// F# reach-around for evaluating script expressions.
-    let mutable internal evalMany : Scripting.Expr list -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr list * World =
-        Unchecked.defaultof<Scripting.Expr list -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr list * World>
+    let mutable internal evalMany : Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr array * World =
+        Unchecked.defaultof<Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr array * World>
 
-    /// Evaluate a script expression, with logging on violation result.
-    let evalWithLogging expr localFrame simulant world =
-        let (evaled, world) = eval expr localFrame simulant world
-        Scripting.log evaled
-        (evaled, world)
+    /// F# reach-around for evaluating a script expression.
+    let mutable internal evalWithLogging : Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr * World =
+        Unchecked.defaultof<Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr * World>
 
-    /// Evaluate a series of script expressions, with logging on violation result.
-    let evalManyWithLogging exprs localFrame simulant world =
-        let (evaleds, world) = evalMany exprs localFrame simulant world
-        List.iter Scripting.log evaleds
-        (evaleds, world)
+    /// F# reach-around for evaluating script expressions.
+    let mutable internal evalManyWithLogging : Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr array * World =
+        Unchecked.defaultof<Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr array * World>
 
     type World with // Construction
 
@@ -396,26 +392,16 @@ module WorldModule =
         static member internal rebuildEntityTree screen world =
             world.Dispatchers.RebuildEntityTree screen world
 
-    type World with // Scripting
+    type World with // Scripting - TODO: document.
 
-        static member internal getScriptEnv world =
-            world.ScriptEnv
+        static member internal getGlobalFrame (world : World) =
+            ScriptingWorld.getGlobalFrame world
 
-        static member internal getScriptEnvBy by world =
-            by world.ScriptEnv
+        static member internal getLocalFrame (world : World) =
+            ScriptingWorld.getLocalFrame world
 
-        static member internal setScriptEnv env world =
-            World.choose { world with ScriptEnv = env }
-
-        static member internal updateScriptEnv updater world =
-            let env = World.getScriptEnv world
-            let env = updater env
-            World.setScriptEnv env world
-
-        static member internal updateScriptEnvPlus updater world =
-            let env = World.getScriptEnv world
-            let (result, env) = updater env
-            (result, World.setScriptEnv env world)
+        static member internal setLocalFrame localFrame (world : World) =
+            ScriptingWorld.setLocalFrame localFrame world
 
         /// Get the context of the script system.
         static member internal getScriptContext (world : World) =
@@ -440,6 +426,10 @@ module WorldModule =
         /// Evaluate a series of script expressions, with logging on violation results.
         static member evalManyWithLogging exprs localFrame simulant world =
             evalManyWithLogging exprs localFrame simulant world
+
+        /// Attempt to evaluate a script.
+        static member tryEvalScript scriptFilePath world =
+            ScriptingWorld.tryEvalScript World.choose scriptFilePath world
 
     type World with // Debugging
 

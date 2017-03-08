@@ -260,7 +260,7 @@ module WorldModuleScreen =
             let screen = evt.Subscriber : Screen
             match World.getScreenScriptOpt screen world with
             | Some script ->
-                match World.assetTagToValueOpt<Scripting.Expr list> true script world with
+                match World.assetTagToValueOpt<Scripting.Expr array> true script world with
                 | (Some script, world) -> World.setScreenScript script screen world
                 | (None, world) -> world
             | None -> world

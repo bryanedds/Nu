@@ -247,7 +247,7 @@ module WorldModuleLayer =
             let layer = evt.Subscriber : Layer
             match World.getLayerScriptOpt layer world with
             | Some script ->
-                match World.assetTagToValueOpt<Scripting.Expr list> true script world with
+                match World.assetTagToValueOpt<Scripting.Expr array> true script world with
                 | (Some script, world) -> World.setLayerScript script layer world
                 | (None, world) -> world
             | None -> world

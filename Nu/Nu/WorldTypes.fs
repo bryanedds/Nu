@@ -410,7 +410,7 @@ module WorldTypes =
           Specialization : string
           CreationTimeStampNp : int64
           ScriptOpt : AssetTag option
-          Script : Scripting.Expr list
+          Script : Scripting.Expr array
           ScriptFrameNp : Scripting.DeclarationFrame
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
@@ -431,7 +431,7 @@ module WorldTypes =
               Specialization = Option.getOrDefault Constants.Engine.EmptySpecialization specializationOpt
               CreationTimeStampNp = Core.getTimeStamp ()
               ScriptOpt = None
-              Script = []
+              Script = [||]
               ScriptFrameNp = Scripting.DeclarationFrame () (* HashIdentity *)
               OnRegister = Scripting.Unit
               OnUnregister = Scripting.Unit
@@ -487,7 +487,7 @@ module WorldTypes =
           Persistent : bool
           CreationTimeStampNp : int64
           ScriptOpt : AssetTag option
-          Script : Scripting.Expr list
+          Script : Scripting.Expr array
           ScriptFrameNp : Scripting.DeclarationFrame
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
@@ -511,7 +511,7 @@ module WorldTypes =
                   Persistent = true
                   CreationTimeStampNp = Core.getTimeStamp ()
                   ScriptOpt = None
-                  Script = []
+                  Script = [||]
                   ScriptFrameNp = Scripting.DeclarationFrame () (* HashIdentity *)
                   OnRegister = Scripting.Unit
                   OnUnregister = Scripting.Unit
@@ -571,7 +571,7 @@ module WorldTypes =
           CreationTimeStampNp : int64
           ScriptFrameNp : Scripting.DeclarationFrame
           ScriptOpt : AssetTag option
-          Script : Scripting.Expr list
+          Script : Scripting.Expr array
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
@@ -590,7 +590,7 @@ module WorldTypes =
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
               ScriptOpt = None
-              Script = []
+              Script = [||]
               ScriptFrameNp = Scripting.DeclarationFrame () (* HashIdentity *)
               OnRegister = Scripting.Unit
               OnUnregister = Scripting.Unit
@@ -986,8 +986,8 @@ module WorldTypes =
             { EventSystem : World EventSystem
               Dispatchers : Dispatchers
               Subsystems : World Subsystems
-              ScriptEnv : Scripting.Env
-              ScriptContext : Simulant
+              ScriptEnv : Scripting.Env // TODO: rename to ScriptingEnv
+              ScriptContext : Simulant // TODO: rename to ScriptingContext
               ScreenCachedOpt : KeyedCache<Screen Address * UMap<Screen Address, ScreenState>, ScreenState option>
               LayerCachedOpt : KeyedCache<Layer Address * UMap<Layer Address, LayerState>, LayerState option>
               EntityCachedOpt : KeyedCache<Entity Address * UMap<Entity Address, EntityState>, EntityState option>
@@ -1016,6 +1016,19 @@ module WorldTypes =
                 | :? Screen -> EventWorld.publishEvent<'a, 'p, Screen, Game, World> participant publisher eventData eventAddress eventTrace subscription world
                 | :? Game -> EventWorld.publishEvent<'a, 'p, Game, Game, World> participant publisher eventData eventAddress eventTrace subscription world
                 | _ -> failwithumf ()
+
+        interface World ScriptingWorld with
+            member this.GetEnv () = this.ScriptEnv
+            member this.UpdateEnv updater = { this with ScriptEnv = updater this.ScriptEnv }
+            member this.UpdateEnvPlus updater = let (result, env) = updater this.ScriptEnv in (result, { this with ScriptEnv = env })
+            member this.IsExtrinsic fnName =
+                match fnName with
+                | "get" | "set" | "v2" | "xOf" | "yOf" | "xAs" | "yAs"
+                | "monitor" -> true
+                | _ -> false
+            member this.EvalExtrinsic _ _ _ = failwithnie ()
+            member this.TryImport _ _ = failwithnie ()
+            member this.TryExport _ _ = failwithnie ()
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.

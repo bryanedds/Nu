@@ -62,6 +62,12 @@ module ScriptingWorld =
     let setLocalFrame<'w when 'w :> 'w ScriptingWorld> localFrame (world : 'w) =
         world.UpdateEnv (EnvModule.Env.setLocalFrame localFrame)
 
+    let tryImport value ty =
+        ScriptingMarshalling.tryImport value ty
+
+    let tryExport value ty =
+        ScriptingMarshalling.tryExport value ty
+
     let isIntrinsic fnName =
         match fnName with
         | "=" | "<>" | "<" | ">" | "<=" | ">=" | "+" | "-" | "*" | "/" | "%" | "!"
@@ -457,8 +463,21 @@ module ScriptingWorld =
                 exprs
         (evaleds, world)
 
+    /// Evaluate an expression, with logging on violation result.
+    let evalWithLogging expr world =
+        let (evaled, world) = eval expr world
+        Scripting.log evaled
+        (evaled, world)
+
+    /// Evaluate a series of expressions, with logging on violation result.
+    let evalManyWithLogging exprs world =
+        let (evaleds, world) = evalMany exprs world
+        Array.iter Scripting.log evaleds
+        (evaleds, world)
+
     /// Attempt to evaluate a script.
     let tryEvalScript choose scriptFilePath world =
+        Log.info ("Evaluating script '" + scriptFilePath + "...")
         try let scriptStr =
                 scriptFilePath |>
                 File.ReadAllText |>
@@ -468,6 +487,9 @@ module ScriptingWorld =
                 (fun str -> Symbol.OpenSymbolsStr + str + Symbol.CloseSymbolsStr) |>
                 scvalue<Scripting.Expr array>
             let (evaleds, world) = evalMany script world
+            Log.info ("Successfully evaluated script '" + scriptFilePath + ".")
             Right (scriptStr, evaleds, world)
         with exn ->
-            Left ("Could not evaluate script due to: " + scstring exn, choose world)
+            let error = "Failed to evaluate script '" + scriptFilePath + "' due to: " + scstring exn
+            Log.info error
+            Left (error, choose world)
