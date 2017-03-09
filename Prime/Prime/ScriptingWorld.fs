@@ -62,11 +62,11 @@ module ScriptingWorld =
     let setLocalFrame<'w when 'w :> 'w ScriptingWorld> localFrame (world : 'w) =
         world.UpdateEnv (EnvModule.Env.setLocalFrame localFrame)
 
-    let tryImport value ty =
-        ScriptingMarshalling.tryImport value ty
+    let tryImport<'w when 'w :> 'w ScriptingWorld> value ty (world : 'w) =
+        ScriptingMarshalling.tryImport world.TryImport value ty
 
-    let tryExport value ty =
-        ScriptingMarshalling.tryExport value ty
+    let tryExport<'w when 'w :> 'w ScriptingWorld> value ty (world : 'w) =
+        ScriptingMarshalling.tryExport world.TryExport value ty
 
     let isIntrinsic fnName =
         match fnName with
