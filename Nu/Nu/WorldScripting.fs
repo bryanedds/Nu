@@ -99,6 +99,45 @@ module WorldScripting =
                 | None -> (Violation (["InvalidProperty"], "Property value could not be set.", originOpt), world)
             | Left error -> error
 
+        static member evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
+            EventWorld.subscribe (fun evt world ->
+                match World.tryGetSimulantScriptFrame subscriber world with
+                | Some scriptFrame ->
+                    match ScriptingWorld.tryImport evt.Data evt.DataType with
+                    | Some dataImported ->
+                        let evtTuple =
+                            Keyphrase
+                                ("Event",
+                                    [|dataImported
+                                      String (scstring evt.Subscriber)
+                                      String (scstring evt.Publisher)
+                                      String (scstring evt.Address)|])
+                        let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
+                        let application = Apply ([|subscription; evtTuple|], breakpoint, None)
+                        World.evalWithLogging application scriptFrame subscriber world |> snd
+                    | None -> Log.info "Property value could not be imported into scripting environment."; world
+                | None -> world)
+                eventAddress
+                (subscriber :> Participant)
+                world
+
+        static member evalMonitor6 fnName originOpt evaledArg evaledArg2 world =
+            match evaledArg with
+            | Binding _
+            | Fun _ ->
+                match evaledArg2 with
+                | String str
+                | Keyword str ->
+                    let world = World.evalMonitor5 evaledArg (Address.makeFromString str) (World.getScriptContext world) world
+                    (Unit, world)
+                | Violation _ as error -> (error, world)
+                | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a relation for its 2nd argument.", originOpt), world)
+            | Violation _ as error -> (error, world)
+            | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a function for its 1st argument.", originOpt), world)
+
+        static member evalMonitor fnName originOpt evaledArg evaledArg2 world =
+            World.evalMonitor6 fnName originOpt evaledArg evaledArg2 world
+
         /// Attempt to evaluate the scripting prelude.
         static member tryEvalPrelude world =
             let oldLocalFrame = World.getLocalFrame world
@@ -169,7 +208,31 @@ module WorldScripting =
                     | _ -> failwithumf ()
                 | ([|_; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a single for the first argument, and a v2 for the second.", originOpt), world)
                 | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
-            | "get" -> failwithnie ()
-            | "set" -> failwithnie ()
+            | "get" ->
+                match World.evalManyInternal exprs world with
+                | ([|Violation _ as v; _|], world) -> (v, world)
+                | ([|_; Violation _ as v|], world) -> (v, world)
+                | ([|String propertyName; relation|], world)
+                | ([|Keyword propertyName; relation|], world) -> World.evalGet propertyName (Some relation) originOpt world
+                | ([|_; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a string or keyword for the first argument, and an optional relation for the second.", originOpt), world)
+                | ([|Violation _ as v|], world) -> (v, world)
+                | ([|String propertyName|], world)
+                | ([|Keyword propertyName|], world) -> World.evalGet propertyName None originOpt world
+                | ([|_|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a string or keyword for the first argument, and an optional relation for the second.", originOpt), world)
+                | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 or 2 arguments required.", originOpt), world)
+            | "set" ->
+                match World.evalManyInternal exprs world with
+                | ([|Violation _ as v; _; _|], world) -> (v, world)
+                | ([|_; Violation _ as v; _|], world) -> (v, world)
+                | ([|_; _; Violation _ as v|], world) -> (v, world)
+                | ([|String propertyName; relation; value|], world)
+                | ([|Keyword propertyName; relation; value|], world) -> World.evalSet propertyName (Some relation) value originOpt world
+                | ([|_; _; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a string or keyword for the first argument, and an optional relation for the second.", originOpt), world)
+                | ([|Violation _ as v; _|], world) -> (v, world)
+                | ([|_; Violation _ as v|], world) -> (v, world)
+                | ([|String propertyName; value|], world)
+                | ([|Keyword propertyName; value|], world) -> World.evalSet propertyName None value originOpt world
+                | ([|_; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a string or keyword for the first argument, a value for the second, and an optional relation for the third.", originOpt), world)
+                | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
             | "monitor" -> failwithnie ()
             | _ -> failwithumf ()
