@@ -122,7 +122,7 @@ module ScriptingPrimitives =
 
     let evalCodata fnName originOpt evaledArg evaledArg2 world =
         match evaledArg with
-        | Binding _ as binding -> (Codata (Unfold (binding, evaledArg2)), world) // evaled expr to binding implies built-in function
+        | Binding _ as binding -> (Codata (Unfold (binding, evaledArg2)), world) // evaled expr to binding implies extrinsic or intrinsic function
         | Fun _ as fn -> (Codata (Unfold (fn, evaledArg2)), world)
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "First argument to " + fnName + " must be a function.", originOpt), world)

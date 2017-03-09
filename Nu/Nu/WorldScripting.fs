@@ -63,7 +63,7 @@ module WorldScripting =
             | Right (simulant, world) ->
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some (propertyValue, propertyType) ->
-                    match ScriptingWorld.tryImport propertyValue propertyType with
+                    match ScriptingWorld.tryImport propertyValue propertyType world with
                     | Some propertyValue -> (propertyValue, world)
                     | None -> (Violation (["InvalidPropertyValue"], "Property value could not be imported into scripting environment.", originOpt), world)
                 | None -> (Violation (["InvalidProperty"], "Simulant or property value could not be found.", originOpt), world)
@@ -90,7 +90,7 @@ module WorldScripting =
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some (_, propertyType) ->
                     let (propertyValue, world) = World.evalInternal propertyValueExpr world
-                    match ScriptingWorld.tryExport propertyValue propertyType with
+                    match ScriptingWorld.tryExport propertyValue propertyType world with
                     | Some propertyValue ->
                         match World.trySetSimulantProperty propertyName (propertyValue, propertyType) simulant world with
                         | (true, world) -> (Unit, world)
@@ -103,7 +103,7 @@ module WorldScripting =
             EventWorld.subscribe (fun evt world ->
                 match World.tryGetSimulantScriptFrame subscriber world with
                 | Some scriptFrame ->
-                    match ScriptingWorld.tryImport evt.Data evt.DataType with
+                    match ScriptingWorld.tryImport evt.Data evt.DataType world with
                     | Some dataImported ->
                         let evtTuple =
                             Keyphrase
