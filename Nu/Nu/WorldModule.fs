@@ -384,14 +384,6 @@ module WorldModule =
         static member internal getEntityCachedOpt world =
             world.EntityCachedOpt
 
-        /// Update an entity in the entity tree.
-        static member internal updateEntityInEntityTree entity oldWorld world =
-            world.Dispatchers.UpdateEntityInEntityTree entity oldWorld world
-
-        /// Rebuild the entity tree if needed.
-        static member internal rebuildEntityTree screen world =
-            world.Dispatchers.RebuildEntityTree screen world
-
     type World with // Scripting - TODO: document.
 
         static member internal getGlobalFrame (world : World) =
