@@ -63,7 +63,7 @@ module WorldModule2 =
                  (typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
                  (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
 
-        static member internal rebuildEntityTreeImpl screen world =
+        static member internal rebuildEntityTree screen world =
             let tree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             let entities = screen |> flip World.getLayers world |> Seq.map (flip World.getEntities world) |> Seq.concat
             for entity in entities do
@@ -671,8 +671,10 @@ module WorldModule2 =
                   LayerDispatchers = World.makeDefaultLayerDispatchers ()
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
                   Facets = World.makeDefaultFacets ()
-                  UpdateEntityInEntityTree = World.updateEntityInEntityTreeImpl
-                  RebuildEntityTree = World.rebuildEntityTreeImpl }
+                  IsExtrinsic = World.isExtrinsic
+                  EvalExtrinsic = World.evalExtrinsic
+                  UpdateEntityInEntityTree = World.updateEntityInEntityTree
+                  RebuildEntityTree = World.rebuildEntityTree }
 
             // make the world's subsystems
             let subsystems =
@@ -755,8 +757,10 @@ module WorldModule2 =
                       LayerDispatchers = Map.addMany pluginLayerDispatchers ^ World.makeDefaultLayerDispatchers ()
                       EntityDispatchers = Map.addMany pluginEntityDispatchers ^ World.makeDefaultEntityDispatchers ()
                       Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets ()
-                      UpdateEntityInEntityTree = World.updateEntityInEntityTreeImpl
-                      RebuildEntityTree = World.rebuildEntityTreeImpl }
+                      IsExtrinsic = World.isExtrinsic
+                      EvalExtrinsic = World.evalExtrinsic
+                      UpdateEntityInEntityTree = World.updateEntityInEntityTree
+                      RebuildEntityTree = World.rebuildEntityTree }
 
                 // make the world's subsystems
                 let subsystems =

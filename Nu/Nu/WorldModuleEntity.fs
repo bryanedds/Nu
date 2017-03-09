@@ -627,7 +627,7 @@ module WorldModuleEntity =
                 // mutate entity tree
                 let entityTree =
                     MutantCache.mutateMutant
-                        (fun () -> World.rebuildEntityTree screen oldWorld)
+                        (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
                         (fun entityTree ->
                             let entityState = World.getEntityState entity world
                             let entityMaxBounds = World.getEntityStateBoundsMax entityState
@@ -728,7 +728,7 @@ module WorldModuleEntity =
                 // mutate entity tree
                 let entityTree =
                     MutantCache.mutateMutant
-                        (fun () -> World.rebuildEntityTree screen oldWorld)
+                        (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
                         (fun entityTree ->
                             let entityState = World.getEntityState entity oldWorld
                             let entityMaxBounds = World.getEntityStateBoundsMax entityState
@@ -911,7 +911,7 @@ module WorldModuleEntity =
             let properties = World.getProperties state
             Array.ofList properties
 
-        static member internal updateEntityInEntityTreeImpl (entity : Entity) oldWorld world =
+        static member internal updateEntityInEntityTree (entity : Entity) oldWorld world =
             // OPTIMIZATION: attempts to avoid constructing a screen address on each call to decrease address hashing
             // OPTIMIZATION: assumes a valid entity address with List.head on its names
             let screen =
@@ -923,7 +923,7 @@ module WorldModuleEntity =
             let screenState = World.getScreenState screen world
             let entityTree =
                 MutantCache.mutateMutant
-                    (fun () -> World.rebuildEntityTree screen oldWorld)
+                    (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
                     (fun entityTree ->
                         let oldEntityState = World.getEntityState entity oldWorld
                         let oldEntityBoundsMax = World.getEntityStateBoundsMax oldEntityState

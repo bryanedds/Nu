@@ -969,6 +969,8 @@ module WorldTypes =
           LayerDispatchers : Map<string, LayerDispatcher>
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
+          IsExtrinsic : string -> bool
+          EvalExtrinsic : string -> SymbolOrigin option -> Scripting.Expr array -> World -> Scripting.Expr * World
           UpdateEntityInEntityTree : Entity -> World -> World -> World
           RebuildEntityTree : Screen -> World -> Entity SpatialTree }
     
@@ -1021,16 +1023,9 @@ module WorldTypes =
             member this.GetEnv () = this.ScriptingEnv
             member this.UpdateEnv updater = { this with ScriptingEnv = updater this.ScriptingEnv }
             member this.UpdateEnvPlus updater = let (result, env) = updater this.ScriptingEnv in (result, { this with ScriptingEnv = env })
-            member this.IsExtrinsic fnName =
-                match fnName with
-                | "get" | "set"
-                | "v2" | "xOf" | "yOf" | "xAs" | "yAs"
-                | "monitor" -> true
-                | _ -> false
-            
-            member this.EvalExtrinsic _ _ _ =
-                failwithnie ()
-            
+            member this.IsExtrinsic fnName = this.Dispatchers.IsExtrinsic fnName
+            member this.EvalExtrinsic fnName originOpt exprs = this.Dispatchers.EvalExtrinsic fnName originOpt exprs this
+
             member this.TryImport value ty =
                 match (value, ty.Name) with
                 | (:? Vector2 as v2, "Vector2") ->
