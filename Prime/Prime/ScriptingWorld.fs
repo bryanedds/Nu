@@ -107,6 +107,7 @@ module ScriptingWorld =
              | "%" -> evalBinary ModFns fnName originOpt evaledArgs world
              | "!" -> evalSinglet evalDereference fnName originOpt evaledArgs world
              | "not" -> evalBoolUnary not fnName originOpt evaledArgs world
+             | "hash" -> evalUnary HashFns fnName originOpt evaledArgs world
              | "toEmpty" -> evalUnary ToEmptyFns fnName originOpt evaledArgs world
              | "toIdentity" -> evalUnary ToIdentityFns fnName originOpt evaledArgs world
              | "toMin" -> evalUnary ToMinFns fnName originOpt evaledArgs world
@@ -114,7 +115,6 @@ module ScriptingWorld =
              | "inc" -> evalUnary IncFns fnName originOpt evaledArgs world
              | "dec" -> evalUnary DecFns fnName originOpt evaledArgs world
              | "negate" -> evalUnary NegateFns fnName originOpt evaledArgs world
-             | "hash" -> evalUnary HashFns fnName originOpt evaledArgs world
              | "pow" -> evalBinary PowFns fnName originOpt evaledArgs world
              | "root" -> evalBinary RootFns fnName originOpt evaledArgs world
              | "sqr" -> evalUnary SqrFns fnName originOpt evaledArgs world
@@ -201,6 +201,12 @@ module ScriptingWorld =
             // allows overloading for keyphrases using binding with name = fnName + _ + keyName
             if Array.notEmpty evaledArgs then
                 match Array.last evaledArgs with
+                | Pluggable pluggable ->
+                    let pluggableName = pluggable.GetName ()
+                    let xfnName = fnName + "_" + pluggableName
+                    let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
+                    let evaleds = Array.cons xfnBinding evaledArgs
+                    evalApply evaleds originOpt world
                 | Keyphrase (keyname, _) ->
                     let xfnName = fnName + "_" + keyname
                     let xfnBinding = Binding (xfnName, ref UncachedBinding, None)

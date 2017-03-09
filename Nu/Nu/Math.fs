@@ -55,6 +55,9 @@ type [<CustomEquality; CustomComparison>] Vector2Pluggable =
             | :? Vector2Pluggable as that -> (this :> Vector2Pluggable IComparable).CompareTo that
             | _ -> failwithumf ()
 
+        member this.GetName () =
+            "Vector2"
+
         member this.ToSymbol () =
             let v2 = Symbol.Atom ("v2", None)
             let x = Symbol.Number (String.singleToCodeString this.Vector2.X, None)
