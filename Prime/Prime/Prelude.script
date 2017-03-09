@@ -1,4 +1,4 @@
-; Nu Game Engine.
+; Prime - A PRIMitivEs code library.
 ; Copyright (C) Bryan Edds, 2013-2017.
 
 #| The unit type indicator.             |# [define -u- []]

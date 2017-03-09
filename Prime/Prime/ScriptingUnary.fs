@@ -22,6 +22,21 @@ module ScriptingUnary =
           Ring : Expr Set -> SymbolOrigin option -> Expr
           Table : Map<Expr, Expr> -> SymbolOrigin option -> Expr }
 
+    let HashFns =
+        { Bool = fun value _ -> Int (hash value)
+          Int = fun value _ -> Int (hash value)
+          Int64 = fun value _ -> Int (hash value)
+          Single = fun value _ -> Int (hash value)
+          Double = fun value _ -> Int (hash value)
+          String = fun value _ -> Int (hash value)
+          Keyword = fun value _ -> Int (hash value)
+          Tuple = fun value _ -> Int (hash value)
+          Keyphrase = fun name fields _ -> Int (hash (name, fields))
+          Codata = fun value _ -> Int (hash value)
+          List = fun value _ -> Int (hash value)
+          Ring = fun value _ -> Int (hash value)
+          Table = fun value _ -> Int (hash value) }
+
     let ToEmptyFns =
         { Bool = fun _ _ -> Bool false
           Int = fun _ _ -> Int 0
@@ -126,21 +141,6 @@ module ScriptingUnary =
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a table.", originOpt) }
-
-    let HashFns =
-        { Bool = fun value _ -> Int (hash value)
-          Int = fun value _ -> Int (hash value)
-          Int64 = fun value _ -> Int (hash value)
-          Single = fun value _ -> Int (hash value)
-          Double = fun value _ -> Int (hash value)
-          String = fun value _ -> Int (hash value)
-          Keyword = fun value _ -> Int (hash value)
-          Tuple = fun value _ -> Int (hash value)
-          Keyphrase = fun name fields _ -> Int (hash (name, fields))
-          Codata = fun value _ -> Int (hash value)
-          List = fun value _ -> Int (hash value)
-          Ring = fun value _ -> Int (hash value)
-          Table = fun value _ -> Int (hash value) }
 
     let SqrFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a bool.", originOpt)

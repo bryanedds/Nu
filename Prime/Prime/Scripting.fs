@@ -10,6 +10,7 @@ module Scripting =
 
     type Pluggable =
         inherit IComparable
+        abstract member GetName : unit -> string
         abstract member ToSymbol : unit -> Symbol
 
     type [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoComparison>] CachedBinding =
@@ -34,8 +35,8 @@ module Scripting =
     and [<Syntax
             ((* Built-in Identifiers *)
              "true false nil " +
-             "not toEmpty toIdentity toMin toMax " +
-             "inc dec negate hash " +
+             "not hash toEmpty toIdentity toMin toMax " +
+             "inc dec negate " +
              "pow root sqr sqrt " +
              "floor ceiling truncate round exp log " +
              "sin cos tan asin acos atan " +

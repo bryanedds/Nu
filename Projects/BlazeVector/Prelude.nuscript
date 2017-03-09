@@ -1,21 +1,35 @@
 ; Nu Game Engine.
 ; Copyright (C) Bryan Edds, 2013-2017.
 
-#| The bool type indicator.      |# [define -b- false]
-#| The int type indicator.       |# [define -i- 0]
-#| The int64 type indicator.     |# [define -L- 0L]
-#| The single type indicator.    |# [define -f- 0f]
-#| The double type indicator.    |# [define -d- 0d]
-#| The v2 type indicator.        |# [define -2- [v2 0f 0f]]
-#| The string type indicator.    |# [define -s- ""]
-#| The keyword type indicator.   |# [define -k- nil]
-#| The tuple type indicator.     |# [define -u- [tuple]]
-#| The keyphrase type indicator. |# [define -p- [nil]]
-#| The option type indicator.    |# [define -o- none]
-#| The list type indicator.      |# [define -l- [list]]
-#| The ring type indicator.      |# [define -r- [ring]]
-#| The table type indicator.     |# [define -t- [table]]
-#| The unit type indicator.      |# [define -u- []]
+#| The unit type indicator.             |# [define -u- []]
+#| The bool type indicator.             |# [define -b- false]
+#| The int type indicator.              |# [define -i- 0]
+#| The int64 type indicator.            |# [define -L- 0L]
+#| The single type indicator.           |# [define -f- 0f]
+#| The double type indicator.           |# [define -d- 0d]
+#| The string type indicator.           |# [define -s- ""]
+#| The keyword type indicator.          |# [define -k- nil]
+#| The tuple type indicator.            |# [define -u- [tuple]]
+#| The keyphrase type indicator.        |# [define -p- [nil]]
+#| The option type indicator.           |# [define -o- none]
+#| The list type indicator.             |# [define -l- [list]]
+#| The ring type indicator.             |# [define -r- [ring]]
+#| The table type indicator.            |# [define -t- [table]]
+
+#| Check that a value is unit.          |# [define isUnit [a] [= [typename a] "Unit"]]
+#| Check that a value is a bool.        |# [define isBool [a] [= [typename a] "Bool"]]
+#| Check that a value is a int.         |# [define isInt [a] [= [typename a] "Int"]]
+#| Check that a value is a int64.       |# [define isInt64 [a] [= [typename a] "Int64"]]
+#| Check that a value is a single.      |# [define isSingle [a] [= [typename a] "Single"]]
+#| Check that a value is a double.      |# [define isDouble [a] [= [typename a] "Double"]]
+#| Check that a value is a string.      |# [define isString [a] [= [typename a] "String"]]
+#| Check that a value is a keyword.     |# [define isKeyword [a] [= [typename a] "Keyword"]]
+#| Check that a value is a tuple.       |# [define isTuple [a] [= [typename a] "Tuple"]]
+#| Check that a value is a keyphrase.   |# [define isKeyphrase [a] [= [typename a] "Keyphrase"]]
+#| Check that a value is a option.      |# [define isOption [a] [= [typename a] "Option"]]
+#| Check that a value is a list.        |# [define isList [a] [= [typename a] "List"]]
+#| Check that a value is a ring.        |# [define isRing [a] [= [typename a] "Ring"]]
+#| Check that a value is a table.       |# [define isTable [a] [= [typename a] "Table"]]
 
 ; The identity function.
 [define id [a] a]
@@ -24,6 +38,7 @@
 [define flip [f]
     [fun [a b] [f b a]]]
 
+; Determine that a value is its identity.
 [define isIdentity [a]
     [= a [toIdentity a]]]
 
@@ -216,8 +231,49 @@
 ; Mathematical constant e as a single value.
 [define e 2.71828f]
 
-; The zero v2 value.
-[define v2Zero [toEmpty -2-]]
+#| Nu Script Extensions. TODO: import Prelude.script rather than pasting it above? |#
+
+[define toEmpty_V2 [_] [v2 0f 0f]]
+[define toIdentity_V2 [_] [v2 1f 1f]]
+[define toMin_V2 [_] [v2 [toMin -s-] [toMin -s-]]]
+[define toMax_V2 [_] [v2 [toMax -s-] [toMax -s-]]]
+[define inc_V2 [v] [v2 [inc [xOf v]] [inc [yOf v]]]]
+[define dec_V2 [v] [v2 [dec [xOf v]] [dec [yOf v]]]]
+[define negate_V2 [v] [v2 [negate [xOf v]] [negate [yOf v]]]]
+[define pow_V2 [v] [v2 [pow [xOf v]] [pow [yOf v]]]]
+[define root_V2 [v] [v2 [root [xOf v]] [root [yOf v]]]]
+[define sqr_V2 [v] [v2 [sqr [xOf v]] [sqr [yOf v]]]]
+[define sqrt_V2 [v] [v2 [sqrt [xOf v]] [sqrt [yOf v]]]]
+[define floor_V2 [v] [v2 [floor [xOf v]] [floor [yOf v]]]]
+[define ceiling_V2 [v] [v2 [ceiling [xOf v]] [ceiling [yOf v]]]]
+[define truncate_V2 [v] [v2 [truncate [xOf v]] [truncate [yOf v]]]]
+[define round_V2 [v] [v2 [round [xOf v]] [round [yOf v]]]]
+[define exp_V2 [v] [v2 [exp [xOf v]] [exp [yOf v]]]]
+[define log_V2 [v] [v2 [log [xOf v]] [log [yOf v]]]]
+[define sin_V2 [v] [v2 [sin [xOf v]] [sin [yOf v]]]]
+[define cos_V2 [v] [v2 [cos [xOf v]] [cos [yOf v]]]]
+[define tan_V2 [v] [v2 [tan [xOf v]] [tan [yOf v]]]]
+[define asin_V2 [v] [v2 [asin [xOf v]] [asin [yOf v]]]]
+[define acos_V2 [v] [v2 [acos [xOf v]] [acos [yOf v]]]]
+[define atan_V2 [v] [v2 [atan [xOf v]] [atan [yOf v]]]]
+[define length_V2 [v] [sqrt [+ [atan [xOf v]] [atan [yOf v]]]]
+[define normal_V2 [v] [/ v [length_V2 v]]]
+
+[define =_V2 [v w] [&& [= [xOf v] [xOf w]] [= [xOf v] [xOf w]]]]
+[define <>_V2 [v w] [&& [<> [xOf v] [xOf w]] [<> [xOf v] [xOf w]]]]
+[define <_V2 [v w] [&& [< [xOf v] [xOf w]] [< [xOf v] [xOf w]]]]
+[define >_V2 [v w] [&& [> [xOf v] [xOf w]] [> [xOf v] [xOf w]]]]
+[define <=_V2 [v w] [&& [<= [xOf v] [xOf w]] [<= [xOf v] [xOf w]]]]
+[define >=_V2 [v w] [&& [>= [xOf v] [xOf w]] [>= [xOf v] [xOf w]]]]
+[define +_V2 [v w] [v2 [+ [xOf v] [xOf w]] [+ [xOf v] [xOf w]]]]
+[define -_V2 [v w] [v2 [- [xOf v] [xOf w]] [- [xOf v] [xOf w]]]]
+[define *_V2 [v w] [v2 [* [xOf v] [xOf w]] [* [xOf v] [xOf w]]]]
+[define /_V2 [v w] [v2 [/ [xOf v] [xOf w]] [/ [xOf v] [xOf w]]]]
+[define %_V2 [v w] [v2 [% [xOf v] [xOf w]] [% [xOf v] [xOf w]]]]
+[define dot_V2 [v w] [+ [* [xOf v] [xOf w]] [* [yOf v] [yOf w]]]]
+
+; The v2 type indicator.
+[define -2- [v2 0f 0f]]
 
 ; The game.
 [define game nil]

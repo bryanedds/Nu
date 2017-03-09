@@ -234,5 +234,10 @@ module WorldScripting =
                 | ([|Keyword propertyName; value|], world) -> World.evalSet propertyName None value originOpt world
                 | ([|_; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a string or keyword for the first argument, a value for the second, and an optional relation for the third.", originOpt), world)
                 | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
-            | "monitor" -> failwithnie ()
+            | "monitor" ->
+                match World.evalManyInternal exprs world with
+                | ([|Violation _ as v; _|], world) -> (v, world)
+                | ([|_; Violation _ as v|], world) -> (v, world)
+                | ([|evaled; evaled2|], world) -> World.evalMonitor fnName originOpt evaled evaled2 world
+                | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             | _ -> failwithumf ()
