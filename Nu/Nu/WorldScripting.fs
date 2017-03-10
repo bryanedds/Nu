@@ -156,6 +156,7 @@ module WorldScripting =
 
         static member internal isExtrinsic fnName =
             match fnName with
+            // TODO: | "tickRate" | "tickTime" | "getSimulantSelected" | "simulantExists"
             | "v2" | "xOf" | "yOf" | "xAs" | "yAs"
             | "get" | "set"
             | "monitor" -> true
