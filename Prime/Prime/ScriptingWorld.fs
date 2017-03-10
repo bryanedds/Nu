@@ -80,6 +80,7 @@ module ScriptingWorld =
         | "bool" | "int" | "int64" | "single" | "double" | "string"
         (*| "typename"*)
         | "keyname" | "keyfields"
+        | "of keynames"
         | "tuple" | "pair" | "fst" | "snd" | "thd" | "fth" | "fif" | "nth"
         | "fstAs" | "sndAs" | "thdAs" | "fthAs" | "fifAs" | "nthAs"
         | "some" | "isNone" | "isSome" | "isEmpty" | "notEmpty"
@@ -143,6 +144,7 @@ module ScriptingWorld =
              | "string" -> evalUnary StringFns fnName originOpt evaledArgs world
              | "keyname" -> evalSinglet evalKeyname fnName originOpt evaledArgs world
              | "keyfields" -> evalSinglet evalKeyfields fnName originOpt evaledArgs world
+             | "keynames" -> evalSinglet evalKeynames fnName originOpt evaledArgs world
              | "xOf" -> evalSinglet (evalNth5 0) fnName originOpt evaledArgs world
              | "yOf" -> evalSinglet (evalNth5 1) fnName originOpt evaledArgs world
              | "xAs" -> evalDoublet (evalNthAs5 0) fnName originOpt evaledArgs world
@@ -162,7 +164,6 @@ module ScriptingWorld =
              | "fifAs" -> evalDoublet (evalNthAs5 4) fnName originOpt evaledArgs world
              | "nthAs" -> evalTriplet evalNthAs fnName originOpt evaledArgs world
              | "some" -> evalSinglet evalSome fnName originOpt evaledArgs world
-             | "Some" -> evalSinglet evalSome fnName originOpt evaledArgs world
              | "isNone" -> evalSinglet evalIsNone fnName originOpt evaledArgs world
              | "isSome" -> evalSinglet evalIsSome fnName originOpt evaledArgs world
              | "isEmpty" -> evalSinglet (evalIsEmpty evalApply) fnName originOpt evaledArgs world
@@ -425,23 +426,24 @@ module ScriptingWorld =
     /// Evaluate an expression.
     and eval expr world =
         match expr with
-        | Violation _ -> (expr, world)
-        | Unit _ -> (expr, world)
-        | Bool _ -> (expr, world)
-        | Int _ -> (expr, world)
-        | Int64 _ -> (expr, world)
-        | Single _ -> (expr, world)
-        | Double _ -> (expr, world)
-        | String _ -> (expr, world)
-        | Keyword _ -> (expr, world)
-        | Tuple _ -> (expr, world)
-        | Keyphrase _ -> (expr, world)
-        | Pluggable _ -> (expr, world)
-        | Option _ -> (expr, world)
-        | Codata _ -> (expr, world)
-        | List _ -> (expr, world)
-        | Ring _ -> (expr, world)
-        | Table _ -> (expr, world)
+        | Violation _
+        | Unit _
+        | Bool _
+        | Int _
+        | Int64 _
+        | Single _
+        | Double _
+        | String _
+        | Keyword _
+        | Tuple _
+        | Keyphrase _
+        | Pluggable _
+        | Option _
+        | Codata _
+        | List _
+        | Ring _
+        | Table _
+        | Keygraph _ -> (expr, world)
         | Binding (name, cachedBinding, originOpt) as expr -> evalBinding expr name cachedBinding originOpt world
         | Apply (exprs, _, originOpt) -> evalApply exprs originOpt world
         | ApplyAnd (exprs, _, originOpt) -> evalApplyAnd exprs originOpt world

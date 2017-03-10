@@ -20,7 +20,8 @@ module ScriptingUnary =
           Codata : Codata -> SymbolOrigin option -> Expr
           List : Expr list -> SymbolOrigin option -> Expr
           Ring : Expr Set -> SymbolOrigin option -> Expr
-          Table : Map<Expr, Expr> -> SymbolOrigin option -> Expr }
+          Table : Map<Expr, Expr> -> SymbolOrigin option -> Expr
+          Keygraph : string -> Map<string, int> -> Expr array -> SymbolOrigin option -> Expr }
 
     let HashFns =
         { Bool = fun value _ -> Int (hash value)
@@ -35,7 +36,8 @@ module ScriptingUnary =
           Codata = fun value _ -> Int (hash value)
           List = fun value _ -> Int (hash value)
           Ring = fun value _ -> Int (hash value)
-          Table = fun value _ -> Int (hash value) }
+          Table = fun value _ -> Int (hash value)
+          Keygraph = fun name map fields _ -> Int (hash (name, map, fields)) }
 
     let ToEmptyFns =
         { Bool = fun _ _ -> Bool false
@@ -50,7 +52,8 @@ module ScriptingUnary =
           Codata = fun _ _ -> Codata Empty
           List = fun _ _ -> List []
           Ring = fun _ _ -> Ring Set.empty
-          Table = fun _ _ -> Table Map.empty }
+          Table = fun _ _ -> Table Map.empty
+          Keygraph = fun _ _ _ _ -> Keygraph (String.Empty, Map.empty, Array.empty) }
 
     let ToIdentityFns =
         { Bool = fun _ _ -> Bool true
@@ -65,7 +68,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a codata to an identity representation.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a list to an identity representation.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a ring to an identity representation.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a table to an identity representation.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a table to an identity representation.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a keygraph to an identity representation.", originOpt) }
 
     let ToMinFns =
         { Bool = fun _ _ -> Bool false
@@ -80,7 +84,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert codata to a minimum representation.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a list to a minimum representation.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a ring to a minimum representation.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a table to a minimum representation.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a table to a minimum representation.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a keygraph to an minimum representation.", originOpt) }
 
     let ToMaxFns =
         { Bool = fun _ _ -> Bool true
@@ -95,7 +100,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert codata to a maximum representation.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a list to a maximum representation.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a ring to a maximum representation.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a table to a maximum representation.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a table to a maximum representation.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a keygraph to an maximum representation.", originOpt) }
 
     let IncFns =
         { Bool = fun value _ -> Bool (if value then false else true)
@@ -110,7 +116,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a keygraph.", originOpt) }
 
     let DecFns =
         { Bool = fun value _ -> Bool (if value then false else true)
@@ -125,7 +132,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a keygraph.", originOpt) }
 
     let NegateFns =
         { Bool = fun value _ -> Bool (if value then false else true)
@@ -140,7 +148,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a keygraph.", originOpt) }
 
     let SqrFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a bool.", originOpt)
@@ -155,7 +164,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a keygraph.", originOpt) }
 
     let SqrtFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a bool.", originOpt)
@@ -170,7 +180,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqtr"], "Cannot square root a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqtr"], "Cannot square root a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a keygraph.", originOpt) }
 
     let FloorFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a bool.", originOpt)
@@ -185,22 +196,24 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a keygraph.", originOpt) }
 
     let CeilingFns =
-        { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot ceiling a bool.", originOpt)
+        { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a bool.", originOpt)
           Int = fun value _ -> Int (int ^ Math.Ceiling (double value))
           Int64 = fun value _ -> Int64 (int64 ^ Math.Ceiling (double value))
           Single = fun value _ -> Single (single ^ Math.Ceiling (double value))
           Double = fun value _ -> Double (Math.Ceiling value)
-          String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot ceiling a string.", originOpt)
-          Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot ceiling a keyword.", originOpt)
-          Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot ceiling a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot ceiling a keyphrase.", originOpt)
-          Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot ceiling codata.", originOpt)
-          List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot ceiling a list.", originOpt)
-          Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot ceiling a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot ceiling a table.", originOpt) }
+          String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a string.", originOpt)
+          Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a keyword.", originOpt)
+          Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a tuple.", originOpt)
+          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a keyphrase.", originOpt)
+          Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of codata.", originOpt)
+          List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a list.", originOpt)
+          Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a ring.", originOpt)
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a keygraph.", originOpt) }
 
     let TruncateFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a bool.", originOpt)
@@ -215,7 +228,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a keygraph.", originOpt) }
 
     let ExpFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a bool.", originOpt)
@@ -230,7 +244,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a keygraph.", originOpt) }
 
     let RoundFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a bool.", originOpt)
@@ -245,7 +260,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a keygraph.", originOpt) }
 
     let LogFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a bool.", originOpt)
@@ -260,7 +276,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a keygraph.", originOpt) }
 
     let SinFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a bool.", originOpt)
@@ -275,7 +292,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a keygraph.", originOpt) }
 
     let CosFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a bool.", originOpt)
@@ -290,7 +308,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a keygraph.", originOpt) }
 
     let TanFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a bool.", originOpt)
@@ -305,7 +324,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a keygraph.", originOpt) }
 
     let AsinFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a bool.", originOpt)
@@ -320,7 +340,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a keygraph.", originOpt) }
 
     let AcosFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a bool.", originOpt)
@@ -335,7 +356,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a keygraph.", originOpt) }
 
     let AtanFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a bool.", originOpt)
@@ -350,7 +372,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a keygraph.", originOpt) }
 
     let LengthFns =
         { Bool = fun value _ -> Int (if value then 1 else 0)
@@ -365,7 +388,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Length"], "Cannot get length of codata.", originOpt)
           List = fun value _ -> Int (List.length value)
           Ring = fun value _ -> Int (value.Count)
-          Table = fun value _ -> Int (value.Count) }
+          Table = fun value _ -> Int (value.Count)
+          Keygraph = fun _ _ fields _ -> Int (Array.length fields) }
 
     let NormalFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a bool.", originOpt)
@@ -380,7 +404,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a ring.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a table.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a table.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a keygraph.", originOpt) }
 
     let BoolFns =
         { Bool = fun value _ -> Bool (value)
@@ -395,7 +420,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert codata to a bool.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a list to a bool.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a ring to a bool.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a table to a bool.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a table to a bool.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a keygraph to a bool.", originOpt) }
 
     let IntFns =
         { Bool = fun value _ -> Int (if value then 1 else 0)
@@ -410,7 +436,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert codata to an int.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a list to an int.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a ring to an int.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a table to an int.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a table to an int.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a keygraph to an int.", originOpt) }
 
     let Int64Fns =
         { Bool = fun value _ -> Int64 (if value then 1L else 0L)
@@ -425,7 +452,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert codata to a 64-bit int.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a list to a 64-bit int.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a ring to a 64-bit int.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a table to a 64-bit int.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a table to a 64-bit int.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a keygraph to a 64-bit int.", originOpt) }
 
     let SingleFns =
         { Bool = fun value _ -> Single (if value then 1.0f else 0.0f)
@@ -440,7 +468,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert codata to a single.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a list to a single.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a ring to a single.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a table to a single.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a table to a single.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a keygraph to a single.", originOpt) }
 
     let DoubleFns =
         { Bool = fun value _ -> Double (if value then 1.0 else 0.0)
@@ -455,7 +484,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert codata to a double.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a list to a double.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a ring to a double.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a table to a double.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a table to a double.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a keygraph to a double.", originOpt) }
 
     let StringFns =
         { Bool = fun value _ -> String (scstring value)
@@ -470,7 +500,8 @@ module ScriptingUnary =
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert codata to a string.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a list to a string.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a ring to a string.", originOpt)
-          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a table to a string.", originOpt) }
+          Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a table to a string.", originOpt)
+          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a keygraph to a string.", originOpt) }
 
     let evalBoolUnary fn fnName originOpt evaledArgs (world : 'w) =
         match evaledArgs with
@@ -483,19 +514,20 @@ module ScriptingUnary =
 
     let evalUnaryInner (fns : UnaryFns) fnName originOpt evaledArg (world : 'w) =
         match evaledArg with
-        | Bool boolValue -> (fns.Bool boolValue originOpt, world)
-        | Int intValue -> (fns.Int intValue originOpt, world)
-        | Int64 int64Value -> (fns.Int64 int64Value originOpt, world)
-        | Single singleValue -> (fns.Single singleValue originOpt, world)
-        | Double doubleValue -> (fns.Double doubleValue originOpt, world)
-        | String stringValue -> (fns.String stringValue originOpt, world)
-        | Keyword keywordValue -> (fns.Keyword keywordValue originOpt, world)
-        | Tuple tupleValue -> (fns.Tuple tupleValue originOpt, world)
-        | Keyphrase (nameValue, phraseValue) -> (fns.Keyphrase nameValue phraseValue originOpt, world)
-        | Codata codataValue -> (fns.Codata codataValue originOpt, world)
-        | List listValue -> (fns.List listValue originOpt, world)
-        | Ring ringValue -> (fns.Ring ringValue originOpt, world)
-        | Table tableValue -> (fns.Table tableValue originOpt, world)
+        | Bool bool -> (fns.Bool bool originOpt, world)
+        | Int int -> (fns.Int int originOpt, world)
+        | Int64 int64 -> (fns.Int64 int64 originOpt, world)
+        | Single single -> (fns.Single single originOpt, world)
+        | Double double -> (fns.Double double originOpt, world)
+        | String string -> (fns.String string originOpt, world)
+        | Keyword keyword -> (fns.Keyword keyword originOpt, world)
+        | Tuple tuple -> (fns.Tuple tuple originOpt, world)
+        | Keyphrase (name, phrase) -> (fns.Keyphrase name phrase originOpt, world)
+        | Codata codata -> (fns.Codata codata originOpt, world)
+        | List list -> (fns.List list originOpt, world)
+        | Ring ring -> (fns.Ring ring originOpt, world)
+        | Table table -> (fns.Table table originOpt, world)
+        | Keygraph (name, map, fields) -> (fns.Keygraph name map fields originOpt, world)
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; (String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", originOpt), world)
 

@@ -20,7 +20,8 @@ module ScriptingBinary =
           Codata : Codata -> Codata -> SymbolOrigin option -> Expr
           List : Expr list -> Expr list -> SymbolOrigin option -> Expr
           Ring : Expr Set -> Expr Set -> SymbolOrigin option -> Expr
-          Table : Map<Expr, Expr> -> Map<Expr, Expr> -> SymbolOrigin option -> Expr }
+          Table : Map<Expr, Expr> -> Map<Expr, Expr> -> SymbolOrigin option -> Expr
+          Keygraph : string -> Map<string, int> -> Expr array -> string -> Map<string, int> -> Expr array -> SymbolOrigin option -> Expr }
 
     let EqFns =
         { Bool = fun left right _ -> Bool (left = right)
@@ -31,11 +32,12 @@ module ScriptingBinary =
           String = fun left right _ -> Bool (left = right)
           Keyword = fun left right _ -> Bool (left = right)
           Tuple = fun left right _ -> Bool (left = right)
-          Keyphrase = fun wordLeft phraseLeft wordRight phraseRight _ -> Bool ((wordLeft, phraseLeft) = (wordRight, phraseRight))
+          Keyphrase = fun keywordLeft fieldsLeft keywordRight fieldsRight _ -> Bool ((keywordLeft, fieldsLeft) = (keywordRight, fieldsRight))
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Eq"], "Cannot determine equality of codata.", originOpt)
           List = fun left right _ -> Bool (left = right)
           Ring = fun left right _ -> Bool (left = right)
-          Table = fun left right _ -> Bool (left = right) }
+          Table = fun left right _ -> Bool (left = right)
+          Keygraph = fun keywordLeft mapLeft fieldsLeft keywordRight mapRight fieldsRight _ -> Bool ((keywordLeft, mapLeft, fieldsLeft) = (keywordRight, mapRight, fieldsRight)) }
 
     let NotEqFns =
         { Bool = fun left right _ -> Bool (left <> right)
@@ -46,11 +48,12 @@ module ScriptingBinary =
           String = fun left right _ -> Bool (left <> right)
           Keyword = fun left right _ -> Bool (left <> right)
           Tuple = fun left right _ -> Bool (left <> right)
-          Keyphrase = fun wordLeft phraseLeft wordRight phraseRight _ -> Bool ((wordLeft, phraseLeft) <> (wordRight, phraseRight))
+          Keyphrase = fun keywordLeft fieldsLeft keywordRight fieldsRight _ -> Bool ((keywordLeft, fieldsLeft) <> (keywordRight, fieldsRight))
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "NotEq"], "Cannot determine inequality of codata.", originOpt)
           List = fun left right _ -> Bool (left <> right)
           Ring = fun left right _ -> Bool (left <> right)
-          Table = fun left right _ -> Bool (left <> right) }
+          Table = fun left right _ -> Bool (left <> right)
+          Keygraph = fun keywordLeft mapLeft fieldsLeft keywordRight mapRight fieldsRight _ -> Bool ((keywordLeft, mapLeft, fieldsLeft) <> (keywordRight, mapRight, fieldsRight)) }
 
     let LtFns =
         { Bool = fun left right _ -> Bool (left < right)
@@ -61,11 +64,12 @@ module ScriptingBinary =
           String = fun left right _ -> Bool (left < right)
           Keyword = fun left right _ -> Bool (left < right)
           Tuple = fun left right _ -> Bool (left < right)
-          Keyphrase = fun wordLeft phraseLeft wordRight phraseRight _ -> Bool ((wordLeft, phraseLeft) < (wordRight, phraseRight))
+          Keyphrase = fun keywordLeft fieldsLeft keywordRight fieldsRight _ -> Bool ((keywordLeft, fieldsLeft) < (keywordRight, fieldsRight))
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Lt"], "Cannot compare codata.", originOpt)
           List = fun left right _ -> Bool (left < right)
           Ring = fun left right _ -> Bool (left < right)
-          Table = fun left right _ -> Bool (left < right) }
+          Table = fun left right _ -> Bool (left < right)
+          Keygraph = fun keywordLeft mapLeft fieldsLeft keywordRight mapRight fieldsRight _ -> Bool ((keywordLeft, mapLeft, fieldsLeft) < (keywordRight, mapRight, fieldsRight)) }
 
     let GtFns =
         { Bool = fun left right _ -> Bool (left > right)
@@ -76,11 +80,12 @@ module ScriptingBinary =
           String = fun left right _ -> Bool (left > right)
           Keyword = fun left right _ -> Bool (left > right)
           Tuple = fun left right _ -> Bool (left > right)
-          Keyphrase = fun wordLeft phraseLeft wordRight phraseRight _ -> Bool ((wordLeft, phraseLeft) > (wordRight, phraseRight))
+          Keyphrase = fun keywordLeft fieldsLeft keywordRight fieldsRight _ -> Bool ((keywordLeft, fieldsLeft) > (keywordRight, fieldsRight))
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Gt"], "Cannot compare codata.", originOpt)
           List = fun left right _ -> Bool (left > right)
           Ring = fun left right _ -> Bool (left > right)
-          Table = fun left right _ -> Bool (left > right) }
+          Table = fun left right _ -> Bool (left > right)
+          Keygraph = fun keywordLeft mapLeft fieldsLeft keywordRight mapRight fieldsRight _ -> Bool ((keywordLeft, mapLeft, fieldsLeft) > (keywordRight, mapRight, fieldsRight)) }
 
     let LtEqFns =
         { Bool = fun left right _ -> Bool (left <= right)
@@ -91,11 +96,12 @@ module ScriptingBinary =
           String = fun left right _ -> Bool (left <= right)
           Keyword = fun left right _ -> Bool (left <= right)
           Tuple = fun left right _ -> Bool (left <= right)
-          Keyphrase = fun wordLeft phraseLeft wordRight phraseRight _ -> Bool ((wordLeft, phraseLeft) <= (wordRight, phraseRight))
+          Keyphrase = fun keywordLeft fieldsLeft keywordRight fieldsRight _ -> Bool ((keywordLeft, fieldsLeft) <= (keywordRight, fieldsRight))
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "LtEq"], "Cannot compare codata.", originOpt)
           List = fun left right _ -> Bool (left <= right)
           Ring = fun left right _ -> Bool (left <= right)
-          Table = fun left right _ -> Bool (left <= right) }
+          Table = fun left right _ -> Bool (left <= right)
+          Keygraph = fun keywordLeft mapLeft fieldsLeft keywordRight mapRight fieldsRight _ -> Bool ((keywordLeft, mapLeft, fieldsLeft) <= (keywordRight, mapRight, fieldsRight)) }
 
     let GtEqFns =
         { Bool = fun left right _ -> Bool (left >= right)
@@ -106,11 +112,12 @@ module ScriptingBinary =
           String = fun left right _ -> Bool (left >= right)
           Keyword = fun left right _ -> Bool (left >= right)
           Tuple = fun left right _ -> Bool (left >= right)
-          Keyphrase = fun wordLeft phraseLeft wordRight phraseRight _ -> Bool ((wordLeft, phraseLeft) >= (wordRight, phraseRight))
+          Keyphrase = fun keywordLeft fieldsLeft keywordRight fieldsRight _ -> Bool ((keywordLeft, fieldsLeft) >= (keywordRight, fieldsRight))
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "GtEq"], "Cannot compare codata.", originOpt)
           List = fun left right _ -> Bool (left >= right)
           Ring = fun left right _ -> Bool (left >= right)
-          Table = fun left right _ -> Bool (left >= right) }
+          Table = fun left right _ -> Bool (left >= right)
+          Keygraph = fun keywordLeft mapLeft fieldsLeft keywordRight mapRight fieldsRight _ -> Bool ((keywordLeft, mapLeft, fieldsLeft) >= (keywordRight, mapRight, fieldsRight)) }
 
     let AddFns =
         { Bool = fun left right _ -> Bool (if left && right then false elif left then true elif right then true else false)
@@ -121,15 +128,12 @@ module ScriptingBinary =
           String = fun left right _ -> String (left + right)
           Keyword = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Add"], "Cannot add keywords.", originOpt)
           Tuple = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Add"], "Cannot add tuples.", originOpt)
-          Keyphrase =
-            fun wordLeft phraseLeft wordRight phraseRight originOpt ->
-                if wordLeft = wordRight
-                then Keyphrase (wordLeft, Array.append phraseLeft phraseRight)
-                else Violation (["InvalidArgumentType"; "Add"], "Cannot add keywords.", originOpt)
+          Keyphrase = fun _ _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Add"], "Cannot add keyphrases.", originOpt)
           Codata = fun left right _ -> Codata (Add (left, right))
           List = fun left right _ -> List (left @ right)
           Ring = fun left right _ -> Ring (Set.union left right)
-          Table = fun left right _ -> Table (left @@ right) }
+          Table = fun left right _ -> Table (left @@ right)
+          Keygraph = fun _ _ _ _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Add"], "Cannot add keygraphs.", originOpt) }
 
     let SubFns =
         { Bool = fun left right _ -> Bool (if left && right then false elif left then true elif right then true else false)
@@ -144,7 +148,8 @@ module ScriptingBinary =
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Sub"], "Cannot subtract codata.", originOpt)
           List = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Sub"], "Cannot subtract lists.", originOpt)
           Ring = fun left right _ -> Ring (Set.difference left right)
-          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Sub"], "Cannot subtract tables.", originOpt) }
+          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Sub"], "Cannot subtract tables.", originOpt)
+          Keygraph = fun _ _ _ _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Sub"], "Cannot subtract keygraphs.", originOpt) }
 
     let MulFns =
         { Bool = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Mul"], "Cannot multiply bools.", originOpt)
@@ -159,7 +164,8 @@ module ScriptingBinary =
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Mul"], "Cannot multiply codata.", originOpt)
           List = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Mul"], "Cannot multiply lists.", originOpt)
           Ring = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Mul"], "Cannot multiply rings.", originOpt)
-          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Mul"], "Cannot multiply tables.", originOpt) }
+          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Mul"], "Cannot multiply tables.", originOpt)
+          Keygraph = fun _ _ _ _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Mul"], "Cannot multiply keygraphs.", originOpt) }
 
     let DivFns =
         { Bool = fun left right originOpt -> if right = false then Violation (["OutOfRangeArgument"; "Div"], "Cannot divide by a false bool.", originOpt) else Bool (if left && right then true else false)
@@ -174,7 +180,8 @@ module ScriptingBinary =
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Div"], "Cannot divide codata.", originOpt)
           List = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Div"], "Cannot divide lists.", originOpt)
           Ring = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Div"], "Cannot divide rings.", originOpt)
-          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Div"], "Cannot divide tables.", originOpt) }
+          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Div"], "Cannot divide tables.", originOpt)
+          Keygraph = fun _ _ _ _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Div"], "Cannot divide keygraphs.", originOpt) }
 
     let ModFns =
         { Bool = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Mod"], "Cannot modulate bools.", originOpt)
@@ -189,7 +196,8 @@ module ScriptingBinary =
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Mod"], "Cannot modulate codata.", originOpt)
           List = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Mod"], "Cannot modulate lists.", originOpt)
           Ring = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Mod"], "Cannot modulate rings.", originOpt)
-          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Mod"], "Cannot modulate tables.", originOpt) }
+          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Mod"], "Cannot modulate tables.", originOpt)
+          Keygraph = fun _ _ _ _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Mod"], "Cannot modulate keygraphs.", originOpt) }
 
     let PowFns =
         { Bool = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Pow"], "Cannot power bools.", originOpt)
@@ -204,7 +212,8 @@ module ScriptingBinary =
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Pow"], "Cannot power codata.", originOpt)
           List = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Pow"], "Cannot power lists.", originOpt)
           Ring = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Pow"], "Cannot power rings.", originOpt)
-          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Pow"], "Cannot power tables.", originOpt) }
+          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Pow"], "Cannot power tables.", originOpt)
+          Keygraph = fun _ _ _ _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Pow"], "Cannot power keygraphs.", originOpt) }
 
     let RootFns =
         { Bool = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Root"], "Cannot root bools.", originOpt)
@@ -219,7 +228,8 @@ module ScriptingBinary =
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Root"], "Cannot root codata.", originOpt)
           List = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Root"], "Cannot root lists.", originOpt)
           Ring = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Root"], "Cannot root rings.", originOpt)
-          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Root"], "Cannot root tables.", originOpt) }
+          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Root"], "Cannot root tables.", originOpt)
+          Keygraph = fun _ _ _ _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Root"], "Cannot root keygraphs.", originOpt) }
 
     let CrossFns =
         { Bool = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Cross"], "Cannot cross multiply bools.", originOpt)
@@ -234,7 +244,8 @@ module ScriptingBinary =
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Cross"], "Cannot cross multiply codata.", originOpt)
           List = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Cross"], "Cannot cross multiply lists.", originOpt)
           Ring = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Cross"], "Cannot cross multiply rings.", originOpt)
-          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Cross"], "Cannot cross multiply tables.", originOpt) }
+          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Cross"], "Cannot cross multiply tables.", originOpt)
+          Keygraph = fun _ _ _ _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Cross"], "Cannot cross multiply keygraphs.", originOpt) }
 
     let DotFns =
         { Bool = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Dot"], "Cannot dot multiply bools.", originOpt)
@@ -249,7 +260,8 @@ module ScriptingBinary =
           Codata = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Dot"], "Cannot dot multiply codata.", originOpt)
           List = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Dot"], "Cannot dot multiply lists.", originOpt)
           Ring = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Dot"], "Cannot dot multiply rings.", originOpt)
-          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Dot"], "Cannot dot multiply tables.", originOpt) }
+          Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Dot"], "Cannot dot multiply tables.", originOpt)
+          Keygraph = fun _ _ _ _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Dot"], "Cannot dot multiply keygraphs.", originOpt) }
 
     let evalBinaryInner (fns : BinaryFns) fnName originOpt evaledLeft evaledRight (world : 'w) =
         match (evaledLeft, evaledRight) with
@@ -261,7 +273,7 @@ module ScriptingBinary =
         | (String stringLeft, String stringRight) -> (fns.String stringLeft stringRight originOpt, world)
         | (Keyword keywordLeft, Keyword keywordRight) -> (fns.String keywordLeft keywordRight originOpt, world)
         | (Tuple tupleLeft, Tuple tupleRight) -> (fns.Tuple tupleLeft tupleRight originOpt, world)
-        | (Keyphrase (nameLeft, phraseLeft), Keyphrase (nameRight, phraseRight)) -> (fns.Keyphrase nameLeft phraseLeft nameRight phraseRight originOpt, world)
+        | (Keyphrase (nameLeft, fieldsLeft), Keyphrase (nameRight, fieldsRight)) -> (fns.Keyphrase nameLeft fieldsLeft nameRight fieldsRight originOpt, world)
         | (Codata codataLeft, Codata codataRight) -> (fns.Codata codataLeft codataRight originOpt, world)
         | (List listLeft, List listRight) -> (fns.List listLeft listRight originOpt, world)
         | (Ring ringLeft, Ring ringRight) -> (fns.Ring ringLeft ringRight originOpt, world)

@@ -246,7 +246,7 @@ module ScriptingMarshalling =
             match ty.GetGenericArguments () with
             | [|fstType; sndType|] ->
                 let pairType = typedefof<Tuple<_, _>>.MakeGenericType [|fstType; sndType|]
-                let pairOpts = map |> Map.toSeq |> Seq.map (fun (key, value) -> tryExport tryExportExt (Tuple [|key; value|]) pairType)
+                let pairOpts = Seq.map (fun (kvp : KeyValuePair<_, _>) -> tryExport tryExportExt (Tuple [|kvp.Key; kvp.Value|]) pairType) map
                 match Seq.definitizePlus pairOpts with
                 | (true, pairs) -> Some (Reflection.pairsToMap ty pairs)
                 | (false, _) -> None
