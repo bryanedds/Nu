@@ -39,7 +39,7 @@ module Map =
     
     /// Convert a seq of a map's keys by a function.
     let toKeySeqBy by map =
-        toSeqBy (by << fst) map
+        toSeqBy (fun k _ -> by k) map
     
     /// Get a seq of a map's values.
     let toValueSeq map =
@@ -47,7 +47,7 @@ module Map =
     
     /// Convert a seq of a map's values by a function.
     let toValueSeqBy by map =
-        toSeqBy (by << snd) map
+        toSeqBy (fun _ v -> by v) map
     
     /// Make a map from a list by a function.
     let ofListBy by list =

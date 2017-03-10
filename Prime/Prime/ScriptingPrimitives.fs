@@ -47,12 +47,20 @@ module ScriptingPrimitives =
     let evalKeyname fnName originOpt evaledArg world =
         match evaledArg with
         | Keyphrase (name, _) -> (String name, world)
+        | Keygraph (name, _, _) -> (String name, world)
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a keyphrase value.", originOpt), world)
 
     let evalKeyfields fnName originOpt evaledArg world =
         match evaledArg with
         | Keyphrase (_, fields) -> (Tuple fields, world)
+        | Keygraph (_, _, fields) -> (Tuple fields, world)
+        | Violation _ as violation -> (violation, world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a keyphrase value.", originOpt), world)
+
+    let evalKeynames fnName originOpt evaledArg world =
+        match evaledArg with
+        | Keygraph (_, map, _) -> (map |> Map.toKeySeqBy Keyword |> Array.ofSeq |> Tuple, world)
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a keyphrase value.", originOpt), world)
 
