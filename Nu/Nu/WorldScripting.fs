@@ -106,7 +106,7 @@ module WorldScripting =
                     match ScriptingWorld.tryImport evt.Data evt.DataType world with
                     | Some dataImported ->
                         let evtTuple =
-                            Keyphrase
+                            Phrase
                                 ("Event",
                                     [|dataImported
                                       String (scstring evt.Subscriber)

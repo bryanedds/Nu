@@ -16,12 +16,12 @@ module ScriptingUnary =
           String : string -> SymbolOrigin option -> Expr
           Keyword : string -> SymbolOrigin option -> Expr
           Tuple : Expr array -> SymbolOrigin option -> Expr
-          Keyphrase : string -> Expr array -> SymbolOrigin option -> Expr
+          Phrase : string -> Expr array -> SymbolOrigin option -> Expr
           Codata : Codata -> SymbolOrigin option -> Expr
           List : Expr list -> SymbolOrigin option -> Expr
           Ring : Expr Set -> SymbolOrigin option -> Expr
           Table : Map<Expr, Expr> -> SymbolOrigin option -> Expr
-          Keygraph : string -> Map<string, int> -> Expr array -> SymbolOrigin option -> Expr }
+          Record : string -> Map<string, int> -> Expr array -> SymbolOrigin option -> Expr }
 
     let HashFns =
         { Bool = fun value _ -> Int (hash value)
@@ -32,12 +32,12 @@ module ScriptingUnary =
           String = fun value _ -> Int (hash value)
           Keyword = fun value _ -> Int (hash value)
           Tuple = fun value _ -> Int (hash value)
-          Keyphrase = fun name fields _ -> Int (hash (name, fields))
+          Phrase = fun name fields _ -> Int (hash (name, fields))
           Codata = fun value _ -> Int (hash value)
           List = fun value _ -> Int (hash value)
           Ring = fun value _ -> Int (hash value)
           Table = fun value _ -> Int (hash value)
-          Keygraph = fun name map fields _ -> Int (hash (name, map, fields)) }
+          Record = fun name map fields _ -> Int (hash (name, map, fields)) }
 
     let ToEmptyFns =
         { Bool = fun _ _ -> Bool false
@@ -48,12 +48,12 @@ module ScriptingUnary =
           String = fun _ _ -> String String.Empty
           Keyword = fun _ _ -> Keyword String.Empty
           Tuple = fun _ _ -> Tuple Array.empty
-          Keyphrase = fun _ _ _ -> Keyphrase (String.Empty, Array.empty)
+          Phrase = fun _ _ _ -> Phrase (String.Empty, Array.empty)
           Codata = fun _ _ -> Codata Empty
           List = fun _ _ -> List []
           Ring = fun _ _ -> Ring Set.empty
           Table = fun _ _ -> Table Map.empty
-          Keygraph = fun _ _ _ _ -> Keygraph (String.Empty, Map.empty, Array.empty) }
+          Record = fun _ _ _ _ -> Record (String.Empty, Map.empty, Array.empty) }
 
     let ToIdentityFns =
         { Bool = fun _ _ -> Bool true
@@ -64,12 +64,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a string to an identity representation.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a keyword to an identity representation.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a tuple to an identity representation.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a keyphrase to an identity representation.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a phrase to an identity representation.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a codata to an identity representation.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a list to an identity representation.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a ring to an identity representation.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a table to an identity representation.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a keygraph to an identity representation.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "ToIdentity"], "Cannot convert a record to an identity representation.", originOpt) }
 
     let ToMinFns =
         { Bool = fun _ _ -> Bool false
@@ -80,12 +80,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a string to a minimum representation.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a keyword to a minimum representation.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a tuple to a minimum representation.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a keyphrase to a minimum representation.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a phrase to a minimum representation.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert codata to a minimum representation.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a list to a minimum representation.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a ring to a minimum representation.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a table to a minimum representation.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a keygraph to an minimum representation.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "ToMin"], "Cannot convert a record to an minimum representation.", originOpt) }
 
     let ToMaxFns =
         { Bool = fun _ _ -> Bool true
@@ -96,12 +96,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a string to a maximum representation.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a keyword to a maximum representation.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a tuple to a maximum representation.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a keyphrase to a maximum representation.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a phrase to a maximum representation.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert codata to a maximum representation.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a list to a maximum representation.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a ring to a maximum representation.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a table to a maximum representation.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a keygraph to an maximum representation.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "ToMax"], "Cannot convert a record to an maximum representation.", originOpt) }
 
     let IncFns =
         { Bool = fun value _ -> Bool (if value then false else true)
@@ -112,12 +112,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Inc"], "Cannot increment a record.", originOpt) }
 
     let DecFns =
         { Bool = fun value _ -> Bool (if value then false else true)
@@ -128,12 +128,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Dec"], "Cannot decrement a record.", originOpt) }
 
     let NegateFns =
         { Bool = fun value _ -> Bool (if value then false else true)
@@ -144,12 +144,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Negate"], "Cannot negate a record.", originOpt) }
 
     let SqrFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a bool.", originOpt)
@@ -160,12 +160,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Sqr"], "Cannot square a record.", originOpt) }
 
     let SqrtFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a bool.", originOpt)
@@ -176,12 +176,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sqtr"], "Cannot square root a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Sqrt"], "Cannot square root a record.", originOpt) }
 
     let FloorFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a bool.", originOpt)
@@ -192,12 +192,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Floor"], "Cannot floor a record.", originOpt) }
 
     let CeilingFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a bool.", originOpt)
@@ -208,12 +208,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Ceiling"], "Cannot get ceiling of a record.", originOpt) }
 
     let TruncateFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a bool.", originOpt)
@@ -224,12 +224,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Truncate"], "Cannot truncate a record.", originOpt) }
 
     let ExpFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a bool.", originOpt)
@@ -240,12 +240,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Exp"], "Cannot exponentiate a record.", originOpt) }
 
     let RoundFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a bool.", originOpt)
@@ -256,12 +256,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Round"], "Cannot round a record.", originOpt) }
 
     let LogFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a bool.", originOpt)
@@ -272,12 +272,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Log"], "Cannot log a record.", originOpt) }
 
     let SinFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a bool.", originOpt)
@@ -288,12 +288,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Sin"], "Cannot sin a record.", originOpt) }
 
     let CosFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a bool.", originOpt)
@@ -304,12 +304,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Cos"], "Cannot cos a record.", originOpt) }
 
     let TanFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a bool.", originOpt)
@@ -320,12 +320,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Tan"], "Cannot tan a record.", originOpt) }
 
     let AsinFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a bool.", originOpt)
@@ -336,12 +336,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Asin"], "Cannot asin a record.", originOpt) }
 
     let AcosFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a bool.", originOpt)
@@ -352,12 +352,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Acos"], "Cannot acos a record.", originOpt) }
 
     let AtanFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a bool.", originOpt)
@@ -368,12 +368,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Atan"], "Cannot atan a record.", originOpt) }
 
     let LengthFns =
         { Bool = fun value _ -> Int (if value then 1 else 0)
@@ -384,12 +384,12 @@ module ScriptingUnary =
           String = fun value _ -> Int (value.Length)
           Keyword = fun value _ -> Int (value.Length)
           Tuple = fun value _ -> Int (Array.length value)
-          Keyphrase = fun _ fields _ -> Int (Array.length fields)
+          Phrase = fun _ fields _ -> Int (Array.length fields)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Length"], "Cannot get length of codata.", originOpt)
           List = fun value _ -> Int (List.length value)
           Ring = fun value _ -> Int (value.Count)
           Table = fun value _ -> Int (value.Count)
-          Keygraph = fun _ _ fields _ -> Int (Array.length fields) }
+          Record = fun _ _ fields _ -> Int (Array.length fields) }
 
     let NormalFns =
         { Bool = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a bool.", originOpt)
@@ -400,12 +400,12 @@ module ScriptingUnary =
           String = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a string.", originOpt)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a keyword.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a tuple.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a keyphrase.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a phrase.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize codata.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a list.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a ring.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a table.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a keygraph.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Normal"], "Cannot normalize a record.", originOpt) }
 
     let BoolFns =
         { Bool = fun value _ -> Bool (value)
@@ -416,12 +416,12 @@ module ScriptingUnary =
           String = fun value _ -> Bool (scvalue value)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a keyword to a bool.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a tuple to a bool.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a keyphrase to a bool.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a phrase to a bool.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert codata to a bool.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a list to a bool.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a ring to a bool.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a table to a bool.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a keygraph to a bool.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Bool"], "Cannot convert a record to a bool.", originOpt) }
 
     let IntFns =
         { Bool = fun value _ -> Int (if value then 1 else 0)
@@ -432,12 +432,12 @@ module ScriptingUnary =
           String = fun value _ -> Int (scvalue value)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a keyword to an int.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a tuple to an int.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a keyphrase to an int.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a phrase to an int.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert codata to an int.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a list to an int.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a ring to an int.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a table to an int.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a keygraph to an int.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Int"], "Cannot convert a record to an int.", originOpt) }
 
     let Int64Fns =
         { Bool = fun value _ -> Int64 (if value then 1L else 0L)
@@ -448,12 +448,12 @@ module ScriptingUnary =
           String = fun value _ -> Int64 (scvalue value)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a keyword to a 64-bit int.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a tuple to a 64-bit int.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a keyphrase to a 64-bit int.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a phrase to a 64-bit int.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert codata to a 64-bit int.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a list to a 64-bit int.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a ring to a 64-bit int.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a table to a 64-bit int.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a keygraph to a 64-bit int.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Int64"], "Cannot convert a record to a 64-bit int.", originOpt) }
 
     let SingleFns =
         { Bool = fun value _ -> Single (if value then 1.0f else 0.0f)
@@ -464,12 +464,12 @@ module ScriptingUnary =
           String = fun value _ -> Single (scvalue value)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a keyword to a single.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a tuple to a single.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a keyphrase to a single.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a phrase to a single.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert codata to a single.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a list to a single.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a ring to a single.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a table to a single.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a keygraph to a single.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Single"], "Cannot convert a record to a single.", originOpt) }
 
     let DoubleFns =
         { Bool = fun value _ -> Double (if value then 1.0 else 0.0)
@@ -480,12 +480,12 @@ module ScriptingUnary =
           String = fun value _ -> Double (scvalue value)
           Keyword = fun _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a keyword to a double.", originOpt)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a tuple to a double.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a keyphrase to a double.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a phrase to a double.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert codata to a double.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a list to a double.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a ring to a double.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a table to a double.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a keygraph to a double.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Double"], "Cannot convert a record to a double.", originOpt) }
 
     let StringFns =
         { Bool = fun value _ -> String (scstring value)
@@ -496,12 +496,12 @@ module ScriptingUnary =
           String = fun value _ -> String (value)
           Keyword = fun value _ -> String (value)
           Tuple = fun _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a tuple to a string.", originOpt)
-          Keyphrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a keyphrase to a string.", originOpt)
+          Phrase = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a phrase to a string.", originOpt)
           Codata = fun _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert codata to a string.", originOpt)
           List = fun _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a list to a string.", originOpt)
           Ring = fun _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a ring to a string.", originOpt)
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a table to a string.", originOpt)
-          Keygraph = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a keygraph to a string.", originOpt) }
+          Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a record to a string.", originOpt) }
 
     let evalBoolUnary fn fnName originOpt evaledArgs (world : 'w) =
         match evaledArgs with
@@ -522,12 +522,12 @@ module ScriptingUnary =
         | String string -> (fns.String string originOpt, world)
         | Keyword keyword -> (fns.Keyword keyword originOpt, world)
         | Tuple tuple -> (fns.Tuple tuple originOpt, world)
-        | Keyphrase (name, phrase) -> (fns.Keyphrase name phrase originOpt, world)
+        | Phrase (name, phrase) -> (fns.Phrase name phrase originOpt, world)
         | Codata codata -> (fns.Codata codata originOpt, world)
         | List list -> (fns.List list originOpt, world)
         | Ring ring -> (fns.Ring ring originOpt, world)
         | Table table -> (fns.Table table originOpt, world)
-        | Keygraph (name, map, fields) -> (fns.Keygraph name map fields originOpt, world)
+        | Record (name, map, fields) -> (fns.Record name map fields originOpt, world)
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; (String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", originOpt), world)
 

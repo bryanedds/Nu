@@ -199,7 +199,7 @@ module ScriptingWorld =
              | "find" -> evalDoublet evalFind fnName originOpt evaledArgs world
              | _ -> (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)) with
         | (Violation _, world) ->
-            // allows overloading for keyphrases using binding with name = fnName + _ + keyName
+            // allows overloading using binding with name = fnName + _ + keyName
             if Array.notEmpty evaledArgs then
                 match Array.last evaledArgs with
                 | Pluggable pluggable ->
@@ -208,7 +208,8 @@ module ScriptingWorld =
                     let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
                     let evaleds = Array.cons xfnBinding evaledArgs
                     evalApply evaleds originOpt world
-                | Keyphrase (keyname, _) ->
+                | Phrase (keyname, _)
+                | Record (keyname, _, _) ->
                     let xfnName = fnName + "_" + keyname
                     let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
                     let evaleds = Array.cons xfnBinding evaledArgs
@@ -232,8 +233,8 @@ module ScriptingWorld =
             match evaledHead with
             | Keyword keyword ->
                 let (evaledTail, world) = evalMany exprsTail world
-                let keyphrase = Keyphrase (keyword, evaledTail)
-                (keyphrase, world)
+                let phrase = Phrase (keyword, evaledTail)
+                (phrase, world)
             | Binding (fnName, _, originOpt) ->
                 // NOTE: when evaluation leads here, we can (actually must) infer that we have
                 // either an extrinsic or intrinsic function.
@@ -436,14 +437,14 @@ module ScriptingWorld =
         | String _
         | Keyword _
         | Tuple _
-        | Keyphrase _
+        | Phrase _
         | Pluggable _
         | Option _
         | Codata _
         | List _
         | Ring _
         | Table _
-        | Keygraph _ -> (expr, world)
+        | Record _ -> (expr, world)
         | Binding (name, cachedBinding, originOpt) as expr -> evalBinding expr name cachedBinding originOpt world
         | Apply (exprs, _, originOpt) -> evalApply exprs originOpt world
         | ApplyAnd (exprs, _, originOpt) -> evalApplyAnd exprs originOpt world
