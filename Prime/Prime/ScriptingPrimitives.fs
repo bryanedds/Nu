@@ -46,23 +46,23 @@ module ScriptingPrimitives =
 
     let evalKeyname fnName originOpt evaledArg world =
         match evaledArg with
-        | Keyphrase (name, _) -> (String name, world)
-        | Keygraph (name, _, _) -> (String name, world)
+        | Phrase (name, _) -> (String name, world)
+        | Record (name, _, _) -> (String name, world)
         | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a keyphrase value.", originOpt), world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a phrase or record value.", originOpt), world)
 
     let evalKeyfields fnName originOpt evaledArg world =
         match evaledArg with
-        | Keyphrase (_, fields) -> (Tuple fields, world)
-        | Keygraph (_, _, fields) -> (Tuple fields, world)
+        | Phrase (_, fields) -> (Tuple fields, world)
+        | Record (_, _, fields) -> (Tuple fields, world)
         | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a keyphrase value.", originOpt), world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a phrase or record value.", originOpt), world)
 
     let evalKeynames fnName originOpt evaledArg world =
         match evaledArg with
-        | Keygraph (_, map, _) -> (map |> Map.toKeySeqBy Keyword |> Array.ofSeq |> Tuple, world)
+        | Record (_, map, _) -> (map |> Map.toKeySeqBy Keyword |> Array.ofSeq |> Tuple, world)
         | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a keyphrase value.", originOpt), world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a phrase or record value.", originOpt), world)
 
     let evalTuple _ _ evaledArgs world =
         (Tuple evaledArgs, world)
@@ -73,8 +73,8 @@ module ScriptingPrimitives =
     let evalNth5 index fnName originOpt evaledArg world =
         match evaledArg with
         | Tuple fields
-        | Keyphrase (_, fields)
-        | Keygraph (_, _, fields) ->
+        | Phrase (_, fields)
+        | Record (_, _, fields) ->
             if index >= 0 && index < Array.length fields
             then (fields.[index], world)
             else (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Structure does not contain element at index " + string index + ".", originOpt), world)
@@ -84,8 +84,8 @@ module ScriptingPrimitives =
     let evalNthAs5 index fnName originOpt evaledArg evaledArg2 world =
         match (evaledArg, evaledArg2) with
         | (value, Tuple fields)
-        | (value, Keyphrase (_, fields))
-        | (value, Keygraph (_, _, fields)) ->
+        | (value, Phrase (_, fields))
+        | (value, Record (_, _, fields)) ->
             if index >= 0 && index < Array.length fields then
                 let fields = Array.copy fields
                 fields.[index] <- value
@@ -162,7 +162,7 @@ module ScriptingPrimitives =
         | Double double -> (Bool (double = 0.0), world)
         | String str -> (Bool (String.isEmpty str), world)
         | Keyword str -> (Bool (String.isEmpty str), world)
-        | Keyphrase (str, _) -> (Bool (String.isEmpty str), world)
+        | Phrase (str, _) -> (Bool (String.isEmpty str), world)
         | Option opt -> (Bool (Option.isNone opt), world)
         | Codata codata ->
             match evalCodataIsEmpty evalApply fnName originOpt codata world with
@@ -171,7 +171,7 @@ module ScriptingPrimitives =
         | List list -> (Bool (List.isEmpty list), world)
         | Ring set -> (Bool (Set.isEmpty set), world)
         | Table map -> (Bool (Map.isEmpty map), world)
-        | Keygraph (str, _, _) -> (Bool (String.isEmpty str), world)
+        | Record (str, _, _) -> (Bool (String.isEmpty str), world)
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
 
@@ -184,7 +184,7 @@ module ScriptingPrimitives =
         | Double double -> (Bool (double <> 0.0), world)
         | String str -> (Bool (String.notEmpty str), world)
         | Keyword str -> (Bool (String.notEmpty str), world)
-        | Keyphrase (str, _) -> (Bool (String.notEmpty str), world)
+        | Phrase (str, _) -> (Bool (String.notEmpty str), world)
         | Option opt -> (Bool (Option.isSome opt), world)
         | Codata codata ->
             match evalCodataIsEmpty evalApply fnName originOpt codata world with
@@ -193,7 +193,7 @@ module ScriptingPrimitives =
         | List list -> (Bool (List.notEmpty list), world)
         | Ring set -> (Bool (Set.notEmpty set), world)
         | Table map -> (Bool (Map.notEmpty map), world)
-        | Keygraph (str, _, _) -> (Bool (String.notEmpty str), world)
+        | Record (str, _, _) -> (Bool (String.notEmpty str), world)
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
 

@@ -39,7 +39,7 @@ module ScriptingMarshalling =
                 | (true, recordFields) ->
                     let recordName = match ty.Name.IndexOf '`' with -1 -> ty.Name | index -> ty.Name.Substring (0, index)
                     let recordFieldMap = recordFieldInfos |> Array.mapi (fun i (field : Reflection.PropertyInfo) -> (field.Name, i)) |> Map.ofArray
-                    Some (Keygraph (recordName, recordFieldMap, recordFields))
+                    Some (Record (recordName, recordFieldMap, recordFields))
                 | (false, _) -> None
 
             // or as Union
@@ -49,9 +49,9 @@ module ScriptingMarshalling =
                 if not ^ Array.isEmpty unionFields then
                     let unionFieldOpts = Array.mapi (fun i unionField -> tryImport tryImportExt unionField unionFieldTypes.[i].PropertyType) unionFields
                     match Array.definitizePlus unionFieldOpts with
-                    | (true, unionFields) -> Some (Keyphrase (unionCase.Name, unionFields))
+                    | (true, unionFields) -> Some (Phrase (unionCase.Name, unionFields))
                     | (false, _) -> None
-                else Some (Keyphrase (unionCase.Name, [||]))
+                else Some (Phrase (unionCase.Name, [||]))
 
             // otherwise, we have no conversion
             else None
@@ -139,8 +139,8 @@ module ScriptingMarshalling =
             if FSharpType.IsTuple ty then
                 match value with
                 | Tuple fields
-                | Keyphrase (_, fields)
-                | Keygraph (_, _, fields) ->
+                | Phrase (_, fields)
+                | Record (_, _, fields) ->
                     let fieldTypes = FSharpType.GetTupleElements ty
                     let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport tryExportExt fieldSymbol fieldTypes.[i]) fields
                     match Array.definitizePlus fieldOpts with
@@ -151,8 +151,8 @@ module ScriptingMarshalling =
             // or as Record
             elif FSharpType.IsRecord ty then
                 match value with
-                | Keyphrase (_, fields)
-                | Keygraph (_, _, fields) ->
+                | Phrase (_, fields)
+                | Record (_, _, fields) ->
                     let fieldTypes = FSharpType.GetRecordFields ty
                     let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport tryExportExt fieldSymbol fieldTypes.[i].PropertyType) fields
                     match Array.definitizePlus fieldOpts with
@@ -168,8 +168,8 @@ module ScriptingMarshalling =
                     match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = name) unionCases with
                     | Some unionCase -> Some (FSharpValue.MakeUnion (unionCase, [||]))
                     | None -> None
-                | Keyphrase (name, fields)
-                | Keygraph (name, _, fields) ->
+                | Phrase (name, fields)
+                | Record (name, _, fields) ->
                     match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = name) unionCases with
                     | Some unionCase ->
                         let unionFieldTypes = unionCase.GetFields ()

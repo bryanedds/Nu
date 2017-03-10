@@ -44,7 +44,7 @@ module Scripting =
              "violation bool int int64 single double string " +
              "typename " +
              "keyname keyfields " +
-             "keygraph keynames of " +
+             "record keynames of " +
              "tuple pair unit fst snd thd fth fif nth " +
              "fstAs sndAs thdAs fthAs fifAs nthAs " +
              "some none isSome isNone isEmpty notEmpty " +
@@ -61,7 +61,7 @@ module Scripting =
              // TODO: "substring update curry compose itemOf tryItemOf itemAs tryItemAs sort replace slice split " +
              "-u- -b- -i- -L- -f- -d- -2- -s- -k- -u- -p- -o- -l- -r- -t- " +
              "isUnit isBool isInt isInt64 isSingle isDouble isString " +
-             "isKeyword isTuple isKeyphrase isKeygraph isOption isList isRing isTable " +
+             "isKeyword isTuple isPhrase isOption isList isRing isTable isRecord " +
              "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegativeInfinity isNaN " +
              "min max compare sign abs fst! snd! rev foldBackWhile foldBacki foldBack " +
              "reduceWhile reducei reduce definitize filter takeWhile take skipWhile skip " +
@@ -97,13 +97,13 @@ module Scripting =
 
         (* Primitive Data Structures *)
         | Tuple of Expr array
-        | Keyphrase of string * Expr array
+        | Phrase of string * Expr array
         | Option of Expr option
         | Codata of Codata
         | List of Expr list
         | Ring of Set<Expr>
         | Table of Map<Expr, Expr>
-        | Keygraph of string * Map<String, int> * Expr array
+        | Record of string * Map<String, int> * Expr array
 
         (* Special Forms *)
         | Binding of string * CachedBinding ref * SymbolOrigin option
@@ -135,14 +135,14 @@ module Scripting =
             | String _
             | Keyword _
             | Tuple _
-            | Keyphrase _
+            | Phrase _
             | Pluggable _
             | Option _
             | Codata _
             | List _
             | Ring _
             | Table _
-            | Keygraph _ -> None
+            | Record _ -> None
             | Binding (_, _, originOpt)
             | Apply (_, _, originOpt)
             | ApplyAnd (_, _, originOpt)
@@ -171,13 +171,13 @@ module Scripting =
             | (Keyword left, Keyword right) -> left = right
             | (Pluggable left, Pluggable right) -> left = right
             | (Tuple left, Tuple right) -> left = right
-            | (Keyphrase (leftKeyword, leftExprs), Keyphrase (rightKeyword, rightExprs)) -> (leftKeyword, leftExprs) = (rightKeyword, rightExprs)
+            | (Phrase (leftKeyword, leftExprs), Phrase (rightKeyword, rightExprs)) -> (leftKeyword, leftExprs) = (rightKeyword, rightExprs)
             | (Option left, Option right) -> left = right
             | (Codata left, Codata right) -> left = right
             | (List left, List right) -> left = right
             | (Ring left, Ring right) -> left = right
             | (Table left, Table right) -> left = right
-            | (Keygraph (leftName, leftMap, leftExprs), Keygraph (rightName, rightMap, rightExprs)) -> (leftName, leftMap, leftExprs) = (rightName, rightMap, rightExprs)
+            | (Record (leftName, leftMap, leftExprs), Record (rightName, rightMap, rightExprs)) -> (leftName, leftMap, leftExprs) = (rightName, rightMap, rightExprs)
             | (Binding (left, _, _), Binding (right, _, _)) -> left = right
             | (Apply (left, _, _), Apply (right, _, _)) -> left = right
             | (ApplyAnd (left, _, _), ApplyAnd (right, _, _)) -> left = right
@@ -207,13 +207,13 @@ module Scripting =
             | (Keyword left, Keyword right) -> compare left right
             | (Pluggable left, Pluggable right) -> compare left right
             | (Tuple left, Tuple right) -> compare left right
-            | (Keyphrase (leftKeyword, leftExprs), Keyphrase (rightKeyword, rightExprs)) -> compare (leftKeyword, leftExprs) (rightKeyword, rightExprs)
+            | (Phrase (leftKeyword, leftExprs), Phrase (rightKeyword, rightExprs)) -> compare (leftKeyword, leftExprs) (rightKeyword, rightExprs)
             | (Option left, Option right) -> compare left right
             | (Codata left, Codata right) -> compare left right
             | (List left, List right) -> compare left right
             | (Ring left, Ring right) -> compare left right
             | (Table left, Table right) -> compare left right
-            | (Keygraph (leftName, leftMap, leftArr), Keygraph (rightName, rightMap, rightArr)) -> compare (leftName, leftMap, leftArr) (rightName, rightMap, rightArr)
+            | (Record (leftName, leftMap, leftArr), Record (rightName, rightMap, rightArr)) -> compare (leftName, leftMap, leftArr) (rightName, rightMap, rightArr)
             | (_, _) -> -1
 
         override this.GetHashCode () =
@@ -229,13 +229,13 @@ module Scripting =
             | Keyword value -> hash value
             | Pluggable value -> hash value
             | Tuple value -> hash value
-            | Keyphrase (keyname, fields) -> hash (keyname, fields)
+            | Phrase (keyname, fields) -> hash (keyname, fields)
             | Option value -> hash value
             | Codata value -> hash value
             | List value -> hash value
             | Ring value -> hash value
             | Table value -> hash value
-            | Keygraph (name, map, fields) -> hash (name, map, fields)
+            | Record (name, map, fields) -> hash (name, map, fields)
             | _ -> -1
 
         override this.Equals that =
@@ -332,7 +332,7 @@ module Scripting =
                     let headingSymbol = Atom ((if Array.length fields = 2 then "pair" else "tuple"), None)
                     let elemSymbols = fields |> Array.map (fun elem -> this.ExprToSymbol elem) |> List.ofArray
                     Symbols (headingSymbol :: elemSymbols, None) :> obj
-                | Keyphrase (keyword, fields) ->
+                | Phrase (keyword, fields) ->
                     let keywordSymbol = Atom (keyword, None)
                     let elemSymbols = fields |> Array.map this.ExprToSymbol |> List.ofArray
                     Symbols (keywordSymbol :: elemSymbols, None) :> obj
@@ -360,9 +360,9 @@ module Scripting =
                             Symbols ([pairSymbol; keySymbol; valueSymbol], None))
                             (Map.toList map)
                     Symbols (tableSymbol :: elemSymbols, None) :> obj
-                | Keygraph (keyname, map, fields) ->
+                | Record (keyname, map, fields) ->
                     if String.notEmpty keyname then
-                        let keygraphSymbol = Atom ("keygraph", None)
+                        let recordSymbol = Atom ("record", None)
                         let keynameSymbol = Atom (keyname, None)
                         let mapSwap = Map.ofSeqBy (fun (kvp : KeyValuePair<_, _>) -> (kvp.Value, kvp.Key)) map
                         let elemSymbols =
@@ -373,7 +373,7 @@ module Scripting =
                                 let valueSymbol = this.ExprToSymbol value
                                 Symbols ([keySymbol; valueSymbol], None))
                                 mapSwap
-                        Symbols (keygraphSymbol :: keynameSymbol :: List.ofSeq elemSymbols, None) :> obj
+                        Symbols (recordSymbol :: keynameSymbol :: List.ofSeq elemSymbols, None) :> obj
                     else Atom ("nix", None) :> obj
                 | Binding (name, _, originOpt) ->
                     Atom (name, originOpt) :> obj
@@ -515,16 +515,16 @@ module Scripting =
                                 try let tagName = tagStr in Violation (tagName.Split Constants.Scripting.ViolationSeparator |> List.ofArray, errorMsg, originOpt) :> obj
                                 with exn -> Violation (["InvalidForm"; "Violation"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | _ -> Violation (["InvalidForm"; "Violation"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
-                        | "keygraph" ->
+                        | "record" ->
                             match tail with
                             | Atom (keyname, _) :: cases ->
                                 if List.forall (function Symbols ([Atom _; _], _) -> true | _ -> false) cases then
                                     let definitions = List.map (function Symbols ([Atom (fieldName, _); fieldValue], _) -> (fieldName, fieldValue) | _ -> failwithumf ()) cases
                                     let definitions = List.map (fun (fieldName, fieldValue) -> (fieldName, this.SymbolToExpr fieldValue)) definitions
                                     let map = definitions |> List.mapi (fun i (fieldName, _) -> (fieldName, i)) |> Map.ofList
-                                    Keygraph (keyname, map, definitions |> List.map snd |> Array.ofList) :> obj
-                                else Violation (["InvalidForm"; "Keygraph"], "Invalid keygraph form. Requires 1 or more field definitions.", originOpt) :> obj
-                            | _ -> Violation (["InvalidForm"; "Keygraph"], "Invalid keygraph form. Requires 1 keyname and 1 or more field definitions.", originOpt) :> obj
+                                    Record (keyname, map, definitions |> List.map snd |> Array.ofList) :> obj
+                                else Violation (["InvalidForm"; "Record"], "Invalid record form. Requires 1 or more field definitions.", originOpt) :> obj
+                            | _ -> Violation (["InvalidForm"; "Record"], "Invalid record form. Requires 1 keyname and 1 or more field definitions.", originOpt) :> obj
                         | "let" ->
                             match tail with
                             | [] -> Violation (["InvalidForm"; "Let"], "Invalid let form. Requires both a binding and a body.", originOpt) :> obj
