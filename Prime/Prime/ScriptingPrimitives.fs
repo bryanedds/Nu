@@ -72,31 +72,25 @@ module ScriptingPrimitives =
 
     let evalNth5 index fnName originOpt evaledArg world =
         match evaledArg with
-        | Tuple arr ->
-            if index >= 0 && index < Array.length arr
-            then (arr.[index], world)
-            else (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Tuple does not contain element at index " + string index + ".", originOpt), world)
-        | Keyphrase (_, arr) ->
-            if index >= 0 && index < Array.length arr
-            then (arr.[index], world)
-            else (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Keyphrase does not contain element at index " + string index + ".", originOpt), world)
+        | Tuple fields
+        | Keyphrase (_, fields)
+        | Keygraph (_, _, fields) ->
+            if index >= 0 && index < Array.length fields
+            then (fields.[index], world)
+            else (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Structure does not contain element at index " + string index + ".", originOpt), world)
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-indexed value.", originOpt), world)
 
     let evalNthAs5 index fnName originOpt evaledArg evaledArg2 world =
         match (evaledArg, evaledArg2) with
-        | (value, Tuple arr) ->
-            if index >= 0 && index < Array.length arr then
-                let arr = Array.copy arr
-                arr.[index] <- value
-                (Tuple arr, world)
-            else (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Tuple does not contain element at index " + string index + ".", originOpt), world)
-        | (value, Keyphrase (_, arr)) ->
-            if index >= 0 && index < Array.length arr then
-                let arr = Array.copy arr
-                arr.[index] <- value
-                (Tuple arr, world)
-            else (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Keyphrase does not contain element at index " + string index + ".", originOpt), world)
+        | (value, Tuple fields)
+        | (value, Keyphrase (_, fields))
+        | (value, Keygraph (_, _, fields)) ->
+            if index >= 0 && index < Array.length fields then
+                let fields = Array.copy fields
+                fields.[index] <- value
+                (Tuple fields, world)
+            else (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Structure does not contain element at index " + string index + ".", originOpt), world)
         | (Violation _ as violation, _) -> (violation, world)
         | (_, (Violation _ as violation)) -> (violation, world)
         | (_, _) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-indexed value.", originOpt), world)
@@ -167,6 +161,8 @@ module ScriptingPrimitives =
         | Single single -> (Bool (single = 0.0f), world)
         | Double double -> (Bool (double = 0.0), world)
         | String str -> (Bool (String.isEmpty str), world)
+        | Keyword str -> (Bool (String.isEmpty str), world)
+        | Keyphrase (str, _) -> (Bool (String.isEmpty str), world)
         | Option opt -> (Bool (Option.isNone opt), world)
         | Codata codata ->
             match evalCodataIsEmpty evalApply fnName originOpt codata world with
@@ -175,6 +171,7 @@ module ScriptingPrimitives =
         | List list -> (Bool (List.isEmpty list), world)
         | Ring set -> (Bool (Set.isEmpty set), world)
         | Table map -> (Bool (Map.isEmpty map), world)
+        | Keygraph (str, _, _) -> (Bool (String.isEmpty str), world)
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
 
@@ -186,6 +183,8 @@ module ScriptingPrimitives =
         | Single single -> (Bool (single <> 0.0f), world)
         | Double double -> (Bool (double <> 0.0), world)
         | String str -> (Bool (String.notEmpty str), world)
+        | Keyword str -> (Bool (String.notEmpty str), world)
+        | Keyphrase (str, _) -> (Bool (String.notEmpty str), world)
         | Option opt -> (Bool (Option.isSome opt), world)
         | Codata codata ->
             match evalCodataIsEmpty evalApply fnName originOpt codata world with
@@ -194,6 +193,7 @@ module ScriptingPrimitives =
         | List list -> (Bool (List.notEmpty list), world)
         | Ring set -> (Bool (Set.notEmpty set), world)
         | Table map -> (Bool (Map.notEmpty map), world)
+        | Keygraph (str, _, _) -> (Bool (String.notEmpty str), world)
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
 
@@ -262,7 +262,7 @@ module ScriptingPrimitives =
             (Ring (Set.add evaledArg set), world)
         | (evaledArg, Table map) ->
             match evaledArg with
-            | Tuple arr when Array.length arr = 2 -> (Table (Map.add arr.[0] arr.[1] map), world)
+            | Tuple fields when Array.length fields = 2 -> (Table (Map.add fields.[0] fields.[1] map), world)
             | Violation _ as violation -> (violation, world)
             | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Table entry must consist of a pair.", originOpt), world)
         | (Violation _ as violation, _) -> (violation, world)
@@ -930,7 +930,7 @@ module ScriptingPrimitives =
             | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", originOpt), world)
 
     let evalTable fnName originOpt evaledArgs world =
-        if Array.forall (function Tuple arr when Array.length arr = 2 -> true | _ -> false) evaledArgs then
+        if Array.forall (function Tuple fields when Array.length fields = 2 -> true | _ -> false) evaledArgs then
             let evaledPairs = Array.map (function List [evaledFst; evaledSnd] -> (evaledFst, evaledSnd) | _ -> failwithumf ()) evaledArgs
             let evaledMap = Map.ofArray evaledPairs
             (Table evaledMap, world)
