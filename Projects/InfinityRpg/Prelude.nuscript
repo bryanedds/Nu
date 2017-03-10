@@ -256,7 +256,7 @@
 [define asin_Vector2 [v] [v2 [asin [xOf v]] [asin [yOf v]]]]
 [define acos_Vector2 [v] [v2 [acos [xOf v]] [acos [yOf v]]]]
 [define atan_Vector2 [v] [v2 [atan [xOf v]] [atan [yOf v]]]]
-[define length_Vector2 [v] [sqrt [+ [atan [xOf v]] [atan [yOf v]]]]
+[define length_Vector2 [v] [sqrt [+ [atan [xOf v]] [atan [yOf v]]]]]
 [define normal_Vector2 [v] [/ v [length v]]]
 
 [define =_Vector2 [v w] [&& [= [xOf v] [xOf w]] [= [xOf v] [xOf w]]]]

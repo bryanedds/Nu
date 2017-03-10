@@ -219,7 +219,8 @@ module ScriptingWorld =
     and evalBinding expr name cachedBinding originOpt world =
         match tryGetBinding name cachedBinding world with
         | None ->
-            if isIntrinsic name then (expr, world)
+            if world.IsExtrinsic name then (expr, world)
+            elif isIntrinsic name then (expr, world)
             else (Violation (["NonexistentBinding"], "Non-existent binding '" + name + "'", originOpt), world)
         | Some binding -> (binding, world)
 
