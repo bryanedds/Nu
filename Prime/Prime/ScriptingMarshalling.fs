@@ -49,9 +49,9 @@ module ScriptingMarshalling =
                 if not ^ Array.isEmpty unionFields then
                     let unionFieldOpts = Array.mapi (fun i unionField -> tryImport tryImportExt unionField unionFieldTypes.[i].PropertyType) unionFields
                     match Array.definitizePlus unionFieldOpts with
-                    | (true, unionFields) -> Some (Phrase (unionCase.Name, unionFields))
+                    | (true, unionFields) -> Some (Union (unionCase.Name, unionFields))
                     | (false, _) -> None
-                else Some (Phrase (unionCase.Name, [||]))
+                else Some (Union (unionCase.Name, [||]))
 
             // otherwise, we have no conversion
             else None
@@ -139,7 +139,7 @@ module ScriptingMarshalling =
             if FSharpType.IsTuple ty then
                 match value with
                 | Tuple fields
-                | Phrase (_, fields)
+                | Union (_, fields)
                 | Record (_, _, fields) ->
                     let fieldTypes = FSharpType.GetTupleElements ty
                     let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport tryExportExt fieldSymbol fieldTypes.[i]) fields
@@ -151,7 +151,7 @@ module ScriptingMarshalling =
             // or as Record
             elif FSharpType.IsRecord ty then
                 match value with
-                | Phrase (_, fields)
+                | Union (_, fields)
                 | Record (_, _, fields) ->
                     let fieldTypes = FSharpType.GetRecordFields ty
                     let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport tryExportExt fieldSymbol fieldTypes.[i].PropertyType) fields
@@ -168,7 +168,7 @@ module ScriptingMarshalling =
                     match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = name) unionCases with
                     | Some unionCase -> Some (FSharpValue.MakeUnion (unionCase, [||]))
                     | None -> None
-                | Phrase (name, fields)
+                | Union (name, fields)
                 | Record (name, _, fields) ->
                     match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = name) unionCases with
                     | Some unionCase ->

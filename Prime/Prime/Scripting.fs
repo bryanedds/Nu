@@ -34,7 +34,7 @@ module Scripting =
 
     and [<Syntax
             ((* Built-in Identifiers *)
-             "true false nil nix " +
+             "true false nil " +
              "not hash toEmpty toIdentity toMin toMax " +
              "inc dec negate " +
              "pow root sqr sqrt " +
@@ -43,8 +43,8 @@ module Scripting =
              "length normal cross dot " +
              "violation bool int int64 single double string " +
              "typename " +
-             "keyname keyfields " +
-             "record keynames of " +
+             "nameOf fieldsOf " +
+             "record fieldOf fieldNamesOf " +
              "tuple pair unit fst snd thd fth fif nth " +
              "fstAs sndAs thdAs fthAs fifAs nthAs " +
              "some none isSome isNone isEmpty notEmpty " +
@@ -61,7 +61,7 @@ module Scripting =
              // TODO: "substring update curry compose itemOf tryItemOf itemAs tryItemAs sort replace slice split " +
              "-u- -b- -i- -L- -f- -d- -2- -s- -k- -u- -p- -o- -l- -r- -t- " +
              "isUnit isBool isInt isInt64 isSingle isDouble isString " +
-             "isKeyword isTuple isPhrase isOption isList isRing isTable isRecord " +
+             "isKeyword isTuple isUnion isOption isList isRing isTable isRecord " +
              "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegativeInfinity isNaN " +
              "min max compare sign abs fst! snd! rev foldBackWhile foldBacki foldBack " +
              "reduceWhile reducei reduce definitize filter takeWhile take skipWhile skip " +
@@ -97,7 +97,7 @@ module Scripting =
 
         (* Primitive Data Structures *)
         | Tuple of Expr array
-        | Phrase of string * Expr array
+        | Union of string * Expr array
         | Option of Expr option
         | Codata of Codata
         | List of Expr list
@@ -135,7 +135,7 @@ module Scripting =
             | String _
             | Keyword _
             | Tuple _
-            | Phrase _
+            | Union _
             | Pluggable _
             | Option _
             | Codata _
@@ -171,7 +171,7 @@ module Scripting =
             | (Keyword left, Keyword right) -> left = right
             | (Pluggable left, Pluggable right) -> left = right
             | (Tuple left, Tuple right) -> left = right
-            | (Phrase (leftKeyword, leftExprs), Phrase (rightKeyword, rightExprs)) -> (leftKeyword, leftExprs) = (rightKeyword, rightExprs)
+            | (Union (leftName, leftExprs), Union (rightName, rightExprs)) -> (leftName, leftExprs) = (rightName, rightExprs)
             | (Option left, Option right) -> left = right
             | (Codata left, Codata right) -> left = right
             | (List left, List right) -> left = right
@@ -207,7 +207,7 @@ module Scripting =
             | (Keyword left, Keyword right) -> compare left right
             | (Pluggable left, Pluggable right) -> compare left right
             | (Tuple left, Tuple right) -> compare left right
-            | (Phrase (leftKeyword, leftExprs), Phrase (rightKeyword, rightExprs)) -> compare (leftKeyword, leftExprs) (rightKeyword, rightExprs)
+            | (Union (leftName, leftExprs), Union (rightName, rightExprs)) -> compare (leftName, leftExprs) (rightName, rightExprs)
             | (Option left, Option right) -> compare left right
             | (Codata left, Codata right) -> compare left right
             | (List left, List right) -> compare left right
@@ -229,7 +229,7 @@ module Scripting =
             | Keyword value -> hash value
             | Pluggable value -> hash value
             | Tuple value -> hash value
-            | Phrase (keyname, fields) -> hash (keyname, fields)
+            | Union (name, fields) -> hash (name, fields)
             | Option value -> hash value
             | Codata value -> hash value
             | List value -> hash value
@@ -332,10 +332,10 @@ module Scripting =
                     let headingSymbol = Atom ((if Array.length fields = 2 then "pair" else "tuple"), None)
                     let elemSymbols = fields |> Array.map (fun elem -> this.ExprToSymbol elem) |> List.ofArray
                     Symbols (headingSymbol :: elemSymbols, None) :> obj
-                | Phrase (keyword, fields) ->
-                    let keywordSymbol = Atom (keyword, None)
+                | Union (name, fields) ->
+                    let nameSymbol = Atom (name, None)
                     let elemSymbols = fields |> Array.map this.ExprToSymbol |> List.ofArray
-                    Symbols (keywordSymbol :: elemSymbols, None) :> obj
+                    Symbols (nameSymbol :: elemSymbols, None) :> obj
                 | Option option ->
                     match option with
                     | Some value -> Symbols ([Atom ("some", None); this.ExprToSymbol value], None) :> obj
@@ -360,21 +360,19 @@ module Scripting =
                             Symbols ([pairSymbol; keySymbol; valueSymbol], None))
                             (Map.toList map)
                     Symbols (tableSymbol :: elemSymbols, None) :> obj
-                | Record (keyname, map, fields) ->
-                    if String.notEmpty keyname then
-                        let recordSymbol = Atom ("record", None)
-                        let keynameSymbol = Atom (keyname, None)
-                        let mapSwap = Map.ofSeqBy (fun (kvp : KeyValuePair<_, _>) -> (kvp.Value, kvp.Key)) map
-                        let elemSymbols =
-                            Seq.map (fun (kvp : KeyValuePair<_, _>) ->
-                                let key = kvp.Value
-                                let value = fields.[kvp.Key]
-                                let keySymbol = Atom (key, None)
-                                let valueSymbol = this.ExprToSymbol value
-                                Symbols ([keySymbol; valueSymbol], None))
-                                mapSwap
-                        Symbols (recordSymbol :: keynameSymbol :: List.ofSeq elemSymbols, None) :> obj
-                    else Atom ("nix", None) :> obj
+                | Record (name, map, fields) ->
+                    let recordSymbol = Atom ("record", None)
+                    let nameSymbol = Atom (name, None)
+                    let mapSwap = Map.ofSeqBy (fun (kvp : KeyValuePair<_, _>) -> (kvp.Value, kvp.Key)) map
+                    let elemSymbols =
+                        Seq.map (fun (kvp : KeyValuePair<_, _>) ->
+                            let key = kvp.Value
+                            let value = fields.[kvp.Key]
+                            let keySymbol = Atom (key, None)
+                            let valueSymbol = this.ExprToSymbol value
+                            Symbols ([keySymbol; valueSymbol], None))
+                            mapSwap
+                    Symbols (recordSymbol :: nameSymbol :: List.ofSeq elemSymbols, None) :> obj
                 | Binding (name, _, originOpt) ->
                     Atom (name, originOpt) :> obj
                 | Apply (exprs, _, originOpt) ->
@@ -517,14 +515,14 @@ module Scripting =
                             | _ -> Violation (["InvalidForm"; "Violation"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
                         | "record" ->
                             match tail with
-                            | Atom (keyname, _) :: cases ->
+                            | Atom (name, _) :: cases ->
                                 if List.forall (function Symbols ([Atom _; _], _) -> true | _ -> false) cases then
                                     let definitions = List.map (function Symbols ([Atom (fieldName, _); fieldValue], _) -> (fieldName, fieldValue) | _ -> failwithumf ()) cases
                                     let definitions = List.map (fun (fieldName, fieldValue) -> (fieldName, this.SymbolToExpr fieldValue)) definitions
                                     let map = definitions |> List.mapi (fun i (fieldName, _) -> (fieldName, i)) |> Map.ofList
-                                    Record (keyname, map, definitions |> List.map snd |> Array.ofList) :> obj
+                                    Record (name, map, definitions |> List.map snd |> Array.ofList) :> obj
                                 else Violation (["InvalidForm"; "Record"], "Invalid record form. Requires 1 or more field definitions.", originOpt) :> obj
-                            | _ -> Violation (["InvalidForm"; "Record"], "Invalid record form. Requires 1 keyname and 1 or more field definitions.", originOpt) :> obj
+                            | _ -> Violation (["InvalidForm"; "Record"], "Invalid record form. Requires 1 name and 1 or more field definitions.", originOpt) :> obj
                         | "let" ->
                             match tail with
                             | [] -> Violation (["InvalidForm"; "Let"], "Invalid let form. Requires both a binding and a body.", originOpt) :> obj

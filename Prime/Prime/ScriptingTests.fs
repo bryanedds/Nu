@@ -41,7 +41,7 @@ module ScriptingTests =
     let [<Fact>] optionsWork () = Assert.Equal ("true", eval "[isSome [some 1]]")
     let [<Fact>] tuplesWork () = Assert.Equal ("1", eval "[fst [tuple 1]]")
     let [<Fact>] listsWork () = Assert.Equal ("1", eval "[head [list 1]]")
-    let [<Fact>] phrasesWork () = Assert.Equal ("1", eval "[fst [P 1]]")
+    let [<Fact>] unionsWork () = Assert.Equal ("1", eval "[fst [U 1]]")
     let [<Fact>] recordsWork () = Assert.Equal ("1", eval "[fst [record R [F 1]]]")
     let [<Fact>] conditionalWorks () = Assert.Equal ("1", eval "[if [= 1 1] 1 0]")
     let [<Fact>] matchWorks () = Assert.Equal ("2", eval "[match 1 [0 0] [1 2]]")
