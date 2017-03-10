@@ -106,7 +106,8 @@ module WorldScripting =
                     match ScriptingWorld.tryImport evt.Data evt.DataType world with
                     | Some dataImported ->
                         let evtTuple =
-                            Phrase
+                            // TODO: change to record and remove function-based accessors after implementing syntactic accessors!
+                            Union
                                 ("Event",
                                     [|dataImported
                                       String (scstring evt.Subscriber)

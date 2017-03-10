@@ -44,25 +44,25 @@ module ScriptingPrimitives =
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a referent value.", originOpt), world)
 
-    let evalKeyname fnName originOpt evaledArg world =
+    let evalNameOf fnName originOpt evaledArg world =
         match evaledArg with
-        | Phrase (name, _) -> (String name, world)
+        | Union (name, _) -> (String name, world)
         | Record (name, _, _) -> (String name, world)
         | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a phrase or record value.", originOpt), world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a union or record value.", originOpt), world)
 
-    let evalKeyfields fnName originOpt evaledArg world =
+    let evalFieldsOf fnName originOpt evaledArg world =
         match evaledArg with
-        | Phrase (_, fields) -> (Tuple fields, world)
+        | Union (_, fields) -> (Tuple fields, world)
         | Record (_, _, fields) -> (Tuple fields, world)
         | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a phrase or record value.", originOpt), world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a union or record value.", originOpt), world)
 
-    let evalKeynames fnName originOpt evaledArg world =
+    let evalFieldNamesOf fnName originOpt evaledArg world =
         match evaledArg with
         | Record (_, map, _) -> (map |> Map.toKeySeqBy Keyword |> Array.ofSeq |> Tuple, world)
         | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a phrase or record value.", originOpt), world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a union or record value.", originOpt), world)
 
     let evalTuple _ _ evaledArgs world =
         (Tuple evaledArgs, world)
@@ -73,7 +73,7 @@ module ScriptingPrimitives =
     let evalNth5 index fnName originOpt evaledArg world =
         match evaledArg with
         | Tuple fields
-        | Phrase (_, fields)
+        | Union (_, fields)
         | Record (_, _, fields) ->
             if index >= 0 && index < Array.length fields
             then (fields.[index], world)
@@ -84,7 +84,7 @@ module ScriptingPrimitives =
     let evalNthAs5 index fnName originOpt evaledArg evaledArg2 world =
         match (evaledArg, evaledArg2) with
         | (value, Tuple fields)
-        | (value, Phrase (_, fields))
+        | (value, Union (_, fields))
         | (value, Record (_, _, fields)) ->
             if index >= 0 && index < Array.length fields then
                 let fields = Array.copy fields
@@ -162,7 +162,7 @@ module ScriptingPrimitives =
         | Double double -> (Bool (double = 0.0), world)
         | String str -> (Bool (String.isEmpty str), world)
         | Keyword str -> (Bool (String.isEmpty str), world)
-        | Phrase (str, _) -> (Bool (String.isEmpty str), world)
+        | Union (str, _) -> (Bool (String.isEmpty str), world)
         | Option opt -> (Bool (Option.isNone opt), world)
         | Codata codata ->
             match evalCodataIsEmpty evalApply fnName originOpt codata world with
@@ -184,7 +184,7 @@ module ScriptingPrimitives =
         | Double double -> (Bool (double <> 0.0), world)
         | String str -> (Bool (String.notEmpty str), world)
         | Keyword str -> (Bool (String.notEmpty str), world)
-        | Phrase (str, _) -> (Bool (String.notEmpty str), world)
+        | Union (str, _) -> (Bool (String.notEmpty str), world)
         | Option opt -> (Bool (Option.isSome opt), world)
         | Codata codata ->
             match evalCodataIsEmpty evalApply fnName originOpt codata world with

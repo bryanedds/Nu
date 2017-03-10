@@ -79,8 +79,8 @@ module ScriptingWorld =
         | "length" | "normal" | "cross" | "dot"
         | "bool" | "int" | "int64" | "single" | "double" | "string"
         (*| "typename"*)
-        | "keyname" | "keyfields"
-        | "keynames" | "of"
+        | "nameOf" | "fieldsOf"
+        | "fieldOf" | "fieldNamesOf"
         | "tuple" | "pair" | "fst" | "snd" | "thd" | "fth" | "fif" | "nth"
         | "fstAs" | "sndAs" | "thdAs" | "fthAs" | "fifAs" | "nthAs"
         | "some" | "isNone" | "isSome" | "isEmpty" | "notEmpty"
@@ -142,9 +142,10 @@ module ScriptingWorld =
              | "single" -> evalUnary SingleFns fnName originOpt evaledArgs world
              | "double" -> evalUnary DoubleFns fnName originOpt evaledArgs world
              | "string" -> evalUnary StringFns fnName originOpt evaledArgs world
-             | "keyname" -> evalSinglet evalKeyname fnName originOpt evaledArgs world
-             | "keyfields" -> evalSinglet evalKeyfields fnName originOpt evaledArgs world
-             | "keynames" -> evalSinglet evalKeynames fnName originOpt evaledArgs world
+             | "nameOf" -> evalSinglet evalNameOf fnName originOpt evaledArgs world
+             | "fieldsOf" -> evalSinglet evalFieldsOf fnName originOpt evaledArgs world
+             | "fieldNamesOf" -> evalSinglet evalFieldNamesOf fnName originOpt evaledArgs world
+             // | "fieldOf" -> TODO
              | "xOf" -> evalSinglet (evalNth5 0) fnName originOpt evaledArgs world
              | "yOf" -> evalSinglet (evalNth5 1) fnName originOpt evaledArgs world
              | "xAs" -> evalDoublet (evalNthAs5 0) fnName originOpt evaledArgs world
@@ -208,9 +209,9 @@ module ScriptingWorld =
                     let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
                     let evaleds = Array.cons xfnBinding evaledArgs
                     evalApply evaleds originOpt world
-                | Phrase (keyname, _)
-                | Record (keyname, _, _) ->
-                    let xfnName = fnName + "_" + keyname
+                | Union (name, _)
+                | Record (name, _, _) ->
+                    let xfnName = fnName + "_" + name
                     let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
                     let evaleds = Array.cons xfnBinding evaledArgs
                     evalApply evaleds originOpt world
@@ -233,8 +234,8 @@ module ScriptingWorld =
             match evaledHead with
             | Keyword keyword ->
                 let (evaledTail, world) = evalMany exprsTail world
-                let phrase = Phrase (keyword, evaledTail)
-                (phrase, world)
+                let union = Union (keyword, evaledTail)
+                (union, world)
             | Binding (fnName, _, originOpt) ->
                 // NOTE: when evaluation leads here, we can (actually must) infer that we have
                 // either an extrinsic or intrinsic function.
@@ -437,7 +438,7 @@ module ScriptingWorld =
         | String _
         | Keyword _
         | Tuple _
-        | Phrase _
+        | Union _
         | Pluggable _
         | Option _
         | Codata _
