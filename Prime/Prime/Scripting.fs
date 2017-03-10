@@ -103,7 +103,7 @@ module Scripting =
         | List of Expr list
         | Ring of Set<Expr>
         | Table of Map<Expr, Expr>
-        | Keygraph of string * Map<String, int> * Expr array // TODO: keygraph interface must be a superset of keyphrase's
+        | Keygraph of string * Map<String, int> * Expr array
 
         (* Special Forms *)
         | Binding of string * CachedBinding ref * SymbolOrigin option

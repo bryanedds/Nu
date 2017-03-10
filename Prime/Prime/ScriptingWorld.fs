@@ -80,7 +80,7 @@ module ScriptingWorld =
         | "bool" | "int" | "int64" | "single" | "double" | "string"
         (*| "typename"*)
         | "keyname" | "keyfields"
-        | "of keynames"
+        | "keynames" | "of"
         | "tuple" | "pair" | "fst" | "snd" | "thd" | "fth" | "fif" | "nth"
         | "fstAs" | "sndAs" | "thdAs" | "fthAs" | "fifAs" | "nthAs"
         | "some" | "isNone" | "isSome" | "isEmpty" | "notEmpty"
