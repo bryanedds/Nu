@@ -79,8 +79,8 @@ module ScriptingWorld =
         | "length" | "normal" | "cross" | "dot"
         | "bool" | "int" | "int64" | "single" | "double" | "string"
         (*| "typename"*)
-        | "nameOf" | "fieldsOf"
-        | "fieldOf" | "fieldNamesOf"
+        | "of" | "nameOf" | "fieldsOf"
+        | "fieldNamesOf"
         | "tuple" | "pair" | "fst" | "snd" | "thd" | "fth" | "fif" | "nth"
         | "fstAs" | "sndAs" | "thdAs" | "fthAs" | "fifAs" | "nthAs"
         | "some" | "isNone" | "isSome" | "isEmpty" | "notEmpty"
@@ -142,28 +142,17 @@ module ScriptingWorld =
              | "single" -> evalUnary SingleFns fnName originOpt evaledArgs world
              | "double" -> evalUnary DoubleFns fnName originOpt evaledArgs world
              | "string" -> evalUnary StringFns fnName originOpt evaledArgs world
+             | "of" -> evalDoublet evalOf fnName originOpt evaledArgs world
              | "nameOf" -> evalSinglet evalNameOf fnName originOpt evaledArgs world
              | "fieldsOf" -> evalSinglet evalFieldsOf fnName originOpt evaledArgs world
              | "fieldNamesOf" -> evalSinglet evalFieldNamesOf fnName originOpt evaledArgs world
-             // | "fieldOf" -> TODO
-             | "xOf" -> evalSinglet (evalNth5 0) fnName originOpt evaledArgs world
-             | "yOf" -> evalSinglet (evalNth5 1) fnName originOpt evaledArgs world
-             | "xAs" -> evalDoublet (evalNthAs5 0) fnName originOpt evaledArgs world
-             | "yAs" -> evalDoublet (evalNthAs5 1) fnName originOpt evaledArgs world
              | "tuple" -> evalTuple fnName originOpt evaledArgs world
              | "pair" -> evalTuple fnName originOpt evaledArgs world
-             | "fst" -> evalSinglet (evalNth5 0) fnName originOpt evaledArgs world
-             | "snd" -> evalSinglet (evalNth5 1) fnName originOpt evaledArgs world
-             | "thd" -> evalSinglet (evalNth5 2) fnName originOpt evaledArgs world
-             | "fth" -> evalSinglet (evalNth5 3) fnName originOpt evaledArgs world
-             | "fif" -> evalSinglet (evalNth5 4) fnName originOpt evaledArgs world
-             | "nth" -> evalDoublet evalNth fnName originOpt evaledArgs world
-             | "fstAs" -> evalDoublet (evalNthAs5 0) fnName originOpt evaledArgs world
-             | "sndAs" -> evalDoublet (evalNthAs5 1) fnName originOpt evaledArgs world
-             | "thdAs" -> evalDoublet (evalNthAs5 2) fnName originOpt evaledArgs world
-             | "fthAs" -> evalDoublet (evalNthAs5 3) fnName originOpt evaledArgs world
-             | "fifAs" -> evalDoublet (evalNthAs5 4) fnName originOpt evaledArgs world
-             | "nthAs" -> evalTriplet evalNthAs fnName originOpt evaledArgs world
+             | "fst" -> evalSinglet (evalOfInt 0) fnName originOpt evaledArgs world
+             | "snd" -> evalSinglet (evalOfInt 1) fnName originOpt evaledArgs world
+             | "thd" -> evalSinglet (evalOfInt 2) fnName originOpt evaledArgs world
+             | "fth" -> evalSinglet (evalOfInt 3) fnName originOpt evaledArgs world
+             | "fif" -> evalSinglet (evalOfInt 4) fnName originOpt evaledArgs world
              | "some" -> evalSinglet evalSome fnName originOpt evaledArgs world
              | "isNone" -> evalSinglet evalIsNone fnName originOpt evaledArgs world
              | "isSome" -> evalSinglet evalIsSome fnName originOpt evaledArgs world

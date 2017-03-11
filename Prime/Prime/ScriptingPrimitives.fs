@@ -44,6 +44,36 @@ module ScriptingPrimitives =
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a referent value.", originOpt), world)
 
+    let evalOfInt index fnName originOpt evaledArg world =
+        match evaledArg with
+        | Tuple fields
+        | Union (_, fields)
+        | Record (_, _, fields) ->
+            if index >= 0 && index < Array.length fields
+            then (fields.[index], world)
+            else (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Structure does not contain element at index " + string index + ".", originOpt), world)
+        | Violation _ as violation -> (violation, world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an indexed value for its second argument.", originOpt), world)
+
+    let evalOfName name fnName originOpt evaledArg world =
+        match evaledArg with
+        | Record (_, map, fields) ->
+            match Map.tryFind name map with
+            | Some i ->
+                if i >= 0 && i < Array.length fields
+                then (fields.[i], world)
+                else (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Record does not contain element with name '" + name + "'.", originOpt), world)
+            | None ->
+                (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Record does not contain element with name '" + name + "'.", originOpt), world)
+        | Violation _ as violation -> (violation, world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a name-indexed value for its second argument.", originOpt), world)
+
+    let evalOf fnName originOpt evaledArg evaledArg2 world =
+        match evaledArg with
+        | Int index -> evalOfInt index fnName originOpt evaledArg2 world
+        | Keyword str -> evalOfName str fnName originOpt evaledArg2 world
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an int, string, or keyword for its first argument.", originOpt), world)
+
     let evalNameOf fnName originOpt evaledArg world =
         match evaledArg with
         | Union (name, _) -> (String name, world)
@@ -69,43 +99,6 @@ module ScriptingPrimitives =
 
     let evalPair _ (_ : string) evaledArg evaledArg2 world =
         (Tuple [|evaledArg; evaledArg2|], world)
-
-    let evalNth5 index fnName originOpt evaledArg world =
-        match evaledArg with
-        | Tuple fields
-        | Union (_, fields)
-        | Record (_, _, fields) ->
-            if index >= 0 && index < Array.length fields
-            then (fields.[index], world)
-            else (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Structure does not contain element at index " + string index + ".", originOpt), world)
-        | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-indexed value.", originOpt), world)
-
-    let evalNthAs5 index fnName originOpt evaledArg evaledArg2 world =
-        match (evaledArg, evaledArg2) with
-        | (value, Tuple fields)
-        | (value, Union (_, fields))
-        | (value, Record (_, _, fields)) ->
-            if index >= 0 && index < Array.length fields then
-                let fields = Array.copy fields
-                fields.[index] <- value
-                (Tuple fields, world)
-            else (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Structure does not contain element at index " + string index + ".", originOpt), world)
-        | (Violation _ as violation, _) -> (violation, world)
-        | (_, (Violation _ as violation)) -> (violation, world)
-        | (_, _) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-indexed value.", originOpt), world)
-
-    let evalNth fnName originOpt evaledArg evaledArg2 world =
-        match evaledArg with
-        | Int int -> evalNth5 int fnName originOpt evaledArg2 world
-        | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an int for the first argument.", originOpt), world)
-
-    let evalNthAs fnName originOpt evaledArg evaledArg2 evaledArg3 world =
-        match evaledArg with
-        | Int int -> evalNthAs5 int fnName originOpt evaledArg2 evaledArg3 world
-        | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an int for the first argument.", originOpt), world)
 
     let evalSome _ _ evaledArg world =
         (Option (Some evaledArg), world)

@@ -158,7 +158,7 @@ module WorldScripting =
         static member internal isExtrinsic fnName =
             match fnName with
             // TODO: | "tickRate" | "tickTime" | "getSimulantSelected" | "simulantExists"
-            | "v2" | "xOf" | "yOf" | "xAs" | "yAs"
+            | "v2" | "of_Vector2"
             | "get" | "set"
             | "monitor" -> true
             | _ -> false
@@ -172,43 +172,19 @@ module WorldScripting =
                 | ([|Single x; Single y|], world) -> (Pluggable { Vector2 = Vector2 (x, y) }, world)
                 | ([|_; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a single for the both arguments.", originOpt), world)
                 | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
-            | "xOf" ->
-                match World.evalManyInternal exprs world with
-                | ([|Violation _ as v|], world) -> (v, world)
-                | ([|Pluggable pluggable|], world) ->
-                    match pluggable with
-                    | :? Vector2Pluggable as v2 -> (Single v2.Vector2.X, world)
-                    | _ -> failwithumf ()
-                | ([|_|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a single for the both arguments.", originOpt), world)
-                | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", originOpt), world)
-            | "yOf" ->
-                match World.evalManyInternal exprs world with
-                | ([|Violation _ as v|], world) -> (v, world)
-                | ([|Pluggable pluggable|], world) ->
-                    match pluggable with
-                    | :? Vector2Pluggable as v2 -> (Single v2.Vector2.Y, world)
-                    | _ -> failwithumf ()
-                | ([|_|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a single for the both arguments.", originOpt), world)
-                | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", originOpt), world)
-            | "xAs" ->
+            | "of_Vector2" ->
                 match World.evalManyInternal exprs world with
                 | ([|Violation _ as v; _|], world) -> (v, world)
                 | ([|_; Violation _ as v|], world) -> (v, world)
-                | ([|Single x; Pluggable pluggable|], world) ->
+                | ([|Keyword indexer; Pluggable pluggable|], world) ->
                     match pluggable with
-                    | :? Vector2Pluggable as v2 -> (Pluggable { Vector2 = Vector2 (x, v2.Vector2.Y) }, world)
+                    | :? Vector2Pluggable as v2 ->
+                        match indexer with
+                        | "X" -> (Single v2.Vector2.X, world)
+                        | "Y" -> (Single v2.Vector2.Y, world)
+                        | _ -> (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for Vector2.", originOpt), world)
                     | _ -> failwithumf ()
-                | ([|_; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a single for the first argument, and a v2 for the second.", originOpt), world)
-                | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
-            | "yAs" ->
-                match World.evalManyInternal exprs world with
-                | ([|Violation _ as v; _|], world) -> (v, world)
-                | ([|_; Violation _ as v|], world) -> (v, world)
-                | ([|Single y; Pluggable pluggable|], world) ->
-                    match pluggable with
-                    | :? Vector2Pluggable as v2 -> (Pluggable { Vector2 = Vector2 (v2.Vector2.X, y) }, world)
-                    | _ -> failwithumf ()
-                | ([|_; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a single for the first argument, and a v2 for the second.", originOpt), world)
+                | ([|_|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a single for the both arguments.", originOpt), world)
                 | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             | "get" ->
                 match World.evalManyInternal exprs world with

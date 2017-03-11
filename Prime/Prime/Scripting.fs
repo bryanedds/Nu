@@ -43,10 +43,9 @@ module Scripting =
              "length normal cross dot " +
              "violation bool int int64 single double string " +
              "typename " +
-             "nameOf fieldsOf " +
-             "record fieldOf fieldNamesOf " +
-             "tuple pair unit fst snd thd fth fif nth " +
-             "fstAs sndAs thdAs fthAs fifAs nthAs " +
+             "of nameOf fieldsOf " +
+             "record fieldNamesOf " +
+             "tuple pair unit fst snd thd fth fif " +
              "some none isSome isNone isEmpty notEmpty " +
              "tryUncons uncons cons commit tryHead head tryTail tail " +
              "scanWhile scani scan foldWhile foldi fold mapi map contains " +
@@ -58,15 +57,14 @@ module Scripting =
              "let fun if match select try do break get set define " +
              
              (* Prelude Identifiers *)
-             // TODO: "substring update curry compose itemOf tryItemOf itemAs tryItemAs sort replace slice split " +
+             // TODO: "substring update curry compose tryOf tryAs sort replace slice split " +
              "-u- -b- -i- -L- -f- -d- -2- -s- -k- -u- -p- -o- -l- -r- -t- " +
              "isUnit isBool isInt isInt64 isSingle isDouble isString " +
              "isKeyword isTuple isUnion isOption isList isRing isTable isRecord " +
              "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegativeInfinity isNaN " +
              "min max compare sign abs fst! snd! rev foldBackWhile foldBacki foldBack " +
              "reduceWhile reducei reduce definitize filter takeWhile take skipWhile skip " +
-             "countBy count notContains exists notExists zipBy zip pi e v2Zero v2Identity game " +
-             "dataOf subscriberOf publisherOf addressOf ",
+             "countBy count notContains exists notExists zipBy zip pi e v2Zero v2Identity",
              
              (* Engine Keywords *)
              "Gt Lt Eq Positive Negative Zero",
@@ -464,6 +462,7 @@ module Scripting =
                     | "none" | "None" -> Option None :> obj
                     | "nil" -> Keyword String.Empty :> obj
                     | "empty" -> Codata Empty :> obj
+                    | "Dot" -> Binding ("of", ref UncachedBinding, originOpt) :> obj
                     | _ ->
                         let firstChar = str.[0]
                         if firstChar = Constants.Relation.Slot || Char.IsUpper firstChar
