@@ -9,7 +9,7 @@
 #| The double type indicator.           |# [define -d- 0d]
 #| The string type indicator.           |# [define -s- ""]
 #| The keyword type indicator.          |# [define -K- nil]
-#| The tuple type indicator.            |# [define -u- [tuple]]
+#| The tuple type indicator.            |# [define -T- [tuple]]
 #| The union type indicator.            |# [define -U- [nil]]
 #| The option type indicator.           |# [define -o- none]
 #| The list type indicator.             |# [define -l- [list]]

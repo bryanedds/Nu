@@ -60,7 +60,7 @@ module RelationModule =
             { NameOpts : string option list
               TypeCarrier : 'a -> unit }
     
-        /// Make a relation from a '/' delimited string where '.' are empty.
+        /// Make a relation from a '/' delimited string where '?' are empty.
         /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
         static member makeFromString<'a> (relationStr : string) =
             let nameOptList = relationStr.Split Constants.Address.Separator |> List.ofSeq
