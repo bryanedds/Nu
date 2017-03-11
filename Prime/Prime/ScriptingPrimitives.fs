@@ -44,7 +44,7 @@ module ScriptingPrimitives =
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a referent value.", originOpt), world)
 
-    let evalOfInt index fnName originOpt evaledArg world =
+    let evalOfIndexInt index fnName originOpt evaledArg world =
         match evaledArg with
         | Tuple fields
         | Union (_, fields)
@@ -55,7 +55,12 @@ module ScriptingPrimitives =
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an indexed value for its second argument.", originOpt), world)
 
-    let evalOfName name fnName originOpt evaledArg world =
+    let evalOfIndexStr indexStr fnName originOpt evaledArg world =
+        match Int32.TryParse indexStr with
+        | (true, index) -> evalOfIndexInt index fnName originOpt evaledArg world
+        | (false, _) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an index string for its first argument.", originOpt), world)
+
+    let evalOfIndexKeyword name fnName originOpt evaledArg world =
         match evaledArg with
         | Record (_, map, fields) ->
             match Map.tryFind name map with
@@ -70,8 +75,8 @@ module ScriptingPrimitives =
 
     let evalOf fnName originOpt evaledArg evaledArg2 world =
         match evaledArg with
-        | Int index -> evalOfInt index fnName originOpt evaledArg2 world
-        | Keyword str -> evalOfName str fnName originOpt evaledArg2 world
+        | String str -> evalOfIndexStr str fnName originOpt evaledArg2 world
+        | Keyword str -> evalOfIndexKeyword str fnName originOpt evaledArg2 world
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an int, string, or keyword for its first argument.", originOpt), world)
 
     let evalNameOf fnName originOpt evaledArg world =
