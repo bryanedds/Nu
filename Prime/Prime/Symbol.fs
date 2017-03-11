@@ -149,8 +149,8 @@ module Symbol =
             let! stop = getPosition
             do! skipWhitespaces
             let str = chars |> String.implode |> fun str -> str.TrimEnd ()
-            let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
-            return Atom (str, origin) }
+            let originOpt = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
+            return Atom (str, originOpt) }
 
     let readNumber =
         parse {
@@ -160,13 +160,13 @@ module Symbol =
             do! followedByWhitespaceOrStructureCharOrAtEof
             let! stop = getPosition
             do! skipWhitespaces
-            let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
+            let originOpt = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
             let suffix =
                 (if number.SuffixChar1 <> (char)65535 then string number.SuffixChar1 else "") + 
                 (if number.SuffixChar2 <> (char)65535 then string number.SuffixChar2 else "") + 
                 (if number.SuffixChar3 <> (char)65535 then string number.SuffixChar3 else "") + 
                 (if number.SuffixChar4 <> (char)65535 then string number.SuffixChar4 else "")
-            return Number (number.String + suffix, origin) }
+            return Number (number.String + suffix, originOpt) }
 
     let readString =
         parse {
@@ -179,8 +179,8 @@ module Symbol =
             let! stop = getPosition
             do! skipWhitespaces
             let str = escaped |> String.implode
-            let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
-            return String (str, origin) }
+            let originOpt = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
+            return String (str, originOpt) }
 
     let readQuote =
         parse {
@@ -190,8 +190,8 @@ module Symbol =
             let! quoted = readSymbol
             let! stop = getPosition
             do! skipWhitespaces
-            let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
-            return Quote (quoted, origin) }
+            let originOpt = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
+            return Quote (quoted, originOpt) }
 
     let readSymbols =
         parse {
@@ -203,8 +203,8 @@ module Symbol =
             do! closeSymbols
             let! stop = getPosition
             do! skipWhitespaces
-            let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
-            return Symbols (symbols, origin) }
+            let originOpt = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
+            return Symbols (symbols, originOpt) }
 
     let readDot =
         parse {
@@ -214,8 +214,8 @@ module Symbol =
             do! skipWhitespaces
             let! stop = getPosition
             do! skipWhitespaces
-            let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
-            return fun target indexer -> Symbols ([Atom (DotExpansion, None); indexer; target], origin) }
+            let originOpt = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
+            return fun target indexer -> Symbols ([Atom (DotExpansion, originOpt); indexer; target], originOpt) }
 
     let readSymbolBirecursive =
         attempt readQuote <|>
