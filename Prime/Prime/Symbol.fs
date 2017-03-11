@@ -79,8 +79,8 @@ module Symbol =
 
     let [<Literal>] NewlineChars = "\n\r"
     let [<Literal>] WhitespaceChars = "\t " + NewlineChars
-    let [<Literal>] SeparatorChar = ' '
-    let [<Literal>] SeparatorStr = " "
+    let [<Literal>] DotChar = '.'
+    let [<Literal>] DotStr = "."
     let [<Literal>] OpenSymbolsChar = '['
     let [<Literal>] OpenSymbolsStr = "["
     let [<Literal>] CloseSymbolsChar = ']'
@@ -95,8 +95,9 @@ module Symbol =
     let [<Literal>] LineCommentStr = ";"
     let [<Literal>] OpenMultilineCommentStr = "#|"
     let [<Literal>] CloseMultilineCommentStr = "|#"
-    let [<Literal>] ReservedChars = "#$:,." // TODO: should include '\\'?
-    let [<Literal>] StructureCharsNoStr = "[]`"
+    let [<Literal>] DotExpansion = "Dot"
+    let [<Literal>] ReservedChars = "#$:," // TODO: should include '\\'?
+    let [<Literal>] StructureCharsNoStr = "[]`."
     let [<Literal>] StructureChars = "\"" + StructureCharsNoStr
     let (*Literal*) IllegalNameChars = ReservedChars + StructureChars + WhitespaceChars
     let (*Literal*) IllegalNameCharsArray = Array.ofSeq IllegalNameChars
@@ -125,11 +126,12 @@ module Symbol =
     let skipWhitespaces = skipMany skipWhitespace
     let followedByWhitespaceOrStructureCharOrAtEof = nextCharSatisfies (fun chr -> isWhitespaceChar chr || isStructureChar chr) <|> eof
     
+    let startDot = skipChar DotChar
+    let startQuote = skipChar QuoteChar
     let openSymbols = skipChar OpenSymbolsChar
     let closeSymbols = skipChar CloseSymbolsChar
     let openString = skipChar OpenStringChar
     let closeString = skipChar CloseStringChar
-    let startQuote = skipChar QuoteChar
     
     let isNumberParser = numberLiteral NumberFormat "number" >>. eof
     let isNumber str = match run isNumberParser str with Success (_, _, position) -> position.Index = int64 str.Length | Failure _ -> false
@@ -204,12 +206,26 @@ module Symbol =
             let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
             return Symbols (symbols, origin) }
 
-    do refReadSymbol :=
+    let readDot =
+        parse {
+            let! userState = getUserState
+            let! start = getPosition
+            do! startDot
+            do! skipWhitespaces
+            let! stop = getPosition
+            do! skipWhitespaces
+            let origin = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
+            return fun target indexer -> Symbols ([Atom (DotExpansion, None); indexer; target], origin) }
+
+    let readSymbolBirecursive =
         attempt readQuote <|>
         attempt readString <|>
         attempt readNumber <|>
         attempt readAtom <|>
         readSymbols
+
+    do refReadSymbol :=
+        chainl1 readSymbolBirecursive readDot
 
     let rec writeSymbol symbol =
         match symbol with
@@ -222,7 +238,10 @@ module Symbol =
         | Number (str, _) -> distillate str
         | String (str, _) -> OpenStringStr + distillate str + CloseStringStr
         | Quote (symbol, _) -> QuoteStr + writeSymbol symbol
-        | Symbols (symbols, _) -> OpenSymbolsStr + String.concat " " (List.map writeSymbol symbols) + CloseSymbolsStr
+        | Symbols (symbols, _) ->
+            match symbols with
+            | [Atom (str, _); left; right] when str = DotExpansion -> writeSymbol left + DotExpansion + writeSymbol right
+            | _ -> OpenSymbolsStr + String.concat " " (List.map writeSymbol symbols) + CloseSymbolsStr
 
     /// Convert a string to a symbol, with the following parses:
     /// 
