@@ -105,16 +105,16 @@ module WorldScripting =
                 | Some scriptFrame ->
                     match ScriptingWorld.tryImport evt.Data evt.DataType world with
                     | Some dataImported ->
-                        let evtTuple =
-                            // TODO: change to record and remove function-based accessors after implementing syntactic accessors!
-                            Union
+                        let evtRecord =
+                            Record
                                 ("Event",
-                                    [|dataImported
-                                      String (scstring evt.Subscriber)
-                                      String (scstring evt.Publisher)
-                                      String (scstring evt.Address)|])
+                                 [|"Data", 0; "Subscriber", 1; "Publisher", 2; "Address", 3|] |> Map.ofArray,
+                                 [|dataImported
+                                   String (scstring evt.Subscriber)
+                                   String (scstring evt.Publisher)
+                                   String (scstring evt.Address)|])
                         let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
-                        let application = Apply ([|subscription; evtTuple|], breakpoint, None)
+                        let application = Apply ([|subscription; evtRecord|], breakpoint, None)
                         World.evalWithLogging application scriptFrame subscriber world |> snd
                     | None -> Log.info "Property value could not be imported into scripting environment."; world
                 | None -> world)
