@@ -337,24 +337,26 @@ module PrettyPrinter =
         | PrettyAtom of bool * bool * string * Symbol
         | PrettyNumber of string * Symbol
         | PrettyString of string * Symbol
+        | PrettyIndex of int * PrettySymbol * PrettySymbol
         | PrettyQuote of int * PrettySymbol
         | PrettySymbols of bool * bool * int * PrettySymbol list
 
-    let rec private getTitled symbolPretty =
-        match symbolPretty with
+    let rec private getTitled prettySymbol =
+        match prettySymbol with
         | PrettyAtom (titled, _, _, _) -> titled
         | _ -> false
 
-    let rec private getHeadered symbolPretty =
-        match symbolPretty with
+    let rec private getHeadered prettySymbol =
+        match prettySymbol with
         | PrettyAtom (_, headered, _, _) -> headered
         | _ -> false
 
-    let rec private getMaxDepth symbolPretty =
-        match symbolPretty with
+    let rec private getMaxDepth prettySymbol =
+        match prettySymbol with
         | PrettyAtom _ -> 0
         | PrettyNumber _ -> 0
         | PrettyString _ -> 0
+        | PrettyIndex _ -> 0
         | PrettyQuote (maxDepth, _) -> maxDepth
         | PrettySymbols (_, _, maxDepth, _) -> maxDepth
 
@@ -369,24 +371,30 @@ module PrettyPrinter =
         | Number (str, _) -> PrettyNumber (str, symbol)
         | String (str, _) -> PrettyString (str, symbol)
         | Quote (quoted, _) ->
-            let quotedPretty = symbolToPrettySymbol quoted prettyPrinter
-            let maxDepth = getMaxDepth quotedPretty
-            PrettyQuote (inc maxDepth, quotedPretty)
+            let prettyQuoted = symbolToPrettySymbol quoted prettyPrinter
+            let maxDepth = getMaxDepth prettyQuoted
+            PrettyQuote (inc maxDepth, prettyQuoted)
         | Symbols (symbols, _) ->
-            let symbolsPretty = List.map (flip symbolToPrettySymbol prettyPrinter) symbols
-            let titled = match symbolsPretty with head :: _ -> getTitled head | [] -> false
-            let headered = match symbolsPretty with head :: _ -> getHeadered head | [] -> false
-            let maxDepths = 0 :: List.map getMaxDepth symbolsPretty
-            let maxDepth = List.max maxDepths
-            // NOTE: it's prettier when headered symbols get a depth discount like so -
-            let maxDepthWhenHeadered = if headered then maxDepth else maxDepth + 1
-            PrettySymbols (titled, headered, maxDepthWhenHeadered, symbolsPretty)
+            match symbols with
+            | [Atom ("Index", _); indexer; target] ->
+                let prettyIndexer = symbolToPrettySymbol indexer prettyPrinter
+                let prettyTarget = symbolToPrettySymbol target prettyPrinter
+                PrettyIndex (0, prettyIndexer, prettyTarget)
+            | _ ->
+                let prettySymbols = List.map (flip symbolToPrettySymbol prettyPrinter) symbols
+                let titled = match prettySymbols with head :: _ -> getTitled head | [] -> false
+                let headered = match prettySymbols with head :: _ -> getHeadered head | [] -> false
+                let maxDepths = 0 :: List.map getMaxDepth prettySymbols
+                let maxDepth = List.max maxDepths
+                // NOTE: it's prettier when headered symbols get a depth discount like so -
+                let maxDepthWhenHeadered = if headered then maxDepth else maxDepth + 1
+                PrettySymbols (titled, headered, maxDepthWhenHeadered, prettySymbols)
 
     let rec private prettySymbolsToPrettyStr titled headered depth unfolding symbols prettyPrinter =
         if unfolding then
             let symbolsLength = List.length symbols
             let prettyStrs =
-                List.mapi (fun i symbolPretty ->
+                List.mapi (fun i prettySymbol ->
                     let whitespace =
                         if titled then
                             if i > 1 then "\n" + String.init (inc depth) (fun _ -> " ")
@@ -399,35 +407,40 @@ module PrettyPrinter =
                         else
                             if i > 0 then "\n" + String.init (inc depth) (fun _ -> " ")
                             else ""
-                    let text = prettySymbolToPrettyStr (inc depth) symbolPretty prettyPrinter
+                    let text = prettySymbolToPrettyStr (inc depth) prettySymbol prettyPrinter
                     whitespace + text)
                     symbols
             let prettyStr = Symbol.OpenSymbolsStr + String.concat "" prettyStrs + Symbol.CloseSymbolsStr
             prettyStr
         else
             let prettyStrs =
-                List.map (fun symbolPretty ->
-                    prettySymbolToPrettyStr (inc depth) symbolPretty prettyPrinter)
+                List.map (fun prettySymbol ->
+                    prettySymbolToPrettyStr (inc depth) prettySymbol prettyPrinter)
                     symbols
             let prettyStr = Symbol.OpenSymbolsStr + String.concat " " prettyStrs + Symbol.CloseSymbolsStr
             prettyStr
 
-    and private prettySymbolToPrettyStr depth symbolPretty prettyPrinter =
-        match symbolPretty with
+    and private prettySymbolToPrettyStr depth prettySymbol prettyPrinter =
+        match prettySymbol with
         | PrettyAtom (_, _, _, symbol)
         | PrettyNumber (_, symbol)
-        | PrettyString (_, symbol) ->
-            Symbol.writeSymbol symbol
-        | PrettyQuote (_, symbolPretty) ->
-            let prettyStr = prettySymbolToPrettyStr (inc depth) symbolPretty prettyPrinter
+        | PrettyString (_, symbol) -> Symbol.writeSymbol symbol
+        | PrettyIndex (depth, prettyIndexer, prettyTarget) ->
+            let prettyIndexerStr = prettySymbolToPrettyStr depth prettyIndexer prettyPrinter
+            let prettyTargetStr = prettySymbolToPrettyStr depth prettyTarget prettyPrinter
+            match prettyIndexer with
+            | PrettyNumber _ -> prettyTargetStr + Symbol.IndexStr + Symbol.OpenSymbolsStr + prettyIndexerStr + Symbol.CloseSymbolsStr
+            | _ -> prettyTargetStr + Symbol.IndexStr + prettyIndexerStr
+        | PrettyQuote (_, prettySymbol) ->
+            let prettyStr = prettySymbolToPrettyStr (inc depth) prettySymbol prettyPrinter
             Symbol.QuoteStr + prettyStr
         | PrettySymbols (titled, headered, maxDepth, symbols) ->
             let unfolding = depth < prettyPrinter.ThresholdMin || maxDepth > prettyPrinter.ThresholdMax
             prettySymbolsToPrettyStr titled headered depth unfolding symbols prettyPrinter
 
     let prettyPrintSymbol symbol prettyPrinter =
-        let symbolPretty = symbolToPrettySymbol symbol prettyPrinter
-        prettySymbolToPrettyStr 0 symbolPretty prettyPrinter
+        let prettySymbol = symbolToPrettySymbol symbol prettyPrinter
+        prettySymbolToPrettyStr 0 prettySymbol prettyPrinter
 
     let prettyPrint str prettyPrinter =
         let symbol = Symbol.fromString str
