@@ -25,5 +25,6 @@
         <file src="..\Prime\bin\Release\Prime.exe.config" target="lib\net45\Prime.exe.config" />
         <file src="..\Prime\bin\Release\Prime.pdb" target="lib\net45\Prime.pdb" />
         <file src="..\Prime\bin\Release\Prime.XML" target="lib\net45\Prime.XML" />
+        <file src="..\Prime\bin\Release\Prelude.amsl" target="lib\net45\Prelude.amsl" />
     </files>
 </package>
