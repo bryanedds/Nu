@@ -11,7 +11,7 @@
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>An F# code library for hardcore pure functional programming, and much more!</description>
         <summary />
-        <releaseNotes>Implemented indexing syntax for Amsl.</releaseNotes>
+        <releaseNotes>Implemented indexing syntax for Amsl, as well as detailed form parameter.</releaseNotes>
         <copyright>Copyright (c) 2017 Bryan Edds</copyright>
         <language>en-US</language>
         <tags>F# Functional Programming</tags>

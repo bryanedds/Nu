@@ -66,14 +66,17 @@ module Scripting =
              "reduceWhile reducei reduce definitize filter takeWhile take skipWhile skip " +
              "countBy count notContains exists notExists zipBy zip pi e v2Zero v2Identity",
 
-             (* Engine Keywords *)
+             (* Keywords *)
              "Gt Lt Eq Positive Negative Zero",
 
-             (* Engine Title Words *)
-             "if match",
+             (* Title Words *)
+             "record if match",
 
-             (* Engine Header Words *)
-             "record define fun",
+             (* Header Words *)
+             "define fun",
+
+             (* Detail Words *)
+             "get set",
              Constants.PrettyPrinter.DefaultThresholdMin,
              Constants.PrettyPrinter.DefaultThresholdMax);
           TypeConverter (typeof<ExprConverter>);
