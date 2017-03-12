@@ -44,7 +44,7 @@ module ScriptingPrimitives =
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Referent value.", originOpt), world)
 
-    let evalOfIndexIntInner index fnName originOpt evaledArg world =
+    let evalIndexIntInner index fnName originOpt evaledArg world =
         match evaledArg with
         | Option opt ->
             match (index, opt) with
@@ -66,7 +66,7 @@ module ScriptingPrimitives =
         | Violation _ as violation -> Right (violation, world)
         | _ -> Left (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an indexed value for its second argument.", originOpt), world)
 
-    let evalOfIndexStringInner indexStr fnName originOpt evaledArg world =
+    let evalIndexStringInner indexStr fnName originOpt evaledArg world =
         match Int32.TryParse indexStr with
         | (false, _) ->
             match evaledArg with    
@@ -76,9 +76,9 @@ module ScriptingPrimitives =
                 | None -> Left (Violation (["InvalidIndex"; String.capitalize fnName], "Table does not contain entry with key '" + indexStr + "'.", originOpt), world)
             | Violation _ as violation -> Left (violation, world)
             | _ -> Left (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an index string for its first argument.", originOpt), world)
-        | (true, index) -> evalOfIndexIntInner index fnName originOpt evaledArg world
+        | (true, index) -> evalIndexIntInner index fnName originOpt evaledArg world
 
-    let evalOfIndexKeywordInner name fnName originOpt evaledArg world =
+    let evalIndexKeywordInner name fnName originOpt evaledArg world =
         match evaledArg with
         | Table map ->
             match Map.tryFind (Keyword name) map with
@@ -95,10 +95,10 @@ module ScriptingPrimitives =
         | Violation _ as violation -> Left (violation, world)
         | _ -> Left (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a name-indexed value for its second argument.", originOpt), world)
 
-    let evalOfInner fnName originOpt evaledArg evaledArg2 world =
+    let evalIndexInner fnName originOpt evaledArg evaledArg2 world =
         match evaledArg with
-        | String str -> evalOfIndexStringInner str fnName originOpt evaledArg2 world
-        | Keyword str -> evalOfIndexKeywordInner str fnName originOpt evaledArg2 world
+        | String str -> evalIndexStringInner str fnName originOpt evaledArg2 world
+        | Keyword str -> evalIndexKeywordInner str fnName originOpt evaledArg2 world
         | Violation _ as violation -> Left (violation, world)
         | _ ->
             match evaledArg2 with    
@@ -108,31 +108,31 @@ module ScriptingPrimitives =
                 | None -> Left (Violation (["InvalidIndex"; String.capitalize fnName], "Table does not contain entry with key '" + scstring evaledArg + "'.", originOpt), world)
             | _ -> Left (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " with non-String / non-Keyword indexes only applicable on Tables.", originOpt), world)
 
-    let evalTryOf fnName originOpt evaledArg evaledArg2 world =
-        match evalOfInner fnName originOpt evaledArg evaledArg2 world with
+    let evalTryIndex fnName originOpt evaledArg evaledArg2 world =
+        match evalIndexInner fnName originOpt evaledArg evaledArg2 world with
         | Right (evaled, world) -> (Option (Some evaled), world)
         | Left (_, world) -> (Option None, world)
 
-    let evalOfIndexInt index fnName originOpt evaledArg world =
-        let eir = evalOfIndexIntInner index fnName originOpt evaledArg world
+    let evalIndexInt index fnName originOpt evaledArg world =
+        let eir = evalIndexIntInner index fnName originOpt evaledArg world
         Either.amb eir
 
-    let evalOfIndexString index fnName originOpt evaledArg world =
-        let eir = evalOfIndexStringInner index fnName originOpt evaledArg world
+    let evalIndexString index fnName originOpt evaledArg world =
+        let eir = evalIndexStringInner index fnName originOpt evaledArg world
         Either.amb eir
 
-    let evalOfIndexKeyword index fnName originOpt evaledArg world =
-        let eir = evalOfIndexKeywordInner index fnName originOpt evaledArg world
+    let evalIndexKeyword index fnName originOpt evaledArg world =
+        let eir = evalIndexKeywordInner index fnName originOpt evaledArg world
         Either.amb eir
 
-    let evalOf fnName originOpt evaledArg evaledArg2 world =
-        match evalOfInner fnName originOpt evaledArg evaledArg2 world with
+    let evalIndex fnName originOpt evaledArg evaledArg2 world =
+        match evalIndexInner fnName originOpt evaledArg evaledArg2 world with
         | Right success -> success
         | Left error -> error
 
     let evalNth fnName originOpt evaledArg evaledArg2 world =
         match evaledArg with
-        | Int i -> evalOfIndexInt i fnName originOpt evaledArg2 world
+        | Int i -> evalIndexInt i fnName originOpt evaledArg2 world
         | Violation _ as v -> (v, world)
         | _ -> (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Application of '" + fnName + "'requires an Int as its first argument.", originOpt), world)
 

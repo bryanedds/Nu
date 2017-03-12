@@ -158,7 +158,7 @@ module WorldScripting =
         static member internal isExtrinsic fnName =
             match fnName with
             // TODO: | "tickRate" | "tickTime" | "getSimulantSelected" | "simulantExists"
-            | "v2" | "of_Vector2"
+            | "v2" | "index_Vector2"
             | "get" | "set"
             | "monitor" -> true
             | _ -> false
@@ -172,7 +172,7 @@ module WorldScripting =
                 | ([|Single x; Single y|], world) -> (Pluggable { Vector2 = Vector2 (x, y) }, world)
                 | ([|_; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single for the both arguments.", originOpt), world)
                 | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
-            | "of_Vector2" ->
+            | "index_Vector2" ->
                 match World.evalManyInternal exprs world with
                 | ([|Violation _ as v; _|], world) -> (v, world)
                 | ([|_; Violation _ as v|], world) -> (v, world)
