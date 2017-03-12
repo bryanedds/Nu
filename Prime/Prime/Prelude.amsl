@@ -1,4 +1,4 @@
-; Prime - A PRIMitivEs code library.
+; AMSL - A Modular Amsl Language.
 ; Copyright (C) Bryan Edds, 2013-2017.
 
 #| The unit type indicator.             |# [define -u- []]
@@ -15,7 +15,7 @@
 #| The list type indicator.             |# [define -l- [list]]
 #| The ring type indicator.             |# [define -r- [ring]]
 #| The table type indicator.            |# [define -t- [table]]
-#| The record type indicator.           |# [define -R- [nix]]
+#| The record type indicator.           |# [define -R- [record nil]]
 
 #| Check that a value is unit.          |# [define isUnit [a] [= [typename a] "Unit"]]
 #| Check that a value is a bool.        |# [define isBool [a] [= [typename a] "Bool"]]
