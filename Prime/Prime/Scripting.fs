@@ -53,9 +53,9 @@ module Scripting =
              "codata toCodata empty " +
              "list toList " +
              "ring toRing add remove " +
-             "table toTable tryFind find " +
+             "table toTable " +
              "let fun if match select try do break get set define " +
-             
+
              (* Prelude Identifiers *)
              // TODO: "substring update curry compose sort replace slice split " +
              "-u- -b- -i- -L- -f- -d- -s- -K- -T- -U- -o- -l- -r- -t- -R- " +
@@ -372,7 +372,9 @@ module Scripting =
                             mapSwap
                     Symbols (recordSymbol :: nameSymbol :: List.ofSeq elemSymbols, None) :> obj
                 | Binding (name, _, originOpt) ->
-                    Atom (name, originOpt) :> obj
+                    if name = "index"
+                    then Atom ("Index", originOpt) :> obj
+                    else Atom (name, originOpt) :> obj
                 | Apply (exprs, _, originOpt) ->
                     let exprSymbols = Array.map this.ExprToSymbol exprs
                     Symbols (List.ofArray exprSymbols, originOpt) :> obj
@@ -628,7 +630,7 @@ module Scripting =
         match expr with
         | Violation (names, error, originOpt) ->
             Log.info ^
-                "Unexpected violation: " + String.concat Constants.Scripting.ViolationSeparatorStr names + "\n" +
+                "Unexpected Violation: " + String.concat Constants.Scripting.ViolationSeparatorStr names + "\n" +
                 "Due to: " + error + "\n" +
                 SymbolOrigin.tryPrint originOpt + "\n"
         | _ -> ()
