@@ -80,7 +80,6 @@ module ScriptingWorld =
         | "bool" | "int" | "int64" | "single" | "double" | "string"
         (*| "typename"*)
         | "tryIndex" | "index" | "nameOf"
-        | "fieldNamesOf"
         | "tuple" | "pair" | "fst" | "snd" | "thd" | "fth" | "fif" | "nth"
         | "fstAs" | "sndAs" | "thdAs" | "fthAs" | "fifAs" | "nthAs"
         | "some" | "isNone" | "isSome" | "isEmpty" | "notEmpty"
@@ -141,16 +140,16 @@ module ScriptingWorld =
         | "single" -> evalUnary SingleFns fnName originOpt evaledArgs world
         | "double" -> evalUnary DoubleFns fnName originOpt evaledArgs world
         | "string" -> evalUnary StringFns fnName originOpt evaledArgs world
-        | "tryOf" -> evalDoublet evalTryOf fnName originOpt evaledArgs world
-        | "of" -> evalDoublet evalOf fnName originOpt evaledArgs world
+        | "tryIndex" -> evalDoublet evalTryIndex fnName originOpt evaledArgs world
+        | "index" -> evalDoublet evalIndex fnName originOpt evaledArgs world
         | "nameOf" -> evalSinglet evalNameOf fnName originOpt evaledArgs world
         | "tuple" -> evalTuple fnName originOpt evaledArgs world
         | "pair" -> evalTuple fnName originOpt evaledArgs world
-        | "fst" -> evalSinglet (evalOfIndexInt 0) fnName originOpt evaledArgs world
-        | "snd" -> evalSinglet (evalOfIndexInt 1) fnName originOpt evaledArgs world
-        | "thd" -> evalSinglet (evalOfIndexInt 2) fnName originOpt evaledArgs world
-        | "fth" -> evalSinglet (evalOfIndexInt 3) fnName originOpt evaledArgs world
-        | "fif" -> evalSinglet (evalOfIndexInt 4) fnName originOpt evaledArgs world
+        | "fst" -> evalSinglet (evalIndexInt 0) fnName originOpt evaledArgs world
+        | "snd" -> evalSinglet (evalIndexInt 1) fnName originOpt evaledArgs world
+        | "thd" -> evalSinglet (evalIndexInt 2) fnName originOpt evaledArgs world
+        | "fth" -> evalSinglet (evalIndexInt 3) fnName originOpt evaledArgs world
+        | "fif" -> evalSinglet (evalIndexInt 4) fnName originOpt evaledArgs world
         | "nth" -> evalDoublet evalNth fnName originOpt evaledArgs world
         | "some" -> evalSinglet evalSome fnName originOpt evaledArgs world
         | "isNone" -> evalSinglet evalIsNone fnName originOpt evaledArgs world
