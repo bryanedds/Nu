@@ -462,7 +462,7 @@ module Scripting =
                     | "none" | "None" -> Option None :> obj
                     | "nil" -> Keyword String.Empty :> obj
                     | "empty" -> Codata Empty :> obj
-                    | "Dot" -> Binding ("of", ref UncachedBinding, originOpt) :> obj
+                    | "Index" -> Binding ("of", ref UncachedBinding, originOpt) :> obj
                     | _ ->
                         let firstChar = str.[0]
                         if firstChar = Constants.Relation.Slot || Char.IsUpper firstChar
