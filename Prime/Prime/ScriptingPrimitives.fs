@@ -40,64 +40,102 @@ module ScriptingPrimitives =
         | Option opt ->
             match opt with
             | Some value -> (value, world)
-            | None -> (Violation (["InvalidDereference"; String.capitalize fnName], "Function '" + fnName + "' requires a some value.", originOpt), world)
+            | None -> (Violation (["InvalidDereference"; String.capitalize fnName], "Function '" + fnName + "' requires some value.", originOpt), world)
         | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a referent value.", originOpt), world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Referent value.", originOpt), world)
 
-    let evalOfIndexInt index fnName originOpt evaledArg world =
+    let evalOfIndexIntInner index fnName originOpt evaledArg world =
         match evaledArg with
+        | Option opt ->
+            match (index, opt) with
+            | (0, Some value) -> Right (value, world)
+            | (_, Some _) -> Left (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Structure does not contain element at index " + string index + ".", originOpt), world)
+            | (_, None) -> Left (Violation (["InvalidIndex"; String.capitalize fnName], "Function '" + fnName + "' requires some value.", originOpt), world)
+        | Codata _ ->
+            Left (Violation (["NotImplemented"; String.capitalize fnName], "Function '" + fnName + "' is not implemented for Codata.", originOpt), world)
+        | List list ->
+            match List.tryItem index list with
+            | Some item -> Right (item, world)
+            | None -> Left (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Structure does not contain element at index " + string index + ".", originOpt), world)
         | Tuple fields
         | Union (_, fields)
         | Record (_, _, fields) ->
             if index >= 0 && index < Array.length fields
-            then (fields.[index], world)
-            else (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Structure does not contain element at index " + string index + ".", originOpt), world)
-        | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an indexed value for its second argument.", originOpt), world)
+            then Right (fields.[index], world)
+            else Left (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Structure does not contain element at index " + string index + ".", originOpt), world)
+        | Violation _ as violation -> Right (violation, world)
+        | _ -> Left (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an indexed value for its second argument.", originOpt), world)
 
-    let evalOfIndexStr indexStr fnName originOpt evaledArg world =
+    let evalOfIndexStringInner indexStr fnName originOpt evaledArg world =
         match Int32.TryParse indexStr with
-        | (true, index) -> evalOfIndexInt index fnName originOpt evaledArg world
-        | (false, _) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an index string for its first argument.", originOpt), world)
+        | (false, _) ->
+            match evaledArg with    
+            | Table map ->
+                match Map.tryFind (String indexStr) map with
+                | Some value -> Right (value, world)
+                | None -> Left (Violation (["InvalidIndex"; String.capitalize fnName], "Table does not contain entry with key '" + indexStr + "'.", originOpt), world)
+            | Violation _ as violation -> Left (violation, world)
+            | _ -> Left (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an index string for its first argument.", originOpt), world)
+        | (true, index) -> evalOfIndexIntInner index fnName originOpt evaledArg world
 
-    let evalOfIndexKeyword name fnName originOpt evaledArg world =
+    let evalOfIndexKeywordInner name fnName originOpt evaledArg world =
         match evaledArg with
+        | Table map ->
+            match Map.tryFind (Keyword name) map with
+            | Some value -> Right (value, world)
+            | None -> Left (Violation (["InvalidIndex"; String.capitalize fnName], "Table does not contain entry with key '" + name + "'.", originOpt), world)
         | Record (_, map, fields) ->
             match Map.tryFind name map with
             | Some i ->
                 if i >= 0 && i < Array.length fields
-                then (fields.[i], world)
-                else (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Record does not contain element with name '" + name + "'.", originOpt), world)
+                then Right (fields.[i], world)
+                else Left (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Record does not contain element with name '" + name + "'.", originOpt), world)
             | None ->
-                (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Record does not contain element with name '" + name + "'.", originOpt), world)
-        | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a name-indexed value for its second argument.", originOpt), world)
+                Left (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Record does not contain element with name '" + name + "'.", originOpt), world)
+        | Violation _ as violation -> Left (violation, world)
+        | _ -> Left (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a name-indexed value for its second argument.", originOpt), world)
+
+    let evalOfInner fnName originOpt evaledArg evaledArg2 world =
+        match evaledArg with
+        | String str -> evalOfIndexStringInner str fnName originOpt evaledArg2 world
+        | Keyword str -> evalOfIndexKeywordInner str fnName originOpt evaledArg2 world
+        | Violation _ as violation -> Left (violation, world)
+        | _ ->
+            match evaledArg2 with    
+            | Table map ->
+                match Map.tryFind evaledArg map with
+                | Some value -> Right (value, world)
+                | None -> Left (Violation (["InvalidIndex"; String.capitalize fnName], "Table does not contain entry with key '" + scstring evaledArg + "'.", originOpt), world)
+            | _ -> Left (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " with non-String / non-Keyword indexes only applicable on Tables.", originOpt), world)
+
+    let evalTryOf fnName originOpt evaledArg evaledArg2 world =
+        match evalOfInner fnName originOpt evaledArg evaledArg2 world with
+        | Right (evaled, world) -> (Option (Some evaled), world)
+        | Left (_, world) -> (Option None, world)
+
+    let evalOfIndexInt index fnName originOpt evaledArg world =
+        let eir = evalOfIndexIntInner index fnName originOpt evaledArg world
+        Either.amb eir
+
+    let evalOfIndexString index fnName originOpt evaledArg world =
+        let eir = evalOfIndexStringInner index fnName originOpt evaledArg world
+        Either.amb eir
+
+    let evalOfIndexKeyword index fnName originOpt evaledArg world =
+        let eir = evalOfIndexKeywordInner index fnName originOpt evaledArg world
+        Either.amb eir
 
     let evalOf fnName originOpt evaledArg evaledArg2 world =
-        match evaledArg with
-        | String str -> evalOfIndexStr str fnName originOpt evaledArg2 world
-        | Keyword str -> evalOfIndexKeyword str fnName originOpt evaledArg2 world
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an int, string, or keyword for its first argument.", originOpt), world)
+        match evalOfInner fnName originOpt evaledArg evaledArg2 world with
+        | Right success -> success
+        | Left error -> error
 
     let evalNameOf fnName originOpt evaledArg world =
         match evaledArg with
         | Union (name, _) -> (String name, world)
         | Record (name, _, _) -> (String name, world)
         | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a union or record value.", originOpt), world)
-
-    let evalFieldsOf fnName originOpt evaledArg world =
-        match evaledArg with
-        | Union (_, fields) -> (Tuple fields, world)
-        | Record (_, _, fields) -> (Tuple fields, world)
-        | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a union or record value.", originOpt), world)
-
-    let evalFieldNamesOf fnName originOpt evaledArg world =
-        match evaledArg with
-        | Record (_, map, _) -> (map |> Map.toKeySeqBy Keyword |> Array.ofSeq |> Tuple, world)
-        | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a union or record value.", originOpt), world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Union or Record value.", originOpt), world)
 
     let evalTuple _ _ evaledArgs world =
         (Tuple evaledArgs, world)
@@ -112,20 +150,20 @@ module ScriptingPrimitives =
         match evaledArg with
         | Option evaled -> (Bool (Option.isNone evaled), world)
         | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-option.", originOpt), world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-Option.", originOpt), world)
     
     let evalIsSome fnName originOpt evaledArg world =
         match evaledArg with
         | Option evaled -> (Bool (Option.isSome evaled), world)
         | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-option.", originOpt), world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-Option.", originOpt), world)
 
     let evalCodata fnName originOpt evaledArg evaledArg2 world =
         match evaledArg with
         | Binding _ as binding -> (Codata (Unfold (binding, evaledArg2)), world) // evaled expr to binding implies extrinsic or intrinsic function
         | Fun _ as fn -> (Codata (Unfold (fn, evaledArg2)), world)
         | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "First argument to " + fnName + " must be a function.", originOpt), world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "First argument to " + fnName + " must be a Function.", originOpt), world)
 
     let rec evalCodataTryUncons evalApply fnName originOpt codata world =
         match codata with
@@ -140,7 +178,7 @@ module ScriptingPrimitives =
             | (Option (Some state), world) -> Right (Right (state, Unfold (unfolder, state), world))
             | (Option None, world) -> Right (Left world)
             | (Violation _, _) as error -> Left error
-            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an option.", originOpt), world)
+            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an Option.", originOpt), world)
         | Conversion (head :: []) -> Right (Right (head, Empty, world))
         | Conversion (head :: tail) -> Right (Right (head, Conversion tail, world))
         | Conversion [] -> Right (Left world)
@@ -246,7 +284,7 @@ module ScriptingPrimitives =
             | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 string arguments required where the first is of length 1.", originOpt), world)
         | (evaledArg, Option opt) ->
             match opt with
-            | Some _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot cons onto a some value.", originOpt), world)
+            | Some _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot cons onto some value.", originOpt), world)
             | None -> (Option (Some evaledArg), world)
         | (evaledArg, List list) ->
             (List (evaledArg :: list), world)
@@ -265,7 +303,7 @@ module ScriptingPrimitives =
             | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Table entry must consist of a pair.", originOpt), world)
         | (Violation _ as violation, _) -> (violation, world)
         | (_, (Violation _ as violation)) -> (violation, world)
-        | (_, _) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-list.", originOpt), world)
+        | (_, _) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-List.", originOpt), world)
 
     let evalCommit fnName originOpt evaledArg world =
         match evaledArg with
@@ -319,17 +357,17 @@ module ScriptingPrimitives =
                 | (Option (Some state), world) -> evalScanWhileCodata evalApply fnName originOpt scanner state (Unfold (unfolder, costate)) world
                 | (Option None, world) -> Right (state, [], world)
                 | (Violation _, _) as error -> Left error
-                | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an option.", originOpt), world)
+                | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an Option.", originOpt), world)
             | (Option None, world) -> Right (state, [], world)
             | (Violation _, _) as error -> Left error
-            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an option.", originOpt), world)
+            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an Option.", originOpt), world)
         | Conversion list ->
             Seq.foldWhileRight (fun (state, states, world) elem ->
                 match evalApply [|scanner; state; elem|] originOpt world with
                 | (Option (Some state), world) -> (Right (state, state :: states, world))
                 | (Option None, world) -> Left (List states, world)
                 | (Violation _, _) as error -> Left error
-                | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an option.", originOpt), world))
+                | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an Option.", originOpt), world))
                 (Right (state, [], world))
                 list
 
@@ -352,14 +390,14 @@ module ScriptingPrimitives =
                 | (state, world) -> evalScaniCodata evalApply fnName originOpt (inc i) scanner state (Unfold (unfolder, costate)) world
             | (Option None, world) -> Right (i, state, [], world)
             | (Violation _, _) as error -> Left error
-            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an option.", originOpt), world)
+            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an Option.", originOpt), world)
         | Conversion list ->
             Seq.foldWhileRight (fun (i, state, states, world) elem ->
                 match evalApply [|scanner; Int i; state; elem|] originOpt world with
                 | (Option (Some state), world) -> (Right (inc i, state, state :: states, world))
                 | (Option None, world) -> Left (List states, world)
                 | (Violation _, _) as error -> Left error
-                | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an option.", originOpt), world))
+                | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an Option.", originOpt), world))
                 (Right (i, state, [], world))
                 list
 
@@ -382,14 +420,14 @@ module ScriptingPrimitives =
                 | (state, world) -> evalScanCodata evalApply fnName originOpt scanner state (Unfold (unfolder, costate)) world
             | (Option None, world) -> Right (state, [], world)
             | (Violation _, _) as error -> Left error
-            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an option.", originOpt), world)
+            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an Option.", originOpt), world)
         | Conversion list ->
             Seq.foldWhileRight (fun (state, states, world) elem ->
                 match evalApply [|scanner; state; elem|] originOpt world with
                 | (Option (Some state), world) -> (Right (state, state :: states, world))
                 | (Option None, world) -> Left (List states, world)
                 | (Violation _, _) as error -> Left error
-                | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an option.", originOpt), world))
+                | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an Option.", originOpt), world))
                 (Right (state, [], world))
                 list
 
@@ -402,7 +440,7 @@ module ScriptingPrimitives =
                     | (Option (Some state), world) -> (Right (state, state :: states, world))
                     | (Option None, world) -> Left (List states, world)
                     | (Violation _, _) as error -> Left error
-                    | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an option.", originOpt), world))
+                    | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an Option.", originOpt), world))
                     (Right (state, [], world))
                     str with
             | Right (_, states, world) -> (List (List.rev states), world)
@@ -418,7 +456,7 @@ module ScriptingPrimitives =
                     | (Option (Some state), world) -> (Right (state, state :: states, world))
                     | (Option None, world) -> Left (List states, world)
                     | (Violation _, _) as error -> Left error
-                    | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an option.", originOpt), world))
+                    | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an Option.", originOpt), world))
                     (Right (state, [], world))
                     list with
             | Right (_, states, world) -> (List (List.rev states), world)
@@ -430,7 +468,7 @@ module ScriptingPrimitives =
                     | (Option (Some state), world) -> (Right (state, state :: states, world))
                     | (Option None, world) -> Left (List states, world)
                     | (Violation _, _) as error -> Left error
-                    | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an option.", originOpt), world))
+                    | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an Option.", originOpt), world))
                     (Right (state, [], world))
                     set with
             | Right (_, states, world) -> (List (List.rev states), world)
@@ -443,7 +481,7 @@ module ScriptingPrimitives =
                     | (Option (Some state), world) -> (Right (state, state :: states, world))
                     | (Option None, world) -> Left (List states, world)
                     | (Violation _, _) as error -> Left error
-                    | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an option.", originOpt), world))
+                    | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s scanner must return an Option.", originOpt), world))
                     (Right (state, [], world))
                     (Map.toList map) with
             | Right (_, states, world) -> (List (List.rev states), world)
@@ -556,17 +594,17 @@ module ScriptingPrimitives =
                 | (Option (Some state), world) -> evalFoldWhileCodata evalApply fnName originOpt folder state (Unfold (unfolder, costate)) world
                 | (Option None, world) -> Right (state, world)
                 | (Violation _, _) as error -> Left error
-                | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an option.", originOpt), world)
+                | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an Option.", originOpt), world)
             | (Option None, world) -> Right (state, world)
             | (Violation _, _) as error -> Left error
-            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an option.", originOpt), world)
+            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an Option.", originOpt), world)
         | Conversion list ->
             Seq.foldWhileRight (fun (state, world) elem ->
                 match evalApply [|folder; state; elem|] originOpt world with
                 | (Option (Some state), world) -> Right (state, world)
                 | (Option None, world) -> Left (state, world)
                 | (Violation _, _) as error -> Left error
-                | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an option.", originOpt), world))
+                | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an Option.", originOpt), world))
                 (Right (state, world))
                 list
 
@@ -589,14 +627,14 @@ module ScriptingPrimitives =
                 | (state, world) -> evalFoldiCodata evalApply fnName originOpt (inc i) folder state (Unfold (unfolder, costate)) world
             | (Option None, world) -> Right (i, state, world)
             | (Violation _, _) as error -> Left error
-            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an option.", originOpt), world)
+            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an Option.", originOpt), world)
         | Conversion list ->
             Seq.foldWhileRight (fun (i, state, world) elem ->
                 match evalApply [|folder; Int i; state; elem|] originOpt world with
                 | (Option (Some state), world) -> (Right (inc i, state, world))
                 | (Option None, world) -> Left (state, world)
                 | (Violation _, _) as error -> Left error
-                | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an option.", originOpt), world))
+                | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an Option.", originOpt), world))
                 (Right (i, state, world))
                 list
 
@@ -619,14 +657,14 @@ module ScriptingPrimitives =
                 | (state, world) -> evalFoldCodata evalApply fnName originOpt folder state (Unfold (unfolder, costate)) world
             | (Option None, world) -> Right (state, world)
             | (Violation _, _) as error -> Left error
-            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an option.", originOpt), world)
+            | (_, world) -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s unfolder must return an Option.", originOpt), world)
         | Conversion list ->
             Seq.foldWhileRight (fun (state, world) elem ->
                 match evalApply [|folder; state; elem|] originOpt world with
                 | (Option (Some state), world) -> (Right (state, world))
                 | (Option None, world) -> Left (state, world)
                 | (Violation _, _) as error -> Left error
-                | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an option.", originOpt), world))
+                | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an Option.", originOpt), world))
                 (Right (state, world))
                 list
 
@@ -639,7 +677,7 @@ module ScriptingPrimitives =
                     | (Option (Some state), world) -> (Right (state, world))
                     | (Option None, world) -> Left (state, world)
                     | (Violation _, _) as error -> Left error
-                    | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an option.", originOpt), world))
+                    | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an Option.", originOpt), world))
                     (Right (state, world))
                     str
             Either.amb eir
@@ -654,7 +692,7 @@ module ScriptingPrimitives =
                     | (Option (Some state), world) -> (Right (state, world))
                     | (Option None, world) -> Left (state, world)
                     | (Violation _, _) as error -> Left error
-                    | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an option.", originOpt), world))
+                    | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an Option.", originOpt), world))
                     (Right (state, world))
                     list
             Either.amb eir
@@ -664,7 +702,7 @@ module ScriptingPrimitives =
                     match evalApply [|folder; state; elem|] originOpt world with
                     | (Option (Some state), world) -> (Right (state, world))
                     | (Option None, world) -> Left (state, world)
-                    | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an option.", originOpt), world))
+                    | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an Option.", originOpt), world))
                     (Right (state, world))
                     set
             Either.amb eir
@@ -675,7 +713,7 @@ module ScriptingPrimitives =
                     match evalApply [|folder; state; entry|] originOpt world with
                     | (Option (Some state), world) -> (Right (state, world))
                     | (Option None, world) -> Left (state, world)
-                    | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an option.", originOpt), world))
+                    | _ -> Left (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s folder must return an Option.", originOpt), world))
                     (Right (state, world))
                     (Map.toList map)
             Either.amb eir
@@ -759,7 +797,7 @@ module ScriptingPrimitives =
                     ([], world)
             if List.forall (function String str when String.length str = 1 -> true | _ -> false) list
             then (String (list |> List.rev |> List.map (function String str -> str.[0] | _ -> failwithumf ()) |> String.implode), world)
-            else (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s mapper must return a string of length 1.", originOpt), world)
+            else (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s mapper must return a String of length 1.", originOpt), world)
         | (mapper, Codata codata) ->
             let (codata, world) = evalMapCodata evalApply originOpt mapper codata world
             (Codata codata, world)
@@ -810,7 +848,7 @@ module ScriptingPrimitives =
                     ([], world)
             if List.forall (function String str when String.length str = 1 -> true | _ -> false) list
             then (String (list |> List.rev |> List.map (function String str -> str.[0] | _ -> failwithumf ()) |> String.implode), world)
-            else (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s mapper must return a string of length 1.", originOpt), world)
+            else (Violation (["InvalidResult"; String.capitalize fnName], "Function " + fnName + "'s mapper must return a String of length 1.", originOpt), world)
         | (mapper, Codata codata) ->
             let (codata, world) = evalMapCodata evalApply originOpt mapper codata world
             (Codata codata, world)
@@ -870,7 +908,7 @@ module ScriptingPrimitives =
         | (evaledArg, String str) ->
             match evaledArg with
             | String str' -> (Bool (str.Contains str'), world)
-            | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "First argument to " + fnName + " for a string must also be a string.", originOpt), world)
+            | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "First argument to " + fnName + " for a String must also be a String.", originOpt), world)
         | (evaledArg, Option opt) -> (Bool (match opt with Some value -> value = evaledArg | None -> false), world)
         | (evaledArg, Codata codata) ->
             match evalContainsCodata evalApply fnName originOpt evaledArg codata world with
@@ -923,7 +961,7 @@ module ScriptingPrimitives =
             | Table map ->
                 match Map.tryFind key map with
                 | Some value -> (value, world)
-                | None -> (Violation (["InvalidKey"; String.capitalize fnName], "Key not found in table.", originOpt), world)
+                | None -> (Violation (["InvalidKey"; String.capitalize fnName], "Key not found in Table.", originOpt), world)
             | Violation _ as error -> (error, world)
             | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", originOpt), world)
 
