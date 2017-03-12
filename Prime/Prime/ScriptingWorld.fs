@@ -88,7 +88,7 @@ module ScriptingWorld =
         | "codata" | "toCodata"
         | "list" (*| "toList"*)
         | "ring" (*| "toRing"*) | "add" | "remove"
-        | "table" (*| "toTable"*) | "tryFind" | "find" -> true
+        | "table" (*| "toTable"*) -> true
         | _ -> false
 
     let rec internal evalIntrinsicInner<'w when 'w :> 'w ScriptingWorld> fnName originOpt evaledArgs (world : 'w) =
@@ -183,8 +183,6 @@ module ScriptingWorld =
         | "remove" -> evalDoublet evalRemove fnName originOpt evaledArgs world
         | "table" -> evalTable fnName originOpt evaledArgs world
         //| "toTable" -> evalSinglet evalToTable fnName originOpt evaledArgs world TODO
-        | "tryFind" -> evalDoublet evalTryFind fnName originOpt evaledArgs world
-        | "find" -> evalDoublet evalFind fnName originOpt evaledArgs world
         | _ -> (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
 
     and evalIntrinsic fnName originOpt evaledArgs world =

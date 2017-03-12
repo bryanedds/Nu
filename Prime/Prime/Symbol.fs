@@ -215,7 +215,10 @@ module Symbol =
             let! stop = getPosition
             do! skipWhitespaces
             let originOpt = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
-            return fun target indexer -> Symbols ([Atom (IndexExpansion, originOpt); indexer; target], originOpt) }
+            return fun target indexer ->
+                match indexer with
+                | Symbols ([Number _ as number], _) -> Symbols ([Atom (IndexExpansion, originOpt); number; target], originOpt)
+                | _ -> Symbols ([Atom (IndexExpansion, originOpt); indexer; target], originOpt) }
 
     let readSymbolBirecursive =
         attempt readQuote <|>
@@ -240,8 +243,12 @@ module Symbol =
         | Quote (symbol, _) -> QuoteStr + writeSymbol symbol
         | Symbols (symbols, _) ->
             match symbols with
-            | [Atom (str, _); left; right] when str = IndexExpansion -> writeSymbol left + IndexExpansion + writeSymbol right
-            | _ -> OpenSymbolsStr + String.concat " " (List.map writeSymbol symbols) + CloseSymbolsStr
+            | [Atom (str, _); Number _ as indexer; target] when str = IndexExpansion ->
+                 writeSymbol target + IndexStr + OpenSymbolsStr + writeSymbol indexer + CloseSymbolsStr
+            | [Atom (str, _); indexer; target] when str = IndexExpansion ->
+                 writeSymbol target + IndexStr + writeSymbol indexer
+            | _ ->
+                OpenSymbolsStr + String.concat " " (List.map writeSymbol symbols) + CloseSymbolsStr
 
     /// Convert a string to a symbol, with the following parses:
     /// 
@@ -371,7 +378,7 @@ module PrettyPrinter =
             let headered = match symbolsPretty with head :: _ -> getHeadered head | [] -> false
             let maxDepths = 0 :: List.map getMaxDepth symbolsPretty
             let maxDepth = List.max maxDepths
-            // NOTE: prettier when headered symbols get a depth discount like so -
+            // NOTE: it's prettier when headered symbols get a depth discount like so -
             let maxDepthWhenHeadered = if headered then maxDepth else maxDepth + 1
             PrettySymbols (titled, headered, maxDepthWhenHeadered, symbolsPretty)
 
