@@ -321,12 +321,14 @@ module Symbol =
 type PrettyPrinter =
     { TitleWords : string Set
       HeaderWords : string Set
+      DetailWords : string Set
       ThresholdMin : int
       ThresholdMax : int }
 
     static member defaulted =
         { TitleWords = Set.empty
           HeaderWords = Set.empty
+          DetailWords = Set.empty
           ThresholdMin = Constants.PrettyPrinter.DefaultThresholdMin
           ThresholdMax = Constants.PrettyPrinter.DefaultThresholdMax }
 
@@ -334,7 +336,7 @@ type PrettyPrinter =
 module PrettyPrinter =
 
     type private PrettySymbol =
-        | PrettyAtom of bool * bool * string * Symbol
+        | PrettyAtom of bool * bool * bool * string * Symbol
         | PrettyNumber of string * Symbol
         | PrettyString of string * Symbol
         | PrettyIndex of int * PrettySymbol * PrettySymbol
@@ -343,12 +345,17 @@ module PrettyPrinter =
 
     let rec private getTitled prettySymbol =
         match prettySymbol with
-        | PrettyAtom (titled, _, _, _) -> titled
+        | PrettyAtom (titled, _, _, _, _) -> titled
         | _ -> false
 
     let rec private getHeadered prettySymbol =
         match prettySymbol with
-        | PrettyAtom (_, headered, _, _) -> headered
+        | PrettyAtom (_, headered, _, _, _) -> headered
+        | _ -> false
+
+    let rec private getDetailed prettySymbol =
+        match prettySymbol with
+        | PrettyAtom (_, _, detailed, _, _) -> detailed
         | _ -> false
 
     let rec private getMaxDepth prettySymbol =
@@ -366,6 +373,7 @@ module PrettyPrinter =
             PrettyAtom
                 (Set.contains str prettyPrinter.TitleWords,
                  Set.contains str prettyPrinter.HeaderWords,
+                 Set.contains str prettyPrinter.DetailWords,
                  str,
                  symbol)
         | Number (str, _) -> PrettyNumber (str, symbol)
@@ -384,11 +392,11 @@ module PrettyPrinter =
                 let prettySymbols = List.map (flip symbolToPrettySymbol prettyPrinter) symbols
                 let titled = match prettySymbols with head :: _ -> getTitled head | [] -> false
                 let headered = match prettySymbols with head :: _ -> getHeadered head | [] -> false
+                let detailed = match prettySymbols with head :: _ -> getDetailed head | [] -> false
                 let maxDepths = 0 :: List.map getMaxDepth prettySymbols
                 let maxDepth = List.max maxDepths
-                // NOTE: it's prettier when headered symbols get a depth discount like so -
-                let maxDepthWhenHeadered = if headered then maxDepth else maxDepth + 1
-                PrettySymbols (titled, headered, maxDepthWhenHeadered, prettySymbols)
+                let maxDepth = if headered || detailed then maxDepth else maxDepth + 1
+                PrettySymbols (titled, headered, maxDepth, prettySymbols)
 
     let rec private prettySymbolsToPrettyStr titled headered depth unfolding symbols prettyPrinter =
         if unfolding then
@@ -422,7 +430,7 @@ module PrettyPrinter =
 
     and private prettySymbolToPrettyStr depth prettySymbol prettyPrinter =
         match prettySymbol with
-        | PrettyAtom (_, _, _, symbol)
+        | PrettyAtom (_, _, _, _, symbol)
         | PrettyNumber (_, symbol)
         | PrettyString (_, symbol) -> Symbol.writeSymbol symbol
         | PrettyIndex (depth, prettyIndexer, prettyTarget) ->
@@ -452,6 +460,7 @@ type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
          keywords1 : string,
          titleWordsStr : string,
          headerWordsStr : string,
+         detailWordsStr : string,
          prettyPrinterThresholdMin : int,
          prettyPrinterThresholdMax : int) =
     inherit Attribute ()
@@ -460,13 +469,14 @@ type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
     member this.PrettyPrinter =
         { TitleWords = Set.ofArray (titleWordsStr.Split ' ')
           HeaderWords = Set.ofArray (headerWordsStr.Split ' ')
+          DetailWords = Set.ofArray (detailWordsStr.Split ' ')
           ThresholdMin = prettyPrinterThresholdMin
           ThresholdMax = prettyPrinterThresholdMax }
     static member getOrDefault (ty : Type) =
         match ty.GetCustomAttribute<SyntaxAttribute> true with
         | null ->
             SyntaxAttribute
-                ("", "", "", "",
+                ("", "", "", "", "",
                  PrettyPrinter.defaulted.ThresholdMin,
                  PrettyPrinter.defaulted.ThresholdMax)
         | syntax -> syntax
