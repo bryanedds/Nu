@@ -101,6 +101,11 @@ module ScriptingPrimitives =
         | Right (evaled, world) -> (Option (Some evaled), world)
         | Left (_, world) -> (Option None, world)
 
+    let evalHasIndex fnName originOpt evaledArg evaledArg2 world =
+        match evalIndexInner fnName originOpt evaledArg evaledArg2 world with
+        | Right (_, world) -> (Bool true, world)
+        | Left (_, world) -> (Bool false, world)
+
     let evalIndexInt index fnName originOpt evaledArg world =
         let eir = evalIndexIntInner index fnName originOpt evaledArg world
         Either.amb eir

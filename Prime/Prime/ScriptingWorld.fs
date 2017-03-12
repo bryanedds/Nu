@@ -141,6 +141,7 @@ module ScriptingWorld =
         | "double" -> evalUnary DoubleFns fnName originOpt evaledArgs world
         | "string" -> evalUnary StringFns fnName originOpt evaledArgs world
         | "tryIndex" -> evalDoublet evalTryIndex fnName originOpt evaledArgs world
+        | "hasIndex" -> evalDoublet evalHasIndex fnName originOpt evaledArgs world
         | "index" -> evalDoublet evalIndex fnName originOpt evaledArgs world
         | "nameOf" -> evalSinglet evalNameOf fnName originOpt evaledArgs world
         | "tuple" -> evalTuple fnName originOpt evaledArgs world
