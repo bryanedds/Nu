@@ -58,14 +58,14 @@ module Scripting =
              
              (* Prelude Identifiers *)
              // TODO: "substring update curry compose sort replace slice split " +
-             "-u- -b- -i- -L- -f- -d- -2- -s- -k- -u- -p- -o- -l- -r- -t- " +
+             "-u- -b- -i- -L- -f- -d- -s- -K- -T- -U- -o- -l- -r- -t- -R- " +
              "isUnit isBool isInt isInt64 isSingle isDouble isString " +
              "isKeyword isTuple isUnion isOption isList isRing isTable isRecord " +
              "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegativeInfinity isNaN " +
              "min max compare sign abs fst! snd! rev foldBackWhile foldBacki foldBack " +
              "reduceWhile reducei reduce definitize filter takeWhile take skipWhile skip " +
              "countBy count notContains exists notExists zipBy zip pi e v2Zero v2Identity",
-             
+
              (* Engine Keywords *)
              "Gt Lt Eq Positive Negative Zero",
 
@@ -462,7 +462,7 @@ module Scripting =
                     | "none" | "None" -> Option None :> obj
                     | "nil" -> Keyword String.Empty :> obj
                     | "empty" -> Codata Empty :> obj
-                    | "Index" -> Binding ("of", ref UncachedBinding, originOpt) :> obj
+                    | "Index" -> Binding ("index", ref UncachedBinding, originOpt) :> obj
                     | _ ->
                         let firstChar = str.[0]
                         if firstChar = Constants.Relation.Slot || Char.IsUpper firstChar

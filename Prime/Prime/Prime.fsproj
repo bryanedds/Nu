@@ -130,7 +130,7 @@
     <Compile Include="ScriptingTests.fs" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Program.fs" />
-    <Content Include="Prelude.script">
+    <Content Include="Prelude.amsl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <None Include="Interactive.fsx" />
