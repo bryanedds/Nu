@@ -43,8 +43,8 @@ module Scripting =
              "length normal cross dot " +
              "violation bool int int64 single double string " +
              "typename " +
-             "of nameOf fieldsOf " +
-             "record fieldNamesOf " +
+             "tryOf of nameOf " +
+             "record " +
              "tuple pair unit fst snd thd fth fif " +
              "some none isSome isNone isEmpty notEmpty " +
              "tryUncons uncons cons commit tryHead head tryTail tail " +
@@ -57,7 +57,7 @@ module Scripting =
              "let fun if match select try do break get set define " +
              
              (* Prelude Identifiers *)
-             // TODO: "substring update curry compose tryOf tryAs sort replace slice split " +
+             // TODO: "substring update curry compose sort replace slice split " +
              "-u- -b- -i- -L- -f- -d- -2- -s- -k- -u- -p- -o- -l- -r- -t- " +
              "isUnit isBool isInt isInt64 isSingle isDouble isString " +
              "isKeyword isTuple isUnion isOption isList isRing isTable isRecord " +
@@ -73,7 +73,7 @@ module Scripting =
              "if match",
 
              (* Engine Header Words *)
-             "define fun",
+             "record define fun",
              Constants.PrettyPrinter.DefaultThresholdMin,
              Constants.PrettyPrinter.DefaultThresholdMax);
           TypeConverter (typeof<ExprConverter>);
@@ -478,12 +478,12 @@ module Scripting =
                                 let str = str.Substring(0, str.Length - 1)
                                 match Single.TryParse str with
                                 | (true, single) -> Single single :> obj
-                                | (false, _) -> Violation (["InvalidForm"; "Number"], "Unexpected number parse failure.", originOpt) :> obj
+                                | (false, _) -> Violation (["InvalidForm"; "Number"], "Unexpected numeric parse failure.", originOpt) :> obj
                             else
                                 let str = if str.EndsWith "d" || str.EndsWith "D" then str.Substring(0, str.Length - 1) else str
                                 match Double.TryParse (str, Globalization.NumberStyles.Float, Globalization.CultureInfo.CurrentCulture) with
                                 | (true, double) -> Double double :> obj
-                                | (false, _) -> Violation (["InvalidForm"; "Number"], "Unexpected number parse failure.", originOpt) :> obj
+                                | (false, _) -> Violation (["InvalidForm"; "Number"], "Unexpected numeric parse failure.", originOpt) :> obj
                         | (true, int64) -> Int64 int64 :> obj
                     | (true, int) -> Int int :> obj
                 | Prime.String (str, _) -> String str :> obj
@@ -505,13 +505,13 @@ module Scripting =
                             match tail with
                             | [Prime.Atom (tagStr, _)]
                             | [Prime.String (tagStr, _)] ->
-                                try let tagName = tagStr in Violation (tagName.Split Constants.Scripting.ViolationSeparator |> List.ofArray, "User-defined violation.", originOpt) :> obj
-                                with exn -> Violation (["InvalidForm"; "Violation"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
+                                try let tagName = tagStr in Violation (tagName.Split Constants.Scripting.ViolationSeparator |> List.ofArray, "User-defined Violation.", originOpt) :> obj
+                                with exn -> Violation (["InvalidForm"; "Violation"], "Invalid Violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | [Prime.Atom (tagStr, _); Prime.String (errorMsg, _)]
                             | [Prime.String (tagStr, _); Prime.String (errorMsg, _)] ->
                                 try let tagName = tagStr in Violation (tagName.Split Constants.Scripting.ViolationSeparator |> List.ofArray, errorMsg, originOpt) :> obj
-                                with exn -> Violation (["InvalidForm"; "Violation"], "Invalid violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
-                            | _ -> Violation (["InvalidForm"; "Violation"], "Invalid violation form. Requires 1 tag.", originOpt) :> obj
+                                with exn -> Violation (["InvalidForm"; "Violation"], "Invalid Violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
+                            | _ -> Violation (["InvalidForm"; "Violation"], "Invalid Violation form. Requires 1 tag.", originOpt) :> obj
                         | "record" ->
                             match tail with
                             | Atom (name, _) :: cases ->
@@ -520,8 +520,8 @@ module Scripting =
                                     let definitions = List.map (fun (fieldName, fieldValue) -> (fieldName, this.SymbolToExpr fieldValue)) definitions
                                     let map = definitions |> List.mapi (fun i (fieldName, _) -> (fieldName, i)) |> Map.ofList
                                     Record (name, map, definitions |> List.map snd |> Array.ofList) :> obj
-                                else Violation (["InvalidForm"; "Record"], "Invalid record form. Requires 1 or more field definitions.", originOpt) :> obj
-                            | _ -> Violation (["InvalidForm"; "Record"], "Invalid record form. Requires 1 name and 1 or more field definitions.", originOpt) :> obj
+                                else Violation (["InvalidForm"; "Record"], "Invalid Record form. Requires 1 or more field definitions.", originOpt) :> obj
+                            | _ -> Violation (["InvalidForm"; "Record"], "Invalid Record form. Requires 1 name and 1 or more field definitions.", originOpt) :> obj
                         | "let" ->
                             match tail with
                             | [] -> Violation (["InvalidForm"; "Let"], "Invalid let form. Requires both a binding and a body.", originOpt) :> obj
@@ -658,7 +658,7 @@ module Scripting =
         module Env =
     
             let private BottomBinding =
-                (String.Empty, Violation (["BottomAccess"], "Accessed a bottom value.", None))
+                (String.Empty, Violation (["BottomAccess"], "Accessed a Bottom value.", None))
 
             let getLocalFrame env =
                 env.LocalFrame

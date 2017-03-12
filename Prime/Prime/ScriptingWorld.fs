@@ -79,7 +79,7 @@ module ScriptingWorld =
         | "length" | "normal" | "cross" | "dot"
         | "bool" | "int" | "int64" | "single" | "double" | "string"
         (*| "typename"*)
-        | "of" | "nameOf" | "fieldsOf"
+        | "tryOf" | "of" | "nameOf"
         | "fieldNamesOf"
         | "tuple" | "pair" | "fst" | "snd" | "thd" | "fth" | "fif" | "nth"
         | "fstAs" | "sndAs" | "thdAs" | "fthAs" | "fifAs" | "nthAs"
@@ -141,10 +141,9 @@ module ScriptingWorld =
         | "single" -> evalUnary SingleFns fnName originOpt evaledArgs world
         | "double" -> evalUnary DoubleFns fnName originOpt evaledArgs world
         | "string" -> evalUnary StringFns fnName originOpt evaledArgs world
+        | "tryOf" -> evalDoublet evalTryOf fnName originOpt evaledArgs world
         | "of" -> evalDoublet evalOf fnName originOpt evaledArgs world
         | "nameOf" -> evalSinglet evalNameOf fnName originOpt evaledArgs world
-        | "fieldsOf" -> evalSinglet evalFieldsOf fnName originOpt evaledArgs world
-        | "fieldNamesOf" -> evalSinglet evalFieldNamesOf fnName originOpt evaledArgs world
         | "tuple" -> evalTuple fnName originOpt evaledArgs world
         | "pair" -> evalTuple fnName originOpt evaledArgs world
         | "fst" -> evalSinglet (evalOfIndexInt 0) fnName originOpt evaledArgs world
@@ -271,9 +270,9 @@ module ScriptingWorld =
                 match eval right world with
                 | (Bool _, _) as result -> result
                 | (Violation _, _) as error -> error
-                | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+                | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-Bool values.", originOpt), world)
             | (Violation _, _) as error -> error
-            | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+            | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-Bool values.", originOpt), world)
         | _ -> (Violation (["InvalidArgumentCount"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
 
     and evalApplyOr exprs originOpt world =
@@ -285,9 +284,9 @@ module ScriptingWorld =
                 match eval right world with
                 | (Bool _, _) as result -> result
                 | (Violation _, _) as error -> error
-                | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+                | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-Bool values.", originOpt), world)
             | (Violation _, _) as error -> error
-            | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-bool values.", originOpt), world)
+            | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-Bool values.", originOpt), world)
         | _ -> (Violation (["InvalidArgumentCount"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
 
     and evalLet4 binding body originOpt world =
@@ -350,7 +349,7 @@ module ScriptingWorld =
         match eval condition world with
         | (Bool bool, world) -> if bool then eval consequent world else eval alternative world
         | (Violation _ as evaled, world) -> (evaled, world)
-        | (_, world) -> (Violation (["InvalidIfCondition"], "Must provide an expression that evaluates to a bool in an if condition.", originOpt), world)
+        | (_, world) -> (Violation (["InvalidIfCondition"], "Must provide an expression that evaluates to a Bool in an if condition.", originOpt), world)
 
     and evalMatch input (cases : (Expr * Expr) array) originOpt world =
         let (input, world) = eval input world
@@ -366,7 +365,7 @@ module ScriptingWorld =
                 cases
         match resultEir with
         | Right success -> success
-        | Left world -> (Violation (["InexhaustiveMatch"], "A match expression failed to meet any of its cases.", originOpt), world)
+        | Left world -> (Violation (["InexhaustiveMatch"], "A match expression failed to satisfy any of its cases.", originOpt), world)
 
     and evalSelect exprPairs originOpt world =
         let resultEir =
@@ -374,12 +373,12 @@ module ScriptingWorld =
                 match eval condition world with
                 | (Bool bool, world) -> if bool then Right (eval consequent world) else Left world
                 | (Violation _ as evaled, world) -> Right (evaled, world)
-                | (_, world) -> Right ((Violation (["InvalidSelectCondition"], "Must provide an expression that evaluates to a bool in a case condition.", originOpt), world)))
+                | (_, world) -> Right ((Violation (["InvalidSelectCondition"], "Must provide an expression that evaluates to a Bool in a case condition.", originOpt), world)))
                 (Left world)
                 exprPairs
         match resultEir with
         | Right success -> success
-        | Left world -> (Violation (["InexhaustiveSelect"], "A select expression failed to meet any of its cases.", originOpt), world)
+        | Left world -> (Violation (["InexhaustiveSelect"], "A select expression failed to satisfy any of its cases.", originOpt), world)
 
     and evalTry body handlers _ world =
         match eval body world with
