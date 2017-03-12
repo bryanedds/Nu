@@ -130,6 +130,12 @@ module ScriptingPrimitives =
         | Right success -> success
         | Left error -> error
 
+    let evalNth fnName originOpt evaledArg evaledArg2 world =
+        match evaledArg with
+        | Int i -> evalOfIndexInt i fnName originOpt evaledArg2 world
+        | Violation _ as v -> (v, world)
+        | _ -> (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Application of '" + fnName + "'requires an Int as its first argument.", originOpt), world)
+
     let evalNameOf fnName originOpt evaledArg world =
         match evaledArg with
         | Union (name, _) -> (String name, world)

@@ -79,7 +79,7 @@ module ScriptingWorld =
         | "length" | "normal" | "cross" | "dot"
         | "bool" | "int" | "int64" | "single" | "double" | "string"
         (*| "typename"*)
-        | "tryOf" | "of" | "nameOf"
+        | "tryIndex" | "index" | "nameOf"
         | "fieldNamesOf"
         | "tuple" | "pair" | "fst" | "snd" | "thd" | "fth" | "fif" | "nth"
         | "fstAs" | "sndAs" | "thdAs" | "fthAs" | "fifAs" | "nthAs"
@@ -151,6 +151,7 @@ module ScriptingWorld =
         | "thd" -> evalSinglet (evalOfIndexInt 2) fnName originOpt evaledArgs world
         | "fth" -> evalSinglet (evalOfIndexInt 3) fnName originOpt evaledArgs world
         | "fif" -> evalSinglet (evalOfIndexInt 4) fnName originOpt evaledArgs world
+        | "nth" -> evalDoublet evalNth fnName originOpt evaledArgs world
         | "some" -> evalSinglet evalSome fnName originOpt evaledArgs world
         | "isNone" -> evalSinglet evalIsNone fnName originOpt evaledArgs world
         | "isSome" -> evalSinglet evalIsSome fnName originOpt evaledArgs world
