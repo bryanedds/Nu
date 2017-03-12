@@ -5,6 +5,7 @@ The Prime F# Code Library [![License](https://img.shields.io/badge/license-MIT-b
 
 - A metaprogramming system based on symbolic expressions with the **Symbol** and **SymbolicConverter** types.
 - A generalized serialization system based on the above and related types.
+- A powerful and reusable scripting language, AMSL, with the types in the **Scripting** module.
 - A purely functional, publisher-neutral event system with **EventSystem** and related types.
 - The functional-reactive **Stream** and **Chain** monads for said event system.
 - A purely functional dynamic property system called **Xtension**.
@@ -16,5 +17,3 @@ The Prime F# Code Library [![License](https://img.shields.io/badge/license-MIT-b
 - So many extension primitives I couldn't hope to mention them all!
 
 Prime is built with clean and modular **Abstract Data Type** programming style as presented here - https://vimeo.com/128464151
-
-This library makes a good base for non-trivial projects like renderers, simulations, and other real thangs that absolutely *need* to be built with good program semantics and efficient execution patterns.
