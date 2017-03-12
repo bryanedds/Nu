@@ -911,7 +911,6 @@ module ScriptingPrimitives =
             | Left error -> error
         | (evaledArg, List list) -> (Bool (List.contains evaledArg list), world)
         | (evaledArg, Ring set) -> (Bool (Set.contains evaledArg set), world)
-        | (evaledArg, Table map) -> (Bool (Map.containsKey evaledArg map), world)
         | (Violation _ as error, _) -> (error, world)
         | (_, (Violation _ as error)) -> (error, world)
         | (_, _) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
