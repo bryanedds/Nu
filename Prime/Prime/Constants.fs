@@ -24,7 +24,7 @@ module Constants =
     
         let [<Literal>] ViolationSeparator = '/'
         let [<Literal>] ViolationSeparatorStr = "/"
-        let [<Literal>] PreludeFilePath = "Prelude.script"
+        let [<Literal>] PreludeFilePath = "Prelude.amsl"
 
     [<RequireQualifiedAccess>]
     module PrettyPrinter =
