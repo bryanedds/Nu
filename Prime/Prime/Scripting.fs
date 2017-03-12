@@ -43,7 +43,7 @@ module Scripting =
              "length normal cross dot " +
              "violation bool int int64 single double string " +
              "typename " +
-             "tryIndex index nameOf " +
+             "tryIndex hasIndex index nameOf " +
              "record " +
              "tuple pair unit fst snd thd fth fif " +
              "some none isSome isNone isEmpty notEmpty " +
