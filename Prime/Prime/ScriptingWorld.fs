@@ -79,7 +79,7 @@ module ScriptingWorld =
         | "length" | "normal" | "cross" | "dot"
         | "bool" | "int" | "int64" | "single" | "double" | "string"
         | "getTypeName"
-        | "tryIndex" | "index" | "getName"
+        | "tryIndex" | "hasIndex" | "index" | "tryUpdate" | "update" | "getName"
         | "tuple" | "pair" | "fst" | "snd" | "thd" | "fth" | "fif" | "nth"
         | "fstAs" | "sndAs" | "thdAs" | "fthAs" | "fifAs" | "nthAs"
         | "some" | "isNone" | "isSome" | "isEmpty" | "notEmpty"
@@ -145,6 +145,8 @@ module ScriptingWorld =
         | "tryIndex" -> evalDoublet evalTryIndex fnName originOpt evaledArgs world
         | "hasIndex" -> evalDoublet evalHasIndex fnName originOpt evaledArgs world
         | "index" -> evalDoublet evalIndex fnName originOpt evaledArgs world
+        // TODO: | "tryUpdate" -> evalDoublet evalTryUpdate fnName originOpt evaledArgs world
+        // TODO: | "update" -> evalDoublet evalUpdate fnName originOpt evaledArgs world
         | "getName" -> evalSinglet evalGetName fnName originOpt evaledArgs world
         | "tuple" -> evalTuple fnName originOpt evaledArgs world
         | "pair" -> evalTuple fnName originOpt evaledArgs world
