@@ -78,7 +78,7 @@ module ScriptingWorld =
         | "sin" | "cos" | "tan" | "asin" | "acos" | "atan"
         | "length" | "normal" | "cross" | "dot"
         | "bool" | "int" | "int64" | "single" | "double" | "string"
-        (*| "typename"*)
+        | "typeNameOf"
         | "tryIndex" | "index" | "nameOf"
         | "tuple" | "pair" | "fst" | "snd" | "thd" | "fth" | "fif" | "nth"
         | "fstAs" | "sndAs" | "thdAs" | "fthAs" | "fifAs" | "nthAs"
@@ -140,6 +140,7 @@ module ScriptingWorld =
         | "single" -> evalUnary SingleFns fnName originOpt evaledArgs world
         | "double" -> evalUnary DoubleFns fnName originOpt evaledArgs world
         | "string" -> evalUnary StringFns fnName originOpt evaledArgs world
+        | "typeNameOf" -> evalSinglet evalTypeNameOf fnName originOpt evaledArgs world
         | "tryIndex" -> evalDoublet evalTryIndex fnName originOpt evaledArgs world
         | "hasIndex" -> evalDoublet evalHasIndex fnName originOpt evaledArgs world
         | "index" -> evalDoublet evalIndex fnName originOpt evaledArgs world
@@ -188,12 +189,12 @@ module ScriptingWorld =
     and evalIntrinsic fnName originOpt evaledArgs world =
         match evalIntrinsicInner fnName originOpt evaledArgs world with
         | (Violation _, world) ->
-            // allows overloading using binding with name = fnName + _ + keyName
+            // allows overloading using binding with name = fnName + _ + typeName
             if Array.notEmpty evaledArgs then
                 match Array.last evaledArgs with
                 | Pluggable pluggable ->
-                    let pluggableName = pluggable.GetName ()
-                    let xfnName = fnName + "_" + pluggableName
+                    let pluggableTypeName = pluggable.TypeName
+                    let xfnName = fnName + "_" + pluggableTypeName
                     let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
                     let evaleds = Array.cons xfnBinding evaledArgs
                     evalApply evaleds originOpt world

@@ -55,7 +55,7 @@ type [<CustomEquality; CustomComparison>] Vector2Pluggable =
             | :? Vector2Pluggable as that -> (this :> Vector2Pluggable IComparable).CompareTo that
             | _ -> failwithumf ()
 
-        member this.GetName () =
+        member this.TypeName =
             "Vector2"
 
         member this.ToSymbol () =
