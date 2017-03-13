@@ -43,7 +43,7 @@ module Scripting =
              "length normal cross dot " +
              "violation bool int int64 single double string " +
              "getTypeName " +
-             "tryIndex hasIndex index getName " +
+             "tryIndex hasIndex index tryUpdate update getName " +
              "record " +
              "tuple pair unit fst snd thd fth fif " +
              "some none isSome isNone isEmpty notEmpty " +
@@ -410,8 +410,8 @@ module Scripting =
                     let fieldSymbols = List.map (fun (name, field) -> Symbols ([Atom (name, None); this.ExprToSymbol field], None)) fields
                     Symbols (recordSymbol :: nameSymbol :: fieldSymbols, None) :> obj
                 | Binding (name, _, originOpt) ->
-                    if name = "index"
-                    then Atom ("Index", originOpt) :> obj
+                    if name = "index" then Atom ("Index", originOpt) :> obj
+                    elif name = "update" then Atom ("Update", originOpt) :> obj
                     else Atom (name, originOpt) :> obj
                 | Apply (exprs, _, originOpt) ->
                     let exprSymbols = Array.map this.ExprToSymbol exprs
@@ -503,6 +503,7 @@ module Scripting =
                     | "nil" -> Keyword String.Empty :> obj
                     | "empty" -> Codata Empty :> obj
                     | "Index" -> Binding ("index", ref UncachedBinding, originOpt) :> obj
+                    | "Update" -> Binding ("update", ref UncachedBinding, originOpt) :> obj
                     | _ ->
                         let firstChar = str.[0]
                         if firstChar = Constants.Relation.Slot || Char.IsUpper firstChar
