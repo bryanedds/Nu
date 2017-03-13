@@ -344,7 +344,7 @@ module Scripting =
                 | Int64 int64 -> Number (String.int64ToCodeString int64, None) :> obj
                 | Single single -> Number (String.singleToCodeString single, None) :> obj
                 | Double double -> Number (String.doubleToCodeString double, None) :> obj
-                | String string -> Atom (string, None) :> obj
+                | String string -> Symbol.String (string, None) :> obj
                 | Keyword string -> Atom ((if String.isEmpty string then "nil" else string), None) :> obj
                 | Pluggable pluggable -> pluggable.ToSymbol () :> obj
                 | Tuple fields ->
