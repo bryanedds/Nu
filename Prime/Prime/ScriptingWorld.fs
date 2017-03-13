@@ -182,7 +182,6 @@ module ScriptingWorld =
         //| "toRing" -> evalSinglet evalToRing fnName originOpt evaledArgs world TODO
         | "add" -> evalDoublet evalCons fnName originOpt evaledArgs world
         | "remove" -> evalDoublet evalRemove fnName originOpt evaledArgs world
-        | "table" -> evalTable fnName originOpt evaledArgs world
         //| "toTable" -> evalSinglet evalToTable fnName originOpt evaledArgs world TODO
         | _ -> (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
 
@@ -208,6 +207,33 @@ module ScriptingWorld =
                 | _ -> (Violation (["InvalidOverload"], "Could not find overload for '" + fnName + "' for target.", originOpt), world)
             else (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
         | success -> success
+
+    and evalUnionUnevaled name exprs world =
+        let (evaleds, world) = evalMany exprs world
+        (Union (name, evaleds), world)
+
+    and evalTableUnevaled exprPairs world =
+        let (evaledPairs, world) =
+            List.fold (fun (evaledPairs, world) (exprKey, exprValue) ->
+                let (evaledKey, world) = eval exprKey world
+                let (evaledValue, world) = eval exprValue world
+                ((evaledKey, evaledValue) :: evaledPairs, world))
+                ([], world)
+                exprPairs
+        let evaledPairs = List.rev evaledPairs
+        (Table (Map.ofList evaledPairs), world)
+
+    and evalRecordUnevaled name exprPairs world =
+        let (evaledPairs, world) =
+            List.fold (fun (evaledPairs, world) (fieldName, expr) ->
+                let (evaledValue, world) = eval expr world
+                ((fieldName, evaledValue) :: evaledPairs, world))
+                ([], world)
+                exprPairs
+        let evaledPairs = List.rev evaledPairs
+        let map = evaledPairs |> List.mapi (fun i (fieldName, _) -> (fieldName, i)) |> Map.ofList
+        let fields = evaledPairs |> List.map snd |> Array.ofList
+        (Record (name, map, fields), world)
 
     and evalBinding expr name cachedBinding originOpt world =
         match tryGetBinding name cachedBinding world with
@@ -436,6 +462,9 @@ module ScriptingWorld =
         | Ring _
         | Table _
         | Record _ -> (expr, world)
+        | UnionUnevaled (name, exprs) -> evalUnionUnevaled name exprs world
+        | TableUnevaled exprPairs -> evalTableUnevaled exprPairs world
+        | RecordUnevaled (name, exprPairs) -> evalRecordUnevaled name exprPairs world
         | Binding (name, cachedBinding, originOpt) as expr -> evalBinding expr name cachedBinding originOpt world
         | Apply (exprs, _, originOpt) -> evalApply exprs originOpt world
         | ApplyAnd (exprs, _, originOpt) -> evalApplyAnd exprs originOpt world
