@@ -57,6 +57,10 @@ module ScriptingPrimitives =
             match List.tryItem index list with
             | Some item -> Right (item, world)
             | None -> Left (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Structure does not contain element at index " + string index + ".", originOpt), world)
+        | Table map ->
+            match Map.tryFind (Int index) map with
+            | Some value -> Right (value, world)
+            | None -> Left (Violation (["IndexNotFound"; String.capitalize fnName], "Could not find index " + string index + " in table.", originOpt), world)
         | Tuple fields
         | Union (_, fields)
         | Record (_, _, fields) ->
@@ -939,10 +943,3 @@ module ScriptingPrimitives =
             | Table map -> (Table (Map.remove value map), world)
             | Violation _ as error -> (error, world)
             | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", originOpt), world)
-
-    let evalTable fnName originOpt evaledArgs world =
-        if Array.forall (function Tuple fields when Array.length fields = 2 -> true | _ -> false) evaledArgs then
-            let evaledPairs = Array.map (function List [evaledFst; evaledSnd] -> (evaledFst, evaledSnd) | _ -> failwithumf ()) evaledArgs
-            let evaledMap = Map.ofArray evaledPairs
-            (Table evaledMap, world)
-        else (Violation (["InvalidEntries"; String.capitalize fnName], "Table entries must consist of 1 or more pairs.", originOpt), world)

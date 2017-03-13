@@ -104,7 +104,12 @@ module Scripting =
         | List of Expr list
         | Ring of Set<Expr>
         | Table of Map<Expr, Expr>
-        | Record of string * Map<String, int> * Expr array
+
+        (* Intermediate Data Structures *)
+        | Record of string * Map<string, int> * Expr array
+        | UnionUnevaled of string * Expr array
+        | TableUnevaled of (Expr * Expr) list
+        | RecordUnevaled of string * (string * Expr) list
 
         (* Special Forms *)
         | Binding of string * CachedBinding ref * SymbolOrigin option
@@ -143,7 +148,10 @@ module Scripting =
             | List _
             | Ring _
             | Table _
-            | Record _ -> None
+            | Record _
+            | UnionUnevaled _
+            | TableUnevaled _
+            | RecordUnevaled _ -> None
             | Binding (_, _, originOpt)
             | Apply (_, _, originOpt)
             | ApplyAnd (_, _, originOpt)
@@ -179,6 +187,9 @@ module Scripting =
             | (Ring left, Ring right) -> left = right
             | (Table left, Table right) -> left = right
             | (Record (leftName, leftMap, leftExprs), Record (rightName, rightMap, rightExprs)) -> (leftName, leftMap, leftExprs) = (rightName, rightMap, rightExprs)
+            | (UnionUnevaled (leftName, leftExprs), UnionUnevaled (rightName, rightExprs)) -> (leftName, leftExprs) = (rightName, rightExprs)
+            | (TableUnevaled left, TableUnevaled right) -> left = right
+            | (RecordUnevaled (leftName, leftExprs), RecordUnevaled (rightName, rightExprs)) -> (leftName, leftExprs) = (rightName, rightExprs)
             | (Binding (left, _, _), Binding (right, _, _)) -> left = right
             | (Apply (left, _, _), Apply (right, _, _)) -> left = right
             | (ApplyAnd (left, _, _), ApplyAnd (right, _, _)) -> left = right
@@ -214,7 +225,10 @@ module Scripting =
             | (List left, List right) -> compare left right
             | (Ring left, Ring right) -> compare left right
             | (Table left, Table right) -> compare left right
-            | (Record (leftName, leftMap, leftArr), Record (rightName, rightMap, rightArr)) -> compare (leftName, leftMap, leftArr) (rightName, rightMap, rightArr)
+            | (Record (leftName, leftMap, leftExprs), Record (rightName, rightMap, rightExprs)) -> compare (leftName, leftMap, leftExprs) (rightName, rightMap, rightExprs)
+            | (UnionUnevaled (leftName, leftExprs), UnionUnevaled (rightName, rightExprs)) -> compare (leftName, leftExprs) (rightName, rightExprs)
+            | (TableUnevaled left, TableUnevaled right) -> compare left right
+            | (RecordUnevaled (leftName, leftExprs), RecordUnevaled (rightName, rightExprs)) -> compare (leftName, leftExprs) (rightName, rightExprs)
             | (_, _) -> -1
 
         override this.GetHashCode () =
@@ -237,6 +251,9 @@ module Scripting =
             | Ring value -> hash value
             | Table value -> hash value
             | Record (name, map, fields) -> hash (name, map, fields)
+            | UnionUnevaled (name, fields) -> hash (name, fields)
+            | TableUnevaled value -> hash value
+            | RecordUnevaled (name, fields) -> hash (name, fields)
             | _ -> -1
 
         override this.Equals that =
@@ -355,17 +372,16 @@ module Scripting =
                     let tableSymbol = Atom ("table", None)
                     let elemSymbols =
                         List.map (fun (key, value) ->
-                            let pairSymbol = Atom ("pair", None)
                             let keySymbol = this.ExprToSymbol key
                             let valueSymbol = this.ExprToSymbol value
-                            Symbols ([pairSymbol; keySymbol; valueSymbol], None))
+                            Symbols ([keySymbol; valueSymbol], None))
                             (Map.toList map)
                     Symbols (tableSymbol :: elemSymbols, None) :> obj
                 | Record (name, map, fields) ->
                     let recordSymbol = Atom ("record", None)
                     let nameSymbol = Atom (name, None)
                     let mapSwap = Map.ofSeqBy (fun (kvp : KeyValuePair<_, _>) -> (kvp.Value, kvp.Key)) map
-                    let elemSymbols =
+                    let fieldSymbols =
                         Seq.map (fun (kvp : KeyValuePair<_, _>) ->
                             let key = kvp.Value
                             let value = fields.[kvp.Key]
@@ -373,7 +389,25 @@ module Scripting =
                             let valueSymbol = this.ExprToSymbol value
                             Symbols ([keySymbol; valueSymbol], None))
                             mapSwap
-                    Symbols (recordSymbol :: nameSymbol :: List.ofSeq elemSymbols, None) :> obj
+                    Symbols (recordSymbol :: nameSymbol :: List.ofSeq fieldSymbols, None) :> obj
+                | UnionUnevaled (name, fields) ->
+                    let nameSymbol = Atom (name, None)
+                    let elemSymbols = fields |> Array.map this.ExprToSymbol |> List.ofArray
+                    Symbols (nameSymbol :: elemSymbols, None) :> obj
+                | TableUnevaled entries ->
+                    let tableSymbol = Atom ("table", None)
+                    let elemSymbols =
+                        List.map (fun (key, value) ->
+                            let keySymbol = this.ExprToSymbol key
+                            let valueSymbol = this.ExprToSymbol value
+                            Symbols ([keySymbol; valueSymbol], None))
+                            entries
+                    Symbols (tableSymbol :: elemSymbols, None) :> obj
+                | RecordUnevaled (name, fields) ->
+                    let recordSymbol = Atom ("record", None)
+                    let nameSymbol = Atom (name, None)
+                    let fieldSymbols = List.map (fun (name, field) -> Symbols ([Atom (name, None); this.ExprToSymbol field], None)) fields
+                    Symbols (recordSymbol :: nameSymbol :: fieldSymbols, None) :> obj
                 | Binding (name, _, originOpt) ->
                     if name = "index"
                     then Atom ("Index", originOpt) :> obj
@@ -517,6 +551,11 @@ module Scripting =
                                 try let tagName = tagStr in Violation (tagName.Split Constants.Scripting.ViolationSeparator |> List.ofArray, errorMsg, originOpt) :> obj
                                 with exn -> Violation (["InvalidForm"; "Violation"], "Invalid Violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
                             | _ -> Violation (["InvalidForm"; "Violation"], "Invalid Violation form. Requires 1 tag.", originOpt) :> obj
+                        | "table" ->
+                            if List.forall (function Symbols ([_; _], _) -> true | _ -> false) tail then
+                                let entries = List.map (function Symbols ([key; value], _) -> (this.SymbolToExpr key, this.SymbolToExpr value) | _ -> failwithumf ()) tail
+                                TableUnevaled entries :> obj
+                            else Violation (["InvalidForm"; "Table"], "Invalid Table form. Requires 1 or more field definitions.", originOpt) :> obj
                         | "record" ->
                             match tail with
                             | Atom (name, _) :: cases ->
