@@ -50,6 +50,7 @@ module Scripting =
              "tryUncons uncons cons commit tryHead head tryTail tail " +
              "scanWhile scani scan foldWhile foldi fold mapi map contains " +
              // TODO: "either isLeft isRight left right " +
+             "toString " +
              "codata toCodata empty " +
              "list toList " +
              "ring toRing add remove " +

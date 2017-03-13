@@ -85,10 +85,11 @@ module ScriptingWorld =
         | "some" | "isNone" | "isSome" | "isEmpty" | "notEmpty"
         | "tryUncons" | "uncons" | "cons" | "commit" | "tryHead" | "head" | "tryTail" | "tail"
         | "scanWhile" | "scani" | "scan" | "foldWhile" | "foldi" | "fold" | "mapi" | "map" | "contains"
+        | "toString"
         | "codata" | "toCodata"
-        | "list" (*| "toList"*)
-        | "ring" (*| "toRing"*) | "add" | "remove"
-        | "table" (*| "toTable"*) -> true
+        | "list" | "toList"
+        | "ring" | "toRing" | "add" | "remove"
+        | "table" | "toTable" -> true
         | _ -> false
 
     let rec internal evalIntrinsicInner<'w when 'w :> 'w ScriptingWorld> fnName originOpt evaledArgs (world : 'w) =
@@ -175,6 +176,7 @@ module ScriptingWorld =
         | "mapi" -> evalDoublet (evalMapi evalApply) fnName originOpt evaledArgs world
         | "map" -> evalDoublet (evalMap evalApply) fnName originOpt evaledArgs world
         | "contains" -> evalDoublet (evalContains evalApply) fnName originOpt evaledArgs world
+        | "toString" -> evalSinglet evalToString fnName originOpt evaledArgs world
         | "codata" -> evalDoublet evalCodata fnName originOpt evaledArgs world
         | "toCodata" -> evalSinglet evalToCodata fnName originOpt evaledArgs world
         | "list" -> evalList fnName originOpt evaledArgs world
