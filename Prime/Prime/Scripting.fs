@@ -10,7 +10,7 @@ module Scripting =
 
     type Pluggable =
         inherit IComparable
-        abstract member GetName : unit -> string
+        abstract member TypeName : string
         abstract member ToSymbol : unit -> Symbol
 
     type [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoComparison>] CachedBinding =
@@ -42,7 +42,7 @@ module Scripting =
              "sin cos tan asin acos atan " +
              "length normal cross dot " +
              "violation bool int int64 single double string " +
-             "typename " +
+             "typeNameOf " +
              "tryIndex hasIndex index nameOf " +
              "record " +
              "tuple pair unit fst snd thd fth fif " +

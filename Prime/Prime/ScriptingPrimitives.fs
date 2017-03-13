@@ -100,6 +100,30 @@ module ScriptingPrimitives =
                 | None -> Left (Violation (["InvalidIndex"; String.capitalize fnName], "Table does not contain entry with key '" + scstring evaledArg + "'.", originOpt), world)
             | _ -> Left (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " with non-String / non-Keyword indexes only applicable on Tables.", originOpt), world)
 
+    let evalTypeNameOf _ _ evaledArg world =
+        match evaledArg with
+        | Violation _ as v-> (v, world)
+        | Unit _ -> (String "Unit", world)
+        | Bool _ -> (String "Bool", world)
+        | Int _ -> (String "Int", world)
+        | Int64 _ -> (String "Int64", world)
+        | Single _ -> (String "Single", world)
+        | Double _ -> (String "Double", world)
+        | String _ -> (String "String", world)
+        | Keyword _ -> (String "Keyword", world)
+        | Pluggable pluggable -> (String pluggable.TypeName, world)
+        | Tuple _ -> (String "Tuple", world)
+        | Union _ -> (String "Union", world)
+        | Option _ -> (String "Option", world)
+        | Codata _ -> (String "Codata", world)
+        | List _ -> (String "List", world)
+        | Ring _ -> (String "Ring", world)
+        | Table _ -> (String "Table", world)
+        | Record _ -> (String "Record", world)
+        | Fun _ -> (String "Fun", world)
+        | Quote _ -> (String "Quote", world)
+        | _ -> failwithumf ()
+
     let evalTryIndex fnName originOpt evaledArg evaledArg2 world =
         match evalIndexInner fnName originOpt evaledArg evaledArg2 world with
         | Right (evaled, world) -> (Option (Some evaled), world)
