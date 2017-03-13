@@ -57,11 +57,11 @@ module Map =
     /// Convert a map to a list by a function.
     let toListBy by map =
         let list = Map.toList map
-        List.map by list
+        List.map (fun (k, v) -> by k v) list
     
     /// Get a list of a map's keys.
     let toKeyList map =
-        toListBy fst map
+        toListBy (fun k _ -> k) map
     
     /// Convert a list of a map's keys by a function.
     let toKeyListBy by map =
@@ -69,11 +69,11 @@ module Map =
     
     /// Get a list of a map's values.
     let toValueList map =
-        toListBy snd map
+        toListBy (fun _ v -> v) map
     
     /// Convert a list of a map's values by a function.
     let toValueListBy by map =
-        toListBy (by << snd) map
+        toListBy (fun _ v -> by v) map
     
     /// Combine the contents of two maps, taking an item from the second map in the case of a key
     /// conflict.

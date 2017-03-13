@@ -78,8 +78,8 @@ module ScriptingWorld =
         | "sin" | "cos" | "tan" | "asin" | "acos" | "atan"
         | "length" | "normal" | "cross" | "dot"
         | "bool" | "int" | "int64" | "single" | "double" | "string"
-        | "typeNameOf"
-        | "tryIndex" | "index" | "nameOf"
+        | "getTypeName"
+        | "tryIndex" | "index" | "getName"
         | "tuple" | "pair" | "fst" | "snd" | "thd" | "fth" | "fif" | "nth"
         | "fstAs" | "sndAs" | "thdAs" | "fthAs" | "fifAs" | "nthAs"
         | "some" | "isNone" | "isSome" | "isEmpty" | "notEmpty"
@@ -140,11 +140,11 @@ module ScriptingWorld =
         | "single" -> evalUnary SingleFns fnName originOpt evaledArgs world
         | "double" -> evalUnary DoubleFns fnName originOpt evaledArgs world
         | "string" -> evalUnary StringFns fnName originOpt evaledArgs world
-        | "typeNameOf" -> evalSinglet evalTypeNameOf fnName originOpt evaledArgs world
+        | "getTypeName" -> evalSinglet evalGetTypeName fnName originOpt evaledArgs world
         | "tryIndex" -> evalDoublet evalTryIndex fnName originOpt evaledArgs world
         | "hasIndex" -> evalDoublet evalHasIndex fnName originOpt evaledArgs world
         | "index" -> evalDoublet evalIndex fnName originOpt evaledArgs world
-        | "nameOf" -> evalSinglet evalNameOf fnName originOpt evaledArgs world
+        | "getName" -> evalSinglet evalGetName fnName originOpt evaledArgs world
         | "tuple" -> evalTuple fnName originOpt evaledArgs world
         | "pair" -> evalTuple fnName originOpt evaledArgs world
         | "fst" -> evalSinglet (evalIndexInt 0) fnName originOpt evaledArgs world
@@ -178,12 +178,12 @@ module ScriptingWorld =
         | "codata" -> evalDoublet evalCodata fnName originOpt evaledArgs world
         | "toCodata" -> evalSinglet evalToCodata fnName originOpt evaledArgs world
         | "list" -> evalList fnName originOpt evaledArgs world
-        //| "toList" -> evalSinglet evalToList fnName originOpt evaledArgs world TODO
+        | "toList" -> evalSinglet evalToList fnName originOpt evaledArgs world
         | "ring" -> evalRing fnName originOpt evaledArgs world
-        //| "toRing" -> evalSinglet evalToRing fnName originOpt evaledArgs world TODO
+        | "toRing" -> evalSinglet evalToRing fnName originOpt evaledArgs world
         | "add" -> evalDoublet evalCons fnName originOpt evaledArgs world
         | "remove" -> evalDoublet evalRemove fnName originOpt evaledArgs world
-        //| "toTable" -> evalSinglet evalToTable fnName originOpt evaledArgs world TODO
+        | "toTable" -> evalSinglet evalToTable fnName originOpt evaledArgs world
         | _ -> (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
 
     and evalIntrinsic fnName originOpt evaledArgs world =
@@ -204,7 +204,7 @@ module ScriptingWorld =
                     let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
                     let evaleds = Array.cons xfnBinding evaledArgs
                     evalApply evaleds originOpt world
-                | Violation _ as v -> (v, world)
+                | Violation _ as error -> (error, world)
                 | _ -> (Violation (["InvalidOverload"], "Could not find overload for '" + fnName + "' for target.", originOpt), world)
             else (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
         | success -> success

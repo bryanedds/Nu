@@ -100,9 +100,9 @@ module ScriptingPrimitives =
                 | None -> Left (Violation (["InvalidIndex"; String.capitalize fnName], "Table does not contain entry with key '" + scstring evaledArg + "'.", originOpt), world)
             | _ -> Left (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " with non-String / non-Keyword indexes only applicable on Tables.", originOpt), world)
 
-    let evalTypeNameOf _ _ evaledArg world =
+    let evalGetTypeName _ _ evaledArg world =
         match evaledArg with
-        | Violation _ as v-> (v, world)
+        | Violation _ as error -> (error, world)
         | Unit _ -> (String "Unit", world)
         | Bool _ -> (String "Bool", world)
         | Int _ -> (String "Int", world)
@@ -150,10 +150,10 @@ module ScriptingPrimitives =
     let evalNth fnName originOpt evaledArg evaledArg2 world =
         match evaledArg with
         | Int i -> evalIndexInt i fnName originOpt evaledArg2 world
-        | Violation _ as v -> (v, world)
+        | Violation _ as error -> (error, world)
         | _ -> (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Application of '" + fnName + "'requires an Int as its first argument.", originOpt), world)
 
-    let evalNameOf fnName originOpt evaledArg world =
+    let evalGetName fnName originOpt evaledArg world =
         match evaledArg with
         | Union (name, _) -> (String name, world)
         | Record (name, _, _) -> (String name, world)
@@ -949,15 +949,33 @@ module ScriptingPrimitives =
         | Codata _ -> (evaledArg, world)
         | List list -> (Codata (Conversion list), world)
         | Ring set -> (Codata (Conversion (Set.toList set)), world)
-        | Table map -> (Codata (Conversion (Map.toListBy (fun (key, value) -> Tuple [|key; value|]) map)), world)
+        | Table map -> (Codata (Conversion (Map.toListBy (fun key value -> Tuple [|key; value|]) map)), world)
         | Violation _ as error -> (error, world)
-        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Canot apply " + fnName + " to a non-container.", originOpt), world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
 
     let evalList _ _ evaledArgs world =
         (List (List.ofArray evaledArgs), world)
 
+    let evalToList fnName originOpt evaledArg world =
+        match evaledArg with
+        | String str -> (List (str |> Seq.map (string >> String) |> List.ofSeq), world)
+        | List _ as list -> (list, world)
+        | Ring set -> (List (List.ofSeq set), world)
+        | Table map -> (List (map |> Map.toListBy (fun k v -> Tuple [|k; v|])), world)
+        | Violation _ as error -> (error, world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
+
     let evalRing _ _ evaledArgs world =
         (Ring (Set.ofArray evaledArgs), world)
+
+    let evalToRing fnName originOpt evaledArg world =
+        match evaledArg with
+        | String str -> (Ring (str |> Seq.map (string >> String) |> Set.ofSeq), world)
+        | List list -> (Ring (Set.ofList list), world)
+        | Ring _ as ring -> (ring, world)
+        | Table map -> (Ring (map |> Map.toSeqBy (fun k v -> Tuple [|k; v|]) |> Set.ofSeq), world)
+        | Violation _ as error -> (error, world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
 
     let evalRemove fnName originOpt evaledArg evaledArg2 world =
         match (evaledArg, evaledArg2) with
@@ -967,3 +985,19 @@ module ScriptingPrimitives =
             | Table map -> (Table (Map.remove value map), world)
             | Violation _ as error -> (error, world)
             | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Incorrect type of argument for application of '" + fnName + "'; target must be a container.", originOpt), world)
+
+    let evalToTable fnName originOpt evaledArg world =
+        match evaledArg with
+        | List list ->
+            if List.forall (function Tuple [|_; _|] -> true | _ -> false) list then
+                let pairs = List.map (function Tuple [|k; v|] -> (k, v) | _ -> failwithumf ()) list
+                (Table (Map.ofList pairs), world)
+            else (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function " + fnName + " cannot only be applied to container of pairs.", originOpt), world)
+        | Ring set ->
+            if Set.forall (function Tuple [|_; _|] -> true | _ -> false) set then
+                let pairs = Seq.map (function Tuple [|k; v|] -> (k, v) | _ -> failwithumf ()) set
+                (Table (Map.ofSeq pairs), world)
+            else (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function " + fnName + " cannot only be applied to container of pairs.", originOpt), world)
+        | Table _ as table -> (table, world)
+        | Violation _ as error -> (error, world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-string or non-container.", originOpt), world)
