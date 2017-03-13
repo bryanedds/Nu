@@ -943,6 +943,22 @@ module ScriptingPrimitives =
         | (_, (Violation _ as error)) -> (error, world)
         | (_, _) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
 
+    let evalToString fnName originOpt evaledArg world =
+        match evaledArg with
+        | String _ as str -> (str, world)
+        | List list ->
+            if List.forall (function String str when str.Length = 1 -> true | _ -> false) list then
+                let chars = List.map (function String str -> str | _ -> failwithumf ()) list
+                (String (String.Join ("", chars)), world)
+            else (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function " + fnName + " cannot only be applied to single character strings.", originOpt), world)
+        | Ring set ->
+            if Set.forall (function String str when str.Length = 1 -> true | _ -> false) set then
+                let chars = Seq.map (function String str -> str | _ -> failwithumf ()) set
+                (String (String.Join ("", chars)), world)
+            else (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function " + fnName + " cannot only be applied to single character strings.", originOpt), world)
+        | Violation _ as error -> (error, world)
+        | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
+
     let evalToCodata fnName originOpt evaledArg world =
         match evaledArg with
         | Option opt -> (Codata (Conversion (match opt with Some value -> [value] | None -> [])), world)
