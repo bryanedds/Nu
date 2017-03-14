@@ -28,4 +28,3 @@ module Pair =
     /// Make a pair.
     let make a b =
         (a, b)
-        

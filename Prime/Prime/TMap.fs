@@ -124,13 +124,9 @@ module TMapModule =
             | (true, value) -> (Some value, map)
             | (false, _) -> (None, map)
 
-        let findNoAlloc key map =
-            let map = validate map
-            KeyValuePair (map.Dict.[key], map)
-
         let find key map =
-            let kvp = findNoAlloc key map
-            (kvp.Key, kvp.Value)
+            let map = validate map
+            (map.Dict.[key], map)
 
         let containsKey key map =
             match tryFind key map with
