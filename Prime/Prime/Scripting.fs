@@ -640,9 +640,9 @@ module Scripting =
                                     if List.forall (function Atom _ -> true | _ -> false) args then
                                         let args = Array.map (function Atom (arg, _) -> arg | _ -> failwithumf ()) (Array.ofList args)
                                         Fun (args, Array.length args, this.SymbolToExpr body, false, None, originOpt) :> obj
-                                    else Violation (["InvalidForm"; "Fun"], "Invalid fun form. Each argument must be a single name.", originOpt) :> obj
-                                | _ -> Violation (["InvalidForm"; "Fun"], "Invalid fun form. Arguments must be enclosed in brackets.", originOpt) :> obj
-                            | _ -> Violation (["InvalidForm"; "Fun"], "Invalid fun form. Fun requires 1 argument list and 1 body.", originOpt) :> obj
+                                    else Violation (["InvalidForm"; "Function"], "Invalid fun form. Each argument must be a single name.", originOpt) :> obj
+                                | _ -> Violation (["InvalidForm"; "Function"], "Invalid fun form. Arguments must be enclosed in brackets.", originOpt) :> obj
+                            | _ -> Violation (["InvalidForm"; "Function"], "Invalid fun form. Fun requires 1 argument list and 1 body.", originOpt) :> obj
                         | "if" ->
                             match tail with
                             | [condition; consequent; alternative] -> If (this.SymbolToExpr condition, this.SymbolToExpr consequent, this.SymbolToExpr alternative, originOpt) :> obj

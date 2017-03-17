@@ -153,7 +153,7 @@ module ScriptingPrimitives =
         | Ring _ -> (String "Ring", world)
         | Table _ -> (String "Table", world)
         | Record _ -> (String "Record", world)
-        | Fun _ -> (String "Fun", world)
+        | Fun _ -> (String "Function", world)
         | Quote _ -> (String "Quote", world)
         | _ -> failwithumf ()
 
