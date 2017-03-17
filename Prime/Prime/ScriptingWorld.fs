@@ -277,7 +277,7 @@ module ScriptingWorld =
                 | _ -> failwithumf ()
             else Left (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Could not update structure at index " + string index + ".", originOpt), world)
         | _ ->
-            match evalOverload fnName [|target; (Int index); value|] originOpt world with
+            match evalOverload fnName [|Int index; value; target|] originOpt world with
             | (Violation _, _) as error -> Left error
             | (_, _) as success -> Right success
 
@@ -298,7 +298,7 @@ module ScriptingWorld =
         | Violation _ as violation ->
             Left (violation, world)
         | _ ->
-            match evalOverload fnName [|target; Keyword keyword; value|] originOpt world with
+            match evalOverload fnName [|Keyword keyword; value; target|] originOpt world with
             | (Violation _, _) as error -> Left error
             | (_, _) as success -> Right success
 
@@ -314,7 +314,7 @@ module ScriptingWorld =
             match target with
             | Table map -> Right (Table (Map.add indexer valueExpr map), world)
             | _ ->
-                match evalOverload fnName [|target; indexer; value|] originOpt world with
+                match evalOverload fnName [|indexer; value; target|] originOpt world with
                 | (Violation _, _) as error -> Left error
                 | (_, _) as success -> Right success
 

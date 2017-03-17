@@ -158,7 +158,7 @@ module WorldScripting =
         static member internal isExtrinsic fnName =
             match fnName with
             // TODO: | "tickRate" | "tickTime" | "getSimulantSelected" | "simulantExists"
-            | "v2" | "index_Vector2"
+            | "v2" | "index_Vector2" | "update_Vector2"
             | "get" | "set"
             | "monitor" -> true
             | _ -> false
@@ -182,9 +182,24 @@ module WorldScripting =
                         match indexer with
                         | "X" -> (Single v2.Vector2.X, world)
                         | "Y" -> (Single v2.Vector2.Y, world)
-                        | _ -> (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for Vector2.", originOpt), world)
+                        | _ -> (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2.", originOpt), world)
                     | _ -> failwithumf ()
-                | ([|_|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single for the both arguments.", originOpt), world)
+                | ([|_; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 index.", originOpt), world)
+                | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | "update_Vector2" ->
+                match World.evalManyInternal exprs world with
+                | ([|Violation _ as v; _; _|], world) -> (v, world)
+                | ([|_; Violation _ as v; _|], world) -> (v, world)
+                | ([|_; _; Violation _ as v|], world) -> (v, world)
+                | ([|Keyword indexer; Single s; Pluggable pluggable|], world) ->
+                    match pluggable with
+                    | :? Vector2Pluggable as v2 ->
+                        match indexer with
+                        | "X" -> (Pluggable { Vector2 = Vector2 (s, v2.Vector2.Y) }, world)
+                        | "Y" -> (Pluggable { Vector2 = Vector2 (v2.Vector2.X, s) }, world)
+                        | _ -> (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2.", originOpt), world)
+                    | _ -> failwithumf ()
+                | ([|_; _; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 target, a keyword index of X or Y, and a Single value.", originOpt), world)
                 | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             | "get" ->
                 match World.evalManyInternal exprs world with
