@@ -30,7 +30,7 @@ module WorldScripting =
         static member internal evalManyWithLoggingInternal exprs world : (Expr array * World) =
             ScriptingWorld.evalManyWithLogging exprs world
 
-        static member internal evalSimulantExists fnName originOpt evaledArg world =
+        static member internal evalSimulantExists fnName evaledArg originOpt world =
             match evaledArg with
             | String str
             | Keyword str ->
@@ -41,7 +41,7 @@ module WorldScripting =
                 | Some simulant -> (Bool (World.getSimulantExists simulant world), world)
                 | None -> (Bool false, world)
             | Violation _ as error -> (error, world)
-            | _ -> (Violation (["InvalidArgumentType"], "Function '" + fnName + "' requires 1 Relation argument.", originOpt), world)
+            | _ -> (Violation (["InvalidArgumentType"; "SimulantExists"], "Function '" + fnName + "' requires 1 Relation argument.", originOpt), world)
 
         static member internal evalGet propertyName relationExprOpt originOpt world =
             let context = World.getScriptContext world
@@ -55,9 +55,9 @@ module WorldScripting =
                         let address = Relation.resolve context.SimulantAddress relation
                         match World.tryDeriveSimulant address with
                         | Some simulant -> Right (simulant, world)
-                        | None -> Left (Violation (["InvalidPropertyRelation"], "Relation must have 0 to 3 names.", originOpt), world)
+                        | None -> Left (Violation (["InvalidPropertyRelation"; "Get"], "Relation must have 0 to 3 names.", originOpt), world)
                     | (Violation _, _) as error -> Left error
-                    | (_, world) -> Left (Violation (["InvalidPropertyRelation"], "Relation must be either a String or Keyword.", originOpt), world)
+                    | (_, world) -> Left (Violation (["InvalidPropertyRelation"; "Get"], "Relation must be either a String or Keyword.", originOpt), world)
                 | None -> Right (context, world)
             match simulantAndEnvEir with
             | Right (simulant, world) ->
@@ -65,8 +65,8 @@ module WorldScripting =
                 | Some (propertyValue, propertyType) ->
                     match ScriptingWorld.tryImport propertyValue propertyType world with
                     | Some propertyValue -> (propertyValue, world)
-                    | None -> (Violation (["InvalidPropertyValue"], "Property value could not be imported into scripting environment.", originOpt), world)
-                | None -> (Violation (["InvalidProperty"], "Simulant or property value could not be found.", originOpt), world)
+                    | None -> (Violation (["InvalidPropertyValue"; "Get"], "Property value could not be imported into scripting environment.", originOpt), world)
+                | None -> (Violation (["InvalidProperty"; "Get"], "Simulant or property value could not be found.", originOpt), world)
             | Left error -> error
 
         static member internal evalSet propertyName relationExprOpt propertyValueExpr originOpt world =
@@ -81,9 +81,9 @@ module WorldScripting =
                         let address = Relation.resolve context.SimulantAddress relation
                         match World.tryDeriveSimulant address with
                         | Some simulant -> Right (simulant, world)
-                        | None -> Left (Violation (["InvalidPropertyRelation"], "Relation must have 0 to 3 parts.", originOpt), world)
+                        | None -> Left (Violation (["InvalidPropertyRelation"; "Set"], "Relation must have 0 to 3 parts.", originOpt), world)
                     | (Violation _, _) as error -> Left error
-                    | (_, world) -> Left (Violation (["InvalidPropertyRelation"], "Relation must be either a String or Keyword.", originOpt), world)
+                    | (_, world) -> Left (Violation (["InvalidPropertyRelation"; "Set"], "Relation must be either a String or Keyword.", originOpt), world)
                 | None -> Right (context, world)
             match simulantAndEnvEir with
             | Right (simulant, world) ->
@@ -94,9 +94,9 @@ module WorldScripting =
                     | Some propertyValue ->
                         match World.trySetSimulantProperty propertyName (propertyValue, propertyType) simulant world with
                         | (true, world) -> (Unit, world)
-                        | (false, world) -> (Violation (["InvalidProperty"], "Property value could not be set.", originOpt), world)
-                    | None -> (Violation (["InvalidPropertyValue"], "Property value could not be exported into Simulant property.", originOpt), world)
-                | None -> (Violation (["InvalidProperty"], "Property value could not be set.", originOpt), world)
+                        | (false, world) -> (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
+                    | None -> (Violation (["InvalidPropertyValue"; "Set"], "Property value could not be exported into Simulant property.", originOpt), world)
+                | None -> (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
             | Left error -> error
 
         static member evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
@@ -122,7 +122,7 @@ module WorldScripting =
                 (subscriber :> Participant)
                 world
 
-        static member evalMonitor6 fnName originOpt evaledArg evaledArg2 world =
+        static member evalMonitor6 fnName evaledArg evaledArg2 originOpt world =
             match evaledArg with
             | Binding _
             | Fun _ ->
@@ -136,8 +136,8 @@ module WorldScripting =
             | Violation _ as error -> (error, world)
             | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Function for its 1st argument.", originOpt), world)
 
-        static member evalMonitor fnName originOpt evaledArg evaledArg2 world =
-            World.evalMonitor6 fnName originOpt evaledArg evaledArg2 world
+        static member evalMonitor fnName evaledArg evaledArg2 originOpt world =
+            World.evalMonitor6 fnName evaledArg evaledArg2 originOpt world
 
         /// Attempt to evaluate the scripting prelude.
         static member tryEvalPrelude world =
@@ -163,7 +163,7 @@ module WorldScripting =
             | "monitor" -> true
             | _ -> false
 
-        static member internal evalExtrinsic fnName originOpt exprs world =
+        static member internal evalExtrinsic fnName exprs originOpt world =
             match fnName with
             | "v2" ->
                 match World.evalManyInternal exprs world with
@@ -231,6 +231,6 @@ module WorldScripting =
                 match World.evalManyInternal exprs world with
                 | ([|Violation _ as v; _|], world) -> (v, world)
                 | ([|_; Violation _ as v|], world) -> (v, world)
-                | ([|evaled; evaled2|], world) -> World.evalMonitor fnName originOpt evaled evaled2 world
+                | ([|evaled; evaled2|], world) -> World.evalMonitor fnName evaled evaled2 originOpt world
                 | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             | _ -> failwithumf ()
