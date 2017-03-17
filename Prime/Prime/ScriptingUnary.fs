@@ -503,7 +503,7 @@ module ScriptingUnary =
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a Table to a String.", originOpt)
           Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a Record to a String.", originOpt) }
 
-    let evalBoolUnary fn fnName originOpt evaledArgs (world : 'w) =
+    let evalBoolUnary fn fnName evaledArgs originOpt (world : 'w) =
         match evaledArgs with
         | [|evaledArg|] ->
             match evaledArg with
@@ -512,7 +512,7 @@ module ScriptingUnary =
             | _ -> (Violation (["InvalidArgumentType"; (String.capitalize fnName)], "Cannot apply a Bool function to a non-Bool value.", originOpt), world)
         | _ -> (Violation (["InvalidArgumentCount"; (String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", originOpt), world)
 
-    let evalUnaryInner (fns : UnaryFns) fnName originOpt evaledArg (world : 'w) =
+    let evalUnaryInner (fns : UnaryFns) fnName evaledArg originOpt (world : 'w) =
         match evaledArg with
         | Bool bool -> (fns.Bool bool originOpt, world)
         | Int int -> (fns.Int int originOpt, world)
@@ -531,7 +531,7 @@ module ScriptingUnary =
         | Violation _ as violation -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; (String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", originOpt), world)
 
-    let evalUnary fns fnName originOpt evaledArgs (world : 'w) =
+    let evalUnary fns fnName evaledArgs originOpt (world : 'w) =
         match evaledArgs with
-        | [|evaledArg|] -> evalUnaryInner fns fnName originOpt evaledArg world
+        | [|evaledArg|] -> evalUnaryInner fns fnName evaledArg originOpt world
         | _ -> (Violation (["InvalidArgumentCount"; (String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", originOpt), world)

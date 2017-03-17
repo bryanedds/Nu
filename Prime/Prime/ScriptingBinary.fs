@@ -263,7 +263,7 @@ module ScriptingBinary =
           Table = fun _ _ originOpt -> Violation (["InvalidArgumentType"; "Dot"], "Cannot dot multiply Tables.", originOpt)
           Record = fun _ _ _ _ _ _ originOpt -> Violation (["InvalidArgumentType"; "Dot"], "Cannot dot multiply Records.", originOpt) }
 
-    let evalBinaryInner (fns : BinaryFns) fnName originOpt evaledLeft evaledRight (world : 'w) =
+    let evalBinaryInner (fns : BinaryFns) fnName evaledLeft evaledRight originOpt (world : 'w) =
         match (evaledLeft, evaledRight) with
         | (Bool boolLeft, Bool boolRight) -> (fns.Bool boolLeft boolRight originOpt, world)
         | (Int intLeft, Int intRight) -> (fns.Int intLeft intRight originOpt, world)
@@ -282,7 +282,7 @@ module ScriptingBinary =
         | (_, (Violation _ as violation)) -> (violation, world)
         | _ -> (Violation (["InvalidArgumentType"; (String.capitalize fnName)], "Cannot apply a binary function on unlike or incompatible values.", originOpt), world)
 
-    let evalBinary fns fnName originOpt evaledArgs (world : 'w) =
+    let evalBinary fns fnName evaledArgs originOpt (world : 'w) =
         match evaledArgs with
-        | [|evaledLeft; evaledRight|] -> evalBinaryInner fns fnName originOpt evaledLeft evaledRight world                
+        | [|evaledLeft; evaledRight|] -> evalBinaryInner fns fnName evaledLeft evaledRight originOpt world
         | _ -> (Violation (["InvalidArgumentCount"; (String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
