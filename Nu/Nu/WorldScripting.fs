@@ -18,16 +18,16 @@ module WorldScripting =
 
     type World with
 
-        static member internal evalInternal expr world : (Expr * World) =
+        static member internal evalInternal expr world : Expr * World =
             ScriptingWorld.eval expr world
 
-        static member internal evalManyInternal exprs world : (Expr array * World) =
+        static member internal evalManyInternal exprs world : Expr array * World =
             ScriptingWorld.evalMany exprs world
 
-        static member internal evalWithLoggingInternal expr world : (Expr * World) =
+        static member internal evalWithLoggingInternal expr world : Expr * World =
             ScriptingWorld.evalWithLogging expr world
 
-        static member internal evalManyWithLoggingInternal exprs world : (Expr array * World) =
+        static member internal evalManyWithLoggingInternal exprs world : Expr array * World =
             ScriptingWorld.evalManyWithLogging exprs world
 
         static member internal evalSimulantExists fnName evaledArg originOpt world =
