@@ -59,7 +59,7 @@ module Scripting =
 
              (* Prelude Identifiers *)
              // TODO: "substring update curry compose sort replace slice split " +
-             "-u- -b- -i- -L- -f- -d- -s- -K- -T- -U- -o- -l- -r- -t- -R- " +
+             "-u- -b- -i- -L- -f- -d- -s- -K- -T- -U- -o- -l- -r- -t- -R- -F- " +
              "isUnit isBool isInt isInt64 isSingle isDouble isString " +
              "isKeyword isTuple isUnion isOption isList isRing isTable isRecord " +
              "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegativeInfinity isNaN " +

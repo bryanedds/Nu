@@ -263,20 +263,20 @@
 [define length_Vector2 [v] [sqrt [+ [sqr v.X] [sqr v.Y]]]]
 [define normal_Vector2 [v] [/ v [length v]]]
 
-[define =_Vector2 [v u] [&& [= v.X u.X] [= v.Y u.Y]]]
-[define <>_Vector2 [v u] [&& [<> v.X u.X] [<> v.Y u.Y]]]
-[define <_Vector2 [v u] [&& [< v.X u.X] [< v.Y u.Y]]]
-[define >_Vector2 [v u] [&& [> v.X u.X] [> v.Y u.Y]]]
-[define <=_Vector2 [v u] [&& [<= v.X u.X] [<= v.Y u.Y]]]
-[define >=_Vector2 [v u] [&& [>= v.X u.X] [>= v.Y u.Y]]]
-[define +_Vector2 [v u] [v2 [+ v.X u.X] [+ v.Y u.Y]]]
-[define -_Vector2 [v u] [v2 [- v.X u.X] [- v.Y u.Y]]]
-[define *_Vector2 [v u] [v2 [* v.X u.X] [* v.Y u.Y]]]
-[define /_Vector2 [v u] [v2 [/ v.X u.X] [/ v.Y u.Y]]]
-[define %_Vector2 [v u] [v2 [% v.X u.X] [% v.Y u.Y]]]
-[define dot_Vector2 [v u] [+ [* v.X u.X] [* v.Y u.Y]]]
+[define =_Vector2 [u v] [&& [= u.X v.X] [= u.Y v.Y]]]
+[define <>_Vector2 [u v] [&& [<> u.X v.X] [<> u.Y v.Y]]]
+[define <_Vector2 [u v] [&& [< u.X v.X] [< u.Y v.Y]]]
+[define >_Vector2 [u v] [&& [> u.X v.X] [> u.Y v.Y]]]
+[define <=_Vector2 [u v] [&& [<= u.X v.X] [<= u.Y v.Y]]]
+[define >=_Vector2 [u v] [&& [>= u.X v.X] [>= u.Y v.Y]]]
+[define +_Vector2 [u v] [v2 [+ u.X v.X] [+ u.Y v.Y]]]
+[define -_Vector2 [u v] [v2 [- u.X v.X] [- u.Y v.Y]]]
+[define *_Vector2 [u v] [v2 [* u.X v.X] [* u.Y v.Y]]]
+[define /_Vector2 [u v] [v2 [/ u.X v.X] [/ u.Y v.Y]]]
+[define %_Vector2 [u v] [v2 [% u.X v.X] [% u.Y v.Y]]]
+[define dot_Vector2 [u v] [+ [* u.X v.X] [* u.Y v.Y]]]
 
-; The v2 type indicator.
+; The V2 type indicator.
 [define -2- [v2 0f 0f]]
 
 ; The game.
