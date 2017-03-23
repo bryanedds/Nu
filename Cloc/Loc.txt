@@ -1,53 +1,54 @@
-     100 files     200 files     300 files     400 files     500 files     558 text files.
-classified 558 filesDuplicate file check 558 files (315 known unique)Unique:      100 files                                          Unique:      200 files                                          Unique:      300 files                                               374 unique files.                              
-Counting:  100Counting:  200Counting:  300    3896 files ignored.
+     100 files     200 files     300 files     400 files     500 files     545 text files.
+classified 545 filesDuplicate file check 545 files (318 known unique)Unique:      100 files                                          Unique:      200 files                                          Unique:      300 files                                               336 unique files.                              
+Counting:  100Counting:  200Counting:  300    7450 files ignored.
 
-http://cloc.sourceforge.net v 1.60  T=9.92 s (17.6 files/s, 3115.6 lines/s)
+http://cloc.sourceforge.net v 1.60  T=26.90 s (6.6 files/s, 1172.0 lines/s)
 --------------------------------------------------------------------------------------------------------------------------------
 File                                                                                         blank        comment           code
 --------------------------------------------------------------------------------------------------------------------------------
-..\Nu\Nu\WorldDispatchers.fs                                                                   163              0           1182
+..\Nu\Nu\WorldDispatchers.fs                                                                   166              0           1183
 ..\Nu\Nu.Gaia.Design\GaiaForm.Designer.cs                                                        7            410           1062
 ..\Nu\Nu.Gaia\GaiaModule.fs                                                                    119              2           1018
-..\Nu\Nu\WorldScriptingPrimitives.fs                                                            63              0            930
-..\Nu\Nu\WorldTypes.fs                                                                         214              0            907
+..\Prime\Prime\ScriptingPrimitives.fs                                                           62              0            961
+..\Nu\Nu\WorldTypes.fs                                                                         217              0            927
 ..\Nu\Nu\WorldModuleEntity.fs                                                                  115              0            854
-..\Nu\Nu\Scripting.fs                                                                           63              0            746
-..\Nu\Nu\World.fs                                                                               95              0            725
+..\Prime\Prime\Scripting.fs                                                                     67              0            810
+..\Nu\Nu\World.fs                                                                               95              0            729
+..\Prime\Prime\ScriptingWorld.fs                                                                48              0            564
 ..\Projects\InfinityRpg\GameplayDispatcher.fs                                                   73              0            511
-..\Nu\Nu\WorldScriptingUnary.fs                                                                 37              0            509
 ..\Nu\Nu\Physics.fs                                                                             85              0            509
+..\Prime\Prime\ScriptingUnary.fs                                                                35              0            502
 ..\Nu\Nu.SDL2\Matrix3.cs                                                                       131            281            485
-..\Nu\Nu\Reflection.fs                                                                          59              0            470
-..\Nu\Nu\WorldScripting.fs                                                                      39              0            467
 ..\Prime\Prime\Stream.fs                                                                        73              0            449
+..\Prime\Prime\Symbol.fs                                                                        47              0            448
 ..\Nu\Nu\EffectSystem.fs                                                                        51              0            432
-..\Nu\Nu\Render.fs                                                                              40              0            426
-..\Prime\Prime\Symbol.fs                                                                        44              0            402
-..\Nu\Nu\WorldModule.fs                                                                        115              0            391
+..\Nu\Nu\Render.fs                                                                              40              0            427
+..\Nu\Nu\Reflection.fs                                                                          43              0            415
+..\Nu\Nu\WorldModule.fs                                                                        112              0            376
 ..\Prime\Prime\SymbolicConverter.fs                                                             43              0            320
 ..\Nu\Nu\WorldModuleScreen.fs                                                                   38              0            318
 ..\Nu\Nu\WorldModuleLayer.fs                                                                    40              0            316
 ..\Prime\Prime\EventWorld.fs                                                                    43              0            311
 ..\Nu\Nu\WorldEntity.fs                                                                         47              0            302
 ..\Nu\Nu\WorldModuleGame.fs                                                                     45              0            297
-..\Nu\Nu\WorldScriptingBinary.fs                                                                21              0            278
 ..\Prime\Prime\List.fs                                                                          56              0            276
+..\Prime\Prime\ScriptingBinary.fs                                                               19              0            269
 ..\Projects\BlazeVector\BlazeDispatchers.fs                                                     55              0            261
-..\Nu\Nu\WorldScriptingMarshalling.fs                                                           33              0            248
-..\Nu\Nu\Audio.fs                                                                               36              0            235
-..\Nu\Nu\Math.fs                                                                                43              0            216
+..\Prime\Prime\ScriptingMarshalling.fs                                                          31              0            247
+..\Nu\Nu\Math.fs                                                                                53              0            244
+..\Nu\Nu\Audio.fs                                                                               36              0            236
+..\Prime\Prime\HMap.fs                                                                          54              0            236
+..\Prime\Prime\Reflection.fs                                                                    47              0            231
+..\Nu\Nu\WorldScripting.fs                                                                      16              0            220
 ..\Prime\Prime\Address.fs                                                                       66              0            215
 ..\Nu\Nu\AssetGraph.fs                                                                          41              0            214
-..\Prime\Prime\HMap.fs                                                                          50              0            214
+..\Prime\Prime\HSet.fs                                                                          49              0            210
 ..\Nu\Nu\WorldGame.fs                                                                           44              0            207
 ..\Projects\InfinityRpg\CharacterState.fs                                                       51              0            204
 ..\Nu\Nu\Sdl.fs                                                                                 28              0            202
 ..\Projects\InfinityRpg\InfinityMath.fs                                                         37              0            200
 ..\Nu\Nu\WorldScreen.fs                                                                         34              0            197
 ..\Prime\Prime\Vsync.fs                                                                         36              0            195
-..\Prime\Prime\HSet.fs                                                                          46              0            194
-..\Prime\Prime\Reflection.fs                                                                    35              0            189
 ..\Prime\Prime\TList.fs                                                                         39              0            189
 ..\Projects\InfinityRpg\CharacterFacets.fs                                                      18              0            187
 ..\Nu\Nu\WorldLayer.fs                                                                          32              0            181
@@ -57,14 +58,14 @@ File                                                                            
 ..\Nu\Nu.Gaia\GaiaTypes.fs                                                                      28              0            161
 ..\Nu\Nu\Effects.fs                                                                             26              0            150
 ..\Prime\Prime\String.fs                                                                        22              0            150
-..\Prime\Prime\Operators.fs                                                                     41              0            147
+..\Prime\Prime\Operators.fs                                                                     39              0            144
 ..\Prime\Prime\ListTests.fs                                                                     27              0            143
 ..\Prime\Prime\EventSystem.fs                                                                   35              0            143
 ..\Prime\Prime\Xtension.fs                                                                      34              0            142
 ..\Prime\Prime\Chain.fs                                                                         32              0            140
 ..\Nu\Nu\WorldPhysics.fs                                                                        32              0            139
-..\Prime\Prime\TMap.fs                                                                          32              0            139
 ..\Nu\Nu\Metadata.fs                                                                            22              0            138
+..\Prime\Prime\TMap.fs                                                                          31              0            136
 ..\Nu\Nu\AmbientState.fs                                                                        35              0            128
 ..\Prime\Prime\TSet.fs                                                                          29              0            126
 ..\Nu\Nu\SpatialTree.fs                                                                         26              0            123
@@ -72,8 +73,8 @@ File                                                                            
 ..\Prime\Prime.Dependencies\xunit.gui\HTML.xslt                                                  6              0            120
 ..\Prime\Prime.Dependencies\xunit.gui\NUnitXml.xslt                                              8              0            113
 ..\Nu\Nu.Gaia.Design\LayerCreationForm.Designer.cs                                               6             44            113
+..\Prime\Prime\Either.fs                                                                        22              0            112
 ..\Nu\Nu.SDL2\Vector2i.cs                                                                       19              4            110
-..\Prime\Prime\Either.fs                                                                        21              0            107
 ..\Nu\Nu.Gaia.Design\Nu.Gaia.Design.csproj                                                       0              7            105
 ..\Nu\Nu\SymbolStore.fs                                                                         13              0             98
 ..\Prime\Prime\Relation.fs                                                                      22              0             97
@@ -82,14 +83,15 @@ File                                                                            
 ..\Nu\Nu.AStar\Nu.AStar.cs                                                                       5             10             93
 ..\Projects\InfinityRpg\OccupationMap.fs                                                        20              0             88
 ..\Prime\Prime\Rand.fs                                                                          20              0             85
+..\Nu\Nu\WorldEvents.fs                                                                         11              0             85
 ..\Prime\Prime\SymbolTests.fs                                                                   24              0             83
+..\Nu\Nu\WorldInit.fs                                                                           17              0             82
 ..\Nu\Nu\WorldSimulant.fs                                                                       14              0             81
-..\Nu\Nu\Program.fs                                                                             25              0             80
-..\Nu\Nu\WorldEvents.fs                                                                          7              0             77
 ..\Prime\Prime\Program.fs                                                                       14              0             75
 ..\Nu\Nu\Subsystems.fs                                                                          17              0             73
+..\Prime\Prime\UMap.fs                                                                          23              0             70
 ..\Projects\BlazeVector\Program.fs                                                              17              0             70
-..\Prime\Prime\UMap.fs                                                                          23              0             69
+..\Nu\Nu\Program.fs                                                                             23              0             70
 ..\Projects\InfinityRpg\FieldDispatcher.fs                                                       9              0             68
 ..\Prime\Prime\Map.fs                                                                           20              0             68
 ..\Nu\Nu\WorldAudio.fs                                                                          17              0             67
@@ -100,11 +102,10 @@ File                                                                            
 ..\Prime\Prime\SetTests.fs                                                                       8              0             62
 ..\Nu\Nu.Template\Program.fs                                                                    14              0             62
 ..\Prime\Prime\EventParticipant.fs                                                              17              0             61
-..\Nu\Nu\WorldInit.fs                                                                           15              0             61
+..\Prime\Prime\ScriptingTests.fs                                                                 8              0             60
 ..\Prime\Prime\MapTests.fs                                                                       8              0             60
+..\Prime\Prime\USet.fs                                                                          20              0             60
 ..\Projects\BlazeVector\BlazeDispatcher.fs                                                      17              0             60
-..\Prime\Prime\USet.fs                                                                          20              0             59
-..\Nu\Nu\ScriptingTests.fs                                                                       8              0             58
 ..\Prime\Prime\Log.fs                                                                           15              0             57
 ..\Nu\Nu\Input.fs                                                                               10              0             56
 ..\Prime\Prime\Dictionary.fs                                                                    12              0             55
@@ -120,16 +121,18 @@ File                                                                            
 ..\Prime\Prime\KeyedCache.fs                                                                     7              0             39
 ..\Projects\InfinityRpg\Program.fs                                                               6              0             37
 ..\Prime\Prime\XtensionTests.fs                                                                 10              0             36
+..\Prime\Prime\Array.fs                                                                          8              0             36
 ..\Prime\Prime\AssemblyInfo.fs                                                                   6              0             35
 ..\Nu\Nu.Gaia.Design\Properties\Resources.Designer.cs                                            8             22             33
 ..\Projects\InfinityRpg\InfinitySimulants.fs                                                     4              0             33
 ..\Projects\InfinityRpg\InfinityConstants.fs                                                     7              0             31
 ..\Projects\InfinityRpg\InfinityDispatcher.fs                                                    6              0             31
+..\Prime\Prime\FOption.fs                                                                        4              0             30
 ..\Projects\BlazeVector\BlazeAssets.fs                                                           3              0             29
-..\Prime\Prime\Array.fs                                                                          7              0             29
 ..\Nu\Nu\WorldModuleSimulant.fs                                                                 13              0             29
 ..\Nu\Nu\SpatialTreeTests.fs                                                                     3              0             29
 ..\Nu\Nu\WorldInput.fs                                                                          10              0             28
+..\Prime\Prime\Constants.fs                                                                     10              0             27
 ..\Prime\Prime\RandTests.fs                                                                      6              0             27
 ..\Prime\Prime\EventTrace.fs                                                                     9              0             26
 ..\Projects\BlazeVector\BlazeSimulants.fs                                                        7              0             26
@@ -139,10 +142,11 @@ File                                                                            
 ..\Nu\Nu\ReflectionTests.fs                                                                      6              0             24
 ..\Nu\Nu\EffectTests.fs                                                                          2              0             23
 ..\Projects\InfinityRpg\InfinityPlugin.fs                                                        6              0             22
-..\Prime\Prime\Pair.fs                                                                           9              0             22
+..\Prime\Prime\Pair.fs                                                                           8              0             22
 ..\Projects\BlazeVector\BlazeConstants.fs                                                        5              0             20
 ..\Nu\Nu.Template\obj\Release\Nu.Template.fsproj.$safeprojectname$.exe.config                    0              0             20
 ..\Projects\InfinityRpg\obj\Debug\InfinityRpg.fsproj.InfinityRpg.exe.config                      0              0             20
+..\Projects\InfinityRpg\obj\Release\InfinityRpg.fsproj.InfinityRpg.exe.config                    0              0             20
 ..\Prime\Prime\SymbolicDescriptor.fs                                                             6              0             19
 ..\Nu\Nu.Pipe\Program.fs                                                                         1              0             19
 ..\Nu\Nu.Gaia\GaiaConstants.fs                                                                   6              0             19
@@ -160,27 +164,25 @@ File                                                                            
 ..\Nu\Nu\Assets.fs                                                                               2              0             16
 ..\Nu\Nu.Gaia.Design\Properties\AssemblyInfo.cs                                                  4             17             15
 ..\Nu\Nu.SDL2\Properties\AssemblyInfo.cs                                                         4             17             15
-..\Nu\Nu.Pipe\obj\Debug\Nu.Pipe.fsproj.Nu.Pipe.exe.config                                        0              0             14
-..\Prime\Prime\Constants.fs                                                                      4              0             14
+..\Prime\Prime\bin\Debug\Prime.exe.config                                                        0              0             14
 ..\Nu\Nu\bin\Debug\Nu.exe.config                                                                 0              0             14
 ..\Projects\InfinityRpg\PlayerDispatcher.fs                                                      4              0             14
 ..\Prime\Prime\AddressTests.fs                                                                   3              0             14
-..\Prime\Prime\bin\Release\Prime.exe.config                                                      0              0             14
+..\Nu\Nu.Pipe\obj\Release\Nu.Pipe.fsproj.Nu.Pipe.exe.config                                      0              0             14
 ..\Projects\InfinityRpg\CharacterDispatcher.fs                                                   4              0             14
 ..\Nu\Nu.Gaia.Design\Properties\Settings.Designer.cs                                             5              8             13
 ..\Nu\Nu.Gaia\Program.fs                                                                         4              0             13
 ..\Projects\BlazeVector\App.config                                                               0              0             12
-..\Prime\Prime\Prime\bin\Debug\Prime.exe.config                                                  0              0             12
 ..\Projects\InfinityRpg\MetaMap.fs                                                               2              0             12
 ..\Nu\Nu.Gaia.Design\GaiaForm.cs                                                                 1              0             12
 ..\Nu\Nu.Gaia.Design\LayerCreationForm.cs                                                        1              0             11
 ..\Nu\Nu.Gaia\GaiaSimulants.fs                                                                   2              0             10
 ..\Nu\Nu.Pipe\App.config                                                                         0              0              6
 ..\NuGet.config                                                                                  0              0              6
-..\Nu\Nu.Gaia.Design\bin\Debug\Nu.Gaia.Design.exe.config                                         0              0              6
+..\Nu\Nu.Gaia.Design\bin\Release\Nu.Gaia.Design.vshost.exe.config                                0              0              6
 ..\Nu\Nu.Template.Export\Install.bat                                                             0              0              4
+..\Cloc\RunCloc.bat                                                                              0              0              4
 ..\Prime\Prime\packages.config                                                                   0              0              4
-..\Cloc\ClocForNu.bat                                                                            0              0              4
 --------------------------------------------------------------------------------------------------------------------------------
-SUM:                                                                                          4058            865          25971
+SUM:                                                                                          4111            865          26557
 --------------------------------------------------------------------------------------------------------------------------------
