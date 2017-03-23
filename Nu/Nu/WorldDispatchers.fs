@@ -3,7 +3,7 @@
 
 namespace Nu
 open System
-open FSharpx.Collections
+open Nito.Collections
 open OpenTK
 open TiledSharp
 open Prime
@@ -197,9 +197,9 @@ module EffectFacetModule =
              Define? EffectStartTimeOpt (None : int64 option)
              Define? EffectDefinitions (Map.empty : Effects.Definitions)
              Define? Effect Effect.empty
-             Define? EffectOffset ^ Vector2 0.5f
+             Define? EffectOffset (Vector2 0.5f)
              Define? EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
-             Define? EffectHistoryNp Deque.empty<Effects.Slice>
+             Define? EffectHistoryNp (Deque<Effects.Slice> Constants.Effects.DefaultEffectHistoryMax)
              Define? EffectPhysicsShapesNp ()
              Define? EffectTagsNp (Map.empty : EffectTags)]
 
@@ -237,10 +237,11 @@ module EffectFacetModule =
                             entity.SetEffectTagsNp effectTags world)
                         world
                         artifacts
+                // update effect history in-place
                 let effectHistoryMax = entity.GetEffectHistoryMax world
-                let effectHistory = Deque.cons effectSlice effectHistory
-                let effectHistory = if Deque.length effectHistory > effectHistoryMax then fst ^ Deque.unconj effectHistory else effectHistory
-                entity.SetEffectHistoryNp effectHistory world
+                effectHistory.Insert (0, effectSlice)
+                if effectHistory.Count > effectHistoryMax then ignore ^ effectHistory.RemoveFromBack ()
+                world
             else world
 
         override facet.Update (entity, world) =
