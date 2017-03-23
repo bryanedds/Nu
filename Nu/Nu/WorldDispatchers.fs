@@ -199,7 +199,7 @@ module EffectFacetModule =
              Define? Effect Effect.empty
              Define? EffectOffset (Vector2 0.5f)
              Define? EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
-             Define? EffectHistoryNp (Deque<Effects.Slice> Constants.Effects.DefaultEffectHistoryMax)
+             Define? EffectHistoryNp (Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))
              Define? EffectPhysicsShapesNp ()
              Define? EffectTagsNp (Map.empty : EffectTags)]
 
@@ -238,9 +238,8 @@ module EffectFacetModule =
                         world
                         artifacts
                 // update effect history in-place
-                let effectHistoryMax = entity.GetEffectHistoryMax world
-                effectHistory.Insert (0, effectSlice)
-                if effectHistory.Count > effectHistoryMax then ignore ^ effectHistory.RemoveFromBack ()
+                effectHistory.AddToFront effectSlice
+                if effectHistory.Count > entity.GetEffectHistoryMax world then ignore ^ effectHistory.RemoveFromBack ()
                 world
             else world
 
