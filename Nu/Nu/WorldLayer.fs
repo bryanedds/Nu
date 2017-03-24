@@ -63,7 +63,7 @@ module WorldLayerModule =
         member this.GetProperty propertyName world = World.getLayerProperty propertyName this world
 
         /// Get a property value.
-        member this.Get<'a> propertyName world : 'a = World.getLayerProperty propertyName this world |> fst :?> 'a
+        member this.Get<'a> propertyName world : 'a = World.getLayerProperty propertyName this world |> snd :?> 'a
 
         /// Try to set a property value with explicit type.
         member this.TrySetProperty propertyName property world = World.trySetLayerProperty propertyName property this world
@@ -72,7 +72,7 @@ module WorldLayerModule =
         member this.SetProperty propertyName property world = World.setLayerProperty propertyName property this world
 
         /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world = World.setLayerProperty propertyName (value :> obj, typeof<'a>) this world
+        member this.Set<'a> propertyName (value : 'a) world = World.setLayerProperty propertyName (typeof<'a>, value :> obj) this world
 
         /// Check that a layer is selected.
         member this.GetSelected world =

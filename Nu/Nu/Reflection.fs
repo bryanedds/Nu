@@ -166,7 +166,7 @@ module Reflection =
             | Some (propertySymbol : Symbol) ->
                 let converter = SymbolicConverter definition.PropertyType
                 if converter.CanConvertFrom typeof<Symbol> then
-                    let xProperty = { PropertyValue = converter.ConvertFrom propertySymbol; PropertyType = definition.PropertyType }
+                    let xProperty = { PropertyType = definition.PropertyType; PropertyValue = converter.ConvertFrom propertySymbol }
                     Xtension.attachProperty definition.PropertyName xProperty xtension
                 else
                     Log.debug ^ "Cannot convert property '" + scstring propertySymbol + "' to type '" + definition.PropertyType.Name + "'."
@@ -317,7 +317,7 @@ module Reflection =
                 | xtensionProperty ->
                     match xtensionProperty.GetValue target with
                     | :? Xtension as xtension ->
-                        let xProperty = { PropertyValue = propertyValue; PropertyType = definition.PropertyType }
+                        let xProperty = { PropertyType = definition.PropertyType; PropertyValue = propertyValue }
                         let xtension = Xtension.attachProperty definition.PropertyName xProperty xtension
                         xtensionProperty.SetValue (target, xtension)
                     | _ -> failwith ^ "Invalid property '" + definition.PropertyName + "' for target type '" + targetType.Name + "'."

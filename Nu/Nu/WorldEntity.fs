@@ -88,7 +88,7 @@ module WorldEntityModule =
         member this.GetProperty propertyName world = World.getEntityProperty propertyName this world
 
         /// Get a property value.
-        member this.Get<'a> propertyName world : 'a = World.getEntityProperty propertyName this world |> fst :?> 'a
+        member this.Get<'a> propertyName world : 'a = World.getEntityProperty propertyName this world |> snd :?> 'a
 
         /// Try to set a property value with explicit type.
         member this.TrySetProperty propertyName property world = World.trySetEntityProperty propertyName property this world
@@ -97,7 +97,7 @@ module WorldEntityModule =
         member this.SetProperty propertyName property world = World.setEntityProperty propertyName property this world
 
         /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world = World.setEntityProperty propertyName (value :> obj, typeof<'a>) this world
+        member this.Set<'a> propertyName (value : 'a) world = World.setEntityProperty propertyName (typeof<'a>, value :> obj) this world
 
         /// Get an entity's transform.
         member this.GetTransform world = World.getEntityTransform this world
@@ -302,7 +302,7 @@ module WorldEntityModule =
                 match property with
                 | EntityXPropertyDescriptor xfd -> xfd.PropertyName
                 | EntityPropertyInfo propertyInfo -> propertyInfo.Name
-            World.getEntityProperty propertyName entity world |> fst
+            World.getEntityProperty propertyName entity world |> snd
 
         /// Set the entity's property value.
         static member setValue property propertyValue (entity : Entity) world =
@@ -310,7 +310,7 @@ module WorldEntityModule =
                 match property with
                 | EntityXPropertyDescriptor xfd -> (xfd.PropertyName, xfd.PropertyType)
                 | EntityPropertyInfo propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)
-            World.setEntityProperty propertyName (propertyValue, propertyType) entity world
+            World.setEntityProperty propertyName (propertyType, propertyValue) entity world
 
         /// Get the property descriptors of as constructed from the given function in the given context.
         static member getPropertyDescriptors makePropertyDescriptor contextOpt =

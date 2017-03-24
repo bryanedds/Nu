@@ -17,8 +17,8 @@ type [<StructuralEquality; NoComparison>] XPropertyDescriptor =
 
 /// An Xtension property.
 type [<StructuralEquality; NoComparison>] XProperty =
-    { mutable PropertyValue : obj
-      mutable PropertyType : Type }
+    { mutable PropertyType : Type
+      mutable PropertyValue : obj }
 
 /// A map of XProperties.
 /// NOTE: Xtension uses UMap because it's slightly faster when used in the Nu game engine, but
@@ -95,7 +95,7 @@ module XtensionModule =
                     { xtension with Properties = properties }
             | None ->
                 if xtension.Sealed then failwith "Cannot add property to a sealed Xtension."
-                let property = { PropertyValue = value :> obj; PropertyType = typeof<'a> }
+                let property = { PropertyType = typeof<'a>; PropertyValue = value :> obj }
                 let properties = UMap.add propertyName property xtension.Properties
                 { xtension with Properties = properties }
 
@@ -138,8 +138,8 @@ module XtensionModule =
             match UMap.tryFind name xtension.Properties with
             | Some property' ->
                 if xtension.Imperative then
-                    property'.PropertyValue <- property.PropertyValue
                     property'.PropertyType <- property.PropertyType
+                    property'.PropertyValue <- property.PropertyValue
                     (true, xtension)
                 else (true, { xtension with Properties = UMap.add name property xtension.Properties })
             | None ->

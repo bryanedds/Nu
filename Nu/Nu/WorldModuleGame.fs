@@ -205,22 +205,22 @@ module WorldModuleGame =
 
         static member internal tryGetGameProperty propertyName world =
             match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> Some (World.getGameId world :> obj, typeof<Guid>)
-            | "DispatcherNp" -> Some (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
-            | "Specialization" -> Some (World.getGameSpecialization world :> obj, typeof<string>)
-            | "CreationTimeStampNp" -> Some (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
-            | "Imperative" -> Some (World.getGameImperative world :> obj, typeof<bool>)
-            | "ScriptOpt" -> Some (World.getGameScriptOpt world :> obj, typeof<AssetTag option>)
-            | "Script" -> Some (World.getGameScript world :> obj, typeof<Scripting.Expr array>)
-            | "ScriptFrameNp" -> Some (World.getGameScript world :> obj, typeof<Scripting.ProceduralFrame list>)
-            | "OnRegister" -> Some (World.getGameOnRegister world :> obj, typeof<Scripting.Expr>)
-            | "OnUnregister" -> Some (World.getGameOnUnregister world :> obj, typeof<Scripting.Expr>)
-            | "OnUpdate" -> Some (World.getGameOnUpdate world :> obj, typeof<Scripting.Expr>)
-            | "OnPostUpdate" -> Some (World.getGameOnPostUpdate world :> obj, typeof<Scripting.Expr>)
-            | "SelectedScreenOpt" -> Some (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
-            | "ScreenTransitionDestinationOpt" -> Some (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
-            | "EyeCenter" -> Some (World.getEyeCenter world :> obj, typeof<Vector2>)
-            | "EyeSize" -> Some (World.getEyeSize world :> obj, typeof<Vector2>)
+            | "Id" -> Some (typeof<Guid>, World.getGameId world :> obj)
+            | "DispatcherNp" -> Some (typeof<GameDispatcher>, World.getGameDispatcherNp world :> obj)
+            | "Specialization" -> Some (typeof<string>, World.getGameSpecialization world :> obj)
+            | "CreationTimeStampNp" -> Some (typeof<int64>, World.getGameCreationTimeStampNp world :> obj)
+            | "Imperative" -> Some (typeof<bool>, World.getGameImperative world :> obj)
+            | "ScriptOpt" -> Some (typeof<AssetTag option>, World.getGameScriptOpt world :> obj)
+            | "Script" -> Some (typeof<Scripting.Expr array>, World.getGameScript world :> obj)
+            | "ScriptFrameNp" -> Some (typeof<Scripting.ProceduralFrame list>, World.getGameScript world :> obj)
+            | "OnRegister" -> Some (typeof<Scripting.Expr>, World.getGameOnRegister world :> obj)
+            | "OnUnregister" -> Some (typeof<Scripting.Expr>, World.getGameOnUnregister world :> obj)
+            | "OnUpdate" -> Some (typeof<Scripting.Expr>, World.getGameOnUpdate world :> obj)
+            | "OnPostUpdate" -> Some (typeof<Scripting.Expr>, World.getGameOnPostUpdate world :> obj)
+            | "SelectedScreenOpt" -> Some (typeof<Screen option>, World.getSelectedScreenOpt world :> obj)
+            | "ScreenTransitionDestinationOpt" -> Some (typeof<Screen option>, World.getScreenTransitionDestinationOpt world :> obj)
+            | "EyeCenter" -> Some (typeof<Vector2>, World.getEyeCenter world :> obj)
+            | "EyeSize" -> Some (typeof<Vector2>, World.getEyeSize world :> obj)
             | _ ->
                 match GameState.tryGetProperty propertyName (World.getGameState world) with
                 | None -> World.tryGetGameCalculatedProperty propertyName world
@@ -228,22 +228,22 @@ module WorldModuleGame =
 
         static member internal getGameProperty propertyName world =
             match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> (World.getGameId world :> obj, typeof<Guid>)
-            | "DispatcherNp" -> (World.getGameDispatcherNp world :> obj, typeof<GameDispatcher>)
-            | "Specialization" -> (World.getGameSpecialization world :> obj, typeof<string>)
-            | "CreationTimeStampNp" -> (World.getGameCreationTimeStampNp world :> obj, typeof<int64>)
-            | "Imperative" -> (World.getGameImperative world :> obj, typeof<bool>)
-            | "ScriptOpt" -> (World.getGameScriptOpt world :> obj, typeof<AssetTag option>)
-            | "Script" -> (World.getGameScript world :> obj, typeof<Scripting.Expr array>)
-            | "ScriptFrameNp" -> (World.getGameScriptFrameNp world :> obj, typeof<Scripting.ProceduralFrame list>)
-            | "OnRegister" -> (World.getGameOnRegister world :> obj, typeof<Scripting.Expr>)
-            | "OnUnregister" -> (World.getGameOnUnregister world :> obj, typeof<Scripting.Expr>)
-            | "OnUpdate" -> (World.getGameOnUpdate world :> obj, typeof<Scripting.Expr>)
-            | "OnPostUpdate" -> (World.getGameOnPostUpdate world :> obj, typeof<Scripting.Expr>)
-            | "SelectedScreenOpt" -> (World.getSelectedScreenOpt world :> obj, typeof<Screen option>)
-            | "ScreenTransitionDestinationOpt" -> (World.getScreenTransitionDestinationOpt world :> obj, typeof<Screen option>)
-            | "EyeCenter" -> (World.getEyeCenter world :> obj, typeof<Vector2>)
-            | "EyeSize" -> (World.getEyeSize world :> obj, typeof<Vector2>)
+            | "Id" -> (typeof<Guid>, World.getGameId world :> obj)
+            | "DispatcherNp" -> (typeof<GameDispatcher>, World.getGameDispatcherNp world :> obj)
+            | "Specialization" -> (typeof<string>, World.getGameSpecialization world :> obj)
+            | "CreationTimeStampNp" -> (typeof<int64>, World.getGameCreationTimeStampNp world :> obj)
+            | "Imperative" -> (typeof<bool>, World.getGameImperative world :> obj)
+            | "ScriptOpt" -> (typeof<AssetTag option>, World.getGameScriptOpt world :> obj)
+            | "Script" -> (typeof<Scripting.Expr array>, World.getGameScript world :> obj)
+            | "ScriptFrameNp" -> (typeof<Scripting.ProceduralFrame list>, World.getGameScriptFrameNp world :> obj)
+            | "OnRegister" -> (typeof<Scripting.Expr>, World.getGameOnRegister world :> obj)
+            | "OnUnregister" -> (typeof<Scripting.Expr>, World.getGameOnUnregister world :> obj)
+            | "OnUpdate" -> (typeof<Scripting.Expr>, World.getGameOnUpdate world :> obj)
+            | "OnPostUpdate" -> (typeof<Scripting.Expr>, World.getGameOnPostUpdate world :> obj)
+            | "SelectedScreenOpt" -> (typeof<Screen option>, World.getSelectedScreenOpt world :> obj)
+            | "ScreenTransitionDestinationOpt" -> (typeof<Screen option>, World.getScreenTransitionDestinationOpt world :> obj)
+            | "EyeCenter" -> (typeof<Vector2>, World.getEyeCenter world :> obj)
+            | "EyeSize" -> (typeof<Vector2>, World.getEyeSize world :> obj)
             | _ ->
                 match GameState.tryGetProperty propertyName (World.getGameState world) with
                 | None ->
@@ -252,7 +252,7 @@ module WorldModuleGame =
                     | Some property -> property
                 | Some property -> property
 
-        static member internal trySetGameProperty propertyName (property : obj * Type) world =
+        static member internal trySetGameProperty propertyName (property : Type * obj) world =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> (false, world)
             | "DispatcherNp" -> (false, world)
@@ -266,10 +266,10 @@ module WorldModuleGame =
             | "OnUnregister" -> (false, world)
             | "OnUpdate" -> (false, world)
             | "OnPostUpdate" -> (false, world)
-            | "SelectedScreenOpt" -> (true, World.setSelectedScreenOpt (property |> fst :?> Screen option) world)
-            | "ScreenTransitionDestinationOpt" -> (true, World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world)
-            | "EyeCenter" -> (true, World.setEyeCenter (property |> fst :?> Vector2) world)
-            | "EyeSize" -> (true, World.setEyeSize (property |> fst :?> Vector2) world)
+            | "SelectedScreenOpt" -> (true, World.setSelectedScreenOpt (property |> snd :?> Screen option) world)
+            | "ScreenTransitionDestinationOpt" -> (true, World.setScreenTransitionDestinationOpt (property |> snd :?> Screen option) world)
+            | "EyeCenter" -> (true, World.setEyeCenter (property |> snd :?> Vector2) world)
+            | "EyeSize" -> (true, World.setEyeSize (property |> snd :?> Vector2) world)
             | _ ->
                 // HACK: needed to mutate a flag to get the success state out of an updateGameState callback...
                 let mutable success = false
@@ -280,7 +280,7 @@ module WorldModuleGame =
                         propertyName world
                 (success, world)
 
-        static member internal setGameProperty propertyName (property : obj * Type) world =
+        static member internal setGameProperty propertyName (property : Type * obj) world =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith ^ "Cannot change game " + propertyName + "."
             | "DispatcherNp" -> failwith ^ "Cannot change game " + propertyName + "."
@@ -294,10 +294,10 @@ module WorldModuleGame =
             | "OnUnregister" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "OnUpdate" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
             | "OnPostUpdate" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
-            | "SelectedScreenOpt" -> World.setSelectedScreenOpt (property |> fst :?> Screen option) world
-            | "ScreenTransitionDestinationOpt" -> World.setScreenTransitionDestinationOpt (property |> fst :?> Screen option) world
-            | "EyeCenter" -> World.setEyeCenter (property |> fst :?> Vector2) world
-            | "EyeSize" -> World.setEyeSize (property |> fst :?> Vector2) world
+            | "SelectedScreenOpt" -> World.setSelectedScreenOpt (property |> snd :?> Screen option) world
+            | "ScreenTransitionDestinationOpt" -> World.setScreenTransitionDestinationOpt (property |> snd :?> Screen option) world
+            | "EyeCenter" -> World.setEyeCenter (property |> snd :?> Vector2) world
+            | "EyeSize" -> World.setEyeSize (property |> snd :?> Vector2) world
             | _ -> World.updateGameState (GameState.setProperty propertyName property) propertyName world
 
         static member internal writeGame3 writeScreens gameDescriptor world =
