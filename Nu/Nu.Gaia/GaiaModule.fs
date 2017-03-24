@@ -853,7 +853,8 @@ module Gaia =
                     World.updateUserState (fun editorState ->
                         { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) })
                         world
-                form.propertyGrid.Refresh ()
+                // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
+                // form.propertyGrid.Refresh ()
                 world
             | DragEntityRotation _ -> world
             | DragEntityNone -> world
