@@ -156,7 +156,7 @@ module WorldTypes =
         default dispatcher.Actualize (_, world) = world
 
         /// Try to get a calculated property with the given name.
-        abstract TryGetCalculatedProperty : string * Game * World -> (obj * Type) option
+        abstract TryGetCalculatedProperty : string * Game * World -> (Type * obj) option
         default dispatcher.TryGetCalculatedProperty (_, _, _) = None
     
     /// The default dispatcher for screens.
@@ -184,7 +184,7 @@ module WorldTypes =
         default dispatcher.Actualize (_, world) = world
 
         /// Try to get a calculated property with the given name.
-        abstract TryGetCalculatedProperty : string * Screen * World -> (obj * Type) option
+        abstract TryGetCalculatedProperty : string * Screen * World -> (Type * obj) option
         default dispatcher.TryGetCalculatedProperty (_, _, _) = None
     
     /// The default dispatcher for layers.
@@ -212,7 +212,7 @@ module WorldTypes =
         default dispatcher.Actualize (_, world) = world
 
         /// Try to get a calculated property with the given name.
-        abstract TryGetCalculatedProperty : string * Layer * World -> (obj * Type) option
+        abstract TryGetCalculatedProperty : string * Layer * World -> (Type * obj) option
         default dispatcher.TryGetCalculatedProperty (_, _, _) = None
     
     /// The default dispatcher for entities.
@@ -264,7 +264,7 @@ module WorldTypes =
         default dispatcher.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
         /// Try to get a calculated property with the given name.
-        abstract TryGetCalculatedProperty : string * Entity * World -> (obj * Type) option
+        abstract TryGetCalculatedProperty : string * Entity * World -> (Type * obj) option
         default dispatcher.TryGetCalculatedProperty (_, _, _) = None
 
     /// Dynamically augments an entity's behavior in a composable way.
@@ -307,7 +307,7 @@ module WorldTypes =
         default facet.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
         /// Try to get a calculated property with the given name.
-        abstract TryGetCalculatedProperty : string * Entity * World -> (obj * Type) option
+        abstract TryGetCalculatedProperty : string * Entity * World -> (Type * obj) option
         default dispatcher.TryGetCalculatedProperty (_, _, _) = None
 
     /// A marker interface for simulant descriptors.
@@ -445,29 +445,30 @@ module WorldTypes =
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName gameState =
             match Xtension.tryGetProperty propertyName gameState.Xtension with
-            | Some xProperty -> Some (xProperty.PropertyValue, xProperty.PropertyType)
+            | Some xProperty -> Some (xProperty.PropertyType, xProperty.PropertyValue)
             | None -> None
 
         /// Get an xtension property and its type information.
         static member getProperty propertyName gameState =
             let xProperty = Xtension.getProperty propertyName gameState.Xtension
-            (xProperty.PropertyValue, xProperty.PropertyType)
+            (xProperty.PropertyType, xProperty.PropertyValue)
 
         /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property gameState =
-            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            let xProperty = { PropertyType = fst property; PropertyValue = snd property }
             match Xtension.trySetProperty propertyName xProperty gameState.Xtension with
             | (true, xtension) -> (true, { gameState with Xtension = xtension })
             | (false, _) -> (false, gameState)
 
         /// Set an xtension property with explicit type information.
         static member setProperty propertyName property gameState =
-            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            let xProperty = { PropertyType = fst property; PropertyValue = snd property }
             { gameState with GameState.Xtension = Xtension.setProperty propertyName xProperty gameState.Xtension }
 
         /// Attach an xtension property.
         static member attachProperty name value gameState =
-            { gameState with GameState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } gameState.Xtension }
+            let property = { PropertyValue = value; PropertyType = getType value }
+            { gameState with GameState.Xtension = Xtension.attachProperty name property gameState.Xtension }
 
         /// Copy a game such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
@@ -525,32 +526,33 @@ module WorldTypes =
             let spatialTree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             { screenState with EntityTreeNp = MutantCache.make Operators.id spatialTree }
 
-        /// Get an xtension property and its type information.
-        static member getProperty propertyName screenState =
-            let xProperty = Xtension.getProperty propertyName screenState.Xtension
-            (xProperty.PropertyValue, xProperty.PropertyType)
-
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName screenState =
             match Xtension.tryGetProperty propertyName screenState.Xtension with
-            | Some xProperty -> Some (xProperty.PropertyValue, xProperty.PropertyType)
+            | Some xProperty -> Some (xProperty.PropertyType, xProperty.PropertyValue)
             | None -> None
+
+        /// Get an xtension property and its type information.
+        static member getProperty propertyName screenState =
+            let xProperty = Xtension.getProperty propertyName screenState.Xtension
+            (xProperty.PropertyType, xProperty.PropertyValue)
 
         /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property screenState =
-            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            let xProperty = { PropertyType = fst property; PropertyValue = snd property }
             match Xtension.trySetProperty propertyName xProperty screenState.Xtension with
             | (true, xtension) -> (true, { screenState with Xtension = xtension })
             | (false, _) -> (false, screenState)
 
         /// Set an xtension property with explicit type information.
         static member setProperty propertyName property screenState =
-            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            let xProperty = { PropertyType = fst property; PropertyValue = snd property }
             { screenState with ScreenState.Xtension = Xtension.setProperty propertyName xProperty screenState.Xtension }
 
         /// Attach an xtension property.
         static member attachProperty name value screenState =
-            { screenState with ScreenState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } screenState.Xtension }
+            let property = { PropertyValue = value; PropertyType = getType value }
+            { screenState with ScreenState.Xtension = Xtension.attachProperty name property screenState.Xtension }
 
         /// Copy a screen such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
@@ -602,29 +604,30 @@ module WorldTypes =
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName layerState =
             match Xtension.tryGetProperty propertyName layerState.Xtension with
-            | Some xProperty -> Some (xProperty.PropertyValue, xProperty.PropertyType)
+            | Some xProperty -> Some (xProperty.PropertyType, xProperty.PropertyValue)
             | None -> None
 
         /// Get an xtension property and its type information.
         static member getProperty propertyName layerState =
             let xProperty = Xtension.getProperty propertyName layerState.Xtension
-            (xProperty.PropertyValue, xProperty.PropertyType)
+            (xProperty.PropertyType, xProperty.PropertyValue)
 
         /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property layerState =
-            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            let xProperty = { PropertyType = fst property; PropertyValue = snd property }
             match Xtension.trySetProperty propertyName xProperty layerState.Xtension with
             | (true, xtension) -> (true, { layerState with Xtension = xtension })
             | (false, _) -> (false, layerState)
 
         /// Set an xtension property with explicit type information.
         static member setProperty propertyName property layerState =
-            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            let xProperty = { PropertyType = fst property; PropertyValue = snd property }
             { layerState with LayerState.Xtension = Xtension.setProperty propertyName xProperty layerState.Xtension }
 
         /// Attach an xtension property.
         static member attachProperty name value layerState =
-            { layerState with LayerState.Xtension = Xtension.attachProperty name { PropertyValue = value; PropertyType = getType value } layerState.Xtension }
+            let property = { PropertyValue = value; PropertyType = getType value }
+            { layerState with LayerState.Xtension = Xtension.attachProperty name property layerState.Xtension }
 
         /// Copy a layer such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
@@ -690,33 +693,30 @@ module WorldTypes =
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName entityState =
             match Xtension.tryGetProperty propertyName entityState.Xtension with
-            | Some xProperty -> Some (xProperty.PropertyValue, xProperty.PropertyType)
+            | Some xProperty -> Some (xProperty.PropertyType, xProperty.PropertyValue)
             | None -> None
 
         /// Get an xtension property and its type information.
         static member getProperty propertyName entityState =
             let xProperty = Xtension.getProperty propertyName entityState.Xtension
-            (xProperty.PropertyValue, xProperty.PropertyType)
+            (xProperty.PropertyType, xProperty.PropertyValue)
 
         /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property entityState =
-            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
+            let xProperty = { PropertyType = fst property; PropertyValue = snd property }
             match Xtension.trySetProperty propertyName xProperty entityState.Xtension with
             | (true, xtension) -> (true, { entityState with Xtension = xtension })
             | (false, _) -> (false, entityState)
 
         /// Set an xtension property with explicit type information.
         static member setProperty propertyName property entityState =
-            let xProperty = { PropertyValue = fst property; PropertyType = snd property }
-            let xtension = Xtension.setProperty propertyName xProperty entityState.Xtension
-            if Xtension.getImperative entityState.Xtension then entityState
-            else { entityState with EntityState.Xtension = xtension }
+            let xProperty = { PropertyType = fst property; PropertyValue = snd property }
+            { entityState with EntityState.Xtension = Xtension.setProperty propertyName xProperty entityState.Xtension }
 
         /// Attach an xtension property.
         static member attachProperty name value entityState =
-            let xtension = Xtension.attachProperty name value entityState.Xtension
-            if Xtension.getImperative entityState.Xtension then entityState.Xtension <- xtension; entityState
-            else { entityState with EntityState.Xtension = xtension }
+            let property = { PropertyValue = value; PropertyType = getType value }
+            { entityState with EntityState.Xtension = Xtension.attachProperty name property entityState.Xtension }
 
         /// Detach an xtension property.
         static member detachProperty name entityState =
@@ -1026,16 +1026,16 @@ module WorldTypes =
             member this.IsExtrinsic fnName = this.Dispatchers.IsExtrinsic fnName
             member this.EvalExtrinsic fnName originOpt exprs = this.Dispatchers.EvalExtrinsic fnName exprs originOpt this
 
-            member this.TryImport value ty =
-                match (value, ty.Name) with
-                | (:? Vector2 as v2, "Vector2") ->
+            member this.TryImport ty value =
+                match (ty.Name, value) with
+                | ("Vector2", (:? Vector2 as v2)) ->
                     let v2p = { Vector2 = v2 }
                     v2p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | (_, _) -> None
             
-            member this.TryExport value ty =
-                match (value, ty.Name) with
-                | (Scripting.Pluggable pluggable, "Vector2") ->
+            member this.TryExport ty value =
+                match (ty.Name, value) with
+                | ("Vector2", Scripting.Pluggable pluggable) ->
                     let v2 = pluggable :?> Vector2Pluggable
                     v2.Vector2 :> obj |> Some
                 | (_, _) -> None

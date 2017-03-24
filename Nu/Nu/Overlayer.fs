@@ -127,7 +127,7 @@ module OverlayerModule =
                         List.foldBack (fun (xPropertyName, xPropertyType, xPropertySymbol : Symbol) xtension ->
                             if isPropertyOverlaid oldOverlayName facetNames xPropertyName xPropertyType target oldOverlayer then
                                 let xPropertyValue = SymbolicDescriptor.convertFrom xPropertySymbol xPropertyType
-                                let xProperty = { PropertyValue = xPropertyValue; PropertyType = xPropertyType }
+                                let xProperty = { PropertyType = xPropertyType; PropertyValue = xPropertyValue;  }
                                 Xtension.attachProperty xPropertyName xProperty xtension
                             else xtension)
                             nodes

@@ -22,8 +22,8 @@ type 'w ScriptingWorld =
         abstract member UpdateEnvPlus : (Env -> 'a * Env) -> 'a * 'w
         abstract member IsExtrinsic : string -> bool
         abstract member EvalExtrinsic : string -> SymbolOrigin option -> Expr array -> Expr * 'w
-        abstract member TryImport : obj -> Type -> Expr option
-        abstract member TryExport : Expr -> Type -> obj option
+        abstract member TryImport : Type -> obj -> Expr option
+        abstract member TryExport : Type -> Expr -> obj option
         end
 
 [<RequireQualifiedAccess>]
@@ -62,11 +62,11 @@ module ScriptingWorld =
     let setLocalFrame<'w when 'w :> 'w ScriptingWorld> localFrame (world : 'w) =
         world.UpdateEnv (EnvModule.Env.setLocalFrame localFrame)
 
-    let tryImport<'w when 'w :> 'w ScriptingWorld> value ty (world : 'w) =
-        ScriptingMarshalling.tryImport world.TryImport value ty
+    let tryImport<'w when 'w :> 'w ScriptingWorld> ty value (world : 'w) =
+        ScriptingMarshalling.tryImport world.TryImport ty value
 
-    let tryExport<'w when 'w :> 'w ScriptingWorld> value ty (world : 'w) =
-        ScriptingMarshalling.tryExport world.TryExport value ty
+    let tryExport<'w when 'w :> 'w ScriptingWorld> ty value (world : 'w) =
+        ScriptingMarshalling.tryExport world.TryExport ty value
 
     let isIntrinsic fnName =
         match fnName with

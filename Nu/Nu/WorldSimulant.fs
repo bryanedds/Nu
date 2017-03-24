@@ -58,7 +58,7 @@ module WorldSimulant =
             | :? Layer as layer -> Some (World.getLayerScriptFrameNp layer world)
             | :? Entity as entity ->
                 match World.tryGetEntityProperty Property? ScriptFrameNp entity world with
-                | Some scriptFrameProperty -> Some (fst scriptFrameProperty :?> Scripting.DeclarationFrame)
+                | Some scriptFrameProperty -> Some (snd scriptFrameProperty :?> Scripting.DeclarationFrame)
                 | None -> None
             | _ -> failwithumf ()
 
