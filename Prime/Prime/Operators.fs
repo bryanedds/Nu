@@ -59,15 +59,6 @@ module Operators =
         Array.map (fun (attr : obj) -> attr :?> CompilationRepresentationAttribute) |>
         Array.exists (fun attr -> int attr.Flags &&& int CompilationRepresentationFlags.UseNullAsTrueValue <> 0)
 
-    /// Convert a nullable value into an option.
-    let inline denull a = match a with null -> None | _ -> Some a
-
-    /// Test for string equality.
-    let inline strEq str str2 = String.Equals (str, str2, StringComparison.Ordinal)
-
-    /// Compare two strings.
-    let inline strCmp str str2 = String.Compare (str, str2, StringComparison.Ordinal)
-
     /// Get the .NET type of a target.
     let inline getType target = target.GetType ()
 
@@ -86,55 +77,18 @@ module Operators =
     /// Get the value of a property.
     let inline getPropertyValue indices (p : PropertyInfo) (a : obj) = p.GetValue (a, indices)
 
+    /// Test for string equality.
+    let inline strEq str str2 = String.Equals (str, str2, StringComparison.Ordinal)
+
+    /// Compare two strings.
+    let inline strCmp str str2 = String.Compare (str, str2, StringComparison.Ordinal)
+
     /// Test for reference equality.
     let inline refEq (a : 'a) (b : 'a) = obj.ReferenceEquals (a, b)
 
     /// Test for equality, usually faster than (=).
     /// TODO: make sure this always generates code equally fast or faster.
     let inline fastEq (x : 'a) (y : 'a) = LanguagePrimitives.GenericEquality x y
-
-    /// Test just the value parts of a type for equality.
-    /// NOTE: This function uses mad reflection, so is extremely slow, and should not be used in tight loops.
-    let rec similar (a : obj) (b : obj) =
-        if isNull a then isNull b
-        elif isNull b then false
-        elif refEq (getType a) (getType b) then
-            let ty = getType a
-            if  ty.IsValueType ||
-                ty = typeof<string> then
-                a = b
-            else if ty.IsSubclassOf typeof<Stream> then
-                // NOTE: Stream has a screwed up contract that its Length property can throw if seeking is not
-                // supported. They should have returned nullable int instead, but nooooo....
-                true
-            else
-                let fieldsSimilar =
-                    ty
-                    |> getFields
-                    |> Array.forall (fun i -> similar (getFieldValue i a) (getFieldValue i b))
-                let propertiesSimilar =
-                    ty
-                    |> getProperties
-                    |> Array.filter (fun p -> (p.GetIndexParameters ()).Length = 0)
-                    |> Array.forall (fun i -> similar (getPropertyValue null i a) (getPropertyValue null i b))
-                fieldsSimilar && propertiesSimilar
-        else false
-
-    /// Apply a function recursively a number of times.
-    let rec doTimes fn arg times =
-        if times < 0 then failwith "Cannot call doTimes with times < 0."
-        elif times = 0 then arg
-        else doTimes fn (fn arg) (times - 1)
-
-    /// Perform an operation until a predicate passes.
-    let rec doUntil op pred =
-        if not (pred ()) then
-            op ()
-            doUntil op pred
-
-    /// Add a custom TypeConverter to an existing type.
-    let assignTypeConverter<'t, 'c> () =
-        TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>) |> ignore
 
     /// Short-hand for linq enumerable cast.
     let inline enumerable<'a> enumeratable =
@@ -144,9 +98,9 @@ module Operators =
     let inline enumerator (enumeratable : _ seq) =
         enumeratable.GetEnumerator ()
 
-    /// Determine if a string is a guid.
-    let inline isGuid str =
-        fst (Guid.TryParse str)
+    /// Add a custom TypeConverter to an existing type.
+    let assignTypeConverter<'t, 'c> () =
+        TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>) |> ignore
 
     /// Make a Guid.
     let inline makeGuid () =
@@ -175,9 +129,6 @@ module Operators =
         let line = frame.GetFileLineNumber ()
         let fileName = frame.GetFileName ()
         raise (NotImplementedException (sprintf "Not implemented exception in '%s' on line %i in file %s." meth.Name line fileName))
-
-    /// As close as we can get to F# implicits.
-    let inline implicit arg = (^a : (static member op_Implicit : ^b -> ^a) arg)
 
     /// Sequences two functions like Haskell ($).
     let inline (^) f g = f g
