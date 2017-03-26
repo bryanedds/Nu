@@ -16,6 +16,7 @@
 #r "../../Nu/Nu.Dependencies/FSharpx.Collections/FSharpx.Collections.dll"
 #r "../../Nu/Nu.Dependencies/Farseer/FarseerPhysics.dll"
 #r "../../Nu/Nu.Dependencies/Magick.NET/Magick.NET-AnyCPU.dll"
+#r "../../Nu/Nu.Dependencies/Nito.Collections.Deque/Nito.Collections.Deque.dll"
 #r "../../Nu/Nu.Dependencies/SDL2#/Debug/SDL2#.dll"
 #r "../../Nu/Nu.Dependencies/TiledSharp/Debug/TiledSharp.dll"
 #r "../../Nu/Nu.SDL2/bin/Debug/Nu.SDL2.dll"
