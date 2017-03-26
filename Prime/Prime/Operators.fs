@@ -65,17 +65,8 @@ module Operators =
     /// Get the .NET type name of a target.
     let inline getTypeName target = (getType target).Name
 
-    /// Get the fields of a type.
-    let inline getFields (t : Type) = t.GetFields (BindingFlags.Instance ||| BindingFlags.Public)
-
-    /// Get the value of a field.
-    let inline getFieldValue (f : FieldInfo) (a : obj) = f.GetValue a
-
     /// Get the properties of a type.
     let inline getProperties (t : Type) = t.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
-
-    /// Get the value of a property.
-    let inline getPropertyValue indices (p : PropertyInfo) (a : obj) = p.GetValue (a, indices)
 
     /// Test for string equality.
     let inline strEq str str2 = String.Equals (str, str2, StringComparison.Ordinal)
