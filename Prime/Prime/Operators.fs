@@ -79,7 +79,7 @@ module Operators =
 
     /// Test for equality, usually faster than (=).
     /// TODO: make sure this always generates code equally fast or faster.
-    let inline fastEq (x : 'a) (y : 'a) = LanguagePrimitives.GenericEquality x y
+    let inline fastEq (a : 'a) (b : 'a) = LanguagePrimitives.GenericEquality a b
 
     /// Short-hand for linq enumerable cast.
     let inline enumerable<'a> enumeratable =
