@@ -17,6 +17,10 @@ module String =
     let notEmpty str =
         String.length str > 0
 
+    /// Check that a string is a guid.
+    let isGuid str =
+        fst (Guid.TryParse str)
+
     /// Convert a bool to a string that works well in code.
     let boolToCodeString (bool : bool) =
         if bool then "true" else "false"
