@@ -292,7 +292,7 @@ module RendererModule =
                     let refTileDestRect = ref ^ SDL.SDL_Rect ()
                     let refTileRotationCenter = ref ^ SDL.SDL_Point ()
                     Seq.iteri
-                        (fun n _ ->
+                        (fun n (tile : TmxLayerTile) ->
                             let mapRun = mapSize.X
                             let (i, j) = (n % mapRun, n / mapRun)
                             let tilePosition =
@@ -302,7 +302,7 @@ module RendererModule =
                             let tileBounds = Math.makeBounds tilePosition tileSize
                             let viewBounds = Math.makeBounds Vector2.Zero eyeSize
                             if Math.isBoundsIntersectingBounds tileBounds viewBounds then
-                                let gid = tiles.[n].Gid - tileSet.FirstGid
+                                let gid = tile.Gid - tileSet.FirstGid
                                 let gidPosition = gid * tileSourceSize.X
                                 let tileSourcePosition =
                                     Vector2
