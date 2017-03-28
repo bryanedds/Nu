@@ -1,4 +1,4 @@
-; AMSL - A Modular Amsl Language.
+; AMSL - A Modular Scripting Language.
 ; Copyright (C) Bryan Edds, 2013-2017.
 
 #| The Unit type indicator.             |# [define -u- []]
