@@ -51,7 +51,7 @@ module XtensionModule =
                 | :? 'a as defaultValue -> defaultValue
                 | _ as defaultValue ->
                     let defaultValueType = defaultValue.GetType ()
-                    let converter = SymbolicConverter defaultValueType
+                    let converter = SymbolicConverter (false, defaultValueType)
                     if converter.CanConvertFrom defaultPropertyType
                     then converter.ConvertFrom defaultValue :?> 'a
                     else failwith ^ "Cannot convert '" + scstring defaultValue + "' to type '" + defaultPropertyType.Name + "'."

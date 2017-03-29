@@ -103,7 +103,6 @@
     <Compile Include="Vsync.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="SymbolicConverter.fs" />
-    <Compile Include="SymbolicDescriptor.fs" />
     <Compile Include="SymbolicOperators.fs" />
     <Compile Include="Xtension.fs" />
     <Compile Include="EventTrace.fs" />

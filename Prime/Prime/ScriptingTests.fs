@@ -30,8 +30,9 @@ module ScriptingTests =
             Scripting.Unit
 
     let eval exprStr =
+        let converter = SymbolicConverter (true, typeof<Scripting.Expr>)
         let evaled = evalPartial exprStr
-        let evaledSymbol = SymbolicDescriptor.convertTo evaled typeof<Scripting.Expr> typeof<Symbol> :?> Symbol
+        let evaledSymbol = converter.ConvertTo (evaled, typeof<Symbol>) :?> Symbol
         Symbol.toString evaledSymbol
 
     let [<Fact>] keywordsWork () = Assert.Equal ("Keyword", eval "Keyword")

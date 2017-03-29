@@ -18,7 +18,7 @@ type SymbolicCompression<'a, 'b> =
     | SymbolicCompressionA of 'a
     | SymbolicCompressionB of 'b
 
-type SymbolicConverter (pointType : Type) =
+type SymbolicConverter (printing : bool, pointType : Type) =
     inherit TypeConverter ()
 
     let padWithDefaults' (fieldTypes : Type array) (values : obj array) =
@@ -55,10 +55,16 @@ type SymbolicConverter (pointType : Type) =
 
             // symbolize string
             elif sourceType = typeof<string> then
-                let sourceStr = string source
-                if Symbol.isNumber sourceStr then Number (sourceStr, None)
-                elif Symbol.shouldBeExplicit sourceStr then String (sourceStr, None)
-                else Atom (sourceStr, None)
+                if printing then
+                    let sourceStr = string source
+                    if pointType = typeof<string> then String (sourceStr, None)
+                    elif Symbol.isNumber sourceStr then Number (sourceStr, None)
+                    else Atom (sourceStr, None)
+                else
+                    let sourceStr = string source
+                    if Symbol.shouldBeExplicit sourceStr then String (sourceStr, None)
+                    elif Symbol.isNumber sourceStr then Number (sourceStr, None)
+                    else Atom (sourceStr, None)
 
             // symbolize Symbol (no transformation)
             elif sourceType = typeof<Symbol> then
@@ -179,8 +185,12 @@ type SymbolicConverter (pointType : Type) =
                 if Symbol.isExplicit str
                 then str.Substring (1, str.Length - 2) :> obj
                 else str :> obj
-            | Number (str, _) | String (str, _) ->
+            | Number (str, _) ->
                 str :> obj
+            | String (str, _) ->
+                if printing
+                then Symbol.OpenStringStr + Symbol.distillate str + Symbol.CloseStringStr :> obj
+                else str :> obj
             | Quote (_, _) | Symbols (_, _) ->
                 failconv "Expected Symbol, Number, or String for conversion to string." ^ Some symbol
 
@@ -383,3 +393,5 @@ type SymbolicConverter (pointType : Type) =
                 | :? Symbol as sourceSymbol -> fromSymbol pointType sourceSymbol
                 | _ -> failconv "Invalid SymbolicConverter conversion from string." None
             else source
+
+    new (pointType : Type) = SymbolicConverter (false, pointType)
