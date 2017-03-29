@@ -11,21 +11,21 @@ module SymbolicOperators =
     /// Convert a value to a symbol.
     let symbolize<'a> (value : 'a) =
         let ty = if isNull (value :> obj) then typeof<'a> else getType value
-        let converter = SymbolicConverter ty
+        let converter = SymbolicConverter (true, ty)
         converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
 
     /// Convert a symbol to a value.
     let valueize<'a> (symbol : Symbol) :'a =
-        let converter = SymbolicConverter typeof<'a>
+        let converter = SymbolicConverter (false, typeof<'a>)
         converter.ConvertFrom symbol :?> 'a
 
     /// Uses a symbolic converter to convert a value to a string.
     let scstring<'a> (value : 'a) =
         let ty = if isNull (value :> obj) then typeof<'a> else getType value
-        let converter = SymbolicConverter ty
+        let converter = SymbolicConverter (true, ty)
         converter.ConvertToString value
 
     /// Uses a symbolic converter to convert a string to a value.
     let scvalue<'a> (str : string) : 'a =
-        let converter = SymbolicConverter typeof<'a>
+        let converter = SymbolicConverter (false, typeof<'a>)
         converter.ConvertFromString str :?> 'a

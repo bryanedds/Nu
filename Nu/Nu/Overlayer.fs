@@ -66,7 +66,7 @@ module OverlayerModule =
                     | (targetProperty, _) -> Some (targetProperty.GetValue target)
                 match propertyValueOpt with
                 | Some propertyValue ->
-                    let converter = SymbolicConverter propertyType
+                    let converter = SymbolicConverter (false, propertyType)
                     if converter.CanConvertFrom typeof<Symbol> then
                         let overlayValue = converter.ConvertFrom propertySymbol
                         if overlayValue = propertyValue then Overlaid else Altered
@@ -95,7 +95,7 @@ module OverlayerModule =
                 property.PropertyType <> typeof<Xtension> &&
                 isPropertyOverlaid oldOverlayName facetNames property.Name property.PropertyType target oldOverlayer
             if shouldApplyOverlay then
-                let converter = SymbolicConverter property.PropertyType
+                let converter = SymbolicConverter (false, property.PropertyType)
                 if converter.CanConvertFrom typeof<Symbol> then
                     let propertyValue = converter.ConvertFrom propertySymbol
                     property.SetValue (target, propertyValue)
@@ -126,7 +126,8 @@ module OverlayerModule =
                     let xtension =
                         List.foldBack (fun (xPropertyName, xPropertyType, xPropertySymbol : Symbol) xtension ->
                             if isPropertyOverlaid oldOverlayName facetNames xPropertyName xPropertyType target oldOverlayer then
-                                let xPropertyValue = SymbolicDescriptor.convertFrom xPropertySymbol xPropertyType
+                                let converter = SymbolicConverter (true, xPropertyType)
+                                let xPropertyValue = converter.ConvertFrom xPropertySymbol
                                 let xProperty = { PropertyType = xPropertyType; PropertyValue = xPropertyValue;  }
                                 Xtension.attachProperty xPropertyName xProperty xtension
                             else xtension)

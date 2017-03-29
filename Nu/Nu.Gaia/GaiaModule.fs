@@ -327,7 +327,7 @@ module Gaia =
             match selectedGridItem.GridItemType with
             | GridItemType.Property ->
                 let ty = selectedGridItem.PropertyDescriptor.PropertyType
-                let typeConverter = SymbolicConverter ty
+                let typeConverter = SymbolicConverter (true, ty)
                 form.propertyEditor.Enabled <- true
                 form.propertyNameLabel.Text <- selectedGridItem.Label
                 form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
@@ -371,7 +371,7 @@ module Gaia =
                 match selectedGridItem.GridItemType with
                 | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
                     let propertyDescriptor = selectedGridItem.PropertyDescriptor :?> EntityPropertyDescriptor
-                    let typeConverter = SymbolicConverter (selectedGridItem.PropertyDescriptor.PropertyType)
+                    let typeConverter = SymbolicConverter (true, selectedGridItem.PropertyDescriptor.PropertyType)
                     try form.propertyValueTextBox.EndUndoAction ()
                         let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
                         let strUnescaped = String.unescape strEscaped
