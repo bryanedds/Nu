@@ -2,7 +2,6 @@
 // Copyright (C) Bryan Edds, 2013-2017.
 
 namespace Nu.Gaia
-open Nu.Gaia.Design
 open SDL2
 open OpenTK
 open System
@@ -14,6 +13,8 @@ open System.Reflection
 open System.Windows.Forms
 open Prime
 open Nu
+open Nu.Gaia
+open Nu.Gaia.Design
 
 [<RequireQualifiedAccess>]
 module Gaia =
