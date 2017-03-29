@@ -9,7 +9,7 @@ What is the **Nu Game Engine**?
 
 This repository hosts several projects, including -
 
-- ![Nu Icon](Nu/Nu.Promotional/Nu Icon.png?raw=true "Nu Game Engine"), the **Nu Game Engine**, a cross-platform F# 2D game engine built in the functional style. Uses SDL2 and Farseer Physics.
+- the **Nu Game Engine**, a cross-platform F# 2D game engine built in the functional style. Uses SDL2 and Farseer Physics.
 - the sample game **BlazeVector**.
 - the work-in-progress game **InfinityRpg**.
 
@@ -23,7 +23,7 @@ Nu's tutorial game, BlazeVector!
 ![Screenshot](Projects/BlazeVector/Promotional/EditingASectionOfABlazeVectorStage.png?raw=true)
 Editing a section of a BlazeVector stage.
 
-![Screenshot](Nu/Nu.Promotional/Nu Special Effects.png?raw=true)
+![Screenshot](Nu/Nu.Promotional/SpecialEffect.png?raw=true)
 Editing a special effect in Nu.
 
 Getting Started
