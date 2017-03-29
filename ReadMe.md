@@ -23,7 +23,7 @@ Nu's tutorial game, BlazeVector!
 ![Screenshot](Projects/BlazeVector/Promotional/EditingASectionOfABlazeVectorStage.png?raw=true)
 Editing a section of a BlazeVector stage.
 
-![Screenshot](Nu/Nu.Promotional/NuSpecialEffects.png?raw=true)
+![Screenshot](Nu/Nu.Promotional/SpecialEffects.png?raw=true)
 Editing a special effect in Nu.
 
 Getting Started
