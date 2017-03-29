@@ -9,6 +9,10 @@ open System.Reflection
 open Microsoft.FSharp.Reflection
 open Prime
 
+/// Expands a record so that its property are named.
+type SymbolicExpansionAttribute () =
+    inherit Attribute ()
+
 /// Compresses two unions into a single union in a symbolic-expression.
 type SymbolicCompression<'a, 'b> =
     | SymbolicCompressionA of 'a
@@ -16,17 +20,6 @@ type SymbolicCompression<'a, 'b> =
 
 type SymbolicConverter (pointType : Type) =
     inherit TypeConverter ()
-
-    let padWithDefaults (fieldTypes : PropertyInfo array) (values : obj array) =
-        if values.Length < fieldTypes.Length then
-            let valuesPadded =
-                fieldTypes |>
-                Seq.skip values.Length |>
-                Seq.map (fun info -> info.PropertyType.GetDefaultValue ()) |>
-                Array.ofSeq |>
-                Array.append values
-            valuesPadded
-        else values
 
     let padWithDefaults' (fieldTypes : Type array) (values : obj array) =
         if values.Length < fieldTypes.Length then
@@ -38,6 +31,9 @@ type SymbolicConverter (pointType : Type) =
                 Array.append values
             valuesPadded
         else values
+
+    let padWithDefaults (fieldInfos : PropertyInfo array) (values : obj array) =
+        padWithDefaults' (Array.map (fun (info : PropertyInfo) -> info.PropertyType) fieldInfos) values
 
     let rec toSymbol (sourceType : Type) (source : obj) =
         match sourceType.TryGetCustomTypeConverter () with
@@ -125,17 +121,26 @@ type SymbolicConverter (pointType : Type) =
 
             // symbolize Record
             elif FSharpType.IsRecord sourceType then
-                let recordFields = FSharpValue.GetRecordFields source
-                let recordFieldTypes = FSharpType.GetRecordFields sourceType
-                let recordFieldSymbols = List.mapi (fun i recordField -> toSymbol recordFieldTypes.[i].PropertyType recordField) (List.ofArray recordFields)
-                Symbols (recordFieldSymbols, None)
+                if sourceType.IsDefined (typeof<SymbolicExpansionAttribute>, true) then
+                    let recordFieldInfos = FSharpType.GetRecordFields sourceType
+                    let recordFields = Array.map (fun info -> (info, FSharpValue.GetRecordField (source, info))) recordFieldInfos
+                    let recordFieldSymbols =
+                        recordFields |>
+                        List.ofArray |>
+                        List.map (fun (info, field) -> Symbols ([Atom (info.Name, None); toSymbol info.PropertyType field], None))
+                    Symbols (recordFieldSymbols, None)
+                else
+                    let recordFields = FSharpValue.GetRecordFields source
+                    let recordFieldTypes = FSharpType.GetRecordFields sourceType
+                    let recordFieldSymbols = List.mapi (fun i recordField -> toSymbol recordFieldTypes.[i].PropertyType recordField) (List.ofArray recordFields)
+                    Symbols (recordFieldSymbols, None)
 
             // symbolize Union
             elif FSharpType.IsUnion sourceType then
                 let (unionCase, unionFields) = FSharpValue.GetUnionFields (source, sourceType)
-                let unionFieldTypes = unionCase.GetFields ()
+                let unionFieldInfos = unionCase.GetFields ()
                 if not ^ Array.isEmpty unionFields then
-                    let unionFieldSymbols = List.mapi (fun i unionField -> toSymbol unionFieldTypes.[i].PropertyType unionField) (List.ofArray unionFields)
+                    let unionFieldSymbols = List.mapi (fun i unionField -> toSymbol unionFieldInfos.[i].PropertyType unionField) (List.ofArray unionFields)
                     let unionSymbols = Atom (unionCase.Name, None) :: unionFieldSymbols
                     Symbols (unionSymbols, None)
                 else Atom (unionCase.Name, None)
@@ -275,14 +280,31 @@ type SymbolicConverter (pointType : Type) =
 
                 // desymbolize Record
                 elif FSharpType.IsRecord destType then
-                    match symbol with
-                    | Symbols (symbols, _) ->
-                        let fieldTypes = FSharpType.GetRecordFields destType
-                        let fields = symbols |> Array.ofList |> Array.mapi (fun i fieldSymbol -> fromSymbol fieldTypes.[i].PropertyType fieldSymbol)
-                        let fields = padWithDefaults fieldTypes fields
-                        FSharpValue.MakeRecord (destType, fields)
-                    | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
-                        failconv "Expected Symbols for conversion to Record." ^ Some symbol
+                        match symbol with
+                        | Symbols (symbols, _) ->
+                            if destType.IsDefined (typeof<SymbolicExpansionAttribute>, true) then
+                                let fieldInfos = FSharpType.GetRecordFields destType
+                                if List.forall (function Symbols ([Atom _; _], _) -> true | _ -> false) symbols then
+                                    let fieldMap =
+                                        symbols |>
+                                        List.map (function Symbols ([Atom (fieldName, _); fieldSymbol], _) -> (fieldName, fieldSymbol) | _ -> failwithumf ()) |>
+                                        Map.ofList
+                                    let fields =
+                                        Array.map
+                                            (fun (info : PropertyInfo) ->
+                                                match Map.tryFind info.Name fieldMap with
+                                                | Some fieldSymbol -> fromSymbol info.PropertyType fieldSymbol
+                                                | None -> info.PropertyType.GetDefaultValue ())
+                                            fieldInfos
+                                    FSharpValue.MakeRecord (destType, fields)
+                                else failconv "Expected Symbols in pairs for expanded Record" ^ Some symbol
+                            else
+                                let fieldInfos = FSharpType.GetRecordFields destType
+                                let fields = symbols |> Array.ofList |> Array.mapi (fun i fieldSymbol -> fromSymbol fieldInfos.[i].PropertyType fieldSymbol)
+                                let fields = padWithDefaults fieldInfos fields
+                                FSharpValue.MakeRecord (destType, fields)
+                        | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
+                            failconv "Expected Symbols for conversion to unexpanded Record." ^ Some symbol
 
                 // desymbolize Union
                 elif FSharpType.IsUnion destType && destType <> typeof<string list> then
@@ -300,9 +322,9 @@ type SymbolicConverter (pointType : Type) =
                             let unionName = symbolHead
                             match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = unionName) unionCases with
                             | Some unionCase ->
-                                let unionFieldTypes = unionCase.GetFields ()
-                                let unionValues = symbolTail |> Array.ofList |> Array.mapi (fun i unionSymbol -> fromSymbol unionFieldTypes.[i].PropertyType unionSymbol)
-                                let unionValues = padWithDefaults unionFieldTypes unionValues
+                                let unionFieldInfos = unionCase.GetFields ()
+                                let unionValues = symbolTail |> Array.ofList |> Array.mapi (fun i unionSymbol -> fromSymbol unionFieldInfos.[i].PropertyType unionSymbol)
+                                let unionValues = padWithDefaults unionFieldInfos unionValues
                                 FSharpValue.MakeUnion (unionCase, unionValues)
                             | None ->
                                 let unionNames = unionCases |> Array.map (fun unionCase -> unionCase.Name) |> String.concat " | "
