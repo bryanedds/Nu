@@ -45,9 +45,9 @@ module ScriptingMarshalling =
             // or as Union
             elif FSharpType.IsUnion ty then
                 let (unionCase, unionFields) = FSharpValue.GetUnionFields (value, ty)
-                let unionFieldTypes = unionCase.GetFields ()
+                let unionFieldInfos = unionCase.GetFields ()
                 if not ^ Array.isEmpty unionFields then
-                    let unionFieldOpts = Array.mapi (fun i unionField -> tryImport tryImportExt unionFieldTypes.[i].PropertyType unionField) unionFields
+                    let unionFieldOpts = Array.mapi (fun i unionField -> tryImport tryImportExt unionFieldInfos.[i].PropertyType unionField) unionFields
                     match Array.definitizePlus unionFieldOpts with
                     | (true, unionFields) -> Some (Union (unionCase.Name, unionFields))
                     | (false, _) -> None
@@ -141,8 +141,8 @@ module ScriptingMarshalling =
                 | Tuple fields
                 | Union (_, fields)
                 | Record (_, _, fields) ->
-                    let fieldTypes = FSharpType.GetTupleElements ty
-                    let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport tryExportExt fieldTypes.[i] fieldSymbol) fields
+                    let fieldInfos = FSharpType.GetTupleElements ty
+                    let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport tryExportExt fieldInfos.[i] fieldSymbol) fields
                     match Array.definitizePlus fieldOpts with
                     | (true, fields) -> Some (FSharpValue.MakeTuple (fields, ty))
                     | (false, _) -> None
@@ -153,8 +153,8 @@ module ScriptingMarshalling =
                 match value with
                 | Union (_, fields)
                 | Record (_, _, fields) ->
-                    let fieldTypes = FSharpType.GetRecordFields ty
-                    let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport tryExportExt fieldTypes.[i].PropertyType fieldSymbol) fields
+                    let fieldInfos = FSharpType.GetRecordFields ty
+                    let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport tryExportExt fieldInfos.[i].PropertyType fieldSymbol) fields
                     match Array.definitizePlus fieldOpts with
                     | (true, fields) -> Some (FSharpValue.MakeRecord (ty, fields))
                     | (false, _) -> None
@@ -172,8 +172,8 @@ module ScriptingMarshalling =
                 | Record (name, _, fields) ->
                     match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = name) unionCases with
                     | Some unionCase ->
-                        let unionFieldTypes = unionCase.GetFields ()
-                        let unionValueOpts = Array.mapi (fun i unionSymbol -> tryExport tryExportExt unionFieldTypes.[i].PropertyType unionSymbol) fields
+                        let unionFieldInfos = unionCase.GetFields ()
+                        let unionValueOpts = Array.mapi (fun i unionSymbol -> tryExport tryExportExt unionFieldInfos.[i].PropertyType unionSymbol) fields
                         match Array.definitizePlus unionValueOpts with
                         | (true, unionValues) -> Some (FSharpValue.MakeUnion (unionCase, unionValues))
                         | (false, _) -> None

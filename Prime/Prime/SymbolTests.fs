@@ -8,6 +8,9 @@ open Prime
 
 type IntIntRecord = { Int : int; Int2 : int }
 
+[<SymbolicExpansion>]
+type IntIntRecordExpanded = { IntX : int; IntX2 : int }
+
 type SimpleUnion =
     | SimpleUnion
     | SimpleUnion2
@@ -81,6 +84,10 @@ module SymbolTests =
     let [<Fact>] canConvertStringToRecord () =
         let value = scvalue<IntIntRecord> "[0 1]"
         Assert.Equal ({ Int = 0; Int2 = 1 }, value)
+
+    let [<Fact>] canConvertStringToExpandedRecord () =
+        let value = scvalue<IntIntRecordExpanded> "[[IntX 0] [IntX2 1]]"
+        Assert.Equal ({ IntX = 0; IntX2 = 1 }, value)
 
     let [<Fact>] canConvertStringToSimpleUnion () =
         let value = scvalue<SimpleUnion> "SimpleUnion"
