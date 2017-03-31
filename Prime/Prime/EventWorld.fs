@@ -183,8 +183,14 @@ module EventWorld =
         let eventSystem = getEventSystem world
         let subscriptions = EventSystem.getSubscriptions eventSystem
         let eventAddresses = getEventAddresses2 eventAddress allowWildcard
-        let subListOpts = List.map (fun eventAddress -> UMap.tryFind eventAddress subscriptions) eventAddresses
-        let subLists = List.definitize subListOpts
+        let subListOpts = List.map (fun eventAddress -> UMap.tryFindFast eventAddress subscriptions) eventAddresses
+        let subLists =
+            List.foldBack (fun subListOpt subListOpts ->
+                if FOption.isSome subListOpt
+                then FOption.get subListOpt :: subListOpts
+                else subListOpts)
+                subListOpts
+                []
         let subList = List.concat subLists
         publishSorter subList world
 
