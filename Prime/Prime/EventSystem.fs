@@ -55,12 +55,13 @@ module Events =
 module EventSystemModule =
 
     /// A publisher-neutral, purely functional event system.
+    /// OPTIMIZATION: EventContext mutable for speed.
     type [<ReferenceEquality>] 'w EventSystem =
         private
             { Subscriptions : SubscriptionEntries
               Unsubscriptions : UnsubscriptionEntries
               GlobalParticipant : Participant
-              EventContext : Participant
+              mutable EventContext : Participant
               EventStates : UMap<Guid, obj>
               EventTracer : string -> unit
               EventTracing : bool
@@ -140,7 +141,7 @@ module EventSystemModule =
 
         /// Set the context of the event system.
         let setEventContext context (eventSystem : 'w EventSystem) =
-            { eventSystem with EventContext = context }
+            eventSystem.EventContext <- context
 
         /// Log an event.
         let logEvent<'w> (address : obj Address) (trace : EventTrace) (eventSystem : 'w EventSystem) =

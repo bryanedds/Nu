@@ -68,15 +68,16 @@ module XtensionModule =
         static member (?) (xtension, propertyName) : 'a =
 
             // check if dynamic member is an existing property
-            match UMap.tryFind propertyName xtension.Properties with
-            | Some property ->
+            let propertyOpt = UMap.tryFindFast propertyName xtension.Properties
+            if FOption.isSome propertyOpt then
                 
                 // return property directly if the return type matches, otherwise the default value for that type
+                let property = FOption.get propertyOpt
                 match property.PropertyValue with
                 | :? 'a as propertyValue -> propertyValue
                 | _ -> failwith ^ "Xtension property '" + propertyName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'a>.Name + "'."
 
-            | None ->
+            else
 
                 // presume we're looking for a property that doesn't exist, so try to get the default value
                 Xtension.tryGetDefaultValue xtension propertyName
@@ -85,15 +86,16 @@ module XtensionModule =
         /// Example:
         ///     let xtn = xtn.Position <- Vector2 (4.0, 5.0).
         static member (?<-) (xtension, propertyName, value : 'a) =
-            match UMap.tryFind propertyName xtension.Properties with
-            | Some property ->
+            let propertyOpt = UMap.tryFindFast propertyName xtension.Properties
+            if FOption.isSome propertyOpt then
+                let property = FOption.get propertyOpt
                 if xtension.Sealed && property.PropertyType <> typeof<'a> then failwith "Cannot change the type of a sealed Xtension's property."
                 if xtension.Imperative then property.PropertyValue <- value :> obj; xtension
                 else
                     let property = { property with PropertyValue = value :> obj }
                     let properties = UMap.add propertyName property xtension.Properties
                     { xtension with Properties = properties }
-            | None ->
+            else
                 if xtension.Sealed then failwith "Cannot add property to a sealed Xtension."
                 let property = { PropertyType = typeof<'a>; PropertyValue = value :> obj }
                 let properties = UMap.add propertyName property xtension.Properties

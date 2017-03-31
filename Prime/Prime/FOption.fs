@@ -5,7 +5,7 @@ namespace Prime
 
 /// An option type that doesn't generate garbage.
 /// TODO: document.
-type FOption<'a> =
+type 'a FOption =
     struct
         val private Exists : bool
         val private ValueOpt : 'a
@@ -17,8 +17,13 @@ type FOption<'a> =
         static member ToOpt (fopt : FOption<'a>) = if fopt.Exists then Some fopt.ValueOpt else None
         member this.IsSome = this.Exists
         member this.IsNone = not this.Exists
+#if DEBUG
         member this.Value = if this.Exists then this.ValueOpt else failwith "FOption has no value to get."
+#else
+        member this.Value = this.ValueOpt
+#endif
         member this.Map (fn : 'a -> 'b) = if this.Exists then new FOption<'b> ((), fn this.ValueOpt) else new FOption<'b> (())
+        member this.Bind (fn : 'a -> 'b FOption) = if this.Exists then fn this.Value else new FOption<'b> (())
         end
 
 [<RequireQualifiedAccess>]
@@ -32,3 +37,4 @@ module FOption =
     let isNone (fopt : FOption<'a>) = fopt.IsNone
     let get (fopt : FOption<'a>) = fopt.Value
     let map fn (fopt : FOption<'a>) = fopt.Map fn
+    let bind fn (fopt : FOption<'a>) = fopt.Bind fn

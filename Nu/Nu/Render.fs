@@ -147,12 +147,12 @@ module RendererModule =
                 | Right assets ->
                     let renderAssetOpts = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
                     let renderAssets = List.definitize renderAssetOpts
-                    let renderAssetMapOpt = UMap.tryFind packageName renderer.RenderPackageMap
-                    match renderAssetMapOpt with
-                    | Some renderAssetMap ->
+                    let renderAssetMapOpt = UMap.tryFindFast packageName renderer.RenderPackageMap
+                    if FOption.isSome renderAssetMapOpt then
+                        let renderAssetMap = FOption.get renderAssetMapOpt
                         let renderAssetMap = UMap.addMany renderAssets renderAssetMap
                         { renderer with RenderPackageMap = UMap.add packageName renderAssetMap renderer.RenderPackageMap }
-                    | None ->
+                    else
                         let renderAssetMap = UMap.ofSeq renderAssets
                         { renderer with RenderPackageMap = UMap.add packageName renderAssetMap renderer.RenderPackageMap }
                 | Left failedAssetNames ->
@@ -164,24 +164,25 @@ module RendererModule =
 
         static member private tryLoadRenderAsset (assetTag : AssetTag) renderer =
             let (assetMapOpt, renderer) =
-                match UMap.tryFind assetTag.PackageName renderer.RenderPackageMap with
-                | Some _ -> (UMap.tryFind assetTag.PackageName renderer.RenderPackageMap, renderer)
-                | None ->
+                if UMap.containsKey assetTag.PackageName renderer.RenderPackageMap
+                then (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
+                else
                     Log.info ^ "Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let renderer = Renderer.tryLoadRenderPackage assetTag.PackageName renderer
-                    (UMap.tryFind assetTag.PackageName renderer.RenderPackageMap, renderer)
-            (Option.bind (fun assetMap -> UMap.tryFind assetTag.AssetName assetMap) assetMapOpt, renderer)
+                    (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
+            (FOption.bind (fun assetMap -> UMap.tryFindFast assetTag.AssetName assetMap) assetMapOpt, renderer)
 
         static member private handleHintRenderPackageUse (hintPackageUse : HintRenderPackageUseMessage) renderer =
             Renderer.tryLoadRenderPackage hintPackageUse.PackageName renderer
 
         static member private handleHintRenderPackageDisuse (hintPackageDisuse : HintRenderPackageDisuseMessage) renderer =
             let packageName = hintPackageDisuse.PackageName
-            match UMap.tryFind packageName renderer.RenderPackageMap with
-            | Some assets ->
+            let assetsOpt = UMap.tryFindFast packageName renderer.RenderPackageMap
+            if FOption.isSome assetsOpt then
+                let assets = FOption.get assetsOpt
                 for (_, asset) in assets do Renderer.freeRenderAsset asset
                 { renderer with RenderPackageMap = UMap.remove packageName renderer.RenderPackageMap }
-            | None -> renderer
+            else renderer
 
         static member private handleReloadRenderAssets renderer =
             let oldPackageMap = renderer.RenderPackageMap
@@ -216,8 +217,8 @@ module RendererModule =
             let color = sprite.Color
             let image = sprite.Image
             let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset image renderer
-            match renderAssetOpt with
-            | Some renderAsset ->
+            if FOption.isSome renderAssetOpt then
+                let renderAsset = FOption.get renderAssetOpt
                 match renderAsset with
                 | TextureAsset texture ->
                     let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
@@ -256,7 +257,7 @@ module RendererModule =
                     if renderResult <> 0 then Log.info ^ "Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + "."
                     renderer
                 | _ -> Log.trace "Cannot render sprite with a non-texture asset."; renderer
-            | None -> Log.info ^ "SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."; renderer
+            else Log.info ^ "SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."; renderer
 
         static member private renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
             Seq.fold
@@ -283,8 +284,8 @@ module RendererModule =
             let tileSetImage = descriptor.TileSetImage
             let tileSetWidth = let tileSetWidthOpt = tileSet.Image.Width in tileSetWidthOpt.Value
             let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset tileSetImage renderer
-            match renderAssetOpt with
-            | Some renderAsset ->
+            if FOption.isSome renderAssetOpt then
+                let renderAsset = FOption.get renderAssetOpt
                 match renderAsset with
                 | TextureAsset texture ->
                     // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
@@ -330,7 +331,7 @@ module RendererModule =
                         tiles
                     renderer
                 | _ -> Log.trace "Cannot render tile with a non-texture asset."; renderer
-            | None -> Log.info ^ "TileLayerDescriptor failed due to unloadable assets for '" + scstring tileSetImage + "'."; renderer
+            else Log.info ^ "TileLayerDescriptor failed due to unloadable assets for '" + scstring tileSetImage + "'."; renderer
 
         static member private renderTextDescriptor
             (viewAbsolute : Matrix3)
@@ -346,8 +347,8 @@ module RendererModule =
             let color = descriptor.Color
             let font = descriptor.Font
             let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset font renderer
-            match renderAssetOpt with
-            | Some renderAsset ->
+            if FOption.isSome renderAssetOpt then
+                let renderAsset = FOption.get renderAssetOpt
                 match renderAsset with
                 | FontAsset (font, _) ->
                     let mutable renderColor = SDL.SDL_Color ()
@@ -377,7 +378,7 @@ module RendererModule =
                         SDL.SDL_FreeSurface textSurface
                     renderer
                 | _ -> Log.trace "Cannot render text with a non-font asset."; renderer
-            | None -> Log.info ^ "TextDescriptor failed due to unloadable assets for '" + scstring font + "'."; renderer
+            else Log.info ^ "TextDescriptor failed due to unloadable assets for '" + scstring font + "'."; renderer
 
         static member private renderLayerableDescriptor
             (viewAbsolute : Matrix3)

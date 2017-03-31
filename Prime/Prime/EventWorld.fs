@@ -87,7 +87,7 @@ module EventWorld =
 
     /// Set the event context of the world.
     let setEventContext<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> context (world : 'w) =
-        updateEventSystem (EventSystem.setEventContext context) world
+        EventSystem.setEventContext context (world.GetEventSystem ())
 
     /// Qualify the event context of the world.
     let qualifyEventContext<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> (address : obj Address) (world : 'w) =
@@ -219,9 +219,9 @@ module EventWorld =
               Trace = eventTrace }
         let callableSubscription = unbox<BoxableSubscription<'w>> subscription
         let oldEventContext = getEventContext world
-        let world = setEventContext subscriber world
+        setEventContext subscriber world
         let (handling, world) = callableSubscription evt evtDynamic world
-        let world = setEventContext oldEventContext world
+        setEventContext oldEventContext world
         (handling, world)
 
     /// Sort subscriptions using categorization via the 'by' procedure.
@@ -311,9 +311,11 @@ module EventWorld =
             let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
             let subscriptions =
                 let subscriptionEntry = (subscriptionKey, subscriber :> Participant, boxSubscription subscription)
-                match UMap.tryFind objEventAddress subscriptions with
-                | Some subscriptionEntries -> UMap.add objEventAddress (subscriptionEntries @ [subscriptionEntry]) subscriptions // NOTE: inefficient to add to back of list! Use a Queue instead!
-                | None -> UMap.add objEventAddress [subscriptionEntry] subscriptions
+                let subscriptionEntriesOpt = UMap.tryFindFast objEventAddress subscriptions
+                if FOption.isSome subscriptionEntriesOpt then
+                    let subscriptionEntries = FOption.get subscriptionEntriesOpt
+                    UMap.add objEventAddress (subscriptionEntries @ [subscriptionEntry]) subscriptions // NOTE: inefficient to add to back of list! Use a Queue instead!
+                else UMap.add objEventAddress [subscriptionEntry] subscriptions
             let unsubscriptions = UMap.add subscriptionKey (objEventAddress, subscriber :> Participant) unsubscriptions
             let world = setSubscriptions subscriptions world
             let world = setUnsubscriptions unsubscriptions world
