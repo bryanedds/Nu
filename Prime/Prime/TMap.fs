@@ -37,13 +37,13 @@ module TMapModule =
 
         let private commit map =
             let oldMap = map
-            let dictOrigin = Dictionary<'k, 'v> map.DictOrigin (* HashIdentity *)
+            let dictOrigin = Dictionary<'k, 'v> (map.DictOrigin, HashIdentity.Structural)
             List.foldBack (fun log () ->
                 match log with
                 | Add (key, value) -> dictOrigin.ForceAdd (key, value)
                 | Remove key -> dictOrigin.Remove key |> ignore)
                 map.Logs ()
-            let dict = Dictionary<'k, 'v> dictOrigin (* HashIdentity *)
+            let dict = Dictionary<'k, 'v> (dictOrigin, HashIdentity.Structural)
             let map = { map with Dict = dict; DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
             map.TMap <- map
             oldMap.TMap <- map
@@ -51,7 +51,7 @@ module TMapModule =
 
         let private compress map =
             let oldMap = map
-            let dictOrigin = Dictionary<'k, 'v> map.Dict (* HashIdentity *)
+            let dictOrigin = Dictionary<'k, 'v> (map.Dict, HashIdentity.Structural)
             let map = { map with DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
             map.TMap <- map
             oldMap.TMap <- map

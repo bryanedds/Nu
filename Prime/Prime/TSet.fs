@@ -37,13 +37,13 @@ module TSetModule =
 
         let private commit set =
             let oldSet = set
-            let hashSetOrigin = HashSet<'a> set.HashSetOrigin (* HashIdentity *)
+            let hashSetOrigin = HashSet<'a> (set.HashSetOrigin, HashIdentity.Structural)
             List.foldBack (fun log () ->
                 match log with
                 | Add value -> hashSetOrigin.TryAdd value |> ignore
                 | Remove value -> hashSetOrigin.Remove value |> ignore)
                 set.Logs ()
-            let hashSet = HashSet<'a> hashSetOrigin (* HashIdentity *)
+            let hashSet = HashSet<'a> (hashSetOrigin, HashIdentity.Structural)
             let set = { set with HashSet = hashSet; HashSetOrigin = hashSetOrigin; Logs = []; LogsLength = 0 }
             set.TSet <- set
             oldSet.TSet <- set
@@ -51,7 +51,7 @@ module TSetModule =
 
         let private compress set =
             let oldSet = set
-            let hashSetOrigin = HashSet<'a> set.HashSet (* HashIdentity *)
+            let hashSetOrigin = HashSet<'a> (set.HashSet, HashIdentity.Structural)
             let set = { set with HashSetOrigin = hashSetOrigin; Logs = []; LogsLength = 0 }
             set.TSet <- set
             oldSet.TSet <- set

@@ -244,19 +244,19 @@ let addToDictBy by (dictionary : Dictionary<'k, 'v>) list =
 
 /// Convert a list of pairs to a Dictionary.
 let toDict list =
-    let dictionary = Dictionary () (* HashIdentity *)
+    let dictionary = Dictionary HashIdentity.Structural
     addToDict dictionary list
     dictionary
 
 /// Convert a list of values to a Dictionary.
 let toDictBy by list =
-    let dictionary = Dictionary () (* HashIdentity *)
+    let dictionary = Dictionary HashIdentity.Structural
     addToDictBy by dictionary list
     dictionary
 
 /// Convert a list to a HashSet.
 let toHashSet list =
-    let hashSet = HashSet () (* HashIdentity *)
+    let hashSet = HashSet HashIdentity.Structural
     List.iter (hashSet.Add >> ignore) list
     hashSet
 

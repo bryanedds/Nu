@@ -118,7 +118,7 @@ module WorldModuleLayer =
         static member internal setLayerScriptOpt value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptOpt = value }) Property? ScriptOpt layer world
         static member internal getLayerScript layer world = (World.getLayerState layer world).Script
         static member internal setLayerScript value layer world =
-            let scriptFrame = Scripting.DeclarationFrame () (* HashIdentity *)
+            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = World.updateLayerState (fun layerState -> { layerState with Script = value }) Property? Script layer world
             let world = World.setLayerScriptFrameNp scriptFrame layer world
             evalManyWithLogging value scriptFrame layer world |> snd
