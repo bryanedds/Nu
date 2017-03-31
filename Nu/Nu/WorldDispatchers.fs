@@ -144,18 +144,18 @@ module EffectFacetModule =
         member this.GetEffectOffset world : Vector2 = this.Get Property? EffectOffset world
         member this.SetEffectOffset (value : Vector2) world = this.Set Property? EffectOffset value world
         member this.EffectOffset = PropertyTag.make this Property? EffectOffset this.GetEffectOffset this.SetEffectOffset
-        member this.GetEffectHistoryMax world : int = this.Get Property? EffectHistoryMax world
-        member this.SetEffectHistoryMax (value : int) world = this.Set Property? EffectHistoryMax value world
-        member this.EffectHistoryMax = PropertyTag.make this Property? EffectHistoryMax this.GetEffectHistoryMax this.SetEffectHistoryMax
-        member this.GetEffectHistoryNp world : Effects.Slice Deque = this.Get Property? EffectHistoryNp world
-        member private this.SetEffectHistoryNp (value : Effects.Slice Deque) world = this.Set Property? EffectHistoryNp value world
-        member this.EffectHistoryNp = PropertyTag.makeReadOnly this Property? EffectHistoryNp this.GetEffectHistoryNp
         member this.GetEffectPhysicsShapesNp world : unit = this.Get Property? EffectPhysicsShapesNp world // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
         member private this.SetEffectPhysicsShapesNp (value : unit) world = this.Set Property? EffectPhysicsShapesNp value world
         member this.EffectPhysicsShapesNp = PropertyTag.makeReadOnly this Property? EffectPhysicsShapesNp this.GetEffectPhysicsShapesNp
         member this.GetEffectTagsNp world : EffectTags = this.Get Property? EffectTagsNp world
         member private this.SetEffectTagsNp (value : EffectTags) world = this.Set Property? EffectTagsNp value world
         member this.EffectTagsNp = PropertyTag.makeReadOnly this Property? EffectTagsNp this.GetEffectTagsNp
+        member this.GetEffectHistoryMax world : int = this.Get Property? EffectHistoryMax world
+        member this.SetEffectHistoryMax (value : int) world = this.Set Property? EffectHistoryMax value world
+        member this.EffectHistoryMax = PropertyTag.make this Property? EffectHistoryMax this.GetEffectHistoryMax this.SetEffectHistoryMax
+        member this.GetEffectHistoryNp world : Effects.Slice Deque = this.Get Property? EffectHistoryNp world
+        member private this.SetEffectHistoryNp (value : Effects.Slice Deque) world = this.Set Property? EffectHistoryNp value world
+        member this.EffectHistoryNp = PropertyTag.makeReadOnly this Property? EffectHistoryNp this.GetEffectHistoryNp
         
         /// The start time of the effect, or zero if none.
         member this.GetEffectStartTime world =
@@ -198,10 +198,10 @@ module EffectFacetModule =
              Define? EffectDefinitions (Map.empty : Effects.Definitions)
              Define? Effect Effect.empty
              Define? EffectOffset (Vector2 0.5f)
-             Define? EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
-             Define? EffectHistoryNp (Deque<Effects.Slice> ())
              Define? EffectPhysicsShapesNp ()
-             Define? EffectTagsNp (Map.empty : EffectTags)]
+             Define? EffectTagsNp (Map.empty : EffectTags)
+             Define? EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
+             Variable? EffectHistoryNp (fun () -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
 
         override facet.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
@@ -252,7 +252,6 @@ module EffectFacetModule =
         override facet.Register (entity, world) =
             let effectStartTime = Option.getOrDefault (World.getTickTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
-            let world = entity.SetEffectHistoryNp (Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax)) world
             let world = World.monitor handleEffectsOptChanged (entity.GetChangeEvent Property? EffectsOptAp) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
