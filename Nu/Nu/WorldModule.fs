@@ -94,9 +94,9 @@ module WorldModule =
 #if DEBUG
         static member internal withEventContext operation context (world : World) =
             let oldContext = World.getEventContext world
-            let world = EventWorld.setEventContext context world
+            EventWorld.setEventContext context world
             let world = operation world
-            let world = EventWorld.setEventContext oldContext world
+            EventWorld.setEventContext oldContext world
             world
 #else
         static member inline internal withEventContext operation _ (world : World) =

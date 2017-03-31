@@ -38,13 +38,13 @@ module SymbolStoreModule =
                 | Right assets ->
                     let symbolOpts = List.map (tryLoadSymbol3 implicitDelimiters packageName) assets
                     let symbols = List.definitize symbolOpts
-                    let symbolMapOpt = UMap.tryFind packageName symbolStore.SymbolStorePackageMap
-                    match symbolMapOpt with
-                    | Some symbolMap ->
+                    let symbolMapOpt = UMap.tryFindFast packageName symbolStore.SymbolStorePackageMap
+                    if FOption.isSome symbolMapOpt then
+                        let symbolMap = FOption.get symbolMapOpt
                         let symbolMap = UMap.addMany symbols symbolMap
                         let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.add packageName symbolMap symbolStore.SymbolStorePackageMap }
                         symbolStore
-                    | None ->
+                    else
                         let symbolMap = UMap.ofSeq symbols
                         let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.add packageName symbolMap symbolStore.SymbolStorePackageMap }
                         symbolStore
@@ -57,9 +57,9 @@ module SymbolStoreModule =
     
         let private tryLoadSymbol implicitDelimiters (assetTag : AssetTag) symbolStore =
             let (assetMapOpt, symbolStore) =
-                match UMap.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap with
-                | Some _ -> (UMap.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap, symbolStore)
-                | None ->
+                if UMap.containsKey assetTag.PackageName symbolStore.SymbolStorePackageMap
+                then (UMap.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap, symbolStore)
+                else
                     Log.info ^ "Loading symbol store package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let symbolStore = tryLoadSymbolStorePackage implicitDelimiters assetTag.PackageName symbolStore
                     let symbolMap = UMap.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap

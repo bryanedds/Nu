@@ -96,12 +96,12 @@ module AudioPlayerModule =
                 | Right assets ->
                     let audioAssetOpts = List.map AudioPlayer.tryLoadAudioAsset2 assets
                     let audioAssets = List.definitize audioAssetOpts
-                    let audioAssetMapOpt = UMap.tryFind packageName audioPlayer.AudioPackageMap
-                    match audioAssetMapOpt with
-                    | Some audioAssetMap ->
+                    let audioAssetMapOpt = UMap.tryFindFast packageName audioPlayer.AudioPackageMap
+                    if FOption.isSome audioAssetMapOpt then
+                        let audioAssetMap = FOption.get audioAssetMapOpt
                         let audioAssetMap = UMap.addMany audioAssets audioAssetMap
                         { audioPlayer with AudioPackageMap = UMap.add packageName audioAssetMap audioPlayer.AudioPackageMap }
-                    | None ->
+                    else
                         let audioAssetMap = UMap.ofSeq audioAssets
                         { audioPlayer with AudioPackageMap = UMap.add packageName audioAssetMap audioPlayer.AudioPackageMap }
                 | Left error ->
@@ -113,32 +113,36 @@ module AudioPlayerModule =
     
         static member private tryLoadAudioAsset (assetTag : AssetTag) audioPlayer =
             let (assetMapOpt, audioPlayer) =
-                match UMap.tryFind assetTag.PackageName audioPlayer.AudioPackageMap with
-                | Some _ -> (UMap.tryFind assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
-                | None ->
+                if UMap.containsKey assetTag.PackageName audioPlayer.AudioPackageMap
+                then (UMap.tryFindFast assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
+                else
                     Log.info ^ "Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let audioPlayer = AudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
-                    (UMap.tryFind assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
-            (Option.bind (fun assetMap -> UMap.tryFind assetTag.AssetName assetMap) assetMapOpt, audioPlayer)
+                    (UMap.tryFindFast assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
+            (FOption.bind (fun assetMap -> UMap.tryFindFast assetTag.AssetName assetMap) assetMapOpt, audioPlayer)
     
         static member private playSong playSongMessage audioPlayer =
             let song = playSongMessage.Song
             let (audioAssetOpt, audioPlayer) = AudioPlayer.tryLoadAudioAsset song audioPlayer
-            match audioAssetOpt with
-            | Some (WavAsset _) -> Log.info ^ "Cannot play wav file as song '" + scstring song + "'."
-            | Some (OggAsset oggAsset) ->
-                SDL_mixer.Mix_VolumeMusic (int ^ playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
-                SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) |> ignore // Mix_PlayMusic seems to somtimes cause audio 'popping' when starting a song, so a fade is used instead... |> ignore
-            | None -> Log.info ^ "PlaySongMessage failed due to unloadable assets for '" + scstring song + "'."
-            { audioPlayer with CurrentSongOpt = Some playSongMessage }
+            if FOption.isSome audioAssetOpt then
+                match FOption.get audioAssetOpt with
+                | WavAsset _ -> Log.info ^ "Cannot play wav file as song '" + scstring song + "'."
+                | OggAsset oggAsset ->
+                    SDL_mixer.Mix_VolumeMusic (int ^ playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
+                    SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) |> ignore // Mix_PlayMusic seems to somtimes cause audio 'popping' when starting a song, so a fade is used instead... |> ignore
+                { audioPlayer with CurrentSongOpt = Some playSongMessage }
+            else
+                Log.info ^ "PlaySongMessage failed due to unloadable assets for '" + scstring song + "'."
+                audioPlayer
     
         static member private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUseMessage) audioPlayer =
             AudioPlayer.tryLoadAudioPackage hintPackageUse.PackageName audioPlayer
     
         static member private handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuseMessage) audioPlayer =
             let packageName = hintPackageDisuse.PackageName
-            match UMap.tryFind packageName audioPlayer.AudioPackageMap with
-            | Some assets ->
+            let assetsOpt = UMap.tryFindFast packageName audioPlayer.AudioPackageMap
+            if FOption.isSome assetsOpt then
+                let assets = FOption.get assetsOpt
                 // all sounds / music must be halted because one of them might be playing during unload
                 // (which is very bad according to the API docs).
                 AudioPlayer.haltSound ()
@@ -147,18 +151,21 @@ module AudioPlayerModule =
                     | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
                     | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
                 { audioPlayer with AudioPackageMap = UMap.remove packageName audioPlayer.AudioPackageMap }
-            | None -> audioPlayer
+            else audioPlayer
     
         static member private handlePlaySound playSoundMessage audioPlayer =
             let sound = playSoundMessage.Sound
             let (audioAssetOpt, audioPlayer) = AudioPlayer.tryLoadAudioAsset sound audioPlayer
-            match audioAssetOpt with
-            | Some (WavAsset wavAsset) ->
-                SDL_mixer.Mix_VolumeChunk (wavAsset, int ^ playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
-                SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0) |> ignore
-            | Some (OggAsset _) -> Log.info ^ "Cannot play ogg file as sound '" + scstring sound + "'."
-            | None -> Log.info ^ "PlaySoundMessage failed due to unloadable assets for '" + scstring sound + "'."
-            audioPlayer
+            if FOption.isSome audioAssetOpt then
+                match FOption.get audioAssetOpt with
+                | WavAsset wavAsset ->
+                    SDL_mixer.Mix_VolumeChunk (wavAsset, int ^ playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
+                    SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0) |> ignore
+                | OggAsset _ -> Log.info ^ "Cannot play ogg file as sound '" + scstring sound + "'."
+                audioPlayer
+            else
+                Log.info ^ "PlaySoundMessage failed due to unloadable assets for '" + scstring sound + "'."
+                audioPlayer
     
         static member private handlePlaySong playSongMessage audioPlayer =
             if SDL_mixer.Mix_PlayingMusic () = 1 then
