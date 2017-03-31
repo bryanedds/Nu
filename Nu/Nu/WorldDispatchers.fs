@@ -199,7 +199,7 @@ module EffectFacetModule =
              Define? Effect Effect.empty
              Define? EffectOffset (Vector2 0.5f)
              Define? EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
-             Define? EffectHistoryNp (Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))
+             Define? EffectHistoryNp (Deque<Effects.Slice> ())
              Define? EffectPhysicsShapesNp ()
              Define? EffectTagsNp (Map.empty : EffectTags)]
 
@@ -252,6 +252,7 @@ module EffectFacetModule =
         override facet.Register (entity, world) =
             let effectStartTime = Option.getOrDefault (World.getTickTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
+            let world = entity.SetEffectHistoryNp (Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax)) world
             let world = World.monitor handleEffectsOptChanged (entity.GetChangeEvent Property? EffectsOptAp) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
@@ -288,7 +289,7 @@ module ScriptFacetModule =
         static let handleScriptChanged evt world =
             let entity = evt.Subscriber : Entity
             let script = entity.GetGetScriptAp world
-            let scriptFrame = Scripting.DeclarationFrame () (* HashIdentity *)
+            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = entity.SetScriptFrameNp scriptFrame world
             evalManyWithLogging script scriptFrame entity world |> snd
             
@@ -300,7 +301,7 @@ module ScriptFacetModule =
         static member PropertyDefinitions =
             [Define? ScriptOptAp (None : AssetTag option)
              Define? ScriptAp ([||] : Scripting.Expr array)
-             Define? ScriptFrameNp (Scripting.DeclarationFrame () (* HashIdentity *))
+             Define? ScriptFrameNp (Scripting.DeclarationFrame HashIdentity.Structural)
              Define? OnRegisterAp Scripting.Unit
              Define? OnUnregister Scripting.Unit
              Define? OnUpdate Scripting.Unit

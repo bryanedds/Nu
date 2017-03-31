@@ -865,7 +865,7 @@ module Scripting =
             let make () =
                 // NOTE: local frame starts out the same as the global frame so that prelude
                 // functions are defined globally
-                let globalFrame = DeclarationFrame () (* HashIdentity *)
+                let globalFrame = DeclarationFrame HashIdentity.Structural
                 { GlobalFrame = globalFrame
                   LocalFrame = globalFrame
                   ProceduralFrames = [] }

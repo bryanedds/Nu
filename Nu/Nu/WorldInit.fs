@@ -12,7 +12,7 @@ open Nu
 module Nu =
 
     let mutable private Initialized = false
-    let private LoadedAssemblies = Dictionary<string, Assembly> () (* HashIdentity *)
+    let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
     /// Initialize the game engine.
     let init sync =

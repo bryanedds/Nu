@@ -13,7 +13,7 @@ open Nu
 module Reflection =
 
     let private PropertyDefinitionsCache =
-        Dictionary<Type, PropertyDefinition list> () (* HashIdentity *)
+        Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
     /// Derive a simulant name from an optional name.
     let deriveName nameOpt id =
@@ -416,7 +416,7 @@ module Reflection =
     let createIntrinsicOverlays requiresFacetNames sourceTypes =
 
         // get the unique, decomposed source types
-        let sourceTypeHashSet = HashSet () (* HashIdentity *)
+        let sourceTypeHashSet = HashSet HashIdentity.Structural
         for sourceType in sourceTypes do
             for sourceTypeDecomposed in sourceType :: getBaseTypesExceptObject sourceType do
                 sourceTypeHashSet.Add sourceTypeDecomposed |> ignore
