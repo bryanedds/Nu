@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open OpenTK
 open Prime
 open Nu
@@ -11,21 +12,22 @@ open Nu
 module WorldModuleLayer =
 
     type World with
-
+    
         static member private layerStateKeyEquality
-            (layerAddress : Layer Address, layerStates : UMap<Layer Address, LayerState>)
-            (layerAddress2 : Layer Address, layerStates2 : UMap<Layer Address, LayerState>) =
-            refEq layerAddress layerAddress2 && refEq layerStates layerStates2
+            (layerStateKey : KeyValuePair<Layer Address, UMap<Layer Address, LayerState>>)
+            (layerStateKey2 : KeyValuePair<Layer Address, UMap<Layer Address, LayerState>>) =
+            refEq layerStateKey.Key layerStateKey2.Key &&
+            refEq layerStateKey.Value layerStateKey2.Value
 
         static member private layerGetFreshKeyAndValue (layer : Layer) world =
             let layerStateOpt = UMap.tryFind layer.LayerAddress world.LayerStates
-            ((layer.LayerAddress, world.LayerStates), layerStateOpt)
+            KeyValuePair (KeyValuePair (layer.LayerAddress, world.LayerStates), layerStateOpt)
 
         static member private layerStateFinder (layer : Layer) world =
             KeyedCache.getValue
                 World.layerStateKeyEquality
                 (fun () -> World.layerGetFreshKeyAndValue layer world)
-                (layer.LayerAddress, world.LayerStates)
+                (KeyValuePair (layer.LayerAddress, world.LayerStates))
                 (World.getLayerCachedOpt world)
 
         static member private layerStateAdder layerState (layer : Layer) world =
