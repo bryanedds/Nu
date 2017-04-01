@@ -11,30 +11,63 @@ open Nu
 [<AutoOpen>]
 module WorldModuleEntity =
 
+    type private KeyEquality () =
+        inherit OptimizedClosures.FSharpFunc<
+            KeyValuePair<
+                Entity Address,
+                UMap<Entity Address, EntityState>>,
+            KeyValuePair<
+                Entity Address,
+                UMap<Entity Address, EntityState>>,
+            bool> ()
+        override this.Invoke _ = failwithumf ()
+        override this.Invoke
+            (entityStateKey : KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>,
+             entityStateKey2 : KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>) =
+            refEq entityStateKey.Key entityStateKey2.Key &&
+            refEq entityStateKey.Value entityStateKey2.Value
+
+    type private GetFreshKeyAndValue () =
+        inherit FSharpFunc<
+            Unit,
+            KeyValuePair<
+                KeyValuePair<
+                    Entity Address,
+                    UMap<Entity Address, EntityState>>,
+                EntityState FOption>> ()
+        let mutable entity = Unchecked.defaultof<Entity>
+        let mutable world = Unchecked.defaultof<World>
+        member this.Entity with get () = entity and set value = entity <- value
+        member this.World with get () = world and set value = world <- value
+        override this.Invoke _ =
+            let entityStateOpt = UMap.tryFindFast entity.EntityAddress world.EntityStates
+            KeyValuePair (KeyValuePair (entity.EntityAddress, world.EntityStates), entityStateOpt)
+
+    // Avoids clojure allocation in tight-loop
+    let private keyEquality = KeyEquality ()
+
+    // Avoids clojure allocation in tight-loop
+    let private getFreshKeyAndValue = GetFreshKeyAndValue ()
+
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
     let mutable private Clipboard : obj option = None
 
     type World with
 
-        static member private entityStateKeyEquality
-            (entityStateKey : KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>)
-            (entityStateKey2 : KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>) =
-            refEq entityStateKey.Key entityStateKey2.Key &&
-            refEq entityStateKey.Value entityStateKey2.Value
-
-        static member private entityGetFreshKeyAndValue (entity : Entity) world =
-            let entityStateOpt = UMap.tryFindFast entity.EntityAddress world.EntityStates
-            KeyValuePair (KeyValuePair (entity.EntityAddress, world.EntityStates), entityStateOpt)
-
         static member private entityStateFinder (entity : Entity) world =
+            // OPTIMIZATION: a ton of optimization has gone down in here...!
             let entityStateOpt = entity.EntityStateOpt
             if isNull (entityStateOpt :> obj) then
+                getFreshKeyAndValue.Entity <- entity
+                getFreshKeyAndValue.World <- world
                 let entityStateOpt =
-                    KeyedCache.getValue
-                        World.entityStateKeyEquality
-                        (fun () -> World.entityGetFreshKeyAndValue entity world)
+                    KeyedCache.getValueFast
+                        keyEquality
+                        getFreshKeyAndValue
                         (KeyValuePair (entity.EntityAddress, world.EntityStates))
                         (World.getEntityCachedOpt world)
+                getFreshKeyAndValue.Entity <- Unchecked.defaultof<Entity>
+                getFreshKeyAndValue.World <- Unchecked.defaultof<World>
                 if FOption.isSome entityStateOpt then
                     let entityState = FOption.get entityStateOpt
                     if  entityState.CachableNp &&
