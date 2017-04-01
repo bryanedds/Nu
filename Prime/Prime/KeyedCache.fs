@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds, 2013-2017.
 
 namespace Prime
+open System.Collections.Generic;
 open Prime
 
 [<AutoOpen>]
@@ -24,12 +25,16 @@ module KeyedCacheModule =
         /// <param name="getFreshKeyAndValue">Generates a fresh key and corresponding value to cache.</param>
         /// <param name="cacheKey">The current key against which to validate the cache.</param>
         /// <param name="keyedCache">The keyed cache.</param>
-        let getValue (keyEquality : 'k -> 'k -> bool) getFreshKeyAndValue cacheKey keyedCache : 'v =
+        let getValue
+            (keyEquality : 'k -> 'k -> bool)
+            (getFreshKeyAndValue : unit -> KeyValuePair<'k, 'v>)
+            cacheKey
+            keyedCache =
             if not ^ keyEquality keyedCache.CacheKey cacheKey then
-                let (freshKey, freshValue) = getFreshKeyAndValue ()
-                keyedCache.CacheKey <- freshKey
-                keyedCache.CacheValue <- freshValue
-                freshValue
+                let freshKvp = getFreshKeyAndValue ()
+                keyedCache.CacheKey <- freshKvp.Key
+                keyedCache.CacheValue <- freshKvp.Value
+                freshKvp.Value
             else keyedCache.CacheValue
 
         /// <summary>Make a keyed cache value.</summary>

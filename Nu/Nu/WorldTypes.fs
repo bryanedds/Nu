@@ -15,6 +15,7 @@ module internal World =
 namespace Nu
 open System
 open System.Diagnostics
+open System.Collections.Generic
 open OpenTK
 open TiledSharp
 open Prime
@@ -990,9 +991,9 @@ module WorldTypes =
               Subsystems : World Subsystems
               ScriptingEnv : Scripting.Env
               ScriptingContext : Simulant
-              ScreenCachedOpt : KeyedCache<Screen Address * UMap<Screen Address, ScreenState>, ScreenState option>
-              LayerCachedOpt : KeyedCache<Layer Address * UMap<Layer Address, LayerState>, LayerState option>
-              EntityCachedOpt : KeyedCache<Entity Address * UMap<Entity Address, EntityState>, EntityState option>
+              ScreenCachedOpt : KeyedCache<KeyValuePair<Screen Address, UMap<Screen Address, ScreenState>>, ScreenState option>
+              LayerCachedOpt : KeyedCache<KeyValuePair<Layer Address, UMap<Layer Address, LayerState>>, LayerState option>
+              EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState option>
               ScreenDirectory : UMap<string, Screen Address * UMap<string, Layer Address * UMap<string, Entity Address>>>
               AmbientState : World AmbientState
               GameState : GameState

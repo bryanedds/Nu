@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Reflection
 open OpenTK
 open Prime
@@ -49,9 +50,9 @@ module WorldModule =
                   Subsystems = subsystems
                   ScriptingEnv = scriptingEnv
                   ScriptingContext = Game Address.empty
-                  ScreenCachedOpt = KeyedCache.make (Address.empty<Screen>, screenStates) None
-                  LayerCachedOpt = KeyedCache.make (Address.empty<Layer>, layerStates) None
-                  EntityCachedOpt = KeyedCache.make (Address.empty<Entity>, entityStates) None
+                  ScreenCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Screen>, screenStates)) None
+                  LayerCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Layer>, layerStates)) None
+                  EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) None
                   ScreenDirectory = UMap.makeEmpty None
                   AmbientState = ambientState
                   GameState = gameState

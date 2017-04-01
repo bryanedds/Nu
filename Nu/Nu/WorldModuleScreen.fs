@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open OpenTK
 open Prime
 open Nu
@@ -11,21 +12,22 @@ open Nu
 module WorldModuleScreen =
 
     type World with
-
+    
         static member private screenStateKeyEquality
-            (screenAddress : Screen Address, screenStates : UMap<Screen Address, ScreenState>)
-            (screenAddress2 : Screen Address, screenStates2 : UMap<Screen Address, ScreenState>) =
-            refEq screenAddress screenAddress2 && refEq screenStates screenStates2
+            (screenStateKey : KeyValuePair<Screen Address, UMap<Screen Address, ScreenState>>)
+            (screenStateKey2 : KeyValuePair<Screen Address, UMap<Screen Address, ScreenState>>) =
+            refEq screenStateKey.Key screenStateKey2.Key &&
+            refEq screenStateKey.Value screenStateKey2.Value
 
         static member private screenGetFreshKeyAndValue (screen : Screen) world =
             let screenStateOpt = UMap.tryFind screen.ScreenAddress world.ScreenStates
-            ((screen.ScreenAddress, world.ScreenStates), screenStateOpt)
+            KeyValuePair (KeyValuePair (screen.ScreenAddress, world.ScreenStates), screenStateOpt)
 
         static member private screenStateFinder (screen : Screen) world =
             KeyedCache.getValue
                 World.screenStateKeyEquality
                 (fun () -> World.screenGetFreshKeyAndValue screen world)
-                (screen.ScreenAddress, world.ScreenStates)
+                (KeyValuePair (screen.ScreenAddress, world.ScreenStates))
                 (World.getScreenCachedOpt world)
 
         static member private screenStateAdder screenState (screen : Screen) world =

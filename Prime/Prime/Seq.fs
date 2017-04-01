@@ -124,9 +124,7 @@ let foldUntilRight folder (state : Either<_, _>) (seq : 't seq) =
 
 /// Check that a predicate passes for NO items in a sequence.
 let rec notExists pred seq =
-    match tryHead seq with
-    | Some head -> not ^ pred head && notExists pred (Seq.skip 1 seq)
-    | None -> true
+    not ^ Seq.exists pred seq
 
 /// Split a sequence on a predicate.
 let split pred seq =

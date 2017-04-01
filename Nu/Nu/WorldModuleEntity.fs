@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open OpenTK
 open Prime
 open Nu
@@ -16,13 +17,14 @@ module WorldModuleEntity =
     type World with
 
         static member private entityStateKeyEquality
-            (entityAddress : Entity Address, entityStates : UMap<Entity Address, EntityState>)
-            (entityAddress2 : Entity Address, entityStates2 : UMap<Entity Address, EntityState>) =
-            refEq entityAddress entityAddress2 && refEq entityStates entityStates2
+            (entityStateKey : KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>)
+            (entityStateKey2 : KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>) =
+            refEq entityStateKey.Key entityStateKey2.Key &&
+            refEq entityStateKey.Value entityStateKey2.Value
 
         static member private entityGetFreshKeyAndValue (entity : Entity) world =
             let entityStateOpt = UMap.tryFind entity.EntityAddress world.EntityStates
-            ((entity.EntityAddress, world.EntityStates), entityStateOpt)
+            KeyValuePair (KeyValuePair (entity.EntityAddress, world.EntityStates), entityStateOpt)
 
         static member private entityStateFinder (entity : Entity) world =
             let entityStateOpt = entity.EntityStateOpt
@@ -31,7 +33,7 @@ module WorldModuleEntity =
                     KeyedCache.getValue
                         World.entityStateKeyEquality
                         (fun () -> World.entityGetFreshKeyAndValue entity world)
-                        (entity.EntityAddress, world.EntityStates)
+                        (KeyValuePair (entity.EntityAddress, world.EntityStates))
                         (World.getEntityCachedOpt world)
                 match entityStateOpt with
                 | Some entityState ->
