@@ -169,7 +169,7 @@ module XtensionModule =
     
         /// Convert an xtension to a sequence of its entries.
         let toSeq xtension = xtension.Properties :> _ seq
-    
+
         /// Convert an xtension to a sequence of its entries.
         let ofSeq seq = attachProperties seq empty
 

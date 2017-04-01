@@ -896,7 +896,7 @@ module Gaia =
     let private updateEditorWorld form world =
         let worldChangersCopy = List.ofSeq WorldChangers
         WorldChangers.Clear ()
-        let world = Seq.fold (fun world worldChanger -> worldChanger world) world worldChangersCopy
+        let world = List.fold (fun world worldChanger -> worldChanger world) world worldChangersCopy
         let world = updateEntityDrag form world
         let world = updateCameraDrag form world
         updateUndoButton form world

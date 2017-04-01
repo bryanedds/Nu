@@ -87,7 +87,7 @@ module MetadataModule =
         let private tryGenerateMetadataSubmap packageName assetGraph =
             match AssetGraph.tryLoadAssetsFromPackage true None packageName assetGraph with
             | Right assets ->
-                let submap = assets |> Seq.map generateAssetMetadata |> UMap.ofSeq
+                let submap = assets |> List.map generateAssetMetadata |> UMap.ofSeq
                 (packageName, submap)
             | Left error ->
                 Log.info ^ "Could not load asset metadata for package '" + packageName + "' due to: " + error

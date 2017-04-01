@@ -169,12 +169,12 @@ module Type =
 
     /// Get the first property that is signalled to be preferred by the 'preference' predicate.
     let GetPropertyByPreference (preference, properties) =
-        let preferredOpt = Seq.tryFind preference properties
-        if Seq.isEmpty properties then null
+        let preferredOpt = Array.tryFind preference properties
+        if Array.isEmpty properties then null
         else
             match preferredOpt with
             | Some preferred -> preferred
-            | None -> Seq.head properties
+            | None -> Array.head properties
 
 [<AutoOpen>]
 module TypeExtension =
@@ -206,17 +206,16 @@ module TypeExtension =
         /// Try to get a custom type converter for the given type.
         member this.TryGetCustomTypeConverter () =
             let globalConverterAttributes =
-                seq {
-                    for attribute in TypeDescriptor.GetAttributes this do
-                        match attribute with
-                        | :? TypeConverterAttribute as tca -> yield tca
-                        | _ -> () }
+                [|for attribute in TypeDescriptor.GetAttributes this do
+                    match attribute with
+                    | :? TypeConverterAttribute as tca -> yield tca
+                    | _ -> () |]
             let typeConverterAttributes =
                 this.GetCustomAttributes (typeof<TypeConverterAttribute>, true) |>
-                Seq.map (fun attr -> attr :?> TypeConverterAttribute) |>
-                Seq.append globalConverterAttributes
-            if not ^ Seq.isEmpty typeConverterAttributes then
-                let typeConverterAttribute = Seq.head typeConverterAttributes
+                Array.map (fun attr -> attr :?> TypeConverterAttribute) |>
+                Array.append globalConverterAttributes
+            if not ^ Array.isEmpty typeConverterAttributes then
+                let typeConverterAttribute = Array.head typeConverterAttributes
                 let typeConverterTypeName = typeConverterAttribute.ConverterTypeName
                 let typeConverterType = Type.GetType typeConverterTypeName
                 match typeConverterType.GetConstructor [|typeof<Type>|] with
@@ -227,7 +226,7 @@ module TypeExtension =
         /// Get a property with the given name that can be written to, or null.
         member this.GetPropertyWritable propertyName =
             let propertyOpt =
-                Seq.tryFind
+                Array.tryFind
                     (fun (property : PropertyInfo) -> property.Name = propertyName && property.CanWrite)
                     (this.GetProperties ())
             match propertyOpt with
@@ -236,19 +235,19 @@ module TypeExtension =
 
         /// Get all the properties with the given name.
         member this.GetProperties propertyName =
-            Seq.filter
+            Array.filter
                 (fun (property : PropertyInfo) -> property.Name = propertyName)
                 (this.GetProperties ())
 
         /// Get all the properties that can be written to.
         member this.GetPropertiesWritable () =
-            Seq.filter
+            Array.filter
                 (fun (property : PropertyInfo) -> property.CanWrite)
                 (this.GetProperties ())
 
         /// Get all the properties with the give name that can be written to.
         member this.GetPropertiesWritable propertyName =
-            Seq.filter
+            Array.filter
                 (fun (property : PropertyInfo) -> property.Name = propertyName && property.CanWrite)
                 (this.GetProperties ())
 
@@ -264,14 +263,14 @@ module TypeExtension =
         /// Get all the properties that are signalled to be preferred by the 'preference' predicate.
         member this.GetPropertiesByPreference preference =
             let propertiesLayered =
-                Seq.groupBy
+                Array.groupBy
                     (fun (property : PropertyInfo) -> property.Name)
                     (this.GetProperties ())
             let propertieOpts =
-                Seq.map
+                Array.map
                     (fun (_, properties) -> Type.GetPropertyByPreference (preference, properties))
                     propertiesLayered
-            Seq.filter isNotNull propertieOpts
+            Array.filter isNotNull propertieOpts
 
         /// Get all the properties, preferring those that can be written to if there is a name clash.
         member this.GetPropertiesPreferWritable () =
