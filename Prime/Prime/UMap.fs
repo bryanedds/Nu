@@ -55,9 +55,9 @@ module UMapModule =
             not ^ isEmpty map
 
         let tryFindFast key map =
-            let (valueOpt, tmap) = TMap.tryFindFast key !map.RefMap
-            map.RefMap := tmap
-            valueOpt
+            let valueOptAndTMap = TMap.tryFindFast key !map.RefMap
+            map.RefMap := valueOptAndTMap.Value
+            valueOptAndTMap.Key
 
         let tryFind key map =
             let (valueOpt, tmap) = TMap.tryFind key !map.RefMap

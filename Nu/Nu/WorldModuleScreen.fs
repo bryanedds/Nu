@@ -34,13 +34,12 @@ module WorldModuleScreen =
             let screenDirectory =
                 match Address.getNames screen.ScreenAddress with
                 | [screenName] ->
-                    match UMap.tryFind screenName world.ScreenDirectory with
-                    | Some (_, layerDirectory) ->
+                    let layerDirectoryOpt = UMap.tryFindFast screenName world.ScreenDirectory
+                    if FOption.isSome layerDirectoryOpt then
+                        let layerDirectory = FOption.get layerDirectoryOpt
                         // NOTE: this is logically a redundant operation...
-                        UMap.add screenName (screen.ScreenAddress, layerDirectory) world.ScreenDirectory
-                    | None ->
-                        let layerDirectory = UMap.makeEmpty None
-                        UMap.add screenName (screen.ScreenAddress, layerDirectory) world.ScreenDirectory
+                        UMap.add screenName (KeyValuePair (screen.ScreenAddress, layerDirectory.Value)) world.ScreenDirectory
+                    else UMap.add screenName (KeyValuePair (screen.ScreenAddress, UMap.makeEmpty None)) world.ScreenDirectory
                 | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
             let screenStates = UMap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }

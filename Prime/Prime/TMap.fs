@@ -121,8 +121,8 @@ module TMapModule =
         let tryFindFast key map =
             let map = validate map
             match map.Dict.TryGetValue key with
-            | (true, value) -> (FOption.some value, map)
-            | (false, _) -> (FOption.none (), map)
+            | (true, value) -> KeyValuePair (FOption.some value, map)
+            | (false, _) -> KeyValuePair (FOption.none (), map)
 
         let tryFind key map =
             let map = validate map

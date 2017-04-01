@@ -48,15 +48,17 @@ module WorldModuleEntity =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
                 | [screenName; layerName; entityName] ->
-                    match UMap.tryFind screenName world.ScreenDirectory with
-                    | Some (screenAddress, layerDirectory) ->
-                        match UMap.tryFind layerName layerDirectory with
-                        | Some (layerAddress, entityDirectory) ->
-                            let entityDirectory = UMap.add entityName entity.EntityAddress entityDirectory
-                            let layerDirectory = UMap.add layerName (layerAddress, entityDirectory) layerDirectory
-                            UMap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
-                        | None -> failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent layer."
-                    | None -> failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent screen."
+                    let layerDirectory = UMap.tryFindFast screenName world.ScreenDirectory
+                    if FOption.isSome layerDirectory then
+                        let layerDirectory = FOption.get layerDirectory
+                        let entityDirectoryOpt = UMap.tryFindFast layerName layerDirectory.Value
+                        if FOption.isSome entityDirectoryOpt then
+                            let entityDirectory = FOption.get entityDirectoryOpt
+                            let entityDirectory' = UMap.add entityName entity.EntityAddress entityDirectory.Value
+                            let layerDirectory' = UMap.add layerName (KeyValuePair (entityDirectory.Key, entityDirectory')) layerDirectory.Value
+                            UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
+                        else failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent layer."
+                    else failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent screen."
                 | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
             let entityStates = UMap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
@@ -65,15 +67,17 @@ module WorldModuleEntity =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
                 | [screenName; layerName; entityName] ->
-                    match UMap.tryFind screenName world.ScreenDirectory with
-                    | Some (screenAddress, layerDirectory) ->
-                        match UMap.tryFind layerName layerDirectory with
-                        | Some (layerAddress, entityDirectory) ->
-                            let entityDirectory = UMap.remove entityName entityDirectory
-                            let layerDirectory = UMap.add layerName (layerAddress, entityDirectory) layerDirectory
-                            UMap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
-                        | None -> failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent layer."
-                    | None -> failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent screen."
+                    let layerDirectoryOpt = UMap.tryFindFast screenName world.ScreenDirectory
+                    if FOption.isSome layerDirectoryOpt then
+                        let layerDirectory = FOption.get layerDirectoryOpt
+                        let entityDirectoryOpt = UMap.tryFindFast layerName layerDirectory.Value
+                        if FOption.isSome entityDirectoryOpt then
+                            let entityDirectory = FOption.get entityDirectoryOpt
+                            let entityDirectory' = UMap.remove entityName entityDirectory.Value
+                            let layerDirectory' = UMap.add layerName (KeyValuePair (entityDirectory.Key, entityDirectory')) layerDirectory.Value
+                            UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
+                        else failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent layer."
+                    else failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent screen."
                 | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
             let entityStates = UMap.remove entity.EntityAddress world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
@@ -561,10 +565,12 @@ module WorldModuleEntity =
 
         static member private updateEntityPublishEventFlag setFlag entity eventAddress world =
             let publishUpdates =
-                match UMap.tryFind eventAddress ^ World.getSubscriptions world with
-                | Some [] -> failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
-                | Some (_ :: _) -> true
-                | None -> false
+                let subscriptionsOpt = UMap.tryFindFast eventAddress (World.getSubscriptions world)
+                if FOption.isSome subscriptionsOpt then
+                    match FOption.get subscriptionsOpt with
+                    | [] -> failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
+                    | _ :: _ -> true
+                else false
             if World.entityExists entity world
             then setFlag publishUpdates entity world
             else world

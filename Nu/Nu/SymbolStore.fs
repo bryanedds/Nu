@@ -58,18 +58,16 @@ module SymbolStoreModule =
         let private tryLoadSymbol implicitDelimiters (assetTag : AssetTag) symbolStore =
             let (assetMapOpt, symbolStore) =
                 if UMap.containsKey assetTag.PackageName symbolStore.SymbolStorePackageMap
-                then (UMap.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap, symbolStore)
+                then (UMap.tryFindFast assetTag.PackageName symbolStore.SymbolStorePackageMap, symbolStore)
                 else
                     Log.info ^ "Loading symbol store package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
                     let symbolStore = tryLoadSymbolStorePackage implicitDelimiters assetTag.PackageName symbolStore
-                    let symbolMap = UMap.tryFind assetTag.PackageName symbolStore.SymbolStorePackageMap
+                    let symbolMap = UMap.tryFindFast assetTag.PackageName symbolStore.SymbolStorePackageMap
                     (symbolMap, symbolStore)
-            match assetMapOpt with
-            | Some assetMap ->
-                match UMap.tryFind assetTag.AssetName assetMap with
-                | Some (_, asset) -> (Some asset, symbolStore)
-                | None -> (None, symbolStore)
-            | None -> (None, symbolStore)
+            if FOption.isSome assetMapOpt then
+                let assetOpt = UMap.tryFindFast assetTag.AssetName (FOption.get assetMapOpt)
+                (FOption.map snd assetOpt, symbolStore)
+            else (FOption.none (), symbolStore)
     
         /// Unload a symbolStore package with the given name.
         let unloadSymbolStorePackage packageName symbolStore =
@@ -77,7 +75,10 @@ module SymbolStoreModule =
     
         /// Try to find a symbol with the given asset tag.
         let tryFindSymbol implicitDelimiters assetTag symbolStore =
-            tryLoadSymbol implicitDelimiters assetTag symbolStore
+            // NOTE: converting canonical option here as I've not yet decided to allow FOption to
+            // leak into the engine's public interface...
+            let (symbolOpt, world) = tryLoadSymbol implicitDelimiters assetTag symbolStore
+            (FOption.ToOpt symbolOpt, world)
             
         /// Try to find the symbols with the given asset tags.
         let tryFindSymbols implicitDelimiters assetTags world =
