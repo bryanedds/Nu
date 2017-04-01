@@ -23,7 +23,7 @@ module WorldModuleEntity =
             refEq entityStateKey.Value entityStateKey2.Value
 
         static member private entityGetFreshKeyAndValue (entity : Entity) world =
-            let entityStateOpt = UMap.tryFind entity.EntityAddress world.EntityStates
+            let entityStateOpt = UMap.tryFindFast entity.EntityAddress world.EntityStates
             KeyValuePair (KeyValuePair (entity.EntityAddress, world.EntityStates), entityStateOpt)
 
         static member private entityStateFinder (entity : Entity) world =
@@ -35,16 +35,13 @@ module WorldModuleEntity =
                         (fun () -> World.entityGetFreshKeyAndValue entity world)
                         (KeyValuePair (entity.EntityAddress, world.EntityStates))
                         (World.getEntityCachedOpt world)
-                match entityStateOpt with
-                | Some entityState ->
+                if FOption.isSome entityStateOpt then
+                    let entityState = FOption.get entityStateOpt
                     if  entityState.CachableNp &&
                         Xtension.getImperative entityState.Xtension then
-                        entity.EntityStateOpt <-
-                            match entityStateOpt with
-                            | None -> Unchecked.defaultof<EntityState>
-                            | Some entityState -> entityState
+                        entity.EntityStateOpt <- entityState
                     entityState
-                | None -> Unchecked.defaultof<EntityState>
+                else Unchecked.defaultof<EntityState>
             else entityStateOpt
 
         static member private entityStateAdder entityState (entity : Entity) world =
