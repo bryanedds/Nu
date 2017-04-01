@@ -34,17 +34,18 @@ module WorldModuleLayer =
             let screenDirectory =
                 match Address.getNames layer.LayerAddress with
                 | [screenName; layerName] ->
-                    match UMap.tryFind screenName world.ScreenDirectory with
-                    | Some (screenAddress, layerDirectory) ->
-                        match UMap.tryFind layerName layerDirectory with
-                        | Some (layerAddress, entityDirectory) ->
-                            let layerDirectory = UMap.add layerName (layerAddress, entityDirectory) layerDirectory
-                            UMap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
-                        | None ->
-                            let entityDirectory = UMap.makeEmpty None
-                            let layerDirectory = UMap.add layerName (layer.LayerAddress, entityDirectory) layerDirectory
-                            UMap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
-                    | None -> failwith ^ "Cannot add layer '" + scstring layer.LayerAddress + "' to non-existent screen."
+                    let layerDirectoryOpt = UMap.tryFindFast screenName world.ScreenDirectory
+                    if FOption.isSome layerDirectoryOpt then
+                        let layerDirectory = FOption.get layerDirectoryOpt
+                        let entityDirectoryOpt = UMap.tryFindFast layerName layerDirectory.Value
+                        if FOption.isSome entityDirectoryOpt then
+                            let entityDirectory = FOption.get entityDirectoryOpt
+                            let layerDirectory' = UMap.add layerName (KeyValuePair (entityDirectory.Key, entityDirectory.Value)) layerDirectory.Value
+                            UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
+                        else
+                            let layerDirectory' = UMap.add layerName (KeyValuePair (layer.LayerAddress, UMap.makeEmpty None)) layerDirectory.Value
+                            UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
+                    else failwith ^ "Cannot add layer '" + scstring layer.LayerAddress + "' to non-existent screen."
                 | _ -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
             let layerStates = UMap.add layer.LayerAddress layerState world.LayerStates
             World.choose { world with ScreenDirectory = screenDirectory; LayerStates = layerStates }
@@ -53,11 +54,12 @@ module WorldModuleLayer =
             let screenDirectory =
                 match Address.getNames layer.LayerAddress with
                 | [screenName; layerName] ->
-                    match UMap.tryFind screenName world.ScreenDirectory with
-                    | Some (screenAddress, layerDirectory) ->
-                        let layerDirectory = UMap.remove layerName layerDirectory
-                        UMap.add screenName (screenAddress, layerDirectory) world.ScreenDirectory
-                    | None -> failwith ^ "Cannot remove layer '" + scstring layer.LayerAddress + "' from non-existent screen."
+                    let layerDirectoryOpt = UMap.tryFindFast screenName world.ScreenDirectory
+                    if FOption.isSome layerDirectoryOpt then
+                        let layerDirectory = FOption.get layerDirectoryOpt
+                        let layerDirectory' = UMap.remove layerName layerDirectory.Value
+                        UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
+                    else failwith ^ "Cannot remove layer '" + scstring layer.LayerAddress + "' from non-existent screen."
                 | _ -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
             let layerStates = UMap.remove layer.LayerAddress world.LayerStates
             World.choose { world with ScreenDirectory = screenDirectory; LayerStates = layerStates }

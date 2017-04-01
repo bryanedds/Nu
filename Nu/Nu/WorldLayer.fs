@@ -126,10 +126,13 @@ module WorldLayerModule =
         static member getLayers (screen : Screen) world =
             match Address.getNames screen.ScreenAddress with
             | [screenName] ->
-                match UMap.tryFind screenName ^ World.getScreenDirectory world with
-                | Some (_, layerDirectory) ->
-                    UMap.fold (fun state _ (layerAddress, _) -> Layer layerAddress :: state) [] layerDirectory :> _ seq
-                | None -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
+                let layerDirectoryOpt = UMap.tryFindFast screenName (World.getScreenDirectory world)
+                if FOption.isSome layerDirectoryOpt then
+                    let layerDirectory = FOption.get layerDirectoryOpt
+                    layerDirectory.Value |>
+                    UMap.fold (fun state _ layerDirectory -> Layer layerDirectory.Key :: state) [] :>
+                    _ seq
+                else failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
             | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
 
         /// Destroy a layer in the world immediately. Can be dangerous if existing in-flight publishing depends on the

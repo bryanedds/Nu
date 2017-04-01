@@ -994,7 +994,7 @@ module WorldTypes =
               ScreenCachedOpt : KeyedCache<KeyValuePair<Screen Address, UMap<Screen Address, ScreenState>>, ScreenState FOption>
               LayerCachedOpt : KeyedCache<KeyValuePair<Layer Address, UMap<Layer Address, LayerState>>, LayerState FOption>
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState FOption>
-              ScreenDirectory : UMap<string, Screen Address * UMap<string, Layer Address * UMap<string, Entity Address>>>
+              ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Layer Address, UMap<string, Entity Address>>>>>
               AmbientState : World AmbientState
               GameState : GameState
               ScreenStates : UMap<Screen Address, ScreenState>
