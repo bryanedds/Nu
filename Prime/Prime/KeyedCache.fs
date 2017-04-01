@@ -37,6 +37,23 @@ module KeyedCacheModule =
                 freshKvp.Value
             else keyedCache.CacheValue
 
+        /// <summary>Get the cached value without allocating if possible.</summary>
+        /// <param name="keyEquality">Determines the equality of the key used to consider if the cache is valid.</param>
+        /// <param name="getFreshKeyAndValue">Generates a fresh key and corresponding value to cache.</param>
+        /// <param name="cacheKey">The current key against which to validate the cache.</param>
+        /// <param name="keyedCache">The keyed cache.</param>
+        let getValueFast
+            (keyEquality : OptimizedClosures.FSharpFunc<'k, 'k, bool>)
+            (getFreshKeyAndValue : FSharpFunc<unit, KeyValuePair<'k, 'v>>)
+            cacheKey
+            keyedCache =
+            if not ^ keyEquality.Invoke (keyedCache.CacheKey, cacheKey) then
+                let freshKvp = getFreshKeyAndValue.Invoke ()
+                keyedCache.CacheKey <- freshKvp.Key
+                keyedCache.CacheValue <- freshKvp.Value
+                freshKvp.Value
+            else keyedCache.CacheValue
+
         /// <summary>Make a keyed cache value.</summary>
         /// <param name="cacheKey">The current key against which to validate the cache.</param>
         /// <param name="cacheValue">The value associated with the cache key.</param>
