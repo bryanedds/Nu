@@ -14,7 +14,7 @@ module TSetModule =
 
     type [<NoEquality; NoComparison>] TSet<'a when 'a : equality> =
         private
-            { mutable TSet : 'a TSet
+            { TSet : 'a TSet WeakReference
               HashSet : 'a HashSet
               HashSetOrigin : 'a HashSet
               Logs : 'a Log list
@@ -45,40 +45,43 @@ module TSetModule =
                 set.Logs ()
             let hashSet = HashSet<'a> (hashSetOrigin, HashIdentity.Structural)
             let set = { set with HashSet = hashSet; HashSetOrigin = hashSetOrigin; Logs = []; LogsLength = 0 }
-            set.TSet <- set
-            oldSet.TSet <- set
+            set.TSet.SetTarget set
+            oldSet.TSet.SetTarget set
             set
 
         let private compress set =
             let oldSet = set
             let hashSetOrigin = HashSet<'a> (set.HashSet, HashIdentity.Structural)
             let set = { set with HashSetOrigin = hashSetOrigin; Logs = []; LogsLength = 0 }
-            set.TSet <- set
-            oldSet.TSet <- set
+            set.TSet.SetTarget set
+            oldSet.TSet.SetTarget set
             set
 
         let private validate set =
-            match obj.ReferenceEquals (set.TSet, set) with
-            | true -> if set.LogsLength > set.HashSet.Count * set.BloatFactor then compress set else set
-            | false -> commit set
+            match set.TSet.TryGetTarget () with
+            | (true, target) ->
+                match obj.ReferenceEquals (target, set) with
+                | true -> if set.LogsLength > set.HashSet.Count * set.BloatFactor then compress set else set
+                | false -> commit set
+            | (false, _) -> commit set
 
         let private update updater set =
             let oldSet = set
             let set = validate set
             let set = updater set
-            set.TSet <- set
-            oldSet.TSet <- set
+            set.TSet.SetTarget set
+            oldSet.TSet.SetTarget set
             set
 
         let makeFromSeq<'a when 'a : equality> optBloatFactor items =
             let set =
-                { TSet = Unchecked.defaultof<'a TSet>
+                { TSet = WeakReference<'a TSet> Unchecked.defaultof<'a TSet>
                   HashSet = hashPlus items
                   HashSetOrigin = hashPlus items
                   Logs = []
                   LogsLength = 0
                   BloatFactor = Option.getOrDefault 1 optBloatFactor }
-            set.TSet <- set
+            set.TSet.SetTarget set
             set
 
         let makeEmpty<'a when 'a : equality> optBloatFactor =

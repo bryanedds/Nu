@@ -397,7 +397,9 @@ module EffectSystemModule =
                                         (fun j slice ->
                                             let timePassed = int64 (i + j)
                                             evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - timePassed })
-                                        effectSystem.History
+                                        effectSystem.History |>
+                                    Array.ofSeq |>
+                                    Seq.ofArray
                                 | _ -> effectSystem.History
                             { effectSystem with History = history; EffectTime = timePassed }
                         let artifacts' =

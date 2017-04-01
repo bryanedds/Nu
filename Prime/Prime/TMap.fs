@@ -14,7 +14,7 @@ module TMapModule =
 
     type [<NoEquality; NoComparison>] TMap<'k, 'v when 'k : equality> =
         private
-            { mutable TMap : TMap<'k, 'v>
+            { TMap : TMap<'k, 'v> WeakReference
               Dict : Dictionary<'k, 'v>
               DictOrigin : Dictionary<'k, 'v>
               Logs : Log<'k, 'v> list
@@ -45,40 +45,43 @@ module TMapModule =
                 map.Logs ()
             let dict = Dictionary<'k, 'v> (dictOrigin, HashIdentity.Structural)
             let map = { map with Dict = dict; DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
-            map.TMap <- map
-            oldMap.TMap <- map
+            map.TMap.SetTarget map
+            oldMap.TMap.SetTarget map
             map
 
         let private compress map =
             let oldMap = map
             let dictOrigin = Dictionary<'k, 'v> (map.Dict, HashIdentity.Structural)
             let map = { map with DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
-            map.TMap <- map
-            oldMap.TMap <- map
+            map.TMap.SetTarget map
+            oldMap.TMap.SetTarget map
             map
 
         let private validate map =
-            match obj.ReferenceEquals (map.TMap, map) with
-            | true -> if map.LogsLength > map.Dict.Count * map.BloatFactor then compress map else map
-            | false -> commit map 
+            match map.TMap.TryGetTarget () with
+            | (true, target) ->
+                match obj.ReferenceEquals (target, map) with
+                | true -> if map.LogsLength > map.Dict.Count * map.BloatFactor then compress map else map
+                | false -> commit map 
+            | (false, _) -> commit map
 
         let private update updater map =
             let oldMap = map
             let map = validate map
             let map = updater map
-            map.TMap <- map
-            oldMap.TMap <- map
+            map.TMap.SetTarget map
+            oldMap.TMap.SetTarget map
             map
 
         let makeFromSeq<'k, 'v when 'k : equality> optBloatFactor entries =
             let map =
-                { TMap = Unchecked.defaultof<TMap<'k, 'v>>
+                { TMap = WeakReference<TMap<'k, 'v>> Unchecked.defaultof<TMap<'k, 'v>>
                   Dict = dictPlus entries
                   DictOrigin = dictPlus entries
                   Logs = []
                   LogsLength = 0
                   BloatFactor = Option.getOrDefault 1 optBloatFactor }
-            map.TMap <- map
+            map.TMap.SetTarget map
             map
 
         let makeEmpty<'k, 'v when 'k : equality> optBloatFactor =

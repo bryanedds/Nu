@@ -32,8 +32,7 @@ module internal SpatialNodeModule =
         let rec internal addElement bounds element node =
             let nodes =
                 node.Children |>
-                Seq.filter (fun node -> inBounds bounds node) |>
-                Array.ofSeq
+                Array.filter (fun node -> inBounds bounds node)
             match nodes.Length with
             | 0 -> node.Elements.Add element |> ignore
             | 1 -> let child = nodes.[0] in addElement bounds element child
@@ -42,8 +41,7 @@ module internal SpatialNodeModule =
         let rec internal removeElement bounds element node =
             let nodes =
                 node.Children |>
-                Seq.filter (fun node -> inBounds bounds node) |>
-                Array.ofSeq
+                Array.filter (fun node -> inBounds bounds node)
             match nodes.Length with
             | 0 -> node.Elements.Remove element |> ignore
             | 1 -> let child = nodes.[0] in removeElement bounds element child

@@ -159,7 +159,7 @@ module Reflection =
     /// Read one of a target's xtension properties from property descriptors.
     let private readXProperty xtension propertyDescriptors (target : 'a) (definition : PropertyDefinition) =
         let targetType = target.GetType ()
-        if Seq.notExists
+        if Array.notExists
             (fun (property : PropertyInfo) -> property.Name = definition.PropertyName)
             (targetType.GetProperties ()) then
             match Map.tryFind definition.PropertyName propertyDescriptors with

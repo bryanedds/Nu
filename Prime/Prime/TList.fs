@@ -15,7 +15,7 @@ module TListModule =
 
     type [<NoEquality; NoComparison>] 'a TList =
         private
-            { mutable TList : 'a TList
+            { TList : 'a TList WeakReference
               ImpList : 'a List
               ImpListOrigin : 'a List
               Logs : 'a Log list
@@ -47,40 +47,43 @@ module TListModule =
                 list.Logs ()
             let impList = List<'a> impListOrigin
             let list = { list with ImpList = impList; ImpListOrigin = impListOrigin; Logs = []; LogsLength = 0 }
-            list.TList <- list
-            oldList.TList <- list
+            list.TList.SetTarget list
+            oldList.TList.SetTarget list
             list
 
         let private compress list =
             let oldList = list
             let impListOrigin = List<'a> list.ImpList
             let list = { list with ImpListOrigin = impListOrigin; Logs = []; LogsLength = 0 }
-            list.TList <- list
-            oldList.TList <- list
+            list.TList.SetTarget list
+            oldList.TList.SetTarget list
             list
 
         let private validate list =
-            match obj.ReferenceEquals (list.TList, list) with
-            | true -> if list.LogsLength > list.ImpList.Count * list.BloatFactor then compress list else list
-            | false -> commit list
+            match list.TList.TryGetTarget () with
+            | (true, target) ->
+                match obj.ReferenceEquals (target, list) with
+                | true -> if list.LogsLength > list.ImpList.Count * list.BloatFactor then compress list else list
+                | false -> commit list
+            | (false, _) -> commit list
 
         let private update updater list =
             let oldList = list
             let list = validate list
             let list = updater list
-            list.TList <- list
-            oldList.TList <- list
+            list.TList.SetTarget list
+            oldList.TList.SetTarget list
             list
 
         let private makeFromTempList bloatFactorOpt (tempList : 'a List) =
             let list =
-                { TList = Unchecked.defaultof<'a TList>
+                { TList = WeakReference<'a TList> Unchecked.defaultof<'a TList>
                   ImpList = tempList
                   ImpListOrigin = List<'a> tempList
                   Logs = []
                   LogsLength = 0
                   BloatFactor = Option.getOrDefault 1 bloatFactorOpt }
-            list.TList <- list
+            list.TList.SetTarget list
             list
 
         let makeFromSeq bloatFactorOpt (items : 'a seq) =

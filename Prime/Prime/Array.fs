@@ -26,6 +26,10 @@ let add elem arr =
 let rec notEmpty arr =
     not ^ Array.isEmpty arr
 
+/// Check that a predicate passes for NO items in an array.
+let rec notExists pred arr =
+    not ^ Array.exists pred arr
+
 /// Convert option values to definite values.
 let definitize opts =
     Array.choose id opts

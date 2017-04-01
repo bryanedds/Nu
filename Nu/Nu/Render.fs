@@ -29,7 +29,7 @@ type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
       Rotation : single
       ViewType : ViewType
       MapSize : Vector2i
-      Tiles : TmxLayerTile List
+      Tiles : TmxLayerTile List // OPTIMIZATION: using List for direct transfer from Tmx
       TileSourceSize : Vector2i
       TileSize : Vector2
       TileSet : TmxTileset
@@ -47,7 +47,7 @@ type [<StructuralEquality; NoComparison>] TextDescriptor =
 /// Describes how to render a layered 'thing' to the rendering system.
 type [<StructuralEquality; NoComparison>] LayeredDescriptor =
     | SpriteDescriptor of SpriteDescriptor
-    | SpritesDescriptor of SpriteDescriptor List
+    | SpritesDescriptor of SpriteDescriptor array
     | TileLayerDescriptor of TileLayerDescriptor
     | TextDescriptor of TextDescriptor
 
@@ -260,7 +260,7 @@ module RendererModule =
             else Log.info ^ "SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."; renderer
 
         static member private renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
-            Seq.fold
+            Array.fold
                 (fun renderer sprite -> Renderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer)
                 renderer
                 sprites
