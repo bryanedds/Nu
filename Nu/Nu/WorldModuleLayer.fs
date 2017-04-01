@@ -20,7 +20,7 @@ module WorldModuleLayer =
             refEq layerStateKey.Value layerStateKey2.Value
 
         static member private layerGetFreshKeyAndValue (layer : Layer) world =
-            let layerStateOpt = UMap.tryFind layer.LayerAddress world.LayerStates
+            let layerStateOpt = UMap.tryFindFast layer.LayerAddress world.LayerStates
             KeyValuePair (KeyValuePair (layer.LayerAddress, world.LayerStates), layerStateOpt)
 
         static member private layerStateFinder (layer : Layer) world =
@@ -87,9 +87,9 @@ module WorldModuleLayer =
             World.layerStateFinder layer world
 
         static member private getLayerState layer world =
-            match World.getLayerStateOpt layer world with
-            | Some layerState -> layerState
-            | None -> failwith ^ "Could not find layer with address '" + scstring layer.LayerAddress + "'."
+            let layerStateOpt = World.getLayerStateOpt layer world
+            if FOption.isSome layerStateOpt then FOption.get layerStateOpt
+            else failwith ^ "Could not find layer with address '" + scstring layer.LayerAddress + "'."
 
         static member private setLayerState layerState layer world =
             World.layerStateSetter layerState layer world
@@ -106,7 +106,7 @@ module WorldModuleLayer =
 
         /// Check that a layer exists in the world.
         static member internal layerExists layer world =
-            Option.isSome ^ World.getLayerStateOpt layer world
+            FOption.isSome ^ World.getLayerStateOpt layer world
 
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
         static member internal getLayerName layer world = (World.getLayerState layer world).Name

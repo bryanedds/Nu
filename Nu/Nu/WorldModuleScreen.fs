@@ -20,7 +20,7 @@ module WorldModuleScreen =
             refEq screenStateKey.Value screenStateKey2.Value
 
         static member private screenGetFreshKeyAndValue (screen : Screen) world =
-            let screenStateOpt = UMap.tryFind screen.ScreenAddress world.ScreenStates
+            let screenStateOpt = UMap.tryFindFast screen.ScreenAddress world.ScreenStates
             KeyValuePair (KeyValuePair (screen.ScreenAddress, world.ScreenStates), screenStateOpt)
 
         static member private screenStateFinder (screen : Screen) world =
@@ -78,9 +78,9 @@ module WorldModuleScreen =
              World.screenStateFinder screen world
 
         static member internal getScreenState screen world =
-            match World.getScreenStateOpt screen world with
-            | Some screenState -> screenState
-            | None -> failwith ^ "Could not find screen with address '" + scstring screen.ScreenAddress + "'."
+            let screenStateOpt = World.getScreenStateOpt screen world
+            if FOption.isSome screenStateOpt then FOption.get screenStateOpt
+            else failwith ^ "Could not find screen with address '" + scstring screen.ScreenAddress + "'."
 
         static member internal setScreenState screenState screen world =
             World.screenStateSetter screenState screen world
@@ -97,7 +97,7 @@ module WorldModuleScreen =
 
         /// Check that a screen exists in the world.
         static member internal screenExists screen world =
-            Option.isSome ^ World.getScreenStateOpt screen world
+            FOption.isSome ^ World.getScreenStateOpt screen world
 
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
