@@ -55,7 +55,7 @@ type AddressConverter (targetType : Type) =
 module AddressModule =
 
     /// Specifies the address of an identifiable value.
-    /// TODO: P1: have an Address constructor to check if multiple wildcards exist in a given address, and throw if so.
+    /// TODO: P1: have Address constructor throw if multiple wildcards are used.
     type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
         private
             { Names : string list

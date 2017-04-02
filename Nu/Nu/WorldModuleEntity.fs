@@ -603,8 +603,8 @@ module WorldModuleEntity =
                 let subscriptionsOpt = UMap.tryFindFast eventAddress (World.getSubscriptions world)
                 if FOption.isSome subscriptionsOpt then
                     match FOption.get subscriptionsOpt with
-                    | [] -> failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
-                    | _ :: _ -> true
+                    | [||] -> failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
+                    | _ -> true
                 else false
             if World.entityExists entity world
             then setFlag publishUpdates entity world

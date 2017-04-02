@@ -103,8 +103,7 @@ module MetadataModule =
 
         /// Try to get the metadata of the given asset.
         let tryGetMetadata (assetTag : AssetTag) metadata =
-            let packageOpt = UMap.tryFind assetTag.PackageName metadata.MetadataMap
-            match packageOpt with
+            match UMap.tryFind assetTag.PackageName metadata.MetadataMap with
             | Some package ->
                 match UMap.tryFind assetTag.AssetName package with
                 | Some _ as asset -> asset

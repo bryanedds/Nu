@@ -124,7 +124,7 @@ type [<StructuralEquality; NoComparison>] CreateBodyMessage =
 type [<StructuralEquality; NoComparison>] CreateBodiesMessage =
     { SourceParticipant : Participant
       SourceId : Guid
-      BodyPropertyList : BodyProperties list }
+      BodiesProperties : BodyProperties seq }
 
 /// A message to the physics system to destroy a body.
 type [<StructuralEquality; NoComparison>] DestroyBodyMessage =
@@ -132,7 +132,7 @@ type [<StructuralEquality; NoComparison>] DestroyBodyMessage =
 
 /// A message to the physics system to destroy multiple bodies.
 type [<StructuralEquality; NoComparison>] DestroyBodiesMessage =
-    { PhysicsIds : PhysicsId list }
+    { PhysicsIds : PhysicsId seq }
 
 /// A message to the physics system to destroy a body.
 type [<StructuralEquality; NoComparison>] SetBodyPositionMessage =
@@ -380,9 +380,9 @@ module PhysicsEngineModule =
                 Log.debug ^ "Could not add body via '" + scstring bodyProperties + "'."
     
         static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
-            List.iter
+            Seq.iter
                 (fun bodyProperties -> PhysicsEngine.createBody4 createBodiesMessage.SourceId createBodiesMessage.SourceParticipant bodyProperties physicsEngine)
-                createBodiesMessage.BodyPropertyList
+                createBodiesMessage.BodiesProperties
     
         static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
             PhysicsEngine.createBody4 createBodyMessage.SourceId createBodyMessage.SourceParticipant createBodyMessage.BodyProperties physicsEngine
@@ -400,7 +400,7 @@ module PhysicsEngineModule =
             PhysicsEngine.destroyBody2 destroyBodyMessage.PhysicsId physicsEngine
     
         static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
-            List.iter (fun physicsId -> PhysicsEngine.destroyBody2 physicsId physicsEngine) destroyBodiesMessage.PhysicsIds
+            Seq.iter (fun physicsId -> PhysicsEngine.destroyBody2 physicsId physicsEngine) destroyBodiesMessage.PhysicsIds
     
         static member private setBodyPosition (setBodyPositionMessage : SetBodyPositionMessage) physicsEngine =
             match physicsEngine.Bodies.TryGetValue setBodyPositionMessage.PhysicsId with

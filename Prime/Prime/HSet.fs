@@ -49,13 +49,13 @@ module HSetModule =
             gutter2
 
         let private removeFromGutter (v : 'a) (gutter : Hv<'a> array) =
-            match Array.tryFindIndexBack (fun (entry2 : Hv<'a>) -> entry2.V.Equals v) gutter with
-            | Some index ->
+            match Array.FindLastIndex (gutter, fun (entry2 : Hv<'a>) -> entry2.V.Equals v) with
+            | -1 -> gutter
+            | index ->
                 let gutter2 = Array.zeroCreate (dec gutter.Length) : Hv<'a> array
                 Array.Copy (gutter, 0, gutter2, 0, index)
                 Array.Copy (gutter, inc index, gutter2, index, gutter2.Length - index)
                 gutter2
-            | None -> gutter
 
         let private containedByGutter (v : 'a) (gutter : Hv<'a> array) =
             Array.exists (fun (entry2 : Hv<'a>) -> v.Equals entry2.V) gutter

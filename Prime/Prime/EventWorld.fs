@@ -115,18 +115,28 @@ module EventWorld =
 
     // NOTE: event addresses are ordered from general to specific. This is so a generalized subscriber can preempt
     // any specific subscribers. Whether this is the best order is open for discussion.
+    // OPTIMIZATION: imperative for speed
     let private getEventAddresses1 (eventAddress : 'a Address) =
-        // OPTIMIZATION: imperative for speed
+        
+        // create target event address array
         let eventAddressNames = eventAddress |> Address.getNames |> Array.ofList
-        Seq.foldi (fun index eventAddresses _ ->
-            let index = eventAddressNames.Length - index - 1
-            let eventAddressNamesAny = Array.zeroCreate eventAddressNames.Length // TODO: P1: use Array.zeroCreateUnchecked if / when it becomes available
-            Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNames.Length)
-            eventAddressNamesAny.[index] <- Address.head Events.Wildcard
+        let eventAddressNamesLength = eventAddressNames.Length
+        let eventAddresses = Array.zeroCreate (inc eventAddressNamesLength)
+
+        // make non-wildcard address the last element
+        eventAddresses.[eventAddressNamesLength] <- eventAddress
+
+        // populate wildcard addresses from specific to general
+        Array.iteri (fun i _ ->
+            let eventAddressNamesAny = Array.zeroCreate eventAddressNamesLength
+            Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNamesLength)
+            eventAddressNamesAny.[i] <- Address.head Events.Wildcard
             let eventAddressAny = eventAddressNamesAny |> List.ofArray |> Address.ltoa
-            eventAddressAny :: eventAddresses)
-            [eventAddress]
+            eventAddresses.[i] <- eventAddressAny)
             eventAddressNames
+
+        // fin
+        eventAddresses
 
     let private getEventAddresses2 (eventAddress : 'a Address) allowWildcard =
         if allowWildcard then
@@ -143,9 +153,9 @@ module EventWorld =
                         | (true, list) -> list.Add eventAddress
                         EventAddressCache.Add (eventAddress, eventAddresses)
                     eventAddresses
-                | (true, eventAddressesObj) -> eventAddressesObj :?> 'a Address list
+                | (true, eventAddressesObj) -> eventAddressesObj :?> 'a Address array
             else getEventAddresses1 eventAddress
-        else [eventAddress]
+        else [|eventAddress|]
 
     let private debugSubscriptionTypeMismatch () =
         Log.debug ^
@@ -168,31 +178,24 @@ module EventWorld =
 
     let getSortableSubscriptions
         (getSortPriority : Participant -> 'w -> IComparable)
-        (subscriptions : SubscriptionEntry list)
+        (subscriptions : SubscriptionEntry array)
         (world : 'w) :
-        (IComparable * SubscriptionEntry) list =
-        List.foldBack
-            (fun (key, participant : Participant, subscription) subscriptions ->
+        (IComparable * SubscriptionEntry) array =
+        Array.map
+            (fun (key, participant : Participant, subscription) ->
                 let priority = getSortPriority participant world
-                let subscription = (priority, (key, participant, subscription))
-                subscription :: subscriptions)
+                (priority, (key, participant, subscription)))
             subscriptions
-            []
 
     let private getSubscriptionsSorted (publishSorter : SubscriptionSorter<'w>) eventAddress allowWildcard (world : 'w) =
         let eventSystem = getEventSystem world
         let subscriptions = EventSystem.getSubscriptions eventSystem
         let eventAddresses = getEventAddresses2 eventAddress allowWildcard
-        let subListOpts = List.map (fun eventAddress -> UMap.tryFindFast eventAddress subscriptions) eventAddresses
-        let subLists =
-            List.foldBack (fun subListOpt subListOpts ->
-                if FOption.isSome subListOpt
-                then FOption.get subListOpt :: subListOpts
-                else subListOpts)
-                subListOpts
-                []
-        let subList = List.concat subLists
-        publishSorter subList world
+        let subscriptionOpts = Array.map (fun eventAddress -> UMap.tryFindFast eventAddress subscriptions) eventAddresses
+        let subscriptionOpts = Array.filter FOption.isSome subscriptionOpts
+        let subscriptions = Array.map FOption.get subscriptionOpts // TODO: consider fusing with filter by using filterBy
+        let subscriptions = Array.concat subscriptions
+        publishSorter subscriptions world
 
     let private logEvent<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> eventAddress eventTrace (world : 'w) =
         EventSystem.logEvent<'w> eventAddress eventTrace (getEventSystem world)
@@ -231,13 +234,13 @@ module EventWorld =
         (handling, world)
 
     /// Sort subscriptions using categorization via the 'by' procedure.
-    let sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) (world : 'w) =
+    let sortSubscriptionsBy by (subscriptions : SubscriptionEntry array) (world : 'w) =
         let subscriptions = getSortableSubscriptions by subscriptions world
-        let subscriptions = List.sortWith (fun ((p : IComparable), _) ((p2 : IComparable), _) -> p.CompareTo p2) subscriptions
-        List.map snd subscriptions
+        let subscriptions = Array.sortWith (fun ((p : IComparable), _) ((p2 : IComparable), _) -> p.CompareTo p2) subscriptions
+        Array.map snd subscriptions
 
     /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
-    let sortSubscriptionsNone (subscriptions : SubscriptionEntry list) (_ : 'w) =
+    let sortSubscriptionsNone (subscriptions : SubscriptionEntry array) (_ : 'w) =
         subscriptions
 
     /// Publish an event, using the given publishSorter procedures to arrange the order to which subscriptions are published.
@@ -252,7 +255,7 @@ module EventWorld =
         let objEventAddress = atooa eventAddress in logEvent<'g, 'w> objEventAddress eventTrace world
         let subscriptions = getSubscriptionsSorted publishSorter objEventAddress allowWildcard world
         let (_, world) =
-            List.foldWhile
+            Array.foldWhile
                 (fun (handling, world : 'w) (_, subscriber : Participant, subscription) ->
 #if DEBUG
                     let eventAddresses = getEventAddresses world
@@ -285,18 +288,18 @@ module EventWorld =
     /// Unsubscribe from an event.
     let unsubscribe<'g, 'w when 'g :> Participant and 'w :> EventWorld<'g, 'w>> subscriptionKey (world : 'w) =
         let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
-        match UMap.tryFind subscriptionKey unsubscriptions with
-        | Some (eventAddress, subscriber) ->
-            match UMap.tryFind eventAddress subscriptions with
-            | Some subscriptionList ->
-                let subscriptionList =
-                    List.remove
-                        (fun (subscriptionKey', subscriber', _) -> subscriptionKey' = subscriptionKey && subscriber' = subscriber)
-                        subscriptionList
+        let unsubscriptionOpt = UMap.tryFindFast subscriptionKey unsubscriptions
+        if FOption.isSome unsubscriptionOpt then
+            let (eventAddress, subscriber) = FOption.get unsubscriptionOpt
+            let subscriptionsArrayOpt = UMap.tryFindFast eventAddress subscriptions
+            if FOption.isSome subscriptionsArrayOpt then
+                let subscriptionsArray =
+                    FOption.get subscriptionsArrayOpt |>
+                    Array.remove (fun (subscriptionKey', subscriber', _) -> subscriptionKey' = subscriptionKey && subscriber' = subscriber)
                 let subscriptions = 
-                    match subscriptionList with
-                    | [] -> UMap.remove eventAddress subscriptions
-                    | _ -> UMap.add eventAddress subscriptionList subscriptions
+                    match subscriptionsArray with
+                    | [||] -> UMap.remove eventAddress subscriptions
+                    | _ -> UMap.add eventAddress subscriptionsArray subscriptions
                 let unsubscriptions = UMap.remove subscriptionKey unsubscriptions
                 let world = setSubscriptions subscriptions world
                 let world = setUnsubscriptions unsubscriptions world
@@ -306,8 +309,8 @@ module EventWorld =
                     (EventTrace.record "EventWorld" "unsubscribe" EventTrace.empty)
                     (EventSystem.getGlobalPariticipant (world.GetEventSystem ()))
                     world
-            | None -> world
-        | None -> world
+            else world
+        else world
 
     /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
     let subscribePlus<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
@@ -320,8 +323,8 @@ module EventWorld =
                 let subscriptionEntriesOpt = UMap.tryFindFast objEventAddress subscriptions
                 if FOption.isSome subscriptionEntriesOpt then
                     let subscriptionEntries = FOption.get subscriptionEntriesOpt
-                    UMap.add objEventAddress (subscriptionEntries @ [subscriptionEntry]) subscriptions // NOTE: inefficient to add to back of list! Use a Queue instead!
-                else UMap.add objEventAddress [subscriptionEntry] subscriptions
+                    UMap.add objEventAddress (Array.add subscriptionEntry subscriptionEntries) subscriptions
+                else UMap.add objEventAddress [|subscriptionEntry|] subscriptions
             let unsubscriptions = UMap.add subscriptionKey (objEventAddress, subscriber :> Participant) unsubscriptions
             let world = setSubscriptions subscriptions world
             let world = setUnsubscriptions unsubscriptions world
