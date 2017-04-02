@@ -87,7 +87,8 @@ module WorldTypes =
         { OldWorldWithOldState : World }
 
     /// Describes the information needed to sort simulants.
-    /// OPTIMIZATION: implemented as a struct and carries related entity to avoid GC pressure.
+    /// OPTIMIZATION: carries related entity to avoid GC pressure.
+    /// TODO: implement as struct.
     and [<CustomEquality; CustomComparison>] SortPriority =
         { SortDepth : single
           SortTarget : Simulant }
