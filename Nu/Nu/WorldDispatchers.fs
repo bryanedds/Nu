@@ -67,18 +67,20 @@ module MountFacetModule =
 
         static let handleLocalPropertyChange evt world =
             let entity = evt.Subscriber : Entity
+            let data = evt.Data : EntityChangeData
             match entity.GetNodeOpt world with
             | Some nodeRelation ->
                 let node = entity.Resolve nodeRelation
                 if World.entityExists node world
-                then (Cascade, updatePropertyFromLocal evt.Data.PropertyName node entity world)
-                else (Cascade, updatePropertyFromLocal3 evt.Data.PropertyName entity world)
-            | None -> (Cascade, updatePropertyFromLocal3 evt.Data.PropertyName entity world)
+                then (Cascade, updatePropertyFromLocal data.PropertyName node entity world)
+                else (Cascade, updatePropertyFromLocal3 data.PropertyName entity world)
+            | None -> (Cascade, updatePropertyFromLocal3 data.PropertyName entity world)
 
         static let handleNodePropertyChange evt world =
             let entity = evt.Subscriber : Entity
             let node = evt.Publisher :?> Entity
-            (Cascade, updatePropertyFromNode evt.Data.PropertyName node entity world)
+            let data = evt.Data : EntityChangeData
+            (Cascade, updatePropertyFromNode data.PropertyName node entity world)
 
         static let rec handleNodeChange evt world =
             let entity = evt.Subscriber : Entity

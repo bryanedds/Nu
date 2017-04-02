@@ -182,9 +182,9 @@ module EventWorld =
         (world : 'w) :
         (IComparable * SubscriptionEntry) array =
         Array.map
-            (fun (key, participant : Participant, subscription) ->
-                let priority = getSortPriority participant world
-                (priority, (key, participant, subscription)))
+            (fun (subscription : SubscriptionEntry) ->
+                let priority = getSortPriority subscription.Subscriber world
+                (priority, { SubscriptionKey = subscription.SubscriptionKey; Subscriber = subscription.Subscriber; Callback = subscription.Callback }))
             subscriptions
 
     let private getSubscriptionsSorted (publishSorter : SubscriptionSorter<'w>) eventAddress allowWildcard (world : 'w) =
@@ -256,7 +256,7 @@ module EventWorld =
         let subscriptions = getSubscriptionsSorted publishSorter objEventAddress allowWildcard world
         let (_, world) =
             Array.foldWhile
-                (fun (handling, world : 'w) (_, subscriber : Participant, subscription) ->
+                (fun (handling, world : 'w) (subscription : SubscriptionEntry) ->
 #if DEBUG
                     let eventAddresses = getEventAddresses world
                     let cycleDetected = List.containsTriplicates eventAddresses
@@ -270,7 +270,7 @@ module EventWorld =
 #if DEBUG
                         let world = pushEventAddress objEventAddress world
 #endif
-                        let (handling, world) = world.PublishEvent subscriber publisher eventData eventAddress eventTrace subscription world
+                        let (handling, world) = world.PublishEvent subscription.Subscriber publisher eventData eventAddress eventTrace subscription world
 #if DEBUG
                         let world = popEventAddress world
 #endif
@@ -295,7 +295,7 @@ module EventWorld =
             if FOption.isSome subscriptionsArrayOpt then
                 let subscriptionsArray =
                     FOption.get subscriptionsArrayOpt |>
-                    Array.remove (fun (subscriptionKey', subscriber', _) -> subscriptionKey' = subscriptionKey && subscriber' = subscriber)
+                    Array.remove (fun subscription -> subscription.SubscriptionKey = subscriptionKey && subscription.Subscriber = subscriber)
                 let subscriptions = 
                     match subscriptionsArray with
                     | [||] -> UMap.remove eventAddress subscriptions
@@ -319,7 +319,10 @@ module EventWorld =
             let objEventAddress = atooa eventAddress
             let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
             let subscriptions =
-                let subscriptionEntry = (subscriptionKey, subscriber :> Participant, boxSubscription subscription)
+                let subscriptionEntry =
+                    { SubscriptionKey = subscriptionKey
+                      Subscriber = subscriber :> Participant
+                      Callback = boxSubscription subscription }
                 let subscriptionEntriesOpt = UMap.tryFindFast objEventAddress subscriptions
                 if FOption.isSome subscriptionEntriesOpt then
                     let subscriptionEntries = FOption.get subscriptionEntriesOpt
