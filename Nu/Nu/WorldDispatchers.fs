@@ -1247,9 +1247,7 @@ module TileMapDispatcherModule =
                     (registerTileLayerPhysics tileMap tileMapData)
                     world
                     tileMapData.Map.Layers
-            | None ->
-                Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
-                world
+            | None -> Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'."); world
 
         let getTileLayerPhysicsIds (tileMap : Entity) tileMapData tileLayer tileLayerIndex world =
             Seq.foldi
@@ -1277,9 +1275,7 @@ module TileMapDispatcherModule =
                         else world)
                     world
                     tileMapData.Map.Layers
-            | None ->
-                Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
-                world
+            | None -> Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'."); world
 
         static member PropertyDefinitions =
             [Define? Omnipresent true
@@ -1298,8 +1294,8 @@ module TileMapDispatcherModule =
             
         override dispatcher.PropagatePhysics (tileMap, world) =
             world |>
-                unregisterTileMapPhysics tileMap |>
-                registerTileMapPhysics tileMap
+            unregisterTileMapPhysics tileMap |>
+            registerTileMapPhysics tileMap
 
         override dispatcher.Actualize (tileMap, world) =
             if tileMap.GetVisible world then

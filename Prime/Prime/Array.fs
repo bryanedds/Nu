@@ -7,11 +7,11 @@ open System
 open Prime
 
 /// 'Cons' a value to the front of an array.
-let cons elem tail =
-    let tailLength = Array.length tail
+let cons elem arr =
+    let tailLength = Array.length arr
     let arr2 = Array.zeroCreate (inc tailLength)
     arr2.[0] <- elem
-    Array.Copy (tail, 0, arr2, 1, tailLength)
+    Array.Copy (arr, 0, arr2, 1, tailLength)
     arr2
 
 /// Add a value to the end of an array.
@@ -21,6 +21,32 @@ let add elem arr =
     arr2.[tailLength] <- elem
     Array.Copy (arr, 0, arr2, 0, tailLength)
     arr2
+
+/// Remove the first matching element of the array.
+let remove pred (arr : 'a array) =
+    match Array.tryFindIndex pred arr with
+    | Some index ->
+        let arr2 = Array.zeroCreate (dec arr.Length) : 'a array
+        Array.Copy (arr, 0, arr2, 0, index)
+        Array.Copy (arr, inc index, arr2, index, arr2.Length - index)
+        arr2
+    | None -> arr
+
+/// Implement a fold while folder results in Some.
+let foldWhile folder (state : 's) (arr : 't array) =
+    Seq.foldWhile folder state arr
+
+/// Implement a fold while folder results in Right.
+let foldWhileRight folder (state : Either<_, _>) (arr : 't array) =
+    Seq.foldWhileRight folder state arr
+
+/// Implement a fold until folder results in Nome.
+let foldUntil folder (state : 's) (arr : 't array) =
+    Seq.foldUntil folder state arr
+
+/// Implement a fold until folder results in Right.
+let foldUntilRight folder (state : Either<_, _>) (arr : 't array) =
+    Seq.foldUntilRight folder state arr
 
 /// Check that an array is not empty.
 let rec notEmpty arr =

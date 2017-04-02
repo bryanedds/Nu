@@ -110,7 +110,7 @@ module WorldModule =
             EventWorld.qualifyEventContext address world
 
         /// Sort subscriptions using categorization via the 'by' procedure.
-        static member sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) (world : World) =
+        static member sortSubscriptionsBy by subscriptions (world : World) =
             EventWorld.sortSubscriptionsBy by subscriptions world
 
         /// Sort subscriptions by their place in the world's simulant hierarchy.
@@ -129,7 +129,7 @@ module WorldModule =
                 world
 
         /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
-        static member sortSubscriptionsNone (subscriptions : SubscriptionEntry list) (world : World) =
+        static member sortSubscriptionsNone subscriptions (world : World) =
             EventWorld.sortSubscriptionsNone subscriptions world
 
         /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.

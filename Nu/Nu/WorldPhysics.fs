@@ -118,8 +118,8 @@ module WorldPhysicsModule =
             World.enqueuePhysicsMessage createBodyMessage world
 
         /// Send a message to the physics system to create several physics bodies.
-        static member createBodies (entity : Entity) entityId bodyPropertyList world =
-            let createBodiesMessage = CreateBodiesMessage { SourceParticipant = entity; SourceId = entityId; BodyPropertyList = bodyPropertyList }
+        static member createBodies (entity : Entity) entityId bodiesProperties world =
+            let createBodiesMessage = CreateBodiesMessage { SourceParticipant = entity; SourceId = entityId; BodiesProperties = bodiesProperties }
             World.enqueuePhysicsMessage createBodiesMessage world
 
         /// Send a message to the physics system to destroy a physics body.

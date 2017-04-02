@@ -30,18 +30,16 @@ type SubscriptionEntry =
     Guid * Participant * obj
 
 /// Abstracts over a subscription sorting procedure.
-/// TODO: P1: for efficiency, consider using UList rather than list.
 type 'w SubscriptionSorter =
-    SubscriptionEntry list -> 'w -> SubscriptionEntry list
+    SubscriptionEntry array -> 'w -> SubscriptionEntry array
 
 /// Describes an event subscription that can be boxed / unboxed.
 type 'w BoxableSubscription =
     obj -> obj -> 'w -> Handling * 'w
 
 /// A map of event subscriptions.
-/// TODO: P1: for efficiency, consider using UList for storing subscriptions rather than list.
 type SubscriptionEntries =
-    UMap<obj Address, SubscriptionEntry list>
+    UMap<obj Address, SubscriptionEntry array>
 
 /// A map of subscription keys to unsubscription data.
 type UnsubscriptionEntries =
