@@ -8,15 +8,15 @@ open System.Collections.Generic
 open Prime
 
 /// Check that a list is not empty.
-let rec notEmpty list =
+let inline notEmpty list =
     not ^ List.isEmpty list
 
 /// Make a singleton list.
-let singleton value =
+let inline singleton value =
     [value]
 
 /// The missing cons function.
-let cons head tail =
+let inline cons head tail =
     head :: tail
 
 /// Cons with flipped arguments.

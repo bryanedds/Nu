@@ -12,6 +12,7 @@ module TSetModule =
         | Add of 'a
         | Remove of 'a
 
+    // TODO: P1: Make operations return struct tuples in next version of F#.
     type [<NoEquality; NoComparison>] TSet<'a when 'a : equality> =
         private
             { TSet : 'a TSet WeakReference
@@ -76,8 +77,8 @@ module TSetModule =
         let makeFromSeq<'a when 'a : equality> optBloatFactor items =
             let set =
                 { TSet = WeakReference<'a TSet> Unchecked.defaultof<'a TSet>
-                  HashSet = hashPlus items
-                  HashSetOrigin = hashPlus items
+                  HashSet = hashsetPlus items
+                  HashSetOrigin = hashsetPlus items
                   Logs = []
                   LogsLength = 0
                   BloatFactor = Option.getOrDefault 1 optBloatFactor }
@@ -129,10 +130,7 @@ module TSetModule =
         /// otherwise opaquely change during iteration.
         let toSeq set =
             let set = validate set
-            let seq =
-                set.HashSet |>
-                Array.ofSeq :>
-                'a seq
+            let seq = set.HashSet |> Array.ofSeq :> 'a seq
             (seq, set)
 
         let ofSeq items =

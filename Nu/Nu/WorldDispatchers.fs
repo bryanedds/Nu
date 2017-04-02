@@ -309,7 +309,7 @@ module ScriptFacetModule =
         override facet.Register (entity, world) =
             let world =
                 match entity.GetOnRegisterAp world with
-                | Scripting.Unit -> world // OPTIMIZATION: don't both evaluating unit
+                | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
                 | handler -> World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
             let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? ScriptAp) entity world
             let world = World.monitor handleOnRegisterChanged (entity.GetChangeEvent Property? OnRegisterAp) entity world
@@ -317,17 +317,17 @@ module ScriptFacetModule =
 
         override facet.Unregister (entity, world) =
             match entity.GetOnUnregister world with
-            | Scripting.Unit -> world // OPTIMIZATION: don't both evaluating unit
+            | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
             | handler -> World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
 
         override facet.Update (entity, world) =
             match entity.GetOnUpdate world with
-            | Scripting.Unit -> world // OPTIMIZATION: don't both evaluating unit
+            | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
             | handler -> World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
 
         override facet.PostUpdate (entity, world) =
             match entity.GetOnPostUpdate world with
-            | Scripting.Unit -> world // OPTIMIZATION: don't both evaluating unit
+            | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
             | handler -> World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
 
 [<AutoOpen>]
@@ -396,7 +396,7 @@ module RigidBodyFacetModule =
             Physics.localizeCollisionBody (entity.GetSize world) (entity.GetCollisionBody world)
 
         static member PropertyDefinitions =
-            [Variable? MinorId ^ fun () -> makeGuid ()
+            [Variable? MinorId (fun () -> makeGuid ())
              Define? BodyType Dynamic
              Define? Awake true
              Define? Density Constants.Physics.NormalDensity
@@ -410,7 +410,7 @@ module RigidBodyFacetModule =
              Define? GravityScale 1.0f
              Define? CollisionCategories "1"
              Define? CollisionMask "@"
-             Define? CollisionBody ^ BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero }
+             Define? CollisionBody (BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero })
              Define? IsBullet false
              Define? IsSensor false]
 
@@ -530,7 +530,7 @@ module AnimatedSpriteFacetModule =
 
         static member PropertyDefinitions =
             [Define? CelCount 16 
-             Define? CelSize ^ Vector2 (16.0f, 16.0f)
+             Define? CelSize (Vector2 (16.0f, 16.0f))
              Define? CelRun 4
              Define? AnimationStutter 4L
              Define? AnimationSheet { PackageName = Assets.DefaultPackageName; AssetName = "Image7" }]
@@ -689,7 +689,7 @@ module ButtonDispatcherModule =
              Define? Down false
              Define? UpImage { PackageName = Assets.DefaultPackageName; AssetName = "Image" }
              Define? DownImage { PackageName = Assets.DefaultPackageName; AssetName = "Image2" }
-             Define? ClickSoundOpt ^ Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" }
+             Define? ClickSoundOpt (Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" })
              Define? OnClick Scripting.Unit]
 
         override dispatcher.Register (button, world) =
@@ -904,7 +904,7 @@ module ToggleDispatcherModule =
              Define? Pressed false
              Define? OpenImage { PackageName = Assets.DefaultPackageName; AssetName = "Image" }
              Define? ClosedImage { PackageName = Assets.DefaultPackageName; AssetName = "Image2" }
-             Define? ToggleSoundOpt ^ Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" }
+             Define? ToggleSoundOpt (Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" })
              Define? OnToggle Scripting.Unit]
 
         override dispatcher.Register (toggle, world) =
@@ -1112,7 +1112,7 @@ module TopViewCharacterDispatcherModule =
             [Define? FixedRotation true
              Define? LinearDamping 10.0f
              Define? GravityScale 0.0f
-             Define? CollisionBody ^ BodyCircle { Radius = 0.5f; Center = Vector2.Zero }
+             Define? CollisionBody (BodyCircle { Radius = 0.5f; Center = Vector2.Zero })
              Define? StaticImage { PackageName = Assets.DefaultPackageName; AssetName = "Image7" }]
         
         static member IntrinsicFacetNames =
@@ -1128,7 +1128,7 @@ module SideViewCharacterDispatcherModule =
         static member PropertyDefinitions =
             [Define? FixedRotation true
              Define? LinearDamping 3.0f
-             Define? CollisionBody ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
+             Define? CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
              Define? StaticImage { PackageName = Assets.DefaultPackageName; AssetName = "Image6" }]
 
         static member IntrinsicFacetNames =

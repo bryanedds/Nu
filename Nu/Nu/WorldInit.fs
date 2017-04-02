@@ -31,7 +31,7 @@ module Nu =
                 System.Globalization.CultureInfo.InvariantCulture
 
             // init logging
-            Log.init ^ Some "Log.txt"
+            Log.init (Some "Log.txt")
 
             // initialize math module
             Math.init ()

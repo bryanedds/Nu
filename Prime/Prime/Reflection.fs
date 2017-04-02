@@ -152,13 +152,13 @@ module Type =
         | null ->
             let allAssemblies = AppDomain.CurrentDomain.GetAssemblies ()
             let types =
-                Seq.choose
+                Array.choose
                     (fun (assembly : Assembly) ->
                         match assembly.GetType name with
                         | null -> None
                         | ty -> Some ty)
                     allAssemblies
-            Seq.tryFind (fun _ -> true) types
+            Array.tryHead types
         | ty -> Some ty
 
     /// Get an existing type with the given unqualified name. Time-intensive.

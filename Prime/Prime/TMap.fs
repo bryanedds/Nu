@@ -12,6 +12,7 @@ module TMapModule =
         | Add of 'k * 'v
         | Remove of 'k
 
+    // TODO: P1: Make operations return struct tuples in next version of F#.
     type [<NoEquality; NoComparison>] TMap<'k, 'v when 'k : equality> =
         private
             { TMap : TMap<'k, 'v> WeakReference
