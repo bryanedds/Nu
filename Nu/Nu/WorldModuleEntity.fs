@@ -175,7 +175,8 @@ module WorldModuleEntity =
             let oldWorld = world
             let entityState = World.getEntityState entity world
             let (entityState, world) = World.updateEntityStateInternal updater mutability entityState entity world
-            if World.shouldPublishChange propertyName entityState then World.publishEntityChange propertyName entity oldWorld world
+            if World.shouldPublishChange propertyName entityState
+            then World.publishEntityChange propertyName entity oldWorld world
             else world
 
         static member private updateEntityStatePlus updater mutability (propertyName : string) entity world =
@@ -183,7 +184,8 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let (entityState, world) = World.updateEntityStateInternal updater mutability entityState entity world
             let world = World.updateEntityInEntityTree entity oldWorld world
-            if World.shouldPublishChange propertyName entityState then World.publishEntityChange propertyName entity oldWorld world
+            if World.shouldPublishChange propertyName entityState
+            then World.publishEntityChange propertyName entity oldWorld world
             else world
 
         static member private publishEntityChanges entity oldWorld world =

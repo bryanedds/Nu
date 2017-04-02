@@ -40,7 +40,7 @@ module Reflection =
         not
             (property.Name = Constants.Engine.NamePropertyName &&
              property.PropertyType = typeof<string> &&
-             fst ^ Guid.TryParse (property.GetValue target :?> string))
+             property.GetValue target :?> string |> Guid.TryParse |> fst)
 
     /// Check that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) (dispatcher : 'a) =
@@ -137,14 +137,12 @@ module Reflection =
     /// Get all the unique reflective property definitions of a type, including those of its
     /// dispatcher and / or facets.
     let getReflectivePropertyDefinitions (target : 'a) =
-        let types = getReflectivePropertyContainerTypes target
-        let definitionLists = List.map getPropertyDefinitions types
-        let definitions = List.concat definitionLists
-        let definitions =
-            Map.ofListBy (fun (definition : PropertyDefinition) ->
-                (definition.PropertyName, definition))
-                definitions
-        Map.toValueList definitions
+        target |>
+        getReflectivePropertyContainerTypes |>
+        List.map getPropertyDefinitions |>
+        List.concat |>
+        Map.ofListBy (fun definition -> (definition.PropertyName, definition)) |>
+        Map.toValueList
         
     /// Try to read the target's member property from property descriptors.
     let private tryReadMemberProperty propertyDescriptors (property : PropertyInfo) target =
