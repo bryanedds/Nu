@@ -69,7 +69,7 @@ module FieldDispatcherModule =
                         [LayerableDescriptor
                             { Depth = field.GetDepth world
                               PositionY = (field.GetPosition world).Y
-                              LayeredDescriptor = SpritesDescriptor (Array.ofList sprites) }])
+                              LayeredDescriptor = SpritesDescriptor sprites }])
                     world
             else world
 
