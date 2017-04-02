@@ -16,8 +16,7 @@ type [<StructuralEquality; NoComparison>] XPropertyDescriptor =
       PropertyType : Type }
 
 /// An Xtension property.
-/// TODO: P1: make this a struct record in next version of F#.
-type [<StructuralEquality; NoComparison>] XProperty =
+type [<Struct; StructuralEquality; NoComparison>] XProperty =
     { mutable PropertyType : Type
       mutable PropertyValue : obj }
 
@@ -89,7 +88,7 @@ module XtensionModule =
         static member (?<-) (xtension, propertyName, value : 'a) =
             let propertyOpt = UMap.tryFindFast propertyName xtension.Properties
             if FOption.isSome propertyOpt then
-                let property = FOption.get propertyOpt
+                let mutable property = FOption.get propertyOpt
                 if xtension.Sealed && property.PropertyType <> typeof<'a> then failwith "Cannot change the type of a sealed Xtension's property."
                 if xtension.Imperative then property.PropertyValue <- value :> obj; xtension
                 else
@@ -141,6 +140,7 @@ module XtensionModule =
             match UMap.tryFind name xtension.Properties with
             | Some property' ->
                 if xtension.Imperative then
+                    let mutable property' = property' // rebind as mutable
                     property'.PropertyType <- property.PropertyType
                     property'.PropertyValue <- property.PropertyValue
                     (true, xtension)

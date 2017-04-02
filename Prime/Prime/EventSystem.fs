@@ -15,6 +15,12 @@ type Liveness =
     | Running
     | Exiting
 
+/// An entry in the subscription map.
+type [<Struct; NoEquality; NoComparison>] SubscriptionEntry =
+    { SubscriptionKey : Guid
+      Subscriber : Participant
+      Callback : obj }
+
 /// An event used by the event system.
 type [<ReferenceEquality>] Event<'a, 's when 's :> Participant> =
     { Data : 'a
@@ -23,11 +29,6 @@ type [<ReferenceEquality>] Event<'a, 's when 's :> Participant> =
       Publisher : Participant
       Address : 'a Address
       Trace : EventTrace }
-
-/// An entry in the subscription map.
-/// TODO: P1: for efficiency, consider using a struct tuple or struct record.
-type SubscriptionEntry =
-    Guid * Participant * obj
 
 /// Abstracts over a subscription sorting procedure.
 type 'w SubscriptionSorter =
