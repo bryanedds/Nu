@@ -16,6 +16,7 @@ type [<StructuralEquality; NoComparison>] XPropertyDescriptor =
       PropertyType : Type }
 
 /// An Xtension property.
+/// TODO: P1: make this a struct record in next version of F#.
 type [<StructuralEquality; NoComparison>] XProperty =
     { mutable PropertyType : Type
       mutable PropertyValue : obj }
@@ -43,8 +44,8 @@ module XtensionModule =
             let defaultPropertyType = typeof<'a>
             let defaultValueAttributeOpt =
                 defaultPropertyType.GetCustomAttributes (typeof<XDefaultValueAttribute>, true) |>
-                Seq.map (fun attr -> attr :?> XDefaultValueAttribute) |>
-                Seq.tryHead
+                Array.map (fun attr -> attr :?> XDefaultValueAttribute) |>
+                Array.tryHead
             match defaultValueAttributeOpt with
             | Some defaultValueAttribute ->
                 match defaultValueAttribute.DefaultValue with

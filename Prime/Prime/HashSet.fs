@@ -26,8 +26,14 @@ module HashSetExtension =
 [<AutoOpen>]
 module HashSetOperators =
 
-    /// Make a concrete HashSet instance populated with the given itesm and using structural hashing.
-    let hashPlus items =
+    /// Make a concrete HashSet instance populated with the given items and using vanilla hashing.
+    let hashset items =
+        let hashSet = HashSet ()
+        for item in items do hashSet.TryAdd item |> ignore
+        hashSet
+
+    /// Make a concrete HashSet instance populated with the given items and using structural hashing.
+    let hashsetPlus items =
         let hashSet = HashSet HashIdentity.Structural
         for item in items do hashSet.TryAdd item |> ignore
         hashSet

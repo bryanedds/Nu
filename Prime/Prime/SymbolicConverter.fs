@@ -25,9 +25,8 @@ type SymbolicConverter (printing : bool, pointType : Type) =
         if values.Length < fieldTypes.Length then
             let valuesPadded =
                 fieldTypes |>
-                Seq.skip values.Length |>
-                Seq.map (fun info -> info.GetDefaultValue ()) |>
-                Array.ofSeq |>
+                Array.skip values.Length |>
+                Array.map (fun info -> info.GetDefaultValue ()) |>
                 Array.append values
             valuesPadded
         else values
@@ -122,8 +121,8 @@ type SymbolicConverter (printing : bool, pointType : Type) =
             elif FSharpType.IsTuple sourceType then
                 let tupleFields = FSharpValue.GetTupleFields source
                 let tupleElementTypes = FSharpType.GetTupleElements sourceType
-                let tupleFieldSymbols = List.mapi (fun i tupleField -> toSymbol tupleElementTypes.[i] tupleField) (List.ofArray tupleFields)
-                Symbols (tupleFieldSymbols, None)
+                let tupleFieldSymbols = Array.mapi (fun i tupleField -> toSymbol tupleElementTypes.[i] tupleField) tupleFields
+                Symbols (List.ofArray tupleFieldSymbols, None)
 
             // symbolize Record
             elif FSharpType.IsRecord sourceType then
@@ -132,23 +131,22 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                     let recordFields = Array.map (fun info -> (info, FSharpValue.GetRecordField (source, info))) recordFieldInfos
                     let recordFieldSymbols =
                         recordFields |>
-                        List.ofArray |>
-                        List.map (fun (info, field) -> Symbols ([Atom (info.Name, None); toSymbol info.PropertyType field], None))
-                    Symbols (recordFieldSymbols, None)
+                        Array.map (fun (info, field) -> Symbols ([Atom (info.Name, None); toSymbol info.PropertyType field], None))
+                    Symbols (List.ofArray recordFieldSymbols, None)
                 else
                     let recordFields = FSharpValue.GetRecordFields source
                     let recordFieldTypes = FSharpType.GetRecordFields sourceType
-                    let recordFieldSymbols = List.mapi (fun i recordField -> toSymbol recordFieldTypes.[i].PropertyType recordField) (List.ofArray recordFields)
-                    Symbols (recordFieldSymbols, None)
+                    let recordFieldSymbols = Array.mapi (fun i recordField -> toSymbol recordFieldTypes.[i].PropertyType recordField) recordFields
+                    Symbols (List.ofArray recordFieldSymbols, None)
 
             // symbolize Union
             elif FSharpType.IsUnion sourceType then
                 let (unionCase, unionFields) = FSharpValue.GetUnionFields (source, sourceType)
                 let unionFieldInfos = unionCase.GetFields ()
                 if not ^ Array.isEmpty unionFields then
-                    let unionFieldSymbols = List.mapi (fun i unionField -> toSymbol unionFieldInfos.[i].PropertyType unionField) (List.ofArray unionFields)
-                    let unionSymbols = Atom (unionCase.Name, None) :: unionFieldSymbols
-                    Symbols (unionSymbols, None)
+                    let unionFieldSymbols = Array.mapi (fun i unionField -> toSymbol unionFieldInfos.[i].PropertyType unionField) unionFields
+                    let unionSymbols = Array.cons (Atom (unionCase.Name, None)) unionFieldSymbols
+                    Symbols (List.ofArray unionSymbols, None)
                 else Atom (unionCase.Name, None)
 
             // symbolize vanilla .NET type

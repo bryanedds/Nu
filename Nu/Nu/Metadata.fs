@@ -106,33 +106,31 @@ module MetadataModule =
             let packageOpt = UMap.tryFind assetTag.PackageName metadata.MetadataMap
             match packageOpt with
             | Some package ->
-                let assetOpt = UMap.tryFind assetTag.AssetName package
-                match assetOpt with
+                match UMap.tryFind assetTag.AssetName package with
                 | Some _ as asset -> asset
                 | None -> None
             | None -> None
 
         /// Try to get the texture metadata of the given asset.
         let tryGetTextureSize assetTag metadata =
-            let assetOpt = tryGetMetadata assetTag metadata
-            match assetOpt with
+            match tryGetMetadata assetTag metadata with
             | Some (TextureMetadata size) -> Some size
             | None -> None
             | _ -> None
 
         /// Forcibly get the texture size metadata of the given asset (throwing on failure).
         let getTextureSize assetTag metadata =
-            Option.get ^ tryGetTextureSize assetTag metadata
+            Option.get (tryGetTextureSize assetTag metadata)
 
         /// Try to get the texture size metadata of the given asset.
         let tryGetTextureSizeAsVector2 assetTag metadata =
             match tryGetTextureSize assetTag metadata with
-            | Some size -> Some ^ Vector2 (single size.X, single size.Y)
+            | Some size -> Some (Vector2 (single size.X, single size.Y))
             | None -> None
 
         /// Forcibly get the texture size metadata of the given asset (throwing on failure).
         let getTextureSizeAsVector2 assetTag metadata =
-            Option.get ^ tryGetTextureSizeAsVector2 assetTag metadata
+            Option.get (tryGetTextureSizeAsVector2 assetTag metadata)
 
         /// Try to get the tile map metadata of the given asset.
         let tryGetTileMapMetadata assetTag metadata =
@@ -144,7 +142,7 @@ module MetadataModule =
 
         /// Forcibly get the tile map metadata of the given asset (throwing on failure).
         let getTileMapMetadata assetTag metadata =
-            Option.get ^ tryGetTileMapMetadata assetTag metadata
+            Option.get (tryGetTileMapMetadata assetTag metadata)
 
         /// Generate metadata from the given asset graph.
         let make assetGraph =

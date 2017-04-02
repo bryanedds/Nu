@@ -215,7 +215,7 @@ module WorldScreenModule =
 
         /// Read multiple screens from a game descriptor.
         static member readScreens gameDescriptor world =
-            Seq.foldBack
+            List.foldBack
                 (fun screenDescriptor (screens, world) ->
                     let (screen, world) = World.readScreen screenDescriptor None world
                     (screen :: screens, world))

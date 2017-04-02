@@ -25,6 +25,7 @@ type [<ReferenceEquality>] Event<'a, 's when 's :> Participant> =
       Trace : EventTrace }
 
 /// An entry in the subscription map.
+/// TODO: P1: for efficiency, consider using a struct tuple or struct record.
 type SubscriptionEntry =
     Guid * Participant * obj
 

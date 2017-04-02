@@ -101,8 +101,8 @@ module RelationModule =
 
         /// Make a relation from a list of option names.
         let makeFromList<'a> nameOptsList =
-            { NameOpts = nameOptsList |> List.ofSeq; TypeCarrier = fun (_ : 'a) -> () }
-    
+            { NameOpts = nameOptsList; TypeCarrier = fun (_ : 'a) -> () }
+
         /// Make a relation from a '/' delimited string.
         let makeFromString<'a> relationStr =
             Relation<'a>.makeFromString relationStr

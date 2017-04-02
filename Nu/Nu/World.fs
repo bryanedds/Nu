@@ -27,13 +27,13 @@ module WorldModule2 =
             (getTypeName source, source)
 
         static member private makeDefaultGameDispatchers () =
-            Map.ofList [World.pairWithName ^ GameDispatcher ()]
+            Map.ofList [World.pairWithName (GameDispatcher ())]
             
         static member private makeDefaultScreenDispatchers () =
-            Map.ofList [World.pairWithName ^ ScreenDispatcher ()]
+            Map.ofList [World.pairWithName (ScreenDispatcher ())]
 
         static member private makeDefaultLayerDispatchers () =
-            Map.ofList [World.pairWithName ^ LayerDispatcher ()]
+            Map.ofList [World.pairWithName (LayerDispatcher ())]
 
         static member private makeDefaultEntityDispatchers () =
             // TODO: see if we can reflectively generate these
@@ -102,7 +102,7 @@ module WorldModule2 =
         static member selectedScreenIdling world =
             match World.tryGetSelectedScreenIdling world with
             | Some answer -> answer
-            | None -> failwith ^ "Cannot query state of non-existent selected screen."
+            | None -> failwith "Cannot query state of non-existent selected screen."
 
         /// Check that the selected screen is transitioning (failing with an exception if no screen
         /// is selected).
@@ -458,7 +458,7 @@ module WorldModule2 =
                     World.publishPlus World.sortSubscriptionsByDepth { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
-                    let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
+                    let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                     let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event")
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
@@ -468,7 +468,7 @@ module WorldModule2 =
                     World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
-                    let mouseButton = World.toNuMouseButton ^ uint32 evt.button.button
+                    let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                     let mouseButtonUpEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event")
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
@@ -752,11 +752,11 @@ module WorldModule2 =
 
                 // make the world's dispatchers
                 let dispatchers =
-                    { GameDispatchers = Map.addMany [World.pairWithName activeGameDispatcher] ^ World.makeDefaultGameDispatchers ()
-                      ScreenDispatchers = Map.addMany pluginScreenDispatchers ^ World.makeDefaultScreenDispatchers ()
-                      LayerDispatchers = Map.addMany pluginLayerDispatchers ^ World.makeDefaultLayerDispatchers ()
-                      EntityDispatchers = Map.addMany pluginEntityDispatchers ^ World.makeDefaultEntityDispatchers ()
-                      Facets = Map.addMany pluginFacets ^ World.makeDefaultFacets ()
+                    { GameDispatchers = Map.addMany [World.pairWithName activeGameDispatcher] (World.makeDefaultGameDispatchers ())
+                      ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
+                      LayerDispatchers = Map.addMany pluginLayerDispatchers (World.makeDefaultLayerDispatchers ())
+                      EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
+                      Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
                       IsExtrinsic = World.isExtrinsic
                       EvalExtrinsic = World.evalExtrinsic
                       UpdateEntityInEntityTree = World.updateEntityInEntityTree
@@ -771,7 +771,7 @@ module WorldModule2 =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> Renderer.make renderContext :> IRenderer
                         | None -> MockRenderer.make () :> IRenderer
-                    let renderer = renderer.EnqueueMessage ^ HintRenderPackageUseMessage { PackageName = Assets.DefaultPackageName }
+                    let renderer = renderer.EnqueueMessage (HintRenderPackageUseMessage { PackageName = Assets.DefaultPackageName })
                     let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> World Subsystem
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u

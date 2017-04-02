@@ -81,7 +81,7 @@ module SubsystemsModule =
                 subsystems.SubsystemMap
     
         let clearSubsystemsMessages<'s, 'w when 's :> 'w Subsystem> subsystems (world : 'w) =
-            updateSubsystems (fun is _ -> is.ClearMessages ()) subsystems world
+            updateSubsystems (fun subsystem _ -> subsystem.ClearMessages ()) subsystems world
     
         let make subsystems =
             { SubsystemMap = subsystems }
