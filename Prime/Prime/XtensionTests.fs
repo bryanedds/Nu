@@ -19,28 +19,28 @@ type [<CLIMutable; NoEquality; NoComparison>] TestXtended =
 module XtensionTests =
 
     let [<Fact>] canAddProperty () =
-        let xtn = Xtension.empty
+        let xtn = Xtension.makeEmpty ()
         let xtn = xtn?TestProperty <- 5
         let propertyValue = xtn?TestProperty
         Assert.Equal (5, propertyValue)
 
     let [<Fact>] cantAddPropertyWhenSealed () =
-        let xtn = Xtension.safe
+        let xtn = Xtension.makeSafe ()
         Assert.Throws<Exception> (fun () -> (xtn?TestProperty <- 0) |> ignore)
 
     let [<Fact>] cantAccessNonexistentProperty () =
-        let xtn = Xtension.mixed
+        let xtn = Xtension.makeMixed ()
         let xtn = xtn?TestProperty <- 5
         Assert.Throws<Exception> (fun () -> xtn?TetProperty |> ignore)
 
     let [<Fact>] missingPropertyReturnsDefault () =
-        let xtn = Xtension.empty
+        let xtn = Xtension.makeEmpty ()
         let xtn = xtn?TestProperty <- 0
         let propertyValue = xtn?MissingProperty
         Assert.Equal (0, propertyValue)
 
     let [<Fact>] canAddPropertyViaContainingType () =
-        let xtd = { Xtension = Xtension.empty }
+        let xtd = { Xtension = Xtension.makeEmpty () }
         let xtd = xtd?TestProperty <- 5
         let propertyValue = xtd?TestProperty
         Assert.Equal (5, propertyValue)

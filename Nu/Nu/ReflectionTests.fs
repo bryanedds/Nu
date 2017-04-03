@@ -22,7 +22,7 @@ module ReflectionTests =
             { this with Xtension = this.Xtension }
 
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
-        let xtd = { Xtension = Xtension.mixed }
+        let xtd = { Xtension = Xtension.makeMixed () }
         let xtd = xtd?TestProperty <- 5
         let properties = Reflection.writePropertiesFromTarget tautology3 Map.empty xtd
         let xtdRead = { xtd with Xtension = xtd.Xtension } // hacky copy

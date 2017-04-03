@@ -308,35 +308,37 @@ module Reflection =
     let attachPropertiesViaDefinitions (copyTarget : 'a -> 'a) definitions target =
         let target = copyTarget target
         let targetType = target.GetType ()
-        for definition in definitions do
-            let propertyValue = PropertyExpr.eval definition.PropertyExpr
-            match targetType.GetPropertyWritable definition.PropertyName with
-            | null ->
-                match targetType.GetPropertyWritable "Xtension" with
-                | null -> failwith ^ "Invalid property '" + definition.PropertyName + "' for target type '" + targetType.Name + "'."
-                | xtensionProperty ->
-                    match xtensionProperty.GetValue target with
-                    | :? Xtension as xtension ->
+        match targetType.GetPropertyWritable "Xtension" with
+        | null -> failwith "Target does not support Xtensions due to missing Xtension property."
+        | xtensionProperty ->
+            match xtensionProperty.GetValue target with
+            | :? Xtension as xtension ->
+                let mutable xtension = xtension
+                for definition in definitions do
+                    let propertyValue = PropertyExpr.eval definition.PropertyExpr
+                    match targetType.GetPropertyWritable definition.PropertyName with
+                    | null ->
                         let xProperty = { PropertyType = definition.PropertyType; PropertyValue = propertyValue }
-                        let xtension = Xtension.attachProperty definition.PropertyName xProperty xtension
-                        xtensionProperty.SetValue (target, xtension)
-                    | _ -> failwith ^ "Invalid property '" + definition.PropertyName + "' for target type '" + targetType.Name + "'."
-            | property -> property.SetValue (target, propertyValue)
+                        xtension <- Xtension.attachProperty definition.PropertyName xProperty xtension
+                    | property -> property.SetValue (target, propertyValue)
+                xtensionProperty.SetValue (target, xtension)
+            | _ -> failwith "Target does not support Xtensions due to missing Xtension property."
         target
 
     /// Detach properties from a target.
     let detachPropertiesViaNames (copyTarget : 'a -> 'a) propertyNames target =
         let target = copyTarget target
         let targetType = target.GetType ()
-        for propertyName in propertyNames do
-            match targetType.GetPropertyWritable propertyName with
-            | null ->
-                match targetType.GetPropertyWritable "Xtension" with
-                | null -> failwith ^ "Invalid property '" + propertyName + "' for target type '" + targetType.Name + "'."
-                | xtensionProperty ->
-                    match xtensionProperty.GetValue target with
-                    | :? Xtension as xtension ->
-                        let xtension = Xtension.detachProperty propertyName xtension
+        match targetType.GetPropertyWritable "Xtension" with
+        | null -> failwith "Target does not support Xtensions due to missing Xtension property."
+        | xtensionProperty ->
+            match xtensionProperty.GetValue target with
+            | :? Xtension as xtension ->
+                let mutable xtension = xtension
+                for propertyName in propertyNames do
+                    match targetType.GetPropertyWritable propertyName with
+                    | null ->
+                        xtension <- Xtension.detachProperty propertyName xtension
                         xtensionProperty.SetValue (target, xtension)
                     | _ -> failwith ^ "Invalid property '" + propertyName + "' for target type '" + targetType.Name + "'."
             | _ -> ()

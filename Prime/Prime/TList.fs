@@ -16,7 +16,7 @@ module TListModule =
     // TODO: P1: Make operations return struct tuples in next version of F#.
     type [<NoEquality; NoComparison>] 'a TList =
         private
-            { TList : 'a TList WeakReference
+            { mutable TListOpt : 'a TList
               ImpList : 'a List
               ImpListOrigin : 'a List
               Logs : 'a Log list
@@ -48,43 +48,43 @@ module TListModule =
                 list.Logs ()
             let impList = List<'a> impListOrigin
             let list = { list with ImpList = impList; ImpListOrigin = impListOrigin; Logs = []; LogsLength = 0 }
-            list.TList.SetTarget list
-            oldList.TList.SetTarget list
+            oldList.TListOpt <- Unchecked.defaultof<'a TList>
+            list.TListOpt <- list
             list
 
         let private compress list =
             let oldList = list
             let impListOrigin = List<'a> list.ImpList
             let list = { list with ImpListOrigin = impListOrigin; Logs = []; LogsLength = 0 }
-            list.TList.SetTarget list
-            oldList.TList.SetTarget list
+            oldList.TListOpt <- Unchecked.defaultof<'a TList>
+            list.TListOpt <- list
             list
 
         let private validate list =
-            match list.TList.TryGetTarget () with
-            | (true, target) ->
+            match box list.TListOpt with
+            | null -> commit list
+            | target ->
                 match obj.ReferenceEquals (target, list) with
                 | true -> if list.LogsLength > list.ImpList.Count * list.BloatFactor then compress list else list
                 | false -> commit list
-            | (false, _) -> commit list
 
         let private update updater list =
             let oldList = list
             let list = validate list
             let list = updater list
-            list.TList.SetTarget list
-            oldList.TList.SetTarget list
+            oldList.TListOpt <- Unchecked.defaultof<'a TList>
+            list.TListOpt <- list
             list
 
         let private makeFromTempList bloatFactorOpt (tempList : 'a List) =
             let list =
-                { TList = WeakReference<'a TList> Unchecked.defaultof<'a TList>
+                { TListOpt = Unchecked.defaultof<'a TList>
                   ImpList = tempList
                   ImpListOrigin = List<'a> tempList
                   Logs = []
                   LogsLength = 0
                   BloatFactor = Option.getOrDefault 1 bloatFactorOpt }
-            list.TList.SetTarget list
+            list.TListOpt <- list
             list
 
         let makeFromSeq bloatFactorOpt (items : 'a seq) =

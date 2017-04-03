@@ -115,13 +115,13 @@ module XtensionModule =
         let makeImperative () = make (UMap.makeEmpty None) false true true
     
         /// An Xtension that can default, isn't sealed, and isn't imperative.
-        let empty = make (UMap.makeEmpty None) true false false
+        let makeEmpty () = make (UMap.makeEmpty None) true false false
     
         /// An Xtension that cannot default, is sealed, and isn't imperative.
-        let safe = make (UMap.makeEmpty None) false true false
+        let makeSafe () = make (UMap.makeEmpty None) false true false
     
         /// An Xtension that cannot default, isn't sealed, and isn't imperative.
-        let mixed = make (UMap.makeEmpty None) false false false
+        let makeMixed () = make (UMap.makeEmpty None) false false false
 
         /// Whether the extension uses mutation.
         let getImperative xtension = xtension.Imperative
@@ -172,7 +172,7 @@ module XtensionModule =
         let toSeq xtension = xtension.Properties :> _ seq
 
         /// Convert an xtension to a sequence of its entries.
-        let ofSeq seq = attachProperties seq empty
+        let ofSeq seq = attachProperties seq (makeEmpty ())
 
 /// Xtensions (and their supporting types) are a dynamic, functional, and convenient way
 /// to implement dynamic properties.

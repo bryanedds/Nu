@@ -183,7 +183,7 @@ module HSetModule =
         /// Create an empty HSet.
         let makeEmpty () =
             { Node = HNode.empty
-              EmptyArray = Array.zeroCreate 16 }
+              EmptyArray = Array.create 16 Nil }
     
         /// Check that an HSet is empty.
         let isEmpty set =
