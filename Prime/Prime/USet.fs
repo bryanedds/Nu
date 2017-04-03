@@ -15,7 +15,7 @@ module USetModule =
     
         interface IEnumerable<'a> with
             member this.GetEnumerator () =
-                let (seq, tset) = TSet.toSeq !this.RefSet
+                let struct (seq, tset) = TSet.toSeq !this.RefSet
                 this.RefSet := tset
                 seq.GetEnumerator ()
     
@@ -44,7 +44,7 @@ module USetModule =
             { RefSet = ref ^ TSet.removeMany values !set.RefSet }
 
         let isEmpty set =
-            let (result, tset) = TSet.isEmpty !set.RefSet
+            let struct (result, tset) = TSet.isEmpty !set.RefSet
             set.RefSet := tset
             result
 
@@ -52,7 +52,7 @@ module USetModule =
             not ^ isEmpty set
 
         let contains value set =
-            let (result, tset) = TSet.contains value !set.RefSet
+            let struct (result, tset) = TSet.contains value !set.RefSet
             set.RefSet := tset
             result
 
@@ -63,17 +63,17 @@ module USetModule =
             set :> _ seq
 
         let fold folder state set =
-            let (result, tset) = TSet.fold folder state !set.RefSet
+            let struct (result, tset) = TSet.fold folder state !set.RefSet
             set.RefSet := tset
             result
 
         let map mapper set =
-            let (result, tset) = TSet.map mapper !set.RefSet
+            let struct (result, tset) = TSet.map mapper !set.RefSet
             set.RefSet := tset
             { RefSet = ref result }
 
         let filter pred set =
-            let (result, tset) = TSet.filter pred !set.RefSet
+            let struct (result, tset) = TSet.filter pred !set.RefSet
             set.RefSet := tset
             { RefSet = ref result }
 

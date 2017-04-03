@@ -33,7 +33,7 @@ module Effects =
         | Ratio
         | Set
 
-    type [<StructuralEquality; NoComparison>] Slice =
+    type [<Struct; NoComparison>] Slice =
         { Position : Vector2
           Size : Vector2
           Rotation : single
@@ -43,49 +43,49 @@ module Effects =
           Volume : single
           Enabled : bool }
 
-    type IKeyFrame =
+    type KeyFrame =
         abstract KeyFrameLength : int64
 
-    type LogicKeyFrame =
+    type [<Struct>] LogicKeyFrame =
         { LogicValue : bool
           LogicLength : int64 }
-        interface IKeyFrame with
+        interface KeyFrame with
             member this.KeyFrameLength = this.LogicLength
 
-    type TweenKeyFrame =
+    type [<Struct>] TweenKeyFrame =
         { TweenValue : single
           TweenLength : int64 }
-        interface IKeyFrame with
+        interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<NoComparison>] Tween2KeyFrame =
+    type [<Struct; NoComparison>] Tween2KeyFrame =
         { TweenValue : Vector2
           TweenLength : int64 }
-        interface IKeyFrame with
+        interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<NoComparison>] Tween3KeyFrame =
+    type [<Struct; NoComparison>] Tween3KeyFrame =
         { TweenValue : Vector3
           TweenLength : int64 }
-        interface IKeyFrame with
+        interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<NoComparison>] Tween4KeyFrame =
+    type [<Struct; NoComparison>] Tween4KeyFrame =
         { TweenValue : Vector4
           TweenLength : int64 }
-        interface IKeyFrame with
+        interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type TweenIKeyFrame =
+    type [<Struct>] TweenIKeyFrame =
         { TweenValue : int
           TweenLength : int64 }
-        interface IKeyFrame with
+        interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type Tween2IKeyFrame =
+    type [<Struct>] Tween2IKeyFrame =
         { TweenValue : Vector2i
           TweenLength : int64 }
-        interface IKeyFrame with
+        interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
     type Playback =
@@ -97,50 +97,50 @@ module Effects =
         | Cycle of int
         | Iterate of int
 
-    type Rate =
+    type [<Struct>] Rate =
         Rate of single
 
-    type Shift =
+    type [<Struct>] Shift =
         Shift of single
 
     type [<NoComparison>] Resource =
         | Resource of string * string
-        | Expand of string * Argument list
+        | Expand of string * Argument array
 
     and [<NoComparison>] Aspect =
-        | Enabled of LogicApplicator * Playback * LogicKeyFrame list
-        | Position of TweenApplicator * Algorithm * Playback * Tween2KeyFrame list
-        | Translation of TweenApplicator * Algorithm * Playback * Tween2KeyFrame list
-        | Offset of TweenApplicator * Algorithm * Playback * Tween2KeyFrame list
-        | Size of TweenApplicator * Algorithm * Playback * Tween2KeyFrame list
-        | Rotation of TweenApplicator * Algorithm * Playback * TweenKeyFrame list
-        | Depth of TweenApplicator * Algorithm * Playback * TweenKeyFrame list
-        | Color of TweenApplicator * Algorithm * Playback * Tween4KeyFrame list
-        | Volume of TweenApplicator * Algorithm * Playback * TweenKeyFrame list
+        | Enabled of LogicApplicator * Playback * LogicKeyFrame array
+        | Position of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
+        | Translation of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
+        | Offset of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
+        | Size of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
+        | Rotation of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
+        | Depth of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
+        | Color of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
+        | Volume of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Bone // TODO: implement bone aspect
-        | Expand of string * Argument list
+        | Expand of string * Argument array
 
     and [<NoComparison>] Content =
         | Nil // first to make default value when missing
         | Tag of string * Symbol
-        | StaticSprite of Resource * Aspect list * Content
-        | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect list * Content
-        | SoundEffect of Resource * Aspect list * Content
-        | Mount of Shift * Aspect list * Content
-        | Repeat of Shift * Repetition * Aspect list * Content
-        | Emit of Shift * Rate * Aspect list * Aspect list * Content
-        | Composite of Shift * Content list
-        | Expand of string * Argument list
+        | StaticSprite of Resource * Aspect array * Content
+        | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect array * Content
+        | SoundEffect of Resource * Aspect array * Content
+        | Mount of Shift * Aspect array * Content
+        | Repeat of Shift * Repetition * Aspect array * Content
+        | Emit of Shift * Rate * Aspect array * Aspect array * Content
+        | Composite of Shift * Content array
+        | Expand of string * Argument array
 
     and Argument =
         SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
 
     type [<NoComparison>] Definition =
-        { DefinitionParams : string list
+        { DefinitionParams : string array
           DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
 
     type [<NoComparison>] Artifact =
-        | RenderArtifact of RenderDescriptor list
+        | RenderArtifact of RenderDescriptor array
         | SoundArtifact of single * AssetTag
         | TagArtifact of string * Symbol * Slice
 
@@ -173,4 +173,4 @@ type [<NoEquality; NoComparison>] Effect =
         { EffectName = Constants.Engine.DefaultEffectName
           LifetimeOpt = None
           Definitions = Map.empty
-          Content = Effects.Composite (Effects.Shift 0.0f, []) }
+          Content = Effects.Composite (Effects.Shift 0.0f, [||]) }

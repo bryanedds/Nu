@@ -47,7 +47,7 @@ type [<StructuralEquality; NoComparison>] TextDescriptor =
 /// Describes how to render a layered 'thing' to the rendering system.
 type [<StructuralEquality; NoComparison>] LayeredDescriptor =
     | SpriteDescriptor of SpriteDescriptor
-    | SpritesDescriptor of SpriteDescriptor seq
+    | SpritesDescriptor of SpriteDescriptor array
     | TileLayerDescriptor of TileLayerDescriptor
     | TextDescriptor of TextDescriptor
 
@@ -73,7 +73,7 @@ type [<StructuralEquality; NoComparison>] HintRenderPackageDisuseMessage =
 
 /// A message to the rendering system.
 type [<StructuralEquality; NoComparison>] RenderMessage =
-    | RenderDescriptorsMessage of RenderDescriptor list
+    | RenderDescriptorsMessage of RenderDescriptor array
     | HintRenderPackageUseMessage of HintRenderPackageUseMessage
     | HintRenderPackageDisuseMessage of HintRenderPackageDisuseMessage
     | ReloadRenderAssetsMessage
@@ -104,7 +104,7 @@ module RendererModule =
             { RenderContext : nativeint
               RenderPackageMap : RenderAsset PackageMap
               RenderMessages : RenderMessage UList
-              RenderDescriptors : RenderDescriptor list }
+              RenderDescriptors : RenderDescriptor array }
 
         static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
             if left.Depth < right.Depth then -1
@@ -186,16 +186,16 @@ module RendererModule =
 
         static member private handleReloadRenderAssets renderer =
             let oldPackageMap = renderer.RenderPackageMap
-            let oldPackageNames = oldPackageMap |> UMap.toSeq |> Seq.map fst
+            let oldPackageNames = oldPackageMap |> UMap.toSeq |> Seq.map fst |> Array.ofSeq
             let renderer = { renderer with RenderPackageMap = UMap.makeEmpty None }
-            Seq.fold
+            Array.fold
                 (fun renderer packageName -> Renderer.tryLoadRenderPackage packageName renderer)
                 renderer
                 oldPackageNames
 
         static member private handleRenderMessage renderer renderMessage =
             match renderMessage with
-            | RenderDescriptorsMessage renderDescriptors -> { renderer with RenderDescriptors = renderDescriptors @ renderer.RenderDescriptors }
+            | RenderDescriptorsMessage renderDescriptors -> { renderer with RenderDescriptors = Array.append renderDescriptors renderer.RenderDescriptors }
             | HintRenderPackageUseMessage hintPackageUse -> Renderer.handleHintRenderPackageUse hintPackageUse renderer
             | HintRenderPackageDisuseMessage hintPackageDisuse -> Renderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
             | ReloadRenderAssetsMessage -> Renderer.handleReloadRenderAssets renderer
@@ -260,7 +260,7 @@ module RendererModule =
             else Log.info ^ "SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."; renderer
 
         static member private renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
-            Seq.fold
+            Array.fold
                 (fun renderer sprite -> Renderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer)
                 renderer
                 sprites
@@ -402,7 +402,6 @@ module RendererModule =
                 SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
                 let renderDescriptorsSorted =
                     renderDescriptors |>
-                    Array.ofList |>
                     Array.rev |>
                     Seq.sortWith Renderer.sortDescriptors |> // Seq.sort is stable, unlike Array.sort...
                     Array.ofSeq
@@ -420,7 +419,7 @@ module RendererModule =
                 { RenderContext = renderContext
                   RenderPackageMap = UMap.makeEmpty None
                   RenderMessages = UList.makeEmpty None
-                  RenderDescriptors = [] }
+                  RenderDescriptors = [||] }
             renderer
 
         interface IRenderer with
@@ -439,7 +438,7 @@ module RendererModule =
                 let renderer = { renderer with RenderMessages = UList.makeEmpty None }
                 let renderer = Renderer.handleRenderMessages renderMessages renderer
                 let renderDescriptors = renderer.RenderDescriptors
-                let renderer = { renderer with RenderDescriptors = [] }
+                let renderer = { renderer with RenderDescriptors = [||] }
                 let renderer = Renderer.renderDescriptors eyeCenter eyeSize renderDescriptors renderer
                 renderer :> IRenderer
 

@@ -517,7 +517,7 @@ module Scripting =
             match source with
             | :? Symbol as symbol ->
                 match symbol with
-                | Prime.Atom (str, originOpt) ->
+                | Atom (str, originOpt) ->
                     match str with
                     | "true" | "True" -> Bool true :> obj
                     | "false" | "False" -> Bool false :> obj
@@ -530,7 +530,7 @@ module Scripting =
                         if firstChar = Constants.Relation.Slot || Char.IsUpper firstChar
                         then Keyword str :> obj
                         else Binding (str, ref UncachedBinding, originOpt) :> obj
-                | Prime.Number (str, originOpt) ->
+                | Number (str, originOpt) ->
                     match Int32.TryParse str with
                     | (false, _) ->
                         let str = if str.EndsWith "l" || str.EndsWith "L" then str.Substring(0, str.Length - 1) else str
@@ -565,11 +565,11 @@ module Scripting =
                             ApplyOr (Array.ofList args, breakpoint, originOpt) :> obj
                         | "violation" ->
                             match tail with
-                            | [Prime.Atom (tagStr, _)]
+                            | [Atom (tagStr, _)]
                             | [Prime.String (tagStr, _)] ->
                                 try let tagName = tagStr in Violation (tagName.Split Constants.Scripting.ViolationSeparator |> List.ofArray, "User-defined Violation.", originOpt) :> obj
                                 with exn -> Violation (["InvalidForm"; "Violation"], "Invalid Violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
-                            | [Prime.Atom (tagStr, _); Prime.String (errorMsg, _)]
+                            | [Atom (tagStr, _); Prime.String (errorMsg, _)]
                             | [Prime.String (tagStr, _); Prime.String (errorMsg, _)] ->
                                 try let tagName = tagStr in Violation (tagName.Split Constants.Scripting.ViolationSeparator |> List.ofArray, errorMsg, originOpt) :> obj
                                 with exn -> Violation (["InvalidForm"; "Violation"], "Invalid Violation form. Violation tag must be composed of 1 or more valid names.", originOpt) :> obj
@@ -666,12 +666,12 @@ module Scripting =
                             else Violation (["InvalidForm"; "Select"], "Invalid select form. Requires 1 or more cases.", originOpt) :> obj
                         | "try" ->
                             match tail with
-                            | [body; Prime.Symbols (handlers, _)] ->
+                            | [body; Symbols (handlers, _)] ->
                                 let handlerEirs =
                                     List.mapi
                                         (fun i handler ->
                                             match handler with
-                                            | Prime.Symbols ([Prime.Atom (categoriesStr, _); handlerBody], _) ->
+                                            | Symbols ([Atom (categoriesStr, _); handlerBody], _) ->
                                                 Right (categoriesStr.Split Constants.Scripting.ViolationSeparator |> List.ofArray, handlerBody)
                                             | _ ->
                                                 Left ("Invalid try handler form for handler #" + scstring (inc i) + ". Requires 1 path and 1 body."))
@@ -724,7 +724,7 @@ module Scripting =
     type DeclarationFrame = Dictionary<string, Expr>
     
     /// A declaration bindings frame in a scripting environment.
-    type ProceduralFrame = (string * Expr) array
+    type ProceduralFrame = (struct (string * Expr)) array
     
     /// The manner in which bindings are added to a frame.
     type AddType =
@@ -745,7 +745,7 @@ module Scripting =
         module Env =
     
             let private BottomBinding =
-                (String.Empty, Violation (["BottomAccess"], "Accessed a Bottom value.", None))
+                struct (String.Empty, Violation (["BottomAccess"], "Accessed a Bottom value.", None))
 
             let getLocalFrame env =
                 env.LocalFrame
@@ -777,13 +777,13 @@ module Scripting =
                     List.tryFindPlus
                         (fun frame ->
                             refOffset := !refOffset + 1
-                            refOptIndex := Array.tryFindIndexBack (fun (bindingName, _) -> name.Equals bindingName) frame // OPTIMIZATION: faster than (=) here
+                            refOptIndex := Array.tryFindIndexBack (fun struct (bindingName, _) -> name.Equals bindingName) frame // OPTIMIZATION: faster than (=) here
                             match !refOptIndex with
                             | Some index -> Some frame.[index]
                             | None -> None)
                         env.ProceduralFrames
                 match optBinding with
-                | Some (_, binding) -> Some (binding, !refOffset, (!refOptIndex).Value)
+                | Some struct (_, binding) -> Some (struct (binding, !refOffset, (!refOptIndex).Value))
                 | None -> None
 
             let tryGetBinding name cachedBinding env =
@@ -801,7 +801,7 @@ module Scripting =
 #endif
                             bindingOpt
                         | None -> None
-                    | Some (binding, offset, index) ->
+                    | Some struct (binding, offset, index) ->
                         let newCachedBinding = ProceduralBinding (offset, index)
                         cachedBinding := newCachedBinding
                         Some binding
@@ -809,26 +809,26 @@ module Scripting =
                     Some binding
                 | ProceduralBinding (offset, index) ->
                     let frame = (List.skip offset env.ProceduralFrames).Head
-                    let (_, binding) = frame.[index]
+                    let struct (_, binding) = frame.[index]
                     Some binding
 
             let tryAddDeclarationBinding name value env =
                 let isTopLevel = List.isEmpty env.ProceduralFrames
                 if isTopLevel then
                     env.LocalFrame.ForceAdd (name, value)
-                    (true, env)
-                else (false, env)
+                    struct (true, env)
+                else struct (false, env)
     
             let addProceduralBinding appendType name value env =
                 match appendType with
                 | AddToNewFrame size ->
                     let frame = makeProceduralFrame size
-                    frame.[0] <- (name, value)
+                    frame.[0] <- struct (name, value)
                     addProceduralFrame frame env
                 | AddToHeadFrame offset ->
                     match env.ProceduralFrames with
                     | frame :: _ ->
-                        frame.[offset] <- (name, value)
+                        frame.[offset] <- struct (name, value)
                         env
                     | [] -> failwithumf ()
     

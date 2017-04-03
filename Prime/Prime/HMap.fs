@@ -19,11 +19,9 @@ module HMapModule =
             val V : 'v
             end
 
-    /// TODO: P1: there's an F# issue where UseNullAsTrueValue does not work on unions with 4 or
-    /// more cases https://github.com/Microsoft/visualfsharp/issues/711 . Once resolved, should use
-    /// it and be able to make arrays with Array.zeroCreate alone without also copying over the
-    /// empty array.
-    type [<NoComparison>] private HNode<'k, 'v when 'k :> 'k IEquatable> =
+    /// Hash map node.
+    type [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoComparison>]
+        private HNode<'k, 'v when 'k :> 'k IEquatable> =
         | Nil
         | Singleton of Hkv<'k, 'v>
         | Multiple of HNode<'k, 'v> array
@@ -37,8 +35,7 @@ module HMapModule =
 
         /// OPTIMIZATION: Array.Clone () is not used since it's been profiled to be slower
         let inline private cloneArray (arr : HNode<'k, 'v> array) =
-            let arr' = Array.zeroCreate 16 : HNode<'k, 'v> array    // NOTE: there's an unecessary check against the size here, but that's the only inefficiency
-                                                                    // TODO: P1: use Array.zeroCreateUnchecked if / when it becomes available
+            let arr' = Array.zeroCreate 16 : HNode<'k, 'v> array
             Array.Copy (arr, 0, arr', 0, 16) // param checks are inefficient, but hopefully there's at least a memcpy underneath...
             arr'
     
@@ -198,7 +195,7 @@ module HMapModule =
         /// Create an empty HMap.
         let makeEmpty () =
             { Node = HNode.empty
-              EmptyArray = Array.create 16 HNode.empty }
+              EmptyArray = Array.zeroCreate 16 }
 
         /// Check that an HMap is empty.
         let isEmpty map =

@@ -46,9 +46,6 @@ type [<CustomEquality; NoComparison>] PhysicsId =
     override this.GetHashCode () =
         PhysicsId.hash this
 
-/// Physics-specific vertices type.
-type Vertices = Vector2 list
-
 /// The shape of a physics body box.
 type [<StructuralEquality; NoComparison>] BodyBox =
     { Extent : Vector2
@@ -67,7 +64,7 @@ type [<StructuralEquality; NoComparison>] BodyCapsule =
 
 /// The shape of a physics body polygon.
 type [<StructuralEquality; NoComparison>] BodyPolygon =
-    { Vertices : Vertices
+    { Vertices : Vector2 array
       Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
 
 /// The shape of a physics body.
@@ -124,7 +121,7 @@ type [<StructuralEquality; NoComparison>] CreateBodyMessage =
 type [<StructuralEquality; NoComparison>] CreateBodiesMessage =
     { SourceParticipant : Participant
       SourceId : Guid
-      BodiesProperties : BodyProperties seq }
+      BodiesProperties : BodyProperties array }
 
 /// A message to the physics system to destroy a body.
 type [<StructuralEquality; NoComparison>] DestroyBodyMessage =
@@ -132,7 +129,7 @@ type [<StructuralEquality; NoComparison>] DestroyBodyMessage =
 
 /// A message to the physics system to destroy multiple bodies.
 type [<StructuralEquality; NoComparison>] DestroyBodiesMessage =
-    { PhysicsIds : PhysicsId seq }
+    { PhysicsIds : PhysicsId array }
 
 /// A message to the physics system to destroy a body.
 type [<StructuralEquality; NoComparison>] SetBodyPositionMessage =
@@ -211,11 +208,11 @@ type IPhysicsEngine =
     /// Check that the physics engine contain the body with the given physics id.
     abstract BodyExists : PhysicsId -> bool
     /// Get the contact normals of the body with the given physics id.
-    abstract GetBodyContactNormals : PhysicsId -> Vector2 list
+    abstract GetBodyContactNormals : PhysicsId -> Vector2 array
     /// Get the linear velocity of the body with the given physics id.
     abstract GetBodyLinearVelocity : PhysicsId -> Vector2
     /// Get the contact normals where the body with the given physics id is touching the ground.
-    abstract GetBodyToGroundContactNormals : PhysicsId -> Vector2 list
+    abstract GetBodyToGroundContactNormals : PhysicsId -> Vector2 array
     /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
     abstract GetBodyToGroundContactNormalOpt : PhysicsId -> Vector2 option
     /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
@@ -286,7 +283,7 @@ module PhysicsEngineModule =
             while current <> null do
                 contacts.Add current.Contact
                 current <- current.Next
-            List.ofSeq contacts
+            Array.ofSeq contacts
     
         static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
             body.Awake <- bodyProperties.Awake
@@ -354,7 +351,7 @@ module PhysicsEngineModule =
             let body =
                 Factories.BodyFactory.CreatePolygon
                     (physicsEngine.PhysicsContext,
-                     FarseerPhysics.Common.Vertices (List.map PhysicsEngine.toPhysicsV2 bodyPolygon.Vertices),
+                     FarseerPhysics.Common.Vertices (Array.map PhysicsEngine.toPhysicsV2 bodyPolygon.Vertices),
                      bodyProperties.Density,
                      PhysicsEngine.toPhysicsV2 bodyPolygon.Center,
                      0.0f,
@@ -380,7 +377,7 @@ module PhysicsEngineModule =
                 Log.debug ^ "Could not add body via '" + scstring bodyProperties + "'."
     
         static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
-            Seq.iter
+            Array.iter
                 (fun bodyProperties -> PhysicsEngine.createBody4 createBodiesMessage.SourceId createBodiesMessage.SourceParticipant bodyProperties physicsEngine)
                 createBodiesMessage.BodiesProperties
     
@@ -400,7 +397,7 @@ module PhysicsEngineModule =
             PhysicsEngine.destroyBody2 destroyBodyMessage.PhysicsId physicsEngine
     
         static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
-            Seq.iter (fun physicsId -> PhysicsEngine.destroyBody2 physicsId physicsEngine) destroyBodiesMessage.PhysicsIds
+            Array.iter (fun physicsId -> PhysicsEngine.destroyBody2 physicsId physicsEngine) destroyBodiesMessage.PhysicsIds
     
         static member private setBodyPosition (setBodyPositionMessage : SetBodyPositionMessage) physicsEngine =
             match physicsEngine.Bodies.TryGetValue setBodyPositionMessage.PhysicsId with
@@ -494,7 +491,7 @@ module PhysicsEngineModule =
     
             member physicsEngine.GetBodyContactNormals physicsId =
                 let contacts = PhysicsEngine.getBodyContacts physicsId physicsEngine
-                List.map
+                Array.map
                     (fun (contact : Contact) ->
                         let normal = fst ^ contact.GetWorldManifold ()
                         Vector2 (normal.X, normal.Y))
@@ -506,7 +503,7 @@ module PhysicsEngineModule =
     
             member physicsEngine.GetBodyToGroundContactNormals physicsId =
                 let normals = (physicsEngine :> IPhysicsEngine).GetBodyContactNormals physicsId
-                List.filter
+                Array.filter
                     (fun normal ->
                         let theta = Vector2.Dot (normal, Vector2.UnitY) |> double |> Math.Acos |> Math.Abs
                         theta < Math.PI * 0.25)
@@ -515,9 +512,9 @@ module PhysicsEngineModule =
             member physicsEngine.GetBodyToGroundContactNormalOpt physicsId =
                 let groundNormals = (physicsEngine :> IPhysicsEngine).GetBodyToGroundContactNormals physicsId
                 match groundNormals with
-                | [] -> None
-                | _ :: _ ->
-                    let averageNormal = List.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
+                | [||] -> None
+                | _ ->
+                    let averageNormal = Array.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
                     Some averageNormal
     
             member physicsEngine.GetBodyToGroundContactTangentOpt physicsId =
@@ -527,7 +524,7 @@ module PhysicsEngineModule =
     
             member physicsEngine.IsBodyOnGround physicsId =
                 let groundNormals = (physicsEngine :> IPhysicsEngine).GetBodyToGroundContactNormals physicsId
-                not ^ List.isEmpty groundNormals
+                Array.notEmpty groundNormals
     
             member physicsEngine.ClearMessages () =
                 let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty None }
@@ -571,7 +568,7 @@ module Physics =
         | BodyCircle bodyCircle -> BodyCircle { Radius = extent.X * bodyCircle.Radius; Center = extent.X * bodyCircle.Center }
         | BodyCapsule bodyCapsule -> BodyCapsule { Height = extent.Y * bodyCapsule.Height; Radius = extent.Y * bodyCapsule.Radius; Center = extent.Y * bodyCapsule.Center }
         | BodyPolygon bodyPolygon ->
-            let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) bodyPolygon.Vertices
+            let vertices = Array.map (fun vertex -> Vector2.Multiply (vertex, extent)) bodyPolygon.Vertices
             BodyPolygon { Vertices = vertices; Center = Vector2.Multiply (extent, bodyPolygon.Center) }
 
 /// The primary implementation of IPhysicsEngine.

@@ -2,7 +2,6 @@
 // Copyright (C) Bryan Edds, 2013-2017.
 
 namespace Nu.Gaia
-open Prime
 open System
 open Prime
 open Nu

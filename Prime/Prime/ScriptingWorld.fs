@@ -19,9 +19,9 @@ type 'w ScriptingWorld =
     interface
         abstract member GetEnv : unit -> Env
         abstract member UpdateEnv : (Env -> Env) -> 'w
-        abstract member UpdateEnvPlus : (Env -> 'a * Env) -> 'a * 'w
+        abstract member UpdateEnvPlus : (Env -> struct ('a * Env)) -> struct ('a * 'w)
         abstract member IsExtrinsic : string -> bool
-        abstract member EvalExtrinsic : string -> SymbolOrigin option -> Expr array -> Expr * 'w
+        abstract member EvalExtrinsic : string -> SymbolOrigin option -> Expr array -> struct (Expr * 'w)
         abstract member TryImport : Type -> obj -> Expr option
         abstract member TryExport : Type -> Expr -> obj option
         end
@@ -33,40 +33,40 @@ module ScriptingWorld =
         () // NOTE: simply infers that a type is a world.
 
     let tryGetBinding<'w when 'w :> 'w ScriptingWorld> name cachedBinding (world : 'w) =
-        EnvModule.Env.tryGetBinding name cachedBinding (world.GetEnv ())
+        Env.tryGetBinding name cachedBinding (world.GetEnv ())
 
     let tryAddDeclarationBinding<'w when 'w :> 'w ScriptingWorld> name value (world : 'w) =
-        world.UpdateEnvPlus (EnvModule.Env.tryAddDeclarationBinding name value)
+        world.UpdateEnvPlus (Env.tryAddDeclarationBinding name value)
 
     let addProceduralBinding<'w when 'w :> 'w ScriptingWorld> appendType name value (world : 'w) =
-        world.UpdateEnv (EnvModule.Env.addProceduralBinding appendType name value)
+        world.UpdateEnv (Env.addProceduralBinding appendType name value)
 
     let addProceduralBindings<'w when 'w :> 'w ScriptingWorld> appendType bindings (world : 'w) =
-        world.UpdateEnv (EnvModule.Env.addProceduralBindings appendType bindings)
+        world.UpdateEnv (Env.addProceduralBindings appendType bindings)
 
     let removeProceduralBindings<'w when 'w :> 'w ScriptingWorld> (world : 'w) =
-        world.UpdateEnv (EnvModule.Env.removeProceduralBindings)
+        world.UpdateEnv (Env.removeProceduralBindings)
 
     let getProceduralFrames<'w when 'w :> 'w ScriptingWorld> (world : 'w) =
-        EnvModule.Env.getProceduralFrames (world.GetEnv ())
+        Env.getProceduralFrames (world.GetEnv ())
 
     let setProceduralFrames<'w when 'w :> 'w ScriptingWorld> proceduralFrames (world : 'w) =
-        world.UpdateEnv (EnvModule.Env.setProceduralFrames proceduralFrames)
+        world.UpdateEnv (Env.setProceduralFrames proceduralFrames)
 
     let getGlobalFrame<'w when 'w :> 'w ScriptingWorld> (world : 'w) =
-        EnvModule.Env.getGlobalFrame (world.GetEnv ())
+        Env.getGlobalFrame (world.GetEnv ())
 
     let getLocalFrame<'w when 'w :> 'w ScriptingWorld> (world : 'w) =
-        EnvModule.Env.getLocalFrame (world.GetEnv ())
+        Env.getLocalFrame (world.GetEnv ())
 
     let setLocalFrame<'w when 'w :> 'w ScriptingWorld> localFrame (world : 'w) =
-        world.UpdateEnv (EnvModule.Env.setLocalFrame localFrame)
+        world.UpdateEnv (Env.setLocalFrame localFrame)
 
     let tryImport<'w when 'w :> 'w ScriptingWorld> ty value (world : 'w) =
-        ScriptingMarshalling.tryImport world.TryImport ty value
+        tryImport world.TryImport ty value
 
     let tryExport<'w when 'w :> 'w ScriptingWorld> ty value (world : 'w) =
-        ScriptingMarshalling.tryExport world.TryExport ty value
+        tryExport world.TryExport ty value
 
     let isIntrinsic fnName =
         match fnName with
@@ -186,11 +186,11 @@ module ScriptingWorld =
         | "add" -> evalDoublet evalCons fnName evaledArgs originOpt world
         | "remove" -> evalDoublet evalRemove fnName evaledArgs originOpt world
         | "toTable" -> evalSinglet evalToTable fnName evaledArgs originOpt world
-        | _ -> (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
+        | _ -> struct (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
 
     and evalIntrinsic fnName evaledArgs originOpt world =
         match evalIntrinsicInner fnName evaledArgs originOpt world with
-        | (Violation _, world) -> evalOverload fnName evaledArgs originOpt world
+        | struct (Violation _, world) -> evalOverload fnName evaledArgs originOpt world
         | success -> success
 
     and evalOverload fnName evaledArgs originOpt world =
@@ -208,44 +208,44 @@ module ScriptingWorld =
                 let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
                 let evaleds = Array.cons xfnBinding evaledArgs
                 evalApply evaleds originOpt world
-            | Violation _ as error -> (error, world)
-            | _ -> (Violation (["InvalidOverload"], "Could not find overload for '" + fnName + "' for target.", originOpt), world)
-        else (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
+            | Violation _ as error -> struct (error, world)
+            | _ -> struct (Violation (["InvalidOverload"], "Could not find overload for '" + fnName + "' for target.", originOpt), world)
+        else struct (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
 
     and evalUnionUnevaled name exprs world =
-        let (evaleds, world) = evalMany exprs world
-        (Union (name, evaleds), world)
+        let struct (evaleds, world) = evalMany exprs world
+        struct (Union (name, evaleds), world)
 
     and evalTableUnevaled exprPairs world =
-        let (evaledPairs, world) =
-            List.fold (fun (evaledPairs, world) (exprKey, exprValue) ->
-                let (evaledKey, world) = eval exprKey world
-                let (evaledValue, world) = eval exprValue world
-                ((evaledKey, evaledValue) :: evaledPairs, world))
-                ([], world)
+        let struct (evaledPairs, world) =
+            List.fold (fun struct (evaledPairs, world) (exprKey, exprValue) ->
+                let struct (evaledKey, world) = eval exprKey world
+                let struct (evaledValue, world) = eval exprValue world
+                struct ((evaledKey, evaledValue) :: evaledPairs, world))
+                struct ([], world)
                 exprPairs
         let evaledPairs = List.rev evaledPairs
-        (Table (Map.ofList evaledPairs), world)
+        struct (Table (Map.ofList evaledPairs), world)
 
     and evalRecordUnevaled name exprPairs world =
-        let (evaledPairs, world) =
-            List.fold (fun (evaledPairs, world) (fieldName, expr) ->
-                let (evaledValue, world) = eval expr world
-                ((fieldName, evaledValue) :: evaledPairs, world))
-                ([], world)
+        let struct (evaledPairs, world) =
+            List.fold (fun struct (evaledPairs, world) (fieldName, expr) ->
+                let struct (evaledValue, world) = eval expr world
+                struct ((fieldName, evaledValue) :: evaledPairs, world))
+                struct ([], world)
                 exprPairs
         let evaledPairs = List.rev evaledPairs
         let map = evaledPairs |> List.mapi (fun i (fieldName, _) -> (fieldName, i)) |> Map.ofList
         let fields = evaledPairs |> List.map snd |> Array.ofList
-        (Record (name, map, fields), world)
+        struct (Record (name, map, fields), world)
 
     and evalBinding expr name cachedBinding originOpt world =
         match tryGetBinding name cachedBinding world with
         | None ->
-            if world.IsExtrinsic name then (expr, world)
-            elif isIntrinsic name then (expr, world)
-            else (Violation (["NonexistentBinding"], "Non-existent binding '" + name + "'.", originOpt), world)
-        | Some binding -> (binding, world)
+            if world.IsExtrinsic name then struct (expr, world)
+            elif isIntrinsic name then struct (expr, world)
+            else struct (Violation (["NonexistentBinding"], "Non-existent binding '" + name + "'.", originOpt), world)
+        | Some binding -> struct (binding, world)
 
     and evalUpdateIntInner fnName index target value originOpt world =
         match target with
@@ -255,15 +255,15 @@ module ScriptingWorld =
                 | String str2 when str2.Length = 1 ->
                     let left = str.Substring (0, index)
                     let right = str.Substring (index, str.Length)
-                    Right (String (left + str2 + right), world)
-                | _ -> Left (Violation (["InvalidArgumentValue"; String.capitalize fnName], "String update value must be a String of length 1.", originOpt), world)
-            else Left (Violation (["OutOfRangeArgument"; String.capitalize fnName], "String does not contain element at index " + string index + ".", originOpt), world)
+                    Right struct (String (left + str2 + right), world)
+                | _ -> Left struct (Violation (["InvalidArgumentValue"; String.capitalize fnName], "String update value must be a String of length 1.", originOpt), world)
+            else Left struct (Violation (["OutOfRangeArgument"; String.capitalize fnName], "String does not contain element at index " + string index + ".", originOpt), world)
         | Option opt ->
             match (index, opt) with
-            | (0, Some value) -> Right (value, world)
-            | (_, _) -> Left (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Could not update at index " + string index + ".", originOpt), world)
-        | List _ -> Left (Violation (["NotImplemented"; String.capitalize fnName], "Updating lists by index is not yet implemented.", originOpt), world) // TODO: implement
-        | Table map -> Right (Table (Map.add (Int index) value map), world)
+            | (0, Some value) -> Right struct (value, world)
+            | (_, _) -> Left struct (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Could not update at index " + string index + ".", originOpt), world)
+        | List _ -> Left struct (Violation (["NotImplemented"; String.capitalize fnName], "Updating lists by index is not yet implemented.", originOpt), world) // TODO: implement
+        | Table map -> Right struct (Table (Map.add (Int index) value map), world)
         | Tuple elements
         | Union (_, elements)
         | Record (_, _, elements) ->
@@ -271,57 +271,57 @@ module ScriptingWorld =
                 let elements' = Array.copy elements
                 elements'.[index] <- value
                 match target with
-                | Tuple _ -> Right (Tuple elements', world)
-                | Union (name, _) -> Right (Union (name, elements'), world)
-                | Record (name, map, _) -> Right (Record (name, map, elements'), world)
+                | Tuple _ -> Right struct (Tuple elements', world)
+                | Union (name, _) -> Right struct (Union (name, elements'), world)
+                | Record (name, map, _) -> Right struct (Record (name, map, elements'), world)
                 | _ -> failwithumf ()
-            else Left (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Could not update structure at index " + string index + ".", originOpt), world)
+            else Left struct (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Could not update structure at index " + string index + ".", originOpt), world)
         | _ ->
             match evalOverload fnName [|Int index; value; target|] originOpt world with
-            | (Violation _, _) as error -> Left error
-            | (_, _) as success -> Right success
+            | struct (Violation _, _) as error -> Left error
+            | struct (_, _) as success -> Right success
 
     and evalUpdateKeywordInner fnName keyword target value originOpt world =
         match target with
         | Table map ->
-            Right (Table (Map.add (Keyword keyword) value map), world)
+            Right struct (Table (Map.add (Keyword keyword) value map), world)
         | Record (name, map, fields) ->
             match Map.tryFind keyword map with
             | Some index ->
                 if index < fields.Length then
                     let fields' = Array.copy fields
                     fields'.[index] <- value
-                    Right (Record (name, map, fields'), world)
-                else Left (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Record does not contain element with name '" + name + "'.", originOpt), world)
+                    Right struct (Record (name, map, fields'), world)
+                else Left struct (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Record does not contain element with name '" + name + "'.", originOpt), world)
             | None ->
-                Left (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Record does not contain element with name '" + name + "'.", originOpt), world)
+                Left struct (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Record does not contain element with name '" + name + "'.", originOpt), world)
         | Violation _ as violation ->
-            Left (violation, world)
+            Left struct (violation, world)
         | _ ->
             match evalOverload fnName [|Keyword keyword; value; target|] originOpt world with
-            | (Violation _, _) as error -> Left error
-            | (_, _) as success -> Right success
+            | struct (Violation _, _) as error -> Left error
+            | struct (_, _) as success -> Right success
 
     and evalUpdateInner fnName indexerExpr targetExpr valueExpr originOpt world =
-        let (indexer, world) = eval indexerExpr world
-        let (target, world) = eval targetExpr world
-        let (value, world) = eval valueExpr world
+        let struct (indexer, world) = eval indexerExpr world
+        let struct (target, world) = eval targetExpr world
+        let struct (value, world) = eval valueExpr world
         match indexer with
-        | Violation _ as v -> Left (v, world)
+        | Violation _ as v -> Left struct (v, world)
         | Int index -> evalUpdateIntInner fnName index target value originOpt world
         | Keyword keyword -> evalUpdateKeywordInner fnName keyword target value originOpt world
         | _ ->
             match target with
-            | Table map -> Right (Table (Map.add indexer valueExpr map), world)
+            | Table map -> Right struct (Table (Map.add indexer valueExpr map), world)
             | _ ->
                 match evalOverload fnName [|indexer; value; target|] originOpt world with
-                | (Violation _, _) as error -> Left error
-                | (_, _) as success -> Right success
+                | struct (Violation _, _) as error -> Left error
+                | struct (_, _) as success -> Right success
 
     and evalTryUpdate fnName indexerExpr targetExpr valueExpr originOpt world =
         match evalUpdateInner fnName indexerExpr targetExpr valueExpr originOpt world with
-        | Right (evaled, world) -> (Option (Some evaled), world)
-        | Left (_, world) -> (Option None, world)
+        | Right struct (evaled, world) -> struct (Option (Some evaled), world)
+        | Left struct (_, world) -> struct (Option None, world)
 
     and evalUpdate fnName indexerExpr targetExpr valueExpr originOpt world =
         match evalUpdateInner fnName indexerExpr targetExpr valueExpr originOpt world with
@@ -331,12 +331,12 @@ module ScriptingWorld =
     and evalApply exprs originOpt world =
         if Array.notEmpty exprs then
             let (exprsHead, exprsTail) = (Array.head exprs, Array.tail exprs)
-            let (evaledHead, world) = eval exprsHead world in annotateWorld world // force the type checker to see the world as it is
+            let struct (evaledHead, world) = eval exprsHead world in annotateWorld world // force the type checker to see the world as it is
             match evaledHead with
             | Keyword keyword ->
-                let (evaledTail, world) = evalMany exprsTail world
+                let struct (evaledTail, world) = evalMany exprsTail world
                 let union = Union (keyword, evaledTail)
-                (union, world)
+                struct (union, world)
             | Binding (fnName, _, originOpt) ->
                 // NOTE: when evaluation leads here, we can (actually must) infer that we have
                 // either an extrinsic or intrinsic function.
@@ -344,79 +344,79 @@ module ScriptingWorld =
                     let exprsTail = Array.tail exprs
                     world.EvalExtrinsic fnName originOpt exprsTail
                 else
-                    let (evaledTail, world) = evalMany exprsTail world
+                    let struct (evaledTail, world) = evalMany exprsTail world
                     evalIntrinsic fnName evaledTail originOpt world
             | Fun (pars, parsCount, body, _, framesOpt, originOpt) ->
-                let (evaledTail, world) = evalMany exprsTail world
-                let (framesCurrentOpt, world) =
+                let struct (evaledTail, world) = evalMany exprsTail world
+                let struct (framesCurrentOpt, world) =
                     match framesOpt with
                     | Some frames ->
                         let framesCurrent = getProceduralFrames world
                         let world = setProceduralFrames (frames :?> ProceduralFrame list) world
-                        (Some framesCurrent, world)
-                    | None -> (None, world)
-                let (evaled, world) =
+                        struct (Some framesCurrent, world)
+                    | None -> struct (None, world)
+                let struct (evaled, world) =
                     if evaledTail.Length = parsCount then
-                        let bindings = Array.map2 (fun par evaledArg -> (par, evaledArg)) pars evaledTail
+                        let bindings = Array.map2 (fun par evaledArg -> struct (par, evaledArg)) pars evaledTail
                         let world = addProceduralBindings (AddToNewFrame parsCount) bindings world
-                        let (evaled, world) = eval body world
-                        (evaled, removeProceduralBindings world)
-                    else (Violation (["MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), world)
+                        let struct (evaled, world) = eval body world
+                        struct (evaled, removeProceduralBindings world)
+                    else struct (Violation (["MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), world)
                 match framesCurrentOpt with
                 | Some framesCurrent ->
                     let world = setProceduralFrames framesCurrent world
-                    (evaled, world)
-                | None -> (evaled, world)
-            | Violation _ as error -> (error, world)
-            | _ -> (Violation (["MalformedApplication"], "Cannot apply the non-binding '" + scstring evaledHead + "'.", originOpt), world)
-        else (Unit, world)
+                    struct (evaled, world)
+                | None -> struct (evaled, world)
+            | Violation _ as error -> struct (error, world)
+            | _ -> struct (Violation (["MalformedApplication"], "Cannot apply the non-binding '" + scstring evaledHead + "'.", originOpt), world)
+        else struct (Unit, world)
 
     and evalApplyAnd exprs originOpt world =
         match exprs with
         | [|left; right|] ->
             match eval left world with
-            | (Bool false, world) -> (Bool false, world)
-            | (Bool true, world) ->
+            | struct (Bool false, _) as never -> never
+            | struct (Bool true, world) ->
                 match eval right world with
-                | (Bool _, _) as result -> result
-                | (Violation _, _) as error -> error
-                | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-Bool values.", originOpt), world)
-            | (Violation _, _) as error -> error
-            | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-Bool values.", originOpt), world)
-        | _ -> (Violation (["InvalidArgumentCount"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
+                | struct (Bool _, _) as result -> result
+                | struct (Violation _, _) as error -> error
+                | _ -> struct (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-Bool values.", originOpt), world)
+            | struct (Violation _, _) as error -> error
+            | _ -> struct (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-Bool values.", originOpt), world)
+        | _ -> struct (Violation (["InvalidArgumentCount"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
 
     and evalApplyOr exprs originOpt world =
         match exprs with
         | [|left; right|] ->
             match eval left world with
-            | (Bool true, world) -> (Bool true, world)
-            | (Bool false, world) ->
+            | struct (Bool true, _) as always -> always
+            | struct (Bool false, world) ->
                 match eval right world with
-                | (Bool _, _) as result -> result
-                | (Violation _, _) as error -> error
-                | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-Bool values.", originOpt), world)
-            | (Violation _, _) as error -> error
-            | _ -> (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-Bool values.", originOpt), world)
-        | _ -> (Violation (["InvalidArgumentCount"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
+                | struct (Bool _, _) as result -> result
+                | struct (Violation _, _) as error -> error
+                | _ -> struct (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-Bool values.", originOpt), world)
+            | struct (Violation _, _) as error -> error
+            | _ -> struct (Violation (["InvalidArgumentType"; "&&"], "Cannot apply a logic function to non-Bool values.", originOpt), world)
+        | _ -> struct (Violation (["InvalidArgumentCount"; "&&"], "Incorrect number of arguments for application of '&&'; 2 arguments required.", originOpt), world)
 
     and evalLet4 binding body originOpt world =
         let world =
             match binding with
             | VariableBinding (name, body) ->
-                let (evaled, world) = eval body world
+                let struct (evaled, world) = eval body world
                 addProceduralBinding (AddToNewFrame 1) name evaled world
             | FunctionBinding (name, args, body) ->
                 let frames = getProceduralFrames world :> obj
                 let fn = Fun (args, args.Length, body, true, Some frames, originOpt)
                 addProceduralBinding (AddToNewFrame 1) name fn world
-        let (evaled, world) = eval body world
-        (evaled, removeProceduralBindings world)
+        let struct (evaled, world) = eval body world
+        struct (evaled, removeProceduralBindings world)
 
     and evalLetMany4 bindingsHead bindingsTail bindingsCount body originOpt world =
         let world =
             match bindingsHead with
             | VariableBinding (name, body) ->
-                let (bodyValue, world) = eval body world
+                let struct (bodyValue, world) = eval body world
                 addProceduralBinding (AddToNewFrame bindingsCount) name bodyValue world
             | FunctionBinding (name, args, body) ->
                 let frames = getProceduralFrames world :> obj
@@ -426,7 +426,7 @@ module ScriptingWorld =
             List.foldi (fun i world binding ->
                 match binding with
                 | VariableBinding (name, body) ->
-                    let (bodyValue, world) = eval body world
+                    let struct (bodyValue, world) = eval body world
                     addProceduralBinding (AddToHeadFrame ^ inc i) name bodyValue world
                 | FunctionBinding (name, args, body) ->
                     let frames = getProceduralFrames world :> obj
@@ -434,8 +434,8 @@ module ScriptingWorld =
                     addProceduralBinding (AddToHeadFrame ^ inc i) name fn world)
                 world
                 bindingsTail
-        let (evaled, world) = eval body world
-        (evaled, removeProceduralBindings world)
+        let struct (evaled, world) = eval body world
+        struct (evaled, removeProceduralBindings world)
         
     and evalLet binding body originOpt world =
         evalLet4 binding body originOpt world
@@ -445,54 +445,54 @@ module ScriptingWorld =
         | bindingsHead :: bindingsTail ->
             let bindingsCount = List.length bindingsTail + 1
             evalLetMany4 bindingsHead bindingsTail bindingsCount body originOpt world
-        | [] -> (Violation (["MalformedLetOperation"], "Let operation must have at least 1 binding.", originOpt), world)
+        | [] -> struct (Violation (["MalformedLetOperation"], "Let operation must have at least 1 binding.", originOpt), world)
 
     and evalFun fn pars parsCount body framesPushed framesOpt originOpt world =
         if not framesPushed then
             if Option.isNone framesOpt then
                 let frames = getProceduralFrames world :> obj
-                (Fun (pars, parsCount, body, true, Some frames, originOpt), world)
-            else (Fun (pars, parsCount, body, true, framesOpt, originOpt), world)
-        else (fn, world)
+                struct (Fun (pars, parsCount, body, true, Some frames, originOpt), world)
+            else struct (Fun (pars, parsCount, body, true, framesOpt, originOpt), world)
+        else struct (fn, world)
 
     and evalIf condition consequent alternative originOpt world =
         match eval condition world with
-        | (Bool bool, world) -> if bool then eval consequent world else eval alternative world
-        | (Violation _ as evaled, world) -> (evaled, world)
-        | (_, world) -> (Violation (["InvalidIfCondition"], "Must provide an expression that evaluates to a Bool in an if condition.", originOpt), world)
+        | struct (Bool bool, world) -> if bool then eval consequent world else eval alternative world
+        | struct (Violation _ as evaled, world) -> struct (evaled, world)
+        | struct (_, world) -> struct (Violation (["InvalidIfCondition"], "Must provide an expression that evaluates to a Bool in an if condition.", originOpt), world)
 
     and evalMatch input (cases : (Expr * Expr) array) originOpt world =
-        let (input, world) = eval input world
+        let struct (input, world) = eval input world
         let resultEir =
             Seq.foldUntilRight (fun world (condition, consequent) ->
-                let (evaledInput, world) = eval condition world
+                let struct (evaledInput, world) = eval condition world
                 match evalBinaryInner EqFns "=" input evaledInput originOpt world with
-                | (Bool true, world) -> Right (eval consequent world)
-                | (Bool false, world) -> Left world
-                | (Violation _, world) -> Right (evaledInput, world)
+                | struct (Bool true, world) -> Right (eval consequent world)
+                | struct (Bool false, world) -> Left world
+                | struct (Violation _, world) -> Right struct (evaledInput, world)
                 | _ -> failwithumf ())
                 (Left world)
                 cases
         match resultEir with
         | Right success -> success
-        | Left world -> (Violation (["InexhaustiveMatch"], "A match expression failed to satisfy any of its cases.", originOpt), world)
+        | Left world -> struct (Violation (["InexhaustiveMatch"], "A match expression failed to satisfy any of its cases.", originOpt), world)
 
     and evalSelect exprPairs originOpt world =
         let resultEir =
             Seq.foldUntilRight (fun world (condition, consequent) ->
                 match eval condition world with
-                | (Bool bool, world) -> if bool then Right (eval consequent world) else Left world
-                | (Violation _ as evaled, world) -> Right (evaled, world)
-                | (_, world) -> Right ((Violation (["InvalidSelectCondition"], "Must provide an expression that evaluates to a Bool in a case condition.", originOpt), world)))
+                | struct (Bool bool, world) -> if bool then Right (eval consequent world) else Left world
+                | struct (Violation _ as evaled, world) -> Right struct (evaled, world)
+                | struct (_, world) -> Right struct (Violation (["InvalidSelectCondition"], "Must provide an expression that evaluates to a Bool in a case condition.", originOpt), world))
                 (Left world)
                 exprPairs
         match resultEir with
         | Right success -> success
-        | Left world -> (Violation (["InexhaustiveSelect"], "A select expression failed to satisfy any of its cases.", originOpt), world)
+        | Left world -> struct (Violation (["InexhaustiveSelect"], "A select expression failed to satisfy any of its cases.", originOpt), world)
 
     and evalTry body handlers _ world =
         match eval body world with
-        | (Violation (categories, _, _) as evaled, world) ->
+        | struct (Violation (categories, _, _) as evaled, world) ->
             match
                 List.foldUntilRight (fun world (handlerCategories, handlerBody) ->
                     let categoriesTrunc = List.truncate (List.length handlerCategories) categories
@@ -500,31 +500,32 @@ module ScriptingWorld =
                     (Left world)
                     handlers with
             | Right success -> success
-            | Left world -> (evaled, world)
+            | Left world -> struct (evaled, world)
         | success -> success
 
     and evalDo exprs _ world =
         let evaledEir =
-            List.foldWhileRight (fun (_, world) expr ->
+            List.foldWhileRight (fun struct (_, world) expr ->
                 match eval expr world with
-                | (Violation _, _) as error -> Left error
+                | struct (Violation _, _) as error -> Left error
                 | success -> Right success)
-                (Right (Unit, world))
+                (Right struct (Unit, world))
                 exprs
         Either.amb evaledEir
 
     and evalDefine binding originOpt world =
-        let (bound, world) =
+        let struct (bound, world) =
             match binding with
             | VariableBinding (name, body) ->
-                let (evaled, world) = eval body world
+                let struct (evaled, world) = eval body world
                 tryAddDeclarationBinding name evaled world
             | FunctionBinding (name, args, body) ->
                 let frames = getProceduralFrames world :> obj
                 let fn = Fun (args, args.Length, body, true, Some frames, originOpt)
                 tryAddDeclarationBinding name fn world
-        if bound then (Unit, world)
-        else (Violation (["InvalidDeclaration"], "Can make declarations only at the top-level.", None), world)
+        if bound
+        then struct (Unit, world)
+        else struct (Violation (["InvalidDeclaration"], "Can make declarations only at the top-level.", None), world)
 
     /// Evaluate an expression.
     and eval expr world =
@@ -546,7 +547,7 @@ module ScriptingWorld =
         | List _
         | Ring _
         | Table _
-        | Record _ -> (expr, world)
+        | Record _ -> struct (expr, world)
         | UnionUnevaled (name, exprs) -> evalUnionUnevaled name exprs world
         | TableUnevaled exprPairs -> evalTableUnevaled exprPairs world
         | RecordUnevaled (name, exprPairs) -> evalRecordUnevaled name exprPairs world
@@ -564,7 +565,7 @@ module ScriptingWorld =
         | Select (exprPairs, originOpt) -> evalSelect exprPairs originOpt world
         | Try (body, handlers, originOpt) -> evalTry body handlers originOpt world
         | Do (exprs, originOpt) -> evalDo exprs originOpt world
-        | Quote _ as quote -> (quote, world)
+        | Quote _ as quote -> struct (quote, world)
         | Define (binding, originOpt) -> evalDefine binding originOpt world
 
     /// Evaluate a sequence of expressions.
@@ -573,24 +574,24 @@ module ScriptingWorld =
         let world =
             Seq.foldi
                 (fun i world expr ->
-                    let (evaled, world) = eval expr world
+                    let struct (evaled, world) = eval expr world
                     evaleds.[i] <- evaled
                     world)
                 world
                 exprs
-        (evaleds, world)
+        struct (evaleds, world)
 
     /// Evaluate an expression, with logging on violation result.
     let evalWithLogging expr world =
-        let (evaled, world) = eval expr world
-        Scripting.log evaled
-        (evaled, world)
+        let struct (evaled, world) = eval expr world
+        log evaled
+        struct (evaled, world)
 
     /// Evaluate a series of expressions, with logging on violation result.
     let evalManyWithLogging exprs world =
-        let (evaleds, world) = evalMany exprs world
-        Array.iter Scripting.log evaleds
-        (evaleds, world)
+        let struct (evaleds, world) = evalMany exprs world
+        Array.iter log evaleds
+        struct (evaleds, world)
 
     /// Attempt to evaluate a script.
     let tryEvalScript choose scriptFilePath world =
@@ -602,11 +603,11 @@ module ScriptingWorld =
             let script =
                 scriptStr |>
                 (fun str -> Symbol.OpenSymbolsStr + str + Symbol.CloseSymbolsStr) |>
-                scvalue<Scripting.Expr array>
-            let (evaleds, world) = evalMany script world
+                scvalue<Expr array>
+            let struct (evaleds, world) = evalMany script world
             Log.info ("Successfully evaluated script '" + scriptFilePath + ".")
-            Right (scriptStr, evaleds, world)
+            Right struct (scriptStr, evaleds, world)
         with exn ->
             let error = "Failed to evaluate script '" + scriptFilePath + "' due to: " + scstring exn
             Log.info error
-            Left (error, choose world)
+            Left struct (error, choose world)

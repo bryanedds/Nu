@@ -75,6 +75,7 @@
     <Compile Include="Option.fs" />
     <Compile Include="FOption.fs" />
     <Compile Include="Pair.fs" />
+    <Compile Include="StructPair.fs" />
     <Compile Include="Triple.fs" />
     <Compile Include="Either.fs" />
     <Compile Include="Seq.fs" />
@@ -156,6 +157,9 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.ValueTuple">
+      <HintPath>..\Prime.Dependencies\System.ValueTuple.4.3.0\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="xunit.abstractions">
       <HintPath>..\Prime.Dependencies\xunit\xunit.abstractions.dll</HintPath>
     </Reference>

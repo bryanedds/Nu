@@ -62,14 +62,15 @@ module FieldDispatcherModule =
                                   Image = fieldMap.FieldTileSheet
                                   Color = Vector4.One }
                             sprite :: sprites)
-                        fieldMap.FieldTiles
-                        []
+                        fieldMap.FieldTiles [] |>
+                    Array.ofList
+
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
-                        [LayerableDescriptor
+                        [|LayerableDescriptor
                             { Depth = field.GetDepth world
                               PositionY = (field.GetPosition world).Y
-                              LayeredDescriptor = SpritesDescriptor sprites }])
+                              LayeredDescriptor = SpritesDescriptor sprites }|])
                     world
             else world
 

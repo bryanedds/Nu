@@ -18,11 +18,9 @@ module HSetModule =
             val V : 'a
             end
 
-    /// TODO: P1: there's an F# issue where UseNullAsTrueValue does not work on unions with 4 or
-    /// more cases https://github.com/Microsoft/visualfsharp/issues/711 . Once resolved, should use
-    /// it and be able to make arrays with Array.zeroCreate alone without also copying over the
-    /// empty array.
-    type [<NoComparison>] private HNode<'a when 'a :> 'a IEquatable> =
+    /// Hash set node.
+    type [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoComparison>]
+        private HNode<'a when 'a :> 'a IEquatable> =
         | Nil
         | Singleton of 'a Hv
         | Multiple of 'a HNode array
@@ -185,7 +183,7 @@ module HSetModule =
         /// Create an empty HSet.
         let makeEmpty () =
             { Node = HNode.empty
-              EmptyArray = Array.create 16 HNode.empty }
+              EmptyArray = Array.zeroCreate 16 }
     
         /// Check that an HSet is empty.
         let isEmpty set =

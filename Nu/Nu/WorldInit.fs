@@ -43,7 +43,7 @@ module Nu =
                 let oldScriptContext = World.getScriptContext world
                 let world = World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptingContext world
-                let (evaled, world) = World.evalInternal expr world
+                let struct (evaled, world) = World.evalInternal expr world
                 let world = World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 (evaled, world)
@@ -54,7 +54,7 @@ module Nu =
                 let oldScriptContext = World.getScriptContext world
                 let world = World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptingContext world
-                let (evaleds, world) = World.evalManyInternal exprs world
+                let struct (evaleds, world) = World.evalManyInternal exprs world
                 let world = World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 (evaleds, world)
@@ -65,7 +65,7 @@ module Nu =
                 let oldScriptContext = World.getScriptContext world
                 let world = World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptingContext world
-                let (evaled, world) = World.evalWithLoggingInternal expr world
+                let struct (evaled, world) = World.evalWithLoggingInternal expr world
                 let world = World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 (evaled, world)
@@ -76,7 +76,7 @@ module Nu =
                 let oldScriptContext = World.getScriptContext world
                 let world = World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptingContext world
-                let (evaleds, world) = World.evalManyWithLoggingInternal exprs world
+                let struct (evaleds, world) = World.evalManyWithLoggingInternal exprs world
                 let world = World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 (evaleds, world)

@@ -270,7 +270,7 @@ module EventWorld =
 #if DEBUG
                         let world = pushEventAddress objEventAddress world
 #endif
-                        let (handling, world) = world.PublishEvent subscription.Subscriber publisher eventData eventAddress eventTrace subscription world
+                        let (handling, world) = world.PublishEvent subscription.Subscriber publisher eventData eventAddress eventTrace subscription.Callback world
 #if DEBUG
                         let world = popEventAddress world
 #endif

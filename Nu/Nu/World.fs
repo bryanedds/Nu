@@ -362,7 +362,9 @@ module WorldModule2 =
             let inputPreludeFilePath = Path.Combine (inputDirectory, Assets.PreludeFilePath)
             let outputPreludeFilePath = Path.Combine (outputDirectory, Assets.PreludeFilePath)
             try File.Copy (inputPreludeFilePath, outputPreludeFilePath, true)
-                World.tryEvalPrelude world
+                match World.tryEvalPrelude world with
+                | Right struct (preludeStr, world) -> Right (preludeStr, world)
+                | Left struct (error, world) -> Left (error, world)
             with exn -> Left (scstring exn, World.choose world)
 
         /// Attempt to reload the asset graph.
@@ -543,7 +545,7 @@ module WorldModule2 =
                 let size = eyeSize
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
-                        [LayerableDescriptor
+                        [|LayerableDescriptor
                             { Depth = Single.MaxValue
                               PositionY = position.Y
                               LayeredDescriptor =
@@ -555,7 +557,7 @@ module WorldModule2 =
                                       ViewType = Absolute
                                       InsetOpt = None
                                       Image = dissolveImage
-                                      Color = color }}])
+                                      Color = color }}|])
                     world
             | None -> world
 
@@ -812,13 +814,13 @@ module WorldModule2 =
 
                     // try to load the prelude for the scripting language
                     match World.tryEvalPrelude world with
-                    | Right (_, world) ->
+                    | Right struct (_, world) ->
                         
                         // finally, register the game
                         let world = World.registerGame world
                         Right world
 
                     // forward error messages
-                    | Left (error, _) -> Left error
+                    | Left struct (error, _) -> Left error
                 | Left error -> Left error
             | Left error -> Left error

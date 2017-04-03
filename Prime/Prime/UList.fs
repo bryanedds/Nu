@@ -14,7 +14,7 @@ module UListModule =
     
         interface 'a IEnumerable with
             member this.GetEnumerator () =
-                let (seq, tlist) = TList.toSeq !this.RefList
+                let struct (seq, tlist) = TList.toSeq !this.RefList
                 this.RefList := tlist
                 seq.GetEnumerator ()
     
@@ -23,7 +23,7 @@ module UListModule =
                 (this :> 'a IEnumerable).GetEnumerator () :> IEnumerator
 
         member this.Item index =
-            let (result, tlist) = TList.get index !this.RefList
+            let struct (result, tlist) = TList.get index !this.RefList
             this.RefList := tlist
             result
 
@@ -52,7 +52,7 @@ module UListModule =
             { RefList = ref ^ TList.remove value !list.RefList }
 
         let isEmpty list =
-            let (result, tlist) = TList.isEmpty !list.RefList
+            let struct (result, tlist) = TList.isEmpty !list.RefList
             list.RefList := tlist
             result
 
@@ -60,7 +60,7 @@ module UListModule =
             not ^ isEmpty list
 
         let contains value list =
-            let (result, tlist) = TList.contains value !list.RefList
+            let struct (result, tlist) = TList.contains value !list.RefList
             list.RefList := tlist
             result
 
@@ -71,42 +71,42 @@ module UListModule =
             list :> _ seq
 
         let fold folder state list =
-            let (result, tlist) = TList.fold folder state !list.RefList
+            let struct (result, tlist) = TList.fold folder state !list.RefList
             list.RefList := tlist
             result
 
         let map mapper list =
-            let (result, tlist) = TList.map mapper !list.RefList
+            let struct (result, tlist) = TList.map mapper !list.RefList
             list.RefList := tlist
             { RefList = ref result }
 
         let filter pred list =
-            let (result, tlist) = TList.filter pred !list.RefList
+            let struct (result, tlist) = TList.filter pred !list.RefList
             list.RefList := tlist
             { RefList = ref result }
 
         let rev list =
-            let (result, tlist) = TList.rev !list.RefList
+            let struct (result, tlist) = TList.rev !list.RefList
             list.RefList := tlist
             { RefList = ref result }
 
         let sortWith comparison list =
-            let (result, tlist) = TList.sortWith comparison !list.RefList
+            let struct (result, tlist) = TList.sortWith comparison !list.RefList
             list.RefList := tlist
             { RefList = ref result }
 
         let sortBy by list =
-            let (result, tlist) = TList.sortBy by !list.RefList
+            let struct (result, tlist) = TList.sortBy by !list.RefList
             list.RefList := tlist
             { RefList = ref result }
 
         let sort list =
-            let (result, tlist) = TList.sort !list.RefList
+            let struct (result, tlist) = TList.sort !list.RefList
             list.RefList := tlist
             { RefList = ref result }
 
         let definitize list =
-            let (result, tlist) = TList.definitize !list.RefList
+            let struct (result, tlist) = TList.definitize !list.RefList
             list.RefList := tlist
             { RefList = ref result }
 

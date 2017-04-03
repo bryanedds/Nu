@@ -23,10 +23,10 @@ module TMapModule =
               BloatFactor : int }
 
         static member (>>.) (map : TMap<'k2, 'v2>, builder : TExpr<unit, TMap<'k2, 'v2>>) =
-            (snd ^ builder map)
+            snd' (builder map)
 
         static member (.>>) (map : TMap<'k2, 'v2>, builder : TExpr<'v2, TMap<'k2, 'v2>>) =
-            (fst ^ builder map)
+            fst' (builder map)
 
         static member (.>>.) (map : TMap<'k2, 'v2>, builder : TExpr<'v2, TMap<'k2, 'v2>>) =
             builder map
@@ -90,15 +90,15 @@ module TMapModule =
 
         let isEmpty map =
             let map = validate map
-            (map.Dict.Count = 0, map)
+            struct (map.Dict.Count = 0, map)
 
         let notEmpty map =
-            mapFst not ^ isEmpty map
+            mapFst' not (isEmpty map)
 
         /// Get the length of the map (constant-time, obviously).
         let length map =
             let map = validate map
-            (map.Dict.Count, map)
+            struct (map.Dict.Count, map)
 
         let add key value map =
             update (fun map ->
@@ -116,7 +116,7 @@ module TMapModule =
 
         /// Add all the given entries to the map.
         let addMany entries map =
-            Seq.fold (flip ^ uncurry add) map entries
+            Seq.fold (flip (uncurry add)) map entries
 
         /// Remove all values with the given keys from the map.
         let removeMany keys map =
@@ -125,23 +125,23 @@ module TMapModule =
         let tryFindFast key map =
             let map = validate map
             match map.Dict.TryGetValue key with
-            | (true, value) -> KeyValuePair (FOption.some value, map)
-            | (false, _) -> KeyValuePair (FOption.none (), map)
+            | (true, value) -> struct (FOption.some value, map)
+            | (false, _) -> struct (FOption.none (), map)
 
         let tryFind key map =
             let map = validate map
             match map.Dict.TryGetValue key with
-            | (true, value) -> (Some value, map)
-            | (false, _) -> (None, map)
+            | (true, value) -> struct (Some value, map)
+            | (false, _) -> struct (None, map)
 
         let find key map =
             let map = validate map
-            (map.Dict.[key], map)
+            struct (map.Dict.[key], map)
 
         let containsKey key map =
             match tryFind key map with
-            | (Some _, map) -> (true, map)
-            | (None, map) -> (false, map)
+            | struct (Some _, map) -> struct (true, map)
+            | struct (None, map) -> struct (false, map)
 
         /// Convert a TMap to a seq. Note that entire map is iterated eagerly since the underlying
         /// Dictionary could otherwise opaquely change during iteration.
@@ -152,26 +152,26 @@ module TMapModule =
                 Seq.map (fun kvp -> (kvp.Key, kvp.Value)) |>
                 Array.ofSeq :>
                 seq<'k * 'v>
-            (seq, map)
+            struct (seq, map)
 
         let ofSeq pairs =
             makeFromSeq None pairs
 
         let fold folder state map =
-            let (seq, map) = toSeq map
+            let struct (seq, map) = toSeq map
             let result = Seq.fold (folder >> uncurry) state seq
-            (result, map)
+            struct (result, map)
 
         let map mapper map =
             fold
                 (fun map key value -> add key (mapper value) map)
-                (makeEmpty ^ Some map.BloatFactor)
+                (makeEmpty (Some map.BloatFactor))
                 map
 
         let filter pred map =
             fold
                 (fun state k v -> if pred k v then add k v state else state)
-                (makeEmpty ^ Some map.BloatFactor)
+                (makeEmpty (Some map.BloatFactor))
                 map
 
 type TMap<'k, 'v when 'k : equality> = TMapModule.TMap<'k, 'v>
