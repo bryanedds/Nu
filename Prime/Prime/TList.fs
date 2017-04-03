@@ -24,10 +24,10 @@ module TListModule =
               BloatFactor : int }
 
         static member (>>.) (list : 'a2 TList, builder : TExpr<unit, 'a2 TList>) =
-            (snd ^ builder list)
+            snd' (builder list)
 
         static member (.>>) (list : 'a2 TList, builder : TExpr<'a2, 'a2 TList>) =
-            (fst ^ builder list)
+            fst' (builder list)
 
         static member (.>>.) (list : 'a2 TList, builder : TExpr<'a2, 'a2 TList>) =
             builder list
@@ -98,15 +98,15 @@ module TListModule =
 
         let isEmpty list =
             let list = validate list
-            (list.ImpList.Count = 0, list)
+            struct (list.ImpList.Count = 0, list)
 
         let notEmpty list =
             let list = validate list
-            mapFst not ^ isEmpty list
+            mapFst' not (isEmpty list)
 
         let get index list =
             let list = validate list
-            (list.ImpList.[index], list)
+            struct (list.ImpList.[index], list)
 
         let set index value list =
             update (fun list ->
@@ -132,26 +132,26 @@ module TListModule =
         /// Get the length of the list (constant-time, obviously).
         let length list =
             let list = validate list
-            (list.ImpList.Count, list)
+            struct (list.ImpList.Count, list)
 
         let contains value list =
             let list = validate list
-            (list.ImpList.Contains value, list)
+            struct (list.ImpList.Contains value, list)
 
         /// Convert a TList to a seq. Note that entire list is iterated eagerly since the underlying .NET List could
         /// otherwise opaquely change during iteration.
         let toSeq list =
             let list = validate list
             let seq = list.ImpList |> Array.ofSeq :> 'a seq
-            (seq, list)
+            struct (seq, list)
 
         let ofSeq items =
             makeFromSeq None items
 
         let fold folder state list =
-            let (seq, list) = toSeq list
+            let struct (seq, list) = toSeq list
             let result = Seq.fold folder state seq
-            (result, list)
+            struct (result, list)
 
         let map (mapper : 'a -> 'b) (list : 'a TList) =
             // OPTIMIZATION: elides building of avoidable transactions.
@@ -160,7 +160,7 @@ module TListModule =
             let tempList = List<'b> impList.Count
             for i in 0 .. impList.Count - 1 do tempList.Add ^ mapper impList.[i]
             let listMapped = makeFromTempList (Some list.BloatFactor) tempList
-            (listMapped, list)
+            struct (listMapped, list)
 
         let filter pred list =
             // OPTIMIZATION: elides building of avoidable transactions.
@@ -169,7 +169,7 @@ module TListModule =
             let tempList = List<'a> impList.Count
             for i in 0 .. impList.Count - 1 do let item = impList.[i] in if pred item then tempList.Add item
             let listFiltered = makeFromTempList (Some list.BloatFactor) tempList
-            (listFiltered, list)
+            struct (listFiltered, list)
 
         let rev list =
             // OPTIMIZATION: elides building of avoidable transactions.
@@ -178,7 +178,7 @@ module TListModule =
             let tempList = List<'a> impList
             tempList.Reverse ()
             let listReversed = makeFromTempList (Some list.BloatFactor) tempList
-            (listReversed, list)
+            struct (listReversed, list)
 
         let sortWith comparison list =
             // OPTIMIZATION: elides building of avoidable transactions.
@@ -187,7 +187,7 @@ module TListModule =
             let tempList = List<'b> impList
             let tempListSorted = Seq.sortWith comparison tempList // NOTE: Generic.List.Sort is _not_ stable, so using a stable one instead...
             let listSorted = makeFromSeq (Some list.BloatFactor) tempListSorted
-            (listSorted, list)
+            struct (listSorted, list)
 
         let sortBy by list =
             // OPTIMIZATION: elides building of avoidable transactions.
@@ -197,7 +197,7 @@ module TListModule =
             for i in 0 .. impList.Count - 1 do tempList.Add (by impList.[i])
             let tempListSorted = Seq.sort tempList // NOTE: Generic.List.Sort is _not_ stable, so using a stable one instead...
             let listSorted = makeFromSeq (Some list.BloatFactor) tempListSorted
-            (listSorted, list)
+            struct (listSorted, list)
 
         let sort list =
             // OPTIMIZATION: elides building of avoidable transactions.
@@ -206,17 +206,17 @@ module TListModule =
             let tempList = List<'b> impList
             let tempListSorted = Seq.sort tempList // NOTE: Generic.List.Sort is _not_ stable, so using a stable one instead...
             let listSorted = makeFromSeq (Some list.BloatFactor) tempListSorted
-            (listSorted, list)
+            struct (listSorted, list)
 
         let definitize list =
-            let listMapped = filter Option.isSome list |> fst
+            let listMapped = filter Option.isSome list |> fst'
             map Option.get listMapped
 
         let concat lists =
             // OPTIMIZATION: elides building of avoidable transactions.
-            let listsAsSeq = toSeq lists |> fst
+            let listsAsSeq = toSeq lists |> fst'
             let tempList = List<'a> ()
-            for list in listsAsSeq do tempList.AddRange (toSeq list |> fst)
+            for list in listsAsSeq do tempList.AddRange (toSeq list |> fst')
             makeFromSeq None tempList
 
         /// Add all the given values to the list.

@@ -15,7 +15,7 @@ module UMapModule =
     
         interface IEnumerable<'k * 'v> with
             member this.GetEnumerator () =
-                let (seq, tmap) = TMap.toSeq !this.RefMap
+                let struct (seq, tmap) = TMap.toSeq !this.RefMap
                 this.RefMap := tmap
                 seq.GetEnumerator ()
     
@@ -47,7 +47,7 @@ module UMapModule =
             { RefMap = ref ^ TMap.removeMany keys !map.RefMap }
 
         let isEmpty map =
-            let (result, tmap) = TMap.isEmpty !map.RefMap
+            let struct (result, tmap) = TMap.isEmpty !map.RefMap
             map.RefMap := tmap
             result
 
@@ -55,22 +55,22 @@ module UMapModule =
             not ^ isEmpty map
 
         let tryFindFast key map =
-            let valueOptAndTMap = TMap.tryFindFast key !map.RefMap
-            map.RefMap := valueOptAndTMap.Value
-            valueOptAndTMap.Key
+            let struct (valueOpt, tmap) = TMap.tryFindFast key !map.RefMap
+            map.RefMap := tmap
+            valueOpt
 
         let tryFind key map =
-            let (valueOpt, tmap) = TMap.tryFind key !map.RefMap
+            let struct (valueOpt, tmap) = TMap.tryFind key !map.RefMap
             map.RefMap := tmap
             valueOpt
 
         let find key map =
-            let (item, tmap) = TMap.find key !map.RefMap
+            let struct (item, tmap) = TMap.find key !map.RefMap
             map.RefMap := tmap
             item
 
         let containsKey key map =
-            let (result, tmap) = TMap.containsKey key !map.RefMap
+            let struct (result, tmap) = TMap.containsKey key !map.RefMap
             map.RefMap := tmap
             result
     
@@ -81,17 +81,17 @@ module UMapModule =
             map :> _ seq
 
         let fold folder state map =
-            let (result, tmap) = TMap.fold folder state !map.RefMap
+            let struct (result, tmap) = TMap.fold folder state !map.RefMap
             map.RefMap := tmap
             result
 
         let map mapper map =
-            let (result, tmap) = TMap.map mapper !map.RefMap
+            let struct (result, tmap) = TMap.map mapper !map.RefMap
             map.RefMap := tmap
             { RefMap = ref result }
 
         let filter pred map =
-            let (result, tmap) = TMap.filter pred !map.RefMap
+            let struct (result, tmap) = TMap.filter pred !map.RefMap
             map.RefMap := tmap
             { RefMap = ref result }
 

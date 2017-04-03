@@ -265,24 +265,24 @@ module ScriptingBinary =
 
     let evalBinaryInner (fns : BinaryFns) fnName evaledLeft evaledRight originOpt (world : 'w) =
         match (evaledLeft, evaledRight) with
-        | (Bool boolLeft, Bool boolRight) -> (fns.Bool boolLeft boolRight originOpt, world)
-        | (Int intLeft, Int intRight) -> (fns.Int intLeft intRight originOpt, world)
-        | (Int64 int64Left, Int64 int64Right) -> (fns.Int64 int64Left int64Right originOpt, world)
-        | (Single singleLeft, Single singleRight) -> (fns.Single singleLeft singleRight originOpt, world)
-        | (Double doubleLeft, Double doubleRight) -> (fns.Double doubleLeft doubleRight originOpt, world)
-        | (String stringLeft, String stringRight) -> (fns.String stringLeft stringRight originOpt, world)
-        | (Keyword keywordLeft, Keyword keywordRight) -> (fns.String keywordLeft keywordRight originOpt, world)
-        | (Tuple tupleLeft, Tuple tupleRight) -> (fns.Tuple tupleLeft tupleRight originOpt, world)
-        | (Union (nameLeft, fieldsLeft), Union (nameRight, fieldsRight)) -> (fns.Union nameLeft fieldsLeft nameRight fieldsRight originOpt, world)
-        | (Codata codataLeft, Codata codataRight) -> (fns.Codata codataLeft codataRight originOpt, world)
-        | (List listLeft, List listRight) -> (fns.List listLeft listRight originOpt, world)
-        | (Ring ringLeft, Ring ringRight) -> (fns.Ring ringLeft ringRight originOpt, world)
-        | (Table tableLeft, Table tableRight) -> (fns.Table tableLeft tableRight originOpt, world)
-        | (Violation _ as violation, _) -> (violation, world)
-        | (_, (Violation _ as violation)) -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; (String.capitalize fnName)], "Cannot apply a binary function on unlike or incompatible values.", originOpt), world)
+        | (Bool boolLeft, Bool boolRight) -> struct (fns.Bool boolLeft boolRight originOpt, world)
+        | (Int intLeft, Int intRight) -> struct (fns.Int intLeft intRight originOpt, world)
+        | (Int64 int64Left, Int64 int64Right) -> struct (fns.Int64 int64Left int64Right originOpt, world)
+        | (Single singleLeft, Single singleRight) -> struct (fns.Single singleLeft singleRight originOpt, world)
+        | (Double doubleLeft, Double doubleRight) -> struct (fns.Double doubleLeft doubleRight originOpt, world)
+        | (String stringLeft, String stringRight) -> struct (fns.String stringLeft stringRight originOpt, world)
+        | (Keyword keywordLeft, Keyword keywordRight) -> struct (fns.String keywordLeft keywordRight originOpt, world)
+        | (Tuple tupleLeft, Tuple tupleRight) -> struct (fns.Tuple tupleLeft tupleRight originOpt, world)
+        | (Union (nameLeft, fieldsLeft), Union (nameRight, fieldsRight)) -> struct (fns.Union nameLeft fieldsLeft nameRight fieldsRight originOpt, world)
+        | (Codata codataLeft, Codata codataRight) -> struct (fns.Codata codataLeft codataRight originOpt, world)
+        | (List listLeft, List listRight) -> struct (fns.List listLeft listRight originOpt, world)
+        | (Ring ringLeft, Ring ringRight) -> struct (fns.Ring ringLeft ringRight originOpt, world)
+        | (Table tableLeft, Table tableRight) -> struct (fns.Table tableLeft tableRight originOpt, world)
+        | (Violation _ as violation, _) -> struct (violation, world)
+        | (_, (Violation _ as violation)) -> struct (violation, world)
+        | _ -> struct (Violation (["InvalidArgumentType"; (String.capitalize fnName)], "Cannot apply a binary function on unlike or incompatible values.", originOpt), world)
 
     let evalBinary fns fnName evaledArgs originOpt (world : 'w) =
         match evaledArgs with
         | [|evaledLeft; evaledRight|] -> evalBinaryInner fns fnName evaledLeft evaledRight originOpt world
-        | _ -> (Violation (["InvalidArgumentCount"; (String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+        | _ -> struct (Violation (["InvalidArgumentCount"; (String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)

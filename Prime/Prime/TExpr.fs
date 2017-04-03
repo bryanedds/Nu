@@ -4,20 +4,20 @@
 namespace Prime
 open System
 
-type TExpr<'a, 'env> = 'env -> 'a * 'env
+type TExpr<'a, 'env> = 'env -> struct ('a * 'env)
 
 // TODO: P1: Make operations work on struct tuples in next version of F#.
 type TExprBuilder<'env> () =
 
     member inline this.Bind (expr : TExpr<'a, 'env>, lift : 'a -> TExpr<'b, 'env>) : TExpr<'b, 'env> =
         fun env ->
-            let (result, env') = expr env
+            let struct (result, env') = expr env
             let expr' = lift result
             expr' env'
 
     member inline this.Return (value : 'a) : TExpr<'a, 'env> =
         fun expr ->
-            (value, expr)
+            struct (value, expr)
 
     member inline this.ReturnFrom (value : 'a) =
         value

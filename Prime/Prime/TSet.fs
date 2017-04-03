@@ -23,10 +23,10 @@ module TSetModule =
               BloatFactor : int }
 
         static member (>>.) (set : 'a2 TSet, builder : TExpr<unit, 'a2 TSet>) =
-            (snd ^ builder set)
+            snd' (builder set)
 
         static member (.>>) (set : 'a2 TSet, builder : TExpr<'a2, 'a2 TSet>) =
-            (fst ^ builder set)
+            fst' (builder set)
 
         static member (.>>.) (set : 'a2 TSet, builder : TExpr<'a2, 'a2 TSet>) =
             builder set
@@ -90,10 +90,10 @@ module TSetModule =
 
         let isEmpty set =
             let set = validate set
-            (set.HashSet.Count = 0, set)
+            struct (set.HashSet.Count = 0, set)
 
         let notEmpty set =
-            mapFst not ^ isEmpty set
+            mapFst' not (isEmpty set)
 
         /// Get the length of the set (constant-time, obviously).
         let length set =
@@ -124,33 +124,33 @@ module TSetModule =
 
         let contains value set =
             let set = validate set
-            (set.HashSet.Contains value, set)
+            struct (set.HashSet.Contains value, set)
 
         /// Convert a TSet to a seq. Note that entire set is iterated eagerly since the underlying HashMap could
         /// otherwise opaquely change during iteration.
         let toSeq set =
             let set = validate set
             let seq = set.HashSet |> Array.ofSeq :> 'a seq
-            (seq, set)
+            struct (seq, set)
 
         let ofSeq items =
             makeFromSeq None items
 
         let fold folder state set =
-            let (seq, set) = toSeq set
+            let struct (seq, set) = toSeq set
             let result = Seq.fold folder state seq
-            (result, set)
+            struct (result, set)
 
         let map mapper set =
             fold
                 (fun set value -> add (mapper value) set)
-                (makeEmpty ^ Some set.BloatFactor)
+                (makeEmpty (Some set.BloatFactor))
                 set
 
         let filter pred set =
             fold
                 (fun set value -> if pred value then add value set else set)
-                (makeEmpty ^ Some set.BloatFactor)
+                (makeEmpty (Some set.BloatFactor))
                 set
 
 type TSet<'a when 'a : equality> = TSetModule.TSet<'a>

@@ -26,38 +26,38 @@ module EffectSystemModule =
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module EffectSystem =
 
-        let rec private selectKeyFrames2 localTime playback (keyFrames : IKeyFrame list) =
+        let rec private selectKeyFrames2<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
             match playback with
             | Once ->
                 match keyFrames with
-                | [] -> failwithumf ()
-                | head :: [] -> (localTime, head, head)
-                | head :: next :: tail ->
+                | [||] -> failwithumf ()
+                | [|head|] -> (localTime, head, head)
+                | _ ->
+                    let (head, next, tail) = (keyFrames.[0], keyFrames.[1], Array.skip 2 keyFrames)
                     if localTime > head.KeyFrameLength then
                         match tail with
-                        | _ :: _ -> selectKeyFrames2 (localTime - head.KeyFrameLength) playback (next :: tail)
-                        | [] -> (head.KeyFrameLength, next, next)
+                        | [||] -> (head.KeyFrameLength, next, next)
+                        | _ -> selectKeyFrames2 (localTime - head.KeyFrameLength) playback (Array.cons next tail)
                     else (localTime, head, next)
             | Loop ->
-                let totalTime = List.fold (fun totalTime (keyFrame : IKeyFrame) -> totalTime + keyFrame.KeyFrameLength) 0L keyFrames 
+                let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) 0L keyFrames 
                 if totalTime <> 0L then
                     let moduloTime = localTime % totalTime
                     selectKeyFrames2 moduloTime Once keyFrames
-                else (0L, List.head keyFrames, List.head keyFrames)
+                else (0L, Array.head keyFrames, Array.head keyFrames)
             | Bounce ->
-                let totalTime = List.fold (fun totalTime (keyFrame : IKeyFrame) -> totalTime + keyFrame.KeyFrameLength) 0L keyFrames
+                let totalTime = Array.fold (fun totalTime (keyFrame : 'kf) -> totalTime + keyFrame.KeyFrameLength) 0L keyFrames
                 if totalTime <> 0L then
                     let moduloTime = localTime % totalTime
                     let bouncing = localTime / totalTime % 2L = 1L
                     let bounceTime = if bouncing then totalTime - moduloTime else moduloTime
                     selectKeyFrames2 bounceTime Once keyFrames
-                else (0L, List.head keyFrames, List.head keyFrames)
+                else (0L, Array.head keyFrames, Array.head keyFrames)
 
-        let private selectKeyFrames<'n when 'n :> IKeyFrame> localTime playback (keyFrames : 'n list) =
+        let private selectKeyFrames<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
             keyFrames |>
-            List.map (fun keyFrame -> keyFrame :> IKeyFrame) |>
             selectKeyFrames2 localTime playback |>
-            fun (fst, snd, thd) -> (fst, snd :?> 'n, thd :?> 'n)
+            fun (fst, snd, thd) -> (fst, snd, thd)
 
         let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm effectSystem =
             match algorithm with
@@ -124,11 +124,11 @@ module EffectSystemModule =
         let evalArgument (argument : Argument) : Definition =
             match argument with
             | SymbolicCompressionA resource ->
-                { DefinitionParams = []; DefinitionBody = SymbolicCompressionA resource }
+                { DefinitionParams = [||]; DefinitionBody = SymbolicCompressionA resource }
             | SymbolicCompressionB (SymbolicCompressionA aspect) ->
-                { DefinitionParams = []; DefinitionBody = SymbolicCompressionB (SymbolicCompressionA aspect) }
+                { DefinitionParams = [||]; DefinitionBody = SymbolicCompressionB (SymbolicCompressionA aspect) }
             | SymbolicCompressionB (SymbolicCompressionB content) ->
-                { DefinitionParams = []; DefinitionBody = SymbolicCompressionB (SymbolicCompressionB content) }
+                { DefinitionParams = [||]; DefinitionBody = SymbolicCompressionB (SymbolicCompressionB content) }
 
         let rec evalResource resource effectSystem : AssetTag =
             match resource with
@@ -162,13 +162,13 @@ module EffectSystemModule =
         and private evalAspect aspect slice effectSystem =
             match aspect with
             | Enabled (applicator, playback, keyFrames) ->
-                if List.hasAtLeast 1 keyFrames then
+                if Array.notEmpty keyFrames then
                     let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                     let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
                     { slice with Enabled = applied }
                 else slice
             | Position (applicator, algorithm, playback, keyFrames) ->
-                if List.hasAtLeast 1 keyFrames then
+                if Array.notEmpty keyFrames then
                     let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                     let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                     let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
@@ -176,7 +176,7 @@ module EffectSystemModule =
                     { slice with Position = applied }
                 else slice
             | Translation (applicator, algorithm, playback, keyFrames) ->
-                if List.hasAtLeast 1 keyFrames then
+                if Array.notEmpty keyFrames then
                     let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                     let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                     let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
@@ -185,7 +185,7 @@ module EffectSystemModule =
                     { slice with Position = applied }
                 else slice
             | Size (applicator, algorithm, playback, keyFrames) ->
-                if List.hasAtLeast 1 keyFrames then
+                if Array.notEmpty keyFrames then
                     let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                     let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                     let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
@@ -193,7 +193,7 @@ module EffectSystemModule =
                     { slice with Size = applied }
                 else slice
             | Rotation (applicator, algorithm, playback, keyFrames) ->
-                if List.hasAtLeast 1 keyFrames then
+                if Array.notEmpty keyFrames then
                     let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                     let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                     let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
@@ -201,7 +201,7 @@ module EffectSystemModule =
                     { slice with Rotation = applied }
                 else slice
             | Depth (applicator, algorithm, playback, keyFrames) ->
-                if List.hasAtLeast 1 keyFrames then
+                if Array.notEmpty keyFrames then
                     let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                     let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                     let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
@@ -209,7 +209,7 @@ module EffectSystemModule =
                     { slice with Depth = applied }
                 else slice
             | Offset (applicator, algorithm, playback, keyFrames) ->
-                if List.hasAtLeast 1 keyFrames then
+                if Array.notEmpty keyFrames then
                     let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                     let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                     let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
@@ -217,7 +217,7 @@ module EffectSystemModule =
                     { slice with Offset = applied }
                 else slice
             | Color (applicator, algorithm, playback, keyFrames) ->
-                if List.hasAtLeast 1 keyFrames then
+                if Array.notEmpty keyFrames then
                     let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                     let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                     let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
@@ -225,7 +225,7 @@ module EffectSystemModule =
                     { slice with Color = applied }
                 else slice
             | Volume (applicator, algorithm, playback, keyFrames) ->
-                if List.hasAtLeast 1 keyFrames then
+                if Array.notEmpty keyFrames then
                     let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                     let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                     let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
@@ -243,21 +243,21 @@ module EffectSystemModule =
                 | None -> Log.info ^ "Could not find definition with name '" + definitionName + "'."; slice
         
         and private evalAspects aspects slice effectSystem =
-            List.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
+            Array.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
 
         and private evalExpand definitionName arguments slice effectSystem =
             match Map.tryFind definitionName effectSystem.EffectEnv with
             | Some definition ->
                 match definition.DefinitionBody with
                 |  SymbolicCompressionB (SymbolicCompressionB content) ->
-                    let localDefinitions = List.map evalArgument arguments
-                    match (try List.zip definition.DefinitionParams localDefinitions |> Some with _ -> None) with
+                    let localDefinitions = Array.map evalArgument arguments
+                    match (try Array.zip definition.DefinitionParams localDefinitions |> Some with _ -> None) with
                     | Some localDefinitionEntries ->
                         let effectSystem = { effectSystem with EffectEnv = Map.addMany localDefinitionEntries effectSystem.EffectEnv }
                         evalContent content slice effectSystem
-                    | None -> Log.info "Wrong number of arguments provided to ExpandContent."; []
-                | _ -> Log.info ^ "Expected Content for definition '" + definitionName + "'."; []
-            | None -> Log.info ^ "Could not find definition with name '" + definitionName + "'."; []
+                    | None -> Log.info "Wrong number of arguments provided to ExpandContent."; [||]
+                | _ -> Log.info ^ "Expected Content for definition '" + definitionName + "'."; [||]
+            | None -> Log.info ^ "Could not find definition with name '" + definitionName + "'."; [||]
 
         and private evalStaticSprite resource aspects content slice effectSystem =
 
@@ -270,8 +270,8 @@ module EffectSystemModule =
             // build sprite artifacts
             let spriteArtifacts =
                 if slice.Enabled then
-                    [RenderArtifact
-                        [LayerableDescriptor
+                    [|RenderArtifact
+                        [|LayerableDescriptor
                             { Depth = slice.Depth
                               PositionY = slice.Position.Y
                               LayeredDescriptor =
@@ -283,14 +283,14 @@ module EffectSystemModule =
                                       InsetOpt = None
                                       Image = image
                                       ViewType = effectSystem.ViewType
-                                      Color = slice.Color }}]]
-                else []
+                                      Color = slice.Color }}|]|]
+                else [||]
 
             // build implicitly mounted content
             let mountedArtifacts = evalContent content slice effectSystem
 
             // return artifacts
-            mountedArtifacts @ spriteArtifacts
+            Array.append mountedArtifacts spriteArtifacts
 
         and private evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effectSystem =
 
@@ -306,8 +306,8 @@ module EffectSystemModule =
             // build animated sprite artifacts
             let animatedSpriteArtifacts =
                 if slice.Enabled then
-                    [RenderArtifact
-                        [LayerableDescriptor
+                    [|RenderArtifact
+                        [|LayerableDescriptor
                             { Depth = slice.Depth
                               PositionY = slice.Position.Y
                               LayeredDescriptor =
@@ -319,14 +319,14 @@ module EffectSystemModule =
                                       InsetOpt = insetOpt
                                       Image = image
                                       ViewType = effectSystem.ViewType
-                                      Color = slice.Color }}]]
-                else []
+                                      Color = slice.Color }}|]|]
+                else [||]
 
             // build implicitly mounted content
             let mountedArtifacts = evalContent content slice effectSystem
 
             // return artifacts
-            mountedArtifacts @ animatedSpriteArtifacts
+            Array.append mountedArtifacts animatedSpriteArtifacts
 
         and private evalSoundEffect resource aspects content slice effectSystem =
 
@@ -339,14 +339,14 @@ module EffectSystemModule =
             // build sprite artifacts
             let soundArtifacts =
                 if slice.Enabled
-                then [SoundArtifact (slice.Volume, sound)]
-                else []
+                then [|SoundArtifact (slice.Volume, sound)|]
+                else [||]
 
             // build implicitly mounted content
             let mountedArtifacts = evalContent content slice effectSystem
 
             // return artifacts
-            mountedArtifacts @ soundArtifacts
+            Array.append mountedArtifacts soundArtifacts
 
         and private evalMount shift aspects content (slice : Slice) effectSystem =
             let slice = { slice with Depth = slice.Depth + shift }
@@ -361,22 +361,23 @@ module EffectSystemModule =
         
             // eval iterative repeat
             | Iterate count ->
-                List.fold
+                Array.fold
                     (fun (slice, artifacts) _ ->
                         let (slice, artifacts') = iterateArtifacts incrementAspects content slice effectSystem
-                        (slice, artifacts @ artifacts'))
-                    (slice, [])
-                    [0 .. count - 1] |>
+                        (slice, Array.append artifacts artifacts'))
+                    (slice, [||])
+                    [|0 .. count - 1|] |>
                 snd
 
             // eval cycling repeat
             | Cycle count ->
-                List.fold
+                Array.fold
                     (fun artifacts i ->
                         let effectSystem = { effectSystem with ProgressOffset = 1.0f / single count * single i }
                         let artifacts' = cycleArtifacts incrementAspects content slice effectSystem
-                        artifacts @ artifacts')
-                    [] [0 .. count - 1]
+                        Array.append artifacts artifacts')
+                    [||]
+                    [|0 .. count - 1|]
 
         and private evalEmit shift rate emitterAspects aspects content effectSystem =
             let artifacts =
@@ -403,15 +404,15 @@ module EffectSystemModule =
                                 | _ -> effectSystem.History
                             { effectSystem with History = history; EffectTime = timePassed }
                         let artifacts' =
-                            List.fold
+                            Array.fold
                                 (fun artifacts' _ ->
                                     let slice = evalAspects aspects slice effectSystem
-                                    let artifacts'' = if slice.Enabled then evalContent content slice effectSystem else []
-                                    artifacts'' @ artifacts')
-                                []
-                                [0 .. emitCount - 1]
-                        artifacts' @ artifacts)
-                    []
+                                    let artifacts'' = if slice.Enabled then evalContent content slice effectSystem else [||]
+                                    Array.append artifacts'' artifacts')
+                                [||]
+                                [|0 .. emitCount - 1|]
+                        Array.append artifacts' artifacts)
+                    [||]
                     effectSystem.History
             artifacts
 
@@ -422,9 +423,9 @@ module EffectSystemModule =
         and private evalContent content slice effectSystem =
             match content with
             | Nil ->
-                []
+                [||]
             | Tag (name, metadata) ->
-                [TagArtifact (name, metadata, slice)]
+                [|TagArtifact (name, metadata, slice)|]
             | StaticSprite (resource, aspects, content) ->
                 evalStaticSprite resource aspects content slice effectSystem
             | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) ->
@@ -443,11 +444,11 @@ module EffectSystemModule =
                 evalExpand definitionName arguments slice effectSystem
 
         and private evalContents contents slice effectSystem =
-            List.fold
+            Array.fold
                 (fun artifacts content ->
                     let artifacts' = evalContent content slice effectSystem
-                    artifacts' @ artifacts)
-                []
+                    Array.append artifacts' artifacts)
+                [||]
                 contents
 
         let eval effect slice effectSystem =
@@ -462,15 +463,15 @@ module EffectSystemModule =
                     let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Effect>).PrettyPrinter
                     let effectStr = PrettyPrinter.prettyPrint (scstring effect) prettyPrinter
                     Log.debug ^ "Error in effect:\r\n" + effectStr + "\r\ndue to: " + scstring exn
-                    []
-            else []
+                    [||]
+            else [||]
 
         let combineEffects effects =
             let effectCombined =
                 { EffectName = String.concat "+" (List.map (fun effect -> effect.EffectName) effects)
                   LifetimeOpt = None
                   Definitions = List.fold (fun definitions effect -> Map.concat definitions effect.Definitions) Map.empty effects
-                  Content = Composite (Shift 0.0f, List.map (fun effect -> effect.Content) effects) }
+                  Content = Composite (Shift 0.0f, effects |> List.map (fun effect -> effect.Content) |> Array.ofList) }
             effectCombined
 
         let make viewType history effectTime globalEnv = 

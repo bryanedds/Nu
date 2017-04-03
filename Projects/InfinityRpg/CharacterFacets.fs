@@ -155,7 +155,7 @@ module CharacterAnimationFacetModule =
             if entity.GetInView world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
-                        [LayerableDescriptor
+                        [|LayerableDescriptor
                             { Depth = entity.GetDepth world
                               PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
@@ -167,7 +167,7 @@ module CharacterAnimationFacetModule =
                                       ViewType = entity.GetViewType world
                                       InsetOpt = getSpriteInsetOpt entity world
                                       Image = entity.GetCharacterAnimationSheet world
-                                      Color = Vector4.One }}])
+                                      Color = Vector4.One }}|])
                     world
             else world
 

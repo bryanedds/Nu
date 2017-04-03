@@ -18,16 +18,16 @@ module WorldScripting =
 
     type World with
 
-        static member internal evalInternal expr world : Expr * World =
+        static member internal evalInternal expr world : struct (Expr * World) =
             ScriptingWorld.eval expr world
 
-        static member internal evalManyInternal exprs world : Expr array * World =
+        static member internal evalManyInternal exprs world : struct (Expr array * World) =
             ScriptingWorld.evalMany exprs world
 
-        static member internal evalWithLoggingInternal expr world : Expr * World =
+        static member internal evalWithLoggingInternal expr world : struct (Expr * World) =
             ScriptingWorld.evalWithLogging expr world
 
-        static member internal evalManyWithLoggingInternal exprs world : Expr array * World =
+        static member internal evalManyWithLoggingInternal exprs world : struct (Expr array * World) =
             ScriptingWorld.evalManyWithLogging exprs world
 
         static member internal evalSimulantExists fnName evaledArg originOpt world =
@@ -38,10 +38,10 @@ module WorldScripting =
                 let relation = Relation.makeFromString str
                 let address = Relation.resolve context.SimulantAddress relation
                 match World.tryDeriveSimulant address with
-                | Some simulant -> (Bool (World.getSimulantExists simulant world), world)
-                | None -> (Bool false, world)
-            | Violation _ as error -> (error, world)
-            | _ -> (Violation (["InvalidArgumentType"; "SimulantExists"], "Function '" + fnName + "' requires 1 Relation argument.", originOpt), world)
+                | Some simulant -> struct (Bool (World.getSimulantExists simulant world), world)
+                | None -> struct (Bool false, world)
+            | Violation _ as error -> struct (error, world)
+            | _ -> struct (Violation (["InvalidArgumentType"; "SimulantExists"], "Function '" + fnName + "' requires 1 Relation argument.", originOpt), world)
 
         static member internal evalGet propertyName relationExprOpt originOpt world =
             let context = World.getScriptContext world
@@ -49,24 +49,24 @@ module WorldScripting =
                 match relationExprOpt with
                 | Some relationExpr ->
                     match World.evalInternal relationExpr world with
-                    | (String str, world)
-                    | (Keyword str, world) ->
+                    | struct (String str, world)
+                    | struct (Keyword str, world) ->
                         let relation = Relation.makeFromString str
                         let address = Relation.resolve context.SimulantAddress relation
                         match World.tryDeriveSimulant address with
-                        | Some simulant -> Right (simulant, world)
-                        | None -> Left (Violation (["InvalidPropertyRelation"; "Get"], "Relation must have 0 to 3 names.", originOpt), world)
-                    | (Violation _, _) as error -> Left error
-                    | (_, world) -> Left (Violation (["InvalidPropertyRelation"; "Get"], "Relation must be either a String or Keyword.", originOpt), world)
-                | None -> Right (context, world)
+                        | Some simulant -> Right struct (simulant, world)
+                        | None -> Left struct (Violation (["InvalidPropertyRelation"; "Get"], "Relation must have 0 to 3 names.", originOpt), world)
+                    | struct (Violation _, _) as error -> Left error
+                    | struct (_, world) -> Left struct (Violation (["InvalidPropertyRelation"; "Get"], "Relation must be either a String or Keyword.", originOpt), world)
+                | None -> Right struct (context, world)
             match simulantAndEnvEir with
-            | Right (simulant, world) ->
+            | Right struct (simulant, world) ->
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some (propertyType, propertyValue) ->
                     match ScriptingWorld.tryImport propertyType propertyValue world with
-                    | Some propertyValue -> (propertyValue, world)
-                    | None -> (Violation (["InvalidPropertyValue"; "Get"], "Property value could not be imported into scripting environment.", originOpt), world)
-                | None -> (Violation (["InvalidProperty"; "Get"], "Simulant or property value could not be found.", originOpt), world)
+                    | Some propertyValue -> struct (propertyValue, world)
+                    | None -> struct (Violation (["InvalidPropertyValue"; "Get"], "Property value could not be imported into scripting environment.", originOpt), world)
+                | None -> struct (Violation (["InvalidProperty"; "Get"], "Simulant or property value could not be found.", originOpt), world)
             | Left error -> error
 
         static member internal evalSet propertyName relationExprOpt propertyValueExpr originOpt world =
@@ -75,28 +75,28 @@ module WorldScripting =
                 match relationExprOpt with
                 | Some relationExpr ->
                     match World.evalInternal relationExpr world with
-                    | (String str, world)
-                    | (Keyword str, world) ->
+                    | struct (String str, world)
+                    | struct (Keyword str, world) ->
                         let relation = Relation.makeFromString str
                         let address = Relation.resolve context.SimulantAddress relation
                         match World.tryDeriveSimulant address with
-                        | Some simulant -> Right (simulant, world)
-                        | None -> Left (Violation (["InvalidPropertyRelation"; "Set"], "Relation must have 0 to 3 parts.", originOpt), world)
-                    | (Violation _, _) as error -> Left error
-                    | (_, world) -> Left (Violation (["InvalidPropertyRelation"; "Set"], "Relation must be either a String or Keyword.", originOpt), world)
-                | None -> Right (context, world)
+                        | Some simulant -> Right struct (simulant, world)
+                        | None -> Left struct (Violation (["InvalidPropertyRelation"; "Set"], "Relation must have 0 to 3 parts.", originOpt), world)
+                    | struct (Violation _, _) as error -> Left error
+                    | struct (_, world) -> Left struct (Violation (["InvalidPropertyRelation"; "Set"], "Relation must be either a String or Keyword.", originOpt), world)
+                | None -> Right struct (context, world)
             match simulantAndEnvEir with
-            | Right (simulant, world) ->
+            | Right struct (simulant, world) ->
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some (propertyType, _) ->
-                    let (propertyValue, world) = World.evalInternal propertyValueExpr world
+                    let struct (propertyValue, world) = World.evalInternal propertyValueExpr world
                     match ScriptingWorld.tryExport propertyType propertyValue world with
                     | Some propertyValue ->
                         match World.trySetSimulantProperty propertyName (propertyType, propertyValue) simulant world with
-                        | (true, world) -> (Unit, world)
-                        | (false, world) -> (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
-                    | None -> (Violation (["InvalidPropertyValue"; "Set"], "Property value could not be exported into Simulant property.", originOpt), world)
-                | None -> (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
+                        | (true, world) -> struct (Unit, world)
+                        | (false, world) -> struct (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
+                    | None -> struct (Violation (["InvalidPropertyValue"; "Set"], "Property value could not be exported into Simulant property.", originOpt), world)
+                | None -> struct (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
             | Left error -> error
 
         static member evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
@@ -130,11 +130,11 @@ module WorldScripting =
                 | String str
                 | Keyword str ->
                     let world = World.evalMonitor5 evaledArg (Address.makeFromString str) (World.getScriptContext world) world
-                    (Unit, world)
-                | Violation _ as error -> (error, world)
-                | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Relation for its 2nd argument.", originOpt), world)
-            | Violation _ as error -> (error, world)
-            | _ -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Function for its 1st argument.", originOpt), world)
+                    struct (Unit, world)
+                | Violation _ as error -> struct (error, world)
+                | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Relation for its 2nd argument.", originOpt), world)
+            | Violation _ as error -> struct (error, world)
+            | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Function for its 1st argument.", originOpt), world)
 
         static member evalMonitor fnName evaledArg evaledArg2 originOpt world =
             World.evalMonitor6 fnName evaledArg evaledArg2 originOpt world
@@ -146,14 +146,14 @@ module WorldScripting =
             let globalFrame = World.getGlobalFrame world
             let world = World.setLocalFrame globalFrame world
             match World.tryEvalScript Assets.PreludeFilePath world with
-            | Right (scriptStr, _, world) ->
+            | Right struct (scriptStr, _, world) ->
                 let world = World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
-                Right (scriptStr, world)
-            | Left (error, world) ->
+                Right struct (scriptStr, world)
+            | Left struct (error, world) ->
                 let world = World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
-                Left (error, world)
+                Left struct (error, world)
 
         static member internal isExtrinsic fnName =
             match fnName with
@@ -167,70 +167,70 @@ module WorldScripting =
             match fnName with
             | "v2" ->
                 match World.evalManyInternal exprs world with
-                | ([|Violation _ as v; _|], world) -> (v, world)
-                | ([|_; Violation _ as v|], world) -> (v, world)
-                | ([|Single x; Single y|], world) -> (Pluggable { Vector2 = Vector2 (x, y) }, world)
-                | ([|_; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single for the both arguments.", originOpt), world)
-                | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+                | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|Single x; Single y|], world) -> struct (Pluggable { Vector2 = Vector2 (x, y) }, world)
+                | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single for the both arguments.", originOpt), world)
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             | "index_Vector2" ->
                 match World.evalManyInternal exprs world with
-                | ([|Violation _ as v; _|], world) -> (v, world)
-                | ([|_; Violation _ as v|], world) -> (v, world)
-                | ([|Keyword indexer; Pluggable pluggable|], world) ->
+                | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|Keyword indexer; Pluggable pluggable|], world) ->
                     match pluggable with
                     | :? Vector2Pluggable as v2 ->
                         match indexer with
-                        | "X" -> (Single v2.Vector2.X, world)
-                        | "Y" -> (Single v2.Vector2.Y, world)
-                        | _ -> (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2.", originOpt), world)
+                        | "X" -> struct (Single v2.Vector2.X, world)
+                        | "Y" -> struct (Single v2.Vector2.Y, world)
+                        | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2.", originOpt), world)
                     | _ -> failwithumf ()
-                | ([|_; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 index.", originOpt), world)
-                | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+                | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 index.", originOpt), world)
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             | "update_Vector2" ->
                 match World.evalManyInternal exprs world with
-                | ([|Violation _ as v; _; _|], world) -> (v, world)
-                | ([|_; Violation _ as v; _|], world) -> (v, world)
-                | ([|_; _; Violation _ as v|], world) -> (v, world)
-                | ([|Keyword indexer; Single s; Pluggable pluggable|], world) ->
+                | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|Keyword indexer; Single s; Pluggable pluggable|], world) ->
                     match pluggable with
                     | :? Vector2Pluggable as v2 ->
                         match indexer with
-                        | "X" -> (Pluggable { Vector2 = Vector2 (s, v2.Vector2.Y) }, world)
-                        | "Y" -> (Pluggable { Vector2 = Vector2 (v2.Vector2.X, s) }, world)
-                        | _ -> (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2.", originOpt), world)
+                        | "X" -> struct (Pluggable { Vector2 = Vector2 (s, v2.Vector2.Y) }, world)
+                        | "Y" -> struct (Pluggable { Vector2 = Vector2 (v2.Vector2.X, s) }, world)
+                        | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2.", originOpt), world)
                     | _ -> failwithumf ()
-                | ([|_; _; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 target, a keyword index of X or Y, and a Single value.", originOpt), world)
-                | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+                | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 target, a keyword index of X or Y, and a Single value.", originOpt), world)
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             | "get" ->
                 match World.evalManyInternal exprs world with
-                | ([|Violation _ as v; _|], world) -> (v, world)
-                | ([|_; Violation _ as v|], world) -> (v, world)
-                | ([|String propertyName; relation|], world)
-                | ([|Keyword propertyName; relation|], world) -> World.evalGet propertyName (Some relation) originOpt world
-                | ([|_; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
-                | ([|Violation _ as v|], world) -> (v, world)
-                | ([|String propertyName|], world)
-                | ([|Keyword propertyName|], world) -> World.evalGet propertyName None originOpt world
-                | ([|_|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
-                | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 or 2 arguments required.", originOpt), world)
+                | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|String propertyName; relation|], world)
+                | struct ([|Keyword propertyName; relation|], world) -> World.evalGet propertyName (Some relation) originOpt world
+                | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
+                | struct ([|Violation _ as v|], world) -> struct (v, world)
+                | struct ([|String propertyName|], world)
+                | struct ([|Keyword propertyName|], world) -> World.evalGet propertyName None originOpt world
+                | struct ([|_|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 or 2 arguments required.", originOpt), world)
             | "set" ->
                 match World.evalManyInternal exprs world with
-                | ([|Violation _ as v; _; _|], world) -> (v, world)
-                | ([|_; Violation _ as v; _|], world) -> (v, world)
-                | ([|_; _; Violation _ as v|], world) -> (v, world)
-                | ([|String propertyName; relation; value|], world)
-                | ([|Keyword propertyName; relation; value|], world) -> World.evalSet propertyName (Some relation) value originOpt world
-                | ([|_; _; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
-                | ([|Violation _ as v; _|], world) -> (v, world)
-                | ([|_; Violation _ as v|], world) -> (v, world)
-                | ([|String propertyName; value|], world)
-                | ([|Keyword propertyName; value|], world) -> World.evalSet propertyName None value originOpt world
-                | ([|_; _|], world) -> (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, a value for the second, and an optional Relation for the third.", originOpt), world)
-                | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
+                | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|String propertyName; relation; value|], world)
+                | struct ([|Keyword propertyName; relation; value|], world) -> World.evalSet propertyName (Some relation) value originOpt world
+                | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
+                | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|String propertyName; value|], world)
+                | struct ([|Keyword propertyName; value|], world) -> World.evalSet propertyName None value originOpt world
+                | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, a value for the second, and an optional Relation for the third.", originOpt), world)
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
             | "monitor" ->
                 match World.evalManyInternal exprs world with
-                | ([|Violation _ as v; _|], world) -> (v, world)
-                | ([|_; Violation _ as v|], world) -> (v, world)
-                | ([|evaled; evaled2|], world) -> World.evalMonitor fnName evaled evaled2 originOpt world
-                | (_, world) -> (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+                | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|evaled; evaled2|], world) -> World.evalMonitor fnName evaled evaled2 originOpt world
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             | _ -> failwithumf ()

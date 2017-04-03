@@ -507,31 +507,31 @@ module ScriptingUnary =
         match evaledArgs with
         | [|evaledArg|] ->
             match evaledArg with
-            | Bool bool -> (Bool (fn bool), world)
-            | Violation _ as violation -> (violation, world)
-            | _ -> (Violation (["InvalidArgumentType"; (String.capitalize fnName)], "Cannot apply a Bool function to a non-Bool value.", originOpt), world)
-        | _ -> (Violation (["InvalidArgumentCount"; (String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", originOpt), world)
+            | Bool bool -> struct (Bool (fn bool), world)
+            | Violation _ as violation -> struct (violation, world)
+            | _ -> struct (Violation (["InvalidArgumentType"; (String.capitalize fnName)], "Cannot apply a Bool function to a non-Bool value.", originOpt), world)
+        | _ -> struct (Violation (["InvalidArgumentCount"; (String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", originOpt), world)
 
     let evalUnaryInner (fns : UnaryFns) fnName evaledArg originOpt (world : 'w) =
         match evaledArg with
-        | Bool bool -> (fns.Bool bool originOpt, world)
-        | Int int -> (fns.Int int originOpt, world)
-        | Int64 int64 -> (fns.Int64 int64 originOpt, world)
-        | Single single -> (fns.Single single originOpt, world)
-        | Double double -> (fns.Double double originOpt, world)
-        | String string -> (fns.String string originOpt, world)
-        | Keyword keyword -> (fns.Keyword keyword originOpt, world)
-        | Tuple tuple -> (fns.Tuple tuple originOpt, world)
-        | Union (name, union) -> (fns.Union name union originOpt, world)
-        | Codata codata -> (fns.Codata codata originOpt, world)
-        | List list -> (fns.List list originOpt, world)
-        | Ring ring -> (fns.Ring ring originOpt, world)
-        | Table table -> (fns.Table table originOpt, world)
-        | Record (name, map, fields) -> (fns.Record name map fields originOpt, world)
-        | Violation _ as violation -> (violation, world)
-        | _ -> (Violation (["InvalidArgumentType"; (String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", originOpt), world)
+        | Bool bool -> struct (fns.Bool bool originOpt, world)
+        | Int int -> struct (fns.Int int originOpt, world)
+        | Int64 int64 -> struct (fns.Int64 int64 originOpt, world)
+        | Single single -> struct (fns.Single single originOpt, world)
+        | Double double -> struct (fns.Double double originOpt, world)
+        | String string -> struct (fns.String string originOpt, world)
+        | Keyword keyword -> struct (fns.Keyword keyword originOpt, world)
+        | Tuple tuple -> struct (fns.Tuple tuple originOpt, world)
+        | Union (name, union) -> struct (fns.Union name union originOpt, world)
+        | Codata codata -> struct (fns.Codata codata originOpt, world)
+        | List list -> struct (fns.List list originOpt, world)
+        | Ring ring -> struct (fns.Ring ring originOpt, world)
+        | Table table -> struct (fns.Table table originOpt, world)
+        | Record (name, map, fields) -> struct (fns.Record name map fields originOpt, world)
+        | Violation _ as violation -> struct (violation, world)
+        | _ -> struct (Violation (["InvalidArgumentType"; (String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", originOpt), world)
 
     let evalUnary fns fnName evaledArgs originOpt (world : 'w) =
         match evaledArgs with
         | [|evaledArg|] -> evalUnaryInner fns fnName evaledArg originOpt world
-        | _ -> (Violation (["InvalidArgumentCount"; (String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", originOpt), world)
+        | _ -> struct (Violation (["InvalidArgumentCount"; (String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", originOpt), world)

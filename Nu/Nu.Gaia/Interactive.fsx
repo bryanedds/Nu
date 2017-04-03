@@ -3,6 +3,7 @@
 
 #I __SOURCE_DIRECTORY__
 #r "System.Configuration"
+#r "../../Prime/Prime.Dependencies/System.ValueTuple.4.3.0/lib/portable-net40+sl4+win8+wp8/System.ValueTuple.dll"
 #r "../../Prime/Prime.Dependencies/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
 #r "../../Prime/Prime.Dependencies/FParsec/FParsec.dll"
 #r "../../Prime/Prime.Dependencies/xunit/xunit.core.dll"

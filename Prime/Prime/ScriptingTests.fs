@@ -12,7 +12,7 @@ module ScriptingTests =
         interface TestWorld ScriptingWorld with
             member this.GetEnv () = this.ScriptingEnv
             member this.UpdateEnv updater = { this with ScriptingEnv = updater this.ScriptingEnv }
-            member this.UpdateEnvPlus updater = let (result, env) = updater this.ScriptingEnv in (result, { this with ScriptingEnv = env })
+            member this.UpdateEnvPlus updater = let struct (result, env) = updater this.ScriptingEnv in struct (result, { this with ScriptingEnv = env })
             member this.IsExtrinsic _ = false
             member this.EvalExtrinsic _ _ _ = failwithumf ()
             member this.TryImport _ _ = failwithnie ()
@@ -22,9 +22,9 @@ module ScriptingTests =
     let evalPartial exprStr =
         let world = TestWorld.make ()
         match ScriptingWorld.tryEvalScript id Constants.Scripting.PreludeFilePath world with
-        | Right (_, _, world) ->
+        | Right struct (_, _, world) ->
             let expr = scvalue<Scripting.Expr> exprStr
-            ScriptingWorld.eval expr world |> fst
+            ScriptingWorld.eval expr world |> fst'
         | Left _ ->
             Assert.True false
             Scripting.Unit

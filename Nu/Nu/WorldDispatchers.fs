@@ -225,7 +225,7 @@ module EffectFacetModule =
                 let effectSystem = EffectSystem.make effectViewType effectHistory effectTime effectEnv
                 let world =
                     let artifacts = EffectSystem.eval effect effectSlice effectSystem
-                    List.fold (fun world artifact ->
+                    Array.fold (fun world artifact ->
                         match artifact with
                         | Effects.RenderArtifact renderDescriptors -> World.enqueueRenderMessage (RenderDescriptorsMessage renderDescriptors) world
                         | Effects.SoundArtifact (volume, sound) -> World.playSound volume sound world
@@ -471,7 +471,7 @@ module StaticSpriteFacetModule =
             if entity.GetVisibleLayered world && entity.GetInView world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
-                        [LayerableDescriptor
+                        [|LayerableDescriptor
                             { Depth = entity.GetDepthLayered world
                               PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
@@ -483,7 +483,7 @@ module StaticSpriteFacetModule =
                                       ViewType = entity.GetViewType world
                                       InsetOpt = None
                                       Image = entity.GetStaticImage world
-                                      Color = Vector4.One }}])
+                                      Color = Vector4.One }}|])
                     world
             else world
 
@@ -541,7 +541,7 @@ module AnimatedSpriteFacetModule =
             if entity.GetVisibleLayered world && entity.GetInView world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
-                        [LayerableDescriptor
+                        [|LayerableDescriptor
                             { Depth = entity.GetDepthLayered world
                               PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
@@ -553,7 +553,7 @@ module AnimatedSpriteFacetModule =
                                       ViewType = entity.GetViewType world
                                       InsetOpt = getSpriteInsetOpt entity world
                                       Image = entity.GetAnimationSheet world
-                                      Color = Vector4.One }}])
+                                      Color = Vector4.One }}|])
                     world
             else world
 
@@ -703,7 +703,7 @@ module ButtonDispatcherModule =
             if button.GetVisibleLayered world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
-                        [LayerableDescriptor
+                        [|LayerableDescriptor
                             { Depth = button.GetDepthLayered world
                               PositionY = (button.GetPosition world).Y
                               LayeredDescriptor =
@@ -715,7 +715,7 @@ module ButtonDispatcherModule =
                                       ViewType = Absolute
                                       InsetOpt = None
                                       Image = if button.GetDown world then button.GetDownImage world else button.GetUpImage world
-                                      Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world }}])
+                                      Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world }}|])
                     world
             else world
 
@@ -744,7 +744,7 @@ module LabelDispatcherModule =
             if label.GetVisibleLayered world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
-                        [LayerableDescriptor
+                        [|LayerableDescriptor
                             { Depth = label.GetDepthLayered world
                               PositionY = (label.GetPosition world).Y
                               LayeredDescriptor =
@@ -756,7 +756,7 @@ module LabelDispatcherModule =
                                       ViewType = Absolute
                                       InsetOpt = None
                                       Image = label.GetLabelImage world
-                                      Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world }}])
+                                      Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world }}|])
                     world
             else world
 
@@ -801,7 +801,7 @@ module TextDispatcherModule =
             if text.GetVisibleLayered world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
-                        [LayerableDescriptor
+                        [|LayerableDescriptor
                             { Depth = text.GetDepthLayered world
                               PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
@@ -812,7 +812,7 @@ module TextDispatcherModule =
                                       ViewType = Absolute
                                       Font = text.GetTextFont world
                                       Color = text.GetTextColor world }}
-                         LayerableDescriptor
+                          LayerableDescriptor
                             { Depth = text.GetDepthLayered world
                               PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
@@ -824,7 +824,7 @@ module TextDispatcherModule =
                                       ViewType = Absolute
                                       InsetOpt = None
                                       Image = text.GetBackgroundImage world
-                                      Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world }}])
+                                      Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world }}|])
                     world
             else world
 
@@ -918,7 +918,7 @@ module ToggleDispatcherModule =
             if toggle.GetVisibleLayered world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
-                        [LayerableDescriptor
+                        [|LayerableDescriptor
                             { Depth = toggle.GetDepthLayered world
                               PositionY = (toggle.GetPosition world).Y
                               LayeredDescriptor =
@@ -930,7 +930,7 @@ module ToggleDispatcherModule =
                                       ViewType = Absolute
                                       InsetOpt = None
                                       Image = if toggle.GetOpen world && not (toggle.GetPressed world) then toggle.GetOpenImage world else toggle.GetClosedImage world
-                                      Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world }}])
+                                      Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world }}|])
                     world
             else world
 
@@ -1043,7 +1043,7 @@ module FillBarDispatcherModule =
                 let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
-                        [LayerableDescriptor
+                        [|LayerableDescriptor
                             { Depth = fillBar.GetDepthLayered world
                               PositionY = (fillBar.GetPosition world).Y
                               LayeredDescriptor =
@@ -1056,7 +1056,7 @@ module FillBarDispatcherModule =
                                       InsetOpt = None
                                       Image = fillBar.GetBorderImage world
                                       Color = fillBarColor }}
-                         LayerableDescriptor
+                          LayerableDescriptor
                             { Depth = fillBar.GetDepthLayered world
                               PositionY = (fillBar.GetPosition world).Y
                               LayeredDescriptor =
@@ -1068,7 +1068,7 @@ module FillBarDispatcherModule =
                                       ViewType = Absolute
                                       InsetOpt = None
                                       Image = fillBar.GetFillImage world
-                                      Color = fillBarColor }}])
+                                      Color = fillBarColor }}|])
                     world
             else world
 
@@ -1233,9 +1233,9 @@ module TileMapDispatcherModule =
                         match getTileBodyProperties tileMap tileMapData tileLayer tileLayerIndex i world with
                         | Some bodyProperties -> bodyProperties :: bodyPropertyList
                         | None -> bodyPropertyList)
-                    []
-                    tileLayer.Tiles
-            else []
+                    [] tileLayer.Tiles |>
+                Array.ofSeq
+            else [||]
 
         let registerTileLayerPhysics (tileMap : Entity) tileMapData tileLayerIndex world tileLayer =
             let bodyPropertyList = getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex tileLayer world
@@ -1262,8 +1262,8 @@ module TileMapDispatcherModule =
                             physicsId :: physicsIds
                         else physicsIds
                     | None -> physicsIds)
-                []
-                tileLayer.Tiles
+                [] tileLayer.Tiles |>
+            Array.ofSeq
 
         let unregisterTileMapPhysics (tileMap : Entity) world =
             let tileMapAsset = tileMap.GetTileMapAsset world
@@ -1319,7 +1319,7 @@ module TileMapDispatcherModule =
                             if World.isBoundsInView viewType (Math.makeBounds parallaxPosition size) world then
                                 World.enqueueRenderMessage
                                     (RenderDescriptorsMessage
-                                        [LayerableDescriptor 
+                                        [|LayerableDescriptor 
                                             { Depth = depth
                                               PositionY = (tileMap.GetPosition world).Y
                                               LayeredDescriptor =
@@ -1333,7 +1333,7 @@ module TileMapDispatcherModule =
                                                       TileSourceSize = tileSourceSize
                                                       TileSize = tileSize
                                                       TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                                      TileSetImage = List.head images }}]) // MAGIC_VALUE: for same reason as above
+                                                      TileSetImage = List.head images }}|]) // MAGIC_VALUE: for same reason as above
                                     world
                             else world)
                         world

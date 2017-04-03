@@ -104,6 +104,9 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.ValueTuple">
+      <HintPath>..\..\Prime\Prime.Dependencies\System.ValueTuple.4.3.0\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="TiledSharp">
       <HintPath>..\Nu.Dependencies\TiledSharp\Release\TiledSharp.dll</HintPath>
