@@ -195,7 +195,7 @@ module HMapModule =
         /// Create an empty HMap.
         let makeEmpty () =
             { Node = HNode.empty
-              EmptyArray = Array.zeroCreate 16 }
+              EmptyArray = Array.create 16 Nil }
 
         /// Check that an HMap is empty.
         let isEmpty map =
