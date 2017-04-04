@@ -142,25 +142,25 @@ module WorldModuleScreen =
         static member internal tryGetScreenProperty propertyName screen world =
             if World.screenExists screen world then
                 match propertyName with // OPTIMIZATION: string match for speed
-                | "Id" -> Some (typeof<Guid>, World.getScreenId screen world :> obj)
-                | "Name" -> Some (typeof<string>, World.getScreenName screen world :> obj)
-                | "DispatcherNp" -> Some (typeof<ScreenDispatcher>, World.getScreenDispatcherNp screen world :> obj)
-                | "Specialization" -> Some (typeof<string>, World.getScreenSpecialization screen world :> obj)
-                | "Persistent" -> Some (typeof<bool>, World.getScreenPersistent screen world :> obj)
-                | "CreationTimeStampNp" -> Some (typeof<int64>, World.getScreenCreationTimeStampNp screen world :> obj)
-                | "Imperative" -> Some (typeof<bool>, World.getScreenImperative screen world :> obj)
-                | "ScriptOpt" -> Some (typeof<AssetTag option>, World.getScreenScriptOpt screen world :> obj)
-                | "Script" -> Some (typeof<Scripting.Expr array>, World.getScreenScript screen world :> obj)
-                | "ScriptFrameNp" -> Some (typeof<Scripting.ProceduralFrame list>, World.getScreenScriptFrameNp screen world :> obj)
-                | "OnRegister" -> Some (typeof<Scripting.Expr>, World.getScreenOnRegister screen world :> obj)
-                | "OnUnregister" -> Some (typeof<Scripting.Expr>, World.getScreenOnUnregister screen world :> obj)
-                | "OnUpdate" -> Some (typeof<Scripting.Expr>, World.getScreenOnUpdate screen world :> obj)
-                | "OnPostUpdate" -> Some (typeof<Scripting.Expr>, World.getScreenOnPostUpdate screen world :> obj)
-                | "EntityTreeNp" -> Some (typeof<Entity SpatialTree MutantCache>, World.getScreenEntityTreeNp screen world :> obj)
-                | "TransitionStateNp" -> Some (typeof<TransitionState>, World.getScreenTransitionStateNp screen world :> obj)
-                | "TransitionTicksNp" -> Some (typeof<int64>, World.getScreenTransitionTicksNp screen world :> obj)
-                | "Incoming" -> Some (typeof<Transition>, World.getScreenIncoming screen world :> obj)
-                | "Outgoing" -> Some (typeof<Transition>, World.getScreenOutgoing screen world :> obj)
+                | "Id" -> Some { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world }
+                | "Name" -> Some { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world }
+                | "DispatcherNp" -> Some { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcherNp screen world }
+                | "Specialization" -> Some { PropertyType = typeof<string>; PropertyValue = World.getScreenSpecialization screen world }
+                | "Persistent" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world }
+                | "CreationTimeStampNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStampNp screen world }
+                | "Imperative" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getScreenImperative screen world }
+                | "ScriptOpt" -> Some { PropertyType = typeof<AssetTag option>; PropertyValue = World.getScreenScriptOpt screen world }
+                | "Script" -> Some { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getScreenScript screen world }
+                | "ScriptFrameNp" -> Some { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrameNp screen world }
+                | "OnRegister" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnRegister screen world }
+                | "OnUnregister" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUnregister screen world }
+                | "OnUpdate" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUpdate screen world }
+                | "OnPostUpdate" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnPostUpdate screen world }
+                | "EntityTreeNp" -> Some { PropertyType = typeof<Entity SpatialTree MutantCache>; PropertyValue = World.getScreenEntityTreeNp screen world }
+                | "TransitionStateNp" -> Some { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionStateNp screen world }
+                | "TransitionTicksNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getScreenTransitionTicksNp screen world }
+                | "Incoming" -> Some { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world }
+                | "Outgoing" -> Some { PropertyType = typeof<Transition>; PropertyValue = World.getScreenOutgoing screen world }
                 | _ ->
                     match ScreenState.tryGetProperty propertyName (World.getScreenState screen world) with
                     | None -> World.tryGetScreenCalculatedProperty propertyName screen world
@@ -169,25 +169,25 @@ module WorldModuleScreen =
 
         static member internal getScreenProperty propertyName screen world =
             match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> (typeof<Guid>, World.getScreenId screen world :> obj)
-            | "Name" -> (typeof<string>, World.getScreenName screen world :> obj)
-            | "DispatcherNp" -> (typeof<ScreenDispatcher>, World.getScreenDispatcherNp screen world :> obj)
-            | "Specialization" -> (typeof<string>, World.getScreenSpecialization screen world :> obj)
-            | "Persistent" -> (typeof<bool>, World.getScreenPersistent screen world :> obj)
-            | "CreationTimeStampNp" -> (typeof<int64>, World.getScreenCreationTimeStampNp screen world :> obj)
-            | "Imperative" -> (typeof<bool>, World.getScreenImperative screen world :> obj)
-            | "ScriptOpt" -> (typeof<AssetTag option>, World.getScreenScriptOpt screen world :> obj)
-            | "Script" -> (typeof<Scripting.Expr array>, World.getScreenScript screen world :> obj)
-            | "ScriptFrameNp" -> (typeof<Scripting.ProceduralFrame list>, World.getScreenScriptFrameNp screen world :> obj)
-            | "OnRegister" -> (typeof<Scripting.Expr>, World.getScreenOnRegister screen world :> obj)
-            | "OnUnregister" -> (typeof<Scripting.Expr>, World.getScreenOnUnregister screen world :> obj)
-            | "OnUpdate" -> (typeof<Scripting.Expr>, World.getScreenOnUpdate screen world :> obj)
-            | "OnPostUpdate" -> (typeof<Scripting.Expr>, World.getScreenOnPostUpdate screen world :> obj)
-            | "EntityTreeNp" -> (typeof<Entity SpatialTree MutantCache>, World.getScreenEntityTreeNp screen world :> obj)
-            | "TransitionStateNp" -> (typeof<TransitionState>, World.getScreenTransitionStateNp screen world :> obj)
-            | "TransitionTicksNp" -> (typeof<int64>, World.getScreenTransitionTicksNp screen world :> obj)
-            | "Incoming" -> (typeof<Transition>, World.getScreenIncoming screen world :> obj)
-            | "Outgoing" -> (typeof<Transition>, World.getScreenOutgoing screen world :> obj)
+            | "Id" -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world }
+            | "Name" -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world }
+            | "DispatcherNp" -> { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcherNp screen world }
+            | "Specialization" -> { PropertyType = typeof<string>; PropertyValue = World.getScreenSpecialization screen world }
+            | "Persistent" -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world }
+            | "CreationTimeStampNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStampNp screen world }
+            | "Imperative" -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenImperative screen world }
+            | "ScriptOpt" -> { PropertyType = typeof<AssetTag option>; PropertyValue = World.getScreenScriptOpt screen world }
+            | "Script" -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getScreenScript screen world }
+            | "ScriptFrameNp" -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrameNp screen world }
+            | "OnRegister" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnRegister screen world }
+            | "OnUnregister" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUnregister screen world }
+            | "OnUpdate" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUpdate screen world }
+            | "OnPostUpdate" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnPostUpdate screen world }
+            | "EntityTreeNp" -> { PropertyType = typeof<Entity SpatialTree MutantCache>; PropertyValue = World.getScreenEntityTreeNp screen world }
+            | "TransitionStateNp" -> { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionStateNp screen world }
+            | "TransitionTicksNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenTransitionTicksNp screen world }
+            | "Incoming" -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world }
+            | "Outgoing" -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenOutgoing screen world }
             | _ ->
                 match ScreenState.tryGetProperty propertyName (World.getScreenState screen world) with
                 | None ->
@@ -196,14 +196,14 @@ module WorldModuleScreen =
                     | Some property -> property
                 | Some property -> property
 
-        static member internal trySetScreenProperty propertyName (property : Type * obj) screen world =
+        static member internal trySetScreenProperty propertyName property screen world =
             if World.screenExists screen world then
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> (false, world)
                 | "Name" -> (false, world)
                 | "DispatcherNp" -> (false, world)
                 | "Specialization" -> (false, world)
-                | "Persistent" -> (true, World.setScreenPersistent (property |> snd :?> bool) screen world)
+                | "Persistent" -> (true, World.setScreenPersistent (property.PropertyValue :?> bool) screen world)
                 | "CreationTimeStampNp" -> (false, world)
                 | "Imperative" -> (false, world)
                 | "ScriptOpt" -> (false, world)
@@ -214,10 +214,10 @@ module WorldModuleScreen =
                 | "OnUpdate" -> (false, world)
                 | "OnPostUpdate" -> (false, world)
                 | "EntityTreeNp" -> (false, world)
-                | "TransitionStateNp" -> (true, World.setScreenTransitionStateNp (property |> snd :?> TransitionState) screen world)
-                | "TransitionTicksNp" -> (true, World.setScreenTransitionTicksNp (property |> snd :?> int64) screen world)
-                | "Incoming" -> (true, World.setScreenIncoming (property |> snd :?> Transition) screen world)
-                | "Outgoing" -> (true, World.setScreenOutgoing (property |> snd :?> Transition) screen world)
+                | "TransitionStateNp" -> (true, World.setScreenTransitionStateNp (property.PropertyValue :?> TransitionState) screen world)
+                | "TransitionTicksNp" -> (true, World.setScreenTransitionTicksNp (property.PropertyValue :?> int64) screen world)
+                | "Incoming" -> (true, World.setScreenIncoming (property.PropertyValue :?> Transition) screen world)
+                | "Outgoing" -> (true, World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world)
                 | _ ->
                     // HACK: needed to mutate a flag to get the success state out of an updateScreenState callback...
                     let mutable success = false
@@ -229,13 +229,13 @@ module WorldModuleScreen =
                     (success, world)
             else (false, world)
 
-        static member internal setScreenProperty propertyName (property : Type * obj) screen world =
+        static member internal setScreenProperty propertyName property screen world =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith ^ "Cannot change screen " + propertyName + "."
             | "Name" -> failwith ^ "Cannot change screen " + propertyName + "."
             | "DispatcherNp" -> failwith ^ "Cannot change screen " + propertyName + "."
             | "Specialization" -> failwith ^ "Cannot change screen " + propertyName + "."
-            | "Persistent" -> World.setScreenPersistent (property |> snd :?> bool) screen world
+            | "Persistent" -> World.setScreenPersistent (property.PropertyValue :?> bool) screen world
             | "CreationTimeStampNp" -> failwith ^ "Cannot change screen " + propertyName + "."
             | "Imperative" -> failwith ^ "Cannot change screen " + propertyName + "."
             | "ScriptOpt" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
@@ -246,10 +246,10 @@ module WorldModuleScreen =
             | "OnUpdate" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "OnPostUpdate" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "EntityTreeNp" -> failwith ^ "Cannot change screen entity tree."
-            | "TransitionStateNp" -> World.setScreenTransitionStateNp (property |> snd :?> TransitionState) screen world
-            | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (property |> snd :?> int64) screen world
-            | "Incoming" -> World.setScreenIncoming (property |> snd :?> Transition) screen world
-            | "Outgoing" -> World.setScreenOutgoing (property |> snd :?> Transition) screen world
+            | "TransitionStateNp" -> World.setScreenTransitionStateNp (property.PropertyValue :?> TransitionState) screen world
+            | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (property.PropertyValue :?> int64) screen world
+            | "Incoming" -> World.setScreenIncoming (property.PropertyValue :?> Transition) screen world
+            | "Outgoing" -> World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world
             | _ -> World.updateScreenState (ScreenState.setProperty propertyName property) propertyName screen world
 
         static member private screenOnRegisterChanged evt world =

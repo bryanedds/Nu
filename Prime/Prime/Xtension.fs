@@ -5,27 +5,6 @@ namespace Prime
 open System
 open Prime
 
-/// An attribute to specify the default value of an XProperty.
-type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>] XDefaultValueAttribute (defaultValue : obj) =
-    inherit Attribute ()
-    member this.DefaultValue = defaultValue
-    
-/// Describes an XProperty.
-type [<StructuralEquality; NoComparison>] XPropertyDescriptor =
-    { PropertyName : string
-      PropertyType : Type }
-
-/// An Xtension property.
-type [<Struct; StructuralEquality; NoComparison>] XProperty =
-    { mutable PropertyType : Type
-      mutable PropertyValue : obj }
-
-/// A map of XProperties.
-/// NOTE: Xtension uses UMap because it's slightly faster when used in the Nu game engine, but
-/// it's not necessarily the right decision in other contexts. However, I'm sticking with this
-/// choice since the performance of Nu trumps other usages for now.
-type XProperties = UMap<string, XProperty>
-
 [<AutoOpen>]
 module XtensionModule =
 
@@ -33,33 +12,14 @@ module XtensionModule =
     /// to implement dynamic properties.
     type [<NoEquality; NoComparison>] Xtension =
         private
-            { Properties : XProperties
+            { Properties : PropertyMap
               CanDefault : bool
               Sealed : bool
               Imperative : bool }
 
-        /// Get the default value of an instance of type 'a taking into account XDefaultValue decorations.
-        static member private getDefaultValue () : 'a =
-            let defaultPropertyType = typeof<'a>
-            let defaultValueAttributeOpt =
-                defaultPropertyType.GetCustomAttributes (typeof<XDefaultValueAttribute>, true) |>
-                Array.map (fun attr -> attr :?> XDefaultValueAttribute) |>
-                Array.tryHead
-            match defaultValueAttributeOpt with
-            | Some defaultValueAttribute ->
-                match defaultValueAttribute.DefaultValue with
-                | :? 'a as defaultValue -> defaultValue
-                | _ as defaultValue ->
-                    let defaultValueType = defaultValue.GetType ()
-                    let converter = SymbolicConverter (false, defaultValueType)
-                    if converter.CanConvertFrom defaultPropertyType
-                    then converter.ConvertFrom defaultValue :?> 'a
-                    else failwith ^ "Cannot convert '" + scstring defaultValue + "' to type '" + defaultPropertyType.Name + "'."
-            | None -> Unchecked.defaultof<'a>
-
         /// Try to get the default value for a given xtension member, returning None when defaulting is disallowed.
         static member private tryGetDefaultValue (this : Xtension) propertyName : 'a =
-            if this.CanDefault then Xtension.getDefaultValue ()
+            if this.CanDefault then scdefaultof ()
             else failwith ^ "Xtension property '" + propertyName + "' does not exist and no default is permitted because CanDefault is false."
 
         /// The dynamic look-up operator for an Xtension.

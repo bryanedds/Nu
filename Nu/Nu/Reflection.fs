@@ -155,7 +155,7 @@ module Reflection =
         | None -> ()
         
     /// Read one of a target's xtension properties from property descriptors.
-    let private readXProperty xtension propertyDescriptors (target : 'a) (definition : PropertyDefinition) =
+    let private readXtensionProperty xtension propertyDescriptors (target : 'a) (definition : PropertyDefinition) =
         let targetType = target.GetType ()
         if Array.notExists
             (fun (property : PropertyInfo) -> property.Name = definition.PropertyName)
@@ -164,8 +164,8 @@ module Reflection =
             | Some (propertySymbol : Symbol) ->
                 let converter = SymbolicConverter (false, definition.PropertyType)
                 if converter.CanConvertFrom typeof<Symbol> then
-                    let xProperty = { PropertyType = definition.PropertyType; PropertyValue = converter.ConvertFrom propertySymbol }
-                    Xtension.attachProperty definition.PropertyName xProperty xtension
+                    let property = { PropertyType = definition.PropertyType; PropertyValue = converter.ConvertFrom propertySymbol }
+                    Xtension.attachProperty definition.PropertyName property xtension
                 else
                     Log.debug ^ "Cannot convert property '" + scstring propertySymbol + "' to type '" + definition.PropertyType.Name + "'."
                     xtension
@@ -173,9 +173,9 @@ module Reflection =
         else xtension
         
     /// Read a target's xtension properties from property descriptors.
-    let private readXProperties xtension propertyDescriptors (target : 'a) =
+    let private readXtensionProperties xtension propertyDescriptors (target : 'a) =
         let definitions = getReflectivePropertyDefinitions target
-        List.fold (fun xtension -> readXProperty xtension propertyDescriptors target) xtension definitions
+        List.fold (fun xtension -> readXtensionProperty xtension propertyDescriptors target) xtension definitions
         
     /// Read a target's Xtension from property descriptors.
     let private readXtension (copyTarget : 'a -> 'a) propertyDescriptors target =
@@ -188,7 +188,7 @@ module Reflection =
         | xtensionProperty ->
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
-                let xtension = readXProperties xtension propertyDescriptors target
+                let xtension = readXtensionProperties xtension propertyDescriptors target
                 xtensionProperty.SetValue (target, xtension)
                 target
             | _ ->
@@ -254,14 +254,14 @@ module Reflection =
         
     /// Write an Xtension to property descriptors.
     let private writeXtension shouldWriteProperty propertyDescriptors xtension =
-        Seq.fold (fun propertyDescriptors (xPropertyName, (xProperty : XProperty)) ->
-            let xPropertyType = xProperty.PropertyType
-            let xPropertyValue = xProperty.PropertyValue
-            if  isPropertyPersistentByName xPropertyName &&
-                shouldWriteProperty xPropertyName xPropertyType xPropertyValue then
-                let converter = SymbolicConverter (false, xPropertyType)
-                let xPropertySymbol = converter.ConvertTo (xPropertyValue, typeof<Symbol>) :?> Symbol
-                Map.add xPropertyName xPropertySymbol propertyDescriptors
+        Seq.fold (fun propertyDescriptors (propertyName, (property : Property)) ->
+            let propertyType = property.PropertyType
+            let propertyValue = property.PropertyValue
+            if  isPropertyPersistentByName propertyName &&
+                shouldWriteProperty propertyName propertyType propertyValue then
+                let converter = SymbolicConverter (false, propertyType)
+                let propertySymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
+                Map.add propertyName propertySymbol propertyDescriptors
             else propertyDescriptors)
             propertyDescriptors
             (Xtension.toSeq xtension)
@@ -318,9 +318,9 @@ module Reflection =
                     let propertyValue = PropertyExpr.eval definition.PropertyExpr
                     match targetType.GetPropertyWritable definition.PropertyName with
                     | null ->
-                        let xProperty = { PropertyType = definition.PropertyType; PropertyValue = propertyValue }
-                        xtension <- Xtension.attachProperty definition.PropertyName xProperty xtension
-                    | property -> property.SetValue (target, propertyValue)
+                        let property = { PropertyType = definition.PropertyType; PropertyValue = propertyValue }
+                        xtension <- Xtension.attachProperty definition.PropertyName property xtension
+                    | propertyInfo -> propertyInfo.SetValue (target, propertyValue)
                 xtensionProperty.SetValue (target, xtension)
             | _ -> failwith "Target does not support Xtensions due to missing Xtension property."
         target

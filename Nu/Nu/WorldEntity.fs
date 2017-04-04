@@ -88,7 +88,7 @@ module WorldEntityModule =
         member this.GetProperty propertyName world = World.getEntityProperty propertyName this world
 
         /// Get a property value.
-        member this.Get<'a> propertyName world : 'a = World.getEntityProperty propertyName this world |> snd :?> 'a
+        member this.Get<'a> propertyName world : 'a = (World.getEntityProperty propertyName this world).PropertyValue :?> 'a
 
         /// Try to set a property value with explicit type.
         member this.TrySetProperty propertyName property world = World.trySetEntityProperty propertyName property this world
@@ -97,7 +97,7 @@ module WorldEntityModule =
         member this.SetProperty propertyName property world = World.setEntityProperty propertyName property this world
 
         /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world = World.setEntityProperty propertyName (typeof<'a>, value :> obj) this world
+        member this.Set<'a> propertyName (value : 'a) world = World.setEntityProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world
 
         /// Get an entity's transform.
         member this.GetTransform world = World.getEntityTransform this world
@@ -290,7 +290,7 @@ module WorldEntityModule =
 
     /// Represents the property value of an entity as accessible via reflection.
     type [<ReferenceEquality>] EntityPropertyValue =
-        | EntityXPropertyDescriptor of XPropertyDescriptor
+        | EntityPropertyDescriptor of PropertyDescriptor
         | EntityPropertyInfo of PropertyInfo
 
         /// Check that an entity contains the given property.
@@ -302,17 +302,17 @@ module WorldEntityModule =
         static member getValue property (entity : Entity) world =
             let propertyName =
                 match property with
-                | EntityXPropertyDescriptor xfd -> xfd.PropertyName
+                | EntityPropertyDescriptor propertyDescriptor -> propertyDescriptor.PropertyName
                 | EntityPropertyInfo propertyInfo -> propertyInfo.Name
-            World.getEntityProperty propertyName entity world |> snd
+            (World.getEntityProperty propertyName entity world).PropertyValue
 
         /// Set the entity's property value.
         static member setValue property propertyValue (entity : Entity) world =
             let (propertyName, propertyType) =
                 match property with
-                | EntityXPropertyDescriptor xfd -> (xfd.PropertyName, xfd.PropertyType)
+                | EntityPropertyDescriptor propertyDescriptor -> (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType)
                 | EntityPropertyInfo propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)
-            World.setEntityProperty propertyName (propertyType, propertyValue) entity world
+            World.setEntityProperty propertyName { PropertyType = propertyType; PropertyValue = propertyValue } entity world
 
         /// Get the property descriptors of as constructed from the given function in the given context.
         static member getPropertyDescriptors makePropertyDescriptor contextOpt =
@@ -326,19 +326,19 @@ module WorldEntityModule =
             let propertyDescriptors =
                 match contextOpt with
                 | Some (entity, world) ->
-                    let xProperties = World.getEntityXtensionProperties entity world
-                    let xPropertyDescriptors =
+                    let properties' = World.getEntityXtensionProperties entity world
+                    let propertyDescriptors' =
                         Seq.fold
-                            (fun xPropertyDescriptors (xPropertyName, xProperty : XProperty) ->
-                                let xPropertyType = xProperty.PropertyType
-                                if Reflection.isPropertyPersistentByName xPropertyName then
-                                    let xPropertyDescriptor = EntityXPropertyDescriptor { PropertyName = xPropertyName; PropertyType = xPropertyType }
-                                    let xPropertyDescriptor : System.ComponentModel.PropertyDescriptor = makePropertyDescriptor (xPropertyDescriptor, [|typeConverterAttribute|])
-                                    xPropertyDescriptor :: xPropertyDescriptors
-                                else xPropertyDescriptors)
+                            (fun propertyDescriptors' (propertyName, property : Property) ->
+                                let propertyType = property.PropertyType
+                                if Reflection.isPropertyPersistentByName propertyName then
+                                    let propertyDescriptor = EntityPropertyDescriptor { PropertyName = propertyName; PropertyType = propertyType }
+                                    let propertyDescriptor : System.ComponentModel.PropertyDescriptor = makePropertyDescriptor (propertyDescriptor, [|typeConverterAttribute|])
+                                    propertyDescriptor :: propertyDescriptors'
+                                else propertyDescriptors')
                             []
-                            xProperties
-                    Seq.append xPropertyDescriptors propertyDescriptors
+                            properties'
+                    Seq.append propertyDescriptors' propertyDescriptors
                 | None -> propertyDescriptors
             List.ofSeq propertyDescriptors
 
