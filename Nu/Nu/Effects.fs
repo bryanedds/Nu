@@ -7,6 +7,7 @@ open Prime
 open OpenTK
 module Effects =
 
+    // TODO: P1: make this a struct when F# allows it.
     type Algorithm =
         | Const
         | Linear
@@ -18,6 +19,7 @@ module Effects =
         | Sin
         | Cos
 
+    // TODO: P1: make this a struct when F# allows it.
     type LogicApplicator =
         | Or
         | Nor
@@ -26,6 +28,7 @@ module Effects =
         | Nand
         | Equal
 
+    // TODO: P1: make this a struct when F# allows it.
     type TweenApplicator =
         | Sum
         | Delta
@@ -88,11 +91,13 @@ module Effects =
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
+    // TODO: P1: make this a struct when F# allows it.
     type Playback =
         | Once
         | Loop
         | Bounce
 
+    // TODO: P1: make this a struct when F# allows it.
     type Repetition =
         | Cycle of int
         | Iterate of int
@@ -139,10 +144,14 @@ module Effects =
         { DefinitionParams : string array
           DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
 
-    type [<NoComparison>] Artifact =
-        | RenderArtifact of RenderDescriptor array
-        | SoundArtifact of single * AssetTag
-        | TagArtifact of string * Symbol * Slice
+    type [<Struct; NoComparison>] RenderArtifact =
+        RenderArtifact of RenderDescriptor
+
+    type [<Struct; NoComparison>] SoundArtifact =
+        SoundArtifact of single * AssetTag
+
+    type [<Struct; NoComparison>] TagArtifact =
+        TagArtifact of string * Symbol * Slice
 
     type Definitions =
         Map<string, Definition>

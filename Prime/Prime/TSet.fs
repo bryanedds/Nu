@@ -12,7 +12,6 @@ module TSetModule =
         | Add of 'a
         | Remove of 'a
 
-    // TODO: P1: Make operations return struct tuples in next version of F#.
     type [<NoEquality; NoComparison>] TSet<'a when 'a : equality> =
         private
             { mutable TSetOpt : 'a TSet

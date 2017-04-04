@@ -4,6 +4,7 @@
 namespace Prime
 
 /// An option type that doesn't generate garbage.
+/// TODO: P1: turn this into a struct DU when that is working in F# - and make sure matching does not allocate!
 /// TODO: document.
 type 'a FOption =
     struct

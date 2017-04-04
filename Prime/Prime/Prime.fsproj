@@ -75,7 +75,7 @@
     <Compile Include="Option.fs" />
     <Compile Include="FOption.fs" />
     <Compile Include="Pair.fs" />
-    <Compile Include="StructPair.fs" />
+    <Compile Include="PairStruct.fs" />
     <Compile Include="Triple.fs" />
     <Compile Include="Either.fs" />
     <Compile Include="Seq.fs" />

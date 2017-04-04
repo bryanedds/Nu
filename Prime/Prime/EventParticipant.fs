@@ -23,7 +23,7 @@ type ParticipantOperators =
     static member (->-) (address, participant : Participant) = ParticipantOperators.acatf address participant
 
 /// The data for a change in a participant.
-type [<StructuralEquality; NoComparison>] ParticipantChangeData<'p, 'w when 'p :> Participant> =
+type [<Struct; StructuralEquality; NoComparison>] ParticipantChangeData<'p, 'w when 'p :> Participant> =
     { Participant : 'p
       PropertyName : string
       OldWorld : 'w }

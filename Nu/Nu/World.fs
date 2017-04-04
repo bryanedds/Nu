@@ -773,7 +773,7 @@ module WorldModule2 =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> Renderer.make renderContext :> IRenderer
                         | None -> MockRenderer.make () :> IRenderer
-                    let renderer = renderer.EnqueueMessage (HintRenderPackageUseMessage { PackageName = Assets.DefaultPackageName })
+                    let renderer = renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.DefaultPackageName)
                     let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> World Subsystem
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u

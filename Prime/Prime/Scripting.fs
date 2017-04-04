@@ -28,7 +28,7 @@ module Scripting =
         | Unfold of Expr * Expr
         | Conversion of Expr list
 
-    and Breakpoint =
+    and [<Struct>] Breakpoint =
         { mutable BreakEnabled : bool
           mutable BreakCondition : Expr }
 
