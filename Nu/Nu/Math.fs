@@ -9,7 +9,7 @@ open Prime
 open Nu
 
 /// Describes all the elements of a 2d transformation.
-type [<StructuralEquality; NoComparison>] Transform =
+type [<Struct; StructuralEquality; NoComparison>] Transform =
     { Position : Vector2
       Size : Vector2
       Rotation : single
@@ -18,6 +18,7 @@ type [<StructuralEquality; NoComparison>] Transform =
 /// Depicts whether a view is purposed to render in relative or absolute space. For
 /// example, Gui entities are rendered in absolute space since they remain still no matter
 /// where the camera moves, and vice versa for non-Gui entities.
+/// TODO: P1: make this a struct when F# allows it.
 [<Syntax
     ("Absolute Relative", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,

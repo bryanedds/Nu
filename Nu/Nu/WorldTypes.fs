@@ -83,13 +83,12 @@ type [<StructuralEquality; NoComparison>] TileData =
 module WorldTypes =
 
     /// The data for a change in the world's ambient state.
-    type [<StructuralEquality; NoComparison>] AmbientChangeData = 
+    type [<Struct; StructuralEquality; NoComparison>] AmbientChangeData = 
         { OldWorldWithOldState : World }
 
     /// Describes the information needed to sort simulants.
     /// OPTIMIZATION: carries related entity to avoid GC pressure.
-    /// TODO: implement as struct.
-    and [<CustomEquality; CustomComparison>] SortPriority =
+    and [<Struct; CustomEquality; CustomComparison>] SortPriority =
         { SortDepth : single
           SortTarget : Simulant }
 

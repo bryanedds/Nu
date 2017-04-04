@@ -7,7 +7,7 @@ open Prime
 open Prime.Scripting
 module ScriptingBinary =
 
-    type [<NoEquality; NoComparison>] BinaryFns =
+    type [<Struct; NoEquality; NoComparison>] BinaryFns =
         { Bool : bool -> bool -> SymbolOrigin option -> Expr
           Int : int -> int -> SymbolOrigin option -> Expr
           Int64 : int64 -> int64 -> SymbolOrigin option -> Expr

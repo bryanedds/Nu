@@ -39,13 +39,13 @@ module WorldRenderModule =
         /// Hint that a rendering asset package with the given name should be loaded. Should be
         /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)
         static member hintRenderPackageUse packageName world =
-            let hintRenderPackageUseMessage = HintRenderPackageUseMessage { PackageName = packageName }
+            let hintRenderPackageUseMessage = HintRenderPackageUseMessage packageName
             World.enqueueRenderMessage hintRenderPackageUseMessage world
             
         /// Hint that a rendering package should be unloaded since its assets will not be used
         /// again (or until specified via World.hintRenderPackageUse).
         static member hintRenderPackageDisuse packageName world =
-            let hintRenderPackageDisuseMessage = HintRenderPackageDisuseMessage { PackageName = packageName }
+            let hintRenderPackageDisuseMessage = HintRenderPackageDisuseMessage packageName
             World.enqueueRenderMessage hintRenderPackageDisuseMessage world
             
         /// Send a message to the renderer to reload its rendering assets.

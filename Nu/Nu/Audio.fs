@@ -18,21 +18,11 @@ type [<StructuralEquality; NoComparison>] PlaySongMessage =
 type [<StructuralEquality; NoComparison>] PlaySoundMessage =
     { Volume : single
       Sound : AssetTag }
-      
-/// Hint that an audio asset package with the given name should be loaded. Should be used to
-/// avoid loading assets at inconvenient times (such as in the middle of game play!)
-type [<StructuralEquality; NoComparison>] HintAudioPackageUseMessage =
-    { PackageName : string }
-
-/// Hint that an audio package should be unloaded since its assets will not be used again (or
-/// until specified via a HintAudioPackageUseMessage).
-type [<StructuralEquality; NoComparison>] HintAudioPackageDisuseMessage =
-    { PackageName : string }
 
 /// A message to the audio system.
 type [<StructuralEquality; NoComparison>] AudioMessage =
-    | HintAudioPackageUseMessage of HintAudioPackageUseMessage
-    | HintAudioPackageDisuseMessage of HintAudioPackageDisuseMessage
+    | HintAudioPackageUseMessage of string
+    | HintAudioPackageDisuseMessage of string
     | PlaySoundMessage of PlaySoundMessage
     | PlaySongMessage of PlaySongMessage
     | FadeOutSongMessage of int
@@ -135,12 +125,11 @@ module AudioPlayerModule =
                 Log.info ^ "PlaySongMessage failed due to unloadable assets for '" + scstring song + "'."
                 audioPlayer
     
-        static member private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUseMessage) audioPlayer =
-            AudioPlayer.tryLoadAudioPackage hintPackageUse.PackageName audioPlayer
+        static member private handleHintAudioPackageUse hintPackageName audioPlayer =
+            AudioPlayer.tryLoadAudioPackage hintPackageName audioPlayer
     
-        static member private handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuseMessage) audioPlayer =
-            let packageName = hintPackageDisuse.PackageName
-            let assetsOpt = UMap.tryFindFast packageName audioPlayer.AudioPackageMap
+        static member private handleHintAudioPackageDisuse hintPackageName audioPlayer =
+            let assetsOpt = UMap.tryFindFast hintPackageName audioPlayer.AudioPackageMap
             if FOption.isSome assetsOpt then
                 let assets = FOption.get assetsOpt
                 // all sounds / music must be halted because one of them might be playing during unload
@@ -150,7 +139,7 @@ module AudioPlayerModule =
                     match asset with
                     | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
                     | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
-                { audioPlayer with AudioPackageMap = UMap.remove packageName audioPlayer.AudioPackageMap }
+                { audioPlayer with AudioPackageMap = UMap.remove hintPackageName audioPlayer.AudioPackageMap }
             else audioPlayer
     
         static member private handlePlaySound playSoundMessage audioPlayer =

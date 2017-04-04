@@ -9,6 +9,7 @@ open Prime
 open Nu
 
 /// Describes a mouse button.
+/// TODO: P1: make this a struct when F# allows it.
 type MouseButton =
     | MouseLeft
     | MouseCenter
@@ -33,11 +34,11 @@ module MouseState =
     /// Convert SDL's representation of a mouse button to a MouseButton.
     let toNuButton mouseButton =
         match mouseButton with
-        | SDL2.SDL.SDL_BUTTON_LEFT -> MouseLeft
-        | SDL2.SDL.SDL_BUTTON_MIDDLE -> MouseCenter
-        | SDL2.SDL.SDL_BUTTON_RIGHT -> MouseRight
-        | SDL2.SDL.SDL_BUTTON_X1 -> MouseX1
-        | SDL2.SDL.SDL_BUTTON_X2 -> MouseX2
+        | SDL.SDL_BUTTON_LEFT -> MouseLeft
+        | SDL.SDL_BUTTON_MIDDLE -> MouseCenter
+        | SDL.SDL_BUTTON_RIGHT -> MouseRight
+        | SDL.SDL_BUTTON_X1 -> MouseX1
+        | SDL.SDL_BUTTON_X2 -> MouseX2
         | _ -> failwith "Invalid SDL mouse button."
 
     /// Check that the given mouse button is down.

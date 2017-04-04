@@ -4,7 +4,7 @@
 namespace Prime
 
 [<AutoOpen>]
-module StructPairOperators =
+module PairStructOperators =
 
     /// Get the fst value in a struct pair.
     let inline fst' struct (fst, _) =
@@ -31,7 +31,7 @@ module StructPairOperators =
         struct (fst, mapper snd)
 
 [<RequireQualifiedAccess>]
-module StructPair =
+module PairStruct =
 
     /// Make a pair.
     let make a b =

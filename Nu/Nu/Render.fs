@@ -12,7 +12,7 @@ open Prime
 open Nu
 
 /// Describes how to render a sprite to the rendering system.
-type [<StructuralEquality; NoComparison>] SpriteDescriptor =
+type [<Struct; StructuralEquality; NoComparison>] SpriteDescriptor =
     { Position : Vector2
       Size : Vector2
       Rotation : single
@@ -23,7 +23,7 @@ type [<StructuralEquality; NoComparison>] SpriteDescriptor =
       Color : Vector4 }
 
 /// Describes how to render a tile map to the rendering system.
-type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
+type [<Struct; StructuralEquality; NoComparison>] TileLayerDescriptor =
     { Position : Vector2
       Size : Vector2
       Rotation : single
@@ -36,7 +36,7 @@ type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
       TileSetImage : AssetTag }
 
 /// Describes how to render text to the rendering system.
-type [<StructuralEquality; NoComparison>] TextDescriptor =
+type [<Struct; StructuralEquality; NoComparison>] TextDescriptor =
     { Position : Vector2
       Size : Vector2
       ViewType : ViewType
@@ -45,6 +45,7 @@ type [<StructuralEquality; NoComparison>] TextDescriptor =
       Color : Vector4 }
 
 /// Describes how to render a layered 'thing' to the rendering system.
+/// TODO: P1: make this a struct when F# allows it.
 type [<StructuralEquality; NoComparison>] LayeredDescriptor =
     | SpriteDescriptor of SpriteDescriptor
     | SpritesDescriptor of SpriteDescriptor array
@@ -52,30 +53,20 @@ type [<StructuralEquality; NoComparison>] LayeredDescriptor =
     | TextDescriptor of TextDescriptor
 
 /// Describes how to render a layerable 'thing' to the rendering system.
-type [<StructuralEquality; NoComparison>] LayerableDescriptor =
+type [<Struct; StructuralEquality; NoComparison>] LayerableDescriptor =
     { Depth : single
       PositionY : single
       LayeredDescriptor : LayeredDescriptor }
 
 /// Describes how to render something to the rendering system.
-type [<StructuralEquality; NoComparison>] RenderDescriptor =
+type [<Struct; StructuralEquality; NoComparison>] RenderDescriptor =
     | LayerableDescriptor of LayerableDescriptor
-
-/// Hint that a rendering asset package with the given name should be loaded. Should be used to
-/// avoid loading assets at inconvenient times (such as in the middle of game play!)
-type [<StructuralEquality; NoComparison>] HintRenderPackageUseMessage =
-    { PackageName : string }
-    
-/// Hint that a rendering package should be unloaded since its assets will not be used again
-/// (or until specified via a HintRenderPackageUseMessage).
-type [<StructuralEquality; NoComparison>] HintRenderPackageDisuseMessage =
-    { PackageName : string }
 
 /// A message to the rendering system.
 type [<StructuralEquality; NoComparison>] RenderMessage =
     | RenderDescriptorsMessage of RenderDescriptor array
-    | HintRenderPackageUseMessage of HintRenderPackageUseMessage
-    | HintRenderPackageDisuseMessage of HintRenderPackageDisuseMessage
+    | HintRenderPackageUseMessage of string
+    | HintRenderPackageDisuseMessage of string
     | ReloadRenderAssetsMessage
     //| ScreenFlashMessage of ...
 
@@ -172,16 +163,15 @@ module RendererModule =
                     (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
             (FOption.bind (fun assetMap -> UMap.tryFindFast assetTag.AssetName assetMap) assetMapOpt, renderer)
 
-        static member private handleHintRenderPackageUse (hintPackageUse : HintRenderPackageUseMessage) renderer =
-            Renderer.tryLoadRenderPackage hintPackageUse.PackageName renderer
+        static member private handleHintRenderPackageUse hintPackageName renderer =
+            Renderer.tryLoadRenderPackage hintPackageName renderer
 
-        static member private handleHintRenderPackageDisuse (hintPackageDisuse : HintRenderPackageDisuseMessage) renderer =
-            let packageName = hintPackageDisuse.PackageName
-            let assetsOpt = UMap.tryFindFast packageName renderer.RenderPackageMap
+        static member private handleHintRenderPackageDisuse hintPackageName renderer =
+            let assetsOpt = UMap.tryFindFast hintPackageName renderer.RenderPackageMap
             if FOption.isSome assetsOpt then
                 let assets = FOption.get assetsOpt
                 for (_, asset) in assets do Renderer.freeRenderAsset asset
-                { renderer with RenderPackageMap = UMap.remove packageName renderer.RenderPackageMap }
+                { renderer with RenderPackageMap = UMap.remove hintPackageName renderer.RenderPackageMap }
             else renderer
 
         static member private handleReloadRenderAssets renderer =

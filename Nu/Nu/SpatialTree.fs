@@ -10,7 +10,7 @@ open Prime
 [<AutoOpen>]
 module internal SpatialNodeModule =
 
-    type [<NoEquality; NoComparison>] SpatialNode<'e when 'e : equality> =
+    type [<Struct; NoEquality; NoComparison>] SpatialNode<'e when 'e : equality> =
         private
             { Depth : int
               Bounds : Vector4

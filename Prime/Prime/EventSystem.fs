@@ -6,11 +6,13 @@ open System
 open Prime
 
 /// Describes whether an in-flight event has been resolved or should cascade to down-stream handlers.
+/// TODO: P1: make this a struct when F# allows it.
 type Handling =
     | Resolve
     | Cascade
 
 /// Specifies whether an event-based application is running or exiting.
+/// TODO: P1: make this a struct when F# allows it.
 type Liveness =
     | Running
     | Exiting
@@ -22,7 +24,7 @@ type [<Struct; NoEquality; NoComparison>] SubscriptionEntry =
       Callback : obj }
 
 /// An event used by the event system.
-type [<ReferenceEquality>] Event<'a, 's when 's :> Participant> =
+type [<Struct; NoEquality; NoComparison>] Event<'a, 's when 's :> Participant> =
     { Data : 'a
       DataType : Type // here so type can be recovered in a dynamic context
       Subscriber : 's

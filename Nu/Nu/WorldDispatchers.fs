@@ -206,7 +206,11 @@ module EffectFacetModule =
              Variable? EffectHistoryNp (fun () -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
 
         override facet.Actualize (entity, world) =
+            
+            // evaluate effect if visible
             if entity.GetVisibleLayered world && entity.GetInView world then
+
+                // set up effect system to evaluate effect
                 let world = entity.SetEffectTagsNp Map.empty world
                 let effect = entity.GetEffect world
                 let effectTime = entity.GetEffectTime world
@@ -223,26 +227,37 @@ module EffectFacetModule =
                 let effectHistory = entity.GetEffectHistoryNp world
                 let effectEnv = entity.GetEffectDefinitions world
                 let effectSystem = EffectSystem.make effectViewType effectHistory effectTime effectEnv
+
+                // evaluate effect with effect system
                 let world =
-                    let artifacts = EffectSystem.eval effect effectSlice effectSystem
-                    Array.fold (fun world artifact ->
-                        match artifact with
-                        | Effects.RenderArtifact renderDescriptors -> World.enqueueRenderMessage (RenderDescriptorsMessage renderDescriptors) world
-                        | Effects.SoundArtifact (volume, sound) -> World.playSound volume sound world
-                        | Effects.TagArtifact (name, metadata, slice) ->
-                            let effectTags =
-                                let effectTags = entity.GetEffectTagsNp world
-                                match Map.tryFind name effectTags with
-                                | Some (metadata, slices) -> Map.add name (metadata, slice :: slices) effectTags
-                                | None -> Map.add name (metadata, [slice]) effectTags
-                            // TODO: also raise event for all new effect tags so they can be handled in scripts?
-                            entity.SetEffectTagsNp effectTags world)
-                        world
-                        artifacts
+                    let effectSystem = EffectSystem.eval effect effectSlice effectSystem
+                    let (artifacts, _) = EffectSystem.release effectSystem
+
+                    // pass a single render message for efficiency
+                    let renderDescriptors = artifacts.RenderArtifacts |> Seq.toArray |> Array.map (function Effects.RenderArtifact descriptor -> descriptor) |> RenderDescriptorsMessage 
+                    let world = World.enqueueRenderMessage renderDescriptors world
+
+                    // pass sound messages
+                    let world = Seq.fold (fun world (Effects.SoundArtifact (volume, sound)) -> World.playSound volume sound world) world artifacts.SoundArtifacts
+                    
+                    // set effects tags all in one pass for efficiency
+                    // TODO: also raise event for all new effect tags so they can be handled in scripts?
+                    let effectTags = entity.GetEffectTagsNp world
+                    let (effectTags, world) =
+                        Seq.fold (fun (effectTags, world) (Effects.TagArtifact (name, metadata, slice)) ->
+                            match Map.tryFind name effectTags with
+                            | Some (metadata, slices) -> (Map.add name (metadata, slice :: slices) effectTags, world)
+                            | None -> (Map.add name (metadata, [slice]) effectTags, world))
+                            (effectTags, world)
+                            artifacts.TagArtifacts
+                    entity.SetEffectTagsNp effectTags world
+
                 // update effect history in-place
                 effectHistory.AddToFront effectSlice
-                if effectHistory.Count > entity.GetEffectHistoryMax world then ignore ^ effectHistory.RemoveFromBack ()
+                if effectHistory.Count > entity.GetEffectHistoryMax world then effectHistory.RemoveFromBack () |> ignore
                 world
+
+            // no need to evaluate non-visible effect
             else world
 
         override facet.Update (entity, world) =

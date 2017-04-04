@@ -12,8 +12,7 @@ module TListModule =
         | Add of 'a
         | Remove of 'a
         | Set of int * 'a
-
-    // TODO: P1: Make operations return struct tuples in next version of F#.
+        
     type [<NoEquality; NoComparison>] 'a TList =
         private
             { mutable TListOpt : 'a TList

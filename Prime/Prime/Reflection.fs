@@ -10,6 +10,7 @@ open System.Reflection
 open Microsoft.FSharp.Reflection
 
 /// An evaluatable expression for defining a property.
+/// TODO: P1: make this a struct when F# allows it.
 type [<NoEquality; NoComparison>] PropertyExpr =
     | DefineExpr of obj
     | VariableExpr of (unit -> obj)
@@ -21,7 +22,7 @@ type [<NoEquality; NoComparison>] PropertyExpr =
         | VariableExpr fn -> fn ()
 
 /// The definition of a data-driven property.
-type [<NoEquality; NoComparison>] PropertyDefinition =
+type [<Struct; NoEquality; NoComparison>] PropertyDefinition =
     { PropertyName : string
       PropertyType : Type
       PropertyExpr : PropertyExpr }
@@ -46,7 +47,7 @@ type [<NoEquality; NoComparison>] PropertyDefinition =
         result
 
 /// In tandem with the define literal, grants a nice syntax to define value properties.
-type ValueDescription =
+type [<Struct>] ValueDescription =
     { ValueDescription : unit }
     
     /// Some magic syntax for composing value properties.
@@ -55,7 +56,7 @@ type ValueDescription =
             PropertyDefinition.makeValidated propertyName typeof<'v> (DefineExpr value)
 
 /// In tandem with the variable literal, grants a nice syntax to define variable properties.
-type VariableDescription =
+type [<Struct>] VariableDescription =
     { VariableDescription : unit }
 
     /// Some magic syntax for composing variable properties.
@@ -64,7 +65,7 @@ type VariableDescription =
             PropertyDefinition.makeValidated propertyName typeof<'v> (VariableExpr (fun () -> variable () :> obj))
 
 /// In tandem with the property literal, grants a nice syntax to denote properties.
-type PropertyDescription =
+type [<Struct>] PropertyDescription =
     { PropertyDescription : unit }
     
     /// Some magic syntax for composing value properties.

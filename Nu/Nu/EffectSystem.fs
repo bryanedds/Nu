@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Reflection
+open System.Collections.Generic
 open Prime
 open OpenTK
 
@@ -13,12 +14,17 @@ module EffectSystemModule =
     // open related module
     open Effects
 
+    /// The artifacts produced by an effect.
+    type [<NoEquality; NoComparison>] EffectArtifacts =
+        { RenderArtifacts : RenderArtifact List
+          SoundArtifacts : SoundArtifact List
+          TagArtifacts : TagArtifact List }
+
     /// An abstract data type for executing effects.
-    /// TODO: P1: There is a lot of array appending going on. See if we can find an elegant and
-    /// efficient way to collect artifacts.
     type [<NoEquality; NoComparison>] EffectSystem =
         private
             { ViewType : ViewType
+              Artifacts : EffectArtifacts
               History : Slice seq
               ProgressOffset : single
               EffectTime : int64
@@ -27,6 +33,18 @@ module EffectSystemModule =
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module EffectSystem =
+
+        let rec private addRenderArtifact artifact effectSystem =
+            effectSystem.Artifacts.RenderArtifacts.Add artifact
+            effectSystem
+
+        let rec private addSoundArtifact artifact effectSystem =
+            effectSystem.Artifacts.SoundArtifacts.Add artifact
+            effectSystem
+
+        let rec private addTagArtifact artifact effectSystem =
+            effectSystem.Artifacts.TagArtifacts.Add artifact
+            effectSystem
 
         let rec private selectKeyFrames2<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
             match playback with
@@ -257,9 +275,9 @@ module EffectSystemModule =
                     | Some localDefinitionEntries ->
                         let effectSystem = { effectSystem with EffectEnv = Map.addMany localDefinitionEntries effectSystem.EffectEnv }
                         evalContent content slice effectSystem
-                    | None -> Log.info "Wrong number of arguments provided to ExpandContent."; [||]
-                | _ -> Log.info ^ "Expected Content for definition '" + definitionName + "'."; [||]
-            | None -> Log.info ^ "Could not find definition with name '" + definitionName + "'."; [||]
+                    | None -> Log.info "Wrong number of arguments provided to ExpandContent."; effectSystem
+                | _ -> Log.info ^ "Expected Content for definition '" + definitionName + "'."; effectSystem
+            | None -> Log.info ^ "Could not find definition with name '" + definitionName + "'."; effectSystem
 
         and private evalStaticSprite resource aspects content slice effectSystem =
 
@@ -270,29 +288,28 @@ module EffectSystemModule =
             let slice = evalAspects aspects slice effectSystem
 
             // build sprite artifacts
-            let spriteArtifacts =
+            let effectSystem =
                 if slice.Enabled then
-                    [|RenderArtifact
-                        [|LayerableDescriptor
-                            { Depth = slice.Depth
-                              PositionY = slice.Position.Y
-                              LayeredDescriptor =
-                                SpriteDescriptor 
-                                    { Position = slice.Position
-                                      Size = slice.Size
-                                      Rotation = slice.Rotation
-                                      Offset = slice.Offset
-                                      InsetOpt = None
-                                      Image = image
-                                      ViewType = effectSystem.ViewType
-                                      Color = slice.Color }}|]|]
-                else [||]
+                    let spriteArtifact =
+                        RenderArtifact
+                            (LayerableDescriptor
+                                { Depth = slice.Depth
+                                  PositionY = slice.Position.Y
+                                  LayeredDescriptor =
+                                    SpriteDescriptor 
+                                        { Position = slice.Position
+                                          Size = slice.Size
+                                          Rotation = slice.Rotation
+                                          Offset = slice.Offset
+                                          InsetOpt = None
+                                          Image = image
+                                          ViewType = effectSystem.ViewType
+                                          Color = slice.Color }})
+                    addRenderArtifact spriteArtifact effectSystem
+                else effectSystem
 
             // build implicitly mounted content
-            let mountedArtifacts = evalContent content slice effectSystem
-
-            // return artifacts
-            Array.append mountedArtifacts spriteArtifacts
+            evalContent content slice effectSystem
 
         and private evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effectSystem =
 
@@ -306,14 +323,15 @@ module EffectSystemModule =
             let insetOpt = evalInsetOpt celSize celRun celCount stutter effectSystem
 
             // build animated sprite artifacts
-            let animatedSpriteArtifacts =
+            let effectSystem =
                 if slice.Enabled then
-                    [|RenderArtifact
-                        [|LayerableDescriptor
-                            { Depth = slice.Depth
-                              PositionY = slice.Position.Y
-                              LayeredDescriptor =
-                                SpriteDescriptor 
+                    let animatedSpriteArtifact =
+                        RenderArtifact
+                            (LayerableDescriptor
+                                { Depth = slice.Depth
+                                  PositionY = slice.Position.Y
+                                  LayeredDescriptor =
+                                  SpriteDescriptor 
                                     { Position = slice.Position
                                       Size = slice.Size
                                       Rotation = slice.Rotation
@@ -321,14 +339,12 @@ module EffectSystemModule =
                                       InsetOpt = insetOpt
                                       Image = image
                                       ViewType = effectSystem.ViewType
-                                      Color = slice.Color }}|]|]
-                else [||]
+                                      Color = slice.Color }})
+                    addRenderArtifact animatedSpriteArtifact effectSystem
+                else effectSystem
 
             // build implicitly mounted content
-            let mountedArtifacts = evalContent content slice effectSystem
-
-            // return artifacts
-            Array.append mountedArtifacts animatedSpriteArtifacts
+            evalContent content slice effectSystem
 
         and private evalSoundEffect resource aspects content slice effectSystem =
 
@@ -339,16 +355,13 @@ module EffectSystemModule =
             let slice = evalAspects aspects slice effectSystem
 
             // build sprite artifacts
-            let soundArtifacts =
+            let effectSystem =
                 if slice.Enabled
-                then [|SoundArtifact (slice.Volume, sound)|]
-                else [||]
+                then addSoundArtifact (SoundArtifact (slice.Volume, sound)) effectSystem
+                else effectSystem
 
             // build implicitly mounted content
-            let mountedArtifacts = evalContent content slice effectSystem
-
-            // return artifacts
-            Array.append mountedArtifacts soundArtifacts
+            evalContent content slice effectSystem
 
         and private evalMount shift aspects content (slice : Slice) effectSystem =
             let slice = { slice with Depth = slice.Depth + shift }
@@ -364,70 +377,59 @@ module EffectSystemModule =
             // eval iterative repeat
             | Iterate count ->
                 Array.fold
-                    (fun (slice, artifacts) _ ->
-                        let (slice, artifacts') = iterateArtifacts incrementAspects content slice effectSystem
-                        (slice, Array.append artifacts artifacts'))
-                    (slice, [||])
+                    (fun (slice, effectSystem) _ ->
+                        let (slice, effectSystem) = iterateArtifacts incrementAspects content slice effectSystem
+                        (slice, effectSystem))
+                    (slice, effectSystem)
                     [|0 .. count - 1|] |>
                 snd
 
             // eval cycling repeat
             | Cycle count ->
                 Array.fold
-                    (fun artifacts i ->
+                    (fun effectSystem i ->
                         let effectSystem = { effectSystem with ProgressOffset = 1.0f / single count * single i }
-                        let artifacts' = cycleArtifacts incrementAspects content slice effectSystem
-                        Array.append artifacts artifacts')
-                    [||]
+                        cycleArtifacts incrementAspects content slice effectSystem)
+                    effectSystem
                     [|0 .. count - 1|]
 
         and private evalEmit shift rate emitterAspects aspects content effectSystem =
-            let artifacts =
+            let effectSystem =
                 Seq.foldi
-                    (fun i artifacts (slice : Slice) ->
+                    (fun i effectSystem (slice : Slice) ->
+                        let oldHistory = effectSystem.History
+                        let oldEffectTime = effectSystem.EffectTime
                         let timePassed = int64 i
                         let slice = { slice with Depth = slice.Depth + shift }
                         let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - timePassed }
                         let emitCountLastFrame = single (effectSystem.EffectTime - timePassed - 1L) * rate
                         let emitCountThisFrame = single (effectSystem.EffectTime - timePassed) * rate
                         let emitCount = int emitCountThisFrame - int emitCountLastFrame
+                        let effectSystem = { effectSystem with EffectTime = timePassed }
                         let effectSystem =
-                            let history =
-                                // TODO: emits on emits are probably still be broken, so fix this if needed!
-                                match content with
-                                | Emit _ ->
-                                    Seq.mapi
-                                        (fun j slice ->
-                                            let timePassed = int64 (i + j)
-                                            evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - timePassed })
-                                        effectSystem.History |>
-                                    Array.ofSeq |>
-                                    Seq.ofArray
-                                | _ -> effectSystem.History
-                            { effectSystem with History = history; EffectTime = timePassed }
-                        let artifacts' =
                             Array.fold
-                                (fun artifacts' _ ->
+                                (fun effectSystem _ ->
                                     let slice = evalAspects aspects slice effectSystem
-                                    let artifacts'' = if slice.Enabled then evalContent content slice effectSystem else [||]
-                                    Array.append artifacts'' artifacts')
-                                [||]
+                                    if slice.Enabled
+                                    then evalContent content slice effectSystem
+                                    else effectSystem)
+                                effectSystem
                                 [|0 .. emitCount - 1|]
-                        Array.append artifacts' artifacts)
-                    [||]
+                        { effectSystem with History = oldHistory; EffectTime = oldEffectTime })
+                    effectSystem
                     effectSystem.History
-            artifacts
+            effectSystem
 
-        and private evalComposite shift contents (slice : Slice) effectSystem =
-            let slice = { slice with Depth = slice.Depth + shift }
+        and private evalComposite shift contents slice effectSystem =
+            let slice = { slice with Slice.Depth = slice.Depth + shift }
             evalContents contents slice effectSystem
 
         and private evalContent content slice effectSystem =
             match content with
             | Nil ->
-                [||]
+                effectSystem
             | Tag (name, metadata) ->
-                [|TagArtifact (name, metadata, slice)|]
+                addTagArtifact (TagArtifact (name, metadata, slice)) effectSystem
             | StaticSprite (resource, aspects, content) ->
                 evalStaticSprite resource aspects content slice effectSystem
             | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) ->
@@ -447,10 +449,8 @@ module EffectSystemModule =
 
         and private evalContents contents slice effectSystem =
             Array.fold
-                (fun artifacts content ->
-                    let artifacts' = evalContent content slice effectSystem
-                    Array.append artifacts' artifacts)
-                [||]
+                (fun effectSystem content -> evalContent content slice effectSystem)
+                effectSystem
                 contents
 
         let eval effect slice effectSystem =
@@ -465,8 +465,8 @@ module EffectSystemModule =
                     let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Effect>).PrettyPrinter
                     let effectStr = PrettyPrinter.prettyPrint (scstring effect) prettyPrinter
                     Log.debug ^ "Error in effect:\r\n" + effectStr + "\r\ndue to: " + scstring exn
-                    [||]
-            else [||]
+                    effectSystem
+            else effectSystem
 
         let combineEffects effects =
             let effectCombined =
@@ -476,8 +476,23 @@ module EffectSystemModule =
                   Content = Composite (Shift 0.0f, effects |> List.map (fun effect -> effect.Content) |> Array.ofList) }
             effectCombined
 
+        let release effectSystem =
+            let artifacts = effectSystem.Artifacts
+            let effectSystem =
+                { effectSystem with
+                    Artifacts =
+                        { RenderArtifacts = List<RenderArtifact> ()
+                          SoundArtifacts = List<SoundArtifact> ()
+                          TagArtifacts = List<TagArtifact> () }}
+            (artifacts, effectSystem)
+
         let make viewType history effectTime globalEnv = 
+            let artifacts =
+                { RenderArtifacts = List<RenderArtifact> ()
+                  SoundArtifacts = List<SoundArtifact> ()
+                  TagArtifacts = List<TagArtifact> () }
             { ViewType = viewType
+              Artifacts = artifacts
               History = history
               ProgressOffset = 0.0f
               EffectTime = effectTime
