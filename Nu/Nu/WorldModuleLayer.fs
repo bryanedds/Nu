@@ -148,22 +148,22 @@ module WorldModuleLayer =
         static member internal tryGetLayerProperty propertyName layer world =
             if World.layerExists layer world then
                 match propertyName with // OPTIMIZATION: string match for speed
-                | "Id" -> Some (typeof<Guid>, World.getLayerId layer world :> obj)
-                | "Name" -> Some (typeof<string>, World.getLayerName layer world :> obj)
-                | "DispatcherNp" -> Some (typeof<LayerDispatcher>, World.getLayerDispatcherNp layer world :> obj)
-                | "Specialization" -> Some (typeof<string>, World.getLayerSpecialization layer world :> obj)
-                | "Persistent" -> Some (typeof<bool>, World.getLayerPersistent layer world :> obj)
-                | "CreationTimeStampNp" -> Some (typeof<int64>, World.getLayerCreationTimeStampNp layer world :> obj)
-                | "Imperative" -> Some (typeof<bool>, World.getLayerImperative layer world :> obj)
-                | "ScriptOpt" -> Some (typeof<AssetTag option>, World.getLayerScriptOpt layer world :> obj)
-                | "Script" -> Some (typeof<Scripting.Expr array>, World.getLayerScript layer world :> obj)
-                | "ScriptFrameNp" -> Some (typeof<Scripting.ProceduralFrame list>, World.getLayerScript layer world :> obj)
-                | "OnRegister" -> Some (typeof<Scripting.Expr>, World.getLayerOnRegister layer world :> obj)
-                | "OnUnregister" -> Some (typeof<Scripting.Expr>, World.getLayerOnUnregister layer world :> obj)
-                | "OnUpdate" -> Some (typeof<Scripting.Expr>, World.getLayerOnUpdate layer world :> obj)
-                | "OnPostUpdate" -> Some (typeof<Scripting.Expr>, World.getLayerOnPostUpdate layer world :> obj)
-                | "Depth" -> Some (typeof<single>, World.getLayerDepth layer world :> obj)
-                | "Visible" -> Some (typeof<single>, World.getLayerVisible layer world :> obj)
+                | "Id" -> Some { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world }
+                | "Name" -> Some { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world }
+                | "DispatcherNp" -> Some { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcherNp layer world }
+                | "Specialization" -> Some { PropertyType = typeof<string>; PropertyValue = World.getLayerSpecialization layer world }
+                | "Persistent" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world }
+                | "CreationTimeStampNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStampNp layer world }
+                | "Imperative" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getLayerImperative layer world }
+                | "ScriptOpt" -> Some { PropertyType = typeof<AssetTag option>; PropertyValue = World.getLayerScriptOpt layer world }
+                | "Script" -> Some { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getLayerScript layer world }
+                | "ScriptFrameNp" -> Some { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScript layer world }
+                | "OnRegister" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnRegister layer world }
+                | "OnUnregister" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUnregister layer world }
+                | "OnUpdate" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUpdate layer world }
+                | "OnPostUpdate" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnPostUpdate layer world }
+                | "Depth" -> Some { PropertyType = typeof<single>; PropertyValue = World.getLayerDepth layer world }
+                | "Visible" -> Some { PropertyType = typeof<single>; PropertyValue = World.getLayerVisible layer world }
                 | _ ->
                     match LayerState.tryGetProperty propertyName (World.getLayerState layer world) with
                     | None -> World.tryGetLayerCalculatedProperty propertyName layer world
@@ -172,22 +172,22 @@ module WorldModuleLayer =
 
         static member internal getLayerProperty propertyName layer world =
             match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> (typeof<Guid>, World.getLayerId layer world :> obj)
-            | "Name" -> (typeof<string>, World.getLayerName layer world :> obj)
-            | "DispatcherNp" -> (typeof<LayerDispatcher>, World.getLayerDispatcherNp layer world :> obj)
-            | "Specialization" -> (typeof<string>, World.getLayerSpecialization layer world :> obj)
-            | "Persistent" -> (typeof<bool>, World.getLayerPersistent layer world :> obj)
-            | "CreationTimeStampNp" -> (typeof<int64>, World.getLayerCreationTimeStampNp layer world :> obj)
-            | "Imperative" -> (typeof<bool>, World.getLayerImperative layer world :> obj)
-            | "ScriptOpt" -> (typeof<AssetTag option>, World.getLayerScriptOpt layer world :> obj)
-            | "Script" -> (typeof<Scripting.Expr array>, World.getLayerScript layer world :> obj)
-            | "ScriptFrameNp" -> (typeof<Scripting.ProceduralFrame list>, World.getLayerScript layer world :> obj)
-            | "OnRegister" -> (typeof<Scripting.Expr>, World.getLayerOnRegister layer world :> obj)
-            | "OnUnregister" -> (typeof<Scripting.Expr>, World.getLayerOnUnregister layer world :> obj)
-            | "OnUpdate" -> (typeof<Scripting.Expr>, World.getLayerOnUpdate layer world :> obj)
-            | "OnPostUpdate" -> (typeof<Scripting.Expr>, World.getLayerOnPostUpdate layer world :> obj)
-            | "Depth" -> (typeof<single>, World.getLayerDepth layer world :> obj)
-            | "Visible" -> (typeof<single>, World.getLayerVisible layer world :> obj)
+            | "Id" -> { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world }
+            | "Name" -> { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world }
+            | "DispatcherNp" -> { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcherNp layer world }
+            | "Specialization" -> { PropertyType = typeof<string>; PropertyValue = World.getLayerSpecialization layer world }
+            | "Persistent" -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world }
+            | "CreationTimeStampNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStampNp layer world }
+            | "Imperative" -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerImperative layer world }
+            | "ScriptOpt" -> { PropertyType = typeof<AssetTag option>; PropertyValue = World.getLayerScriptOpt layer world }
+            | "Script" -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getLayerScript layer world }
+            | "ScriptFrameNp" -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScript layer world }
+            | "OnRegister" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnRegister layer world }
+            | "OnUnregister" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUnregister layer world }
+            | "OnUpdate" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUpdate layer world }
+            | "OnPostUpdate" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnPostUpdate layer world }
+            | "Depth" -> { PropertyType = typeof<single>; PropertyValue = World.getLayerDepth layer world }
+            | "Visible" -> { PropertyType = typeof<single>; PropertyValue = World.getLayerVisible layer world }
             | _ ->
                 match LayerState.tryGetProperty propertyName (World.getLayerState layer world) with
                 | None ->
@@ -196,14 +196,14 @@ module WorldModuleLayer =
                     | Some property -> property
                 | Some property -> property
 
-        static member internal trySetLayerProperty propertyName (property : Type * obj) layer world =
+        static member internal trySetLayerProperty propertyName property layer world =
             if World.layerExists layer world then
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> (false, world)
                 | "Name" -> (false, world)
                 | "DispatcherNp" -> (false, world)
                 | "Specialization" -> (false, world)
-                | "Persistent" -> (true, World.setLayerPersistent (property |> snd :?> bool) layer world)
+                | "Persistent" -> (true, World.setLayerPersistent (property.PropertyValue :?> bool) layer world)
                 | "CreationTimeStampNp" -> (false, world)
                 | "Imperative" -> (false, world)
                 | "ScriptOpt" -> (false, world)
@@ -224,13 +224,13 @@ module WorldModuleLayer =
                     (success, world)
             else (false, world)
 
-        static member internal setLayerProperty propertyName (property : Type * obj) layer world =
+        static member internal setLayerProperty propertyName property layer world =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith ^ "Cannot change layer " + propertyName + "."
             | "Name" -> failwith ^ "Cannot change layer " + propertyName + "."
             | "DispatcherNp" -> failwith ^ "Cannot change layer " + propertyName + "."
             | "Specialization" -> failwith ^ "Cannot change layer " + propertyName + "."
-            | "Persistent" -> World.setLayerPersistent (property |> snd :?> bool) layer world
+            | "Persistent" -> World.setLayerPersistent (property.PropertyValue :?> bool) layer world
             | "CreationTimeStampNp" -> failwith ^ "Cannot change layer " + propertyName + "."
             | "Imperative" -> failwith ^ "Cannot change layer " + propertyName + "."
             | "ScriptOpt" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."

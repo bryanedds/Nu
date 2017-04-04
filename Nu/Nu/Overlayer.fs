@@ -117,19 +117,19 @@ module OverlayerModule =
                 match xtensionProperty.GetValue target with
                 | :? Xtension as xtension ->
                     let nodes =
-                        Seq.foldBack (fun (xPropertyName, xProperty : XProperty) nodeOpts ->
-                            match tryFindPropertySymbol newOverlayName xPropertyName newOverlayer with
-                            | Some xPropertySymbol -> (xPropertyName, xProperty.PropertyType, xPropertySymbol) :: nodeOpts
+                        Seq.foldBack (fun (propertyName, property : Property) nodeOpts ->
+                            match tryFindPropertySymbol newOverlayName propertyName newOverlayer with
+                            | Some propertySymbol -> (propertyName, property.PropertyType, propertySymbol) :: nodeOpts
                             | None -> nodeOpts)
                             (Xtension.toSeq xtension)
                             []
                     let xtension =
-                        List.foldBack (fun (xPropertyName, xPropertyType, xPropertySymbol : Symbol) xtension ->
-                            if isPropertyOverlaid oldOverlayName facetNames xPropertyName xPropertyType target oldOverlayer then
-                                let converter = SymbolicConverter (true, xPropertyType)
-                                let xPropertyValue = converter.ConvertFrom xPropertySymbol
-                                let xProperty = { PropertyType = xPropertyType; PropertyValue = xPropertyValue;  }
-                                Xtension.attachProperty xPropertyName xProperty xtension
+                        List.foldBack (fun (propertyName, propertyType, propertySymbol : Symbol) xtension ->
+                            if isPropertyOverlaid oldOverlayName facetNames propertyName propertyType target oldOverlayer then
+                                let converter = SymbolicConverter (true, propertyType)
+                                let propertyValue = converter.ConvertFrom propertySymbol
+                                let property = { PropertyType = propertyType; PropertyValue = propertyValue;  }
+                                Xtension.attachProperty propertyName property xtension
                             else xtension)
                             nodes
                             xtension

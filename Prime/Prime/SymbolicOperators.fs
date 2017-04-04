@@ -5,6 +5,11 @@ namespace Prime
 open System
 open Prime
 
+/// An attribute to specify the default value of a property.
+type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>] DefaultValueAttribute (defaultValue : obj) =
+    inherit Attribute ()
+    member this.DefaultValue = defaultValue
+
 [<AutoOpen>]
 module SymbolicOperators =
 
@@ -29,3 +34,22 @@ module SymbolicOperators =
     let scvalue<'a> (str : string) : 'a =
         let converter = SymbolicConverter (false, typeof<'a>)
         converter.ConvertFromString str :?> 'a
+
+    /// Get the default value of an instance of type 'a taking into account DefaultValue decorations.
+    let scdefaultof<'a> () : 'a =
+        let defaultPropertyType = typeof<'a>
+        let defaultValueAttributeOpt =
+            defaultPropertyType.GetCustomAttributes (typeof<DefaultValueAttribute>, true) |>
+            Array.map (fun attr -> attr :?> DefaultValueAttribute) |>
+            Array.tryHead
+        match defaultValueAttributeOpt with
+        | Some defaultValueAttribute ->
+            match defaultValueAttribute.DefaultValue with
+            | :? 'a as defaultValue -> defaultValue
+            | _ as defaultValue ->
+                let defaultValueType = defaultValue.GetType ()
+                let converter = SymbolicConverter (false, defaultValueType)
+                if converter.CanConvertFrom defaultPropertyType
+                then converter.ConvertFrom defaultValue :?> 'a
+                else failwith ^ "Cannot convert '" + scstring defaultValue + "' to type '" + defaultPropertyType.Name + "'."
+        | None -> Unchecked.defaultof<'a>

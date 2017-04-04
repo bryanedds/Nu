@@ -435,7 +435,7 @@ module WorldModule =
             Array.toList
 
         /// View the xtension properties of some SimulantState.
-        static member internal getXProperties (state : SimulantState) =
+        static member internal getXtensionProperties (state : SimulantState) =
             state.GetXtension () |>
             Xtension.toSeq |>
             List.ofSeq |>
@@ -446,7 +446,7 @@ module WorldModule =
         static member internal getProperties state =
             List.append
                 (World.getMemberProperties state)
-                (World.getXProperties state)
+                (World.getXtensionProperties state)
 
     type World with // Handlers
 

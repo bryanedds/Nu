@@ -42,12 +42,12 @@ type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTy
 
 and EntityPropertyDescriptor (property, attributes) =
     inherit System.ComponentModel.PropertyDescriptor (
-        (match property with EntityXPropertyDescriptor xfd -> xfd.PropertyName | EntityPropertyInfo pi -> pi.Name),
+        (match property with EntityPropertyDescriptor xfd -> xfd.PropertyName | EntityPropertyInfo pi -> pi.Name),
         attributes)
 
-    let propertyName = match property with EntityXPropertyDescriptor xfd -> xfd.PropertyName | EntityPropertyInfo pi -> pi.Name
-    let propertyType = match property with EntityXPropertyDescriptor xfd -> xfd.PropertyType | EntityPropertyInfo pi -> pi.PropertyType
-    let propertyCanWrite = match property with EntityXPropertyDescriptor _ -> true | EntityPropertyInfo xfd -> xfd.CanWrite
+    let propertyName = match property with EntityPropertyDescriptor pd -> pd.PropertyName | EntityPropertyInfo pi -> pi.Name
+    let propertyType = match property with EntityPropertyDescriptor pd -> pd.PropertyType | EntityPropertyInfo pi -> pi.PropertyType
+    let propertyCanWrite = match property with EntityPropertyDescriptor _ -> true | EntityPropertyInfo xfd -> xfd.CanWrite
 
     let pushPastWorld pastWorld world =
         World.updateUserState

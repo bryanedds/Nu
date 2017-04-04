@@ -450,29 +450,29 @@ module WorldModuleEntity =
         static member internal tryGetEntityProperty propertyName entity world =
             if World.entityExists entity world then
                 match propertyName with // OPTIMIZATION: string match for speed
-                | "Id" -> Some (typeof<Guid>, World.getEntityId entity world :> obj)
-                | "Name" -> Some (typeof<string>, World.getEntityName entity world :> obj)
-                | "DispatcherNp" -> Some (typeof<EntityDispatcher>, World.getEntityDispatcherNp entity world :> obj)
-                | "Persistent" -> Some (typeof<bool>, World.getEntityPersistent entity world :> obj)
-                | "Specialization" -> Some (typeof<string>, World.getEntitySpecialization entity world :> obj)
-                | "CreationTimeStampNp" -> Some (typeof<int64>, World.getEntityCreationTimeStampNp entity world :> obj)
-                | "Imperative" -> Some (typeof<bool>, World.getEntityImperative entity world :> obj)
-                | "CachableNp" -> Some (typeof<bool>, World.getEntityCachableNp entity world :> obj)
-                | "OverlayNameOpt" -> Some (typeof<string option>, World.getEntityOverlayNameOpt entity world :> obj)
-                | "Position" -> Some (typeof<Vector2>, World.getEntityPosition entity world :> obj)
-                | "Size" -> Some (typeof<Vector2>, World.getEntitySize entity world :> obj)
-                | "Rotation" -> Some (typeof<single>, World.getEntityRotation entity world :> obj)
-                | "Depth" -> Some (typeof<single>, World.getEntityDepth entity world :> obj)
-                | "Overflow" -> Some (typeof<Vector2>, World.getEntityOverflow entity world :> obj)
-                | "ViewType" -> Some (typeof<ViewType>, World.getEntityViewType entity world :> obj)
-                | "Visible" -> Some (typeof<bool>, World.getEntityVisible entity world :> obj)
-                | "Enabled" -> Some (typeof<bool>, World.getEntityEnabled entity world :> obj)
-                | "Omnipresent" -> Some (typeof<bool>, World.getEntityOmnipresent entity world :> obj)
-                | "PublishChanges" -> Some (typeof<bool>, World.getEntityPublishChanges entity world :> obj)
-                | "PublishUpdatesNp" -> Some (typeof<bool>, World.getEntityPublishUpdatesNp entity world :> obj)
-                | "PublishPostUpdatesNp" -> Some (typeof<bool>, World.getEntityPublishPostUpdatesNp entity world :> obj)
-                | "FacetNames" -> Some (typeof<string Set>, World.getEntityFacetNames entity world :> obj)
-                | "FacetsNp" -> Some (typeof<Facet list>, World.getEntityFacetsNp entity world :> obj)
+                | "Id" -> Some { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world }
+                | "Name" -> Some { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world }
+                | "DispatcherNp" -> Some { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcherNp entity world }
+                | "Persistent" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world }
+                | "Specialization" -> Some { PropertyType = typeof<string>; PropertyValue = World.getEntitySpecialization entity world }
+                | "CreationTimeStampNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStampNp entity world }
+                | "Imperative" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world }
+                | "CachableNp" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityCachableNp entity world }
+                | "OverlayNameOpt" -> Some { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world }
+                | "Position" -> Some { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world }
+                | "Size" -> Some { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world }
+                | "Rotation" -> Some { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world }
+                | "Depth" -> Some { PropertyType = typeof<single>; PropertyValue = World.getEntityDepth entity world }
+                | "Overflow" -> Some { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world }
+                | "ViewType" -> Some { PropertyType = typeof<ViewType>; PropertyValue = World.getEntityViewType entity world }
+                | "Visible" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world }
+                | "Enabled" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world }
+                | "Omnipresent" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world }
+                | "PublishChanges" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChanges entity world }
+                | "PublishUpdatesNp" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdatesNp entity world }
+                | "PublishPostUpdatesNp" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdatesNp entity world }
+                | "FacetNames" -> Some { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world }
+                | "FacetsNp" -> Some { PropertyType = typeof<Facet list>; PropertyValue = World.getEntityFacetsNp entity world }
                 | _ ->
                     match EntityState.tryGetProperty propertyName (World.getEntityState entity world) with
                     | None -> World.tryGetEntityCalculatedProperty propertyName entity world
@@ -481,29 +481,29 @@ module WorldModuleEntity =
 
         static member internal getEntityProperty propertyName entity world =
             match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> (typeof<Guid>, World.getEntityId entity world :> obj)
-            | "Name" -> (typeof<string>, World.getEntityName entity world :> obj)
-            | "DispatcherNp" -> (typeof<EntityDispatcher>, World.getEntityDispatcherNp entity world :> obj)
-            | "Persistent" -> (typeof<bool>, World.getEntityPersistent entity world :> obj)
-            | "Specialization" -> (typeof<string>, World.getEntitySpecialization entity world :> obj)
-            | "CreationTimeStampNp" -> (typeof<int64>, World.getEntityCreationTimeStampNp entity world :> obj)
-            | "Imperative" -> (typeof<bool>, World.getEntityImperative entity world :> obj)
-            | "CachableNp" -> (typeof<bool>, World.getEntityCachableNp entity world :> obj)
-            | "OverlayNameOpt" -> (typeof<string option>, World.getEntityOverlayNameOpt entity world :> obj)
-            | "Position" -> (typeof<Vector2>, World.getEntityPosition entity world :> obj)
-            | "Size" -> (typeof<Vector2>, World.getEntitySize entity world :> obj)
-            | "Rotation" -> (typeof<single>, World.getEntityRotation entity world :> obj)
-            | "Depth" -> (typeof<single>, World.getEntityDepth entity world :> obj)
-            | "Overflow" -> (typeof<Vector2>, World.getEntityOverflow entity world :> obj)
-            | "ViewType" -> (typeof<ViewType>, World.getEntityViewType entity world :> obj)
-            | "Visible" -> (typeof<bool>, World.getEntityVisible entity world :> obj)
-            | "Enabled" -> (typeof<bool>,World.getEntityEnabled entity world :> obj)
-            | "Omnipresent" -> (typeof<bool>, World.getEntityOmnipresent entity world :> obj)
-            | "PublishChanges" -> (typeof<bool>, World.getEntityPublishChanges entity world :> obj)
-            | "PublishUpdatesNp" -> (typeof<bool>, World.getEntityPublishUpdatesNp entity world :> obj)
-            | "PublishPostUpdatesNp" -> (typeof<bool>, World.getEntityPublishPostUpdatesNp entity world :> obj)
-            | "FacetNames" -> (typeof<string Set>, World.getEntityFacetNames entity world :> obj)
-            | "FacetsNp" -> (typeof<Facet list>, World.getEntityFacetsNp entity world :> obj)
+            | "Id" -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world }
+            | "Name" -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world }
+            | "DispatcherNp" -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcherNp entity world }
+            | "Persistent" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world }
+            | "Specialization" -> { PropertyType = typeof<string>; PropertyValue = World.getEntitySpecialization entity world }
+            | "CreationTimeStampNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStampNp entity world }
+            | "Imperative" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world }
+            | "CachableNp" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCachableNp entity world }
+            | "OverlayNameOpt" -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world }
+            | "Position" -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world }
+            | "Size" -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world }
+            | "Rotation" -> { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world }
+            | "Depth" -> { PropertyType = typeof<single>; PropertyValue = World.getEntityDepth entity world }
+            | "Overflow" -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world }
+            | "ViewType" -> { PropertyType = typeof<ViewType>; PropertyValue = World.getEntityViewType entity world }
+            | "Visible" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world }
+            | "Enabled" -> { PropertyType = typeof<bool>; PropertyValue =World.getEntityEnabled entity world }
+            | "Omnipresent" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world }
+            | "PublishChanges" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChanges entity world }
+            | "PublishUpdatesNp" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdatesNp entity world }
+            | "PublishPostUpdatesNp" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdatesNp entity world }
+            | "FacetNames" -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world }
+            | "FacetsNp" -> { PropertyType = typeof<Facet list>; PropertyValue = World.getEntityFacetsNp entity world }
             | _ ->
                 match EntityState.tryGetProperty propertyName (World.getEntityState entity world) with
                 | None ->
@@ -512,27 +512,27 @@ module WorldModuleEntity =
                     | Some property -> property
                 | Some property -> property
 
-        static member internal trySetEntityProperty propertyName (property : Type * obj) entity world =
+        static member internal trySetEntityProperty propertyName property entity world =
             if World.entityExists entity world then
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> (false, world)
                 | "Name" -> (false, world)
                 | "DispatcherNp" -> (false, world)
                 | "Specialization" -> (false, world)
-                | "Persistent" -> (true, World.setEntityPersistent (property |> snd :?> bool) entity world)
+                | "Persistent" -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
                 | "CreationTimeStampNp" -> (false, world)
                 | "Imperative" -> (false, world)
                 | "CachableNp" -> (false, world)
-                | "Position" -> (true, World.setEntityPosition (property |> snd :?> Vector2) entity world)
-                | "Size" -> (true, World.setEntitySize (property |> snd :?> Vector2) entity world)
-                | "Rotation" -> (true, World.setEntityRotation (property |> snd :?> single) entity world)
-                | "Depth" -> (true, World.setEntityDepth (property |> snd :?> single) entity world)
-                | "Overflow" -> (true, World.setEntityOverflow (property |> snd :?> Vector2) entity world)
-                | "ViewType" -> (true, World.setEntityViewType (property |> snd :?> ViewType) entity world)
-                | "Visible" -> (true, World.setEntityVisible (property |> snd :?> bool) entity world)
-                | "Enabled" -> (true, World.setEntityEnabled (property |> snd :?> bool) entity world)
-                | "Omnipresent" -> (true, World.setEntityOmnipresent (property |> snd :?> bool) entity world)
-                | "PublishChanges" -> (true, World.setEntityPublishChanges (property |> snd :?> bool) entity world)
+                | "Position" -> (true, World.setEntityPosition (property.PropertyValue :?> Vector2) entity world)
+                | "Size" -> (true, World.setEntitySize (property.PropertyValue :?> Vector2) entity world)
+                | "Rotation" -> (true, World.setEntityRotation (property.PropertyValue :?> single) entity world)
+                | "Depth" -> (true, World.setEntityDepth (property.PropertyValue :?> single) entity world)
+                | "Overflow" -> (true, World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world)
+                | "ViewType" -> (true, World.setEntityViewType (property.PropertyValue :?> ViewType) entity world)
+                | "Visible" -> (true, World.setEntityVisible (property.PropertyValue :?> bool) entity world)
+                | "Enabled" -> (true, World.setEntityEnabled (property.PropertyValue :?> bool) entity world)
+                | "Omnipresent" -> (true, World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world)
+                | "PublishChanges" -> (true, World.setEntityPublishChanges (property.PropertyValue :?> bool) entity world)
                 | "PublishUpdatesNp" -> (false, world)
                 | "PublishPostUpdatesNp" -> (false, world)
                 | "FacetNames" -> (false, world)
@@ -548,26 +548,26 @@ module WorldModuleEntity =
                     (success, world)
             else (false, world)
 
-        static member internal setEntityProperty propertyName (property : Type * obj) entity world =
+        static member internal setEntityProperty propertyName property entity world =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "Name" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "DispatcherNp" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "Specialization" -> failwith ^ "Cannot change entity " + propertyName + "."
-            | "Persistent" -> World.setEntityPersistent (property |> snd :?> bool) entity world
+            | "Persistent" -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world
             | "CreationTimeStampNp" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "Imperative" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "CachableNp" -> failwith ^ "Cannot change entity " + propertyName + "."
-            | "Position" -> World.setEntityPosition (property |> snd :?> Vector2) entity world
-            | "Size" -> World.setEntitySize (property |> snd :?> Vector2) entity world
-            | "Rotation" -> World.setEntityRotation (property |> snd :?> single) entity world
-            | "Depth" -> World.setEntityDepth (property |> snd :?> single) entity world
-            | "Overflow" -> World.setEntityOverflow (property |> snd :?> Vector2) entity world
-            | "ViewType" -> World.setEntityViewType (property |> snd :?> ViewType) entity world
-            | "Visible" -> World.setEntityVisible (property |> snd :?> bool) entity world
-            | "Enabled" -> World.setEntityEnabled (property |> snd :?> bool) entity world
-            | "Omnipresent" -> World.setEntityOmnipresent (property |> snd :?> bool) entity world
-            | "PublishChanges" -> World.setEntityPublishChanges (property |> snd :?> bool) entity world
+            | "Position" -> World.setEntityPosition (property.PropertyValue :?> Vector2) entity world
+            | "Size" -> World.setEntitySize (property.PropertyValue :?> Vector2) entity world
+            | "Rotation" -> World.setEntityRotation (property.PropertyValue :?> single) entity world
+            | "Depth" -> World.setEntityDepth (property.PropertyValue :?> single) entity world
+            | "Overflow" -> World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world
+            | "ViewType" -> World.setEntityViewType (property.PropertyValue :?> ViewType) entity world
+            | "Visible" -> World.setEntityVisible (property.PropertyValue :?> bool) entity world
+            | "Enabled" -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world
+            | "Omnipresent" -> World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world
+            | "PublishChanges" -> World.setEntityPublishChanges (property.PropertyValue :?> bool) entity world
             | "PublishUpdatesNp" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "PublishPostUpdatesNp" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "FacetNames" -> failwith ^ "Cannot change entity " + propertyName + " dynamically."

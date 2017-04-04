@@ -117,7 +117,7 @@ module MountFacetModule =
 
         override facet.TryGetCalculatedProperty (propertyName, entity, world) =
             match propertyName with
-            | "NodeExists" -> Some (typeof<bool>, entity.NodeExists world :> obj)
+            | "NodeExists" -> Some { PropertyType = typeof<bool>; PropertyValue = entity.NodeExists world }
             | _ -> None
 
 [<AutoOpen>]
@@ -449,7 +449,7 @@ module RigidBodyFacetModule =
 
         override facet.TryGetCalculatedProperty (name, entity, world) =
             match name with
-            | "PhysicsId" -> Some (typeof<PhysicsId>, entity.GetPhysicsId world :> obj)
+            | "PhysicsId" -> Some { PropertyType = typeof<PhysicsId>; PropertyValue = entity.GetPhysicsId world }
             | _ -> None
 
 [<AutoOpen>]

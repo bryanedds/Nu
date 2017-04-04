@@ -72,7 +72,7 @@ module WorldScreenModule =
         member this.GetProperty propertyName world = World.getScreenProperty propertyName this world
 
         /// Get a property value.
-        member this.Get<'a> propertyName world : 'a = World.getScreenProperty propertyName this world |> snd :?> 'a
+        member this.Get<'a> propertyName world : 'a = (World.getScreenProperty propertyName this world).PropertyValue :?> 'a
 
         /// Try to set a property value with explicit type.
         member this.TrySetProperty propertyName property world = World.trySetScreenProperty propertyName property this world
@@ -81,7 +81,7 @@ module WorldScreenModule =
         member this.SetProperty propertyName property world = World.setScreenProperty propertyName property this world
 
         /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world = World.setScreenProperty propertyName (typeof<'a>, value :> obj) this world
+        member this.Set<'a> propertyName (value : 'a) world = World.setScreenProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
         member this.IsIdling world = this.GetTransitionStateNp world = IdlingState

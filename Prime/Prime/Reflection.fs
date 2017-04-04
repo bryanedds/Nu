@@ -46,8 +46,8 @@ type [<NoEquality; NoComparison>] PropertyDefinition =
         result
 
 /// In tandem with the define literal, grants a nice syntax to define value properties.
-type ValueDefinition =
-    { ValueDefinition : unit }
+type ValueDescription =
+    { ValueDescription : unit }
     
     /// Some magic syntax for composing value properties.
     static member (?) (_, propertyName) =
@@ -55,8 +55,8 @@ type ValueDefinition =
             PropertyDefinition.makeValidated propertyName typeof<'v> (DefineExpr value)
 
 /// In tandem with the variable literal, grants a nice syntax to define variable properties.
-type VariableDefinition =
-    { VariableDefinition : unit }
+type VariableDescription =
+    { VariableDescription : unit }
 
     /// Some magic syntax for composing variable properties.
     static member (?) (_, propertyName) =
@@ -64,24 +64,40 @@ type VariableDefinition =
             PropertyDefinition.makeValidated propertyName typeof<'v> (VariableExpr (fun () -> variable () :> obj))
 
 /// In tandem with the property literal, grants a nice syntax to denote properties.
-type PropertyDescriptor =
-    { PropertyDescriptor : unit }
+type PropertyDescription =
+    { PropertyDescription : unit }
     
     /// Some magic syntax for composing value properties.
     static member inline (?) (_, propertyName : string) =
         propertyName
+    
+/// Describes a property.
+type [<Struct; StructuralEquality; NoComparison>] PropertyDescriptor =
+    { PropertyName : string
+      PropertyType : Type }
+
+/// An Xtension property.
+type [<Struct; StructuralEquality; NoComparison>] Property =
+    { mutable PropertyType : Type
+      mutable PropertyValue : obj }
+
+/// A map of propertyies.
+/// NOTE: Xtension uses UMap because it's slightly faster when used in the Nu game engine, but
+/// it's not necessarily the right decision in other contexts. However, I'm sticking with this
+/// choice since the performance of Nu trumps other usages for now.
+type PropertyMap = UMap<string, Property>
 
 [<AutoOpen>]
 module ReflectionModule =
 
     /// In tandem with the ValueDefinition type, grants a nice syntax to define value properties.
-    let Define = { ValueDefinition = () }
+    let Define = { ValueDescription = () }
 
     /// In tandem with the VariableDefinition type, grants a nice syntax to define variable properties.
-    let Variable = { VariableDefinition = () }
-    
+    let Variable = { VariableDescription = () }
+
     /// In tandem with the PropertyDescriptor type, grants a nice syntax to denote properties.
-    let Property = { PropertyDescriptor = () }
+    let Property = { PropertyDescription = () }
 
 module Reflection =
 
