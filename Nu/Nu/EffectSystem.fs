@@ -14,6 +14,8 @@ module EffectSystemModule =
     open Effects
 
     /// An abstract data type for executing effects.
+    /// TODO: P1: There is a lot of array appending going on. See if we can find an elegant and
+    /// efficient way to collect artifacts.
     type [<NoEquality; NoComparison>] EffectSystem =
         private
             { ViewType : ViewType
