@@ -11,6 +11,7 @@ open Nu
 module SymbolStoreModule =
 
     /// Provides references to Symbols that are loaded from files.
+    /// TODO: P1: consider making key a struct tuple.
     type [<ReferenceEquality>] SymbolStore =
         private
             { SymbolStorePackageMap : (bool * Symbol) PackageMap }
