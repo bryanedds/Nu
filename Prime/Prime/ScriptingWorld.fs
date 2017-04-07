@@ -68,6 +68,15 @@ module ScriptingWorld =
     let tryExport<'w when 'w :> 'w ScriptingWorld> ty value (world : 'w) =
         tryExport world.TryExport ty value
 
+    let log expr =
+        match expr with
+        | Violation (names, error, originOpt) ->
+            Log.info ^
+                "Unexpected Violation: " + String.concat Constants.Scripting.ViolationSeparatorStr names + "\n" +
+                "Due to: " + error + "\n" +
+                SymbolOrigin.tryPrint originOpt + "\n"
+        | _ -> ()
+
     let isIntrinsic fnName =
         match fnName with
         | "=" | "<>" | "<" | ">" | "<=" | ">=" | "+" | "-" | "*" | "/" | "%" | "!"

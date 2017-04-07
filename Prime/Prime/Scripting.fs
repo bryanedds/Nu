@@ -709,16 +709,6 @@ module Scripting =
     
     /// The none value in scripting.
     let NoneValue = Option None
-
-    /// Log a violation if an expression is one.
-    let log expr =
-        match expr with
-        | Violation (names, error, originOpt) ->
-            Log.info ^
-                "Unexpected Violation: " + String.concat Constants.Scripting.ViolationSeparatorStr names + "\n" +
-                "Due to: " + error + "\n" +
-                SymbolOrigin.tryPrint originOpt + "\n"
-        | _ -> ()
     
     /// A declaration bindings frame in a scripting environment.
     type DeclarationFrame = Dictionary<string, Expr>
