@@ -1111,12 +1111,11 @@ module Gaia =
     /// Attempt to make SdlDeps needed to use in the Gaia form.
     let attemptMakeSdlDeps (form : GaiaForm) =
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
-        let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
         let sdlConfig =
             { ViewConfig = sdlViewConfig
               ViewW = form.displayPanel.MaximumSize.Width
               ViewH = form.displayPanel.MaximumSize.Height
-              RendererFlags = sdlRendererFlags
+              RendererFlags = Constants.Render.DefaultRendererFlags
               AudioChunkSize = Constants.Audio.DefaultBufferSize }
         SdlDeps.attemptMake sdlConfig
 

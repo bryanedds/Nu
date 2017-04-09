@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open OpenTK
+open SDL2
 open Nu
 
 [<RequireQualifiedAccess>]
@@ -46,10 +47,14 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Render =
 
-        let [<Literal>] ResolutionXDefault = 960
-        let [<Literal>] ResolutionYDefault = 544
-        let (*Literal*) ResolutionX = Core.getResolutionOrDefault true ResolutionXDefault
-        let (*Literal*) ResolutionY = Core.getResolutionOrDefault false ResolutionYDefault
+        let [<Literal>] DefaultResolutionX = 960
+        let [<Literal>] DefaultResolutionY = 544
+        let (*Literal*) DefaultRendererFlags =
+            enum<SDL.SDL_RendererFlags>
+                (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
+                 int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
+        let (*Literal*) ResolutionX = Core.getResolutionOrDefault true DefaultResolutionX
+        let (*Literal*) ResolutionY = Core.getResolutionOrDefault false DefaultResolutionY
         let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy)
 
     [<RequireQualifiedAccess>]
