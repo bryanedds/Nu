@@ -30,7 +30,7 @@ module AmbientStateModule =
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter
               SymbolStore : SymbolStore
-              UserState : obj }
+              UserState : UserState }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module AmbientState =
@@ -136,15 +136,13 @@ module AmbientStateModule =
             let camera = updater ^ getSymbolStore state
             { state with SymbolStore = camera }
     
-        /// Get the user-defined state, casted to 'u.
-        let getUserState state : 'u =
-            state.UserState :?> 'u
+        /// Get the user-defined state value, casted to 'a.
+        let getUserValue state : 'a =
+            UserState.get state.UserState
     
-        /// Update the user state of the world.
-        let updateUserState (updater : 'u -> 'v) state =
-            let userState = getUserState state
-            let userState = updater userState
-            { state with UserState = userState }
+        /// Update the user-defined state value.
+        let updateUserValue (updater : 'a -> 'b) state =
+            { state with UserState = UserState.update updater state.UserState }
     
         /// Make an ambient state value.
         let make tickRate assetMetadataMap overlayRouter overlayer symbolStore userState =
@@ -157,7 +155,7 @@ module AmbientStateModule =
               OverlayRouter = overlayRouter
               Overlayer = overlayer
               SymbolStore = symbolStore
-              UserState = userState }
+              UserState = UserState.make userState false }
 
 /// The ambient state of the world.
 type 'w AmbientState = 'w AmbientStateModule.AmbientState

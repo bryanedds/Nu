@@ -50,7 +50,7 @@ and EntityPropertyDescriptor (property, attributes) =
     let propertyCanWrite = match property with EntityPropertyDescriptor _ -> true | EntityPropertyInfo xfd -> xfd.CanWrite
 
     let pushPastWorld pastWorld world =
-        World.updateUserState
+        World.updateUserValue
             (fun editorState -> { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = [] })
             world
 
@@ -62,8 +62,8 @@ and EntityPropertyDescriptor (property, attributes) =
         let mountProperties = Reflection.getPropertyDefinitions typeof<MountFacet>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if propertyName.Length > 2 && propertyName.StartsWith "On" && Char.IsUpper propertyName.[2] then "Events"
-        elif    propertyName = "Name" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" ||
-                propertyName = "Specialization" || propertyName = "PublishChanges" then "\rAmbient Properties"
+        elif    propertyName = "Name" || propertyName = "UserState" || propertyName = "OverlayNameOpt" ||
+                propertyName = "FacetNames" || propertyName = "Specialization" || propertyName = "PublishChanges" then "\rAmbient Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) mountProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "\rPhysics Properties"

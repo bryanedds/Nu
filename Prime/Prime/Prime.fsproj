@@ -105,6 +105,7 @@
     <Compile Include="Reflection.fs" />
     <Compile Include="SymbolicConverter.fs" />
     <Compile Include="SymbolicOperators.fs" />
+    <Compile Include="UserState.fs" />
     <Compile Include="Xtension.fs" />
     <Compile Include="EventTrace.fs" />
     <Compile Include="EventFilter.fs" />

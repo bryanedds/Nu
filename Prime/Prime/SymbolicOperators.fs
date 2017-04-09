@@ -5,11 +5,6 @@ namespace Prime
 open System
 open Prime
 
-/// An attribute to specify the default value of a property.
-type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>] DefaultValueAttribute (defaultValue : obj) =
-    inherit Attribute ()
-    member this.DefaultValue = defaultValue
-
 [<AutoOpen>]
 module SymbolicOperators =
 

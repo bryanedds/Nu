@@ -220,6 +220,10 @@ module WorldModuleEntity =
         // NOTE: Wouldn't macros be nice?
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
+        static member internal getEntityUserState entity world = (World.getEntityState entity world).UserState
+        static member internal setEntityUserState value entity world = World.updateEntityState (fun entityState -> if UserState.getImperative entityState.UserState then entityState.UserState <- value; entityState else { entityState with UserState = value }) false Property? UserState entity world
+        static member internal getEntityUserValue<'a> entity world = UserState.get<'a> (World.getEntityState entity world).UserState
+        static member internal setEntityUserValue<'a> value entity world = World.updateEntityState (fun entityState -> if UserState.getImperative entityState.UserState then ignore (UserState.set<'a> value entityState.UserState); entityState else { entityState with UserState = UserState.set<'a> value entityState.UserState }) false Property? UserValue entity world
         static member internal getEntityDispatcherNp entity world = (World.getEntityState entity world).DispatcherNp
         static member internal getEntitySpecialization entity world = (World.getEntityState entity world).Specialization
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
@@ -452,6 +456,7 @@ module WorldModuleEntity =
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> Some { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world }
                 | "Name" -> Some { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world }
+                | "UserState" -> Some { PropertyType = typeof<UserState>; PropertyValue = World.getEntityUserState entity world }
                 | "DispatcherNp" -> Some { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcherNp entity world }
                 | "Persistent" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world }
                 | "Specialization" -> Some { PropertyType = typeof<string>; PropertyValue = World.getEntitySpecialization entity world }
@@ -483,6 +488,7 @@ module WorldModuleEntity =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world }
             | "Name" -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world }
+            | "UserState" -> { PropertyType = typeof<UserState>; PropertyValue = World.getEntityUserState entity world }
             | "DispatcherNp" -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcherNp entity world }
             | "Persistent" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world }
             | "Specialization" -> { PropertyType = typeof<string>; PropertyValue = World.getEntitySpecialization entity world }
@@ -517,6 +523,7 @@ module WorldModuleEntity =
                 match propertyName with // OPTIMIZATION: string match for speed
                 | "Id" -> (false, world)
                 | "Name" -> (false, world)
+                | "UserState" -> (true, World.setEntityUserState (property.PropertyValue :?> UserState) entity world)
                 | "DispatcherNp" -> (false, world)
                 | "Specialization" -> (false, world)
                 | "Persistent" -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
@@ -552,6 +559,7 @@ module WorldModuleEntity =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "Name" -> failwith ^ "Cannot change entity " + propertyName + "."
+            | "UserState" -> World.setEntityUserState (property.PropertyValue :?> UserState) entity world
             | "DispatcherNp" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "Specialization" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "Persistent" -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world
