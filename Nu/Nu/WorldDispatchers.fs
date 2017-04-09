@@ -583,6 +583,15 @@ module ImperativeDispatcherModule =
         interface Imperative
 
 [<AutoOpen>]
+module NodeDispatcherModule =
+
+    type NodeDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member IntrinsicFacetNames =
+            [typeof<MountFacet>.Name]
+
+[<AutoOpen>]
 module EffectDispatcherModule =
 
     type EffectDispatcher () =

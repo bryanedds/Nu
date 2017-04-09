@@ -40,6 +40,7 @@ module WorldModule2 =
             Map.ofListBy World.pairWithName ^
                 [EntityDispatcher ()
                  ImperativeDispatcher () :> EntityDispatcher
+                 NodeDispatcher () :> EntityDispatcher
                  EffectDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
                  ButtonDispatcher () :> EntityDispatcher
