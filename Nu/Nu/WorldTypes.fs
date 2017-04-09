@@ -221,7 +221,8 @@ module WorldTypes =
         inherit SimulantDispatcher ()
     
         static member PropertyDefinitions =
-            [Define? Specialization Constants.Engine.EmptySpecialization
+            [Define? UserState (UserState.make () false)
+             Define? Specialization Constants.Engine.EmptySpecialization
              Define? Persistent true
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
@@ -636,6 +637,7 @@ module WorldTypes =
         { Id : Guid
           Name : string
           mutable Xtension : Xtension
+          mutable UserState : UserState
           DispatcherNp : EntityDispatcher
           Specialization : string
           mutable Persistent : bool
@@ -659,10 +661,12 @@ module WorldTypes =
 
         /// Make an entity state value.
         static member make specializationOpt nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+            let imperative = dispatcher.GetImperative ()
             let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
             { Id = id
               Name = name
-              Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()
+              Xtension = if imperative then Xtension.makeImperative () else Xtension.makeSafe ()
+              UserState = UserState.make () imperative
               DispatcherNp = dispatcher
               Specialization = specialization
               Persistent = true

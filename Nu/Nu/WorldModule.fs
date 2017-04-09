@@ -353,13 +353,13 @@ module WorldModule =
         static member reloadSymbols world =
             World.updateSymbolStore SymbolStore.reloadSymbols world
 
-        /// Get the user state of the world, casted to 'u.
-        static member getUserState world : 'u =
-            World.getAmbientStateBy AmbientState.getUserState world
+        /// Get the user-defined state value, casted to 'a.
+        static member getUserValue world : 'a =
+            World.getAmbientStateBy AmbientState.getUserValue world
 
-        /// Update the user state of the world.
-        static member updateUserState (updater : 'u -> 'v) world =
-            World.updateAmbientState (AmbientState.updateUserState updater) world
+        /// Update the user-defined state value of the world.
+        static member updateUserValue (updater : 'a -> 'b) world =
+            World.updateAmbientState (AmbientState.updateUserValue updater) world
 
         /// Make vanilla overlay routes from dispatchers.
         static member internal dispatchersToOverlayRoutes entityDispatchers =

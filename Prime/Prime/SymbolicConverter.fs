@@ -83,6 +83,10 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                 let symbols = List.map (toSymbol ^ sourceType.GetElementType ()) items
                 Symbols (symbols, None)
 
+            // symbolize unit
+            elif sourceType.Name = typeof<unit>.Name then
+                Symbols ([], None)
+
             // symbolize list
             elif sourceType.Name = typedefof<_ list>.Name then
                 let gargs = sourceType.GetGenericArguments ()
@@ -215,6 +219,12 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                         Reflection.objsToArray destType elements
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
                         failconv "Expected Symbols for conversion to array." ^ Some symbol
+
+                // desymbolize unit
+                elif destType.Name = typeof<unit>.Name then
+                    match symbol with
+                    | Symbols ([], _) -> () :> obj
+                    | _ -> failconv "Expected empty Symbols for conversion to unit." ^ Some symbol
 
                 // desymbolize list
                 elif destType.Name = typedefof<_ list>.Name then

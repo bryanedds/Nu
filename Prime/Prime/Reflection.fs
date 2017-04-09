@@ -9,6 +9,12 @@ open System.Collections.Generic
 open System.Reflection
 open Microsoft.FSharp.Reflection
 
+/// An attribute to specify the default value of a property.
+type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
+    DefaultValueAttribute (defaultValue : obj) =
+    inherit Attribute ()
+    member this.DefaultValue = defaultValue
+
 /// An evaluatable expression for defining a property.
 /// TODO: P1: make this a struct when F# allows it.
 type [<NoEquality; NoComparison>] PropertyExpr =
