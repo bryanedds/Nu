@@ -61,7 +61,7 @@ module Scripting =
              // TODO: "substring update curry compose sort replace slice split " +
              "-u- -b- -i- -L- -f- -d- -s- -K- -T- -U- -o- -l- -r- -t- -R- -F- " +
              "isUnit isBool isInt isInt64 isSingle isDouble isString " +
-             "isKeyword isTuple isUnion isOption isList isRing isTable isRecord " +
+             "isKeyword isTuple isUnion isOption isList isRing isTable isRecord isFunction " +
              "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegativeInfinity isNaN " +
              "min max compare sign abs fst! snd! rev foldBackWhile foldBacki foldBack " +
              "reduceWhile reducei reduce definitize filter takeWhile take skipWhile skip " +
