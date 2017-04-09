@@ -425,7 +425,8 @@ module WorldTypes =
         /// Make a game state value.
         static member make specializationOpt (dispatcher : GameDispatcher) =
             let eyeCenter = Vector2.Zero
-            let eyeSize = Vector2 (single Constants.Render.ResolutionXDefault, single Constants.Render.ResolutionYDefault)
+            // TODO: P1: see if the following is too hard-coded?
+            let eyeSize = Vector2 (single Constants.Render.DefaultResolutionX, single Constants.Render.DefaultResolutionY)
             { Id = makeGuid ()
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()
               DispatcherNp = dispatcher

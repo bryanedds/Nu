@@ -21,15 +21,14 @@ type SdlViewConfig =
     //| FullScreen TODO: implement
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module SdlViewConfig =
+module SdlWindowConfig =
 
-    /// A default SdlViewConfig.
+    /// A default SdlWindowConfig.
     let defaultConfig =
-        NewWindow
-            { WindowTitle = "Nu Game"
-              WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
-              WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
-              WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
+        { WindowTitle = "Nu Game"
+          WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
+          WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
+          WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
 
 /// Describes the general configuration of SDL.
 type SdlConfig =
@@ -44,10 +43,10 @@ module SdlConfig =
 
     /// A default SdlConfig.
     let defaultConfig =
-        { ViewConfig = SdlViewConfig.defaultConfig
+        { ViewConfig = NewWindow SdlWindowConfig.defaultConfig
           ViewW = Constants.Render.ResolutionX
           ViewH = Constants.Render.ResolutionY
-          RendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
+          RendererFlags = Constants.Render.DefaultRendererFlags
           AudioChunkSize = Constants.Audio.DefaultBufferSize }
 
 [<AutoOpen>]

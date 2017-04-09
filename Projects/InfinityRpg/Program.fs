@@ -9,35 +9,16 @@ module Program =
 
         // initialize Nu
         Nu.init false
-    
-        // this specifies the manner in which the game is viewed. With this configuration, a new
-        // window is created with a title of "Infinity Rpg".
-        let sdlViewConfig =
-            NewWindow
-                { WindowTitle = "Infinity Rpg"
-                  WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
-                  WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
-                  WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
-                  
-        // this specifies the manner in which the game's rendering takes place. With this
-        // configuration, rendering is hardware-accelerated and synchronized with the system's
-        // vertical re-trace, making for fast and smooth rendering.
-        let sdlRendererFlags =
-            enum<SDL.SDL_RendererFlags>
-                (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
-                 int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
 
-        // this makes a configuration record with the specifications we set out above.
+
+        // this specifies the general configuration of the game engine. With this configuration,
+        // a new window is created with a title of "InfinityRpg".
         let sdlConfig =
-            { ViewConfig = sdlViewConfig
+            { ViewConfig = NewWindow { SdlWindowConfig.defaultConfig with WindowTitle = "InfinityRpg" }
               ViewW = Constants.Render.ResolutionX
               ViewH = Constants.Render.ResolutionY
-              RendererFlags = sdlRendererFlags
+              RendererFlags = Constants.Render.DefaultRendererFlags
               AudioChunkSize = Constants.Audio.DefaultBufferSize }
 
         // after some configuration it is time to run the game. We're off and running!
-        World.run
-            (fun sdlDeps -> World.attemptMake true None 1L () (InfinityRpgPlugin ()) sdlDeps)
-            (fun world -> world)
-            (fun world -> world)
-            sdlConfig
+        World.run (fun sdlDeps -> World.attemptMake true None 1L () (InfinityRpgPlugin ()) sdlDeps) id id sdlConfig
