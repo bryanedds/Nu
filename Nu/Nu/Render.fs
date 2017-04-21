@@ -115,7 +115,7 @@ module RendererModule =
                 if textureOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, TextureAsset textureOpt)
                 else
                     let errorMsg = SDL.SDL_GetError ()
-                    Log.trace ^ "Could not load texture '" + asset.FilePath + "' due to '" + errorMsg + "'."
+                    Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + errorMsg + "'.")
                     None
             | ".ttf" ->
                 let fileFirstName = Path.GetFileNameWithoutExtension asset.FilePath
@@ -126,10 +126,10 @@ module RendererModule =
                     | (true, fontSize) ->
                         let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
                         if fontOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, FontAsset (fontOpt, fontSize))
-                        else Log.trace ^ "Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."; None
-                    | (false, _) -> Log.trace ^ "Could not load font due to file name being too short: '" + asset.FilePath + "'."; None
-                else Log.trace ^ "Could not load font '" + asset.FilePath + "'."; None
-            | extension -> Log.trace ^ "Could not load render asset '" + scstring asset + "' due to unknown extension '" + extension + "'."; None
+                        else Log.debug ("Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."); None
+                    | (false, _) -> Log.debug ("Could not load font due to file name being too short: '" + asset.FilePath + "'."); None
+                else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
+            | extension -> Log.debug ("Could not load render asset '" + scstring asset + "' due to unknown extension '" + extension + "'."); None
 
         static member private tryLoadRenderPackage packageName renderer =
             match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
@@ -147,10 +147,10 @@ module RendererModule =
                         let renderAssetMap = UMap.ofSeq renderAssets
                         { renderer with RenderPackageMap = UMap.add packageName renderAssetMap renderer.RenderPackageMap }
                 | Left failedAssetNames ->
-                    Log.info ^ "Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'."
+                    Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
                     renderer
             | Left error ->
-                Log.info ^ "Render package load failed due to unloadable asset graph due to: '" + error
+                Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
                 renderer
 
         static member private tryLoadRenderAsset (assetTag : AssetTag) renderer =
@@ -158,7 +158,7 @@ module RendererModule =
                 if UMap.containsKey assetTag.PackageName renderer.RenderPackageMap
                 then (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
                 else
-                    Log.info ^ "Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
+                    Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                     let renderer = Renderer.tryLoadRenderPackage assetTag.PackageName renderer
                     (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
             (FOption.bind (fun assetMap -> UMap.tryFindFast assetTag.AssetName assetMap) assetMapOpt, renderer)
@@ -244,10 +244,10 @@ module RendererModule =
                             rotation,
                             ref rotationCenter,
                             SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                    if renderResult <> 0 then Log.info ^ "Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + "."
+                    if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
                     renderer
                 | _ -> Log.trace "Cannot render sprite with a non-texture asset."; renderer
-            else Log.info ^ "SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."; renderer
+            else Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."); renderer
 
         static member private renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
             Array.fold
@@ -317,11 +317,11 @@ module RendererModule =
                                 refTileDestRect := destRect
                                 refTileRotationCenter := rotationCenter
                                 let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, refTileSourceRect, refTileDestRect, rotation, refTileRotationCenter, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
-                                if renderResult <> 0 then Log.info ^ "Render error - could not render texture for tile '" + scstring descriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                                if renderResult <> 0 then Log.info ("Render error - could not render texture for tile '" + scstring descriptor + "' due to '" + SDL.SDL_GetError () + "."))
                         tiles
                     renderer
-                | _ -> Log.trace "Cannot render tile with a non-texture asset."; renderer
-            else Log.info ^ "TileLayerDescriptor failed due to unloadable assets for '" + scstring tileSetImage + "'."; renderer
+                | _ -> Log.debug "Cannot render tile with a non-texture asset."; renderer
+            else Log.info ("TileLayerDescriptor failed due to unloadable assets for '" + scstring tileSetImage + "'."); renderer
 
         static member private renderTextDescriptor
             (viewAbsolute : Matrix3)
@@ -367,8 +367,8 @@ module RendererModule =
                         SDL.SDL_DestroyTexture textTexture
                         SDL.SDL_FreeSurface textSurface
                     renderer
-                | _ -> Log.trace "Cannot render text with a non-font asset."; renderer
-            else Log.info ^ "TextDescriptor failed due to unloadable assets for '" + scstring font + "'."; renderer
+                | _ -> Log.debug "Cannot render text with a non-font asset."; renderer
+            else Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'."); renderer
 
         static member private renderLayerableDescriptor
             (viewAbsolute : Matrix3)
@@ -400,7 +400,7 @@ module RendererModule =
                 let viewRelative = Matrix3.InvertView ^ Math.getViewRelativeI eyeCenter eyeSize
                 Array.fold (Renderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize) renderer layeredDescriptors
             | _ ->
-                Log.trace ^ "Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
+                Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
                 renderer
 
         /// Make a Renderer.

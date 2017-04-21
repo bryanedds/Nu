@@ -46,38 +46,40 @@ module SubsystemsModule =
     /// The subsystems of a world.
     type [<ReferenceEquality>] 'w Subsystems =
         private
-            { SubsystemMap : Map<string, 'w Subsystem> }
+            { SubsystemMap : UMap<string, 'w Subsystem> }
 
     [<RequireQualifiedAccess>]
     module Subsystems =
     
         let getSubsystemMap subsystems =
             subsystems.SubsystemMap
+
+        let addSubsystem<'s, 'w when 's :> 'w Subsystem> name (subsystem : 's) (subsystems : 'w Subsystems) =
+            { SubsystemMap = UMap.add name (subsystem :> 'w Subsystem) subsystems.SubsystemMap }
     
+        let removeSubsystem<'s, 'w when 's :> 'w Subsystem> name (subsystems : 'w Subsystems) =
+            { SubsystemMap = UMap.remove name subsystems.SubsystemMap }
+
+        let containsSubsystem<'s, 'w when 's :> 'w Subsystem> name (subsystems : 'w Subsystems) =
+            UMap.containsKey name subsystems.SubsystemMap
+
         let getSubsystem<'s, 'w when 's :> 'w Subsystem> (name : string) (subsystems : 'w Subsystems) : 's =
-            Map.find name subsystems.SubsystemMap :?> 's
+            UMap.find name subsystems.SubsystemMap :?> 's
     
         let getSubsystemBy<'s, 't, 'w when 's :> 'w Subsystem> by name (subsystems : 'w Subsystems) : 't =
             let subsystem = getSubsystem<'s, 'w> name subsystems
             by subsystem
     
-        let setSubsystem<'s, 'w when 's :> 'w Subsystem> (subsystem : 's) name (subsystems : 'w Subsystems) =
-#if DEBUG
-            if not ^ Map.containsKey name subsystems.SubsystemMap then
-                failwith ^ "Cannot set the state of a non-existent subsystem '" + name + "'"
-#endif
-            { SubsystemMap = Map.add name (subsystem :> 'w Subsystem) subsystems.SubsystemMap }
-    
         let updateSubsystem<'s, 'w when 's :> 'w Subsystem> (updater : 's -> 'w -> 's) name subsystems world =
             let subsystem = getSubsystem<'s, 'w> name subsystems
             let subsystem = updater subsystem world
-            setSubsystem subsystem name subsystems
+            addSubsystem name subsystem subsystems
     
         let updateSubsystems<'s, 'w when 's :> 'w Subsystem> (updater : 'w Subsystem -> 'w -> 'w Subsystem) subsystems world =
-            Map.fold
+            UMap.fold
                 (fun subsystems name subsystem ->
                     let subsystem = updater subsystem world
-                    setSubsystem subsystem name subsystems)
+                    addSubsystem name subsystem subsystems)
                 subsystems
                 subsystems.SubsystemMap
     

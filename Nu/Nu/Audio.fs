@@ -68,16 +68,16 @@ module AudioPlayerModule =
                 if wavOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, WavAsset wavOpt)
                 else
                     let errorMsg = SDL.SDL_GetError ()
-                    Log.trace ^ "Could not load wav '" + asset.FilePath + "' due to '" + errorMsg + "'."
+                    Log.debug ("Could not load wav '" + asset.FilePath + "' due to '" + errorMsg + "'.")
                     None
             | ".ogg" ->
                 let oggOpt = SDL_mixer.Mix_LoadMUS asset.FilePath
                 if oggOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, OggAsset oggOpt)
                 else
                     let errorMsg = SDL.SDL_GetError ()
-                    Log.trace ^ "Could not load ogg '" + asset.FilePath + "' due to '" + errorMsg + "'."
+                    Log.debug ("Could not load ogg '" + asset.FilePath + "' due to '" + errorMsg + "'.")
                     None
-            | extension -> Log.trace ^ "Could not load audio asset '" + scstring asset + "' due to unknown extension '" + extension + "'."; None
+            | extension -> Log.debug ("Could not load audio asset '" + scstring asset + "' due to unknown extension '" + extension + "'."); None
     
         static member private tryLoadAudioPackage packageName audioPlayer =
             match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
@@ -95,10 +95,10 @@ module AudioPlayerModule =
                         let audioAssetMap = UMap.ofSeq audioAssets
                         { audioPlayer with AudioPackageMap = UMap.add packageName audioAssetMap audioPlayer.AudioPackageMap }
                 | Left error ->
-                    Log.info ^ "Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'."
+                    Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
                     audioPlayer
             | Left error ->
-                Log.info ^ "Audio package load failed due to unloadable asset graph due to: '" + error
+                Log.info ("Audio package load failed due to unloadable asset graph due to: '" + error)
                 audioPlayer
     
         static member private tryLoadAudioAsset (assetTag : AssetTag) audioPlayer =
@@ -106,7 +106,7 @@ module AudioPlayerModule =
                 if UMap.containsKey assetTag.PackageName audioPlayer.AudioPackageMap
                 then (UMap.tryFindFast assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
                 else
-                    Log.info ^ "Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
+                    Log.info ("Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                     let audioPlayer = AudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
                     (UMap.tryFindFast assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
             (FOption.bind (fun assetMap -> UMap.tryFindFast assetTag.AssetName assetMap) assetMapOpt, audioPlayer)
@@ -116,13 +116,14 @@ module AudioPlayerModule =
             let (audioAssetOpt, audioPlayer) = AudioPlayer.tryLoadAudioAsset song audioPlayer
             if FOption.isSome audioAssetOpt then
                 match FOption.get audioAssetOpt with
-                | WavAsset _ -> Log.info ^ "Cannot play wav file as song '" + scstring song + "'."
+                | WavAsset _ ->
+                    Log.info ("Cannot play wav file as song '" + scstring song + "'.")
                 | OggAsset oggAsset ->
                     SDL_mixer.Mix_VolumeMusic (int ^ playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
                     SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) |> ignore // Mix_PlayMusic seems to somtimes cause audio 'popping' when starting a song, so a fade is used instead... |> ignore
                 { audioPlayer with CurrentSongOpt = Some playSongMessage }
             else
-                Log.info ^ "PlaySongMessage failed due to unloadable assets for '" + scstring song + "'."
+                Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
                 audioPlayer
     
         static member private handleHintAudioPackageUse hintPackageName audioPlayer =
@@ -150,10 +151,10 @@ module AudioPlayerModule =
                 | WavAsset wavAsset ->
                     SDL_mixer.Mix_VolumeChunk (wavAsset, int ^ playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
                     SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0) |> ignore
-                | OggAsset _ -> Log.info ^ "Cannot play ogg file as sound '" + scstring sound + "'."
+                | OggAsset _ -> Log.info ("Cannot play ogg file as sound '" + scstring sound + "'.")
                 audioPlayer
             else
-                Log.info ^ "PlaySoundMessage failed due to unloadable assets for '" + scstring sound + "'."
+                Log.info ("PlaySoundMessage failed due to unloadable assets for '" + scstring sound + "'.")
                 audioPlayer
     
         static member private handlePlaySong playSongMessage audioPlayer =

@@ -167,7 +167,7 @@ module Reflection =
                     let property = { PropertyType = definition.PropertyType; PropertyValue = converter.ConvertFrom propertySymbol }
                     Xtension.attachProperty definition.PropertyName property xtension
                 else
-                    Log.debug ^ "Cannot convert property '" + scstring propertySymbol + "' to type '" + definition.PropertyType.Name + "'."
+                    Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + definition.PropertyType.Name + "'.")
                     xtension
             | None -> xtension
         else xtension

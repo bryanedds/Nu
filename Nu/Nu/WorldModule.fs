@@ -192,15 +192,17 @@ module WorldModule =
         static member internal getSubsystemMap world =
             Subsystems.getSubsystemMap world.Subsystems
 
-        static member internal getSubsystem<'s when 's :> World Subsystem> name world : 's =
+        static member getSubsystem<'s when 's :> World Subsystem> name world : 's =
             Subsystems.getSubsystem name world.Subsystems
 
-        static member internal getSubsystemBy<'s, 't when 's :> World Subsystem> (by : 's -> 't) name world : 't =
+        static member getSubsystemBy<'s, 't when 's :> World Subsystem> (by : 's -> 't) name world : 't =
             Subsystems.getSubsystemBy by name world.Subsystems
 
-        // NOTE: it'd be nice to get rid of this function to improve encapsulation, but I can't seem to do so in practice...
-        static member internal setSubsystem<'s when 's :> World Subsystem> (subsystem : 's) name world =
-            World.choose { world with Subsystems = Subsystems.setSubsystem subsystem name world.Subsystems }
+        static member addSubsystem<'s when 's :> World Subsystem> name (subsystem : 's) world =
+            { world with Subsystems = Subsystems.addSubsystem name subsystem world.Subsystems }
+
+        static member removeSubsystem<'s when 's :> World Subsystem> name world =
+            { world with Subsystems = Subsystems.removeSubsystem name world.Subsystems }
 
         static member internal updateSubsystem<'s when 's :> World Subsystem> (updater : 's -> World -> 's) name world =
             World.choose { world with Subsystems = Subsystems.updateSubsystem updater name world.Subsystems world }

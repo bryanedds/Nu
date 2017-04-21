@@ -41,7 +41,7 @@ module MetadataModule =
                   AssetName = properties.["ImageAssetName"] }
             with :? KeyNotFoundException ->
                 let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (PackageName or AssetName)."
-                raise ^ TileSetPropertyNotFoundException errorMessage
+                raise (TileSetPropertyNotFoundException errorMessage)
 
         let private generateTextureMetadata asset =
             if not ^ File.Exists asset.FilePath then
@@ -90,7 +90,7 @@ module MetadataModule =
                 let submap = assets |> List.map generateAssetMetadata |> UMap.ofSeq
                 (packageName, submap)
             | Left error ->
-                Log.info ^ "Could not load asset metadata for package '" + packageName + "' due to: " + error
+                Log.info ("Could not load asset metadata for package '" + packageName + "' due to: " + error)
                 (packageName, UMap.makeEmpty None)
 
         let private makeMetadataMap packageNames assetGraph =

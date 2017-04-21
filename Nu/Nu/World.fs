@@ -410,22 +410,22 @@ module WorldModule2 =
 
         static member private processSubsystems subsystemType world =
             World.getSubsystemMap world |>
-            Map.toList |>
-            List.filter (fun (_, subsystem) -> subsystem.SubsystemType = subsystemType) |>
-            List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
-            List.fold (fun world (subsystemName, subsystem) ->
+            UMap.toSeq |>
+            Seq.filter (fun (_, subsystem) -> subsystem.SubsystemType = subsystemType) |>
+            Seq.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
+            Seq.fold (fun world (subsystemName, subsystem) ->
                 let (subsystemResult, subsystem, world) = subsystem.ProcessMessages world
                 let world = subsystem.ApplyResult (subsystemResult, world)
-                World.setSubsystem subsystem subsystemName world)
+                World.addSubsystem subsystemName subsystem world)
                 world
 
         static member private cleanUpSubsystems world =
             World.getSubsystemMap world |>
-            Map.toList |>
-            List.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
-            List.fold (fun world (subsystemName, subsystem) ->
+            UMap.toSeq |>
+            Seq.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
+            Seq.fold (fun world (subsystemName, subsystem) ->
                 let (subsystem, world) = subsystem.CleanUp world
-                World.setSubsystem subsystem subsystemName world)
+                World.addSubsystem subsystemName subsystem world)
                 world
 
         static member private processTasklet (taskletsNotRun, world) tasklet =
@@ -682,7 +682,8 @@ module WorldModule2 =
             // make the world's subsystems
             let subsystems =
                 let subsystemMap =
-                    Map.ofList
+                    UMap.makeFromSeq
+                        None
                         [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockPhysicsEngine.make ()) :> World Subsystem)
                          (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockRenderer.make ()) :> World Subsystem)
                          (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockAudioPlayer.make ()) :> World Subsystem)]
@@ -782,11 +783,12 @@ module WorldModule2 =
                         else MockAudioPlayer.make () :> IAudioPlayer
                     let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> World Subsystem
                     let defaultSubsystemMap =
-                        Map.ofList
+                        UMap.makeFromSeq
+                            None
                             [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
                              (Constants.Engine.RendererSubsystemName, rendererSubsystem)
                              (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)]
-                    let subsystemMap = Map.addMany userSubsystems defaultSubsystemMap
+                    let subsystemMap = UMap.addMany userSubsystems defaultSubsystemMap
                     Subsystems.make subsystemMap
 
                 // attempt to make the overlayer

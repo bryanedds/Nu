@@ -23,7 +23,7 @@ module Log =
         remark "Info" message
 
     /// Log a debug message with Debug.Fail and call to info.
-    let debug message =
+    let debug (message : string) =
 #if DEBUG
         Debug.Fail (getUtcNowStr () + "|Debug|" + message)
 #else
@@ -31,7 +31,7 @@ module Log =
 #endif
 
     /// Conditional debug message call where condition is lazily evaluated.
-    let debugIf predicate message =
+    let debugIf (predicate : unit -> bool) (message : string) =
 #if DEBUG
         if predicate () then debug message
 #else
