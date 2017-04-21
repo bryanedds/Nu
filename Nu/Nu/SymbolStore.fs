@@ -25,10 +25,10 @@ module SymbolStoreModule =
                 try let symbol = Symbol.fromString text
                     Some (asset.AssetTag.AssetName, (implicitDelimiters, symbol))
                 with exn ->
-                    Log.info ^ "Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn
+                    Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
                     None
             with _ ->
-                Log.info ^ "Failed to load symbol file '" + asset.FilePath + "' for package '" + packageName + "' due to: " + scstring exn
+                Log.info ("Failed to load symbol file '" + asset.FilePath + "' for package '" + packageName + "' due to: " + scstring exn)
                 None
 
         /// Try to load a symbol store package with the given name.
@@ -50,10 +50,10 @@ module SymbolStoreModule =
                         let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.add packageName symbolMap symbolStore.SymbolStorePackageMap }
                         symbolStore
                 | Left error ->
-                    Log.info ^ "Symbol store package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'."
+                    Log.info ("Symbol store package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
                     symbolStore
             | Left error ->
-                Log.info ^ "Symbol store package load failed due to unloadable asset graph due to: '" + error
+                Log.info ("Symbol store package load failed due to unloadable asset graph due to: '" + error)
                 symbolStore
     
         let private tryLoadSymbol implicitDelimiters (assetTag : AssetTag) symbolStore =
@@ -61,7 +61,7 @@ module SymbolStoreModule =
                 if UMap.containsKey assetTag.PackageName symbolStore.SymbolStorePackageMap
                 then (UMap.tryFindFast assetTag.PackageName symbolStore.SymbolStorePackageMap, symbolStore)
                 else
-                    Log.info ^ "Loading symbol store package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
+                    Log.info ("Loading symbol store package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                     let symbolStore = tryLoadSymbolStorePackage implicitDelimiters assetTag.PackageName symbolStore
                     let symbolMap = UMap.tryFindFast assetTag.PackageName symbolStore.SymbolStorePackageMap
                     (symbolMap, symbolStore)

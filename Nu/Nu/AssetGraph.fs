@@ -96,7 +96,7 @@ module AssetGraphModule =
             | ".png" ->
                 use stream = File.OpenWrite filePath
                 image.Write (stream, MagickFormat.Png32)
-            | _ -> Log.info ^ "Invalid image file format for refinement '" + scstring OldSchool + "'; must be of *.png format."
+            | _ -> Log.info ("Invalid image file format for refinement '" + scstring OldSchool + "'; must be of *.png format.")
     
         /// Apply a single refinement to an asset.
         let private refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement =
@@ -163,7 +163,7 @@ module AssetGraphModule =
                     let outputFilePath = Path.Combine (outputDirectory, intermediateFileSubpath)
                     Directory.CreateDirectory ^ Path.GetDirectoryName outputFilePath |> ignore
                     try File.Copy (intermediateFilePath, outputFilePath, true)
-                    with _ -> Log.info ^ "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'."
+                    with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
     
         /// Load all the assets from a package descriptor.
         let private loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor =
@@ -190,7 +190,7 @@ module AssetGraphModule =
                                     filePaths |>
                                 List.ofArray
                             assets @ assetsRev
-                        with exn -> Log.info ^ "Invalid directory '" + directory + "'."; [])
+                        with exn -> Log.info ("Invalid directory '" + directory + "'."); [])
                     [] packageDescriptor |>
                 List.rev
             match associationOpt with
