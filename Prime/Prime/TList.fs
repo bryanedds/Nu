@@ -85,10 +85,11 @@ module TListModule =
 
         let makeFromSeq configOpt (items : 'a seq) =
             let impList = List<'a> items
+            let impListOrigin = List<'a> impList
             let list =
                 { TListOpt = Unchecked.defaultof<'a TList>
                   ImpList = impList
-                  ImpListOrigin = impList
+                  ImpListOrigin = impListOrigin
                   Logs = []
                   LogsLength = 0
                   Config = Option.getOrDefault (BloatFactor 1) configOpt }
@@ -100,14 +101,6 @@ module TListModule =
 
         let makeEmpty<'a> configOpt =
             makeFromSeq configOpt (List<'a> ())
-
-        let isEmpty list =
-            let list = validate list
-            struct (list.ImpList.Count = 0, list)
-
-        let notEmpty list =
-            let list = validate list
-            mapFst' not (isEmpty list)
 
         let get index list =
             let list = validate list
@@ -145,6 +138,14 @@ module TListModule =
                     bloatFactor
                     list
             | Imperative -> list.ImpList.Remove value |> ignore; list
+
+        let isEmpty list =
+            let list = validate list
+            struct (list.ImpList.Count = 0, list)
+
+        let notEmpty list =
+            let list = validate list
+            mapFst' not (isEmpty list)
 
         /// Get the length of the list (constant-time, obviously).
         let length list =

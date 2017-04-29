@@ -92,7 +92,7 @@ module AudioPlayerModule =
                         let audioAssetMap = UMap.addMany audioAssets audioAssetMap
                         { audioPlayer with AudioPackageMap = UMap.add packageName audioAssetMap audioPlayer.AudioPackageMap }
                     else
-                        let audioAssetMap = UMap.ofSeq audioAssets
+                        let audioAssetMap = UMap.makeFromSeq None audioAssets
                         { audioPlayer with AudioPackageMap = UMap.add packageName audioAssetMap audioPlayer.AudioPackageMap }
                 | Left error ->
                     Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")

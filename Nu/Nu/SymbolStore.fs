@@ -46,7 +46,7 @@ module SymbolStoreModule =
                         let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.add packageName symbolMap symbolStore.SymbolStorePackageMap }
                         symbolStore
                     else
-                        let symbolMap = UMap.ofSeq symbols
+                        let symbolMap = UMap.makeFromSeq None symbols
                         let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.add packageName symbolMap symbolStore.SymbolStorePackageMap }
                         symbolStore
                 | Left error ->

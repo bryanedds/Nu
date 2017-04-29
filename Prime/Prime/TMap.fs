@@ -19,7 +19,7 @@ module TMapModule =
               DictOrigin : Dictionary<'k, 'v>
               Logs : Log<'k, 'v> list
               LogsLength : int
-              BloatFactor : int }
+              Config : TConfig }
 
         static member (>>.) (map : TMap<'k2, 'v2>, builder : TExpr<unit, TMap<'k2, 'v2>>) =
             snd' (builder map)
@@ -57,35 +57,64 @@ module TMapModule =
             map.TMapOpt <- map
             map
 
-        let private validate map =
+        let private validate2 bloatFactor map =
             match box map.TMapOpt with
             | null -> commit map
             | target ->
                 match obj.ReferenceEquals (target, map) with
-                | true -> if map.LogsLength > map.Dict.Count * map.BloatFactor then compress map else map
+                | true -> if map.LogsLength > map.Dict.Count * bloatFactor then compress map else map
                 | false -> commit map
 
-        let private update updater map =
+        let private update updater bloatFactor map =
             let oldMap = map
-            let map = validate map
+            let map = validate2 bloatFactor map
             let map = updater map
             oldMap.TMapOpt <- Unchecked.defaultof<TMap<'k, 'v>>
             map.TMapOpt <- map
             map
 
-        let makeFromSeq<'k, 'v when 'k : equality> optBloatFactor entries =
+        let private validate map =
+            match map.Config with
+            | BloatFactor bloatFactor -> validate2 bloatFactor map
+            | Imperative -> map
+
+        let makeFromSeq<'k, 'v when 'k : equality> configOpt entries =
+            let dict = dictPlus entries
+            let dictOrigin = Dictionary (dict, HashIdentity.Structural)
             let map =
                 { TMapOpt = Unchecked.defaultof<TMap<'k, 'v>>
-                  Dict = dictPlus entries
-                  DictOrigin = dictPlus entries
+                  Dict = dict
+                  DictOrigin = dictOrigin
                   Logs = []
                   LogsLength = 0
-                  BloatFactor = Option.getOrDefault 1 optBloatFactor }
+                  Config = Option.getOrDefault (BloatFactor 1) configOpt }
             map.TMapOpt <- map
             map
 
-        let makeEmpty<'k, 'v when 'k : equality> optBloatFactor =
-            makeFromSeq<'k, 'v> optBloatFactor Seq.empty
+        let makeEmpty<'k, 'v when 'k : equality> configOpt =
+            makeFromSeq<'k, 'v> configOpt Seq.empty
+
+        let add key value map =
+            match map.Config with
+            | BloatFactor bloatFactor ->
+                update (fun map ->
+                    let map = { map with Logs = Add (key, value) :: map.Logs; LogsLength = map.LogsLength + 1 }
+                    map.Dict.ForceAdd (key, value)
+                    map)
+                    bloatFactor
+                    map
+            | Imperative -> map.Dict.ForceAdd (key, value); map
+
+        let remove key map =
+            match map.Config with
+            | BloatFactor bloatFactor ->
+                update (fun map ->
+                    let map = { map with Logs = Remove key :: map.Logs; LogsLength = map.LogsLength + 1 }
+                    map.Dict.Remove key |> ignore
+                    map)
+                    bloatFactor
+                    map
+            | Imperative -> map.Dict.Remove key |> ignore; map
 
         let isEmpty map =
             let map = validate map
@@ -98,28 +127,6 @@ module TMapModule =
         let length map =
             let map = validate map
             struct (map.Dict.Count, map)
-
-        let add key value map =
-            update (fun map ->
-                let map = { map with Logs = Add (key, value) :: map.Logs; LogsLength = map.LogsLength + 1 }
-                map.Dict.ForceAdd (key, value)
-                map)
-                map
-
-        let remove key map =
-            update (fun map ->
-                let map = { map with Logs = Remove key :: map.Logs; LogsLength = map.LogsLength + 1 }
-                map.Dict.Remove key |> ignore
-                map)
-                map
-
-        /// Add all the given entries to the map.
-        let addMany entries map =
-            Seq.fold (flip (uncurry add)) map entries
-
-        /// Remove all values with the given keys from the map.
-        let removeMany keys map =
-            Seq.fold (flip remove) map keys
 
         let tryFindFast key map =
             let map = validate map
@@ -142,6 +149,14 @@ module TMapModule =
             | struct (Some _, map) -> struct (true, map)
             | struct (None, map) -> struct (false, map)
 
+        /// Add all the given entries to the map.
+        let addMany entries map =
+            Seq.fold (flip (uncurry add)) map entries
+
+        /// Remove all values with the given keys from the map.
+        let removeMany keys map =
+            Seq.fold (flip remove) map keys
+
         /// Convert a TMap to a seq. Note that entire map is iterated eagerly since the underlying
         /// Dictionary could otherwise opaquely change during iteration.
         let toSeq map =
@@ -153,9 +168,6 @@ module TMapModule =
                 seq<'k * 'v>
             struct (seq, map)
 
-        let ofSeq pairs =
-            makeFromSeq None pairs
-
         let fold folder state map =
             let struct (seq, map) = toSeq map
             let result = Seq.fold (folder >> uncurry) state seq
@@ -164,13 +176,13 @@ module TMapModule =
         let map mapper map =
             fold
                 (fun map key value -> add key (mapper value) map)
-                (makeEmpty (Some map.BloatFactor))
+                (makeEmpty (Some map.Config))
                 map
 
         let filter pred map =
             fold
                 (fun state k v -> if pred k v then add k v state else state)
-                (makeEmpty (Some map.BloatFactor))
+                (makeEmpty (Some map.Config))
                 map
 
 type TMap<'k, 'v when 'k : equality> = TMapModule.TMap<'k, 'v>
