@@ -15,11 +15,11 @@ module TSetModule =
     type [<NoEquality; NoComparison>] TSet<'a when 'a : equality> =
         private
             { mutable TSetOpt : 'a TSet
+              TConfig : TConfig
               HashSet : 'a HashSet
               HashSetOrigin : 'a HashSet
               Logs : 'a Log list
-              LogsLength : int
-              Config : TConfig }
+              LogsLength : int }
 
         static member (>>.) (set : 'a2 TSet, builder : TExpr<unit, 'a2 TSet>) =
             snd' (builder set)
@@ -74,7 +74,7 @@ module TSetModule =
             set
 
         let private validate set =
-            match set.Config with
+            match set.TConfig with
             | BloatFactor bloatFactor -> validate2 bloatFactor set
             | Imperative -> set
 
@@ -86,26 +86,26 @@ module TSetModule =
                 let hashSetOrigin = HashSet<'a> (hashSet, HashIdentity.Structural)
                 let set =
                     { TSetOpt = Unchecked.defaultof<'a TSet>
+                      TConfig = config
                       HashSet = hashSet
                       HashSetOrigin = hashSetOrigin
                       Logs = []
-                      LogsLength = 0
-                      Config = config }
+                      LogsLength = 0 }
                 set.TSetOpt <- set
                 set
             | Imperative ->
                 { TSetOpt = Unchecked.defaultof<'a TSet>
+                  TConfig = config
                   HashSet = hashsetPlus items
                   HashSetOrigin = HashSet<'a> HashIdentity.Structural
                   Logs = []
-                  LogsLength = 0
-                  Config = config }
+                  LogsLength = 0 }
 
         let makeEmpty<'a when 'a : equality> configOpt =
             makeFromSeq<'a> configOpt Seq.empty
 
         let add value set =
-            match set.Config with
+            match set.TConfig with
             | BloatFactor bloatFactor ->
                 update (fun set ->
                     let set = { set with Logs = Add value :: set.Logs; LogsLength = set.LogsLength + 1 }
@@ -116,7 +116,7 @@ module TSetModule =
             | Imperative -> set.HashSet.TryAdd value |> ignore; set
 
         let remove value set =
-            match set.Config with
+            match set.TConfig with
             | BloatFactor bloatFactor ->
                 update (fun set ->
                     let set = { set with Logs = Remove value :: set.Logs; LogsLength = set.LogsLength + 1 }
@@ -165,13 +165,13 @@ module TSetModule =
         let map mapper set =
             fold
                 (fun set value -> add (mapper value) set)
-                (makeEmpty (Some set.Config))
+                (makeEmpty (Some set.TConfig))
                 set
 
         let filter pred set =
             fold
                 (fun set value -> if pred value then add value set else set)
-                (makeEmpty (Some set.Config))
+                (makeEmpty (Some set.TConfig))
                 set
 
 type TSet<'a when 'a : equality> = TSetModule.TSet<'a>

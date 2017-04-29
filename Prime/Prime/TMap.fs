@@ -15,11 +15,11 @@ module TMapModule =
     type [<NoEquality; NoComparison>] TMap<'k, 'v when 'k : equality> =
         private
             { mutable TMapOpt : TMap<'k, 'v>
+              TConfig : TConfig
               Dict : Dictionary<'k, 'v>
               DictOrigin : Dictionary<'k, 'v>
               Logs : Log<'k, 'v> list
-              LogsLength : int
-              Config : TConfig }
+              LogsLength : int }
 
         static member (>>.) (map : TMap<'k2, 'v2>, builder : TExpr<unit, TMap<'k2, 'v2>>) =
             snd' (builder map)
@@ -74,7 +74,7 @@ module TMapModule =
             map
 
         let private validate map =
-            match map.Config with
+            match map.TConfig with
             | BloatFactor bloatFactor -> validate2 bloatFactor map
             | Imperative -> map
 
@@ -86,26 +86,26 @@ module TMapModule =
                 let dictOrigin = Dictionary (dict, HashIdentity.Structural)
                 let map =
                     { TMapOpt = Unchecked.defaultof<TMap<'k, 'v>>
+                      TConfig = config
                       Dict = dict
                       DictOrigin = dictOrigin
                       Logs = []
-                      LogsLength = 0
-                      Config = config }
+                      LogsLength = 0 }
                 map.TMapOpt <- map
                 map
             | Imperative ->
                 { TMapOpt = Unchecked.defaultof<TMap<'k, 'v>>
+                  TConfig = config
                   Dict = dictPlus entries
                   DictOrigin = Dictionary HashIdentity.Structural
                   Logs = []
-                  LogsLength = 0
-                  Config = config }
+                  LogsLength = 0 }
 
         let makeEmpty<'k, 'v when 'k : equality> configOpt =
             makeFromSeq<'k, 'v> configOpt Seq.empty
 
         let add key value map =
-            match map.Config with
+            match map.TConfig with
             | BloatFactor bloatFactor ->
                 update (fun map ->
                     let map = { map with Logs = Add (key, value) :: map.Logs; LogsLength = map.LogsLength + 1 }
@@ -116,7 +116,7 @@ module TMapModule =
             | Imperative -> map.Dict.ForceAdd (key, value); map
 
         let remove key map =
-            match map.Config with
+            match map.TConfig with
             | BloatFactor bloatFactor ->
                 update (fun map ->
                     let map = { map with Logs = Remove key :: map.Logs; LogsLength = map.LogsLength + 1 }
@@ -186,13 +186,13 @@ module TMapModule =
         let map mapper map =
             fold
                 (fun map key value -> add key (mapper value) map)
-                (makeEmpty (Some map.Config))
+                (makeEmpty (Some map.TConfig))
                 map
 
         let filter pred map =
             fold
                 (fun state k v -> if pred k v then add k v state else state)
-                (makeEmpty (Some map.Config))
+                (makeEmpty (Some map.TConfig))
                 map
 
 type TMap<'k, 'v when 'k : equality> = TMapModule.TMap<'k, 'v>
