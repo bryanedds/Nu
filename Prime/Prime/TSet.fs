@@ -75,13 +75,13 @@ module TSetModule =
 
         let private validate set =
             match set.TConfig with
-            | BloatFactor bloatFactor -> validate2 bloatFactor set
+            | Functional bloatFactor -> validate2 bloatFactor set
             | Imperative -> set
 
         let makeFromSeq<'a when 'a : equality> configOpt items =
-            let config = Option.getOrDefault (BloatFactor 1) configOpt
+            let config = Option.getOrDefault (Functional 1) configOpt
             match config with
-            | BloatFactor _ ->
+            | Functional _ ->
                 let hashSet = hashsetPlus items
                 let hashSetOrigin = HashSet<'a> (hashSet, HashIdentity.Structural)
                 let set =
@@ -106,7 +106,7 @@ module TSetModule =
 
         let add value set =
             match set.TConfig with
-            | BloatFactor bloatFactor ->
+            | Functional bloatFactor ->
                 update (fun set ->
                     let set = { set with Logs = Add value :: set.Logs; LogsLength = set.LogsLength + 1 }
                     set.HashSet.TryAdd value |> ignore
@@ -117,7 +117,7 @@ module TSetModule =
 
         let remove value set =
             match set.TConfig with
-            | BloatFactor bloatFactor ->
+            | Functional bloatFactor ->
                 update (fun set ->
                     let set = { set with Logs = Remove value :: set.Logs; LogsLength = set.LogsLength + 1 }
                     set.HashSet.Remove value |> ignore
