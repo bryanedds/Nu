@@ -51,7 +51,7 @@ module Program =
         runTimings (fun () -> list |> List.rev |> List.sort |> List.map (fun x -> x * 13) |> List.filter (fun x -> x % 2 = 0)) "F# List Compute"
 
         // run list timings
-        let ulist = UList.ofSeq [|0 .. 10000000|]
+        let ulist = UList.makeFromSeq None [|0 .. 10000000|]
         runTimings (fun () -> ulist |> UList.rev |> UList.sort |> UList.map (fun x -> x * 13) |> UList.filter (fun x -> x % 2 = 0)) "UList Compute"
         
         // run map timings

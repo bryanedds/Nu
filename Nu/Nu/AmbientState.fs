@@ -89,7 +89,7 @@ module AmbientStateModule =
 
         /// Restore the given tasklets from future processing.
         let restoreTasklets tasklets state =
-            { state with Tasklets = UList.ofSeq ^ Seq.append (state.Tasklets :> _ seq) (tasklets :> _ seq) }
+            { state with Tasklets = UList.makeFromSeq None (Seq.append (state.Tasklets :> _ seq) (tasklets :> _ seq)) }
 
         /// Add a tasklet to be executed at the scheduled time.
         let addTasklet tasklet state =
@@ -97,7 +97,7 @@ module AmbientStateModule =
 
         /// Add multiple tasklets to be executed at the scheduled times.
         let addTasklets tasklets state =
-            { state with Tasklets = UList.ofSeq ^ Seq.append (tasklets :> _ seq) (state.Tasklets :> _ seq) }
+            { state with Tasklets = UList.makeFromSeq None (Seq.append (tasklets :> _ seq) (state.Tasklets :> _ seq)) }
 
         /// Get the metadata.
         let getMetadata state =

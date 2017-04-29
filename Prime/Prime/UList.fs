@@ -30,14 +30,22 @@ module UListModule =
     [<RequireQualifiedAccess>]
     module UList =
 
-        let makeFromSeq bloatFactorOpt items =
-            { RefList = ref ^ TList.makeFromSeq bloatFactorOpt items }
+        let makeFromSeq configOpt items =
+            { RefList = ref ^ TList.makeFromSeq configOpt items }
 
-        let makeEmpty<'a> bloatFactorOpt =
-            { RefList = ref ^ TList.makeEmpty<'a> bloatFactorOpt }
+        let makeFromArray configOpt items =
+            { RefList = ref ^ TList.makeFromArray configOpt items }
 
-        let singleton item =
-            { RefList = ref ^ TList.singleton item }
+        let makeEmpty<'a> configOpt =
+            { RefList = ref ^ TList.makeEmpty<'a> configOpt }
+
+        let isEmpty list =
+            let struct (result, tlist) = TList.isEmpty !list.RefList
+            list.RefList := tlist
+            result
+
+        let notEmpty list =
+            not ^ isEmpty list
 
         let get (index : int) (list : 'a UList) =
             list.[index]
@@ -51,29 +59,23 @@ module UListModule =
         let remove value list =
             { RefList = ref ^ TList.remove value !list.RefList }
 
-        let isEmpty list =
-            let struct (result, tlist) = TList.isEmpty !list.RefList
+        let length list =
+            let struct (result, tlist) = TList.length !list.RefList
             list.RefList := tlist
             result
-
-        let notEmpty list =
-            not ^ isEmpty list
 
         let contains value list =
             let struct (result, tlist) = TList.contains value !list.RefList
             list.RefList := tlist
             result
 
-        let ofSeq values =
-            { RefList = ref ^ TList.ofSeq values }
+        let toArray (list : _ UList) =
+            let struct (arr, tlist) = TList.toArray !list.RefList
+            list.RefList := tlist
+            arr
 
         let toSeq (list : _ UList) =
             list :> _ seq
-
-        let fold folder state list =
-            let struct (result, tlist) = TList.fold folder state !list.RefList
-            list.RefList := tlist
-            result
 
         let map mapper list =
             let struct (result, tlist) = TList.map mapper !list.RefList
@@ -105,15 +107,20 @@ module UListModule =
             list.RefList := tlist
             { RefList = ref result }
 
+        let makeFromLists configOpt lists =
+            let tlists = !(map (fun (list : 'a UList) -> !list.RefList) lists).RefList
+            let tlist = TList.makeFromLists configOpt tlists
+            { RefList = ref tlist }
+
+        let fold folder state list =
+            let struct (result, tlist) = TList.fold folder state !list.RefList
+            list.RefList := tlist
+            result
+
         let definitize list =
             let struct (result, tlist) = TList.definitize !list.RefList
             list.RefList := tlist
             { RefList = ref result }
-
-        let concat lists =
-            let tlists = !(map (fun (list : 'a UList) -> !list.RefList) lists).RefList
-            let tlist = TList.concat tlists
-            { RefList = ref tlist }
 
         /// Add all the given values to the list.
         let addMany values list =
