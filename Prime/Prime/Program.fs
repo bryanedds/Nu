@@ -50,8 +50,12 @@ module Program =
         let list = [0 .. 10000000]
         runTimings (fun () -> list |> List.rev |> List.sort |> List.map (fun x -> x * 13) |> List.filter (fun x -> x % 2 = 0)) "F# List Compute"
 
-        // run list timings
+        // run ulist timings
         let ulist = UList.makeFromSeq None [|0 .. 10000000|]
+        runTimings (fun () -> ulist |> UList.rev |> UList.sort |> UList.map (fun x -> x * 13) |> UList.filter (fun x -> x % 2 = 0)) "UList Compute"
+
+        // run ulist timings
+        let ulist = UList.makeFromSeq (Some Imperative) [|0 .. 10000000|]
         runTimings (fun () -> ulist |> UList.rev |> UList.sort |> UList.map (fun x -> x * 13) |> UList.filter (fun x -> x % 2 = 0)) "UList Compute"
         
         // run map timings

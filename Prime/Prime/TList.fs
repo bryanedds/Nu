@@ -83,19 +83,17 @@ module TListModule =
             | BloatFactor bloatFactor -> validate2 bloatFactor list
             | Imperative -> list
 
-        let private makeFromTempList configOpt (tempList : 'a List) =
+        let makeFromSeq configOpt (items : 'a seq) =
+            let impList = List<'a> items
             let list =
                 { TListOpt = Unchecked.defaultof<'a TList>
-                  ImpList = tempList
-                  ImpListOrigin = List<'a> tempList
+                  ImpList = impList
+                  ImpListOrigin = impList
                   Logs = []
                   LogsLength = 0
                   Config = Option.getOrDefault (BloatFactor 1) configOpt }
             list.TListOpt <- list
             list
-
-        let makeFromSeq configOpt (items : 'a seq) =
-            makeFromTempList configOpt (List<'a> items)
 
         let makeFromArray configOpt (items : 'a array) =
             makeFromSeq configOpt items
@@ -171,95 +169,49 @@ module TListModule =
             struct (Seq.ofArray arr, list)
 
         let map (mapper : 'a -> 'b) (list : 'a TList) =
-            match list.Config with
-            | BloatFactor bloatFactor ->
-                // OPTIMIZATION: elides building of avoidable transactions.
-                let list = validate2 bloatFactor list
-                let impList = list.ImpList
-                let tempList = List<'b> impList.Count
-                for i in 0 .. impList.Count - 1 do tempList.Add ^ mapper impList.[i]
-                let listMapped = makeFromTempList (Some list.Config) tempList
-                struct (listMapped, list)
-            | Imperative ->
-                let tempListMapped = list.ImpList |> Seq.map mapper |> List<'b>
-                let listMapped = makeFromTempList (Some list.Config) tempListMapped
-                struct (listMapped, list)
+            let list = validate list
+            let seqMapped = Seq.map mapper list.ImpList
+            let listMapped = makeFromSeq (Some list.Config) seqMapped
+            struct (listMapped, list)
 
         let filter pred list =
-            match list.Config with
-            | BloatFactor bloatFactor ->
-                // OPTIMIZATION: elides building of avoidable transactions.
-                let list = validate2 bloatFactor list
-                let impList = list.ImpList
-                let tempList = List<'a> impList.Count
-                for i in 0 .. impList.Count - 1 do let item = impList.[i] in if pred item then tempList.Add item
-                let listFiltered = makeFromTempList (Some list.Config) tempList
-                struct (listFiltered, list)
-            | Imperative ->
-                let tempListFiltered = list.ImpList |> Seq.filter pred |> List<'b>
-                let listFiltered = makeFromTempList (Some list.Config) tempListFiltered
-                struct (listFiltered, list)
+            let list = validate list
+            let seqFiltered = Seq.filter pred list.ImpList
+            let listFiltered = makeFromSeq (Some list.Config) seqFiltered
+            struct (listFiltered, list)
 
         let rev list =
-            match list.Config with
-            | BloatFactor bloatFactor ->
-                // OPTIMIZATION: elides building of avoidable transactions.
-                let list = validate2 bloatFactor list
-                let impList = list.ImpList
-                let tempList = List<'a> impList
-                tempList.Reverse ()
-                let listReversed = makeFromTempList (Some list.Config) tempList
-                struct (listReversed, list)
-            | Imperative ->
-                let tempListReversed = list.ImpList |> Seq.rev |> List<'b>
-                let listReversed = makeFromTempList (Some list.Config) tempListReversed
-                struct (listReversed, list)
+            let list = validate list
+            let seqReversed = Seq.rev list.ImpList
+            let listReversed = makeFromSeq (Some list.Config) seqReversed
+            struct (listReversed, list)
 
         let sortWith comparison list =
-            match list.Config with
-            | BloatFactor bloatFactor ->
-                // OPTIMIZATION: elides building of avoidable transactions.
-                let list = validate2 bloatFactor list
-                let impList = list.ImpList
-                let tempList = List<'b> impList
-                let tempListSorted = Seq.sortWith comparison tempList
-                let listSorted = makeFromSeq (Some list.Config) tempListSorted
-                struct (listSorted, list)
-            | Imperative ->
-                let tempListSorted = list.ImpList |> Seq.sortWith comparison |> List<'b>
-                let listSorted = makeFromTempList (Some list.Config) tempListSorted
-                struct (listSorted, list)
+            let list = validate list
+            let seqSorted = Seq.sortWith comparison list.ImpList
+            let listSorted = makeFromSeq (Some list.Config) seqSorted
+            struct (listSorted, list)
 
         let sortBy by list =
-            match list.Config with
-            | BloatFactor bloatFactor ->
-                // OPTIMIZATION: elides building of avoidable transactions.
-                let list = validate2 bloatFactor list
-                let impList = list.ImpList
-                let tempList = List<'b> impList.Count
-                for i in 0 .. impList.Count - 1 do tempList.Add (by impList.[i])
-                let tempListSorted = Seq.sortBy by tempList
-                let listSorted = makeFromSeq (Some list.Config) tempListSorted
-                struct (listSorted, list)
-            | Imperative ->
-                let tempListSorted = list.ImpList |> Seq.sortBy by |> List<'b>
-                let listSorted = makeFromTempList (Some list.Config) tempListSorted
-                struct (listSorted, list)
+            let list = validate list
+            let seqSorted = Seq.sortBy by list.ImpList
+            let listSorted = makeFromSeq (Some list.Config) seqSorted
+            struct (listSorted, list)
 
         let sort list =
-            match list.Config with
-            | BloatFactor bloatFactor ->
-                // OPTIMIZATION: elides building of avoidable transactions.
-                let list = validate2 bloatFactor list
-                let impList = list.ImpList
-                let tempList = List<'b> impList
-                let tempListSorted = Seq.sort tempList
-                let listSorted = makeFromSeq (Some list.Config) tempListSorted
-                struct (listSorted, list)
-            | Imperative ->
-                let tempListSorted = list.ImpList |> Seq.sort |> List<'b>
-                let listSorted = makeFromTempList (Some list.Config) tempListSorted
-                struct (listSorted, list)
+            let list = validate list
+            let seqSorted = Seq.sort list.ImpList
+            let listSorted = makeFromSeq (Some list.Config) seqSorted
+            struct (listSorted, list)
+
+        let fold folder state list =
+            let struct (seq, list) = toSeq list
+            let folded = Seq.fold folder state seq
+            struct (folded, list)
+
+        let definitize list =
+            let listMapped = filter Option.isSome list |> fst'
+            map Option.get listMapped
 
         let makeFromLists configOpt lists =
             // OPTIMIZATION: elides building of avoidable transactions.
@@ -268,19 +220,10 @@ module TListModule =
             for list in listsAsSeq do tempList.AddRange (toSeq list |> fst')
             makeFromSeq configOpt tempList
 
-        let fold folder state list =
-            let struct (seq, list) = toSeq list
-            let result = Seq.fold folder state seq
-            struct (result, list)
-
-        let definitize list =
-            let listMapped = filter Option.isSome list |> fst'
-            map Option.get listMapped
-
         /// Add all the given values to the list.
         let addMany (values : 'a seq) list =
             let list = validate list
-            let lists = add list (makeFromSeq (Some list.Config) [makeFromSeq (Some list.Config) values])
+            let lists = add list (makeFromArray (Some list.Config) [|makeFromSeq (Some list.Config) values|])
             makeFromLists (Some list.Config) lists
 
         /// Remove all the given values from the list.

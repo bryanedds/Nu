@@ -107,11 +107,6 @@ module UListModule =
             list.RefList := tlist
             { RefList = ref result }
 
-        let makeFromLists configOpt lists =
-            let tlists = !(map (fun (list : 'a UList) -> !list.RefList) lists).RefList
-            let tlist = TList.makeFromLists configOpt tlists
-            { RefList = ref tlist }
-
         let fold folder state list =
             let struct (result, tlist) = TList.fold folder state !list.RefList
             list.RefList := tlist
@@ -121,6 +116,11 @@ module UListModule =
             let struct (result, tlist) = TList.definitize !list.RefList
             list.RefList := tlist
             { RefList = ref result }
+
+        let makeFromLists configOpt lists =
+            let tlists = !(map (fun (list : 'a UList) -> !list.RefList) lists).RefList
+            let tlist = TList.makeFromLists configOpt tlists
+            { RefList = ref tlist }
 
         /// Add all the given values to the list.
         let addMany values list =
