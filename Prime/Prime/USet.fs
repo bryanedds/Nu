@@ -26,8 +26,11 @@ module USetModule =
     [<RequireQualifiedAccess>]
     module USet =
 
-        let makeEmpty<'a when 'a : equality> bloatFactorOpt =
-            { RefSet = ref ^ TSet.makeEmpty<'a> bloatFactorOpt }
+        let makeFromSeq<'a when 'a : equality> configOpt items =
+            { RefSet = ref ^ TSet.makeFromSeq<'a> configOpt items }
+
+        let makeEmpty<'a when 'a : equality> configOpt =
+            { RefSet = ref ^ TSet.makeEmpty<'a> configOpt }
 
         let add value set =
             { RefSet = ref ^ TSet.add value !set.RefSet }
@@ -55,9 +58,6 @@ module USetModule =
             let struct (result, tset) = TSet.contains value !set.RefSet
             set.RefSet := tset
             result
-
-        let ofSeq items =
-            { RefSet = ref ^ TSet.ofSeq items }
 
         let toSeq (set : _ USet) =
             set :> _ seq

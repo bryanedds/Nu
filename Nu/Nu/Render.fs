@@ -144,7 +144,7 @@ module RendererModule =
                         let renderAssetMap = UMap.addMany renderAssets renderAssetMap
                         { renderer with RenderPackageMap = UMap.add packageName renderAssetMap renderer.RenderPackageMap }
                     else
-                        let renderAssetMap = UMap.ofSeq renderAssets
+                        let renderAssetMap = UMap.makeFromSeq None renderAssets
                         { renderer with RenderPackageMap = UMap.add packageName renderAssetMap renderer.RenderPackageMap }
                 | Left failedAssetNames ->
                     Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")

@@ -26,25 +26,17 @@ module UMapModule =
     [<RequireQualifiedAccess>]
     module UMap =
 
-        let makeFromSeq<'k, 'v when 'k : equality> bloatFactorOpt entries =
-            { RefMap = ref ^ TMap.makeFromSeq<'k, 'v> bloatFactorOpt entries }
+        let makeFromSeq<'k, 'v when 'k : equality> configOpt entries =
+            { RefMap = ref ^ TMap.makeFromSeq<'k, 'v> configOpt entries }
 
-        let makeEmpty<'k, 'v when 'k : equality> bloatFactorOpt =
-            { RefMap = ref ^ TMap.makeEmpty<'k, 'v> bloatFactorOpt }
+        let makeEmpty<'k, 'v when 'k : equality> configOpt =
+            { RefMap = ref ^ TMap.makeEmpty<'k, 'v> configOpt }
 
         let add key value map =
             { RefMap = ref ^ TMap.add key value !map.RefMap }
 
         let remove key map =
             { RefMap = ref ^ TMap.remove key !map.RefMap }
-    
-        /// Add all the given entries to the map.
-        let addMany entries map =
-            { RefMap = ref ^ TMap.addMany entries !map.RefMap }
-    
-        /// Remove all values with the given keys from the map.
-        let removeMany keys map =
-            { RefMap = ref ^ TMap.removeMany keys !map.RefMap }
 
         let isEmpty map =
             let struct (result, tmap) = TMap.isEmpty !map.RefMap
@@ -73,9 +65,14 @@ module UMapModule =
             let struct (result, tmap) = TMap.containsKey key !map.RefMap
             map.RefMap := tmap
             result
+
+        /// Add all the given entries to the map.
+        let addMany entries map =
+            { RefMap = ref ^ TMap.addMany entries !map.RefMap }
     
-        let ofSeq pairs =
-            { RefMap = ref ^ TMap.ofSeq pairs }
+        /// Remove all values with the given keys from the map.
+        let removeMany keys map =
+            { RefMap = ref ^ TMap.removeMany keys !map.RefMap }
 
         let toSeq (map : UMap<_, _>) =
             map :> _ seq

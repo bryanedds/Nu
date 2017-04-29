@@ -57,12 +57,12 @@ module MapTests =
 
     [<Property>]
     let hmapsEqualFsmapsAfterSteps (initialMap : Map<int, string>) (actions : MapAction<int, string>[]) =
-        let testMap = HMap.ofSeq ^ Map.toSeq initialMap
+        let testMap = HMap.ofSeq (Map.toSeq initialMap)
         let eq (hmap : HMap<_,_>) (fsmap : Map<_,_>) = Map.ofSeq hmap = fsmap
         eqMapsAfterSteps initialMap testMap actions HMap.add HMap.remove HMap.fold (+) eq
 
     [<Property>]
     let umapsEqualFsmapsAfterSteps (initialMap : Map<int, string>) (actions : MapAction<int, string>[]) =
-        let testMap = UMap.ofSeq ^ Map.toSeq initialMap
+        let testMap = UMap.makeFromSeq None (Map.toSeq initialMap)
         let eq (umap : UMap<_,_>) (fsmap : Map<_,_>) = Map.ofSeq umap = fsmap
         eqMapsAfterSteps initialMap testMap actions UMap.add UMap.remove UMap.fold (+) eq

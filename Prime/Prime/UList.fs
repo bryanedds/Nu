@@ -39,14 +39,6 @@ module UListModule =
         let makeEmpty<'a> configOpt =
             { RefList = ref ^ TList.makeEmpty<'a> configOpt }
 
-        let isEmpty list =
-            let struct (result, tlist) = TList.isEmpty !list.RefList
-            list.RefList := tlist
-            result
-
-        let notEmpty list =
-            not ^ isEmpty list
-
         let get (index : int) (list : 'a UList) =
             list.[index]
 
@@ -58,6 +50,14 @@ module UListModule =
 
         let remove value list =
             { RefList = ref ^ TList.remove value !list.RefList }
+
+        let isEmpty list =
+            let struct (result, tlist) = TList.isEmpty !list.RefList
+            list.RefList := tlist
+            result
+
+        let notEmpty list =
+            not ^ isEmpty list
 
         let length list =
             let struct (result, tlist) = TList.length !list.RefList
