@@ -79,17 +79,27 @@ module TMapModule =
             | Imperative -> map
 
         let makeFromSeq<'k, 'v when 'k : equality> configOpt entries =
-            let dict = dictPlus entries
-            let dictOrigin = Dictionary (dict, HashIdentity.Structural)
-            let map =
+            let config = Option.getOrDefault (BloatFactor 1) configOpt
+            match config with
+            | BloatFactor _ ->
+                let dict = dictPlus entries
+                let dictOrigin = Dictionary (dict, HashIdentity.Structural)
+                let map =
+                    { TMapOpt = Unchecked.defaultof<TMap<'k, 'v>>
+                      Dict = dict
+                      DictOrigin = dictOrigin
+                      Logs = []
+                      LogsLength = 0
+                      Config = config }
+                map.TMapOpt <- map
+                map
+            | Imperative ->
                 { TMapOpt = Unchecked.defaultof<TMap<'k, 'v>>
-                  Dict = dict
-                  DictOrigin = dictOrigin
+                  Dict = dictPlus entries
+                  DictOrigin = Dictionary HashIdentity.Structural
                   Logs = []
                   LogsLength = 0
-                  Config = Option.getOrDefault (BloatFactor 1) configOpt }
-            map.TMapOpt <- map
-            map
+                  Config = config }
 
         let makeEmpty<'k, 'v when 'k : equality> configOpt =
             makeFromSeq<'k, 'v> configOpt Seq.empty
