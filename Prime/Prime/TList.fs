@@ -80,13 +80,13 @@ module TListModule =
 
         let private validate list =
             match list.TConfig with
-            | BloatFactor bloatFactor -> validate2 bloatFactor list
+            | Functional bloatFactor -> validate2 bloatFactor list
             | Imperative -> list
 
         let makeFromSeq configOpt (items : 'a seq) =
-            let config = Option.getOrDefault (BloatFactor 1) configOpt
+            let config = Option.getOrDefault (Functional 1) configOpt
             match config with
-            | BloatFactor _ ->
+            | Functional _ ->
                 let impList = List<'a> items
                 let impListOrigin = List<'a> impList
                 let list =
@@ -118,7 +118,7 @@ module TListModule =
 
         let set index value list =
             match list.TConfig with
-            | BloatFactor bloatFactor ->
+            | Functional bloatFactor ->
                 update (fun list ->
                     let list = { list with Logs = Set (index, value) :: list.Logs; LogsLength = list.LogsLength + 1 }
                     list.ImpList.[index] <- value
@@ -129,7 +129,7 @@ module TListModule =
 
         let add value list =
             match list.TConfig with
-            | BloatFactor bloatFactor ->
+            | Functional bloatFactor ->
                 update (fun list ->
                     let list = { list with Logs = Add value :: list.Logs; LogsLength = list.LogsLength + 1 }
                     list.ImpList.Add value |> ignore
@@ -140,7 +140,7 @@ module TListModule =
 
         let remove value list =
             match list.TConfig with
-            | BloatFactor bloatFactor ->
+            | Functional bloatFactor ->
                 update (fun list ->
                     let list = { list with Logs = Remove value :: list.Logs; LogsLength = list.LogsLength + 1 }
                     list.ImpList.Remove value |> ignore

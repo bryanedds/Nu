@@ -75,13 +75,13 @@ module TMapModule =
 
         let private validate map =
             match map.TConfig with
-            | BloatFactor bloatFactor -> validate2 bloatFactor map
+            | Functional bloatFactor -> validate2 bloatFactor map
             | Imperative -> map
 
         let makeFromSeq<'k, 'v when 'k : equality> configOpt entries =
-            let config = Option.getOrDefault (BloatFactor 1) configOpt
+            let config = Option.getOrDefault (Functional 1) configOpt
             match config with
-            | BloatFactor _ ->
+            | Functional _ ->
                 let dict = dictPlus entries
                 let dictOrigin = Dictionary (dict, HashIdentity.Structural)
                 let map =
@@ -106,7 +106,7 @@ module TMapModule =
 
         let add key value map =
             match map.TConfig with
-            | BloatFactor bloatFactor ->
+            | Functional bloatFactor ->
                 update (fun map ->
                     let map = { map with Logs = Add (key, value) :: map.Logs; LogsLength = map.LogsLength + 1 }
                     map.Dict.ForceAdd (key, value)
@@ -117,7 +117,7 @@ module TMapModule =
 
         let remove key map =
             match map.TConfig with
-            | BloatFactor bloatFactor ->
+            | Functional bloatFactor ->
                 update (fun map ->
                     let map = { map with Logs = Remove key :: map.Logs; LogsLength = map.LogsLength + 1 }
                     map.Dict.Remove key |> ignore
