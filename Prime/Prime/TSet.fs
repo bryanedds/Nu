@@ -79,17 +79,27 @@ module TSetModule =
             | Imperative -> set
 
         let makeFromSeq<'a when 'a : equality> configOpt items =
-            let hashSet = hashsetPlus items
-            let hashSetOrigin = HashSet<'a> (hashSet, HashIdentity.Structural)
-            let set =
+            let config = Option.getOrDefault (BloatFactor 1) configOpt
+            match config with
+            | BloatFactor _ ->
+                let hashSet = hashsetPlus items
+                let hashSetOrigin = HashSet<'a> (hashSet, HashIdentity.Structural)
+                let set =
+                    { TSetOpt = Unchecked.defaultof<'a TSet>
+                      HashSet = hashSet
+                      HashSetOrigin = hashSetOrigin
+                      Logs = []
+                      LogsLength = 0
+                      Config = config }
+                set.TSetOpt <- set
+                set
+            | Imperative ->
                 { TSetOpt = Unchecked.defaultof<'a TSet>
-                  HashSet = hashSet
-                  HashSetOrigin = hashSetOrigin
+                  HashSet = hashsetPlus items
+                  HashSetOrigin = HashSet<'a> HashIdentity.Structural
                   Logs = []
                   LogsLength = 0
-                  Config = Option.getOrDefault (BloatFactor 1) configOpt }
-            set.TSetOpt <- set
-            set
+                  Config = config }
 
         let makeEmpty<'a when 'a : equality> configOpt =
             makeFromSeq<'a> configOpt Seq.empty

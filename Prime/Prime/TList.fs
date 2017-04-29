@@ -84,17 +84,27 @@ module TListModule =
             | Imperative -> list
 
         let makeFromSeq configOpt (items : 'a seq) =
-            let impList = List<'a> items
-            let impListOrigin = List<'a> impList
-            let list =
+            let config = Option.getOrDefault (BloatFactor 1) configOpt
+            match config with
+            | BloatFactor _ ->
+                let impList = List<'a> items
+                let impListOrigin = List<'a> impList
+                let list =
+                    { TListOpt = Unchecked.defaultof<'a TList>
+                      ImpList = impList
+                      ImpListOrigin = impListOrigin
+                      Logs = []
+                      LogsLength = 0
+                      Config = config }
+                list.TListOpt <- list
+                list
+            | Imperative ->
                 { TListOpt = Unchecked.defaultof<'a TList>
-                  ImpList = impList
-                  ImpListOrigin = impListOrigin
+                  ImpList = List<'a> items
+                  ImpListOrigin = List<'a> ()
                   Logs = []
                   LogsLength = 0
-                  Config = Option.getOrDefault (BloatFactor 1) configOpt }
-            list.TListOpt <- list
-            list
+                  Config = config }
 
         let makeFromArray configOpt (items : 'a array) =
             makeFromSeq configOpt items

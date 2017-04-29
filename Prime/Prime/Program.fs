@@ -46,13 +46,17 @@ module Program =
         let array = [|0 .. 10000000|]
         runTimings (fun () -> array |> Array.rev |> Array.sort |> Array.map (fun x -> x * 13) |> Array.filter (fun x -> x % 2 = 0)) "Array Compute"
 
-        // run list timings
-        let list = [0 .. 10000000]
-        runTimings (fun () -> list |> List.rev |> List.sort |> List.map (fun x -> x * 13) |> List.filter (fun x -> x % 2 = 0)) "F# List Compute"
-
         // run ulist timings
         let ulist = UList.makeFromSeq None [|0 .. 10000000|]
         runTimings (fun () -> ulist |> UList.rev |> UList.sort |> UList.map (fun x -> x * 13) |> UList.filter (fun x -> x % 2 = 0)) "UList Compute"
+
+        // run ulist imperative timings
+        let ulist = UList.makeFromSeq (Some Imperative) [|0 .. 10000000|]
+        runTimings (fun () -> ulist |> UList.rev |> UList.sort |> UList.map (fun x -> x * 13) |> UList.filter (fun x -> x % 2 = 0)) "UList Imperative Compute"
+
+        // run list timings
+        let list = [0 .. 10000000]
+        runTimings (fun () -> list |> List.rev |> List.sort |> List.map (fun x -> x * 13) |> List.filter (fun x -> x % 2 = 0)) "F# List Compute"
         
         // run map timings
         runMapTimings
@@ -77,6 +81,12 @@ module Program =
             (fun entries -> Array.fold (fun map (k, v) -> UMap.add k v map) (UMap.makeEmpty None) entries)
             (fun entries map -> Array.iter (fun (k, _) -> UMap.find k map |> ignore) entries)
             "UMap"
+        
+        // run umap imperative timings without computation expressions
+        runMapTimings
+            (fun entries -> Array.fold (fun map (k, v) -> UMap.add k v map) (UMap.makeEmpty (Some Imperative)) entries)
+            (fun entries map -> Array.iter (fun (k, _) -> UMap.find k map |> ignore) entries)
+            "UMap Imperative"
         
         // run dictionary timings
         let dic = Dictionary<string, string * string> ()
