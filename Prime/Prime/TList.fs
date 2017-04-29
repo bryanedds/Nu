@@ -16,11 +16,11 @@ module TListModule =
     type [<NoEquality; NoComparison>] 'a TList =
         private
             { mutable TListOpt : 'a TList
+              TConfig : TConfig
               ImpList : 'a List
               ImpListOrigin : 'a List
               Logs : 'a Log list
-              LogsLength : int
-              Config : TConfig }
+              LogsLength : int }
 
         static member (>>.) (list : 'a2 TList, builder : TExpr<unit, 'a2 TList>) =
             snd' (builder list)
@@ -79,7 +79,7 @@ module TListModule =
             list
 
         let private validate list =
-            match list.Config with
+            match list.TConfig with
             | BloatFactor bloatFactor -> validate2 bloatFactor list
             | Imperative -> list
 
@@ -91,20 +91,20 @@ module TListModule =
                 let impListOrigin = List<'a> impList
                 let list =
                     { TListOpt = Unchecked.defaultof<'a TList>
+                      TConfig = config
                       ImpList = impList
                       ImpListOrigin = impListOrigin
                       Logs = []
-                      LogsLength = 0
-                      Config = config }
+                      LogsLength = 0 }
                 list.TListOpt <- list
                 list
             | Imperative ->
                 { TListOpt = Unchecked.defaultof<'a TList>
+                  TConfig = config
                   ImpList = List<'a> items
                   ImpListOrigin = List<'a> ()
                   Logs = []
-                  LogsLength = 0
-                  Config = config }
+                  LogsLength = 0 }
 
         let makeFromArray configOpt (items : 'a array) =
             makeFromSeq configOpt items
@@ -117,7 +117,7 @@ module TListModule =
             struct (list.ImpList.[index], list)
 
         let set index value list =
-            match list.Config with
+            match list.TConfig with
             | BloatFactor bloatFactor ->
                 update (fun list ->
                     let list = { list with Logs = Set (index, value) :: list.Logs; LogsLength = list.LogsLength + 1 }
@@ -128,7 +128,7 @@ module TListModule =
             | Imperative -> list.ImpList.[index] <- value; list
 
         let add value list =
-            match list.Config with
+            match list.TConfig with
             | BloatFactor bloatFactor ->
                 update (fun list ->
                     let list = { list with Logs = Add value :: list.Logs; LogsLength = list.LogsLength + 1 }
@@ -139,7 +139,7 @@ module TListModule =
             | Imperative -> list.ImpList.Add value |> ignore; list
 
         let remove value list =
-            match list.Config with
+            match list.TConfig with
             | BloatFactor bloatFactor ->
                 update (fun list ->
                     let list = { list with Logs = Remove value :: list.Logs; LogsLength = list.LogsLength + 1 }
@@ -182,37 +182,37 @@ module TListModule =
         let map (mapper : 'a -> 'b) (list : 'a TList) =
             let list = validate list
             let seqMapped = Seq.map mapper list.ImpList
-            let listMapped = makeFromSeq (Some list.Config) seqMapped
+            let listMapped = makeFromSeq (Some list.TConfig) seqMapped
             struct (listMapped, list)
 
         let filter pred list =
             let list = validate list
             let seqFiltered = Seq.filter pred list.ImpList
-            let listFiltered = makeFromSeq (Some list.Config) seqFiltered
+            let listFiltered = makeFromSeq (Some list.TConfig) seqFiltered
             struct (listFiltered, list)
 
         let rev list =
             let list = validate list
             let seqReversed = Seq.rev list.ImpList
-            let listReversed = makeFromSeq (Some list.Config) seqReversed
+            let listReversed = makeFromSeq (Some list.TConfig) seqReversed
             struct (listReversed, list)
 
         let sortWith comparison list =
             let list = validate list
             let seqSorted = Seq.sortWith comparison list.ImpList
-            let listSorted = makeFromSeq (Some list.Config) seqSorted
+            let listSorted = makeFromSeq (Some list.TConfig) seqSorted
             struct (listSorted, list)
 
         let sortBy by list =
             let list = validate list
             let seqSorted = Seq.sortBy by list.ImpList
-            let listSorted = makeFromSeq (Some list.Config) seqSorted
+            let listSorted = makeFromSeq (Some list.TConfig) seqSorted
             struct (listSorted, list)
 
         let sort list =
             let list = validate list
             let seqSorted = Seq.sort list.ImpList
-            let listSorted = makeFromSeq (Some list.Config) seqSorted
+            let listSorted = makeFromSeq (Some list.TConfig) seqSorted
             struct (listSorted, list)
 
         let fold folder state list =
@@ -234,8 +234,8 @@ module TListModule =
         /// Add all the given values to the list.
         let addMany (values : 'a seq) list =
             let list = validate list
-            let lists = add list (makeFromArray (Some list.Config) [|makeFromSeq (Some list.Config) values|])
-            makeFromLists (Some list.Config) lists
+            let lists = add list (makeFromArray (Some list.TConfig) [|makeFromSeq (Some list.TConfig) values|])
+            makeFromLists (Some list.TConfig) lists
 
         /// Remove all the given values from the list.
         let removeMany values list =
