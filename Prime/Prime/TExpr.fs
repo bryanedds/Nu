@@ -4,6 +4,11 @@
 namespace Prime
 open System
 
+// TODO: P1: Move to its own file?
+type TConfig =
+    | BloatFactor of int
+    | Imperative
+
 type TExpr<'a, 'env> = 'env -> struct ('a * 'env)
 
 // TODO: P1: Make operations work on struct tuples in next version of F#.
