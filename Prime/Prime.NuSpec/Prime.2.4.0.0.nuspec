@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>Prime</id>
-        <version>2.3.5.0</version>
+        <version>2.4.0.0</version>
         <title>Prime - An F# primitives library.</title>
         <authors>Bryan Edds</authors>
         <owners>Bryan Edds</owners>
@@ -22,10 +22,10 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="..\Prime\bin\Release\Prime.exe" target="lib\net45\Prime.exe" />
-        <file src="..\Prime\bin\Release\Prime.exe.config" target="lib\net45\Prime.exe.config" />
-        <file src="..\Prime\bin\Release\Prime.pdb" target="lib\net45\Prime.pdb" />
-        <file src="..\Prime\bin\Release\Prime.XML" target="lib\net45\Prime.XML" />
-        <file src="..\Prime\bin\Release\Prelude.amsl" target="lib\net45\Prelude.amsl" />
+        <file src="..\Prime\bin\Release\Prime.exe" target="lib\net46\Prime.exe" />
+        <file src="..\Prime\bin\Release\Prime.exe.config" target="lib\net46\Prime.exe.config" />
+        <file src="..\Prime\bin\Release\Prime.pdb" target="lib\net46\Prime.pdb" />
+        <file src="..\Prime\bin\Release\Prime.XML" target="lib\net46\Prime.XML" />
+        <file src="..\Prime\bin\Release\Prelude.amsl" target="lib\net46\Prelude.amsl" />
     </files>
 </package>
