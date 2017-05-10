@@ -47,11 +47,11 @@ module Program =
         runTimings (fun () -> array |> Array.rev |> Array.sort |> Array.map (fun x -> x * 13) |> Array.filter (fun x -> x % 2 = 0)) "Array Compute"
 
         // run ulist timings
-        let ulist = UList.makeFromSeq None [|0 .. 10000000|]
+        let ulist = UList.makeFromSeq Functional [|0 .. 10000000|]
         runTimings (fun () -> ulist |> UList.rev |> UList.sort |> UList.map (fun x -> x * 13) |> UList.filter (fun x -> x % 2 = 0)) "UList Compute"
 
         // run ulist imperative timings
-        let ulist = UList.makeFromSeq (Some Imperative) [|0 .. 10000000|]
+        let ulist = UList.makeFromSeq Imperative [|0 .. 10000000|]
         runTimings (fun () -> ulist |> UList.rev |> UList.sort |> UList.map (fun x -> x * 13) |> UList.filter (fun x -> x % 2 = 0)) "UList Imperative Compute"
 
         // run list timings
@@ -72,19 +72,19 @@ module Program =
         
         // run tmap timings with computation expressions
         runMapTimings
-            (fun entries -> Array.fold (fun map (k, v) -> TMap.add k v map) (TMap.makeEmpty None) entries)
+            (fun entries -> Array.fold (fun map (k, v) -> TMap.add k v map) (TMap.makeEmpty Functional) entries)
             (fun entries map -> entries |> Array.iter (fun (k, _) -> TMap.find k map |> ignore))
             "TMap"
         
         // run umap timings without computation expressions
         runMapTimings
-            (fun entries -> Array.fold (fun map (k, v) -> UMap.add k v map) (UMap.makeEmpty None) entries)
+            (fun entries -> Array.fold (fun map (k, v) -> UMap.add k v map) (UMap.makeEmpty Functional) entries)
             (fun entries map -> Array.iter (fun (k, _) -> UMap.find k map |> ignore) entries)
             "UMap"
         
         // run umap imperative timings without computation expressions
         runMapTimings
-            (fun entries -> Array.fold (fun map (k, v) -> UMap.add k v map) (UMap.makeEmpty (Some Imperative)) entries)
+            (fun entries -> Array.fold (fun map (k, v) -> UMap.add k v map) (UMap.makeEmpty Imperative) entries)
             (fun entries map -> Array.iter (fun (k, _) -> UMap.find k map |> ignore) entries)
             "UMap Imperative"
         

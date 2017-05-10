@@ -11,6 +11,7 @@ module TSetModule =
     type private Log<'a when 'a : equality> =
         | Add of 'a
         | Remove of 'a
+        | Clear
 
     type [<NoEquality; NoComparison>] TSet<'a when 'a : equality> =
         private
@@ -41,7 +42,8 @@ module TSetModule =
             List.foldBack (fun log () ->
                 match log with
                 | Add value -> hashSetOrigin.TryAdd value |> ignore
-                | Remove value -> hashSetOrigin.Remove value |> ignore)
+                | Remove value -> hashSetOrigin.Remove value |> ignore
+                | Clear -> hashSetOrigin.Clear ())
                 set.Logs ()
             let hashSet = HashSet<'a> (hashSetOrigin, HashIdentity.Structural)
             let set = { set with HashSet = hashSet; HashSetOrigin = hashSetOrigin; Logs = []; LogsLength = 0 }
@@ -57,17 +59,17 @@ module TSetModule =
             set.TSetOpt <- set
             set
 
-        let private validate2 bloatFactor set =
+        let private validate2 set =
             match box set.TSetOpt with
             | null -> commit set
             | target ->
                 match obj.ReferenceEquals (target, set) with
-                | true -> if set.LogsLength > set.HashSet.Count * bloatFactor then compress set else set
+                | true -> if set.LogsLength > set.HashSet.Count then compress set else set
                 | false -> commit set
 
-        let private update updater bloatFactor set =
+        let private update updater set =
             let oldSet = set
-            let set = validate2 bloatFactor set
+            let set = validate2 set
             let set = updater set
             oldSet.TSetOpt <- Unchecked.defaultof<'a TSet>
             set.TSetOpt <- set
@@ -75,56 +77,118 @@ module TSetModule =
 
         let private validate set =
             match set.TConfig with
-            | Functional bloatFactor -> validate2 bloatFactor set
+            | BasedOnBuild ->
+#if DEBUG
+                validate2 set
+#else
+                set
+#endif
+            | Functional -> validate2 set
             | Imperative -> set
 
-        let makeFromSeq<'a when 'a : equality> configOpt items =
-            let config = Option.getOrDefault (Functional 1) configOpt
-            match config with
-            | Functional _ ->
-                let hashSet = hashsetPlus items
-                let hashSetOrigin = HashSet<'a> (hashSet, HashIdentity.Structural)
-                let set =
-                    { TSetOpt = Unchecked.defaultof<'a TSet>
-                      TConfig = config
-                      HashSet = hashSet
-                      HashSetOrigin = hashSetOrigin
-                      Logs = []
-                      LogsLength = 0 }
-                set.TSetOpt <- set
-                set
-            | Imperative ->
+        let private makeFromSeqFunctional config (items : 'a seq) =
+            let hashSet = hashsetPlus items
+            let hashSetOrigin = HashSet<'a> (hashSet, HashIdentity.Structural)
+            let set =
                 { TSetOpt = Unchecked.defaultof<'a TSet>
                   TConfig = config
-                  HashSet = hashsetPlus items
-                  HashSetOrigin = HashSet<'a> HashIdentity.Structural
+                  HashSet = hashSet
+                  HashSetOrigin = hashSetOrigin
                   Logs = []
                   LogsLength = 0 }
+            set.TSetOpt <- set
+            set
 
-        let makeEmpty<'a when 'a : equality> configOpt =
-            makeFromSeq<'a> configOpt Seq.empty
+        let private makeFromSeqImperative config (items : 'a seq) =
+            { TSetOpt = Unchecked.defaultof<'a TSet>
+              TConfig = config
+              HashSet = hashsetPlus items
+              HashSetOrigin = HashSet<'a> HashIdentity.Structural
+              Logs = []
+              LogsLength = 0 }
+
+        let private addFunctional value set =
+            update (fun set ->
+                let set = { set with Logs = Add value :: set.Logs; LogsLength = set.LogsLength + 1 }
+                set.HashSet.TryAdd value |> ignore
+                set)
+                set
+
+        let private addImperative value set =
+            set.HashSet.TryAdd value |> ignore
+            set
+
+        let private removeFunctional value set =
+            update (fun set ->
+                let set = { set with Logs = Remove value :: set.Logs; LogsLength = set.LogsLength + 1 }
+                set.HashSet.Remove value |> ignore
+                set)
+                set
+
+        let private removeImperative value set =
+            set.HashSet.Remove value |> ignore
+            set
+
+        let private clearFunctional set =
+            update (fun set ->
+                let set = { set with Logs = Clear :: set.Logs; LogsLength = set.LogsLength + 1 }
+                set.HashSet.Clear ()
+                set)
+                set
+
+        let private clearImperative set =
+            set.HashSet.Clear ()
+            set
+
+        let makeFromSeq<'a when 'a : equality> config (items : 'a seq) =
+            match config with
+            | BasedOnBuild _ ->
+#if DEBUG
+                makeFromSeqFunctional config items
+#else
+                makeFromSeqImperative config items
+#endif
+            | Functional _ -> makeFromSeqFunctional config items
+            | Imperative -> makeFromSeqImperative config items
+
+        let makeEmpty<'a when 'a : equality> config =
+            makeFromSeq<'a> config Seq.empty
+
+        let getConfig set =
+            struct (set.TConfig, set)
 
         let add value set =
             match set.TConfig with
-            | Functional bloatFactor ->
-                update (fun set ->
-                    let set = { set with Logs = Add value :: set.Logs; LogsLength = set.LogsLength + 1 }
-                    set.HashSet.TryAdd value |> ignore
-                    set)
-                    bloatFactor
-                    set
-            | Imperative -> set.HashSet.TryAdd value |> ignore; set
+            | BasedOnBuild ->
+#if DEBUG
+                addFunctional value set
+#else
+                addImperative value set
+#endif
+            | Functional -> addFunctional value set
+            | Imperative -> addImperative value set
 
         let remove value set =
             match set.TConfig with
-            | Functional bloatFactor ->
-                update (fun set ->
-                    let set = { set with Logs = Remove value :: set.Logs; LogsLength = set.LogsLength + 1 }
-                    set.HashSet.Remove value |> ignore
-                    set)
-                    bloatFactor
-                    set
-            | Imperative -> set.HashSet.Remove value |> ignore; set
+            | BasedOnBuild ->
+#if DEBUG
+                removeFunctional value set
+#else
+                removeImperative value set
+#endif
+            | Functional -> removeFunctional value set
+            | Imperative -> removeImperative value set
+
+        let clear set =
+            match set.TConfig with
+            | BasedOnBuild ->
+#if DEBUG
+                clearFunctional set
+#else
+                clearImperative set
+#endif
+            | Functional -> clearFunctional set
+            | Imperative -> clearImperative set
 
         let isEmpty set =
             let set = validate set
@@ -165,13 +229,13 @@ module TSetModule =
         let map mapper set =
             fold
                 (fun set value -> add (mapper value) set)
-                (makeEmpty (Some set.TConfig))
+                (makeEmpty set.TConfig)
                 set
 
         let filter pred set =
             fold
                 (fun set value -> if pred value then add value set else set)
-                (makeEmpty (Some set.TConfig))
+                (makeEmpty set.TConfig)
                 set
 
 type TSet<'a when 'a : equality> = TSetModule.TSet<'a>

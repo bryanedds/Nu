@@ -65,6 +65,6 @@ module SetTests =
 
     [<Property>]
     let usetsEqSetsAfterSteps (initialSet : Set<int>) (actions : SetAction<int>[]) =
-        let testSet = USet.makeFromSeq None initialSet
+        let testSet = USet.makeFromSeq Functional initialSet
         let eq (uset : USet<_>) (fsset : Set<_>) = Set.ofSeq uset = fsset
         eqSetsAfterSteps initialSet testSet actions USet.add USet.remove USet.fold (+) eq

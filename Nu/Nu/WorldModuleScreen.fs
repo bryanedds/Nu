@@ -39,7 +39,7 @@ module WorldModuleScreen =
                         let layerDirectory = FOption.get layerDirectoryOpt
                         // NOTE: this is logically a redundant operation...
                         UMap.add screenName (KeyValuePair (screen.ScreenAddress, layerDirectory.Value)) world.ScreenDirectory
-                    else UMap.add screenName (KeyValuePair (screen.ScreenAddress, UMap.makeEmpty None)) world.ScreenDirectory
+                    else UMap.add screenName (KeyValuePair (screen.ScreenAddress, UMap.makeEmpty Functional)) world.ScreenDirectory
                 | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
             let screenStates = UMap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }

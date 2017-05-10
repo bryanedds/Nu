@@ -30,14 +30,19 @@ module UListModule =
     [<RequireQualifiedAccess>]
     module UList =
 
-        let makeFromSeq configOpt items =
-            { RefList = ref ^ TList.makeFromSeq configOpt items }
+        let makeFromSeq config items =
+            { RefList = ref ^ TList.makeFromSeq config items }
 
-        let makeFromArray configOpt items =
-            { RefList = ref ^ TList.makeFromArray configOpt items }
+        let makeFromArray config items =
+            { RefList = ref ^ TList.makeFromArray config items }
 
-        let makeEmpty<'a> configOpt =
-            { RefList = ref ^ TList.makeEmpty<'a> configOpt }
+        let makeEmpty<'a> config =
+            { RefList = ref ^ TList.makeEmpty<'a> config }
+
+        let getConfig list =
+            let struct (result, tlist) = TList.getConfig !list.RefList
+            list.RefList := tlist
+            result
 
         let get (index : int) (list : 'a UList) =
             list.[index]
@@ -50,6 +55,9 @@ module UListModule =
 
         let remove value list =
             { RefList = ref ^ TList.remove value !list.RefList }
+
+        let clear list =
+            { RefList = ref ^ TList.clear !list.RefList }
 
         let isEmpty list =
             let struct (result, tlist) = TList.isEmpty !list.RefList
@@ -117,9 +125,9 @@ module UListModule =
             list.RefList := tlist
             { RefList = ref result }
 
-        let makeFromLists configOpt lists =
+        let makeFromLists config lists =
             let tlists = !(map (fun (list : 'a UList) -> !list.RefList) lists).RefList
-            let tlist = TList.makeFromLists configOpt tlists
+            let tlist = TList.makeFromLists config tlists
             { RefList = ref tlist }
 
         /// Add all the given values to the list.

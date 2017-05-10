@@ -92,7 +92,7 @@ module AudioPlayerModule =
                         let audioAssetMap = UMap.addMany audioAssets audioAssetMap
                         { audioPlayer with AudioPackageMap = UMap.add packageName audioAssetMap audioPlayer.AudioPackageMap }
                     else
-                        let audioAssetMap = UMap.makeFromSeq None audioAssets
+                        let audioAssetMap = UMap.makeFromSeq Functional audioAssets
                         { audioPlayer with AudioPackageMap = UMap.add packageName audioAssetMap audioPlayer.AudioPackageMap }
                 | Left error ->
                     Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
@@ -185,7 +185,7 @@ module AudioPlayerModule =
         static member private handleReloadAudioAssets audioPlayer =
             let oldPackageMap = audioPlayer.AudioPackageMap
             let oldPackageNames = oldPackageMap |> UMap.toSeq |> Seq.map fst
-            let audioPlayer = { audioPlayer with AudioPackageMap = UMap.makeEmpty None }
+            let audioPlayer = { audioPlayer with AudioPackageMap = UMap.makeEmpty Functional }
             Seq.fold
                 (fun audioPlayer packageName -> AudioPlayer.tryLoadAudioPackage packageName audioPlayer)
                 audioPlayer
@@ -228,8 +228,8 @@ module AudioPlayerModule =
                 failwith "Cannot create an AudioPlayer without SDL audio initialized."
             let audioPlayer =
                 { AudioContext = ()
-                  AudioPackageMap = UMap.makeEmpty None
-                  AudioMessages = UList.makeEmpty None
+                  AudioPackageMap = UMap.makeEmpty Functional
+                  AudioMessages = UList.makeEmpty Functional
                   CurrentSongOpt = None
                   NextPlaySongOpt = None }
             audioPlayer
@@ -237,7 +237,7 @@ module AudioPlayerModule =
         interface IAudioPlayer with
     
             member audioPlayer.ClearMessages () =
-                let audioPlayer = { audioPlayer with AudioMessages = UList.makeEmpty None }
+                let audioPlayer = { audioPlayer with AudioMessages = UList.makeEmpty Functional }
                 audioPlayer :> IAudioPlayer
     
             member audioPlayer.EnqueueMessage audioMessage =
@@ -247,7 +247,7 @@ module AudioPlayerModule =
     
             member audioPlayer.Play () =
                 let audioMessages = audioPlayer.AudioMessages
-                let audioPlayer = { audioPlayer with AudioMessages = UList.makeEmpty None }
+                let audioPlayer = { audioPlayer with AudioMessages = UList.makeEmpty Functional }
                 let audioPlayer = AudioPlayer.handleAudioMessages audioMessages audioPlayer
                 let audioPlayer = AudioPlayer.updateAudioPlayer audioPlayer
                 audioPlayer :> IAudioPlayer

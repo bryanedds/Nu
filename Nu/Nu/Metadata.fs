@@ -87,18 +87,18 @@ module MetadataModule =
         let private tryGenerateMetadataSubmap packageName assetGraph =
             match AssetGraph.tryLoadAssetsFromPackage true None packageName assetGraph with
             | Right assets ->
-                let submap = assets |> List.map generateAssetMetadata |> UMap.makeFromSeq None
+                let submap = assets |> List.map generateAssetMetadata |> UMap.makeFromSeq Functional
                 (packageName, submap)
             | Left error ->
                 Log.info ("Could not load asset metadata for package '" + packageName + "' due to: " + error)
-                (packageName, UMap.makeEmpty None)
+                (packageName, UMap.makeEmpty Functional)
 
         let private makeMetadataMap packageNames assetGraph =
             List.fold
                 (fun metadata packageName ->
                     let (packageName, submap) = tryGenerateMetadataSubmap packageName assetGraph
                     UMap.add packageName submap metadata)
-                (UMap.makeEmpty None)
+                (UMap.makeEmpty Functional)
                 packageNames
 
         /// Try to get the metadata of the given asset.
@@ -151,7 +151,7 @@ module MetadataModule =
 
         /// The empty metadata.
         let makeEmpty () =
-            { MetadataMap = UMap.makeEmpty None }
+            { MetadataMap = UMap.makeEmpty Functional }
 
 /// Stores metadata for game assets.
 type Metadata = MetadataModule.Metadata

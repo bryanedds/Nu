@@ -46,7 +46,7 @@ module SymbolStoreModule =
                         let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.add packageName symbolMap symbolStore.SymbolStorePackageMap }
                         symbolStore
                     else
-                        let symbolMap = UMap.makeFromSeq None symbols
+                        let symbolMap = UMap.makeFromSeq Functional symbols
                         let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.add packageName symbolMap symbolStore.SymbolStorePackageMap }
                         symbolStore
                 | Left error ->
@@ -95,7 +95,7 @@ module SymbolStoreModule =
         /// Reload all the assets in the symbolStore.
         let reloadSymbols symbolStore =
             let oldPackageMap = symbolStore.SymbolStorePackageMap
-            let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.makeEmpty None }
+            let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.makeEmpty Functional }
             UMap.fold (fun (symbolStore : SymbolStore) packageName package ->
                 UMap.fold (fun (symbolStore : SymbolStore) assetName (implicitDelimiters, _) ->
                     let assetTag = { PackageName = packageName; AssetName = assetName }
@@ -107,7 +107,7 @@ module SymbolStoreModule =
     
         /// The empty symbolStore.
         let empty =
-            { SymbolStorePackageMap = UMap.makeEmpty None }
+            { SymbolStorePackageMap = UMap.makeEmpty Functional }
 
 /// Provides references to Symbols that are loaded from files.
 type SymbolStore = SymbolStoreModule.SymbolStore
