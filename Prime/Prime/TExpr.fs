@@ -6,7 +6,8 @@ open System
 
 // TODO: P1: Move to its own file?
 type TConfig =
-    | Functional of int
+    | BasedOnBuild
+    | Functional
     | Imperative
 
 type TExpr<'a, 'env> = 'env -> struct ('a * 'env)

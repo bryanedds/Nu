@@ -167,11 +167,11 @@ module EventSystemModule =
 
         /// Make an event system.
         let make eventTracer eventTracing eventFilter globalParticipant =
-            { Subscriptions = UMap.makeEmpty None
-              Unsubscriptions = UMap.makeEmpty None
+            { Subscriptions = UMap.makeEmpty Functional
+              Unsubscriptions = UMap.makeEmpty Functional
               GlobalParticipant = globalParticipant
               EventContext = globalParticipant
-              EventStates = UMap.makeEmpty None
+              EventStates = UMap.makeEmpty Functional
               EventTracer = eventTracer
               EventTracing = eventTracing
               EventFilter = eventFilter

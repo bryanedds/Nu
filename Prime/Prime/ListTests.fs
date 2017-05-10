@@ -125,7 +125,7 @@ module ListTests =
         eqListsAfterSteps initialList ary actions add get set ((+) 1) Array.map pred Array.filter eq true
 
     let ulistEqLists (initialList : ResizeArray<int>) (actions : ListAction<int>[]) (lookBackwards : bool) =
-        let testList = UList.addMany initialList (UList.makeEmpty(None))
+        let testList = UList.addMany initialList (UList.makeEmpty Functional)
         let eq (ulist : UList<_>) (fslist : _ ResizeArray) = List.ofSeq ulist = List.ofSeq fslist
         let pred i = i % 2 = 0
         eqListsAfterSteps initialList testList actions UList.add UList.get UList.set ((+) 1) UList.map pred UList.filter eq lookBackwards 

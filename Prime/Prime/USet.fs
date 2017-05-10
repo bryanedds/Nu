@@ -26,17 +26,25 @@ module USetModule =
     [<RequireQualifiedAccess>]
     module USet =
 
-        let makeFromSeq<'a when 'a : equality> configOpt items =
-            { RefSet = ref ^ TSet.makeFromSeq<'a> configOpt items }
+        let makeFromSeq<'a when 'a : equality> config items =
+            { RefSet = ref ^ TSet.makeFromSeq<'a> config items }
 
-        let makeEmpty<'a when 'a : equality> configOpt =
-            { RefSet = ref ^ TSet.makeEmpty<'a> configOpt }
+        let makeEmpty<'a when 'a : equality> config =
+            { RefSet = ref ^ TSet.makeEmpty<'a> config }
+
+        let getConfig set =
+            let struct (result, tset) = TSet.getConfig !set.RefSet
+            set.RefSet := tset
+            result
 
         let add value set =
             { RefSet = ref ^ TSet.add value !set.RefSet }
 
         let remove value set =
             { RefSet = ref ^ TSet.remove value !set.RefSet }
+
+        let clear set =
+            { RefSet = ref ^ TSet.clear !set.RefSet }
     
         /// Add all the given values to the set.
         let addMany values set =

@@ -26,11 +26,16 @@ module UMapModule =
     [<RequireQualifiedAccess>]
     module UMap =
 
-        let makeFromSeq<'k, 'v when 'k : equality> configOpt entries =
-            { RefMap = ref ^ TMap.makeFromSeq<'k, 'v> configOpt entries }
+        let makeFromSeq<'k, 'v when 'k : equality> config entries =
+            { RefMap = ref ^ TMap.makeFromSeq<'k, 'v> config entries }
 
-        let makeEmpty<'k, 'v when 'k : equality> configOpt =
-            { RefMap = ref ^ TMap.makeEmpty<'k, 'v> configOpt }
+        let makeEmpty<'k, 'v when 'k : equality> config =
+            { RefMap = ref ^ TMap.makeEmpty<'k, 'v> config }
+
+        let getConfig map =
+            let struct (result, tmap) = TMap.getConfig !map.RefMap
+            map.RefMap := tmap
+            result
 
         let add key value map =
             { RefMap = ref ^ TMap.add key value !map.RefMap }

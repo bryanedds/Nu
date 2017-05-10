@@ -12,6 +12,7 @@ module TListModule =
         | Add of 'a
         | Remove of 'a
         | Set of int * 'a
+        | Clear
         
     type [<NoEquality; NoComparison>] 'a TList =
         private
@@ -36,14 +37,15 @@ module TListModule =
     [<RequireQualifiedAccess>]
     module TList =
 
-        let private commit (_ : int) list =
+        let private commit list =
             let oldList = list
             let impListOrigin = List<'a> list.ImpListOrigin
             List.foldBack (fun log () ->
                 match log with
                 | Add value -> impListOrigin.Add value
                 | Remove value -> impListOrigin.Remove value |> ignore
-                | Set (index, value) -> impListOrigin.[index] <- value)
+                | Set (index, value) -> impListOrigin.[index] <- value
+                | Clear -> impListOrigin.Clear ())
                 list.Logs ()
             let impList = List<'a> impListOrigin
             let list = { list with ImpList = impList; ImpListOrigin = impListOrigin; Logs = []; LogsLength = 0 }
@@ -51,7 +53,7 @@ module TListModule =
             list.TListOpt <- list
             list
 
-        let private compress (_ : int) list =
+        let private compress list =
             let oldList = list
             let impListOrigin = List<'a> list.ImpList
             let list = { list with ImpListOrigin = impListOrigin; Logs = []; LogsLength = 0 }
@@ -59,20 +61,20 @@ module TListModule =
             list.TListOpt <- list
             list
 
-        let private validate2 bloatFactor list =
+        let private validate2 list =
             match box list.TListOpt with
-            | null -> commit bloatFactor list
+            | null -> commit list
             | target ->
                 match obj.ReferenceEquals (target, list) with
                 | true ->
-                    if list.LogsLength > list.ImpList.Count * bloatFactor
-                    then compress bloatFactor list
+                    if list.LogsLength > list.ImpList.Count
+                    then compress list
                     else list
-                | false -> commit bloatFactor list
+                | false -> commit list
 
-        let private update updater bloatFactor list =
+        let private update updater list =
             let oldList = list
-            let list = validate2 bloatFactor list
+            let list = validate2 list
             let list = updater list
             oldList.TListOpt <- Unchecked.defaultof<'a TList>
             list.TListOpt <- list
@@ -80,37 +82,100 @@ module TListModule =
 
         let private validate list =
             match list.TConfig with
-            | Functional bloatFactor -> validate2 bloatFactor list
+            | BasedOnBuild ->
+#if DEBUG
+                validate2 list
+#else
+                list
+#endif
+            | Functional -> validate2 list
             | Imperative -> list
 
-        let makeFromSeq configOpt (items : 'a seq) =
-            let config = Option.getOrDefault (Functional 1) configOpt
-            match config with
-            | Functional _ ->
-                let impList = List<'a> items
-                let impListOrigin = List<'a> impList
-                let list =
-                    { TListOpt = Unchecked.defaultof<'a TList>
-                      TConfig = config
-                      ImpList = impList
-                      ImpListOrigin = impListOrigin
-                      Logs = []
-                      LogsLength = 0 }
-                list.TListOpt <- list
-                list
-            | Imperative ->
+        let private makeFromSeqFunctional config (items : 'a seq) =
+            let impList = List<'a> items
+            let impListOrigin = List<'a> impList
+            let list =
                 { TListOpt = Unchecked.defaultof<'a TList>
                   TConfig = config
-                  ImpList = List<'a> items
-                  ImpListOrigin = List<'a> ()
+                  ImpList = impList
+                  ImpListOrigin = impListOrigin
                   Logs = []
                   LogsLength = 0 }
+            list.TListOpt <- list
+            list
 
-        let makeFromArray configOpt (items : 'a array) =
-            makeFromSeq configOpt items
+        let private makeFromSeqImperative config (items : 'a seq) =
+            { TListOpt = Unchecked.defaultof<'a TList>
+              TConfig = config
+              ImpList = List<'a> items
+              ImpListOrigin = List<'a> ()
+              Logs = []
+              LogsLength = 0 }
 
-        let makeEmpty<'a> configOpt =
-            makeFromSeq configOpt (List<'a> ())
+        let private setFunctional index value list =
+            update (fun list ->
+                let list = { list with Logs = Set (index, value) :: list.Logs; LogsLength = list.LogsLength + 1 }
+                list.ImpList.[index] <- value
+                list)
+                list
+
+        let private setImperative index value list =
+            list.ImpList.[index] <- value
+            list
+
+        let private addFunctional value list =
+            update (fun list ->
+                let list = { list with Logs = Add value :: list.Logs; LogsLength = list.LogsLength + 1 }
+                list.ImpList.Add value |> ignore
+                list)
+                list
+
+        let private addImperative value list =
+            list.ImpList.Add value |> ignore
+            list
+
+        let private removeFunctional value list =
+            update (fun list ->
+                let list = { list with Logs = Remove value :: list.Logs; LogsLength = list.LogsLength + 1 }
+                list.ImpList.Remove value |> ignore
+                list)
+                list
+
+        let private removeImperative value list =
+            list.ImpList.Remove value |> ignore
+            list
+
+        let private clearFunctional list =
+            update (fun list ->
+                let list = { list with Logs = Clear :: list.Logs; LogsLength = list.LogsLength + 1 }
+                list.ImpList.Clear ()
+                list)
+                list
+
+        let private clearImperative list =
+            list.ImpList.Clear ()
+            list
+
+        let makeFromSeq config (items : 'a seq) =
+            match config with
+            | BasedOnBuild _ ->
+#if DEBUG
+                makeFromSeqFunctional config items
+#else
+                makeFromSeqImperative config items
+#endif
+            | Functional _ -> makeFromSeqFunctional config items
+            | Imperative -> makeFromSeqImperative config items
+                
+
+        let makeFromArray config (items : 'a array) =
+            makeFromSeq config items
+
+        let makeEmpty<'a> config =
+            makeFromSeq config (List<'a> ())
+
+        let getConfig list =
+            struct (list.TConfig, list)
 
         let get index list =
             let list = validate list
@@ -118,36 +183,47 @@ module TListModule =
 
         let set index value list =
             match list.TConfig with
-            | Functional bloatFactor ->
-                update (fun list ->
-                    let list = { list with Logs = Set (index, value) :: list.Logs; LogsLength = list.LogsLength + 1 }
-                    list.ImpList.[index] <- value
-                    list)
-                    bloatFactor
-                    list
-            | Imperative -> list.ImpList.[index] <- value; list
+            | BasedOnBuild ->
+#if DEBUG
+                setFunctional index value list
+#else
+                setImperative index value list
+#endif
+            | Functional -> setFunctional index value list
+            | Imperative -> setImperative index value list
 
         let add value list =
             match list.TConfig with
-            | Functional bloatFactor ->
-                update (fun list ->
-                    let list = { list with Logs = Add value :: list.Logs; LogsLength = list.LogsLength + 1 }
-                    list.ImpList.Add value |> ignore
-                    list)
-                    bloatFactor
-                    list
-            | Imperative -> list.ImpList.Add value |> ignore; list
+            | BasedOnBuild ->
+#if DEBUG
+                addFunctional value list
+#else
+                addImperative value list
+#endif
+            | Functional -> addFunctional value list
+            | Imperative -> addImperative value list
 
         let remove value list =
             match list.TConfig with
-            | Functional bloatFactor ->
-                update (fun list ->
-                    let list = { list with Logs = Remove value :: list.Logs; LogsLength = list.LogsLength + 1 }
-                    list.ImpList.Remove value |> ignore
-                    list)
-                    bloatFactor
-                    list
-            | Imperative -> list.ImpList.Remove value |> ignore; list
+            | BasedOnBuild ->
+#if DEBUG
+                removeFunctional value list
+#else
+                removeImperative value list
+#endif
+            | Functional -> removeFunctional value list
+            | Imperative -> removeImperative value list
+
+        let clear list =
+            match list.TConfig with
+            | BasedOnBuild ->
+#if DEBUG
+                clearFunctional list
+#else
+                clearImperative list
+#endif
+            | Functional -> clearFunctional list
+            | Imperative -> clearImperative list
 
         let isEmpty list =
             let list = validate list
@@ -182,37 +258,37 @@ module TListModule =
         let map (mapper : 'a -> 'b) (list : 'a TList) =
             let list = validate list
             let seqMapped = Seq.map mapper list.ImpList
-            let listMapped = makeFromSeq (Some list.TConfig) seqMapped
+            let listMapped = makeFromSeq list.TConfig seqMapped
             struct (listMapped, list)
 
         let filter pred list =
             let list = validate list
             let seqFiltered = Seq.filter pred list.ImpList
-            let listFiltered = makeFromSeq (Some list.TConfig) seqFiltered
+            let listFiltered = makeFromSeq list.TConfig seqFiltered
             struct (listFiltered, list)
 
         let rev list =
             let list = validate list
             let seqReversed = Seq.rev list.ImpList
-            let listReversed = makeFromSeq (Some list.TConfig) seqReversed
+            let listReversed = makeFromSeq list.TConfig seqReversed
             struct (listReversed, list)
 
         let sortWith comparison list =
             let list = validate list
             let seqSorted = Seq.sortWith comparison list.ImpList
-            let listSorted = makeFromSeq (Some list.TConfig) seqSorted
+            let listSorted = makeFromSeq list.TConfig seqSorted
             struct (listSorted, list)
 
         let sortBy by list =
             let list = validate list
             let seqSorted = Seq.sortBy by list.ImpList
-            let listSorted = makeFromSeq (Some list.TConfig) seqSorted
+            let listSorted = makeFromSeq list.TConfig seqSorted
             struct (listSorted, list)
 
         let sort list =
             let list = validate list
             let seqSorted = Seq.sort list.ImpList
-            let listSorted = makeFromSeq (Some list.TConfig) seqSorted
+            let listSorted = makeFromSeq list.TConfig seqSorted
             struct (listSorted, list)
 
         let fold folder state list =
@@ -224,18 +300,18 @@ module TListModule =
             let listMapped = filter Option.isSome list |> fst'
             map Option.get listMapped
 
-        let makeFromLists configOpt lists =
+        let makeFromLists config lists =
             // OPTIMIZATION: elides building of avoidable transactions.
             let listsAsSeq = toSeq lists |> fst'
             let tempList = List<'a> ()
             for list in listsAsSeq do tempList.AddRange (toSeq list |> fst')
-            makeFromSeq configOpt tempList
+            makeFromSeq config tempList
 
         /// Add all the given values to the list.
         let addMany (values : 'a seq) list =
             let list = validate list
-            let lists = add list (makeFromArray (Some list.TConfig) [|makeFromSeq (Some list.TConfig) values|])
-            makeFromLists (Some list.TConfig) lists
+            let lists = add list (makeFromArray list.TConfig [|makeFromSeq list.TConfig values|])
+            makeFromLists list.TConfig lists
 
         /// Remove all the given values from the list.
         let removeMany values list =

@@ -63,6 +63,6 @@ module MapTests =
 
     [<Property>]
     let umapsEqualFsmapsAfterSteps (initialMap : Map<int, string>) (actions : MapAction<int, string>[]) =
-        let testMap = UMap.makeFromSeq None (Map.toSeq initialMap)
+        let testMap = UMap.makeFromSeq Functional (Map.toSeq initialMap)
         let eq (umap : UMap<_,_>) (fsmap : Map<_,_>) = Map.ofSeq umap = fsmap
         eqMapsAfterSteps initialMap testMap actions UMap.add UMap.remove UMap.fold (+) eq

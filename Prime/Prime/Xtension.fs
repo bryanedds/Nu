@@ -72,16 +72,16 @@ module XtensionModule =
               Imperative = imperative }
     
         /// An Xtension that cannot default, is sealed, and is imperative.
-        let makeImperative () = make (UMap.makeEmpty None) false true true
+        let makeImperative () = make (UMap.makeEmpty Functional) false true true
     
         /// An Xtension that can default, isn't sealed, and isn't imperative.
-        let makeEmpty () = make (UMap.makeEmpty None) true false false
+        let makeEmpty () = make (UMap.makeEmpty Functional) true false false
     
         /// An Xtension that cannot default, is sealed, and isn't imperative.
-        let makeSafe () = make (UMap.makeEmpty None) false true false
+        let makeSafe () = make (UMap.makeEmpty Functional) false true false
     
         /// An Xtension that cannot default, isn't sealed, and isn't imperative.
-        let makeMixed () = make (UMap.makeEmpty None) false false false
+        let makeMixed () = make (UMap.makeEmpty Functional) false false false
 
         /// Whether the extension uses mutation.
         let getImperative xtension = xtension.Imperative

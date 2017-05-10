@@ -11,6 +11,7 @@ module TMapModule =
     type private Log<'k, 'v when 'k : equality> =
         | Add of 'k * 'v
         | Remove of 'k
+        | Clear
 
     type [<NoEquality; NoComparison>] TMap<'k, 'v when 'k : equality> =
         private
@@ -41,7 +42,8 @@ module TMapModule =
             List.foldBack (fun log () ->
                 match log with
                 | Add (key, value) -> dictOrigin.ForceAdd (key, value)
-                | Remove key -> dictOrigin.Remove key |> ignore)
+                | Remove key -> dictOrigin.Remove key |> ignore
+                | Clear -> dictOrigin.Clear ())
                 map.Logs ()
             let dict = Dictionary<'k, 'v> (dictOrigin, HashIdentity.Structural)
             let map = { map with Dict = dict; DictOrigin = dictOrigin; Logs = []; LogsLength = 0 }
@@ -57,17 +59,17 @@ module TMapModule =
             map.TMapOpt <- map
             map
 
-        let private validate2 bloatFactor map =
+        let private validate2 map =
             match box map.TMapOpt with
             | null -> commit map
             | target ->
                 match obj.ReferenceEquals (target, map) with
-                | true -> if map.LogsLength > map.Dict.Count * bloatFactor then compress map else map
+                | true -> if map.LogsLength > map.Dict.Count then compress map else map
                 | false -> commit map
 
-        let private update updater bloatFactor map =
+        let private update updater map =
             let oldMap = map
-            let map = validate2 bloatFactor map
+            let map = validate2 map
             let map = updater map
             oldMap.TMapOpt <- Unchecked.defaultof<TMap<'k, 'v>>
             map.TMapOpt <- map
@@ -75,56 +77,118 @@ module TMapModule =
 
         let private validate map =
             match map.TConfig with
-            | Functional bloatFactor -> validate2 bloatFactor map
+            | BasedOnBuild ->
+#if DEBUG
+                validate2 map
+#else
+                map
+#endif
+            | Functional -> validate2 map
             | Imperative -> map
 
-        let makeFromSeq<'k, 'v when 'k : equality> configOpt entries =
-            let config = Option.getOrDefault (Functional 1) configOpt
-            match config with
-            | Functional _ ->
-                let dict = dictPlus entries
-                let dictOrigin = Dictionary (dict, HashIdentity.Structural)
-                let map =
-                    { TMapOpt = Unchecked.defaultof<TMap<'k, 'v>>
-                      TConfig = config
-                      Dict = dict
-                      DictOrigin = dictOrigin
-                      Logs = []
-                      LogsLength = 0 }
-                map.TMapOpt <- map
-                map
-            | Imperative ->
+        let private makeFromSeqFunctional config (entries : ('k * 'v) seq) =
+            let dict = dictPlus entries
+            let dictOrigin = Dictionary (dict, HashIdentity.Structural)
+            let map =
                 { TMapOpt = Unchecked.defaultof<TMap<'k, 'v>>
                   TConfig = config
-                  Dict = dictPlus entries
-                  DictOrigin = Dictionary HashIdentity.Structural
+                  Dict = dict
+                  DictOrigin = dictOrigin
                   Logs = []
                   LogsLength = 0 }
+            map.TMapOpt <- map
+            map
 
-        let makeEmpty<'k, 'v when 'k : equality> configOpt =
-            makeFromSeq<'k, 'v> configOpt Seq.empty
+        let private makeFromSeqImperative config (entries : ('k * 'v) seq) =
+            { TMapOpt = Unchecked.defaultof<TMap<'k, 'v>>
+              TConfig = config
+              Dict = dictPlus entries
+              DictOrigin = Dictionary HashIdentity.Structural
+              Logs = []
+              LogsLength = 0 }
+
+        let private addFunctional key value map =
+            update (fun map ->
+                let map = { map with Logs = Add (key, value) :: map.Logs; LogsLength = map.LogsLength + 1 }
+                map.Dict.ForceAdd (key, value)
+                map)
+                map
+
+        let private addImperative key value map =
+            map.Dict.ForceAdd (key, value)
+            map
+
+        let private removeFunctional key map =
+            update (fun map ->
+                let map = { map with Logs = Remove key :: map.Logs; LogsLength = map.LogsLength + 1 }
+                map.Dict.Remove key |> ignore
+                map)
+                map
+
+        let private removeImperative key map =
+            map.Dict.Remove key |> ignore
+            map
+
+        let private clearFunctional map =
+            update (fun map ->
+                let map = { map with Logs = Clear :: map.Logs; LogsLength = map.LogsLength + 1 }
+                map.Dict.Clear ()
+                map)
+                map
+
+        let private clearImperative map =
+            map.Dict.Clear ()
+            map
+
+        let makeFromSeq<'k, 'v when 'k : equality> config (entries : ('k * 'v) seq) =
+            match config with
+            | BasedOnBuild _ ->
+#if DEBUG
+                makeFromSeqFunctional config entries
+#else
+                makeFromSeqImperative config entries
+#endif
+            | Functional _ -> makeFromSeqFunctional config entries
+            | Imperative -> makeFromSeqImperative config entries
+
+        let makeEmpty<'k, 'v when 'k : equality> config =
+            makeFromSeq<'k, 'v> config Seq.empty
+
+        let getConfig map =
+            struct (map.TConfig, map)
 
         let add key value map =
             match map.TConfig with
-            | Functional bloatFactor ->
-                update (fun map ->
-                    let map = { map with Logs = Add (key, value) :: map.Logs; LogsLength = map.LogsLength + 1 }
-                    map.Dict.ForceAdd (key, value)
-                    map)
-                    bloatFactor
-                    map
-            | Imperative -> map.Dict.ForceAdd (key, value); map
+            | BasedOnBuild ->
+#if DEBUG
+                addFunctional key value map
+#else
+                addImperative key value map
+#endif
+            | Functional -> addFunctional key value map
+            | Imperative -> addImperative key value map
 
         let remove key map =
             match map.TConfig with
-            | Functional bloatFactor ->
-                update (fun map ->
-                    let map = { map with Logs = Remove key :: map.Logs; LogsLength = map.LogsLength + 1 }
-                    map.Dict.Remove key |> ignore
-                    map)
-                    bloatFactor
-                    map
-            | Imperative -> map.Dict.Remove key |> ignore; map
+            | BasedOnBuild ->
+#if DEBUG
+                removeFunctional key map
+#else
+                removeImperative key map
+#endif
+            | Functional -> removeFunctional key map
+            | Imperative -> removeImperative key map
+
+        let clear map =
+            match map.TConfig with
+            | BasedOnBuild ->
+#if DEBUG
+                clearFunctional map
+#else
+                clearImperative map
+#endif
+            | Functional -> clearFunctional map
+            | Imperative -> clearImperative map
 
         let isEmpty map =
             let map = validate map
@@ -186,13 +250,13 @@ module TMapModule =
         let map mapper map =
             fold
                 (fun map key value -> add key (mapper value) map)
-                (makeEmpty (Some map.TConfig))
+                (makeEmpty map.TConfig)
                 map
 
         let filter pred map =
             fold
                 (fun state k v -> if pred k v then add k v state else state)
-                (makeEmpty (Some map.TConfig))
+                (makeEmpty map.TConfig)
                 map
 
 type TMap<'k, 'v when 'k : equality> = TMapModule.TMap<'k, 'v>
