@@ -76,80 +76,30 @@ module TMapModule =
             map
 
         let private validate map =
-            match map.TConfig with
-            | BasedOnBuild ->
-#if DEBUG
-                validate2 map
-#else
-                map
-#endif
-            | Functional -> validate2 map
-            | Imperative -> map
-
-        let private makeFromSeqFunctional config (entries : ('k * 'v) seq) =
-            let dict = dictPlus entries
-            let dictOrigin = Dictionary (dict, HashIdentity.Structural)
-            let map =
-                { TMapOpt = Unchecked.defaultof<TMap<'k, 'v>>
-                  TConfig = config
-                  Dict = dict
-                  DictOrigin = dictOrigin
-                  Logs = []
-                  LogsLength = 0 }
-            map.TMapOpt <- map
-            map
-
-        let private makeFromSeqImperative config (entries : ('k * 'v) seq) =
-            { TMapOpt = Unchecked.defaultof<TMap<'k, 'v>>
-              TConfig = config
-              Dict = dictPlus entries
-              DictOrigin = Dictionary HashIdentity.Structural
-              Logs = []
-              LogsLength = 0 }
-
-        let private addFunctional key value map =
-            update (fun map ->
-                let map = { map with Logs = Add (key, value) :: map.Logs; LogsLength = map.LogsLength + 1 }
-                map.Dict.ForceAdd (key, value)
-                map)
-                map
-
-        let private addImperative key value map =
-            map.Dict.ForceAdd (key, value)
-            map
-
-        let private removeFunctional key map =
-            update (fun map ->
-                let map = { map with Logs = Remove key :: map.Logs; LogsLength = map.LogsLength + 1 }
-                map.Dict.Remove key |> ignore
-                map)
-                map
-
-        let private removeImperative key map =
-            map.Dict.Remove key |> ignore
-            map
-
-        let private clearFunctional map =
-            update (fun map ->
-                let map = { map with Logs = Clear :: map.Logs; LogsLength = map.LogsLength + 1 }
-                map.Dict.Clear ()
-                map)
-                map
-
-        let private clearImperative map =
-            map.Dict.Clear ()
-            map
+            if TConfig.isFunctional map.TConfig
+            then validate2 map
+            else map
 
         let makeFromSeq<'k, 'v when 'k : equality> config (entries : ('k * 'v) seq) =
-            match config with
-            | BasedOnBuild _ ->
-#if DEBUG
-                makeFromSeqFunctional config entries
-#else
-                makeFromSeqImperative config entries
-#endif
-            | Functional _ -> makeFromSeqFunctional config entries
-            | Imperative -> makeFromSeqImperative config entries
+            if TConfig.isFunctional config then 
+                let dict = dictPlus entries
+                let dictOrigin = Dictionary (dict, HashIdentity.Structural)
+                let map =
+                    { TMapOpt = Unchecked.defaultof<TMap<'k, 'v>>
+                      TConfig = config
+                      Dict = dict
+                      DictOrigin = dictOrigin
+                      Logs = []
+                      LogsLength = 0 }
+                map.TMapOpt <- map
+                map
+            else
+                { TMapOpt = Unchecked.defaultof<TMap<'k, 'v>>
+                  TConfig = config
+                  Dict = dictPlus entries
+                  DictOrigin = Dictionary HashIdentity.Structural
+                  Logs = []
+                  LogsLength = 0 }
 
         let makeEmpty<'k, 'v when 'k : equality> config =
             makeFromSeq<'k, 'v> config Seq.empty
@@ -158,37 +108,31 @@ module TMapModule =
             struct (map.TConfig, map)
 
         let add key value map =
-            match map.TConfig with
-            | BasedOnBuild ->
-#if DEBUG
-                addFunctional key value map
-#else
-                addImperative key value map
-#endif
-            | Functional -> addFunctional key value map
-            | Imperative -> addImperative key value map
+            if TConfig.isFunctional map.TConfig then
+                update (fun map ->
+                    let map = { map with Logs = Add (key, value) :: map.Logs; LogsLength = map.LogsLength + 1 }
+                    map.Dict.ForceAdd (key, value)
+                    map)
+                    map
+            else map.Dict.ForceAdd (key, value); map
 
         let remove key map =
-            match map.TConfig with
-            | BasedOnBuild ->
-#if DEBUG
-                removeFunctional key map
-#else
-                removeImperative key map
-#endif
-            | Functional -> removeFunctional key map
-            | Imperative -> removeImperative key map
+            if TConfig.isFunctional map.TConfig then
+                update (fun map ->
+                    let map = { map with Logs = Remove key :: map.Logs; LogsLength = map.LogsLength + 1 }
+                    map.Dict.Remove key |> ignore
+                    map)
+                    map
+            else map.Dict.Remove key |> ignore; map
 
         let clear map =
-            match map.TConfig with
-            | BasedOnBuild ->
-#if DEBUG
-                clearFunctional map
-#else
-                clearImperative map
-#endif
-            | Functional -> clearFunctional map
-            | Imperative -> clearImperative map
+            if TConfig.isFunctional map.TConfig then
+                update (fun map ->
+                    let map = { map with Logs = Clear :: map.Logs; LogsLength = map.LogsLength + 1 }
+                    map.Dict.Clear ()
+                    map)
+                    map
+            else map.Dict.Clear (); map
 
         let isEmpty map =
             let map = validate map

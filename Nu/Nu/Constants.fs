@@ -6,6 +6,7 @@ open System
 open OpenTK
 open SDL2
 open Nu
+open Prime
 
 [<RequireQualifiedAccess>]
 module Constants =
@@ -36,6 +37,9 @@ module Constants =
         let (*Literal*) EntityTreeBounds = Vector4 (EntityTreeSize.X * -0.5f, EntityTreeSize.Y * -0.5f, EntityTreeSize.X * 0.5f, EntityTreeSize.Y * 0.5f)
         let (*Literal*) EmptySpecialization = ""
         let (*Literal*) InvalidId = Guid.Empty
+        let (*Literal*) SubsystemMapConfig = Functional
+        let (*Literal*) TaskletListConfig = Functional
+        let (*Literal*) SimulantMapConfig = Functional
 
     [<RequireQualifiedAccess>]
     module Associations =
@@ -43,6 +47,11 @@ module Constants =
         let [<Literal>] Symbol = "Symbol"
         let [<Literal>] Render = "Render"
         let [<Literal>] Audio = "Audio"
+
+    [<RequireQualifiedAccess>]
+    module SymbolStore =
+
+        let (*Literal*) SymbolMapConfig = Functional
 
     [<RequireQualifiedAccess>]
     module Render =
@@ -56,6 +65,8 @@ module Constants =
         let (*Literal*) ResolutionX = Core.getResolutionOrDefault true DefaultResolutionX
         let (*Literal*) ResolutionY = Core.getResolutionOrDefault false DefaultResolutionY
         let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy)
+        let (*Literal*) AssetMapConfig = Functional
+        let (*Literal*) MessageListConfig = Functional
 
     [<RequireQualifiedAccess>]
     module Audio =
@@ -63,6 +74,8 @@ module Constants =
         let [<Literal>] Frequency = 44100
         let [<Literal>] DefaultBufferSize = 1024
         let [<Literal>] DefaultTimeToFadeOutSongMs = 500
+        let (*Literal*) AssetMapConfig = Functional
+        let (*Literal*) MessageListConfig = Functional
 
     [<RequireQualifiedAccess>]
     module Physics =
@@ -73,6 +86,12 @@ module Constants =
         let [<Literal>] NormalDensity = 10.0f // NOTE: this seems to be a stable density for Farseer
         let (*Literal*) Gravity = Vector2 (0.0f, -9.80665f) * PhysicsToPixelRatio
         let [<Literal>] CollisionProperty = "C"
+        let (*Literal*) MessageListConfig = Functional
+
+    [<RequireQualifiedAccess>]
+    module Metadata =
+
+        let (*Literal*) MetadatMapConfig = Functional
 
     [<RequireQualifiedAccess>]
     module Effects =

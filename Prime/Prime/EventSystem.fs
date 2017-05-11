@@ -73,6 +73,9 @@ module EventSystemModule =
     [<RequireQualifiedAccess>]
     module EventSystem =
 
+        /// The TConfig of Xtension's T/U structures.
+        let Config = Functional
+
         /// Add event state.
         let addEventState<'a, 'w> key (state : 'a) (eventSystem : 'w EventSystem) =
             { eventSystem with EventStates = UMap.add key (state :> obj) eventSystem.EventStates }
@@ -167,11 +170,11 @@ module EventSystemModule =
 
         /// Make an event system.
         let make eventTracer eventTracing eventFilter globalParticipant =
-            { Subscriptions = UMap.makeEmpty Functional
-              Unsubscriptions = UMap.makeEmpty Functional
+            { Subscriptions = UMap.makeEmpty Config
+              Unsubscriptions = UMap.makeEmpty Config
               GlobalParticipant = globalParticipant
               EventContext = globalParticipant
-              EventStates = UMap.makeEmpty Functional
+              EventStates = UMap.makeEmpty Config
               EventTracer = eventTracer
               EventTracing = eventTracing
               EventFilter = eventFilter

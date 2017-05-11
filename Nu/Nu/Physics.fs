@@ -479,7 +479,7 @@ module PhysicsEngineModule =
             let physicsEngine =
                 { PhysicsContext = FarseerPhysics.Dynamics.World (PhysicsEngine.toPhysicsV2 gravity)
                   Bodies = BodyDictionary (HashIdentity.FromFunctions PhysicsId.hash PhysicsId.equals)
-                  PhysicsMessages = UList.makeEmpty Functional
+                  PhysicsMessages = UList.makeEmpty Constants.Physics.MessageListConfig
                   IntegrationMessages = List<IntegrationMessage> ()
                   RebuildingHack = false }
             physicsEngine :> IPhysicsEngine
@@ -527,7 +527,7 @@ module PhysicsEngineModule =
                 Array.notEmpty groundNormals
     
             member physicsEngine.ClearMessages () =
-                let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty Functional }
+                let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }
                 physicsEngine :> IPhysicsEngine
     
             member physicsEngine.EnqueueMessage physicsMessage =
@@ -537,7 +537,7 @@ module PhysicsEngineModule =
     
             member physicsEngine.Integrate tickRate =
                 let physicsMessages = physicsEngine.PhysicsMessages
-                let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty Functional }
+                let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }
                 PhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
                 let physicsStepAmount = Constants.Physics.PhysicsStepRate * single tickRate
                 physicsEngine.PhysicsContext.Step physicsStepAmount

@@ -144,7 +144,7 @@ module RendererModule =
                         let renderAssetMap = UMap.addMany renderAssets renderAssetMap
                         { renderer with RenderPackageMap = UMap.add packageName renderAssetMap renderer.RenderPackageMap }
                     else
-                        let renderAssetMap = UMap.makeFromSeq Functional renderAssets
+                        let renderAssetMap = UMap.makeFromSeq Constants.Render.AssetMapConfig renderAssets
                         { renderer with RenderPackageMap = UMap.add packageName renderAssetMap renderer.RenderPackageMap }
                 | Left failedAssetNames ->
                     Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
@@ -177,7 +177,7 @@ module RendererModule =
         static member private handleReloadRenderAssets renderer =
             let oldPackageMap = renderer.RenderPackageMap
             let oldPackageNames = oldPackageMap |> UMap.toSeq |> Seq.map fst |> Array.ofSeq
-            let renderer = { renderer with RenderPackageMap = UMap.makeEmpty Functional }
+            let renderer = { renderer with RenderPackageMap = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageMap) }
             Array.fold
                 (fun renderer packageName -> Renderer.tryLoadRenderPackage packageName renderer)
                 renderer
@@ -407,15 +407,15 @@ module RendererModule =
         static member make renderContext =
             let renderer =
                 { RenderContext = renderContext
-                  RenderPackageMap = UMap.makeEmpty Functional
-                  RenderMessages = UList.makeEmpty Functional
+                  RenderPackageMap = UMap.makeEmpty Constants.Render.AssetMapConfig
+                  RenderMessages = UList.makeEmpty Constants.Render.MessageListConfig
                   RenderDescriptors = [||] }
             renderer
 
         interface IRenderer with
 
             member renderer.ClearMessages () =
-                let renderer = { renderer with RenderMessages = UList.makeEmpty Functional }
+                let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderer.RenderMessages) }
                 renderer :> IRenderer
 
             member renderer.EnqueueMessage renderMessage =
@@ -425,7 +425,7 @@ module RendererModule =
 
             member renderer.Render eyeCenter eyeSize =
                 let renderMessages = renderer.RenderMessages
-                let renderer = { renderer with RenderMessages = UList.makeEmpty Functional }
+                let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderMessages) }
                 let renderer = Renderer.handleRenderMessages renderMessages renderer
                 let renderDescriptors = renderer.RenderDescriptors
                 let renderer = { renderer with RenderDescriptors = [||] }
@@ -436,7 +436,7 @@ module RendererModule =
                 let renderAssetMaps = renderer.RenderPackageMap |> UMap.toSeq |> Seq.map snd
                 let renderAssets = Seq.collect (UMap.toSeq >> Seq.map snd) renderAssetMaps
                 for renderAsset in renderAssets do Renderer.freeRenderAsset renderAsset
-                let renderer = { renderer with RenderPackageMap = UMap.makeEmpty Functional }
+                let renderer = { renderer with RenderPackageMap = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageMap) }
                 renderer :> IRenderer
 
 /// The primary implementation of IRenderer.
