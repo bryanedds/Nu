@@ -683,7 +683,7 @@ module WorldModule2 =
             let subsystems =
                 let subsystemMap =
                     UMap.makeFromSeq
-                        Functional
+                        Constants.Engine.SubsystemMapConfig
                         [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockPhysicsEngine.make ()) :> World Subsystem)
                          (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockRenderer.make ()) :> World Subsystem)
                          (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockAudioPlayer.make ()) :> World Subsystem)]
@@ -784,7 +784,7 @@ module WorldModule2 =
                     let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> World Subsystem
                     let defaultSubsystemMap =
                         UMap.makeFromSeq
-                            Functional
+                            Constants.Engine.SubsystemMapConfig
                             [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
                              (Constants.Engine.RendererSubsystemName, rendererSubsystem)
                              (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)]

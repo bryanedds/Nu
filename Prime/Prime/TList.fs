@@ -81,92 +81,30 @@ module TListModule =
             list
 
         let private validate list =
-            match list.TConfig with
-            | BasedOnBuild ->
-#if DEBUG
-                validate2 list
-#else
-                list
-#endif
-            | Functional -> validate2 list
-            | Imperative -> list
-
-        let private makeFromSeqFunctional config (items : 'a seq) =
-            let impList = List<'a> items
-            let impListOrigin = List<'a> impList
-            let list =
-                { TListOpt = Unchecked.defaultof<'a TList>
-                  TConfig = config
-                  ImpList = impList
-                  ImpListOrigin = impListOrigin
-                  Logs = []
-                  LogsLength = 0 }
-            list.TListOpt <- list
-            list
-
-        let private makeFromSeqImperative config (items : 'a seq) =
-            { TListOpt = Unchecked.defaultof<'a TList>
-              TConfig = config
-              ImpList = List<'a> items
-              ImpListOrigin = List<'a> ()
-              Logs = []
-              LogsLength = 0 }
-
-        let private setFunctional index value list =
-            update (fun list ->
-                let list = { list with Logs = Set (index, value) :: list.Logs; LogsLength = list.LogsLength + 1 }
-                list.ImpList.[index] <- value
-                list)
-                list
-
-        let private setImperative index value list =
-            list.ImpList.[index] <- value
-            list
-
-        let private addFunctional value list =
-            update (fun list ->
-                let list = { list with Logs = Add value :: list.Logs; LogsLength = list.LogsLength + 1 }
-                list.ImpList.Add value |> ignore
-                list)
-                list
-
-        let private addImperative value list =
-            list.ImpList.Add value |> ignore
-            list
-
-        let private removeFunctional value list =
-            update (fun list ->
-                let list = { list with Logs = Remove value :: list.Logs; LogsLength = list.LogsLength + 1 }
-                list.ImpList.Remove value |> ignore
-                list)
-                list
-
-        let private removeImperative value list =
-            list.ImpList.Remove value |> ignore
-            list
-
-        let private clearFunctional list =
-            update (fun list ->
-                let list = { list with Logs = Clear :: list.Logs; LogsLength = list.LogsLength + 1 }
-                list.ImpList.Clear ()
-                list)
-                list
-
-        let private clearImperative list =
-            list.ImpList.Clear ()
-            list
+            if TConfig.isFunctional list.TConfig
+            then validate2 list
+            else list
 
         let makeFromSeq config (items : 'a seq) =
-            match config with
-            | BasedOnBuild _ ->
-#if DEBUG
-                makeFromSeqFunctional config items
-#else
-                makeFromSeqImperative config items
-#endif
-            | Functional _ -> makeFromSeqFunctional config items
-            | Imperative -> makeFromSeqImperative config items
-                
+            if TConfig.isFunctional config then 
+                let impList = List<'a> items
+                let impListOrigin = List<'a> impList
+                let list =
+                    { TListOpt = Unchecked.defaultof<'a TList>
+                      TConfig = config
+                      ImpList = impList
+                      ImpListOrigin = impListOrigin
+                      Logs = []
+                      LogsLength = 0 }
+                list.TListOpt <- list
+                list
+            else
+                { TListOpt = Unchecked.defaultof<'a TList>
+                  TConfig = config
+                  ImpList = List<'a> items
+                  ImpListOrigin = List<'a> ()
+                  Logs = []
+                  LogsLength = 0 }
 
         let makeFromArray config (items : 'a array) =
             makeFromSeq config items
@@ -182,48 +120,40 @@ module TListModule =
             struct (list.ImpList.[index], list)
 
         let set index value list =
-            match list.TConfig with
-            | BasedOnBuild ->
-#if DEBUG
-                setFunctional index value list
-#else
-                setImperative index value list
-#endif
-            | Functional -> setFunctional index value list
-            | Imperative -> setImperative index value list
+            if TConfig.isFunctional list.TConfig then 
+                update (fun list ->
+                    let list = { list with Logs = Set (index, value) :: list.Logs; LogsLength = list.LogsLength + 1 }
+                    list.ImpList.[index] <- value
+                    list)
+                    list
+            else list.ImpList.[index] <- value; list
 
         let add value list =
-            match list.TConfig with
-            | BasedOnBuild ->
-#if DEBUG
-                addFunctional value list
-#else
-                addImperative value list
-#endif
-            | Functional -> addFunctional value list
-            | Imperative -> addImperative value list
+            if TConfig.isFunctional list.TConfig then 
+                update (fun list ->
+                    let list = { list with Logs = Add value :: list.Logs; LogsLength = list.LogsLength + 1 }
+                    list.ImpList.Add value |> ignore
+                    list)
+                    list
+            else list.ImpList.Add value |> ignore; list
 
         let remove value list =
-            match list.TConfig with
-            | BasedOnBuild ->
-#if DEBUG
-                removeFunctional value list
-#else
-                removeImperative value list
-#endif
-            | Functional -> removeFunctional value list
-            | Imperative -> removeImperative value list
+            if TConfig.isFunctional list.TConfig then
+                update (fun list ->
+                    let list = { list with Logs = Remove value :: list.Logs; LogsLength = list.LogsLength + 1 }
+                    list.ImpList.Remove value |> ignore
+                    list)
+                    list
+            else list.ImpList.Remove value |> ignore; list
 
         let clear list =
-            match list.TConfig with
-            | BasedOnBuild ->
-#if DEBUG
-                clearFunctional list
-#else
-                clearImperative list
-#endif
-            | Functional -> clearFunctional list
-            | Imperative -> clearImperative list
+            if TConfig.isFunctional list.TConfig then
+                update (fun list ->
+                    let list = { list with Logs = Clear :: list.Logs; LogsLength = list.LogsLength + 1 }
+                    list.ImpList.Clear ()
+                    list)
+                    list
+            else list.ImpList.Clear (); list
 
         let isEmpty list =
             let list = validate list

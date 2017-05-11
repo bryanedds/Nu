@@ -10,6 +10,19 @@ type TConfig =
     | Functional
     | Imperative
 
+module TConfig =
+
+    let isFunctional config =
+        match config with
+        | BasedOnBuild ->
+#if DEBUG
+            true
+#else
+            false
+#endif
+        | Functional -> true
+        | Imperative -> false
+
 type TExpr<'a, 'env> = 'env -> struct ('a * 'env)
 
 // TODO: P1: Make operations work on struct tuples in next version of F#.
