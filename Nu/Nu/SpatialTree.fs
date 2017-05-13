@@ -119,9 +119,12 @@ module SpatialTreeModule =
             oldOmnipresence oldBounds
             newOmnipresence newBounds
             element tree =
-            removeElement oldOmnipresence oldBounds element tree
-            addElement newOmnipresence newBounds element tree
-    
+            // OPTIMIZATION: only update when element is not omnipresent
+            if oldOmnipresence && newOmnipresence then
+                // TODO: P1: OPTIMIZATION: only update when element is computed to have changed nodes
+                removeElement oldOmnipresence oldBounds element tree
+                addElement newOmnipresence newBounds element tree
+
         let getElementsAtPoint point tree =
             let list = List tree.OmnipresentElements
             SpatialNode.getElementsAtPoint point tree.Node list

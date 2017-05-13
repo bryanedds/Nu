@@ -18,3 +18,9 @@ module Option =
         match opt with
         | Some value -> value
         | None -> aDefault
+
+    /// Map an option's value, or missing that, return a default value.
+    let mapOrDefault mapper aDefault opt =
+        match opt with
+        | Some value -> mapper value
+        | None -> aDefault

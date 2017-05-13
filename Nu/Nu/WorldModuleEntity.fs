@@ -665,24 +665,22 @@ module WorldModuleEntity =
                 // get old world for entity tree rebuild and change events
                 let oldWorld = world
                 
-                // adding entity to world
+                // add entity to world
                 let world = World.addEntityState entityState entity world
-                
-                // pulling out screen state
-                let screen = entity.EntityAddress |> Address.head |> ntoa<Screen> |> Screen
-                let screenState = World.getScreenState screen world
 
                 // mutate entity tree
-                let entityTree =
-                    MutantCache.mutateMutant
-                        (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
-                        (fun entityTree ->
-                            let entityState = World.getEntityState entity world
-                            let entityMaxBounds = World.getEntityStateBoundsMax entityState
-                            SpatialTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
-                            entityTree)
-                        screenState.EntityTreeNp
-                let world = World.setScreenEntityTreeNpNoEvent entityTree screen world
+                let screen = entity.EntityAddress |> Address.head |> ntoa<Screen> |> Screen
+                let world =
+                    let entityTree =
+                        MutantCache.mutateMutant
+                            (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
+                            (fun entityTree ->
+                                let entityState = World.getEntityState entity world
+                                let entityMaxBounds = World.getEntityStateBoundsMax entityState
+                                SpatialTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                                entityTree)
+                            (World.getScreenEntityTreeNp screen world)
+                    World.setScreenEntityTreeNpNoEvent entityTree screen world
 
                 // register entity if needed
                 if isNew
@@ -769,22 +767,19 @@ module WorldModuleEntity =
                 // get old world for entity tree rebuild
                 let oldWorld = world
                 
-                // pulling out screen state
-                let screen = entity.EntityAddress |> Address.head |> ntoa<Screen> |> Screen
-                let screenState = World.getScreenState screen world
-
                 // mutate entity tree
-                let entityTree =
-                    MutantCache.mutateMutant
-                        (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
-                        (fun entityTree ->
-                            let entityState = World.getEntityState entity oldWorld
-                            let entityMaxBounds = World.getEntityStateBoundsMax entityState
-                            SpatialTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
-                            entityTree)
-                        screenState.EntityTreeNp
-                let screenState = { screenState with EntityTreeNp = entityTree }
-                let world = World.setScreenState screenState screen world
+                let screen = entity.EntityAddress |> Address.head |> ntoa<Screen> |> Screen
+                let world =
+                    let entityTree =
+                        MutantCache.mutateMutant
+                            (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
+                            (fun entityTree ->
+                                let entityState = World.getEntityState entity oldWorld
+                                let entityMaxBounds = World.getEntityStateBoundsMax entityState
+                                SpatialTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                                entityTree)
+                            (World.getScreenEntityTreeNp screen world)
+                    World.setScreenEntityTreeNpNoEvent entityTree screen world
 
                 // remove cached entity event addresses
                 EventWorld.cleanEventAddressCache entity.EntityAddress
@@ -968,7 +963,6 @@ module WorldModuleEntity =
                 | Some _ | None -> entity.EntityAddress |> Address.getNames |> List.head |> ntoa<Screen> |> Screen
 
             // proceed with updating entity in entity tree
-            let screenState = World.getScreenState screen world
             let entityTree =
                 MutantCache.mutateMutant
                     (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
@@ -982,9 +976,8 @@ module WorldModuleEntity =
                             (entityState.Omnipresent || entityState.ViewType = Absolute) entityBoundsMax
                             entity entityTree
                         entityTree)
-                    screenState.EntityTreeNp
-            let screenState = { screenState with EntityTreeNp = entityTree }
-            World.setScreenState screenState screen world
+                    (World.getScreenEntityTreeNp screen world)
+            World.setScreenEntityTreeNpNoEvent entityTree screen world
 
         /// Copy an entity to the clipboard.
         static member copyEntityToClipboard entity world =

@@ -159,7 +159,6 @@ module WorldModuleScreen =
                 | "OnUnregister" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUnregister screen world }
                 | "OnUpdate" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUpdate screen world }
                 | "OnPostUpdate" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnPostUpdate screen world }
-                | "EntityTreeNp" -> Some { PropertyType = typeof<Entity SpatialTree MutantCache>; PropertyValue = World.getScreenEntityTreeNp screen world }
                 | "TransitionStateNp" -> Some { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionStateNp screen world }
                 | "TransitionTicksNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getScreenTransitionTicksNp screen world }
                 | "Incoming" -> Some { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world }
@@ -186,7 +185,6 @@ module WorldModuleScreen =
             | "OnUnregister" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUnregister screen world }
             | "OnUpdate" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUpdate screen world }
             | "OnPostUpdate" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnPostUpdate screen world }
-            | "EntityTreeNp" -> { PropertyType = typeof<Entity SpatialTree MutantCache>; PropertyValue = World.getScreenEntityTreeNp screen world }
             | "TransitionStateNp" -> { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionStateNp screen world }
             | "TransitionTicksNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenTransitionTicksNp screen world }
             | "Incoming" -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world }
@@ -216,7 +214,6 @@ module WorldModuleScreen =
                 | "OnUnregister" -> (false, world)
                 | "OnUpdate" -> (false, world)
                 | "OnPostUpdate" -> (false, world)
-                | "EntityTreeNp" -> (false, world)
                 | "TransitionStateNp" -> (true, World.setScreenTransitionStateNp (property.PropertyValue :?> TransitionState) screen world)
                 | "TransitionTicksNp" -> (true, World.setScreenTransitionTicksNp (property.PropertyValue :?> int64) screen world)
                 | "Incoming" -> (true, World.setScreenIncoming (property.PropertyValue :?> Transition) screen world)
@@ -248,7 +245,6 @@ module WorldModuleScreen =
             | "OnUnregister" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "OnUpdate" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
             | "OnPostUpdate" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
-            | "EntityTreeNp" -> failwith ^ "Cannot change screen entity tree."
             | "TransitionStateNp" -> World.setScreenTransitionStateNp (property.PropertyValue :?> TransitionState) screen world
             | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (property.PropertyValue :?> int64) screen world
             | "Incoming" -> World.setScreenIncoming (property.PropertyValue :?> Transition) screen world
