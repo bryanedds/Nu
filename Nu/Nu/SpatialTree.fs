@@ -118,13 +118,8 @@ module SpatialTreeModule =
                     tree.OmnipresentElements.Remove element |> ignore
                 else SpatialNode.removeElement bounds element tree.Node
     
-        let updateElement
-            oldOmnipresent oldBounds
-            newOmnipresent newBounds
-            element tree =
-            // OPTIMIZATION: only update when element is not omnipresent
-            if not oldOmnipresent || not newOmnipresent then
-                SpatialNode.updateElement oldBounds newBounds element tree.Node
+        let updateElement oldBounds newBounds element tree =
+            SpatialNode.updateElement oldBounds newBounds element tree.Node
 
         let getElementsAtPoint point tree =
             let set = HashSet tree.OmnipresentElements
