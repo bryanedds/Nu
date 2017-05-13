@@ -341,7 +341,7 @@ module ScriptFacetModule =
             match entity.GetOnUpdate world with
             | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
             | handler ->
-                if World.isTicking // only run script updates when ticking
+                if World.isTicking world // only run script updates when ticking
                 then World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
                 else world
 
