@@ -99,8 +99,24 @@ module WorldLayerModule =
 
         static member internal updateLayer (layer : Layer) world =
             World.withEventContext (fun world ->
+                
+                // update via dispatcher
                 let dispatcher = layer.GetDispatcherNp world
                 let world = dispatcher.Update (layer, world)
+
+                // run script update
+                let world =
+                    if World.isTicking world // only run script post-updates when ticking
+                    then World.evalWithLogging (layer.GetOnUpdate world) (layer.GetScriptFrameNp world) layer world |> snd
+                    else world
+
+                // run script post-update
+                let world =
+                    if World.isTicking world // only run script post-updates when ticking
+                    then World.evalWithLogging (layer.GetOnPostUpdate world) (layer.GetScriptFrameNp world) layer world |> snd
+                    else world
+
+                // publish update event
                 let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
                 World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update ->- layer) eventTrace Simulants.Game true world)
                 layer
@@ -108,8 +124,12 @@ module WorldLayerModule =
 
         static member internal postUpdateLayer (layer : Layer) world =
             World.withEventContext (fun world ->
+
+                // post-update via dispatcher
                 let dispatcher = layer.GetDispatcherNp world
                 let world = dispatcher.PostUpdate (layer, world)
+
+                // run script post-update
                 let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty
                 World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- layer) eventTrace Simulants.Game true world)
                 layer

@@ -340,12 +340,18 @@ module ScriptFacetModule =
         override facet.Update (entity, world) =
             match entity.GetOnUpdate world with
             | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
-            | handler -> World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
+            | handler ->
+                if World.isTicking // only run script updates when ticking
+                then World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
+                else world
 
         override facet.PostUpdate (entity, world) =
             match entity.GetOnPostUpdate world with
             | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
-            | handler -> World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
+            | handler ->
+                if World.isTicking world // only run script post-updates when ticking
+                then World.evalWithLogging handler (entity.GetScriptFrameNp world) entity world |> snd
+                else world
 
 [<AutoOpen>]
 module RigidBodyFacetModule =

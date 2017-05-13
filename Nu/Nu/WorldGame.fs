@@ -157,39 +157,54 @@ module WorldGameModule =
             World.choose world
 
         static member internal updateGame world =
+            let game = Simulants.Game
             World.withEventContext (fun world ->
 
                 // update via dispatcher
-                let dispatcher = Simulants.Game.GetDispatcherNp world
-                let world = dispatcher.Update (Simulants.Game, world)
+                let dispatcher = game.GetDispatcherNp world
+                let world = dispatcher.Update (game, world)
+
+                // run script update
+                let world =
+                    if World.isTicking world // only run script post-updates when ticking
+                    then World.evalWithLogging (game.GetOnUpdate world) (game.GetScriptFrameNp world) game world |> snd
+                    else world
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateGame" EventTrace.empty
-                let world = World.publishPlus World.sortSubscriptionsByHierarchy () Events.Update eventTrace Simulants.Game true world
+                let world = World.publishPlus World.sortSubscriptionsByHierarchy () Events.Update eventTrace game true world
                 World.choose world)
-                Simulants.Game
+                game
                 world
 
         static member internal postUpdateGame world =
+            let game = Simulants.Game
             World.withEventContext (fun world ->
                 
                 // post-update via dispatcher
-                let dispatcher = Simulants.Game.GetDispatcherNp world
-                let world = dispatcher.PostUpdate (Simulants.Game, world)
+                let dispatcher = game.GetDispatcherNp world
+                let world = dispatcher.PostUpdate (game, world)
+
+                // run script post-update
+                let world =
+                    if World.isTicking world // only run script post-updates when ticking
+                    then World.evalWithLogging (game.GetOnPostUpdate world) (game.GetScriptFrameNp world) game world |> snd
+                    else world
 
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateGame" EventTrace.empty
-                let world = World.publishPlus World.sortSubscriptionsByHierarchy () Events.PostUpdate eventTrace Simulants.Game true world
+                let world = World.publishPlus World.sortSubscriptionsByHierarchy () Events.PostUpdate eventTrace game true world
                 World.choose world)
-                Simulants.Game
+                game
                 world
 
         static member internal actualizeGame world =
+            let game = Simulants.Game
             World.withEventContext (fun world ->
-                let dispatcher = Simulants.Game.GetDispatcherNp world
-                let world = dispatcher.Actualize (Simulants.Game, world)
+                let dispatcher = game.GetDispatcherNp world
+                let world = dispatcher.Actualize (game, world)
                 World.choose world)
-                Simulants.Game
+                game
                 world
 
         // Get all the entities in the world.
