@@ -218,9 +218,7 @@ type [<StructuralEquality; NoComparison>] ActionDescriptor =
         match actionDescriptor.ActionTargetPositionMOpt with
         | Some targetPositionM -> targetPositionM - vftovm currentPosition |> vmtod
         | None -> currentDirection
-
-    static member updateActionTicks tickRate actionDescriptor =
-        { actionDescriptor with ActionTicks = actionDescriptor.ActionTicks + tickRate }
+        
 
 type [<StructuralEquality; NoComparison>] ActivityState =
     | Action of ActionDescriptor

@@ -22,7 +22,7 @@ module BulletModule =
 
         static let handleUpdate evt world =
             let bullet = evt.Subscriber : Entity
-            let world = bullet.SetAge (bullet.GetAge world + World.getTickRate world) world
+            let world = bullet.SetAge (inc (bullet.GetAge world)) world
             if bullet.GetAge world > BulletLifetime
             then World.destroyEntity bullet world
             else world
@@ -71,8 +71,7 @@ module EnemyModule =
         inherit EntityDispatcher ()
         
         static let move (enemy : Entity) world =
-            let tickRate = World.getTickRate world
-            let force = Vector2 (-2000.0f, -20000.0f) * single tickRate
+            let force = Vector2 (-2000.0f, -20000.0f)
             World.applyBodyForce force (enemy.GetPhysicsId world) world
 
         static let die (enemy : Entity) world =
@@ -180,8 +179,7 @@ module PlayerModule =
                 match groundTangentOpt with
                 | Some groundTangent ->
                     let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
-                    let vectorForce = Vector2.Multiply (groundTangent, Vector2 (WalkForce, downForce))
-                    vectorForce * World.getTickRateF world
+                    Vector2.Multiply (groundTangent, Vector2 (WalkForce, downForce))
                 | None -> Vector2 (WalkForce, FallForce)
             World.applyBodyForce force physicsId world
 

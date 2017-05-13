@@ -172,10 +172,10 @@ module GameplayDispatcherModule =
             if actionDescriptor.ActionTicks = 0L then
                 world |>
                     character.SetCharacterAnimationState (getCharacterAnimationStateByActionBegin (World.getTickTime world) (character.GetPosition world) (character.GetCharacterAnimationState world) actionDescriptor) |>
-                    character.SetActivityState (Action ^ ActionDescriptor.updateActionTicks (World.getTickRate world) actionDescriptor)
+                    character.SetActivityState (Action { actionDescriptor with ActionTicks = inc actionDescriptor.ActionTicks })
             elif actionDescriptor.ActionTicks > 0L && actionDescriptor.ActionTicks < Constants.InfinityRpg.ActionTicksMax then
                 world |>
-                    character.SetActivityState (Action ^ ActionDescriptor.updateActionTicks (World.getTickRate world) actionDescriptor)
+                    character.SetActivityState (Action { actionDescriptor with ActionTicks = inc actionDescriptor.ActionTicks })
             else
                 world |>
                     character.SetActivityState NoActivity |>
