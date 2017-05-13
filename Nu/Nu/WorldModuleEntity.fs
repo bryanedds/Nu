@@ -982,27 +982,35 @@ module WorldModuleEntity =
             Array.ofList properties
 
         static member internal updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax (entity : Entity) oldWorld world =
-            // OPTIMIZATION: attempts to avoid constructing a screen address on each call to decrease address hashing
-            // OPTIMIZATION: assumes a valid entity address with List.head on its names
-            let screen =
-                match (World.getGameState world).SelectedScreenOpt with
-                | Some screen when Address.getName screen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> screen
-                | Some _ | None -> entity.EntityAddress |> Address.getNames |> List.head |> ntoa<Screen> |> Screen
+            
+            // OPTIMIZATION: only update when entity is not omnipresent
+            if  (not oldOmnipresent && oldViewType <> Absolute) ||
+                (not (World.getEntityOmnipresent entity world) && World.getEntityViewType entity world <> Absolute) then
 
-            // proceed with updating entity in entity tree
-            let entityTree =
-                MutantCache.mutateMutant
-                    (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
-                    (fun entityTree ->
-                        let entityState = World.getEntityState entity world
-                        let entityBoundsMax = World.getEntityStateBoundsMax entityState
-                        SpatialTree.updateElement
-                            (oldOmnipresent || oldViewType = Absolute) oldBoundsMax
-                            (entityState.Omnipresent || entityState.ViewType = Absolute) entityBoundsMax
-                            entity entityTree
-                        entityTree)
-                    (World.getScreenEntityTreeNp screen world)
-            World.setScreenEntityTreeNpNoEvent entityTree screen world
+                // OPTIMIZATION: attempts to avoid constructing a screen address on each call to decrease address hashing
+                // OPTIMIZATION: assumes a valid entity address with List.head on its names
+                let screen =
+                    match (World.getGameState world).SelectedScreenOpt with
+                    | Some screen when Address.getName screen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> screen
+                    | Some _ | None -> entity.EntityAddress |> Address.getNames |> List.head |> ntoa<Screen> |> Screen
+
+                // proceed to update entity in entity tree
+                let entityTree =
+                    MutantCache.mutateMutant
+                        (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
+                        (fun entityTree ->
+                            let entityState = World.getEntityState entity world
+                            let entityBoundsMax = World.getEntityStateBoundsMax entityState
+                            SpatialTree.updateElement
+                                (oldOmnipresent || oldViewType = Absolute) oldBoundsMax
+                                (entityState.Omnipresent || entityState.ViewType = Absolute) entityBoundsMax
+                                entity entityTree
+                            entityTree)
+                        (World.getScreenEntityTreeNp screen world)
+                World.setScreenEntityTreeNpNoEvent entityTree screen world
+
+            // just world
+            else world
 
         /// Copy an entity to the clipboard.
         static member copyEntityToClipboard entity world =
