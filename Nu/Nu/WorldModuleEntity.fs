@@ -988,7 +988,7 @@ module WorldModuleEntity =
                 (not (World.getEntityOmnipresent entity world) && World.getEntityViewType entity world <> Absolute) then
 
                 // OPTIMIZATION: attempts to avoid constructing a screen address on each call to decrease address hashing
-                // OPTIMIZATION: assumes a valid entity address with List.head on its names
+                // OPTIMIZATION: assumes a well-formed entity address with List.head on its names
                 let screen =
                     match (World.getGameState world).SelectedScreenOpt with
                     | Some screen when Address.getName screen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> screen
@@ -1001,10 +1001,7 @@ module WorldModuleEntity =
                         (fun entityTree ->
                             let entityState = World.getEntityState entity world
                             let entityBoundsMax = World.getEntityStateBoundsMax entityState
-                            SpatialTree.updateElement
-                                (oldOmnipresent || oldViewType = Absolute) oldBoundsMax
-                                (entityState.Omnipresent || entityState.ViewType = Absolute) entityBoundsMax
-                                entity entityTree
+                            SpatialTree.updateElement oldBoundsMax entityBoundsMax entity entityTree
                             entityTree)
                         (World.getScreenEntityTreeNp screen world)
                 World.setScreenEntityTreeNpNoEvent entityTree screen world
