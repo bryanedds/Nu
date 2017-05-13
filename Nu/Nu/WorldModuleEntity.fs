@@ -254,6 +254,8 @@ module WorldModuleEntity =
         static member internal setEntityEnabled value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Enabled <- value; entityState else { entityState with EntityState.Enabled = value }) true Property? Enabled entity world
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Omnipresent <- value; entityState else { entityState with EntityState.Omnipresent = value }) true Property? Omnipresent entity world
+        static member internal getEntityAlwaysUpdate entity world = (World.getEntityState entity world).AlwaysUpdate
+        static member internal setEntityAlwaysUpdate value entity world = World.updateEntityStatePlus (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.AlwaysUpdate <- value; entityState else { entityState with EntityState.AlwaysUpdate = value }) true Property? AlwaysUpdate entity world
         static member internal getEntityPublishChanges entity world = (World.getEntityState entity world).PublishChanges
         static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.PublishChanges <- value; entityState else { entityState with PublishChanges = value }) false Property? PublishChanges entity world
         static member internal getEntityPublishUpdatesNp entity world = (World.getEntityState entity world).PublishUpdatesNp
@@ -492,6 +494,7 @@ module WorldModuleEntity =
                 | "Visible" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world }
                 | "Enabled" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world }
                 | "Omnipresent" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world }
+                | "AlwaysUpdate" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world }
                 | "PublishChanges" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChanges entity world }
                 | "PublishUpdatesNp" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdatesNp entity world }
                 | "PublishPostUpdatesNp" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdatesNp entity world }
@@ -524,6 +527,7 @@ module WorldModuleEntity =
             | "Visible" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world }
             | "Enabled" -> { PropertyType = typeof<bool>; PropertyValue =World.getEntityEnabled entity world }
             | "Omnipresent" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world }
+            | "AlwaysUpdate" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world }
             | "PublishChanges" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChanges entity world }
             | "PublishUpdatesNp" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdatesNp entity world }
             | "PublishPostUpdatesNp" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdatesNp entity world }
@@ -558,6 +562,7 @@ module WorldModuleEntity =
                 | "Visible" -> (true, World.setEntityVisible (property.PropertyValue :?> bool) entity world)
                 | "Enabled" -> (true, World.setEntityEnabled (property.PropertyValue :?> bool) entity world)
                 | "Omnipresent" -> (true, World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world)
+                | "AlwaysUpdate" -> (true, World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
                 | "PublishChanges" -> (true, World.setEntityPublishChanges (property.PropertyValue :?> bool) entity world)
                 | "PublishUpdatesNp" -> (false, world)
                 | "PublishPostUpdatesNp" -> (false, world)
@@ -594,6 +599,7 @@ module WorldModuleEntity =
             | "Visible" -> World.setEntityVisible (property.PropertyValue :?> bool) entity world
             | "Enabled" -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world
             | "Omnipresent" -> World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world
+            | "AlwaysUpdate" -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world
             | "PublishChanges" -> World.setEntityPublishChanges (property.PropertyValue :?> bool) entity world
             | "PublishUpdatesNp" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "PublishPostUpdatesNp" -> failwith ^ "Cannot change entity " + propertyName + "."

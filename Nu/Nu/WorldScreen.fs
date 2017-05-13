@@ -117,10 +117,7 @@ module WorldScreenModule =
                 let world = dispatcher.Update (screen, world)
 
                 // run script update
-                let world =
-                    if World.isTicking world // only run script post-updates when ticking
-                    then World.evalWithLogging (screen.GetOnUpdate world) (screen.GetScriptFrameNp world) screen world |> snd
-                    else world
+                let world = World.evalWithLogging (screen.GetOnUpdate world) (screen.GetScriptFrameNp world) screen world |> snd
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
@@ -136,10 +133,7 @@ module WorldScreenModule =
                 let world = dispatcher.PostUpdate (screen, world)
 
                 // run script post-update
-                let world =
-                    if World.isTicking world // only run script post-updates when ticking
-                    then World.evalWithLogging (screen.GetOnPostUpdate world) (screen.GetScriptFrameNp world) screen world |> snd
-                    else world
+                let world = World.evalWithLogging (screen.GetOnPostUpdate world) (screen.GetScriptFrameNp world) screen world |> snd
                 
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty

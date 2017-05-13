@@ -69,7 +69,7 @@ module AmbientStateModule =
 
         /// Increment the update count.
         let incrementUpdateCount state =
-            { state with UpdateCount = inc ^ getUpdateCount state }
+            { state with UpdateCount = inc (getUpdateCount state) }
 
         /// Get the the liveness state of the engine.
         let getLiveness state =
