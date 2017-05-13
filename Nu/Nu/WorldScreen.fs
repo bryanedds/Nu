@@ -111,8 +111,18 @@ module WorldScreenModule =
 
         static member internal updateScreen (screen : Screen) world =
             World.withEventContext (fun world ->
+                
+                // update via dispatcher
                 let dispatcher = World.getScreenDispatcherNp screen world
                 let world = dispatcher.Update (screen, world)
+
+                // run script update
+                let world =
+                    if World.isTicking world // only run script post-updates when ticking
+                    then World.evalWithLogging (screen.GetOnUpdate world) (screen.GetScriptFrameNp world) screen world |> snd
+                    else world
+
+                // publish update event
                 let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
                 World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update ->- screen) eventTrace Simulants.Game true world)
                 screen
@@ -120,8 +130,18 @@ module WorldScreenModule =
 
         static member internal postUpdateScreen (screen : Screen) world =
             World.withEventContext (fun world ->
+                
+                // post-update via dispatcher
                 let dispatcher = World.getScreenDispatcherNp screen world
                 let world = dispatcher.PostUpdate (screen, world)
+
+                // run script post-update
+                let world =
+                    if World.isTicking world // only run script post-updates when ticking
+                    then World.evalWithLogging (screen.GetOnPostUpdate world) (screen.GetScriptFrameNp world) screen world |> snd
+                    else world
+                
+                // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty
                 World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- screen) eventTrace Simulants.Game true world)
                 screen
