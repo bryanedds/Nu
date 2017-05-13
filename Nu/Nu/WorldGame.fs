@@ -165,10 +165,7 @@ module WorldGameModule =
                 let world = dispatcher.Update (game, world)
 
                 // run script update
-                let world =
-                    if World.isTicking world // only run script post-updates when ticking
-                    then World.evalWithLogging (game.GetOnUpdate world) (game.GetScriptFrameNp world) game world |> snd
-                    else world
+                let world = World.evalWithLogging (game.GetOnUpdate world) (game.GetScriptFrameNp world) game world |> snd
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateGame" EventTrace.empty
@@ -186,10 +183,7 @@ module WorldGameModule =
                 let world = dispatcher.PostUpdate (game, world)
 
                 // run script post-update
-                let world =
-                    if World.isTicking world // only run script post-updates when ticking
-                    then World.evalWithLogging (game.GetOnPostUpdate world) (game.GetScriptFrameNp world) game world |> snd
-                    else world
+                let world = World.evalWithLogging (game.GetOnPostUpdate world) (game.GetScriptFrameNp world) game world |> snd
 
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateGame" EventTrace.empty

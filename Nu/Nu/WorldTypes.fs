@@ -233,6 +233,7 @@ module WorldTypes =
              Define? Visible true
              Define? Enabled true
              Define? Omnipresent false
+             Define? AlwaysUpdate false
              Define? PublishChanges true
              Define? PublishUpdatesNp false
              Define? PublishPostUpdatesNp false]
@@ -651,6 +652,7 @@ module WorldTypes =
           mutable Visible : bool
           mutable Enabled : bool
           mutable Omnipresent : bool
+          mutable AlwaysUpdate : bool
           mutable PublishChanges : bool
           mutable PublishUpdatesNp : bool
           mutable PublishPostUpdatesNp : bool
@@ -680,6 +682,7 @@ module WorldTypes =
               Visible = true
               Enabled = true
               Omnipresent = false
+              AlwaysUpdate = false
               PublishChanges = true
               PublishUpdatesNp = false
               PublishPostUpdatesNp = false

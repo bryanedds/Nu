@@ -531,13 +531,27 @@ module WorldModule2 =
                 let world = World.updateScreen selectedScreen world
                 let world = World.updateScreenTransition selectedScreen world
                 let world = Seq.fold (fun world layer -> World.updateLayer layer world) world layers
-                let world = Seq.fold (fun world entity -> World.updateEntity entity world) world entities
+                let world =
+                    Seq.fold (fun world (entity : Entity) ->
+                        if World.isTicking world || entity.GetAlwaysUpdate world
+                        then World.updateEntity entity world
+                        else world)
+                        world
+                        entities
 
                 // post-update simulants
                 let world = World.postUpdateGame world
                 let world = World.postUpdateScreen selectedScreen world
                 let world = Seq.fold (fun world layer -> World.postUpdateLayer layer world) world layers
-                let world = Seq.fold (fun world entity -> World.postUpdateEntity entity world) world entities
+                let world =
+                    Seq.fold (fun world (entity : Entity) ->
+                        if World.isTicking world || entity.GetAlwaysUpdate world
+                        then World.postUpdateEntity entity world
+                        else world)
+                        world
+                        entities
+
+                // fin
                 world
             
             // no screen; just operate on the game
