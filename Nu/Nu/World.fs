@@ -498,12 +498,22 @@ module WorldModule2 =
                 | _ -> world
             (World.getLiveness world, world)
 
-        static member getEntitiesInView selectedScreen world =
-            let viewBounds = World.getViewBoundsRelative world
-            let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) (selectedScreen.GetEntityTreeNp world)
+        static member getEntities3 getElementsFromTree (selectedScreen : Screen) world =
+            let entityTree = selectedScreen.GetEntityTreeNp world
+            let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) entityTree
             let world = selectedScreen.SetEntityTreeNpNoEvent entityTree world
-            let entities = SpatialTree.getElementsInBounds viewBounds spatialTree
+            let entities = getElementsFromTree spatialTree
             (entities, world)
+
+        static member getEntitiesInView (selectedScreen : Screen) world =
+            let viewBounds = World.getViewBoundsRelative world
+            World.getEntities3 (SpatialTree.getElementsInBounds viewBounds) selectedScreen world
+
+        static member getEntitiesInBounds bounds (selectedScreen : Screen) world =
+            World.getEntities3 (SpatialTree.getElementsInBounds bounds) selectedScreen world
+
+        static member getEntitiesAtPoint point (selectedScreen : Screen) world =
+            World.getEntities3 (SpatialTree.getElementsAtPoint point) selectedScreen world
 
         static member private updateSimulants world =
             
