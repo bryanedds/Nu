@@ -22,9 +22,6 @@ module internal SpatialNodeModule =
         let internal atPoint point node =
             Math.isPointInBounds point node.Bounds
 
-        let internal inBounds bounds node =
-            Math.isBoundsInBounds bounds node.Bounds
-
         let internal intersectingBounds bounds node =
             Math.isBoundsIntersectingBounds bounds node.Bounds
 
@@ -107,8 +104,8 @@ module SpatialTreeModule =
             if omnipresent then 
                 tree.OmnipresentElements.Add element |> ignore
             else
-                if not (SpatialNode.inBounds bounds tree.Node) then
-                    Log.info "Element is beyond spatial tree's containment area or is being added redundantly."
+                if not (SpatialNode.intersectingBounds bounds tree.Node) then
+                    Log.info "Element is outside spatial tree's containment area or is being added redundantly."
                     tree.OmnipresentElements.Add element |> ignore
                 else SpatialNode.addElement bounds element tree.Node
 
@@ -116,8 +113,8 @@ module SpatialTreeModule =
             if omnipresent then 
                 tree.OmnipresentElements.Remove element |> ignore
             else
-                if not (SpatialNode.inBounds bounds tree.Node) then
-                    Log.info "Element is beyond spatial tree's containment area or is not present for removal."
+                if not (SpatialNode.intersectingBounds bounds tree.Node) then
+                    Log.info "Element is outside spatial tree's containment area or is not present for removal."
                     tree.OmnipresentElements.Remove element |> ignore
                 else SpatialNode.removeElement bounds element tree.Node
     
