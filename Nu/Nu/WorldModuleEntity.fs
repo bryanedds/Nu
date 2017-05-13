@@ -135,7 +135,7 @@ module WorldModuleEntity =
             if propertyName.EndsWith "Np" then false
             else entityState.PublishChanges || propertyName.EndsWith "Ap"
 
-        static member private publishEntityChange propertyName (entity : Entity) oldWorld world =
+        static member private publishEntityChange propertyName (entity : Entity) (oldWorld : World) world =
             let changeEventAddress = ltoa ["Entity"; "Change"; propertyName; "Event"] ->>- entity.EntityAddress
             let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
             World.publishPlus World.sortSubscriptionsByHierarchy { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace entity false world
@@ -181,9 +181,12 @@ module WorldModuleEntity =
 
         static member private updateEntityStatePlus updater mutability (propertyName : string) entity world =
             let oldWorld = world
-            let entityState = World.getEntityState entity world
-            let (entityState, world) = World.updateEntityStateInternal updater mutability entityState entity world
-            let world = World.updateEntityInEntityTree entity oldWorld world
+            let oldEntityState = World.getEntityState entity oldWorld
+            let oldOmnipresent = oldEntityState.Omnipresent
+            let oldViewType = oldEntityState.ViewType
+            let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
+            let (entityState, world) = World.updateEntityStateInternal updater mutability oldEntityState entity world
+            let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
             if World.shouldPublishChange propertyName entityState
             then World.publishEntityChange propertyName entity oldWorld world
             else world
@@ -265,8 +268,12 @@ module WorldModuleEntity =
         
         static member internal setEntityTransform value entity world =
             let oldWorld = world
+            let oldEntityState = World.getEntityState entity oldWorld
+            let oldOmnipresent = oldEntityState.Omnipresent
+            let oldViewType = oldEntityState.ViewType
+            let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
             let world = World.updateEntityStateWithoutEvent (EntityState.setTransform value) true entity world
-            let world = World.updateEntityInEntityTree entity oldWorld world
+            let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
             if World.getEntityPublishChanges entity world then
                 let world = World.publishEntityChange Property? Position entity oldWorld world
                 let world = World.publishEntityChange Property? Size entity oldWorld world
@@ -356,8 +363,12 @@ module WorldModuleEntity =
                 match entityOpt with
                 | Some entity ->
                     let oldWorld = world
+                    let oldEntityState = entityState
+                    let oldOmnipresent = oldEntityState.Omnipresent
+                    let oldViewType = oldEntityState.ViewType
+                    let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
                     let world = World.setEntityState entityState entity world
-                    let world = World.updateEntityInEntityTree entity oldWorld world
+                    let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
             | None -> let _ = World.choose world in Left ^ "Failure to remove facet '" + facetName + "' from entity."
@@ -379,8 +390,12 @@ module WorldModuleEntity =
                     match entityOpt with
                     | Some entity ->
                         let oldWorld = world
+                        let oldEntityState = entityState
+                        let oldOmnipresent = oldEntityState.Omnipresent
+                        let oldViewType = oldEntityState.ViewType
+                        let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
                         let world = World.setEntityState entityState entity world
-                        let world = World.updateEntityInEntityTree entity oldWorld world
+                        let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
                         let world = World.withEventContext (fun world -> facet.Register (entity, world)) entity world
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
@@ -435,10 +450,14 @@ module WorldModuleEntity =
                 match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
                 | Right (entityState, world) ->
                     let oldWorld = world
+                    let oldEntityState = entityState
+                    let oldOmnipresent = oldEntityState.Omnipresent
+                    let oldViewType = oldEntityState.ViewType
+                    let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState oldOverlayer overlayer
                     let world = World.setEntityState entityState entity world
-                    World.updateEntityInEntityTree entity oldWorld world
+                    World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
                 | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
             | None -> world
 
@@ -922,8 +941,12 @@ module WorldModuleEntity =
                 let facetNames = World.getEntityFacetNamesReflectively entityState
                 let entityState = Overlayer.applyOverlay EntityState.copy oldOverlayName overlayName facetNames entityState overlayer
                 let oldWorld = world
+                let oldEntityState = entityState
+                let oldOmnipresent = oldEntityState.Omnipresent
+                let oldViewType = oldEntityState.ViewType
+                let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
                 let world = World.setEntityState entityState entity world
-                let world = World.updateEntityInEntityTree entity oldWorld world
+                let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
                 let world =
                     if World.getEntityPublishChanges entity world
                     then World.publishEntityChanges entity oldWorld world
@@ -939,8 +962,12 @@ module WorldModuleEntity =
             match World.trySetFacetNames facetNames entityState (Some entity) world with
             | Right (entityState, world) ->
                 let oldWorld = world
+                let oldEntityState = entityState
+                let oldOmnipresent = oldEntityState.Omnipresent
+                let oldViewType = oldEntityState.ViewType
+                let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
                 let world = World.setEntityState entityState entity world
-                let world = World.updateEntityInEntityTree entity oldWorld world
+                let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
                 let world =
                     if World.getEntityPublishChanges entity world
                     then World.publishEntityChanges entity oldWorld world
@@ -954,7 +981,7 @@ module WorldModuleEntity =
             let properties = World.getProperties state
             Array.ofList properties
 
-        static member internal updateEntityInEntityTree (entity : Entity) oldWorld world =
+        static member internal updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax (entity : Entity) oldWorld world =
             // OPTIMIZATION: attempts to avoid constructing a screen address on each call to decrease address hashing
             // OPTIMIZATION: assumes a valid entity address with List.head on its names
             let screen =
@@ -967,12 +994,10 @@ module WorldModuleEntity =
                 MutantCache.mutateMutant
                     (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
                     (fun entityTree ->
-                        let oldEntityState = World.getEntityState entity oldWorld
-                        let oldEntityBoundsMax = World.getEntityStateBoundsMax oldEntityState
                         let entityState = World.getEntityState entity world
                         let entityBoundsMax = World.getEntityStateBoundsMax entityState
                         SpatialTree.updateElement
-                            (oldEntityState.Omnipresent || oldEntityState.ViewType = Absolute) oldEntityBoundsMax
+                            (oldOmnipresent || oldViewType = Absolute) oldBoundsMax
                             (entityState.Omnipresent || entityState.ViewType = Absolute) entityBoundsMax
                             entity entityTree
                         entityTree)

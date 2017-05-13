@@ -961,7 +961,7 @@ module WorldTypes =
           Facets : Map<string, Facet>
           IsExtrinsic : string -> bool
           EvalExtrinsic : string -> Scripting.Expr array -> SymbolOrigin option -> World -> struct (Scripting.Expr * World)
-          UpdateEntityInEntityTree : Entity -> World -> World -> World
+          UpdateEntityInEntityTree : bool -> ViewType -> Vector4 -> Entity -> World -> World -> World
           RebuildEntityTree : Screen -> World -> Entity SpatialTree }
     
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
