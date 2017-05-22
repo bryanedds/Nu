@@ -1099,10 +1099,10 @@ module Gaia =
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
     let attemptMakeWorld plugin sdlDeps =
-        let worldEir = World.attemptMake false None 0L () plugin sdlDeps
+        let worldEir = World.attemptMake false (Some Constants.Editor.GameSpecialization) 0L () plugin sdlDeps
         match worldEir with
         | Right world ->
-            let world = World.createScreen None (Some Simulants.EditorScreen.ScreenName) world |> snd
+            let world = World.createScreen4 (plugin.GetEditorScreenDispatcherName ()) (Some Constants.Editor.ScreenSpecialization) (Some Simulants.EditorScreen.ScreenName) world |> snd
             let world = World.createLayer None (Some Simulants.DefaultEditorLayer.LayerName) Simulants.EditorScreen world |> snd
             let world = World.setSelectedScreen Simulants.EditorScreen world
             Right world
