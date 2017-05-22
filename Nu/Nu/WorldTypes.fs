@@ -1041,9 +1041,13 @@ module WorldTypes =
         abstract MakeSubsystems : unit -> (string * World Subsystem) list
         default this.MakeSubsystems () = []
     
-        /// Optionally make a user-defined game dispatchers such that Nu can utilize it at run-time.
-        abstract MakeGameDispatcherOpt : unit -> GameDispatcher option
-        default this.MakeGameDispatcherOpt () = None
+        /// Make a user-defined game dispatcher that Nu will utilize when running inside the editor.
+        abstract MakeEditorGameDispatcher : unit -> GameDispatcher
+        default this.MakeEditorGameDispatcher () = GameDispatcher ()
+    
+        /// Make a user-defined game dispatcher that Nu will utilize when running outside the editor.
+        abstract MakeGameDispatcher : unit -> GameDispatcher
+        default this.MakeGameDispatcher () = GameDispatcher ()
     
         /// Make user-defined screen dispatchers such that Nu can utilize them at run-time.
         abstract MakeScreenDispatchers : unit -> ScreenDispatcher list
@@ -1065,6 +1069,10 @@ module WorldTypes =
         /// classifications.
         abstract MakeOverlayRoutes : unit -> (string * OverlayDescriptor) list
         default this.MakeOverlayRoutes () = []
+    
+        /// Make a user-defined screen dispatcher that Nu will utilize when running inside the editor.
+        abstract GetEditorScreenDispatcherName : unit -> string
+        default this.GetEditorScreenDispatcherName () = typeof<ScreenDispatcher>.Name
 
 /// The data for a change in the world's ambient state.
 type AmbientChangeData = WorldTypes.AmbientChangeData

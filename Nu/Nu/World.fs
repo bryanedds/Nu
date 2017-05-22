@@ -691,9 +691,12 @@ module WorldModule2 =
                 let eventFilter = Core.getEventFilter ()
                 EventSystem.make eventTracer eventTracing eventFilter Simulants.Game
 
+            // make the game dispatcher
+            let defaultGameDispatcher = GameDispatcher ()
+
             // make the world's dispatchers
             let dispatchers =
-                { GameDispatchers = World.makeDefaultGameDispatchers ()
+                { GameDispatchers = Map.addMany [World.pairWithName defaultGameDispatcher] (World.makeDefaultGameDispatchers ())
                   ScreenDispatchers = World.makeDefaultScreenDispatchers ()
                   LayerDispatchers = World.makeDefaultLayerDispatchers ()
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
@@ -722,11 +725,8 @@ module WorldModule2 =
                 let overlayRouter = OverlayRouter.make overlayRoutes
                 AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty SymbolStore.empty userState
 
-            // select the first game dispatcher as active
-            let activeGameDispatcher = dispatchers.GameDispatchers |> Seq.head |> fun kvp -> kvp.Value
-
             // make the world
-            let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState None activeGameDispatcher
+            let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState None defaultGameDispatcher
             
             // subscribe to subscribe and unsubscribe events
             let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
@@ -745,7 +745,7 @@ module WorldModule2 =
 
         /// Try to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member attemptMake preferPluginGameDispatcher gameSpecializationOpt tickRate userState (plugin : NuPlugin) sdlDeps =
+        static member attemptMake standAlone gameSpecializationOpt tickRate userState (plugin : NuPlugin) sdlDeps =
 
             // ensure game engine is initialized
             // TODO: P1: parameterize hard-coded boolean
@@ -767,20 +767,11 @@ module WorldModule2 =
                 let pluginEntityDispatchers = plugin.MakeEntityDispatchers () |> List.map World.pairWithName
                 let pluginLayerDispatchers = plugin.MakeLayerDispatchers () |> List.map World.pairWithName
                 let pluginScreenDispatchers = plugin.MakeScreenDispatchers () |> List.map World.pairWithName
-                let pluginGameDispatcherOpt = plugin.MakeGameDispatcherOpt ()
-
-                // infer the active game dispatcher
-                let defaultGameDispatcher = GameDispatcher ()
-                let activeGameDispatcher =
-                    if preferPluginGameDispatcher then
-                        match pluginGameDispatcherOpt with
-                        | Some gameDispatcher -> gameDispatcher
-                        | None -> defaultGameDispatcher
-                    else defaultGameDispatcher
+                let pluginGameDispatcher = if standAlone then plugin.MakeGameDispatcher () else plugin.MakeEditorGameDispatcher ()
 
                 // make the world's dispatchers
                 let dispatchers =
-                    { GameDispatchers = Map.addMany [World.pairWithName activeGameDispatcher] (World.makeDefaultGameDispatchers ())
+                    { GameDispatchers = Map.addMany [World.pairWithName pluginGameDispatcher] (World.makeDefaultGameDispatchers ())
                       ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
                       LayerDispatchers = Map.addMany pluginLayerDispatchers (World.makeDefaultLayerDispatchers ())
                       EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
@@ -833,7 +824,7 @@ module WorldModule2 =
                         AmbientState.make tickRate assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
                     // make the world
-                    let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState gameSpecializationOpt activeGameDispatcher
+                    let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState gameSpecializationOpt pluginGameDispatcher
 
                     // subscribe to subscribe and unsubscribe events
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
