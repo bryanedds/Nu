@@ -638,6 +638,7 @@ module GuiDispatcherModule =
 
         static member PropertyDefinitions =
             [Define? ViewType Absolute
+             Define? AlwaysUpdate true
              Define? DisabledColor ^ Vector4 0.75f
              Define? SwallowMouseLeft true]
 
