@@ -692,11 +692,11 @@ module WorldModule2 =
                 EventSystem.make eventTracer eventTracing eventFilter Simulants.Game
 
             // make the game dispatcher
-            let defaultGameDispatcher = GameDispatcher ()
+            let activeGameDispatcher = GameDispatcher ()
 
             // make the world's dispatchers
             let dispatchers =
-                { GameDispatchers = Map.addMany [World.pairWithName defaultGameDispatcher] (World.makeDefaultGameDispatchers ())
+                { GameDispatchers = World.makeDefaultGameDispatchers ()
                   ScreenDispatchers = World.makeDefaultScreenDispatchers ()
                   LayerDispatchers = World.makeDefaultLayerDispatchers ()
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
@@ -726,7 +726,7 @@ module WorldModule2 =
                 AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty SymbolStore.empty userState
 
             // make the world
-            let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState None defaultGameDispatcher
+            let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState None activeGameDispatcher
             
             // subscribe to subscribe and unsubscribe events
             let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
@@ -764,14 +764,14 @@ module WorldModule2 =
 
                 // make plug-in dispatchers
                 let pluginFacets = plugin.MakeFacets () |> List.map World.pairWithName
-                let pluginEntityDispatchers = plugin.MakeEntityDispatchers () |> List.map World.pairWithName
-                let pluginLayerDispatchers = plugin.MakeLayerDispatchers () |> List.map World.pairWithName
+                let pluginGameDispatchers = plugin.MakeGameDispatchers () |> List.map World.pairWithName
                 let pluginScreenDispatchers = plugin.MakeScreenDispatchers () |> List.map World.pairWithName
-                let pluginGameDispatcher = if standAlone then plugin.MakeGameDispatcher () else plugin.MakeEditorGameDispatcher ()
+                let pluginLayerDispatchers = plugin.MakeLayerDispatchers () |> List.map World.pairWithName
+                let pluginEntityDispatchers = plugin.MakeEntityDispatchers () |> List.map World.pairWithName
 
                 // make the world's dispatchers
                 let dispatchers =
-                    { GameDispatchers = Map.addMany [World.pairWithName pluginGameDispatcher] (World.makeDefaultGameDispatchers ())
+                    { GameDispatchers = Map.addMany pluginGameDispatchers (World.makeDefaultGameDispatchers ())
                       ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
                       LayerDispatchers = Map.addMany pluginLayerDispatchers (World.makeDefaultLayerDispatchers ())
                       EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
@@ -780,6 +780,10 @@ module WorldModule2 =
                       EvalExtrinsic = World.evalExtrinsic
                       UpdateEntityInEntityTree = World.updateEntityInEntityTree
                       RebuildEntityTree = World.rebuildEntityTree }
+
+                // look up the active game dispather
+                let activeGameDispatcherName = if standAlone then plugin.GetStandAloneGameDispatcherName () else plugin.GetEditorGameDispatcherName ()
+                let activeGameDispatcher = Map.find activeGameDispatcherName dispatchers.GameDispatchers
 
                 // make the world's subsystems
                 let subsystems =
@@ -824,7 +828,7 @@ module WorldModule2 =
                         AmbientState.make tickRate assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
                     // make the world
-                    let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState gameSpecializationOpt pluginGameDispatcher
+                    let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState gameSpecializationOpt activeGameDispatcher
 
                     // subscribe to subscribe and unsubscribe events
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
