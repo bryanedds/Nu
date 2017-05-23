@@ -164,7 +164,7 @@ module WorldScripting =
             | "monitor" -> true
             | _ -> false
 
-        static member internal getExtrinsic fnName =
+        static member internal evalExtrinsic fnName =
             match fnName with
             | "v2" ->
                 fun exprs originOpt world ->
