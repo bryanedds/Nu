@@ -504,8 +504,8 @@ module WorldTypes =
           Outgoing : Transition }
           
         /// Make a screen state value.
-        static member make specializationOpt nameOpt (dispatcher : ScreenDispatcher) =
-            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
+        static member make nameOpt specializationOpt (dispatcher : ScreenDispatcher) =
+            let (id, name, specialization) = Reflection.deriveIdAndNameAndSpecialization nameOpt specializationOpt
             let spatialTree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             { Id = id
               Name = name
@@ -582,8 +582,8 @@ module WorldTypes =
           Visible : bool }
 
         /// Make a layer state value.
-        static member make specializationOpt nameOpt (dispatcher : LayerDispatcher) =
-            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
+        static member make nameOpt specializationOpt (dispatcher : LayerDispatcher) =
+            let (id, name, specialization) = Reflection.deriveIdAndNameAndSpecialization nameOpt specializationOpt
             { LayerState.Id = id
               Name = name
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()
@@ -660,9 +660,9 @@ module WorldTypes =
           mutable FacetsNp : Facet list }
 
         /// Make an entity state value.
-        static member make specializationOpt nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+        static member make nameOpt specializationOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let imperative = dispatcher.GetImperative ()
-            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
+            let (id, name, specialization) = Reflection.deriveIdAndNameAndSpecialization nameOpt specializationOpt
             { Id = id
               Name = name
               Xtension = if imperative then Xtension.makeImperative () else Xtension.makeSafe ()

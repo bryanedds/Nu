@@ -26,8 +26,8 @@ module WorldModule2 =
         static member private pairWithName source =
             (getTypeName source, source)
 
-        static member private makeDefaultGameDispatchers () =
-            Map.ofList [World.pairWithName (GameDispatcher ())]
+        static member private makeDefaultGameDispatcher () =
+            World.pairWithName (GameDispatcher ())
             
         static member private makeDefaultScreenDispatchers () =
             Map.ofList [World.pairWithName (ScreenDispatcher ())]
@@ -692,11 +692,11 @@ module WorldModule2 =
                 EventSystem.make eventTracer eventTracing eventFilter Simulants.Game
 
             // make the game dispatcher
-            let activeGameDispatcher = GameDispatcher ()
+            let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
 
             // make the world's dispatchers
             let dispatchers =
-                { GameDispatchers = World.makeDefaultGameDispatchers ()
+                { GameDispatchers = Map.ofList [defaultGameDispatcher]
                   ScreenDispatchers = World.makeDefaultScreenDispatchers ()
                   LayerDispatchers = World.makeDefaultLayerDispatchers ()
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
@@ -726,7 +726,7 @@ module WorldModule2 =
                 AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty SymbolStore.empty userState
 
             // make the world
-            let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState None activeGameDispatcher
+            let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState None (snd defaultGameDispatcher)
             
             // subscribe to subscribe and unsubscribe events
             let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
@@ -769,9 +769,12 @@ module WorldModule2 =
                 let pluginLayerDispatchers = plugin.MakeLayerDispatchers () |> List.map World.pairWithName
                 let pluginEntityDispatchers = plugin.MakeEntityDispatchers () |> List.map World.pairWithName
 
+                // make the default game dispatcher
+                let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
+
                 // make the world's dispatchers
                 let dispatchers =
-                    { GameDispatchers = Map.addMany pluginGameDispatchers (World.makeDefaultGameDispatchers ())
+                    { GameDispatchers = Map.addMany pluginGameDispatchers (Map.ofList [defaultGameDispatcher])
                       ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
                       LayerDispatchers = Map.addMany pluginLayerDispatchers (World.makeDefaultLayerDispatchers ())
                       EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
