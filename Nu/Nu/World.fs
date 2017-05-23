@@ -274,14 +274,14 @@ module WorldModule2 =
 
         /// Create a dissolve screen whose contents is loaded from the given layer file.
         static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt dissolveData layerFilePath world =
-            let (dissolveScreen, world) = World.createDissolveScreen<'d> dissolveData specializationOpt nameOpt world
+            let (dissolveScreen, world) = World.createDissolveScreen<'d> specializationOpt nameOpt dissolveData world
             let world = World.readLayerFromFile layerFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
         static member createSplashScreen<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt splashData destination world =
             let cameraEyeSize = World.getEyeSize world
-            let (splashScreen, world) = World.createDissolveScreen<'d> splashData.DissolveData specializationOpt nameOpt world
+            let (splashScreen, world) = World.createDissolveScreen<'d> specializationOpt nameOpt splashData.DissolveData world
             let (splashLayer, world) = World.createLayer<LayerDispatcher> None (Some "SplashLayer") splashScreen world
             let (splashLabel, world) = World.createEntity<LabelDispatcher> None (Some "SplashLabel") splashLayer world
             let world = splashLabel.SetSize cameraEyeSize world

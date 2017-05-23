@@ -26,3 +26,6 @@ type InfinityRpgPlugin () =
 
     override this.MakeOverlayRoutes () =
         [typeof<ButtonDispatcher>.Name, OverlayDescriptor.makeVanilla (Some "InfinityButtonDispatcher")]
+        
+    override this.GetStandAloneGameDispatcherName () =
+        typeof<InfinityDispatcher>.Name
