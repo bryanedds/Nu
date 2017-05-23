@@ -21,7 +21,7 @@ type 'w ScriptingWorld =
         abstract member UpdateEnv : (Env -> Env) -> 'w
         abstract member UpdateEnvPlus : (Env -> struct ('a * Env)) -> struct ('a * 'w)
         abstract member IsExtrinsic : string -> bool
-        abstract member EvalExtrinsic : string -> SymbolOrigin option -> Expr array -> struct (Expr * 'w)
+        abstract member GetExtrinsic : string -> (Expr array -> SymbolOrigin option -> 'w -> struct (Expr * 'w))
         abstract member TryImport : Type -> obj -> Expr option
         abstract member TryExport : Type -> Expr -> obj option
         end
@@ -77,7 +77,30 @@ module ScriptingWorld =
                 SymbolOrigin.tryPrint originOpt + "\n"
         | _ -> ()
 
-    let isIntrinsic fnName =
+    let rec evalOverload fnName evaledArgs originOpt world =
+        if Array.notEmpty evaledArgs then
+            match Array.last evaledArgs with
+            | Pluggable pluggable ->
+                let pluggableTypeName = pluggable.TypeName
+                let xfnName = fnName + "_" + pluggableTypeName
+                let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
+                let evaleds = Array.cons xfnBinding evaledArgs
+                evalApply evaleds originOpt world
+            | Union (name, _)
+            | Record (name, _, _) ->
+                let xfnName = fnName + "_" + name
+                let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
+                let evaleds = Array.cons xfnBinding evaledArgs
+                evalApply evaleds originOpt world
+            | Violation _ as error -> struct (error, world)
+            | _ -> struct (Violation (["InvalidOverload"], "Could not find overload for '" + fnName + "' for target.", originOpt), world)
+        else struct (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
+
+    and getOverload fnName =
+        fun evaledArgs originOpt world ->
+            evalOverload fnName evaledArgs originOpt world
+
+    and isIntrinsic fnName =
         match fnName with
         | "=" | "<>" | "<" | ">" | "<=" | ">=" | "+" | "-" | "*" | "/" | "%" | "!"
         | "not" | "toEmpty" | "toIdentity" | "toMin" | "toMax"
@@ -101,125 +124,101 @@ module ScriptingWorld =
         | "table" | "toTable" -> true
         | _ -> false
 
-    let rec internal evalIntrinsicInner<'w when 'w :> 'w ScriptingWorld> fnName evaledArgs originOpt (world : 'w) =
+    and internal getIntrinsic<'w when 'w :> 'w ScriptingWorld> fnName =
         match fnName with
-        | "=" -> evalBinary EqFns fnName evaledArgs originOpt world
-        | "<>" -> evalBinary NotEqFns fnName evaledArgs originOpt world
-        | "<" -> evalBinary LtFns fnName evaledArgs originOpt world
-        | ">" -> evalBinary GtFns fnName evaledArgs originOpt world
-        | "<=" -> evalBinary LtEqFns fnName evaledArgs originOpt world
-        | ">=" -> evalBinary GtEqFns fnName evaledArgs originOpt world
-        | "+" -> evalBinary AddFns fnName evaledArgs originOpt world
-        | "-" -> evalBinary SubFns fnName evaledArgs originOpt world
-        | "*" -> evalBinary MulFns fnName evaledArgs originOpt world
-        | "/" -> evalBinary DivFns fnName evaledArgs originOpt world
-        | "%" -> evalBinary ModFns fnName evaledArgs originOpt world
-        | "!" -> evalSinglet evalDereference fnName evaledArgs originOpt world
-        | "not" -> evalBoolUnary not fnName evaledArgs originOpt world
-        | "hash" -> evalUnary HashFns fnName evaledArgs originOpt world
-        | "toEmpty" -> evalUnary ToEmptyFns fnName evaledArgs originOpt world
-        | "toIdentity" -> evalUnary ToIdentityFns fnName evaledArgs originOpt world
-        | "toMin" -> evalUnary ToMinFns fnName evaledArgs originOpt world
-        | "toMax" -> evalUnary ToMaxFns fnName evaledArgs originOpt world
-        | "inc" -> evalUnary IncFns fnName evaledArgs originOpt world
-        | "dec" -> evalUnary DecFns fnName evaledArgs originOpt world
-        | "negate" -> evalUnary NegateFns fnName evaledArgs originOpt world
-        | "pow" -> evalBinary PowFns fnName evaledArgs originOpt world
-        | "root" -> evalBinary RootFns fnName evaledArgs originOpt world
-        | "sqr" -> evalUnary SqrFns fnName evaledArgs originOpt world
-        | "sqrt" -> evalUnary SqrtFns fnName evaledArgs originOpt world
-        | "floor" -> evalUnary FloorFns fnName evaledArgs originOpt world
-        | "ceiling" -> evalUnary CeilingFns fnName evaledArgs originOpt world
-        | "truncate" -> evalUnary TruncateFns fnName evaledArgs originOpt world
-        | "round" -> evalUnary RoundFns fnName evaledArgs originOpt world
-        | "exp" -> evalUnary ExpFns fnName evaledArgs originOpt world
-        | "log" -> evalUnary LogFns fnName evaledArgs originOpt world
-        | "sin" -> evalUnary SinFns fnName evaledArgs originOpt world
-        | "cos" -> evalUnary CosFns fnName evaledArgs originOpt world
-        | "tan" -> evalUnary TanFns fnName evaledArgs originOpt world
-        | "asin" -> evalUnary AsinFns fnName evaledArgs originOpt world
-        | "acos" -> evalUnary AcosFns fnName evaledArgs originOpt world
-        | "atan" -> evalUnary AtanFns fnName evaledArgs originOpt world
-        | "length" -> evalUnary LengthFns fnName evaledArgs originOpt world
-        | "normal" -> evalUnary NormalFns fnName evaledArgs originOpt world
-        | "cross" -> evalBinary CrossFns fnName evaledArgs originOpt world
-        | "dot" -> evalBinary DotFns fnName evaledArgs originOpt world
-        | "bool" -> evalUnary BoolFns fnName evaledArgs originOpt world
-        | "int" -> evalUnary IntFns fnName evaledArgs originOpt world
-        | "int64" -> evalUnary Int64Fns fnName evaledArgs originOpt world
-        | "single" -> evalUnary SingleFns fnName evaledArgs originOpt world
-        | "double" -> evalUnary DoubleFns fnName evaledArgs originOpt world
-        | "string" -> evalUnary StringFns fnName evaledArgs originOpt world
-        | "getTypeName" -> evalSinglet evalGetTypeName fnName evaledArgs originOpt world
-        | "tryIndex" -> evalDoublet evalTryIndex fnName evaledArgs originOpt world
-        | "hasIndex" -> evalDoublet evalHasIndex fnName evaledArgs originOpt world
-        | "index" -> evalDoublet evalIndex fnName evaledArgs originOpt world
-        | "getName" -> evalSinglet evalGetName fnName evaledArgs originOpt world
-        | "tuple" -> evalTuple fnName evaledArgs originOpt world
-        | "pair" -> evalTuple fnName evaledArgs originOpt world
-        | "fst" -> evalSinglet (evalIndexInt 0) fnName evaledArgs originOpt world
-        | "snd" -> evalSinglet (evalIndexInt 1) fnName evaledArgs originOpt world
-        | "thd" -> evalSinglet (evalIndexInt 2) fnName evaledArgs originOpt world
-        | "fth" -> evalSinglet (evalIndexInt 3) fnName evaledArgs originOpt world
-        | "fif" -> evalSinglet (evalIndexInt 4) fnName evaledArgs originOpt world
-        | "nth" -> evalDoublet evalNth fnName evaledArgs originOpt world
-        | "some" -> evalSinglet evalSome fnName evaledArgs originOpt world
-        | "isNone" -> evalSinglet evalIsNone fnName evaledArgs originOpt world
-        | "isSome" -> evalSinglet evalIsSome fnName evaledArgs originOpt world
-        | "isEmpty" -> evalSinglet (evalIsEmpty evalApply) fnName evaledArgs originOpt world
-        | "notEmpty" -> evalSinglet (evalNotEmpty evalApply) fnName evaledArgs originOpt world
-        | "tryUncons" -> evalSinglet (evalTryUncons evalApply) fnName evaledArgs originOpt world
-        | "uncons" -> evalSinglet (evalUncons evalApply) fnName evaledArgs originOpt world
-        | "cons" -> evalDoublet evalCons fnName evaledArgs originOpt world
-        | "commit" -> evalSinglet evalCommit fnName evaledArgs originOpt world
-        | "tryHead" -> evalSinglet (evalTryHead evalApply) fnName evaledArgs originOpt world
-        | "head" -> evalSinglet (evalHead evalApply) fnName evaledArgs originOpt world
-        | "tryTail" -> evalSinglet (evalTryTail evalApply) fnName evaledArgs originOpt world
-        | "tail" -> evalSinglet (evalTail evalApply) fnName evaledArgs originOpt world
-        | "scanWhile" -> evalTriplet (evalScanWhile evalApply) fnName evaledArgs originOpt world
-        | "scani" -> evalTriplet (evalScani evalApply) fnName evaledArgs originOpt world
-        | "scan" -> evalTriplet (evalScan evalApply) fnName evaledArgs originOpt world
-        | "foldWhile" -> evalTriplet (evalFoldWhile evalApply) fnName evaledArgs originOpt world
-        | "foldi" -> evalTriplet (evalFoldi evalApply) fnName evaledArgs originOpt world
-        | "fold" -> evalTriplet (evalFold evalApply) fnName evaledArgs originOpt world
-        | "mapi" -> evalDoublet (evalMapi evalApply) fnName evaledArgs originOpt world
-        | "map" -> evalDoublet (evalMap evalApply) fnName evaledArgs originOpt world
-        | "contains" -> evalDoublet (evalContains evalApply) fnName evaledArgs originOpt world
-        | "toString" -> evalSinglet evalToString fnName evaledArgs originOpt world
-        | "codata" -> evalDoublet evalCodata fnName evaledArgs originOpt world
-        | "toCodata" -> evalSinglet evalToCodata fnName evaledArgs originOpt world
-        | "list" -> evalList fnName evaledArgs originOpt world
-        | "toList" -> evalSinglet evalToList fnName evaledArgs originOpt world
-        | "ring" -> evalRing fnName evaledArgs originOpt world
-        | "toRing" -> evalSinglet evalToRing fnName evaledArgs originOpt world
-        | "add" -> evalDoublet evalCons fnName evaledArgs originOpt world
-        | "remove" -> evalDoublet evalRemove fnName evaledArgs originOpt world
-        | "toTable" -> evalSinglet evalToTable fnName evaledArgs originOpt world
-        | _ -> struct (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
-
-    and evalIntrinsic fnName evaledArgs originOpt world =
-        match evalIntrinsicInner fnName evaledArgs originOpt world with
-        | struct (Violation _, world) -> evalOverload fnName evaledArgs originOpt world
-        | success -> success
-
-    and evalOverload fnName evaledArgs originOpt world =
-        if Array.notEmpty evaledArgs then
-            match Array.last evaledArgs with
-            | Pluggable pluggable ->
-                let pluggableTypeName = pluggable.TypeName
-                let xfnName = fnName + "_" + pluggableTypeName
-                let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
-                let evaleds = Array.cons xfnBinding evaledArgs
-                evalApply evaleds originOpt world
-            | Union (name, _)
-            | Record (name, _, _) ->
-                let xfnName = fnName + "_" + name
-                let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
-                let evaleds = Array.cons xfnBinding evaledArgs
-                evalApply evaleds originOpt world
-            | Violation _ as error -> struct (error, world)
-            | _ -> struct (Violation (["InvalidOverload"], "Could not find overload for '" + fnName + "' for target.", originOpt), world)
-        else struct (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
+        | "=" -> fun evaledArgs originOpt (world : 'w) -> evalBinary EqFns fnName evaledArgs originOpt world
+        | "<>" -> fun evaledArgs originOpt world -> evalBinary NotEqFns fnName evaledArgs originOpt world
+        | "<" -> fun evaledArgs originOpt world -> evalBinary LtFns fnName evaledArgs originOpt world
+        | ">" -> fun evaledArgs originOpt world -> evalBinary GtFns fnName evaledArgs originOpt world
+        | "<=" -> fun evaledArgs originOpt world -> evalBinary LtEqFns fnName evaledArgs originOpt world
+        | ">=" -> fun evaledArgs originOpt world -> evalBinary GtEqFns fnName evaledArgs originOpt world
+        | "+" -> fun evaledArgs originOpt world -> evalBinary AddFns fnName evaledArgs originOpt world
+        | "-" -> fun evaledArgs originOpt world -> evalBinary SubFns fnName evaledArgs originOpt world
+        | "*" -> fun evaledArgs originOpt world -> evalBinary MulFns fnName evaledArgs originOpt world
+        | "/" -> fun evaledArgs originOpt world -> evalBinary DivFns fnName evaledArgs originOpt world
+        | "%" -> fun evaledArgs originOpt world -> evalBinary ModFns fnName evaledArgs originOpt world
+        | "!" -> fun evaledArgs originOpt world -> evalSinglet evalDereference fnName evaledArgs originOpt world
+        | "not" -> fun evaledArgs originOpt world -> evalBoolUnary not fnName evaledArgs originOpt world
+        | "hash" -> fun evaledArgs originOpt world -> evalUnary HashFns fnName evaledArgs originOpt world
+        | "toEmpty" -> fun evaledArgs originOpt world -> evalUnary ToEmptyFns fnName evaledArgs originOpt world
+        | "toIdentity" -> fun evaledArgs originOpt world -> evalUnary ToIdentityFns fnName evaledArgs originOpt world
+        | "toMin" -> fun evaledArgs originOpt world -> evalUnary ToMinFns fnName evaledArgs originOpt world
+        | "toMax" -> fun evaledArgs originOpt world -> evalUnary ToMaxFns fnName evaledArgs originOpt world
+        | "inc" -> fun evaledArgs originOpt world -> evalUnary IncFns fnName evaledArgs originOpt world
+        | "dec" -> fun evaledArgs originOpt world -> evalUnary DecFns fnName evaledArgs originOpt world
+        | "negate" -> fun evaledArgs originOpt world -> evalUnary NegateFns fnName evaledArgs originOpt world
+        | "pow" -> fun evaledArgs originOpt world -> evalBinary PowFns fnName evaledArgs originOpt world
+        | "root" -> fun evaledArgs originOpt world -> evalBinary RootFns fnName evaledArgs originOpt world
+        | "sqr" -> fun evaledArgs originOpt world -> evalUnary SqrFns fnName evaledArgs originOpt world
+        | "sqrt" -> fun evaledArgs originOpt world -> evalUnary SqrtFns fnName evaledArgs originOpt world
+        | "floor" -> fun evaledArgs originOpt world -> evalUnary FloorFns fnName evaledArgs originOpt world
+        | "ceiling" -> fun evaledArgs originOpt world -> evalUnary CeilingFns fnName evaledArgs originOpt world
+        | "truncate" -> fun evaledArgs originOpt world -> evalUnary TruncateFns fnName evaledArgs originOpt world
+        | "round" -> fun evaledArgs originOpt world -> evalUnary RoundFns fnName evaledArgs originOpt world
+        | "exp" -> fun evaledArgs originOpt world -> evalUnary ExpFns fnName evaledArgs originOpt world
+        | "log" -> fun evaledArgs originOpt world -> evalUnary LogFns fnName evaledArgs originOpt world
+        | "sin" -> fun evaledArgs originOpt world -> evalUnary SinFns fnName evaledArgs originOpt world
+        | "cos" -> fun evaledArgs originOpt world -> evalUnary CosFns fnName evaledArgs originOpt world
+        | "tan" -> fun evaledArgs originOpt world -> evalUnary TanFns fnName evaledArgs originOpt world
+        | "asin" -> fun evaledArgs originOpt world -> evalUnary AsinFns fnName evaledArgs originOpt world
+        | "acos" -> fun evaledArgs originOpt world -> evalUnary AcosFns fnName evaledArgs originOpt world
+        | "atan" -> fun evaledArgs originOpt world -> evalUnary AtanFns fnName evaledArgs originOpt world
+        | "length" -> fun evaledArgs originOpt world -> evalUnary LengthFns fnName evaledArgs originOpt world
+        | "normal" -> fun evaledArgs originOpt world -> evalUnary NormalFns fnName evaledArgs originOpt world
+        | "cross" -> fun evaledArgs originOpt world -> evalBinary CrossFns fnName evaledArgs originOpt world
+        | "dot" -> fun evaledArgs originOpt world -> evalBinary DotFns fnName evaledArgs originOpt world
+        | "bool" -> fun evaledArgs originOpt world -> evalUnary BoolFns fnName evaledArgs originOpt world
+        | "int" -> fun evaledArgs originOpt world -> evalUnary IntFns fnName evaledArgs originOpt world
+        | "int64" -> fun evaledArgs originOpt world -> evalUnary Int64Fns fnName evaledArgs originOpt world
+        | "single" -> fun evaledArgs originOpt world -> evalUnary SingleFns fnName evaledArgs originOpt world
+        | "double" -> fun evaledArgs originOpt world -> evalUnary DoubleFns fnName evaledArgs originOpt world
+        | "string" -> fun evaledArgs originOpt world -> evalUnary StringFns fnName evaledArgs originOpt world
+        | "getTypeName" -> fun evaledArgs originOpt world -> evalSinglet evalGetTypeName fnName evaledArgs originOpt world
+        | "tryIndex" -> fun evaledArgs originOpt world -> evalDoublet evalTryIndex fnName evaledArgs originOpt world
+        | "hasIndex" -> fun evaledArgs originOpt world -> evalDoublet evalHasIndex fnName evaledArgs originOpt world
+        | "index" -> fun evaledArgs originOpt world -> evalDoublet evalIndex fnName evaledArgs originOpt world
+        | "getName" -> fun evaledArgs originOpt world -> evalSinglet evalGetName fnName evaledArgs originOpt world
+        | "tuple" -> fun evaledArgs originOpt world -> evalTuple fnName evaledArgs originOpt world
+        | "pair" -> fun evaledArgs originOpt world -> evalTuple fnName evaledArgs originOpt world
+        | "fst" -> fun evaledArgs originOpt world -> evalSinglet (evalIndexInt 0) fnName evaledArgs originOpt world
+        | "snd" -> fun evaledArgs originOpt world -> evalSinglet (evalIndexInt 1) fnName evaledArgs originOpt world
+        | "thd" -> fun evaledArgs originOpt world -> evalSinglet (evalIndexInt 2) fnName evaledArgs originOpt world
+        | "fth" -> fun evaledArgs originOpt world -> evalSinglet (evalIndexInt 3) fnName evaledArgs originOpt world
+        | "fif" -> fun evaledArgs originOpt world -> evalSinglet (evalIndexInt 4) fnName evaledArgs originOpt world
+        | "nth" -> fun evaledArgs originOpt world -> evalDoublet evalNth fnName evaledArgs originOpt world
+        | "some" -> fun evaledArgs originOpt world -> evalSinglet evalSome fnName evaledArgs originOpt world
+        | "isNone" -> fun evaledArgs originOpt world -> evalSinglet evalIsNone fnName evaledArgs originOpt world
+        | "isSome" -> fun evaledArgs originOpt world -> evalSinglet evalIsSome fnName evaledArgs originOpt world
+        | "isEmpty" -> fun evaledArgs originOpt world -> evalSinglet (evalIsEmpty evalApply) fnName evaledArgs originOpt world
+        | "notEmpty" -> fun evaledArgs originOpt world -> evalSinglet (evalNotEmpty evalApply) fnName evaledArgs originOpt world
+        | "tryUncons" -> fun evaledArgs originOpt world -> evalSinglet (evalTryUncons evalApply) fnName evaledArgs originOpt world
+        | "uncons" -> fun evaledArgs originOpt world -> evalSinglet (evalUncons evalApply) fnName evaledArgs originOpt world
+        | "cons" -> fun evaledArgs originOpt world -> evalDoublet evalCons fnName evaledArgs originOpt world
+        | "commit" -> fun evaledArgs originOpt world -> evalSinglet evalCommit fnName evaledArgs originOpt world
+        | "tryHead" -> fun evaledArgs originOpt world -> evalSinglet (evalTryHead evalApply) fnName evaledArgs originOpt world
+        | "head" -> fun evaledArgs originOpt world -> evalSinglet (evalHead evalApply) fnName evaledArgs originOpt world
+        | "tryTail" -> fun evaledArgs originOpt world -> evalSinglet (evalTryTail evalApply) fnName evaledArgs originOpt world
+        | "tail" -> fun evaledArgs originOpt world -> evalSinglet (evalTail evalApply) fnName evaledArgs originOpt world
+        | "scanWhile" -> fun evaledArgs originOpt world -> evalTriplet (evalScanWhile evalApply) fnName evaledArgs originOpt world
+        | "scani" -> fun evaledArgs originOpt world -> evalTriplet (evalScani evalApply) fnName evaledArgs originOpt world
+        | "scan" -> fun evaledArgs originOpt world -> evalTriplet (evalScan evalApply) fnName evaledArgs originOpt world
+        | "foldWhile" -> fun evaledArgs originOpt world -> evalTriplet (evalFoldWhile evalApply) fnName evaledArgs originOpt world
+        | "foldi" -> fun evaledArgs originOpt world -> evalTriplet (evalFoldi evalApply) fnName evaledArgs originOpt world
+        | "fold" -> fun evaledArgs originOpt world -> evalTriplet (evalFold evalApply) fnName evaledArgs originOpt world
+        | "mapi" -> fun evaledArgs originOpt world -> evalDoublet (evalMapi evalApply) fnName evaledArgs originOpt world
+        | "map" -> fun evaledArgs originOpt world -> evalDoublet (evalMap evalApply) fnName evaledArgs originOpt world
+        | "contains" -> fun evaledArgs originOpt world -> evalDoublet (evalContains evalApply) fnName evaledArgs originOpt world
+        | "toString" -> fun evaledArgs originOpt world -> evalSinglet evalToString fnName evaledArgs originOpt world
+        | "codata" -> fun evaledArgs originOpt world -> evalDoublet evalCodata fnName evaledArgs originOpt world
+        | "toCodata" -> fun evaledArgs originOpt world -> evalSinglet evalToCodata fnName evaledArgs originOpt world
+        | "list" -> fun evaledArgs originOpt world -> evalList fnName evaledArgs originOpt world
+        | "toList" -> fun evaledArgs originOpt world -> evalSinglet evalToList fnName evaledArgs originOpt world
+        | "ring" -> fun evaledArgs originOpt world -> evalRing fnName evaledArgs originOpt world
+        | "toRing" -> fun evaledArgs originOpt world -> evalSinglet evalToRing fnName evaledArgs originOpt world
+        | "add" -> fun evaledArgs originOpt world -> evalDoublet evalCons fnName evaledArgs originOpt world
+        | "remove" -> fun evaledArgs originOpt world -> evalDoublet evalRemove fnName evaledArgs originOpt world
+        | "toTable" -> fun evaledArgs originOpt world -> evalSinglet evalToTable fnName evaledArgs originOpt world
+        | _ -> getOverload fnName
 
     and evalUnionUnevaled name exprs world =
         let struct (evaleds, world) = evalMany exprs world
@@ -337,7 +336,7 @@ module ScriptingWorld =
         | Right success -> success
         | Left error -> error
 
-    and evalApply exprs originOpt world =
+    and evalApply exprs originOpt (world : 'w) =
         if Array.notEmpty exprs then
             let (exprsHead, exprsTail) = (Array.head exprs, Array.tail exprs)
             let struct (evaledHead, world) = eval exprsHead world in annotateWorld world // force the type checker to see the world as it is
@@ -346,15 +345,31 @@ module ScriptingWorld =
                 let struct (evaledTail, world) = evalMany exprsTail world
                 let union = Union (keyword, evaledTail)
                 struct (union, world)
-            | Binding (fnName, _, originOpt) ->
+            | Binding (fnName, cachedBinding, originOpt) ->
                 // NOTE: when evaluation leads here, we can (actually must) infer that we have
                 // either an extrinsic or intrinsic function.
-                if world.IsExtrinsic fnName then
-                    let exprsTail = Array.tail exprs
-                    world.EvalExtrinsic fnName originOpt exprsTail
-                else
-                    let struct (evaledTail, world) = evalMany exprsTail world
-                    evalIntrinsic fnName evaledTail originOpt world
+                let directBinding =
+                    match !cachedBinding with
+                    | UncachedBinding ->
+                        if world.IsExtrinsic fnName then
+                            let directBinding = world.GetExtrinsic fnName
+                            let directBinding = fun exprsTail originOpt (worldObj : obj) ->
+                                let struct (result, world) = directBinding exprsTail originOpt (worldObj :?> 'w)
+                                struct (result, box world)
+                            cachedBinding := DirectBinding directBinding
+                            directBinding
+                        else
+                            let directBinding = getIntrinsic fnName
+                            let directBinding = fun exprsTail originOpt (worldObj : obj) ->
+                                let struct (evaledTail, world) = evalMany exprsTail (worldObj :?> 'w)
+                                let struct (result, world) = directBinding evaledTail originOpt world
+                                struct (result, box world)
+                            cachedBinding := DirectBinding directBinding
+                            directBinding
+                    | DeclarationBinding _ | ProceduralBinding _ -> failwithumf ()
+                    | DirectBinding directBinding -> directBinding
+                let struct (result, worldObj) = directBinding exprsTail originOpt world
+                struct (result, worldObj :?> 'w)
             | Fun (pars, parsCount, body, _, framesOpt, originOpt) ->
                 let struct (evaledTail, world) = evalMany exprsTail world
                 let struct (framesCurrentOpt, world) =

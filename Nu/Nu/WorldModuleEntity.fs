@@ -914,7 +914,7 @@ module WorldModuleEntity =
         static member reassignEntityImmediate entity specializationOpt nameOpt (layer : Layer) world =
             let entityState = World.getEntityState entity world
             let world = World.removeEntity entity world
-            let (id, name, specialization) = Reflection.deriveIdAndNameAndSpecialization nameOpt specializationOpt
+            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
             let entityState = { entityState with Id = id; Name = name; Specialization = specialization }
             let transmutedEntity = Entity (layer.LayerAddress -<<- ntoa<Entity> name)
             let world = World.addEntity false entityState transmutedEntity world

@@ -504,8 +504,8 @@ module WorldTypes =
           Outgoing : Transition }
           
         /// Make a screen state value.
-        static member make nameOpt specializationOpt (dispatcher : ScreenDispatcher) =
-            let (id, name, specialization) = Reflection.deriveIdAndNameAndSpecialization nameOpt specializationOpt
+        static member make specializationOpt nameOpt (dispatcher : ScreenDispatcher) =
+            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
             let spatialTree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             { Id = id
               Name = name
@@ -582,8 +582,8 @@ module WorldTypes =
           Visible : bool }
 
         /// Make a layer state value.
-        static member make nameOpt specializationOpt (dispatcher : LayerDispatcher) =
-            let (id, name, specialization) = Reflection.deriveIdAndNameAndSpecialization nameOpt specializationOpt
+        static member make specializationOpt nameOpt (dispatcher : LayerDispatcher) =
+            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
             { LayerState.Id = id
               Name = name
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()
@@ -660,9 +660,9 @@ module WorldTypes =
           mutable FacetsNp : Facet list }
 
         /// Make an entity state value.
-        static member make nameOpt specializationOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+        static member make specializationOpt nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let imperative = dispatcher.GetImperative ()
-            let (id, name, specialization) = Reflection.deriveIdAndNameAndSpecialization nameOpt specializationOpt
+            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
             { Id = id
               Name = name
               Xtension = if imperative then Xtension.makeImperative () else Xtension.makeSafe ()
@@ -963,7 +963,7 @@ module WorldTypes =
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
           IsExtrinsic : string -> bool
-          EvalExtrinsic : string -> Scripting.Expr array -> SymbolOrigin option -> World -> struct (Scripting.Expr * World)
+          GetExtrinsic : string -> (Scripting.Expr array -> SymbolOrigin option -> World -> struct (Scripting.Expr * World))
           UpdateEntityInEntityTree : bool -> ViewType -> Vector4 -> Entity -> World -> World -> World
           RebuildEntityTree : Screen -> World -> Entity SpatialTree }
     
@@ -1017,7 +1017,7 @@ module WorldTypes =
             member this.UpdateEnv updater = { this with ScriptingEnv = updater this.ScriptingEnv }
             member this.UpdateEnvPlus updater = let struct (result, env) = updater this.ScriptingEnv in struct (result, { this with ScriptingEnv = env })
             member this.IsExtrinsic fnName = this.Dispatchers.IsExtrinsic fnName
-            member this.EvalExtrinsic fnName originOpt exprs = this.Dispatchers.EvalExtrinsic fnName exprs originOpt this
+            member this.GetExtrinsic fnName = this.Dispatchers.GetExtrinsic fnName
 
             member this.TryImport ty value =
                 match (ty.Name, value) with
