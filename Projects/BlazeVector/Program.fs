@@ -28,6 +28,10 @@ type BlazePlugin () =
          PlayerDispatcher () :> EntityDispatcher
          EnemyDispatcher () :> EntityDispatcher]
 
+    // specify the correct game dispatcher to use
+    override this.GetStandAloneGameDispatcherName () =
+        typeof<BlazeDispatcher>.Name
+
 module Program =
 
     // this the entry point for the BlazeVector application

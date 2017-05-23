@@ -184,7 +184,7 @@ module WorldScreenModule =
             World.createScreen4 typeof<'d>.Name specializationOpt nameOpt world
         
         /// Create a screen with a dissolving transition, and add it to the world.
-        static member createDissolveScreen<'d when 'd :> ScreenDispatcher> dissolveData specializationOpt nameOpt world =
+        static member createDissolveScreen<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt dissolveData world =
             let dissolveImageOpt = Some dissolveData.DissolveImage
             let (screen, world) = World.createScreen<'d> specializationOpt nameOpt world
             let world = screen.SetIncoming { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; DissolveImageOpt = dissolveImageOpt } world
