@@ -963,7 +963,7 @@ module WorldTypes =
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
           IsExtrinsic : string -> bool
-          GetExtrinsic : string -> (Scripting.Expr array -> SymbolOrigin option -> World -> struct (Scripting.Expr * World))
+          EvalExtrinsic : string -> Scripting.Expr array -> SymbolOrigin option -> World -> struct (Scripting.Expr * World)
           UpdateEntityInEntityTree : bool -> ViewType -> Vector4 -> Entity -> World -> World -> World
           RebuildEntityTree : Screen -> World -> Entity SpatialTree }
     
@@ -1017,7 +1017,7 @@ module WorldTypes =
             member this.UpdateEnv updater = { this with ScriptingEnv = updater this.ScriptingEnv }
             member this.UpdateEnvPlus updater = let struct (result, env) = updater this.ScriptingEnv in struct (result, { this with ScriptingEnv = env })
             member this.IsExtrinsic fnName = this.Dispatchers.IsExtrinsic fnName
-            member this.GetExtrinsic fnName = this.Dispatchers.GetExtrinsic fnName
+            member this.EvalExtrinsic fnName originOpt exprs = this.Dispatchers.EvalExtrinsic fnName exprs originOpt this
 
             member this.TryImport ty value =
                 match (ty.Name, value) with
