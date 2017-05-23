@@ -13,10 +13,11 @@ module Scripting =
         abstract member TypeName : string
         abstract member ToSymbol : unit -> Symbol
 
-    and [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoComparison>] CachedBinding =
+    and [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoEquality; NoComparison>] CachedBinding =
         | UncachedBinding
         | DeclarationBinding of Expr
         | ProceduralBinding of int * int
+        | DirectBinding of (Expr array -> SymbolOrigin option -> obj -> struct (Expr * obj))
 
     and Binding =
         | VariableBinding of string * Expr
@@ -801,6 +802,7 @@ module Scripting =
                     let frame = (List.skip offset env.ProceduralFrames).Head
                     let struct (_, binding) = frame.[index]
                     Some binding
+                | DirectBinding _ -> failwithumf ()
 
             let tryAddDeclarationBinding name value env =
                 let isTopLevel = List.isEmpty env.ProceduralFrames

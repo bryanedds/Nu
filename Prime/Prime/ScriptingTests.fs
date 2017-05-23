@@ -14,7 +14,7 @@ module ScriptingTests =
             member this.UpdateEnv updater = { this with ScriptingEnv = updater this.ScriptingEnv }
             member this.UpdateEnvPlus updater = let struct (result, env) = updater this.ScriptingEnv in struct (result, { this with ScriptingEnv = env })
             member this.IsExtrinsic _ = false
-            member this.EvalExtrinsic _ _ _ = failwithumf ()
+            member this.GetExtrinsic _ = failwithumf ()
             member this.TryImport _ _ = failwithnie ()
             member this.TryExport _ _ = failwithnie ()
         static member make () = { ScriptingEnv = Scripting.EnvModule.Env.make () }
