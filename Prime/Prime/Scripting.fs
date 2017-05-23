@@ -802,7 +802,7 @@ module Scripting =
                     let frame = (List.skip offset env.ProceduralFrames).Head
                     let struct (_, binding) = frame.[index]
                     Some binding
-                | DirectBinding _ -> failwithumf ()
+                | DirectBinding _ -> None
 
             let tryAddDeclarationBinding name value env =
                 let isTopLevel = List.isEmpty env.ProceduralFrames
