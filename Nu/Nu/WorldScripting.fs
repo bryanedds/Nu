@@ -100,7 +100,7 @@ module WorldScripting =
                 | None -> struct (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
             | Left error -> error
 
-        static member evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
+        static member private evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
             EventWorld.subscribe (fun evt world ->
                 match World.tryGetSimulantScriptFrame subscriber world with
                 | Some scriptFrame ->
@@ -123,7 +123,7 @@ module WorldScripting =
                 (subscriber :> Participant)
                 world
 
-        static member evalMonitor6 fnName evaledArg evaledArg2 originOpt world =
+        static member private evalMonitor6 fnName evaledArg evaledArg2 originOpt world =
             match evaledArg with
             | Binding _
             | Fun _ ->
@@ -137,7 +137,7 @@ module WorldScripting =
             | Violation _ as error -> struct (error, world)
             | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Function for its 1st argument.", originOpt), world)
 
-        static member evalMonitor fnName evaledArg evaledArg2 originOpt world =
+        static member private evalMonitor fnName evaledArg evaledArg2 originOpt world =
             World.evalMonitor6 fnName evaledArg evaledArg2 originOpt world
 
         /// Attempt to evaluate the scripting prelude.

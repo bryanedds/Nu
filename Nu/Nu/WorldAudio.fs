@@ -9,6 +9,10 @@ open Nu
 [<AutoOpen>]
 module WorldAudioModule =
 
+    /// Marker for module reflection.
+    type private ModuleMarker = interface end
+    let ModuleType = typeof<ModuleMarker>.DeclaringType
+
     /// The subsystem for the world's audio player.
     type [<ReferenceEquality>] AudioPlayerSubsystem =
         private

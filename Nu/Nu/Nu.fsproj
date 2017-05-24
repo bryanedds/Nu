@@ -110,6 +110,7 @@
     <Compile Include="WorldTests.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
+    <None Include="GenerateScriptingBindings.fsx" />
     <None Include="App.config" />
     <Content Include="AssetGraph.nuag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

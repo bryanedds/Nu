@@ -13,6 +13,10 @@ open global.Nu
 [<AutoOpen>]
 module WorldModule2 =
 
+    /// Marker for module reflection.
+    type private ModuleMarker = interface end
+    let ModuleType = typeof<ModuleMarker>.DeclaringType
+
     let private ScreenTransitionMouseLeftKey = makeGuid ()
     let private ScreenTransitionMouseCenterKey = makeGuid ()
     let private ScreenTransitionMouseRightKey = makeGuid ()
@@ -89,26 +93,26 @@ module WorldModule2 =
 
         /// Try to check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
-        static member tryGetSelectedScreenIdling world =
+        static member tryGetIsSelectedScreenIdling world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen -> Some ^ selectedScreen.IsIdling world
             | None -> None
 
         /// Try to check that the selected screen is transitioning.
-        static member tryGetSelectedScreenTransitioning world =
-            Option.map not (World.tryGetSelectedScreenIdling world)
+        static member tryGetIsSelectedScreenTransitioning world =
+            Option.map not (World.tryGetIsSelectedScreenIdling world)
 
         /// Check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen (failing with an exception if no screen is selected).
-        static member selectedScreenIdling world =
-            match World.tryGetSelectedScreenIdling world with
+        static member isSelectedScreenIdling world =
+            match World.tryGetIsSelectedScreenIdling world with
             | Some answer -> answer
             | None -> failwith "Cannot query state of non-existent selected screen."
 
         /// Check that the selected screen is transitioning (failing with an exception if no screen
         /// is selected).
-        static member selectedScreenTransitioning world =
-            not ^ World.selectedScreenIdling world
+        static member isSelectedScreenTransitioning world =
+            not ^ World.isSelectedScreenIdling world
 
         static member private setScreenTransitionState state (screen : Screen) world =
             let world = screen.SetTransitionStateNp state world
@@ -502,7 +506,7 @@ module WorldModule2 =
             let entityTree = selectedScreen.GetEntityTreeNp world
             let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) entityTree
             let world = selectedScreen.SetEntityTreeNpNoEvent entityTree world
-            let entities = getElementsFromTree spatialTree
+            let entities : Entity HashSet = getElementsFromTree spatialTree
             (entities, world)
 
         static member getEntitiesInView (selectedScreen : Screen) world =

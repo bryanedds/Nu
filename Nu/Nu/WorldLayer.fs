@@ -10,6 +10,10 @@ open Nu
 [<AutoOpen>]
 module WorldLayerModule =
 
+    /// Marker for module reflection.
+    type private ModuleMarker = interface end
+    let ModuleType = typeof<ModuleMarker>.DeclaringType
+
     type Layer with
     
         member this.GetId world = World.getLayerId this world
@@ -163,7 +167,7 @@ module WorldLayerModule =
             
         /// Destroy multiple layers in the world immediately. Can be dangerous if existing in-flight publishing depends
         /// on any of the layers' existences. Consider using World.destroyLayers instead.
-        static member destroyLayersImmediate layers world =
+        static member destroyLayersImmediate (layers : Layer seq) world =
             List.foldBack
                 (fun layer world -> World.destroyLayerImmediate layer world)
                 (List.ofSeq layers)

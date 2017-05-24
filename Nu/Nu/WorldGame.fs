@@ -10,6 +10,10 @@ open Nu
 [<AutoOpen>]
 module WorldGameModule =
 
+    /// Marker for module reflection.
+    type private ModuleMarker = interface end
+    let ModuleType = typeof<ModuleMarker>.DeclaringType
+
     type Game with
 
         member this.GetId world = World.getGameId world

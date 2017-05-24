@@ -65,6 +65,10 @@ let definitizePlus opts =
     let (flag, seq) = Seq.definitizePlus opts
     (flag, Array.ofSeq seq)
 
+/// Get all but the last item from a list.
+let allButLast arr =
+    Array.take (Array.length arr - 1) arr
+
 /// A more tolerant and open-minded take.
 let tryTake (count : int) (arr : _ array) =
     Seq.tryTake count arr |> Array.ofSeq
