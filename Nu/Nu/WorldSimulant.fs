@@ -7,7 +7,11 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module WorldSimulant =
+module WorldSimulantModule =
+
+    /// Marker for module reflection.
+    type private ModuleMarker = interface end
+    let ModuleType = typeof<ModuleMarker>.DeclaringType
 
     type World with
 

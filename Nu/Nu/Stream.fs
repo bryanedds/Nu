@@ -32,12 +32,12 @@ module Stream =
     /// Take events from a stream only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).+
     let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenIdling stream =
-        filterEvent (fun _ -> World.selectedScreenIdling) stream
+        filterEvent (fun _ -> World.isSelectedScreenIdling) stream
     
     /// Take events from a stream only when the currently selected screen is transitioning
     /// (that is, there is a screen transition in progress).
     let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenTransitioning stream =
-        filterEvent (fun _ -> World.selectedScreenTransitioning) stream
+        filterEvent (fun _ -> World.isSelectedScreenTransitioning) stream
 
 [<AutoOpen>]
 module StreamOperators =

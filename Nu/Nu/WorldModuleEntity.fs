@@ -11,6 +11,10 @@ open Nu
 [<AutoOpen>]
 module WorldModuleEntity =
 
+    /// Marker for module reflection.
+    type private ModuleMarker = interface end
+    let ModuleType = typeof<ModuleMarker>.DeclaringType
+
     type private KeyEquality () =
         inherit OptimizedClosures.FSharpFunc<
             KeyValuePair<

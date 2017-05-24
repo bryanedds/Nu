@@ -12,6 +12,10 @@ open Nu
 [<AutoOpen>]
 module WorldEntityModule =
 
+    /// Marker for module reflection.
+    type private ModuleMarker = interface end
+    let ModuleType = typeof<ModuleMarker>.DeclaringType
+
     type Entity with
 
         member this.GetId world = World.getEntityId this world
@@ -236,7 +240,7 @@ module WorldEntityModule =
 
         /// Destroy multiple entities in the world immediately. Can be dangerous if existing in-flight publishing
         /// depends on any of the entities' existences. Consider using World.destroyEntities instead.
-        static member destroyEntitiesImmediate entities world =
+        static member destroyEntitiesImmediate (entities : Entity seq) world =
             List.foldBack
                 (fun entity world -> World.destroyEntityImmediate entity world)
                 (List.ofSeq entities)

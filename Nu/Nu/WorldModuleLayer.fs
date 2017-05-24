@@ -11,6 +11,10 @@ open Nu
 [<AutoOpen>]
 module WorldModuleLayer =
 
+    /// Marker for module reflection.
+    type private ModuleMarker = interface end
+    let ModuleType = typeof<ModuleMarker>.DeclaringType
+
     type World with
     
         static member private layerStateKeyEquality

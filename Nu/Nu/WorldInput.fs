@@ -9,6 +9,10 @@ open Nu
 [<AutoOpen>]
 module WorldInputModule =
 
+    /// Marker for module reflection.
+    type private ModuleMarker = interface end
+    let ModuleType = typeof<ModuleMarker>.DeclaringType
+
     type World with
 
         /// Convert a MouseButton to SDL's representation.
