@@ -79,6 +79,18 @@ type [<StructuralEquality; NoComparison>] TileData =
       TileSetTileOpt : TmxTilesetTile option
       TilePosition : Vector2i }
 
+/// Specifies that a module contains functions that need to be considered for binding generation.
+type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
+    ModuleBindingAttribute () =
+    inherit Attribute ()
+
+/// Specifies that a module contains functions that need to be considered for binding generation.
+type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
+    FunctionBindingAttribute (altName : string) =
+    inherit Attribute ()
+    member this.AltName = altName
+    new () = FunctionBindingAttribute ""
+
 [<AutoOpen>]
 module WorldTypes =
 

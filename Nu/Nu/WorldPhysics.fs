@@ -7,12 +7,8 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-[<AutoOpen>]
+[<AutoOpen; ModuleBinding>]
 module WorldPhysicsModule =
-
-    /// Marker for module reflection.
-    type private ModuleMarker = interface end
-    let ModuleType = typeof<ModuleMarker>.DeclaringType
 
     /// The subsystem for the world's physics system.
     type [<ReferenceEquality>] PhysicsEngineSubsystem =

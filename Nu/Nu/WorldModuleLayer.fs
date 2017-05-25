@@ -8,12 +8,8 @@ open OpenTK
 open Prime
 open Nu
 
-[<AutoOpen>]
+[<AutoOpen; ModuleBinding>]
 module WorldModuleLayer =
-
-    /// Marker for module reflection.
-    type private ModuleMarker = interface end
-    let ModuleType = typeof<ModuleMarker>.DeclaringType
 
     type World with
     
@@ -303,6 +299,7 @@ module WorldModuleLayer =
             else world
 
         /// Create a layer and add it to the world.
+        [<FunctionBinding ("createLayer")>]
         static member createLayer5 dispatcherName specializationOpt nameOpt (screen : Screen) world =
             let dispatchers = World.getLayerDispatchers world
             let dispatcher =

@@ -6,12 +6,8 @@ open System
 open Prime
 open Nu
 
-[<AutoOpen>]
+[<AutoOpen; ModuleBinding>]
 module WorldInputModule =
-
-    /// Marker for module reflection.
-    type private ModuleMarker = interface end
-    let ModuleType = typeof<ModuleMarker>.DeclaringType
 
     type World with
 
@@ -24,18 +20,22 @@ module WorldInputModule =
             MouseState.toNuButton mouseButton
 
         /// Check that the given mouse button is down.
+        [<FunctionBinding>]
         static member isMouseButtonDown mouseButton (_ : World) =
             MouseState.isButtonDown mouseButton
 
         /// Get the position of the mouse.
+        [<FunctionBinding>]
         static member getMousePosition (_ : World) =
             MouseState.getPosition ()
 
         /// Get the position of the mouse in floating-point coordinates.
+        [<FunctionBinding>]
         static member getMousePositionF (_ : World) =
             MouseState.getPositionF ()
 
         /// Check that the given keyboard key is down.
+        [<FunctionBinding>]
         static member isKeyboardKeyDown scanCode (_ : World) =
             KeyboardState.isKeyDown scanCode
 

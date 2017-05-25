@@ -7,12 +7,8 @@ open System.IO
 open Prime
 open Nu
 
-[<AutoOpen>]
+[<AutoOpen; ModuleBinding>]
 module WorldScreenModule =
-
-    /// Marker for module reflection.
-    type private ModuleMarker = interface end
-    let ModuleType = typeof<ModuleMarker>.DeclaringType
 
     type Screen with
     
@@ -153,6 +149,7 @@ module WorldScreenModule =
                 world
 
         /// Get all the world's screens.
+        [<FunctionBinding>]
         static member getScreens world =
             World.getScreenDirectory world |>
             UMap.fold (fun state _ screenDirectory -> Screen screenDirectory.Key :: state) [] :>
@@ -164,6 +161,7 @@ module WorldScreenModule =
             World.removeScreen screen world
 
         /// Destroy a screen in the world at the end of the current update.
+        [<FunctionBinding>]
         static member destroyScreen screen world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
@@ -171,6 +169,7 @@ module WorldScreenModule =
             World.addTasklet tasklet world
 
         /// Create a screen and add it to the world.
+        [<FunctionBinding ("createScreen")>]
         static member createScreen4 dispatcherName specializationOpt nameOpt world =
             let dispatchers = World.getScreenDispatchers world
             let dispatcher =
@@ -188,12 +187,17 @@ module WorldScreenModule =
             World.createScreen4 typeof<'d>.Name specializationOpt nameOpt world
         
         /// Create a screen with a dissolving transition, and add it to the world.
-        static member createDissolveScreen<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt dissolveData world =
+        [<FunctionBinding ("createDissolveScreen")>]
+        static member createDissolveScreen5 dispatcherName specializationOpt nameOpt dissolveData world =
             let dissolveImageOpt = Some dissolveData.DissolveImage
-            let (screen, world) = World.createScreen<'d> specializationOpt nameOpt world
+            let (screen, world) = World.createScreen4 dispatcherName specializationOpt nameOpt world
             let world = screen.SetIncoming { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; DissolveImageOpt = dissolveImageOpt } world
             let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; DissolveImageOpt = dissolveImageOpt } world
             (screen, world)
+        
+        /// Create a screen with a dissolving transition, and add it to the world.
+        static member createDissolveScreen<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt dissolveData world =
+            World.createDissolveScreen5 typeof<'d>.Name specializationOpt nameOpt dissolveData world
 
         /// Write a screen to a screen descriptor.
         static member writeScreen screen screenDescriptor world =
@@ -211,6 +215,7 @@ module WorldScreenModule =
             fun screenDescriptors -> { gameDescriptor with Screens = screenDescriptors }
 
         /// Write a screen to a file.
+        [<FunctionBinding>]
         static member writeScreenToFile (filePath : string) screen world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrinter
@@ -225,12 +230,6 @@ module WorldScreenModule =
         static member readScreen screenDescriptor nameOpt world =
             World.readScreen4 World.readLayers screenDescriptor nameOpt world
 
-        /// Read a screen from a file.
-        static member readScreenFromFile (filePath : string) nameOpt world =
-            let screenDescriptorStr = File.ReadAllText filePath
-            let screenDescriptor = scvalue<ScreenDescriptor> screenDescriptorStr
-            World.readScreen screenDescriptor nameOpt world
-
         /// Read multiple screens from a game descriptor.
         static member readScreens gameDescriptor world =
             List.foldBack
@@ -239,6 +238,13 @@ module WorldScreenModule =
                     (screen :: screens, world))
                 gameDescriptor.Screens
                 ([], world)
+
+        /// Read a screen from a file.
+        [<FunctionBinding>]
+        static member readScreenFromFile (filePath : string) nameOpt world =
+            let screenDescriptorStr = File.ReadAllText filePath
+            let screenDescriptor = scvalue<ScreenDescriptor> screenDescriptorStr
+            World.readScreen screenDescriptor nameOpt world
 
 namespace Debug
 open Nu

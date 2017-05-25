@@ -136,7 +136,7 @@ module AmbientStateModule =
             let camera = updater ^ getSymbolStore state
             { state with SymbolStore = camera }
     
-        /// Get the user-defined state value, casted to 'a.
+        /// Get the user-defined state value, cast to 'a.
         let getUserValue state : 'a =
             UserState.get state.UserState
     

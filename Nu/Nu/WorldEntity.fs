@@ -9,12 +9,8 @@ open System.Runtime.CompilerServices
 open Prime
 open Nu
 
-[<AutoOpen>]
+[<AutoOpen; ModuleBinding>]
 module WorldEntityModule =
-
-    /// Marker for module reflection.
-    type private ModuleMarker = interface end
-    let ModuleType = typeof<ModuleMarker>.DeclaringType
 
     type Entity with
 
@@ -217,6 +213,7 @@ module WorldEntityModule =
                 world
 
         /// Get all the entities contained by a layer.
+        [<FunctionBinding>]
         static member getEntities (layer : Layer) world =
             match Address.getNames layer.LayerAddress with
             | [screenName; layerName] ->
@@ -232,6 +229,7 @@ module WorldEntityModule =
             | _ -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
 
         /// Destroy an entity in the world at the end of the current update.
+        [<FunctionBinding>]
         static member destroyEntity entity world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
@@ -247,6 +245,7 @@ module WorldEntityModule =
                 world
 
         /// Destroy multiple entities in the world at the end of the current update.
+        [<FunctionBinding>]
         static member destroyEntities entities world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
@@ -265,6 +264,7 @@ module WorldEntityModule =
             Array.map (fun p -> p.SortTarget :?> Entity)
 
         /// Try to pick an entity at the given position.
+        [<FunctionBinding>]
         static member tryPickEntity position entities world =
             /// OPTIMIZATION: using arrays for speed
             let entitiesSorted = World.sortEntities entities world

@@ -9,12 +9,8 @@ open OpenTK
 open Prime
 open Nu
 
-[<AutoOpen>]
+[<AutoOpen; ModuleBinding>]
 module WorldModule =
-
-    /// Marker for module reflection.
-    type private ModuleMarker = interface end
-    let ModuleType = typeof<ModuleMarker>.DeclaringType
 
     /// F# reach-around for evaluating a script expression.
     let mutable internal eval : Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr * World =
@@ -227,16 +223,25 @@ module WorldModule =
 
         static member internal updateAmbientState updater world =
             World.choose { world with AmbientState = updater world.AmbientState }
+
+        static member internal updateTickTime world =
+            World.updateAmbientState AmbientState.updateTickTime world
+
+        static member internal incrementUpdateCount world =
+            World.updateAmbientState AmbientState.incrementUpdateCount world
     
         /// Get the tick rate.
+        [<FunctionBinding>]
         static member getTickRate world =
             World.getAmbientStateBy AmbientState.getTickRate world
 
         /// Get the tick rate as a floating-point value.
+        [<FunctionBinding>]
         static member getTickRateF world =
             World.getAmbientStateBy AmbientState.getTickRateF world
 
         /// Set the tick rate, starting at the end of the current frame.
+        [<FunctionBinding>]
         static member setTickRate tickRate world =
             World.updateAmbientState
                 (AmbientState.addTasklet
@@ -244,6 +249,7 @@ module WorldModule =
                       Command = { Execute = fun world -> World.updateAmbientState (AmbientState.setTickRateImmediate tickRate) world }}) world
 
         /// Reset the tick time to 0 at the end of the current frame.
+        [<FunctionBinding>]
         static member resetTickTime world =
             World.updateAmbientState
                 (AmbientState.addTasklet
@@ -251,28 +257,27 @@ module WorldModule =
                       Command = { Execute = fun world -> World.updateAmbientState AmbientState.resetTickTimeImmediate world }}) world
 
         /// Get the world's tick time.
+        [<FunctionBinding>]
         static member getTickTime world =
             World.getAmbientStateBy AmbientState.getTickTime world
 
         /// Check that the world is ticking.
+        [<FunctionBinding>]
         static member isTicking world =
             World.getAmbientStateBy AmbientState.isTicking world
 
-        static member internal updateTickTime world =
-            World.updateAmbientState AmbientState.updateTickTime world
-
         /// Get the world's update count.
+        [<FunctionBinding>]
         static member getUpdateCount world =
             World.getAmbientStateBy AmbientState.getUpdateCount world
 
-        static member internal incrementUpdateCount world =
-            World.updateAmbientState AmbientState.incrementUpdateCount world
-
         /// Get the the liveness state of the engine.
+        [<FunctionBinding>]
         static member getLiveness world =
             World.getAmbientStateBy AmbientState.getLiveness world
 
         /// Place the engine into a state such that the app will exit at the end of the current phase.
+        [<FunctionBinding>]
         static member exit world =
             World.updateAmbientState AmbientState.exit world
 
@@ -286,10 +291,12 @@ module WorldModule =
             World.updateAmbientState (AmbientState.restoreTasklets tasklets) world
 
         /// Add a tasklet to be executed by the engine at the scheduled time.
+        [<FunctionBinding>]
         static member addTasklet tasklet world =
             World.updateAmbientState (AmbientState.addTasklet tasklet) world
 
         /// Add multiple tasklets to be executed by the engine at the scheduled times.
+        [<FunctionBinding>]
         static member addTasklets tasklets world =
             World.updateAmbientState (AmbientState.addTasklets tasklets) world
 
@@ -359,7 +366,7 @@ module WorldModule =
         static member reloadSymbols world =
             World.updateSymbolStore SymbolStore.reloadSymbols world
 
-        /// Get the user-defined state value, casted to 'a.
+        /// Get the user-defined state value, cast to 'a.
         static member getUserValue world : 'a =
             World.getAmbientStateBy AmbientState.getUserValue world
 

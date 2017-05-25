@@ -33,8 +33,8 @@ open TiledSharp
 open Prime
 open Prime.Stream
 open Prime.Chain
-open Nu
-open Nu.Stream
+open global.Nu
+open global.Nu.Stream
 
 // set current directly to local for execution in VS F# interactive
 Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
