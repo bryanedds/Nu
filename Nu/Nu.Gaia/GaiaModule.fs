@@ -571,7 +571,6 @@ module Gaia =
         layerCreationForm.StartPosition <- FormStartPosition.CenterParent
         layerCreationForm.dispatcherTextBox.Text <- typeof<LayerDispatcher>.Name
         layerCreationForm.specializationTextBox.Text <- Constants.Engine.EmptySpecialization
-        layerCreationForm.depthTextBox.Text <- scstring 0.0f
         layerCreationForm.okButton.Click.Add ^ fun _ ->
             addWorldChanger ^ fun world ->
                 let world = pushPastWorld world world
@@ -579,9 +578,7 @@ module Gaia =
                 let layerDispatcher = layerCreationForm.dispatcherTextBox.Text
                 let layerSpecialization = layerCreationForm.specializationTextBox.Text
                 try if String.length layerName = 0 then failwith "Layer name cannot be empty in Gaia due to WinForms limitations."
-                    let layerDepth = Single.Parse layerCreationForm.depthTextBox.Text
-                    let (layer, world) = World.createLayer5 layerDispatcher (Some layerSpecialization) (Some layerName) Simulants.EditorScreen world
-                    let world = layer.SetDepth layerDepth world
+                    let world = World.createLayer5 layerDispatcher (Some layerSpecialization) (Some layerName) Simulants.EditorScreen world |> snd
                     refreshLayerTabs form world
                     form.layerTabs.SelectTab (form.layerTabs.TabPages.IndexOfKey layerName)
                     world
