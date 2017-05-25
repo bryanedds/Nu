@@ -300,12 +300,41 @@ module WorldModule =
         static member addTasklets tasklets world =
             World.updateAmbientState (AmbientState.addTasklets tasklets) world
 
-        /// Get the asset metadata map.
-        static member getMetadata world =
-            AmbientState.getMetadata ^ World.getAmbientState world
+        static member internal getMetadata world =
+            AmbientState.getMetadata (World.getAmbientState world)
 
         static member internal setMetadata assetMetadataMap world =
             World.updateAmbientState (AmbientState.setMetadata assetMetadataMap) world
+
+        /// Try to get the texture metadata of the given asset.
+        [<FunctionBinding>]
+        static member tryGetTextureSize assetTag world =
+            Metadata.tryGetTextureSize assetTag (World.getMetadata world)
+
+        /// Forcibly get the texture size metadata of the given asset (throwing on failure).
+        [<FunctionBinding>]
+        static member getTextureSize assetTag world =
+            Metadata.getTextureSize assetTag (World.getMetadata world)
+
+        /// Try to get the texture size metadata of the given asset.
+        [<FunctionBinding>]
+        static member tryGetTextureSizeAsVector2 assetTag world =
+            Metadata.tryGetTextureSizeAsVector2 assetTag (World.getMetadata world)
+
+        /// Forcibly get the texture size metadata of the given asset (throwing on failure).
+        [<FunctionBinding>]
+        static member getTextureSizeAsVector2 assetTag world =
+            Metadata.getTextureSizeAsVector2 assetTag (World.getMetadata world)
+
+        /// Try to get the tile map metadata of the given asset.
+        [<FunctionBinding>]
+        static member tryGetTileMapMetadata assetTag world =
+            Metadata.tryGetTileMapMetadata assetTag (World.getMetadata world)
+
+        /// Forcibly get the tile map metadata of the given asset (throwing on failure).
+        [<FunctionBinding>]
+        static member getTileMapMetadata assetTag world =
+            Metadata.getTileMapMetadata assetTag (World.getMetadata world)
 
         static member internal getOverlayerBy by world =
             let overlayer = World.getAmbientStateBy AmbientState.getOverlayer world

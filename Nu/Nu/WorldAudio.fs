@@ -35,47 +35,56 @@ module WorldAudioModule =
             World.updateSubsystem (fun aps _ -> aps.EnqueueMessage message) Constants.Engine.AudioPlayerSubsystemName world
 
         /// Send a message to the audio system to play a song.
+        [<FunctionBinding>]
         static member playSong timeToFadeOutSongMs volume song world =
             let playSongMessage = PlaySongMessage { TimeToFadeOutSongMs = timeToFadeOutSongMs; Volume = volume; Song = song }
             World.enqueueAudioMessage playSongMessage world
 
         /// Send a message to the audio system to play a song.
-        static member playSong6 timeToFadeOutSongMs volume songPackageName songAssetName world =
+        [<FunctionBinding ("playSong4")>]
+        static member playSong5 timeToFadeOutSongMs volume songPackageName songAssetName world =
             let song = { PackageName = songPackageName; AssetName = songAssetName }
             World.playSong timeToFadeOutSongMs volume song world
 
         /// Send a message to the audio system to play a sound.
+        [<FunctionBinding>]
         static member playSound volume sound world =
             let playSoundMessage = PlaySoundMessage { Sound = sound; Volume = volume }
             World.enqueueAudioMessage playSoundMessage world
 
         /// Send a message to the audio system to play a sound.
-        static member playSound5 volume soundPackageName soundAssetName world =
+        [<FunctionBinding ("playSound3")>]
+        static member playSound4 volume soundPackageName soundAssetName world =
             let sound = { PackageName = soundPackageName; AssetName = soundAssetName }
             World.playSound volume sound world
 
         /// Send a message to the audio system to fade out any current song.
+        [<FunctionBinding>]
         static member fadeOutSong timeToFadeOutSongMs world =
             let fadeOutSongMessage = FadeOutSongMessage timeToFadeOutSongMs
             World.enqueueAudioMessage fadeOutSongMessage world
 
         /// Send a message to the audio system to stop a song.
+        [<FunctionBinding>]
         static member stopSong world =
             World.enqueueAudioMessage StopSongMessage world
             
         /// Hint that an audio asset package with the given name should be loaded. Should be used
         /// to avoid loading assets at inconvenient times (such as in the middle of game play!)
+        [<FunctionBinding>]
         static member hintAudioPackageUse packageName world =
             let hintAudioPackageUseMessage = HintAudioPackageUseMessage packageName
             World.enqueueAudioMessage hintAudioPackageUseMessage world
             
         /// Hint that an audio package should be unloaded since its assets will not be used again
         /// (or until specified via a HintAudioPackageUseMessage).
+        [<FunctionBinding>]
         static member hintAudioPackageDisuse packageName world =
             let hintAudioPackageDisuseMessage = HintAudioPackageDisuseMessage packageName
             World.enqueueAudioMessage hintAudioPackageDisuseMessage world
 
         /// Send a message to the audio player to reload its audio assets.
+        [<FunctionBinding>]
         static member reloadAudioAssets world =
             let reloadAudioAssetsMessage = ReloadAudioAssetsMessage
             World.enqueueAudioMessage reloadAudioAssetsMessage world
