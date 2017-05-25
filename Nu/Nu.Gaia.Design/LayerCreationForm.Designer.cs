@@ -36,13 +36,11 @@
             this.label2 = new System.Windows.Forms.Label();
             this.specializationTextBox = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.depthTextBox = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // okButton
             // 
-            this.okButton.Location = new System.Drawing.Point(209, 166);
+            this.okButton.Location = new System.Drawing.Point(204, 135);
             this.okButton.Name = "okButton";
             this.okButton.Size = new System.Drawing.Size(75, 23);
             this.okButton.TabIndex = 3;
@@ -52,7 +50,7 @@
             // cancelButton
             // 
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(290, 166);
+            this.cancelButton.Location = new System.Drawing.Point(285, 135);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 4;
@@ -61,7 +59,7 @@
             // 
             // nameTextBox
             // 
-            this.nameTextBox.Location = new System.Drawing.Point(103, 24);
+            this.nameTextBox.Location = new System.Drawing.Point(98, 24);
             this.nameTextBox.Name = "nameTextBox";
             this.nameTextBox.Size = new System.Drawing.Size(262, 20);
             this.nameTextBox.TabIndex = 0;
@@ -69,7 +67,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(22, 27);
+            this.label1.Location = new System.Drawing.Point(17, 27);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(38, 13);
             this.label1.TabIndex = 3;
@@ -77,7 +75,7 @@
             // 
             // dispatcherTextBox
             // 
-            this.dispatcherTextBox.Location = new System.Drawing.Point(103, 59);
+            this.dispatcherTextBox.Location = new System.Drawing.Point(98, 59);
             this.dispatcherTextBox.Name = "dispatcherTextBox";
             this.dispatcherTextBox.Size = new System.Drawing.Size(262, 20);
             this.dispatcherTextBox.TabIndex = 1;
@@ -85,7 +83,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(22, 62);
+            this.label2.Location = new System.Drawing.Point(17, 62);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(61, 13);
             this.label2.TabIndex = 3;
@@ -93,7 +91,7 @@
             // 
             // specializationTextBox
             // 
-            this.specializationTextBox.Location = new System.Drawing.Point(103, 95);
+            this.specializationTextBox.Location = new System.Drawing.Point(98, 95);
             this.specializationTextBox.Name = "specializationTextBox";
             this.specializationTextBox.Size = new System.Drawing.Size(262, 20);
             this.specializationTextBox.TabIndex = 2;
@@ -101,27 +99,11 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(22, 98);
+            this.label3.Location = new System.Drawing.Point(17, 98);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(75, 13);
             this.label3.TabIndex = 3;
             this.label3.Text = "Specialization:";
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(22, 133);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(39, 13);
-            this.label4.TabIndex = 5;
-            this.label4.Text = "Depth:";
-            // 
-            // depthTextBox
-            // 
-            this.depthTextBox.Location = new System.Drawing.Point(103, 130);
-            this.depthTextBox.Name = "depthTextBox";
-            this.depthTextBox.Size = new System.Drawing.Size(262, 20);
-            this.depthTextBox.TabIndex = 6;
             // 
             // LayerCreationForm
             // 
@@ -129,9 +111,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.cancelButton;
-            this.ClientSize = new System.Drawing.Size(377, 206);
-            this.Controls.Add(this.depthTextBox);
-            this.Controls.Add(this.label4);
+            this.ClientSize = new System.Drawing.Size(382, 177);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.specializationTextBox);
@@ -157,7 +137,5 @@
         private System.Windows.Forms.Label label2;
         public System.Windows.Forms.TextBox specializationTextBox;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label4;
-        public System.Windows.Forms.TextBox depthTextBox;
     }
 }
