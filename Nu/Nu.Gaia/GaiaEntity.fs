@@ -123,7 +123,7 @@ and EntityPropertyDescriptor (property, attributes) =
                     | Right world -> world
                     | Left error -> Log.trace error; world
                 entityTds.RefWorld := world // must be set for property grid
-                entityTds.Form.propertyGrid.Refresh ()
+                entityTds.Form.entityPropertyGrid.Refresh ()
                 world
 
             // change the property dynamically
@@ -138,7 +138,7 @@ and EntityPropertyDescriptor (property, attributes) =
                     | _ -> EntityPropertyValue.setValue property value entity world
                 let world = entityTds.DescribedEntity.PropagatePhysics world
                 entityTds.RefWorld := world // must be set for property grid
-                entityTds.Form.propertyGrid.Refresh ()
+                entityTds.Form.entityPropertyGrid.Refresh ()
                 world)
 
         // NOTE: in order to update the view immediately, we have to apply the changer twice,
