@@ -112,8 +112,8 @@ module Gaia =
             if Seq.notExists (fun (layer : Layer) -> layer.LayerName = layerTabPage.Name) layers then
                 layerTabPages.RemoveByKey layerTabPage.Name
 
-    let private setTreeViewSelectionToPropertyGridSelection (form : GaiaForm) =
-        match form.propertyGrid.SelectedObject with
+    let private setTreeViewSelectionToEntityPropertyGridSelection (form : GaiaForm) =
+        match form.entityPropertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             match form.treeView.Nodes.Find (scstring entityTds.DescribedEntity.EntityAddress, true) with
             | [||] -> form.treeView.SelectedNode <- null
@@ -127,12 +127,12 @@ module Gaia =
     let private selectEntity (form : GaiaForm) entity world =
         let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
         RefWorld := world // must be set for property grid
-        form.propertyGrid.SelectedObject <- entityTds
+        form.entityPropertyGrid.SelectedObject <- entityTds
         form.propertyTabControl.SelectTab 0 // show entity properties
 
     let private deselectEntity (form : GaiaForm) world =
         RefWorld := world // must be set for property grid
-        form.propertyGrid.SelectedObject <- null
+        form.entityPropertyGrid.SelectedObject <- null
 
     let private refreshTreeView (form : GaiaForm) world =
         let treeState = getExpansionState form.treeView
@@ -140,14 +140,14 @@ module Gaia =
         populateTreeViewLayers form world
         populateTreeViewNodes form world
         restoreExpansionState form.treeView treeState
-        setTreeViewSelectionToPropertyGridSelection form
+        setTreeViewSelectionToEntityPropertyGridSelection form
 
-    let private refreshPropertyGrid (form : GaiaForm) world =
-        match form.propertyGrid.SelectedObject with
+    let private refreshEntityPropertyGrid (form : GaiaForm) world =
+        match form.entityPropertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             entityTds.RefWorld := world // must be set for property grid
             if entityTds.DescribedEntity.GetExists world
-            then form.propertyGrid.Refresh ()
+            then form.entityPropertyGrid.Refresh ()
             else deselectEntity form world
         | _ -> ()
 
@@ -174,7 +174,7 @@ module Gaia =
 
     let private refreshFormOnUndoRedo (form : GaiaForm) world =
         form.tickingButton.Checked <- false
-        refreshPropertyGrid form world
+        refreshEntityPropertyGrid form world
         refreshLayerPropertyGrid form world
         refreshLayerTabs form world
         refreshTreeView form world
@@ -202,7 +202,7 @@ module Gaia =
         match form.treeView.Nodes.Find (scstring evt.Publisher.ParticipantAddress, true) with
         | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
-        match form.propertyGrid.SelectedObject with
+        match form.entityPropertyGrid.SelectedObject with
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
             if atoa evt.Publisher.ParticipantAddress = entityTds.DescribedEntity.EntityAddress then
@@ -249,7 +249,7 @@ module Gaia =
             | DragEntityPosition _
             | DragEntityRotation _ ->
                 let world = World.updateUserValue (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
-                form.propertyGrid.Refresh ()
+                form.entityPropertyGrid.Refresh ()
                 (handled, world)
             | DragEntityNone -> (Resolve, world)
 
@@ -336,7 +336,11 @@ module Gaia =
         form.createDepthTextBox.Text <- scstring ^ depth - 1.0f
 
     let private refreshPropertyEditor (form : GaiaForm) =
-        match (form.propertyGrid.SelectedObject, form.propertyGrid.SelectedGridItem) with
+        let activePropertyGrid =
+            if form.propertyTabControl.SelectedIndex = 0
+            then form.entityPropertyGrid
+            else form.layerPropertyGrid
+        match (activePropertyGrid.SelectedObject, activePropertyGrid.SelectedGridItem) with
         | (null, _) | (_, null) ->
             form.propertyEditor.Enabled <- false
             form.propertyNameLabel.Text <- String.Empty
@@ -381,11 +385,16 @@ module Gaia =
                 form.propertyValueTextBox.Text <- String.Empty
                 form.propertyValueTextBox.EmptyUndoBuffer ()
 
+    // TODO: get rid of the code duplication in this function!
     let private applyPropertyEditor (form : GaiaForm) =
-        match form.propertyGrid.SelectedObject with
+        let activePropertyGrid =
+            if form.propertyTabControl.SelectedIndex = 0
+            then form.entityPropertyGrid
+            else form.layerPropertyGrid
+        match activePropertyGrid.SelectedObject with
         | null -> ()
         | :? EntityTypeDescriptorSource as entityTds ->
-            match form.propertyGrid.SelectedGridItem with
+            match activePropertyGrid.SelectedGridItem with
             | null -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
             | selectedGridItem ->
                 match selectedGridItem.GridItemType with
@@ -397,6 +406,32 @@ module Gaia =
                         let strUnescaped = String.unescape strEscaped
                         let propertyValue = typeConverter.ConvertFromString strUnescaped
                         propertyDescriptor.SetValue (entityTds, propertyValue)
+                    with
+                    | :? ConversionException as exn ->
+                        match exn.SymbolOpt with
+                        | Some symbol ->
+                            match Symbol.tryGetOrigin symbol with
+                            | Some origin ->
+                                form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
+                                form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
+                            | None -> ()
+                        | None -> ()
+                        Log.trace ^ "Invalid apply property operation due to: " + scstring exn
+                    | exn -> Log.trace ^ "Invalid apply property operation due to: " + scstring exn
+                | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
+        | :? LayerTypeDescriptorSource as layerTds ->
+            match activePropertyGrid.SelectedGridItem with
+            | null -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
+            | selectedGridItem ->
+                match selectedGridItem.GridItemType with
+                | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
+                    let propertyDescriptor = selectedGridItem.PropertyDescriptor :?> LayerPropertyDescriptor
+                    let typeConverter = SymbolicConverter (true, selectedGridItem.PropertyDescriptor.PropertyType)
+                    try form.propertyValueTextBox.EndUndoAction ()
+                        let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
+                        let strUnescaped = String.unescape strEscaped
+                        let propertyValue = typeConverter.ConvertFromString strUnescaped
+                        propertyDescriptor.SetValue (layerTds, propertyValue)
                     with
                     | :? ConversionException as exn ->
                         match exn.SymbolOpt with
@@ -447,7 +482,7 @@ module Gaia =
     let private tryLoadAssetGraph (form : GaiaForm) world =
         match tryReloadAssetGraph form world with
         | Right (assetGraph, world) ->
-            let selectionStart = form.propertyValueTextBox.SelectionStart
+            let selectionStart = form.assetGraphTextBox.SelectionStart
             let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
             form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter + "\r\n"
@@ -478,7 +513,7 @@ module Gaia =
     let private tryLoadOverlayer (form : GaiaForm) world =
         match tryReloadOverlays form world with
         | Right (overlayer, world) ->
-            let selectionStart = form.propertyValueTextBox.SelectionStart
+            let selectionStart = form.overlayerTextBox.SelectionStart
             let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Overlay>).PrettyPrinter
             form.overlayerTextBox.Text <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter + "\r\n"
@@ -501,12 +536,23 @@ module Gaia =
             MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to save overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             false
 
-    let private handleFormPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormEntityPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
-        setTreeViewSelectionToPropertyGridSelection form
+        setTreeViewSelectionToEntityPropertyGridSelection form
 
-    let private handleFormPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormEntityPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
+
+    let private handleFormLayerPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
+        refreshPropertyEditor form
+
+    let private handleFormLayerPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
+        refreshPropertyEditor form
+
+    let private handlePropertyTabControlSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
+        if form.propertyTabControl.SelectedIndex = 0
+        then refreshEntityPropertyGrid form !RefWorld
+        else refreshLayerPropertyGrid form !RefWorld
 
     let private handleFormPropertyRefreshClick (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
@@ -523,7 +569,7 @@ module Gaia =
                 | [_; _; _] ->
                     RefWorld := world // must be set for property grid
                     let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
-                    form.propertyGrid.SelectedObject <- entityTds
+                    form.entityPropertyGrid.SelectedObject <- entityTds
                     form.propertyTabControl.SelectTab 0 // show entity properties
                     world
                 | _ -> world // don't have an entity address
@@ -549,7 +595,7 @@ module Gaia =
                 let world = entity.PropagatePhysics world
                 RefWorld := world // must be set for property grid
                 let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
-                form.propertyGrid.SelectedObject <- entityTds
+                form.entityPropertyGrid.SelectedObject <- entityTds
                 world
             with exn ->
                 let world = World.choose world
@@ -559,7 +605,7 @@ module Gaia =
     let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             let world = pushPastWorld world world
-            match form.propertyGrid.SelectedObject with
+            match form.entityPropertyGrid.SelectedObject with
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = World.destroyEntity entityTds.DescribedEntity world
                 deselectEntity form world
@@ -675,14 +721,14 @@ module Gaia =
 
     let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            match form.propertyGrid.SelectedObject with
+            match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds -> World.copyEntityToClipboard entityTds.DescribedEntity world; world
             | _ -> Log.trace ^ "Invalid copy operation (likely a code issue in Gaia)."; world
 
     let private handleFormCut (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            match form.propertyGrid.SelectedObject with
+            match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = pushPastWorld world world
@@ -704,7 +750,7 @@ module Gaia =
 
     let private handleFormQuickSize (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            match form.propertyGrid.SelectedObject with
+            match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
                 let world = pushPastWorld world world
@@ -712,7 +758,7 @@ module Gaia =
                 let world = entity.SetSize (entity.GetQuickSize world) world
                 let world = entity.PropagatePhysics world
                 entityTds.RefWorld := world // must be set for property grid
-                form.propertyGrid.Refresh ()
+                form.entityPropertyGrid.Refresh ()
                 world
             | _ -> Log.trace ^ "Invalid quick size operation (likely a code issue in Gaia)."; world
 
@@ -736,7 +782,7 @@ module Gaia =
             let world = unsubscribeFromEntityEvents world
             deselectEntity form world
             refreshTreeView form world
-            refreshPropertyGrid form world
+            refreshEntityPropertyGrid form world
             refreshLayerPropertyGrid form world
             world
 
@@ -749,7 +795,7 @@ module Gaia =
             let world = World.updateUserValue (fun editorState -> { editorState with SelectedLayer = selectedLayer}) world
             let world = subscribeToEntityEvents form world
             refreshTreeView form world
-            refreshPropertyGrid form world
+            refreshEntityPropertyGrid form world
             selectLayer form selectedLayer world
             world
 
@@ -874,7 +920,7 @@ module Gaia =
                         { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) })
                         world
                 // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
-                // form.propertyGrid.Refresh ()
+                // form.entityPropertyGrid.Refresh ()
                 world
             | DragEntityRotation _ -> world
             | DragEntityNone -> world
@@ -1027,8 +1073,11 @@ module Gaia =
         form.exitToolStripMenuItem.Click.Add (handleFormExit form)
         form.createDepthPlusButton.Click.Add (handleFormCreateDepthPlusClick form)
         form.createDepthMinusButton.Click.Add (handleFormCreateDepthMinusClick form)
-        form.propertyGrid.SelectedObjectsChanged.Add (handleFormPropertyGridSelectedObjectsChanged form)
-        form.propertyGrid.SelectedGridItemChanged.Add (handleFormPropertyGridSelectedGridItemChanged form)
+        form.entityPropertyGrid.SelectedObjectsChanged.Add (handleFormEntityPropertyGridSelectedObjectsChanged form)
+        form.entityPropertyGrid.SelectedGridItemChanged.Add (handleFormEntityPropertyGridSelectedGridItemChanged form)
+        form.layerPropertyGrid.SelectedObjectsChanged.Add (handleFormLayerPropertyGridSelectedObjectsChanged form)
+        form.layerPropertyGrid.SelectedGridItemChanged.Add (handleFormLayerPropertyGridSelectedGridItemChanged form)
+        form.propertyTabControl.SelectedIndexChanged.Add (handlePropertyTabControlSelectedIndexChanged form)
         form.propertyRefreshButton.Click.Add (handleFormPropertyRefreshClick form)
         form.propertyApplyButton.Click.Add (handleFormPropertyApplyClick form)
         form.traceEventsCheckBox.CheckStateChanged.Add (handleTraceEventsCheckBoxChanged form)

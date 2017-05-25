@@ -118,7 +118,7 @@ and LayerPropertyDescriptor (property, attributes) =
                         world
                     | _ -> LayerPropertyValue.setValue property value layer world
                 layerTds.RefWorld := world // must be set for property grid
-                layerTds.Form.propertyGrid.Refresh ()
+                layerTds.Form.layerPropertyGrid.Refresh ()
                 world)
 
         // NOTE: in order to update the view immediately, we have to apply the changer twice,
