@@ -95,6 +95,10 @@ module WorldModuleLayer =
             if FOption.isSome layerStateOpt then FOption.get layerStateOpt
             else failwith ^ "Could not find layer with address '" + scstring layer.LayerAddress + "'."
 
+        static member internal getLayerXtensionProperties layer world =
+            let layerState = World.getLayerState layer world
+            layerState.Xtension |> Xtension.toSeq |> Seq.toList
+
         static member private setLayerState layerState layer world =
             World.layerStateSetter layerState layer world
 
@@ -208,13 +212,15 @@ module WorldModuleLayer =
                 | "Persistent" -> (true, World.setLayerPersistent (property.PropertyValue :?> bool) layer world)
                 | "CreationTimeStampNp" -> (false, world)
                 | "Imperative" -> (false, world)
-                | "ScriptOpt" -> (false, world)
-                | "Script" -> (false, world)
+                | "ScriptOpt" -> (true, World.setLayerScriptOpt (property.PropertyValue :?> AssetTag option) layer world)
+                | "Script" -> (true, World.setLayerScript (property.PropertyValue :?> Scripting.Expr array) layer world)
                 | "ScriptFrameNp" -> (false, world)
-                | "OnRegister" -> (false, world)
-                | "OnUnregister" -> (false, world)
-                | "OnUpdate" -> (false, world)
-                | "OnPostUpdate" -> (false, world)
+                | "OnRegister" -> (true, World.setLayerOnRegister (property.PropertyValue :?> Scripting.Expr) layer world)
+                | "OnUnregister" -> (true, World.setLayerOnUnregister (property.PropertyValue :?> Scripting.Expr) layer world)
+                | "OnUpdate" -> (true, World.setLayerOnUpdate (property.PropertyValue :?> Scripting.Expr) layer world)
+                | "OnPostUpdate" -> (true, World.setLayerOnPostUpdate (property.PropertyValue :?> Scripting.Expr) layer world)
+                | "Depth" -> (true, World.setLayerDepth (property.PropertyValue :?> single) layer world)
+                | "Visible" -> (true, World.setLayerVisible (property.PropertyValue :?> bool) layer world)
                 | _ ->
                     // HACK: needed to mutate a flag to get the success state out of an updateLayerState callback...
                     let mutable success = false
@@ -235,13 +241,15 @@ module WorldModuleLayer =
             | "Persistent" -> World.setLayerPersistent (property.PropertyValue :?> bool) layer world
             | "CreationTimeStampNp" -> failwith ^ "Cannot change layer " + propertyName + "."
             | "Imperative" -> failwith ^ "Cannot change layer " + propertyName + "."
-            | "ScriptOpt" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
-            | "Script" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
-            | "ScriptFrameNp" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
-            | "OnRegister" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
-            | "OnUnregister" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
-            | "OnUpdate" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
-            | "OnPostUpdate" -> failwith ^ "Cannot change layer " + propertyName + " dynamically."
+            | "ScriptOpt" -> World.setLayerScriptOpt (property.PropertyValue :?> AssetTag option) layer world
+            | "Script" -> World.setLayerScript (property.PropertyValue :?> Scripting.Expr array) layer world
+            | "ScriptFrameNp" -> world
+            | "OnRegister" -> World.setLayerOnRegister (property.PropertyValue :?> Scripting.Expr) layer world
+            | "OnUnregister" -> World.setLayerOnUnregister (property.PropertyValue :?> Scripting.Expr) layer world
+            | "OnUpdate" -> World.setLayerOnUpdate (property.PropertyValue :?> Scripting.Expr) layer world
+            | "OnPostUpdate" -> World.setLayerOnPostUpdate (property.PropertyValue :?> Scripting.Expr) layer world
+            | "Depth" -> World.setLayerDepth (property.PropertyValue :?> single) layer world
+            | "Visible" -> World.setLayerVisible (property.PropertyValue :?> bool) layer world
             | _ -> World.updateLayerState (LayerState.setProperty propertyName property) propertyName layer world
 
         static member private layerOnRegisterChanged evt world =

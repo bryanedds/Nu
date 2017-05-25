@@ -128,10 +128,19 @@ module Gaia =
         let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
         RefWorld := world // must be set for property grid
         form.propertyGrid.SelectedObject <- entityTds
+        form.propertyTabControl.SelectTab 0 // show entity properties
 
     let private deselectEntity (form : GaiaForm) world =
         RefWorld := world // must be set for property grid
         form.propertyGrid.SelectedObject <- null
+
+    let private refreshTreeView (form : GaiaForm) world =
+        let treeState = getExpansionState form.treeView
+        clearTreeViewNodes form
+        populateTreeViewLayers form world
+        populateTreeViewNodes form world
+        restoreExpansionState form.treeView treeState
+        setTreeViewSelectionToPropertyGridSelection form
 
     let private refreshPropertyGrid (form : GaiaForm) world =
         match form.propertyGrid.SelectedObject with
@@ -142,13 +151,23 @@ module Gaia =
             else deselectEntity form world
         | _ -> ()
 
-    let private refreshTreeView (form : GaiaForm) world =
-        let treeState = getExpansionState form.treeView
-        clearTreeViewNodes form
-        populateTreeViewLayers form world
-        populateTreeViewNodes form world
-        restoreExpansionState form.treeView treeState
-        setTreeViewSelectionToPropertyGridSelection form
+    let private selectLayer (form : GaiaForm) layer world =
+        let layerTds = { DescribedLayer = layer; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
+        RefWorld := world // must be set for property grid
+        form.layerPropertyGrid.SelectedObject <- layerTds
+
+    let private deselectLayer (form : GaiaForm) world =
+        RefWorld := world // must be set for property grid
+        form.layerPropertyGrid.SelectedObject <- null
+
+    let private refreshLayerPropertyGrid (form : GaiaForm) world =
+        match form.layerPropertyGrid.SelectedObject with
+        | :? LayerTypeDescriptorSource as layerTds ->
+            layerTds.RefWorld := world // must be set for property grid
+            if layerTds.DescribedLayer.GetExists world
+            then form.layerPropertyGrid.Refresh ()
+            else deselectLayer form world
+        | _ -> ()
 
     let private refreshLayerTabs (form : GaiaForm) world =
         populateLayerTabs form world
@@ -156,8 +175,9 @@ module Gaia =
     let private refreshFormOnUndoRedo (form : GaiaForm) world =
         form.tickingButton.Checked <- false
         refreshPropertyGrid form world
-        refreshTreeView form world
+        refreshLayerPropertyGrid form world
         refreshLayerTabs form world
+        refreshTreeView form world
 
     let private canEditWithMouse (form : GaiaForm) world =
         World.isTicking world &&
@@ -504,6 +524,7 @@ module Gaia =
                     RefWorld := world // must be set for property grid
                     let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
                     form.propertyGrid.SelectedObject <- entityTds
+                    form.propertyTabControl.SelectTab 0 // show entity properties
                     world
                 | _ -> world // don't have an entity address
             else world
@@ -598,7 +619,7 @@ module Gaia =
         addWorldChanger ^ fun world ->
             match form.layerTabs.TabPages.Count with
             | 1 ->
-                MessageBox.Show ("Cannot destroy the only remaining layer.", "Layer destruction error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Cannot close the only remaining layer.", "Layer close error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
             | _ ->
                 let world = pushPastWorld world world
@@ -717,21 +738,22 @@ module Gaia =
         addWorldChanger ^ fun world ->
             let world = unsubscribeFromEntityEvents world
             deselectEntity form world
-            refreshPropertyGrid form world
             refreshTreeView form world
+            refreshPropertyGrid form world
+            refreshLayerPropertyGrid form world
             world
 
     let private handleFormLayerTabSelected (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            let world =
-                World.updateUserValue (fun editorState ->
-                    let layerTabs = form.layerTabs
-                    let layerTab = layerTabs.SelectedTab
-                    { editorState with SelectedLayer = stol Simulants.EditorScreen layerTab.Text })
-                    world
+            let selectedLayer =
+                let layerTabs = form.layerTabs
+                let layerTab = layerTabs.SelectedTab
+                stol Simulants.EditorScreen layerTab.Text
+            let world = World.updateUserValue (fun editorState -> { editorState with SelectedLayer = selectedLayer}) world
             let world = subscribeToEntityEvents form world
-            refreshPropertyGrid form world
             refreshTreeView form world
+            refreshPropertyGrid form world
+            selectLayer form selectedLayer world
             world
 
     let private handleTraceEventsCheckBoxChanged (form : GaiaForm) (_ : EventArgs) =
@@ -956,6 +978,7 @@ module Gaia =
         populateCreateComboBox form !RefWorld
         populateTreeViewLayers form !RefWorld
         populateLayerTabs form !RefWorld
+        selectLayer form Simulants.DefaultLayer !RefWorld
         form.tickingButton.CheckState <- CheckState.Unchecked
         tryRun3 runWhile sdlDeps (form : GaiaForm)
 

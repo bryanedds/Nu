@@ -282,13 +282,13 @@ module WorldModuleGame =
             | "Specialization" -> (false, world)
             | "CreationTimeStampNp" -> (false, world)
             | "Imperative" -> (false, world)
-            | "ScriptOpt" -> (false, world)
-            | "Script" -> (false, world)
+            | "ScriptOpt" -> (true, World.setGameScriptOpt (property.PropertyValue :?> AssetTag option) world)
+            | "Script" -> (true, World.setGameScript (property.PropertyValue :?> Scripting.Expr array) world)
             | "ScriptFrameNp" -> (false, world)
-            | "OnRegister" -> (false, world)
-            | "OnUnregister" -> (false, world)
-            | "OnUpdate" -> (false, world)
-            | "OnPostUpdate" -> (false, world)
+            | "OnRegister" -> (true, World.setGameOnRegister (property.PropertyValue :?> Scripting.Expr) world)
+            | "OnUnregister" -> (true, World.setGameOnUnregister (property.PropertyValue :?> Scripting.Expr) world)
+            | "OnUpdate" -> (true, World.setGameOnUpdate (property.PropertyValue :?> Scripting.Expr) world)
+            | "OnPostUpdate" -> (true, World.setGameOnPostUpdate (property.PropertyValue :?> Scripting.Expr) world)
             | "SelectedScreenOpt" -> (true, World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world)
             | "ScreenTransitionDestinationOpt" -> (true, World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world)
             | "EyeCenter" -> (true, World.setEyeCenter (property.PropertyValue :?> Vector2) world)
@@ -310,13 +310,13 @@ module WorldModuleGame =
             | "Specialization" -> failwith ^ "Cannot change game " + propertyName + "."
             | "CreationTimeStampNp" -> failwith ^ "Cannot change game " + propertyName + "."
             | "Imperative" -> failwith ^ "Cannot change game " + propertyName + "."
-            | "ScriptOpt" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
-            | "Script" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
-            | "ScriptFrameNp" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
-            | "OnRegister" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
-            | "OnUnregister" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
-            | "OnUpdate" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
-            | "OnPostUpdate" -> failwith ^ "Cannot change game " + propertyName + " dynamically."
+            | "ScriptOpt" -> World.setGameScriptOpt (property.PropertyValue :?> AssetTag option) world
+            | "Script" -> World.setGameScript (property.PropertyValue :?> Scripting.Expr array) world
+            | "ScriptFrameNp" -> world
+            | "OnRegister" -> World.setGameOnRegister (property.PropertyValue :?> Scripting.Expr) world
+            | "OnUnregister" -> World.setGameOnUnregister (property.PropertyValue :?> Scripting.Expr) world
+            | "OnUpdate" -> World.setGameOnUpdate (property.PropertyValue :?> Scripting.Expr) world
+            | "OnPostUpdate" -> World.setGameOnPostUpdate (property.PropertyValue :?> Scripting.Expr) world
             | "SelectedScreenOpt" -> World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world
             | "ScreenTransitionDestinationOpt" -> World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world
             | "EyeCenter" -> World.setEyeCenter (property.PropertyValue :?> Vector2) world
