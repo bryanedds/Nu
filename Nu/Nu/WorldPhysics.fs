@@ -85,84 +85,102 @@ module WorldPhysicsModule =
             World.updateSubsystem (fun is _ -> is.EnqueueMessage message) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Check that the world contains a body with the given physics id.
+        [<FunctionBinding>]
         static member bodyExists physicsId world =
             World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.BodyExists physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Get the contact normals of the body with the given physics id.
+        [<FunctionBinding>]
         static member getBodyContactNormals physicsId world =
             World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyContactNormals physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Get the linear velocity of the body with the given physics id.
+        [<FunctionBinding>]
         static member getBodyLinearVelocity physicsId world =
             World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyLinearVelocity physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Get the contact normals where the body with the given physics id is touching the ground.
+        [<FunctionBinding>]
         static member getBodyToGroundContactNormals physicsId world =
             World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyToGroundContactNormals physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
+        [<FunctionBinding>]
         static member getBodyToGroundContactNormalOpt physicsId world =
             World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyToGroundContactNormalOpt physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
+        [<FunctionBinding>]
         static member getBodyToGroundContactTangentOpt physicsId world =
             World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyToGroundContactTangentOpt physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Check that the body with the given physics id is on the ground.
+        [<FunctionBinding>]
         static member isBodyOnGround physicsId world =
             World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.IsBodyOnGround physicsId) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Send a message to the physics system to create a physics body.
+        [<FunctionBinding>]
         static member createBody (entity : Entity) entityId bodyProperties world =
             let createBodyMessage = CreateBodyMessage { SourceParticipant = entity; SourceId = entityId; BodyProperties = bodyProperties }
             World.enqueuePhysicsMessage createBodyMessage world
 
         /// Send a message to the physics system to create several physics bodies.
+        [<FunctionBinding>]
         static member createBodies (entity : Entity) entityId bodiesProperties world =
             let createBodiesMessage = CreateBodiesMessage { SourceParticipant = entity; SourceId = entityId; BodiesProperties = bodiesProperties }
             World.enqueuePhysicsMessage createBodiesMessage world
 
         /// Send a message to the physics system to destroy a physics body.
+        [<FunctionBinding>]
         static member destroyBody physicsId world =
             let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
             World.enqueuePhysicsMessage destroyBodyMessage world
 
         /// Send a message to the physics system to destroy several physics bodies.
+        [<FunctionBinding>]
         static member destroyBodies physicsIds world =
             let destroyBodiesMessage = DestroyBodiesMessage { PhysicsIds = physicsIds }
             World.enqueuePhysicsMessage destroyBodiesMessage world
 
         /// Send a message to the physics system to set the position of a body with the given physics id.
+        [<FunctionBinding>]
         static member setBodyPosition position physicsId world =
             let setBodyPositionMessage = SetBodyPositionMessage { PhysicsId = physicsId; Position = position }
             World.enqueuePhysicsMessage setBodyPositionMessage world
 
         /// Send a message to the physics system to set the rotation of a body with the given physics id.
+        [<FunctionBinding>]
         static member setBodyRotation rotation physicsId world =
             let setBodyRotationMessage = SetBodyRotationMessage { PhysicsId = physicsId; Rotation = rotation }
             World.enqueuePhysicsMessage setBodyRotationMessage world
 
         /// Send a message to the physics system to set the angular velocity of a body with the given physics id.
+        [<FunctionBinding>]
         static member setBodyAngularVelocity angularVelocity physicsId world =
             let setBodyAngularVelocityMessage = SetBodyAngularVelocityMessage { PhysicsId = physicsId; AngularVelocity = angularVelocity }
             World.enqueuePhysicsMessage setBodyAngularVelocityMessage world
 
         /// Send a message to the physics system to set the linear velocity of a body with the given physics id.
+        [<FunctionBinding>]
         static member setBodyLinearVelocity linearVelocity physicsId world =
             let setBodyLinearVelocityMessage = SetBodyLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
             World.enqueuePhysicsMessage setBodyLinearVelocityMessage world
 
         /// Send a message to the physics system to apply angular impulse to a body with the given physics id.
+        [<FunctionBinding>]
         static member applyBodyAngularImpulse angularImpulse physicsId world =
             let applyBodyAngularImpulseMessage = ApplyBodyAngularImpulseMessage { PhysicsId = physicsId; AngularImpulse = angularImpulse }
             World.enqueuePhysicsMessage applyBodyAngularImpulseMessage world
 
         /// Send a message to the physics system to apply linear impulse to a body with the given physics id.
+        [<FunctionBinding>]
         static member applyBodyLinearImpulse linearImpulse physicsId world =
             let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse }
             World.enqueuePhysicsMessage applyBodyLinearImpulseMessage world
 
         /// Send a message to the physics system to apply force to a body with the given physics id.
+        [<FunctionBinding>]
         static member applyBodyForce force physicsId world =
             let applyBodyForceMessage = ApplyBodyForceMessage { PhysicsId = physicsId; Force = force }
             World.enqueuePhysicsMessage applyBodyForceMessage world

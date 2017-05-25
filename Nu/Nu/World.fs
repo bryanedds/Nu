@@ -89,17 +89,20 @@ module WorldModule2 =
 
         /// Try to check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
+        [<FunctionBinding>]
         static member tryGetIsSelectedScreenIdling world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen -> Some ^ selectedScreen.IsIdling world
             | None -> None
 
         /// Try to check that the selected screen is transitioning.
+        [<FunctionBinding>]
         static member tryGetIsSelectedScreenTransitioning world =
             Option.map not (World.tryGetIsSelectedScreenIdling world)
 
         /// Check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen (failing with an exception if no screen is selected).
+        [<FunctionBinding>]
         static member isSelectedScreenIdling world =
             match World.tryGetIsSelectedScreenIdling world with
             | Some answer -> answer
@@ -107,6 +110,7 @@ module WorldModule2 =
 
         /// Check that the selected screen is transitioning (failing with an exception if no screen
         /// is selected).
+        [<FunctionBinding>]
         static member isSelectedScreenTransitioning world =
             not ^ World.isSelectedScreenIdling world
 
@@ -132,6 +136,7 @@ module WorldModule2 =
                 world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
+        [<FunctionBinding>]
         static member selectScreen screen world =
             let world =
                 match World.getSelectedScreenOpt world with
@@ -145,6 +150,7 @@ module WorldModule2 =
             World.publish () (Events.Select ->- screen) eventTrace screen world
 
         /// Try to transition to the given screen if no other transition is in progress.
+        [<FunctionBinding>]
         static member tryTransitionScreen destination world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
@@ -167,6 +173,7 @@ module WorldModule2 =
 
         /// Transition to the given screen (failing with an exception if another transition is in
         /// progress).
+        [<FunctionBinding>]
         static member transitionScreen destinationAddress world =
             Option.get ^ World.tryTransitionScreen destinationAddress world
             
@@ -273,15 +280,22 @@ module WorldModule2 =
             (Resolve, world)
 
         /// Create a dissolve screen whose contents is loaded from the given layer file.
-        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt dissolveData layerFilePath world =
-            let (dissolveScreen, world) = World.createDissolveScreen<'d> specializationOpt nameOpt dissolveData world
+        [<FunctionBinding>]
+        static member createDissolveScreenFromLayerFile6 dispatcherName specializationOpt nameOpt dissolveData layerFilePath world =
+            let (dissolveScreen, world) = World.createDissolveScreen5 dispatcherName specializationOpt nameOpt dissolveData world
             let world = World.readLayerFromFile layerFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
+        /// Create a dissolve screen whose contents is loaded from the given layer file.
+        [<FunctionBinding>]
+        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt dissolveData layerFilePath world =
+            World.createDissolveScreenFromLayerFile6 typeof<'d>.Name specializationOpt nameOpt dissolveData layerFilePath world
+
         /// Create a splash screen that transitions to the given destination upon completion.
-        static member createSplashScreen<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt splashData destination world =
+        [<FunctionBinding>]
+        static member createSplashScreen6 dispatcherName specializationOpt nameOpt splashData destination world =
             let cameraEyeSize = World.getEyeSize world
-            let (splashScreen, world) = World.createDissolveScreen<'d> specializationOpt nameOpt splashData.DissolveData world
+            let (splashScreen, world) = World.createDissolveScreen5 dispatcherName specializationOpt nameOpt splashData.DissolveData world
             let (splashLayer, world) = World.createLayer<LayerDispatcher> None (Some "SplashLayer") splashScreen world
             let (splashLabel, world) = World.createEntity<LabelDispatcher> None (Some "SplashLabel") splashLayer world
             let world = splashLabel.SetSize cameraEyeSize world
@@ -290,6 +304,11 @@ module WorldModule2 =
             let world = World.monitorPlus (World.handleSplashScreenIdle splashData.IdlingTime splashScreen) (Events.IncomingFinish ->- splashScreen) splashScreen world |> snd
             let world = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- splashScreen) splashScreen world |> snd
             (splashScreen, world)
+
+        /// Create a splash screen that transitions to the given destination upon completion.
+        [<FunctionBinding>]
+        static member createSplashScreen<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt splashData destination world =
+            World.createSplashScreen6 typeof<'d>.Name specializationOpt nameOpt splashData destination world
 
         static member private handleSubscribeAndUnsubscribe event world =
             // here we need to update the event publish flags for entities based on whether there are subscriptions to
@@ -333,6 +352,7 @@ module WorldModule2 =
             Reflection.createIntrinsicOverlays requiresFacetNames sourceTypes
 
         /// Try to reload the overlayer currently in use by the world.
+        [<FunctionBinding>]
         static member tryReloadOverlays inputDirectory outputDirectory world =
             
             // attempt to reload overlay file
@@ -359,6 +379,7 @@ module WorldModule2 =
             with exn -> Left (scstring exn, World.choose world)
 
         /// Try to reload the prelude currently in use by the world.
+        [<FunctionBinding>]
         static member tryReloadPrelude inputDirectory outputDirectory world =
             let inputPreludeFilePath = Path.Combine (inputDirectory, Assets.PreludeFilePath)
             let outputPreludeFilePath = Path.Combine (outputDirectory, Assets.PreludeFilePath)
@@ -371,6 +392,7 @@ module WorldModule2 =
         /// Attempt to reload the asset graph.
         /// Currently does not support reloading of song assets, and possibly others that are
         /// locked by the engine's subsystems.
+        [<FunctionBinding>]
         static member tryReloadAssetGraph inputDirectory outputDirectory refinementDirectory world =
             
             // attempt to reload asset graph file
@@ -498,20 +520,23 @@ module WorldModule2 =
                 | _ -> world
             (World.getLiveness world, world)
 
-        static member getEntities3 getElementsFromTree (selectedScreen : Screen) world =
+        static member private getEntities3 getElementsFromTree (selectedScreen : Screen) world =
             let entityTree = selectedScreen.GetEntityTreeNp world
             let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) entityTree
             let world = selectedScreen.SetEntityTreeNpNoEvent entityTree world
             let entities : Entity HashSet = getElementsFromTree spatialTree
             (entities, world)
 
+        [<FunctionBinding>]
         static member getEntitiesInView (selectedScreen : Screen) world =
             let viewBounds = World.getViewBoundsRelative world
             World.getEntities3 (SpatialTree.getElementsInBounds viewBounds) selectedScreen world
 
+        [<FunctionBinding>]
         static member getEntitiesInBounds bounds (selectedScreen : Screen) world =
             World.getEntities3 (SpatialTree.getElementsInBounds bounds) selectedScreen world
 
+        [<FunctionBinding>]
         static member getEntitiesAtPoint point (selectedScreen : Screen) world =
             World.getEntities3 (SpatialTree.getElementsAtPoint point) selectedScreen world
 
