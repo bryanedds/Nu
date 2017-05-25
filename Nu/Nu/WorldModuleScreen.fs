@@ -207,13 +207,13 @@ module WorldModuleScreen =
                 | "Persistent" -> (true, World.setScreenPersistent (property.PropertyValue :?> bool) screen world)
                 | "CreationTimeStampNp" -> (false, world)
                 | "Imperative" -> (false, world)
-                | "ScriptOpt" -> (false, world)
-                | "Script" -> (false, world)
+                | "ScriptOpt" -> (true, World.setScreenScriptOpt (property.PropertyValue :?> AssetTag option) screen world)
+                | "Script" -> (true, World.setScreenScript (property.PropertyValue :?> Scripting.Expr array) screen world)
                 | "ScriptFrameNp" -> (false, world)
-                | "OnRegister" -> (false, world)
-                | "OnUnregister" -> (false, world)
-                | "OnUpdate" -> (false, world)
-                | "OnPostUpdate" -> (false, world)
+                | "OnRegister" -> (true, World.setScreenOnRegister (property.PropertyValue :?> Scripting.Expr) screen world)
+                | "OnUnregister" -> (true, World.setScreenOnUnregister (property.PropertyValue :?> Scripting.Expr) screen world)
+                | "OnUpdate" -> (true, World.setScreenOnUpdate (property.PropertyValue :?> Scripting.Expr) screen world)
+                | "OnPostUpdate" -> (true, World.setScreenOnPostUpdate (property.PropertyValue :?> Scripting.Expr) screen world)
                 | "TransitionStateNp" -> (true, World.setScreenTransitionStateNp (property.PropertyValue :?> TransitionState) screen world)
                 | "TransitionTicksNp" -> (true, World.setScreenTransitionTicksNp (property.PropertyValue :?> int64) screen world)
                 | "Incoming" -> (true, World.setScreenIncoming (property.PropertyValue :?> Transition) screen world)
@@ -238,13 +238,13 @@ module WorldModuleScreen =
             | "Persistent" -> World.setScreenPersistent (property.PropertyValue :?> bool) screen world
             | "CreationTimeStampNp" -> failwith ^ "Cannot change screen " + propertyName + "."
             | "Imperative" -> failwith ^ "Cannot change screen " + propertyName + "."
-            | "ScriptOpt" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
-            | "Script" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
-            | "ScriptFrameNp" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
-            | "OnRegister" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
-            | "OnUnregister" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
-            | "OnUpdate" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
-            | "OnPostUpdate" -> failwith ^ "Cannot change screen " + propertyName + " dynamically."
+            | "ScriptOpt" -> World.setScreenScriptOpt (property.PropertyValue :?> AssetTag option) screen world
+            | "Script" -> World.setScreenScript (property.PropertyValue :?> Scripting.Expr array) screen world
+            | "ScriptFrameNp" -> world
+            | "OnRegister" -> World.setScreenOnRegister (property.PropertyValue :?> Scripting.Expr) screen world
+            | "OnUnregister" -> World.setScreenOnUnregister (property.PropertyValue :?> Scripting.Expr) screen world
+            | "OnUpdate" -> World.setScreenOnUpdate (property.PropertyValue :?> Scripting.Expr) screen world
+            | "OnPostUpdate" -> World.setScreenOnPostUpdate (property.PropertyValue :?> Scripting.Expr) screen world
             | "TransitionStateNp" -> World.setScreenTransitionStateNp (property.PropertyValue :?> TransitionState) screen world
             | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (property.PropertyValue :?> int64) screen world
             | "Incoming" -> World.setScreenIncoming (property.PropertyValue :?> Transition) screen world

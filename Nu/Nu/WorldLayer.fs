@@ -4,6 +4,9 @@
 namespace Nu
 open System
 open System.IO
+open System.ComponentModel
+open System.Reflection
+open System.Runtime.CompilerServices
 open Prime
 open Nu
 
@@ -225,6 +228,60 @@ module WorldLayerModule =
             let layerDescriptorStr = File.ReadAllText filePath
             let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
             World.readLayer layerDescriptor nameOpt screen world
+
+    /// Represents the property value of an layer as accessible via reflection.
+    type [<ReferenceEquality>] LayerPropertyValue =
+        | LayerPropertyDescriptor of PropertyDescriptor
+        | LayerPropertyInfo of PropertyInfo
+
+        /// Check that an layer contains the given property.
+        static member containsProperty (property : PropertyInfo) =
+            let properties = typeof<LayerState>.GetProperties property.Name
+            Seq.exists (fun item -> item = property) properties
+
+        /// Get the layer's property value.
+        static member getValue property (layer : Layer) world =
+            let propertyName =
+                match property with
+                | LayerPropertyDescriptor propertyDescriptor -> propertyDescriptor.PropertyName
+                | LayerPropertyInfo propertyInfo -> propertyInfo.Name
+            (World.getLayerProperty propertyName layer world).PropertyValue
+
+        /// Set the layer's property value.
+        static member setValue property propertyValue (layer : Layer) world =
+            let (propertyName, propertyType) =
+                match property with
+                | LayerPropertyDescriptor propertyDescriptor -> (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType)
+                | LayerPropertyInfo propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)
+            World.setLayerProperty propertyName { PropertyType = propertyType; PropertyValue = propertyValue } layer world
+
+        /// Get the property descriptors of as constructed from the given function in the given context.
+        static member getPropertyDescriptors makePropertyDescriptor contextOpt =
+            // OPTIMIZATION: seqs used for speed.
+            let properties = typeof<LayerState>.GetProperties ()
+            let typeConverterAttribute = TypeConverterAttribute typeof<SymbolicConverter>
+            let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty ^ property.GetCustomAttributes<ExtensionAttribute> ()) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
+            let propertyDescriptors = Seq.map (fun property -> makePropertyDescriptor (LayerPropertyInfo property, [|typeConverterAttribute|])) properties
+            let propertyDescriptors =
+                match contextOpt with
+                | Some (layer, world) ->
+                    let properties' = World.getLayerXtensionProperties layer world
+                    let propertyDescriptors' =
+                        Seq.fold
+                            (fun propertyDescriptors' (propertyName, property : Property) ->
+                                let propertyType = property.PropertyType
+                                if Reflection.isPropertyPersistentByName propertyName then
+                                    let propertyDescriptor = LayerPropertyDescriptor { PropertyName = propertyName; PropertyType = propertyType }
+                                    let propertyDescriptor : System.ComponentModel.PropertyDescriptor = makePropertyDescriptor (propertyDescriptor, [|typeConverterAttribute|])
+                                    propertyDescriptor :: propertyDescriptors'
+                                else propertyDescriptors')
+                            []
+                            properties'
+                    Seq.append propertyDescriptors' propertyDescriptors
+                | None -> propertyDescriptors
+            List.ofSeq propertyDescriptors
 
 namespace Debug
 open Nu
