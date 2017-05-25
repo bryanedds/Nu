@@ -10,12 +10,8 @@ open OpenTK
 open Prime
 open global.Nu
 
-[<AutoOpen>]
+[<AutoOpen; ModuleBinding>]
 module WorldModule2 =
-
-    /// Marker for module reflection.
-    type private ModuleMarker = interface end
-    let ModuleType = typeof<ModuleMarker>.DeclaringType
 
     let private ScreenTransitionMouseLeftKey = makeGuid ()
     let private ScreenTransitionMouseCenterKey = makeGuid ()

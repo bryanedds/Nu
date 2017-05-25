@@ -7,12 +7,8 @@ open System.IO
 open Prime
 open Nu
 
-[<AutoOpen>]
+[<AutoOpen; ModuleBinding>]
 module WorldLayerModule =
-
-    /// Marker for module reflection.
-    type private ModuleMarker = interface end
-    let ModuleType = typeof<ModuleMarker>.DeclaringType
 
     type Layer with
     
@@ -141,6 +137,7 @@ module WorldLayerModule =
                 world
 
         /// Get all the layers in a screen.
+        [<FunctionBinding>]
         static member getLayers (screen : Screen) world =
             match Address.getNames screen.ScreenAddress with
             | [screenName] ->
@@ -159,6 +156,7 @@ module WorldLayerModule =
             World.removeLayer layer world
 
         /// Destroy a layer in the world at the end of the current update.
+        [<FunctionBinding>]
         static member destroyLayer layer world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
@@ -174,6 +172,7 @@ module WorldLayerModule =
                 world
 
         /// Destroy multiple layers from the world at the end of the current update.
+        [<FunctionBinding>]
         static member destroyLayers layers world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
@@ -196,6 +195,7 @@ module WorldLayerModule =
             fun layerDescriptors -> { screenDescriptor with Layers = layerDescriptors }
 
         /// Write a layer to a file.
+        [<FunctionBinding>]
         static member writeLayerToFile (filePath : string) layer world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrinter
@@ -210,12 +210,6 @@ module WorldLayerModule =
         static member readLayer layerDescriptor nameOpt screen world =
             World.readLayer5 World.readEntities layerDescriptor nameOpt screen world
 
-        /// Read a layer from a file.
-        static member readLayerFromFile (filePath : string) nameOpt screen world =
-            let layerDescriptorStr = File.ReadAllText filePath
-            let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
-            World.readLayer layerDescriptor nameOpt screen world
-
         /// Read multiple layers from a screen descriptor.
         static member readLayers screenDescriptor screen world =
             List.foldBack
@@ -224,6 +218,13 @@ module WorldLayerModule =
                     (layer :: layers, world))
                 screenDescriptor.Layers
                 ([], world)
+
+        /// Read a layer from a file.
+        [<FunctionBinding>]
+        static member readLayerFromFile (filePath : string) nameOpt screen world =
+            let layerDescriptorStr = File.ReadAllText filePath
+            let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
+            World.readLayer layerDescriptor nameOpt screen world
 
 namespace Debug
 open Nu

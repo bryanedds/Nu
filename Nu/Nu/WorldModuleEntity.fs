@@ -8,12 +8,8 @@ open OpenTK
 open Prime
 open Nu
 
-[<AutoOpen>]
+[<AutoOpen; ModuleBinding>]
 module WorldModuleEntity =
-
-    /// Marker for module reflection.
-    type private ModuleMarker = interface end
-    let ModuleType = typeof<ModuleMarker>.DeclaringType
 
     type private KeyEquality () =
         inherit OptimizedClosures.FSharpFunc<
@@ -725,6 +721,7 @@ module WorldModuleEntity =
             World.removeEntity entity world
 
         /// Create an entity and add it to the world.
+        [<FunctionBinding ("createEntity")>]
         static member createEntity5 dispatcherName specializationOpt nameOpt (layer : Layer) world =
 
             // grab overlay dependencies
@@ -925,6 +922,7 @@ module WorldModuleEntity =
             (transmutedEntity, world)
 
         /// Reassign an entity's identity and / or layer.
+        [<FunctionBinding>]
         static member reassignEntity entity specializationOpt nameOpt layer world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
@@ -932,6 +930,7 @@ module WorldModuleEntity =
             World.addTasklet tasklet world
 
         /// Try to set an entity's optional overlay name.
+        [<FunctionBinding>]
         static member trySetEntityOverlayNameOpt overlayNameOpt entity world =
             let oldEntityState = World.getEntityState entity world
             let oldOverlayNameOpt = oldEntityState.OverlayNameOpt
@@ -967,6 +966,7 @@ module WorldModuleEntity =
                 Left "Could not set the entity's overlay name because setting an overlay to or from None is currently unimplemented."
 
         /// Try to set the entity's facet names.
+        [<FunctionBinding>]
         static member trySetEntityFacetNames facetNames entity world =
             let entityState = World.getEntityState entity world
             match World.trySetFacetNames facetNames entityState (Some entity) world with

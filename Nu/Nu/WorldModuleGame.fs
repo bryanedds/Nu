@@ -7,12 +7,8 @@ open OpenTK
 open Prime
 open Nu
 
-[<AutoOpen>]
+[<AutoOpen; ModuleBinding>]
 module WorldModuleGame =
-
-    /// Marker for module reflection.
-    type private ModuleMarker = interface end
-    let ModuleType = typeof<ModuleMarker>.DeclaringType
 
     type World with
 
@@ -68,69 +64,84 @@ module WorldModuleGame =
         static member internal setGameOnPostUpdate value world = World.updateGameState (fun gameState -> { gameState with OnPostUpdate = value }) Property? OnPostUpdate world
 
         /// Get the current eye center.
+        [<FunctionBinding>]
         static member getEyeCenter world =
             (World.getGameState world).EyeCenter
 
         /// Set the current eye center.
+        [<FunctionBinding>]
         static member setEyeCenter value world =
             World.updateGameState (fun layerState -> { layerState with EyeCenter = value }) Property? EyeCenter world
 
         /// Get the current eye size.
+        [<FunctionBinding>]
         static member getEyeSize world =
             (World.getGameState world).EyeSize
 
         /// Set the current eye size.
+        [<FunctionBinding>]
         static member setEyeSize value world =
             World.updateGameState (fun layerState -> { layerState with EyeSize = value }) Property? EyeSize world
 
         /// Get the currently selected screen, if any.
+        [<FunctionBinding>]
         static member getSelectedScreenOpt world =
             (World.getGameState world).SelectedScreenOpt
         
         /// Set the currently selected screen or None. Be careful using this function directly as
         /// you may be wanting to use the higher-level World.transitionScreen function instead.
+        [<FunctionBinding>]
         static member setSelectedScreenOpt value world =
             World.updateGameState (fun layerState -> { layerState with SelectedScreenOpt = value }) Property? SelectedScreenOpt world
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
+        [<FunctionBinding>]
         static member getSelectedScreen world =
             Option.get ^ World.getSelectedScreenOpt world
         
         /// Set the currently selected screen. Be careful using this function directly as you may
         /// be wanting to use the higher-level World.transitionScreen function instead.
+        [<FunctionBinding>]
         static member setSelectedScreen screen world =
             World.setSelectedScreenOpt (Some screen) world
 
         /// Get the current destination screen if a screen transition is currently underway.
+        [<FunctionBinding>]
         static member getScreenTransitionDestinationOpt world =
             (World.getGameState world).ScreenTransitionDestinationOpt
 
         /// Set the current destination screen or None. Be careful using this function as calling
         /// it is predicated that no screen transition is currently underway.
         /// TODO: consider asserting such predication here.
+        [<FunctionBinding>]
         static member internal setScreenTransitionDestinationOpt destination world =
             World.updateGameState (fun gameState -> { gameState with ScreenTransitionDestinationOpt = destination }) Property? ScreenTransitionDestinationOpt world
 
         /// Get the view of the eye in absolute terms (world space).
+        [<FunctionBinding>]
         static member getViewAbsolute world =
             Math.getViewAbsolute (World.getEyeCenter world) (World.getEyeSize world)
         
         /// Get the view of the eye in absolute terms (world space) with translation sliced on
         /// integers.
+        [<FunctionBinding>]
         static member getViewAbsoluteI world =
             Math.getViewAbsolute (World.getEyeCenter world) (World.getEyeSize world)
 
         /// The relative view of the eye with original single values. Due to the problems with
         /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
         /// coordinates is very, very bad for rendering.
+        [<FunctionBinding>]
         static member getViewRelative world =
             Math.getViewRelative (World.getEyeCenter world) (World.getEyeSize world)
 
         /// The relative view of the eye with translation sliced on integers. Good for rendering.
+        [<FunctionBinding>]
         static member getViewRelativeI world =
             Math.getViewRelativeI (World.getEyeCenter world) (World.getEyeSize world)
 
         /// Get the bounds of the eye's sight relative to its position.
+        [<FunctionBinding>]
         static member getViewBoundsRelative world =
             let gameState = World.getGameState world
             Vector4
@@ -140,6 +151,7 @@ module WorldModuleGame =
                  gameState.EyeCenter.Y + gameState.EyeSize.Y * 0.5f)
 
         /// Get the bounds of the eye's sight not relative to its position.
+        [<FunctionBinding>]
         static member getViewBoundsAbsolute world =
             let gameState = World.getGameState world
             Vector4
@@ -149,17 +161,20 @@ module WorldModuleGame =
                  gameState.EyeSize.Y * 0.5f)
 
         /// Get the bounds of the eye's sight.
+        [<FunctionBinding>]
         static member getViewBounds viewType world =
             match viewType with
             | Relative -> World.getViewBoundsRelative world
             | Absolute -> World.getViewBoundsAbsolute world
 
         /// Check that the given bounds is within the eye's sight.
+        [<FunctionBinding>]
         static member isBoundsInView viewType (bounds : Vector4) world =
             let viewBounds = World.getViewBounds viewType world
             Math.isBoundsIntersectingBounds bounds viewBounds
 
         /// Transform the given mouse position to screen space.
+        [<FunctionBinding>]
         static member mouseToScreen (mousePosition : Vector2) world =
             let gameState = World.getGameState world
             let positionScreen =
@@ -169,6 +184,7 @@ module WorldModuleGame =
             positionScreen
 
         /// Transform the given mouse position to world space.
+        [<FunctionBinding>]
         static member mouseToWorld viewType mousePosition world =
             let positionScreen = World.mouseToScreen mousePosition world
             let view =
@@ -179,10 +195,12 @@ module WorldModuleGame =
             positionWorld
 
         /// Transform the given mouse position to entity space.
+        [<FunctionBinding>]
         static member mouseToEntity viewType entityPosition mousePosition world =
             let mousePositionWorld = World.mouseToWorld viewType mousePosition world
             entityPosition - mousePositionWorld
 
+        /// Fetch an asset with the given tag and convert it to a value of type 'a.
         static member assetTagToValueOpt<'a> implicitDelimiters assetTag world =
             let (symbolOpt, world) = World.tryFindSymbol implicitDelimiters assetTag world
             let scriptOpt =
@@ -193,6 +211,7 @@ module WorldModuleGame =
                 | None -> None
             (scriptOpt, world)
 
+        /// Fetch assets with the given tags and convert it to values of type 'a.
         static member assetTagsToValueOpts<'a> implicitDelimiters assetTags world =
             let (values, world) =
                 List.fold (fun (values, world) assetTag ->

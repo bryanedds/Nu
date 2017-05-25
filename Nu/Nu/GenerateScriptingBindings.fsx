@@ -141,4 +141,11 @@ let tryGenerateBindingsCode bindings =
 
     Some header
 
-Array.map (fun (mi : MethodInfo) -> mi.Name) methods
+let typesNames =
+    AppDomain.CurrentDomain.GetAssemblies () |>
+    Array.filter (fun asm -> (asm.GetName ()).Name = "Nu") |>
+    Array.head |>
+    fun asm ->
+        asm.GetTypes () |>
+        Array.filter (fun ty -> isNotNull (ty.GetCustomAttribute<ModuleBindingAttribute> ())) |>
+        Array.map (fun ty -> ty.Name)

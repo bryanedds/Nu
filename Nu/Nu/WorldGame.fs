@@ -7,12 +7,8 @@ open System.IO
 open Prime
 open Nu
 
-[<AutoOpen>]
+[<AutoOpen; ModuleBinding>]
 module WorldGameModule =
-
-    /// Marker for module reflection.
-    type private ModuleMarker = interface end
-    let ModuleType = typeof<ModuleMarker>.DeclaringType
 
     type Game with
 
@@ -206,12 +202,14 @@ module WorldGameModule =
                 world
 
         // Get all the entities in the world.
+        [<FunctionBinding>]
         static member getEntities1 world =
             World.getLayers1 world |>
             Seq.map (fun layer -> World.getEntities layer world) |>
             Seq.concat
 
         // Get all the layers in the world.
+        [<FunctionBinding>]
         static member getLayers1 world =
             World.getScreens world |>
             Seq.map (fun screen -> World.getLayers screen world) |>
@@ -219,6 +217,7 @@ module WorldGameModule =
 
         /// Determine if a simulant is contained by, or is the same as, the currently selected screen.
         /// Game is always considered 'selected' as well.
+        [<FunctionBinding>]
         static member isSimulantSelected (simulant : Simulant) world =
             match Address.getNames simulant.SimulantAddress with
             | [] -> true
@@ -235,6 +234,7 @@ module WorldGameModule =
             World.writeGame3 writeScreens gameDescriptor world
 
         /// Write a game to a file.
+        [<FunctionBinding>]
         static member writeGameToFile (filePath : string) world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrinter
@@ -250,6 +250,7 @@ module WorldGameModule =
             World.readGame3 World.readScreens gameDescriptor world
 
         /// Read a game from a file.
+        [<FunctionBinding>]
         static member readGameFromFile (filePath : string) world =
             let gameDescriptorStr = File.ReadAllText filePath
             let gameDescriptor = scvalue<GameDescriptor> gameDescriptorStr
