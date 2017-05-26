@@ -48,7 +48,7 @@ module OverlayerModule =
                 | None -> List.tryFindPlus (flip3 tryFindPropertySymbol propertyName overlayer) overlay.OverlayIncludeNames
             | None -> None
 
-        let private getPropertyState overlayName propertyName propertyType target overlayer =
+        let private getPropertyStateInner overlayName propertyName propertyType target overlayer =
             match tryFindPropertySymbol overlayName propertyName overlayer with
             | Some propertySymbol -> 
                 let targetType = target.GetType ()
@@ -75,9 +75,18 @@ module OverlayerModule =
                 | None -> Bare
             | None -> Bare
 
+        let rec private getPropertyState overlayName facetNames propertyName propertyType target overlayer =
+            match getPropertyStateInner overlayName propertyName propertyType target overlayer with
+            | Bare ->
+                let states = Seq.map (fun facetName -> getPropertyStateInner facetName propertyName propertyType target overlayer) facetNames
+                match Seq.tryFind (function Bare -> false | Altered -> true | Overlaid -> true) states with
+                | Some state -> state
+                | None -> Bare
+            | Altered -> Altered
+            | Overlaid -> Overlaid
+
         let private isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer =
-            getPropertyState overlayName propertyName propertyType target overlayer = Overlaid ||
-            Set.exists (fun facetName -> getPropertyState facetName propertyName propertyType target overlayer = Overlaid) facetNames
+            getPropertyState overlayName facetNames propertyName propertyType target overlayer = Overlaid
 
         let private isPropertyOverlaid5 facetNames propertyName propertyType target overlayer =
             let targetType = target.GetType ()
@@ -91,11 +100,16 @@ module OverlayerModule =
                     | None -> false
                 | _ -> false
 
-        let private tryApplyOverlayToRecordProperty facetNames (property : PropertyInfo) (propertySymbol : Symbol) oldOverlayName target oldOverlayer =
-            let shouldApplyOverlay =
-                property.PropertyType <> typeof<Xtension> &&
-                isPropertyOverlaid oldOverlayName facetNames property.Name property.PropertyType target oldOverlayer
-            if shouldApplyOverlay then
+        let private shouldApplyOverlay oldOverlayName facetNames (property : PropertyInfo) target oldOverlayer =
+            if property.PropertyType <> typeof<Xtension> then
+                match getPropertyState oldOverlayName facetNames property.Name property.PropertyType target oldOverlayer with
+                | Bare -> true
+                | Altered -> false
+                | Overlaid -> true
+            else false
+
+        let private tryApplyOverlayToRecordProperty facetNames property (propertySymbol : Symbol) oldOverlayName target oldOverlayer =
+            if shouldApplyOverlay oldOverlayName facetNames property target oldOverlayer then
                 let converter = SymbolicConverter (false, property.PropertyType)
                 if converter.CanConvertFrom typeof<Symbol> then
                     let propertyValue = converter.ConvertFrom propertySymbol
