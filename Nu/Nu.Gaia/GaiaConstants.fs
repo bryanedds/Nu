@@ -15,8 +15,6 @@ module Constants =
         let [<Literal>] DefaultPositionSnap = 8
         let [<Literal>] DefaultRotationSnap = 5
         let [<Literal>] DefaultCreationDepth = 0.0f
-        let [<Literal>] GameSpecialization = "EditorGame"
-        let [<Literal>] ScreenSpecialization = "EditorScreen"
         let [<Literal>] RefinementDir = "refinement"
         let [<Literal>] CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
 

@@ -234,7 +234,6 @@ module WorldTypes =
     
         static member PropertyDefinitions =
             [Define? UserState (UserState.make () false)
-             Define? Specialization Constants.Engine.EmptySpecialization
              Define? Persistent true
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
@@ -422,7 +421,6 @@ module WorldTypes =
         { Id : Guid
           Xtension : Xtension
           DispatcherNp : GameDispatcher
-          Specialization : string
           CreationTimeStampNp : int64
           ScriptOpt : AssetTag option
           Script : Scripting.Expr array
@@ -437,14 +435,13 @@ module WorldTypes =
           EyeSize : Vector2 }
 
         /// Make a game state value.
-        static member make specializationOpt (dispatcher : GameDispatcher) =
+        static member make (dispatcher : GameDispatcher) =
             let eyeCenter = Vector2.Zero
             // TODO: P1: see if the following is too hard-coded?
             let eyeSize = Vector2 (single Constants.Render.DefaultResolutionX, single Constants.Render.DefaultResolutionY)
             { Id = makeGuid ()
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()
               DispatcherNp = dispatcher
-              Specialization = Option.getOrDefault Constants.Engine.EmptySpecialization specializationOpt
               CreationTimeStampNp = Core.getTimeStamp ()
               ScriptOpt = None
               Script = [||]
@@ -499,7 +496,6 @@ module WorldTypes =
           Name : string
           Xtension : Xtension
           DispatcherNp : ScreenDispatcher
-          Specialization : string
           Persistent : bool
           CreationTimeStampNp : int64
           ScriptOpt : AssetTag option
@@ -516,14 +512,13 @@ module WorldTypes =
           Outgoing : Transition }
           
         /// Make a screen state value.
-        static member make specializationOpt nameOpt (dispatcher : ScreenDispatcher) =
-            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
+        static member make nameOpt (dispatcher : ScreenDispatcher) =
+            let (id, name) = Reflection.deriveIdAndName nameOpt
             let spatialTree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             { Id = id
               Name = name
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()
               DispatcherNp = dispatcher
-              Specialization = specialization
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
               ScriptOpt = None
@@ -580,7 +575,6 @@ module WorldTypes =
           Name : string
           Xtension : Xtension
           DispatcherNp : LayerDispatcher
-          Specialization : string
           Persistent : bool
           CreationTimeStampNp : int64
           ScriptFrameNp : Scripting.DeclarationFrame
@@ -594,13 +588,12 @@ module WorldTypes =
           Visible : bool }
 
         /// Make a layer state value.
-        static member make specializationOpt nameOpt (dispatcher : LayerDispatcher) =
-            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
+        static member make nameOpt (dispatcher : LayerDispatcher) =
+            let (id, name) = Reflection.deriveIdAndName nameOpt
             { LayerState.Id = id
               Name = name
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()
               DispatcherNp = dispatcher
-              Specialization = specialization
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
               ScriptOpt = None
@@ -650,7 +643,6 @@ module WorldTypes =
           mutable Xtension : Xtension
           mutable UserState : UserState
           DispatcherNp : EntityDispatcher
-          Specialization : string
           mutable Persistent : bool
           CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
           CachableNp : bool
@@ -672,15 +664,14 @@ module WorldTypes =
           mutable FacetsNp : Facet list }
 
         /// Make an entity state value.
-        static member make specializationOpt nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+        static member make nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let imperative = dispatcher.GetImperative ()
-            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
+            let (id, name) = Reflection.deriveIdAndName nameOpt
             { Id = id
               Name = name
               Xtension = if imperative then Xtension.makeImperative () else Xtension.makeSafe ()
               UserState = UserState.make () imperative
               DispatcherNp = dispatcher
-              Specialization = specialization
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()
               CachableNp = String.endsWithGuid name
@@ -1090,8 +1081,8 @@ module WorldTypes =
         default this.GetStandAloneScreenDispatcherName () = typeof<ScreenDispatcher>.Name
     
         /// Make the overlay routes that will allow Nu to use different overlays for the specified
-        /// classifications.
-        abstract MakeOverlayRoutes : unit -> (string * OverlayDescriptor) list
+        /// dispatcher name.
+        abstract MakeOverlayRoutes : unit -> (string * string option) list
         default this.MakeOverlayRoutes () = []
 
 /// The data for a change in the world's ambient state.

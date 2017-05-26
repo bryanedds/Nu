@@ -39,8 +39,8 @@ module WorldModule =
             world
 
         /// Make the world.
-        static member internal make eventSystem dispatchers subsystems scriptingEnv ambientState gameSpecializationOpt activeGameDispatcher =
-            let gameState = GameState.make gameSpecializationOpt activeGameDispatcher
+        static member internal make eventSystem dispatchers subsystems scriptingEnv ambientState activeGameDispatcher =
+            let gameState = GameState.make activeGameDispatcher
             let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let layerStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let entityStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
@@ -407,7 +407,7 @@ module WorldModule =
         static member internal dispatchersToOverlayRoutes entityDispatchers =
             entityDispatchers |>
             Map.toValueListBy getTypeName |>
-            List.map (fun typeName -> (typeName, OverlayDescriptor.makeVanilla (Some typeName)))
+            List.map (fun typeName -> (typeName, Some typeName))
 
     type World with // Caching
 

@@ -26,6 +26,10 @@ type $safeprojectname$Plugin () =
     // make our game-specific game dispatcher...
     override this.MakeGameDispatcherOpt () =
         Some ($safeprojectname$Dispatcher () :> GameDispatcher)
+
+    // specify the above game dispatcher to use
+    override this.GetStandAloneGameDispatcherName () =
+        typeof<$safeprojectname$Dispatcher>.Name
     
 // this is the main module for our program.
 module Program =
@@ -54,7 +58,7 @@ module Program =
 
             // here is an attempt to make the world with the various initial states, the engine
             // plugin, and SDL dependencies.
-            World.attemptMake true None 1L () plugin sdlDeps
+            World.attemptMake true 1L () plugin sdlDeps
 
         // after some configuration it is time to run the game. We're off and running!
         World.run attemptMakeWorld id id sdlConfig

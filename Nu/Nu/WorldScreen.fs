@@ -18,10 +18,6 @@ module WorldScreenModule =
         member this.Name = PropertyTag.makeReadOnly this Property? Name this.GetName
         member this.GetDispatcherNp world = World.getScreenDispatcherNp this world
         member this.DispatcherNp = PropertyTag.makeReadOnly this Property? DispatcherNp this.GetDispatcherNp
-        member this.GetSpecialization world = World.getScreenSpecialization this world
-        member this.Specialization = PropertyTag.makeReadOnly this Property? Specialization this.GetSpecialization
-        member this.GetClassification world = Classification.make (getTypeName ^ this.GetDispatcherNp world) (this.GetSpecialization world)
-        member this.Classification = PropertyTag.makeReadOnly this Property? Classification this.GetClassification
         member this.GetPersistent world = World.getScreenPersistent this world
         member this.SetPersistent value world = World.setScreenPersistent value this world
         member this.Persistent = PropertyTag.makeReadOnly this Property? Persistent this.GetPersistent
@@ -170,34 +166,34 @@ module WorldScreenModule =
 
         /// Create a screen and add it to the world.
         [<FunctionBinding ("createScreen")>]
-        static member createScreen4 dispatcherName specializationOpt nameOpt world =
+        static member createScreen3 dispatcherName nameOpt world =
             let dispatchers = World.getScreenDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None -> failwith ^ "Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?"
-            let screenState = ScreenState.make specializationOpt nameOpt dispatcher
+            let screenState = ScreenState.make nameOpt dispatcher
             let screenState = Reflection.attachProperties ScreenState.copy dispatcher screenState
             let screen = ntos screenState.Name
             let world = World.addScreen false screenState screen world
             (screen, world)
 
         /// Create a screen and add it to the world.
-        static member createScreen<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt world =
-            World.createScreen4 typeof<'d>.Name specializationOpt nameOpt world
+        static member createScreen<'d when 'd :> ScreenDispatcher> nameOpt world =
+            World.createScreen3 typeof<'d>.Name nameOpt world
         
         /// Create a screen with a dissolving transition, and add it to the world.
         [<FunctionBinding ("createDissolveScreen")>]
-        static member createDissolveScreen5 dispatcherName specializationOpt nameOpt dissolveData world =
+        static member createDissolveScreen5 dispatcherName nameOpt dissolveData world =
             let dissolveImageOpt = Some dissolveData.DissolveImage
-            let (screen, world) = World.createScreen4 dispatcherName specializationOpt nameOpt world
+            let (screen, world) = World.createScreen3 dispatcherName nameOpt world
             let world = screen.SetIncoming { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; DissolveImageOpt = dissolveImageOpt } world
             let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; DissolveImageOpt = dissolveImageOpt } world
             (screen, world)
         
         /// Create a screen with a dissolving transition, and add it to the world.
-        static member createDissolveScreen<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt dissolveData world =
-            World.createDissolveScreen5 typeof<'d>.Name specializationOpt nameOpt dissolveData world
+        static member createDissolveScreen<'d when 'd :> ScreenDispatcher> nameOpt dissolveData world =
+            World.createDissolveScreen5 typeof<'d>.Name nameOpt dissolveData world
 
         /// Write a screen to a screen descriptor.
         static member writeScreen screen screenDescriptor world =

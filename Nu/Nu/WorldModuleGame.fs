@@ -41,7 +41,6 @@ module WorldModuleGame =
 
         static member internal getGameId world = (World.getGameState world).Id
         static member internal getGameDispatcherNp world = (World.getGameState world).DispatcherNp
-        static member internal getGameSpecialization world = (World.getGameState world).Specialization
         static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
         static member internal getGameImperative world = Xtension.getImperative (World.getGameState world).Xtension
         static member internal getGameScriptOpt world = (World.getGameState world).ScriptOpt
@@ -230,7 +229,6 @@ module WorldModuleGame =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> Some { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world }
             | "DispatcherNp" -> Some { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcherNp world }
-            | "Specialization" -> Some { PropertyType = typeof<string>; PropertyValue = World.getGameSpecialization world }
             | "CreationTimeStampNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStampNp world }
             | "Imperative" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getGameImperative world }
             | "ScriptOpt" -> Some { PropertyType = typeof<AssetTag option>; PropertyValue = World.getGameScriptOpt world }
@@ -253,7 +251,6 @@ module WorldModuleGame =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world }
             | "DispatcherNp" -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcherNp world }
-            | "Specialization" -> { PropertyType = typeof<string>; PropertyValue = World.getGameSpecialization world }
             | "CreationTimeStampNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStampNp world }
             | "Imperative" -> { PropertyType = typeof<bool>; PropertyValue = World.getGameImperative world }
             | "ScriptOpt" -> { PropertyType = typeof<AssetTag option>; PropertyValue = World.getGameScriptOpt world }
@@ -279,7 +276,6 @@ module WorldModuleGame =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> (false, world)
             | "DispatcherNp" -> (false, world)
-            | "Specialization" -> (false, world)
             | "CreationTimeStampNp" -> (false, world)
             | "Imperative" -> (false, world)
             | "ScriptOpt" -> (true, World.setGameScriptOpt (property.PropertyValue :?> AssetTag option) world)
@@ -307,7 +303,6 @@ module WorldModuleGame =
             match propertyName with // OPTIMIZATION: string match for speed
             | "Id" -> failwith ^ "Cannot change game " + propertyName + "."
             | "DispatcherNp" -> failwith ^ "Cannot change game " + propertyName + "."
-            | "Specialization" -> failwith ^ "Cannot change game " + propertyName + "."
             | "CreationTimeStampNp" -> failwith ^ "Cannot change game " + propertyName + "."
             | "Imperative" -> failwith ^ "Cannot change game " + propertyName + "."
             | "ScriptOpt" -> World.setGameScriptOpt (property.PropertyValue :?> AssetTag option) world
@@ -345,7 +340,7 @@ module WorldModuleGame =
                     Map.find dispatcherName dispatchers
 
             // make the game state and populate its properties
-            let gameState = GameState.make None dispatcher
+            let gameState = GameState.make dispatcher
             let gameState = Reflection.attachProperties GameState.copy dispatcher gameState
             let gameState = Reflection.readPropertiesToTarget GameState.copy gameDescriptor.GameProperties gameState
 
