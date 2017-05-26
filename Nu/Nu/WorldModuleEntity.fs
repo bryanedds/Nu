@@ -346,6 +346,7 @@ module WorldModuleEntity =
                 let (entityState, world) =
                     match entityOpt with
                     | Some entity ->
+                        let world = World.setEntityState entityState entity world
                         let world = World.withEventContext (fun world -> facet.Unregister (entity, world)) entity world
                         let entityState = World.getEntityState entity world
                         (entityState, world)
