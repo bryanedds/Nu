@@ -164,80 +164,74 @@ module WorldScripting =
             | "monitor" -> true
             | _ -> false
 
-        static member internal evalExtrinsic fnName =
+        static member internal evalExtrinsic fnName exprs originOpt world =
             match fnName with
             | "v2" ->
-                fun exprs originOpt world ->
-                    match World.evalManyInternal exprs world with
-                    | struct ([|Violation _ as v; _|], world) -> struct (v, world)
-                    | struct ([|_; Violation _ as v|], world) -> struct (v, world)
-                    | struct ([|Single x; Single y|], world) -> struct (Pluggable { Vector2 = Vector2 (x, y) }, world)
-                    | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single for the both arguments.", originOpt), world)
-                    | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+                match World.evalManyInternal exprs world with
+                | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|Single x; Single y|], world) -> struct (Pluggable { Vector2 = Vector2 (x, y) }, world)
+                | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single for the both arguments.", originOpt), world)
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             | "index_Vector2" ->
-                fun exprs originOpt world ->
-                    match World.evalManyInternal exprs world with
-                    | struct ([|Violation _ as v; _|], world) -> struct (v, world)
-                    | struct ([|_; Violation _ as v|], world) -> struct (v, world)
-                    | struct ([|Keyword indexer; Pluggable pluggable|], world) ->
-                        match pluggable with
-                        | :? Vector2Pluggable as v2 ->
-                            match indexer with
-                            | "X" -> struct (Single v2.Vector2.X, world)
-                            | "Y" -> struct (Single v2.Vector2.Y, world)
-                            | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2.", originOpt), world)
-                        | _ -> failwithumf ()
-                    | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 index.", originOpt), world)
-                    | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+                match World.evalManyInternal exprs world with
+                | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|Keyword indexer; Pluggable pluggable|], world) ->
+                    match pluggable with
+                    | :? Vector2Pluggable as v2 ->
+                        match indexer with
+                        | "X" -> struct (Single v2.Vector2.X, world)
+                        | "Y" -> struct (Single v2.Vector2.Y, world)
+                        | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2.", originOpt), world)
+                    | _ -> failwithumf ()
+                | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 index.", originOpt), world)
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             | "update_Vector2" ->
-                fun exprs originOpt world ->
-                    match World.evalManyInternal exprs world with
-                    | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
-                    | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
-                    | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
-                    | struct ([|Keyword indexer; Single s; Pluggable pluggable|], world) ->
-                        match pluggable with
-                        | :? Vector2Pluggable as v2 ->
-                            match indexer with
-                            | "X" -> struct (Pluggable { Vector2 = Vector2 (s, v2.Vector2.Y) }, world)
-                            | "Y" -> struct (Pluggable { Vector2 = Vector2 (v2.Vector2.X, s) }, world)
-                            | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2.", originOpt), world)
-                        | _ -> failwithumf ()
-                    | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 target, a keyword index of X or Y, and a Single value.", originOpt), world)
-                    | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+                match World.evalManyInternal exprs world with
+                | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|Keyword indexer; Single s; Pluggable pluggable|], world) ->
+                    match pluggable with
+                    | :? Vector2Pluggable as v2 ->
+                        match indexer with
+                        | "X" -> struct (Pluggable { Vector2 = Vector2 (s, v2.Vector2.Y) }, world)
+                        | "Y" -> struct (Pluggable { Vector2 = Vector2 (v2.Vector2.X, s) }, world)
+                        | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2.", originOpt), world)
+                    | _ -> failwithumf ()
+                | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 target, a keyword index of X or Y, and a Single value.", originOpt), world)
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             | "get" ->
-                fun exprs originOpt world ->
-                    match World.evalManyInternal exprs world with
-                    | struct ([|Violation _ as v; _|], world) -> struct (v, world)
-                    | struct ([|_; Violation _ as v|], world) -> struct (v, world)
-                    | struct ([|String propertyName; relation|], world)
-                    | struct ([|Keyword propertyName; relation|], world) -> World.evalGet propertyName (Some relation) originOpt world
-                    | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
-                    | struct ([|Violation _ as v|], world) -> struct (v, world)
-                    | struct ([|String propertyName|], world)
-                    | struct ([|Keyword propertyName|], world) -> World.evalGet propertyName None originOpt world
-                    | struct ([|_|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
-                    | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 or 2 arguments required.", originOpt), world)
+                match World.evalManyInternal exprs world with
+                | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|String propertyName; relation|], world)
+                | struct ([|Keyword propertyName; relation|], world) -> World.evalGet propertyName (Some relation) originOpt world
+                | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
+                | struct ([|Violation _ as v|], world) -> struct (v, world)
+                | struct ([|String propertyName|], world)
+                | struct ([|Keyword propertyName|], world) -> World.evalGet propertyName None originOpt world
+                | struct ([|_|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 or 2 arguments required.", originOpt), world)
             | "set" ->
-                fun exprs originOpt world ->
-                    match World.evalManyInternal exprs world with
-                    | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
-                    | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
-                    | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
-                    | struct ([|String propertyName; relation; value|], world)
-                    | struct ([|Keyword propertyName; relation; value|], world) -> World.evalSet propertyName (Some relation) value originOpt world
-                    | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
-                    | struct ([|Violation _ as v; _|], world) -> struct (v, world)
-                    | struct ([|_; Violation _ as v|], world) -> struct (v, world)
-                    | struct ([|String propertyName; value|], world)
-                    | struct ([|Keyword propertyName; value|], world) -> World.evalSet propertyName None value originOpt world
-                    | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, a value for the second, and an optional Relation for the third.", originOpt), world)
-                    | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
+                match World.evalManyInternal exprs world with
+                | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|String propertyName; relation; value|], world)
+                | struct ([|Keyword propertyName; relation; value|], world) -> World.evalSet propertyName (Some relation) value originOpt world
+                | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
+                | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|String propertyName; value|], world)
+                | struct ([|Keyword propertyName; value|], world) -> World.evalSet propertyName None value originOpt world
+                | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, a value for the second, and an optional Relation for the third.", originOpt), world)
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
             | "monitor" ->
-                fun exprs originOpt world ->
-                    match World.evalManyInternal exprs world with
-                    | struct ([|Violation _ as v; _|], world) -> struct (v, world)
-                    | struct ([|_; Violation _ as v|], world) -> struct (v, world)
-                    | struct ([|evaled; evaled2|], world) -> World.evalMonitor fnName evaled evaled2 originOpt world
-                    | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
-            | _ -> fun _ _ _ -> failwithumf ()
+                match World.evalManyInternal exprs world with
+                | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|evaled; evaled2|], world) -> World.evalMonitor fnName evaled evaled2 originOpt world
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | _ -> failwithumf ()
