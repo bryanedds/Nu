@@ -592,7 +592,6 @@ module Gaia =
                 let selectedLayer = (World.getUserValue world).SelectedLayer
                 let overlayNameOpt = match form.overlayComboBox.Text with "(DefaultOverlay)" -> None | overlayName -> Some overlayName
                 let (entity, world) = World.createEntity5 form.createEntityComboBox.Text None None selectedLayer world
-                let world = entity.SetOverlayNameOpt overlayNameOpt world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =
@@ -606,14 +605,19 @@ module Gaia =
                       Depth = getCreationDepth form }
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
                 let world = entity.PropagatePhysics world
-                RefWorld := world // must be set for property grid
-                let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
-                form.entityPropertyGrid.SelectedObject <- entityTds
-                world
-            with exn ->
-                let world = World.choose world
-                MessageBox.Show (scstring exn, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
+                match World.trySetEntityOverlayNameOpt overlayNameOpt entity world with
+                | Right world ->
+                    RefWorld := world // must be set for property grid
+                    let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
+                    form.entityPropertyGrid.SelectedObject <- entityTds
+                    world
+                | Left error ->
+                    MessageBox.Show (error, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    world
+                with exn ->
+                    let world = World.choose world
+                    MessageBox.Show (scstring exn, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    world
 
     let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
