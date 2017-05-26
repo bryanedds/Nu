@@ -235,7 +235,6 @@ module WorldModuleEntity =
         static member internal getEntityImperative entity world = Xtension.getImperative (World.getEntityState entity world).Xtension
         static member internal getEntityCachableNp entity world = (World.getEntityState entity world).CachableNp
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
-        static member internal setEntityOverlayNameOpt value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.OverlayNameOpt <- value; entityState else { entityState with OverlayNameOpt = value }) false Property? OverlayNameOpt entity world
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Position
         static member internal setEntityPosition value entity world = World.updateEntityStatePlus (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Position <- value; entityState else { entityState with EntityState.Position = value }) true Property? Position entity world
         static member internal getEntitySize entity world = (World.getEntityState entity world).Size
@@ -553,6 +552,7 @@ module WorldModuleEntity =
                 | "CreationTimeStampNp" -> (false, world)
                 | "Imperative" -> (false, world)
                 | "CachableNp" -> (false, world)
+                | "OverlayNameOpt" -> (false, world)
                 | "Position" -> (true, World.setEntityPosition (property.PropertyValue :?> Vector2) entity world)
                 | "Size" -> (true, World.setEntitySize (property.PropertyValue :?> Vector2) entity world)
                 | "Rotation" -> (true, World.setEntityRotation (property.PropertyValue :?> single) entity world)
@@ -590,6 +590,7 @@ module WorldModuleEntity =
             | "CreationTimeStampNp" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "Imperative" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "CachableNp" -> failwith ^ "Cannot change entity " + propertyName + "."
+            | "OverlayNameOpt" -> failwith ^ "Cannot change entity " + propertyName + " dynamically."
             | "Position" -> World.setEntityPosition (property.PropertyValue :?> Vector2) entity world
             | "Size" -> World.setEntitySize (property.PropertyValue :?> Vector2) entity world
             | "Rotation" -> World.setEntityRotation (property.PropertyValue :?> single) entity world
