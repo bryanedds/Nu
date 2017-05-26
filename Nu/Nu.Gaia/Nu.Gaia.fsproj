@@ -96,6 +96,9 @@
       <HintPath>..\Nu.Dependencies\FSharpx.Core\FSharpx.Core.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
+    <Reference Include="Nito.Collections.Deque">
+      <HintPath>..\Nu.Dependencies\Nito.Collections.Deque\Nito.Collections.Deque.dll</HintPath>
+    </Reference>
     <Reference Include="ScintillaNET">
       <HintPath>..\Nu.Dependencies\ScintillaNET\ScintillaNET.dll</HintPath>
     </Reference>

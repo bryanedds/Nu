@@ -101,7 +101,7 @@
             this.applyEventFilterButton = new System.Windows.Forms.Button();
             this.eventFilterTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
-            this.propertyGrid = new System.Windows.Forms.PropertyGrid();
+            this.entityPropertyGrid = new System.Windows.Forms.PropertyGrid();
             this.treeView = new System.Windows.Forms.TreeView();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
@@ -117,8 +117,6 @@
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.createEntityButton = new System.Windows.Forms.ToolStripButton();
             this.createEntityComboBox = new System.Windows.Forms.ToolStripComboBox();
-            this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
-            this.specializationTextBox = new System.Windows.Forms.ToolStripTextBox();
             this.creationDepthLabel = new System.Windows.Forms.ToolStripLabel();
             this.createDepthMinusButton = new System.Windows.Forms.ToolStripButton();
             this.createDepthTextBox = new System.Windows.Forms.ToolStripTextBox();
@@ -142,6 +140,8 @@
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.layerPropertyGrid = new System.Windows.Forms.PropertyGrid();
+            this.overlayComboBox = new System.Windows.Forms.ToolStripComboBox();
+            this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -974,16 +974,16 @@
             this.splitContainer3.SplitterDistance = 418;
             this.splitContainer3.TabIndex = 2;
             // 
-            // propertyGrid
+            // entityPropertyGrid
             // 
-            this.propertyGrid.CategoryForeColor = System.Drawing.SystemColors.InactiveCaptionText;
-            this.propertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.propertyGrid.Location = new System.Drawing.Point(3, 3);
-            this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
-            this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(326, 386);
-            this.propertyGrid.TabIndex = 0;
-            this.propertyGrid.ToolbarVisible = false;
+            this.entityPropertyGrid.CategoryForeColor = System.Drawing.SystemColors.InactiveCaptionText;
+            this.entityPropertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.entityPropertyGrid.Location = new System.Drawing.Point(3, 3);
+            this.entityPropertyGrid.Margin = new System.Windows.Forms.Padding(2);
+            this.entityPropertyGrid.Name = "entityPropertyGrid";
+            this.entityPropertyGrid.Size = new System.Drawing.Size(326, 386);
+            this.entityPropertyGrid.TabIndex = 0;
+            this.entityPropertyGrid.ToolbarVisible = false;
             // 
             // treeView
             // 
@@ -1020,7 +1020,7 @@
             this.createEntityButton,
             this.createEntityComboBox,
             this.toolStripLabel1,
-            this.specializationTextBox,
+            this.overlayComboBox,
             this.creationDepthLabel,
             this.createDepthMinusButton,
             this.createDepthTextBox,
@@ -1039,7 +1039,7 @@
             this.editWhileInteractiveCheckBox});
             this.toolStrip.Location = new System.Drawing.Point(92, 2);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1186, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1217, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -1114,24 +1114,13 @@
             this.createEntityComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.createEntityComboBox.Font = new System.Drawing.Font("Tahoma", 8.25F);
             this.createEntityComboBox.Name = "createEntityComboBox";
-            this.createEntityComboBox.Size = new System.Drawing.Size(130, 25);
-            // 
-            // toolStripLabel1
-            // 
-            this.toolStripLabel1.Name = "toolStripLabel1";
-            this.toolStripLabel1.Size = new System.Drawing.Size(42, 22);
-            this.toolStripLabel1.Text = "Spec\'n";
-            // 
-            // specializationTextBox
-            // 
-            this.specializationTextBox.Name = "specializationTextBox";
-            this.specializationTextBox.Size = new System.Drawing.Size(90, 25);
+            this.createEntityComboBox.Size = new System.Drawing.Size(114, 25);
             // 
             // creationDepthLabel
             // 
             this.creationDepthLabel.Name = "creationDepthLabel";
-            this.creationDepthLabel.Size = new System.Drawing.Size(39, 22);
-            this.creationDepthLabel.Text = "Depth";
+            this.creationDepthLabel.Size = new System.Drawing.Size(52, 22);
+            this.creationDepthLabel.Text = "@ depth";
             // 
             // createDepthMinusButton
             // 
@@ -1303,7 +1292,7 @@
             // 
             // tabPage1
             // 
-            this.tabPage1.Controls.Add(this.propertyGrid);
+            this.tabPage1.Controls.Add(this.entityPropertyGrid);
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
@@ -1331,6 +1320,19 @@
             this.layerPropertyGrid.Size = new System.Drawing.Size(326, 386);
             this.layerPropertyGrid.TabIndex = 0;
             this.layerPropertyGrid.ToolbarVisible = false;
+            // 
+            // overlayComboBox
+            // 
+            this.overlayComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.overlayComboBox.Font = new System.Drawing.Font("Tahoma", 8.25F);
+            this.overlayComboBox.Name = "overlayComboBox";
+            this.overlayComboBox.Size = new System.Drawing.Size(114, 25);
+            // 
+            // toolStripLabel1
+            // 
+            this.toolStripLabel1.Name = "toolStripLabel1";
+            this.toolStripLabel1.Size = new System.Drawing.Size(21, 22);
+            this.toolStripLabel1.Text = "w/";
             // 
             // GaiaForm
             // 
@@ -1467,7 +1469,7 @@
         public System.Windows.Forms.ToolStripButton redoButton;
         public System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
         public System.Windows.Forms.ToolStripButton quickSizeToolStripButton;
-        public System.Windows.Forms.PropertyGrid propertyGrid;
+        public System.Windows.Forms.PropertyGrid entityPropertyGrid;
         public System.Windows.Forms.ToolStripButton editWhileInteractiveCheckBox;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
         public System.Windows.Forms.ToolStripButton reloadAssetsButton;
@@ -1516,8 +1518,6 @@
         public System.Windows.Forms.SplitContainer eventTracing;
         public System.Windows.Forms.SplitContainer assetGraph;
         public System.Windows.Forms.SplitContainer overlayer;
-        private System.Windows.Forms.ToolStripLabel toolStripLabel1;
-        public System.Windows.Forms.ToolStripTextBox specializationTextBox;
         public System.Windows.Forms.Button evalButton;
         public System.Windows.Forms.Button clearOutputButton;
         public System.Windows.Forms.Button evalLineButton;
@@ -1530,6 +1530,8 @@
         private System.Windows.Forms.TabPage tabPage1;
         private System.Windows.Forms.TabPage tabPage2;
         public System.Windows.Forms.PropertyGrid layerPropertyGrid;
+        public System.Windows.Forms.ToolStripComboBox overlayComboBox;
+        private System.Windows.Forms.ToolStripLabel toolStripLabel1;
     }
 }
 

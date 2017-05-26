@@ -80,6 +80,13 @@ module Gaia =
     let private clearTreeViewNodes (form : GaiaForm) =
         form.treeView.Nodes.Clear ()
 
+    let private populateOverlayComboBox (form : GaiaForm) world =
+        form.overlayComboBox.Items.Clear ()
+        form.overlayComboBox.Items.Add "(DefaultOverlay)" |> ignore
+        for overlay in World.getExtrinsicOverlays world do
+            form.overlayComboBox.Items.Add overlay.OverlayName |> ignore
+        form.overlayComboBox.SelectedIndex <- 0
+
     let private populateCreateComboBox (form : GaiaForm) world =
         form.createEntityComboBox.Items.Clear ()
         for dispatcherKvp in World.getEntityDispatchers world do
@@ -505,10 +512,14 @@ module Gaia =
             MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             false
 
-    let private tryReloadOverlays (_ : GaiaForm) world =
+    let private tryReloadOverlays form world =
         let targetDir = (World.getUserValue world).TargetDir
         let overlayDir = Path.Combine (targetDir, "..\\..")
-        World.tryReloadOverlays overlayDir targetDir world
+        match World.tryReloadOverlays overlayDir targetDir world with
+        | Right (overlayer, world) ->
+            populateOverlayComboBox form world
+            Right (overlayer, world)
+        | Left _ as error -> error
 
     let private tryLoadOverlayer (form : GaiaForm) world =
         match tryReloadOverlays form world with
@@ -579,7 +590,9 @@ module Gaia =
         addWorldChanger ^ fun world ->
             try let world = pushPastWorld world world
                 let selectedLayer = (World.getUserValue world).SelectedLayer
-                let (entity, world) = World.createEntity5 form.createEntityComboBox.Text (Some form.specializationTextBox.Text) None selectedLayer world
+                let overlayNameOpt = match form.overlayComboBox.Text with "(DefaultOverlay)" -> None | overlayName -> Some overlayName
+                let (entity, world) = World.createEntity5 form.createEntityComboBox.Text None None selectedLayer world
+                let world = entity.SetOverlayNameOpt overlayNameOpt world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =
@@ -894,7 +907,7 @@ module Gaia =
         form.evalOutputTextBox.Text <- String.Empty
 
     let private handleCreateEntityComboBoxSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
-        form.specializationTextBox.Text <- Constants.Engine.EmptySpecialization
+        form.overlayComboBox.SelectedIndex <- 0
 
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.YesNo) with
@@ -1018,6 +1031,7 @@ module Gaia =
 
     let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
         RefWorld := attachToWorld targetDir form !RefWorld
+        populateOverlayComboBox form !RefWorld
         populateCreateComboBox form !RefWorld
         populateTreeViewLayers form !RefWorld
         populateLayerTabs form !RefWorld
@@ -1056,7 +1070,6 @@ module Gaia =
         form.positionSnapTextBox.Text <- scstring Constants.Editor.DefaultPositionSnap
         form.rotationSnapTextBox.Text <- scstring Constants.Editor.DefaultRotationSnap
         form.createDepthTextBox.Text <- scstring Constants.Editor.DefaultCreationDepth
-        form.specializationTextBox.Text <- Constants.Engine.EmptySpecialization
 
         // sort tree view nodes with a bias against guids
         form.treeView.Sorted <- true
