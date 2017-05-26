@@ -82,7 +82,8 @@ module Gaia =
 
     let private populateOverlayComboBox (form : GaiaForm) world =
         form.overlayComboBox.Items.Clear ()
-        form.overlayComboBox.Items.Add "(DefaultOverlay)" |> ignore
+        form.overlayComboBox.Items.Add "(No Overlay)" |> ignore
+        form.overlayComboBox.Items.Add "(Default Overlay)" |> ignore
         for overlay in World.getExtrinsicOverlays world do
             form.overlayComboBox.Items.Add overlay.OverlayName |> ignore
         form.overlayComboBox.SelectedIndex <- 0
@@ -590,8 +591,13 @@ module Gaia =
         addWorldChanger ^ fun world ->
             try let world = pushPastWorld world world
                 let selectedLayer = (World.getUserValue world).SelectedLayer
-                let overlayNameOpt = match form.overlayComboBox.Text with "(DefaultOverlay)" -> None | overlayName -> Some overlayName
-                let (entity, world) = World.createEntity5 form.createEntityComboBox.Text None None selectedLayer world
+                let dispatcherName = form.createEntityComboBox.Text
+                let overlayNameOpt =
+                    match form.overlayComboBox.Text with
+                    | "(No Overlay)" -> None
+                    | "(Default Overlay)" -> Some dispatcherName
+                    | overlayName -> Some overlayName
+                let (entity, world) = World.createEntity5 dispatcherName None (None, ()) selectedLayer world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =
@@ -605,19 +611,18 @@ module Gaia =
                       Depth = getCreationDepth form }
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
                 let world = entity.PropagatePhysics world
-                match World.trySetEntityOverlayNameOpt overlayNameOpt entity world with
-                | Right world ->
-                    RefWorld := world // must be set for property grid
-                    let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
-                    form.entityPropertyGrid.SelectedObject <- entityTds
-                    world
-                | Left error ->
-                    MessageBox.Show (error, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
-                with exn ->
-                    let world = World.choose world
-                    MessageBox.Show (scstring exn, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                    world
+                let world =
+                    match World.trySetEntityOverlayNameOpt overlayNameOpt entity world with
+                    | Right world -> world
+                    | Left error -> MessageBox.Show (error, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore; world
+                RefWorld := world // must be set for property grid
+                let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
+                form.entityPropertyGrid.SelectedObject <- entityTds
+                world
+            with exn ->
+                let world = World.choose world
+                MessageBox.Show (scstring exn, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                world
 
     let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
@@ -633,15 +638,13 @@ module Gaia =
         use layerCreationForm = new LayerCreationForm ()
         layerCreationForm.StartPosition <- FormStartPosition.CenterParent
         layerCreationForm.dispatcherTextBox.Text <- typeof<LayerDispatcher>.Name
-        layerCreationForm.specializationTextBox.Text <- Constants.Engine.EmptySpecialization
         layerCreationForm.okButton.Click.Add ^ fun _ ->
             addWorldChanger ^ fun world ->
                 let world = pushPastWorld world world
                 let layerName = layerCreationForm.nameTextBox.Text
-                let layerDispatcher = layerCreationForm.dispatcherTextBox.Text
-                let layerSpecialization = layerCreationForm.specializationTextBox.Text
+                let layerDispatcherName = layerCreationForm.dispatcherTextBox.Text
                 try if String.length layerName = 0 then failwith "Layer name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createLayer5 layerDispatcher (Some layerSpecialization) (Some layerName) Simulants.EditorScreen world |> snd
+                    let world = World.createLayer4 layerDispatcherName (Some layerName) Simulants.EditorScreen world |> snd
                     refreshLayerTabs form world
                     form.layerTabs.SelectTab (form.layerTabs.TabPages.IndexOfKey layerName)
                     world
@@ -1185,11 +1188,11 @@ module Gaia =
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
     let attemptMakeWorld plugin sdlDeps =
-        let worldEir = World.attemptMake false (Some Constants.Editor.GameSpecialization) 0L () plugin sdlDeps
+        let worldEir = World.attemptMake false 0L () plugin sdlDeps
         match worldEir with
         | Right world ->
-            let world = World.createScreen4 (plugin.GetEditorScreenDispatcherName ()) (Some Constants.Editor.ScreenSpecialization) (Some Simulants.EditorScreen.ScreenName) world |> snd
-            let world = World.createLayer None (Some Simulants.DefaultEditorLayer.LayerName) Simulants.EditorScreen world |> snd
+            let world = World.createScreen3 (plugin.GetEditorScreenDispatcherName ()) (Some Simulants.EditorScreen.ScreenName) world |> snd
+            let world = World.createLayer (Some Simulants.DefaultEditorLayer.LayerName) Simulants.EditorScreen world |> snd
             let world = World.setSelectedScreen Simulants.EditorScreen world
             Right world
         | Left error -> Left error

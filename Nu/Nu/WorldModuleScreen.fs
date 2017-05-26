@@ -104,7 +104,6 @@ module WorldModuleScreen =
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
         static member internal getScreenDispatcherNp screen world = (World.getScreenState screen world).DispatcherNp
-        static member internal getScreenSpecialization screen world = (World.getScreenState screen world).Specialization
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent screen world
         static member internal getScreenCreationTimeStampNp screen world = (World.getScreenState screen world).CreationTimeStampNp
@@ -148,7 +147,6 @@ module WorldModuleScreen =
                 | "Id" -> Some { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world }
                 | "Name" -> Some { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world }
                 | "DispatcherNp" -> Some { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcherNp screen world }
-                | "Specialization" -> Some { PropertyType = typeof<string>; PropertyValue = World.getScreenSpecialization screen world }
                 | "Persistent" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world }
                 | "CreationTimeStampNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStampNp screen world }
                 | "Imperative" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getScreenImperative screen world }
@@ -174,7 +172,6 @@ module WorldModuleScreen =
             | "Id" -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world }
             | "Name" -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world }
             | "DispatcherNp" -> { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcherNp screen world }
-            | "Specialization" -> { PropertyType = typeof<string>; PropertyValue = World.getScreenSpecialization screen world }
             | "Persistent" -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world }
             | "CreationTimeStampNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStampNp screen world }
             | "Imperative" -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenImperative screen world }
@@ -203,7 +200,6 @@ module WorldModuleScreen =
                 | "Id" -> (false, world)
                 | "Name" -> (false, world)
                 | "DispatcherNp" -> (false, world)
-                | "Specialization" -> (false, world)
                 | "Persistent" -> (true, World.setScreenPersistent (property.PropertyValue :?> bool) screen world)
                 | "CreationTimeStampNp" -> (false, world)
                 | "Imperative" -> (false, world)
@@ -234,7 +230,6 @@ module WorldModuleScreen =
             | "Id" -> failwith ^ "Cannot change screen " + propertyName + "."
             | "Name" -> failwith ^ "Cannot change screen " + propertyName + "."
             | "DispatcherNp" -> failwith ^ "Cannot change screen " + propertyName + "."
-            | "Specialization" -> failwith ^ "Cannot change screen " + propertyName + "."
             | "Persistent" -> World.setScreenPersistent (property.PropertyValue :?> bool) screen world
             | "CreationTimeStampNp" -> failwith ^ "Cannot change screen " + propertyName + "."
             | "Imperative" -> failwith ^ "Cannot change screen " + propertyName + "."
@@ -327,7 +322,7 @@ module WorldModuleScreen =
                     Map.find dispatcherName dispatchers
 
             // make the screen state and populate its properties
-            let screenState = ScreenState.make None None dispatcher
+            let screenState = ScreenState.make None dispatcher
             let screenState = Reflection.attachProperties ScreenState.copy screenState.DispatcherNp screenState
             let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
 

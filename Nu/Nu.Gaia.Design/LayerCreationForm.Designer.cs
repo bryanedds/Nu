@@ -34,13 +34,11 @@
             this.label1 = new System.Windows.Forms.Label();
             this.dispatcherTextBox = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.specializationTextBox = new System.Windows.Forms.TextBox();
-            this.label3 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // okButton
             // 
-            this.okButton.Location = new System.Drawing.Point(204, 135);
+            this.okButton.Location = new System.Drawing.Point(204, 95);
             this.okButton.Name = "okButton";
             this.okButton.Size = new System.Drawing.Size(75, 23);
             this.okButton.TabIndex = 3;
@@ -50,7 +48,7 @@
             // cancelButton
             // 
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(285, 135);
+            this.cancelButton.Location = new System.Drawing.Point(285, 95);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 4;
@@ -89,32 +87,14 @@
             this.label2.TabIndex = 3;
             this.label2.Text = "Dispatcher:";
             // 
-            // specializationTextBox
-            // 
-            this.specializationTextBox.Location = new System.Drawing.Point(98, 95);
-            this.specializationTextBox.Name = "specializationTextBox";
-            this.specializationTextBox.Size = new System.Drawing.Size(262, 20);
-            this.specializationTextBox.TabIndex = 2;
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(17, 98);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(75, 13);
-            this.label3.TabIndex = 3;
-            this.label3.Text = "Specialization:";
-            // 
             // LayerCreationForm
             // 
             this.AcceptButton = this.okButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.cancelButton;
-            this.ClientSize = new System.Drawing.Size(382, 177);
-            this.Controls.Add(this.label3);
+            this.ClientSize = new System.Drawing.Size(378, 138);
             this.Controls.Add(this.label2);
-            this.Controls.Add(this.specializationTextBox);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.dispatcherTextBox);
             this.Controls.Add(this.nameTextBox);
@@ -135,7 +115,5 @@
         public System.Windows.Forms.TextBox nameTextBox;
         public System.Windows.Forms.TextBox dispatcherTextBox;
         private System.Windows.Forms.Label label2;
-        public System.Windows.Forms.TextBox specializationTextBox;
-        private System.Windows.Forms.Label label3;
     }
 }

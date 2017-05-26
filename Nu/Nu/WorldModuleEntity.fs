@@ -228,7 +228,6 @@ module WorldModuleEntity =
         static member internal getEntityUserValue<'a> entity world = UserState.get<'a> (World.getEntityState entity world).UserState
         static member internal setEntityUserValue<'a> value entity world = World.updateEntityState (fun entityState -> if UserState.getImperative entityState.UserState then ignore (UserState.set<'a> value entityState.UserState); entityState else { entityState with UserState = UserState.set<'a> value entityState.UserState }) false Property? UserValue entity world
         static member internal getEntityDispatcherNp entity world = (World.getEntityState entity world).DispatcherNp
-        static member internal getEntitySpecialization entity world = (World.getEntityState entity world).Specialization
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Persistent <- value; entityState else { entityState with Persistent = value }) false Property? Persistent entity world
         static member internal getEntityCreationTimeStampNp entity world = (World.getEntityState entity world).CreationTimeStampNp
@@ -479,7 +478,6 @@ module WorldModuleEntity =
                 | "UserState" -> Some { PropertyType = typeof<UserState>; PropertyValue = World.getEntityUserState entity world }
                 | "DispatcherNp" -> Some { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcherNp entity world }
                 | "Persistent" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world }
-                | "Specialization" -> Some { PropertyType = typeof<string>; PropertyValue = World.getEntitySpecialization entity world }
                 | "CreationTimeStampNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStampNp entity world }
                 | "Imperative" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world }
                 | "CachableNp" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityCachableNp entity world }
@@ -512,7 +510,6 @@ module WorldModuleEntity =
             | "UserState" -> { PropertyType = typeof<UserState>; PropertyValue = World.getEntityUserState entity world }
             | "DispatcherNp" -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcherNp entity world }
             | "Persistent" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world }
-            | "Specialization" -> { PropertyType = typeof<string>; PropertyValue = World.getEntitySpecialization entity world }
             | "CreationTimeStampNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStampNp entity world }
             | "Imperative" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world }
             | "CachableNp" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCachableNp entity world }
@@ -547,7 +544,6 @@ module WorldModuleEntity =
                 | "Name" -> (false, world)
                 | "UserState" -> (true, World.setEntityUserState (property.PropertyValue :?> UserState) entity world)
                 | "DispatcherNp" -> (false, world)
-                | "Specialization" -> (false, world)
                 | "Persistent" -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
                 | "CreationTimeStampNp" -> (false, world)
                 | "Imperative" -> (false, world)
@@ -585,7 +581,6 @@ module WorldModuleEntity =
             | "Name" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "UserState" -> World.setEntityUserState (property.PropertyValue :?> UserState) entity world
             | "DispatcherNp" -> failwith ^ "Cannot change entity " + propertyName + "."
-            | "Specialization" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "Persistent" -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world
             | "CreationTimeStampNp" -> failwith ^ "Cannot change entity " + propertyName + "."
             | "Imperative" -> failwith ^ "Cannot change entity " + propertyName + "."
@@ -723,7 +718,7 @@ module WorldModuleEntity =
 
         /// Create an entity and add it to the world.
         [<FunctionBinding ("createEntity")>]
-        static member createEntity5 dispatcherName specializationOpt nameOpt (layer : Layer) world =
+        static member createEntity5 dispatcherName nameOpt overlayNameOpt (layer : Layer) world =
 
             // grab overlay dependencies
             let overlayer = World.getOverlayer world
@@ -736,12 +731,14 @@ module WorldModuleEntity =
                 | Some dispatcher -> dispatcher
                 | None -> failwith ^ "Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
 
-            // try to compute the routed overlay name
-            let classification = Classification.make dispatcherName ^ Option.getOrDefault Constants.Engine.EmptySpecialization specializationOpt
-            let overlayNameOpt = OverlayRouter.findOverlayNameOpt classification overlayRouter
+            // try to route the overlay name
+            let _ : unit = snd overlayNameOpt
+            let overlayNameOpt =
+                if Option.isSome (fst overlayNameOpt) then (fst overlayNameOpt)
+                else OverlayRouter.findOverlayNameOpt dispatcherName overlayRouter
 
             // make the bare entity state (with name as id if none is provided)
-            let entityState = EntityState.make specializationOpt nameOpt overlayNameOpt dispatcher
+            let entityState = EntityState.make nameOpt overlayNameOpt dispatcher
 
             // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
@@ -749,10 +746,10 @@ module WorldModuleEntity =
             // apply the entity state's overlay to its facet names
             let entityState =
                 match overlayNameOpt with
-                | Some routedOverlayName ->
+                | Some overlayName ->
 
                     // apply overlay to facets
-                    let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy dispatcherName routedOverlayName entityState overlayer overlayer
+                    let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy dispatcherName overlayName entityState overlayer overlayer
 
                     // synchronize the entity's facets (and attach their properties)
                     match World.trySynchronizeFacetsToNames Set.empty entityState None world with
@@ -780,8 +777,8 @@ module WorldModuleEntity =
             (entity, world)
 
         /// Create an entity and add it to the world.
-        static member createEntity<'d when 'd :> EntityDispatcher> specializationOpt nameOpt layer world =
-            World.createEntity5 typeof<'d>.Name specializationOpt nameOpt layer world
+        static member createEntity<'d when 'd :> EntityDispatcher> nameOpt overlayNameOpt layer world =
+            World.createEntity5 typeof<'d>.Name nameOpt overlayNameOpt layer world
 
         static member private removeEntity entity world =
             
@@ -839,12 +836,11 @@ module WorldModuleEntity =
                         | None -> failwith ^ "Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
                     (dispatcherName, dispatcher)
 
-            // try to compute the routed overlay name
-            let classification = Classification.makeUnspecialized dispatcherName
-            let overlayNameOpt = OverlayRouter.findOverlayNameOpt classification overlayRouter
+            // try to route the overlay name
+            let overlayNameOpt = OverlayRouter.findOverlayNameOpt dispatcherName overlayRouter
 
             // make the bare entity state with name as id
-            let entityState = EntityState.make None None overlayNameOpt dispatcher
+            let entityState = EntityState.make None overlayNameOpt dispatcher
 
             // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
@@ -853,7 +849,7 @@ module WorldModuleEntity =
             let entityState = Reflection.tryReadOverlayNameOptToTarget EntityState.copy entityDescriptor.EntityProperties entityState
             let entityState =
                 match (overlayNameOpt, entityState.OverlayNameOpt) with
-                | (Some routedOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames EntityState.copy routedOverlayName overlayName entityState overlayer overlayer
+                | (Some overlayName, Some esOverlayName) -> Overlayer.applyOverlayToFacetNames EntityState.copy overlayName esOverlayName entityState overlayer overlayer
                 | (_, _) -> entityState
 
             // read the entity state's facet names
@@ -901,8 +897,7 @@ module WorldModuleEntity =
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OverlayNameOpt" && propertyType = typeof<string option> then
                     let overlayRouter = World.getOverlayRouter world
-                    let classification = Classification.make entityDispatcherName entityState.Specialization
-                    let defaultOverlayNameOpt = OverlayRouter.findOverlayNameOpt classification overlayRouter
+                    let defaultOverlayNameOpt = OverlayRouter.findOverlayNameOpt entityDispatcherName overlayRouter
                     defaultOverlayNameOpt <> (propertyValue :?> string option)
                 else
                     let overlayer = World.getOverlayer world
@@ -913,21 +908,21 @@ module WorldModuleEntity =
 
         /// Reassign an entity's identity and / or layer. Note that since this destroys the reassigned entity
         /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
-        static member reassignEntityImmediate entity specializationOpt nameOpt (layer : Layer) world =
+        static member reassignEntityImmediate entity nameOpt (layer : Layer) world =
             let entityState = World.getEntityState entity world
             let world = World.removeEntity entity world
-            let (id, specialization, name) = Reflection.deriveIdAndSpecializationAndName specializationOpt nameOpt
-            let entityState = { entityState with Id = id; Name = name; Specialization = specialization }
+            let (id, name) = Reflection.deriveIdAndName nameOpt
+            let entityState = { entityState with Id = id; Name = name }
             let transmutedEntity = Entity (layer.LayerAddress -<<- ntoa<Entity> name)
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
 
         /// Reassign an entity's identity and / or layer.
         [<FunctionBinding>]
-        static member reassignEntity entity specializationOpt nameOpt layer world =
+        static member reassignEntity entity nameOpt layer world =
             let tasklet =
                 { ScheduledTime = World.getTickTime world
-                  Command = { Execute = fun world -> World.reassignEntityImmediate entity specializationOpt nameOpt layer world |> snd }}
+                  Command = { Execute = fun world -> World.reassignEntityImmediate entity nameOpt layer world |> snd }}
             World.addTasklet tasklet world
 
         /// Try to set an entity's optional overlay name.
@@ -962,8 +957,9 @@ module WorldModuleEntity =
                     then World.publishEntityChanges entity oldWorld world
                     else world
                 Right world
+            | (None, None) ->
+                Right world
             | (_, _) ->
-                World.choose world |> ignore
                 Left "Could not set the entity's overlay name because setting an overlay to or from None is currently unimplemented."
 
         /// Try to set the entity's facet names.

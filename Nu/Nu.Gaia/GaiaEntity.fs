@@ -41,7 +41,7 @@ and EntityPropertyDescriptor (property, attributes) =
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if propertyName.Length > 2 && propertyName.StartsWith "On" && Char.IsUpper propertyName.[2] then "Events"
         elif    propertyName = "Name" || propertyName = "UserState" || propertyName = "OverlayNameOpt" ||
-                propertyName = "FacetNames" || propertyName = "Specialization" || propertyName = "PublishChanges" then "\rAmbient Properties"
+                propertyName = "FacetNames" || propertyName = "PublishChanges" then "\rAmbient Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) mountProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "\rPhysics Properties"
@@ -93,8 +93,7 @@ and EntityPropertyDescriptor (property, attributes) =
                 let name = value :?> string
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
                     let entity = entityTds.DescribedEntity
-                    let specialization = entity.GetSpecialization world
-                    let world = World.reassignEntity entity (Some specialization) (Some name) (etol entity) world
+                    let world = World.reassignEntity entity (Some name) (etol entity) world
                     entityTds.RefWorld := world // must be set for property grid
                     world
                 else
@@ -104,15 +103,6 @@ and EntityPropertyDescriptor (property, attributes) =
                          MessageBoxButtons.OK) |>
                         ignore
                     world
-            
-            // change the specialization property
-            | "Specialization" ->
-                let specialization = value :?> string
-                let entity = entityTds.DescribedEntity
-                let name = entity.GetName world
-                let world = World.reassignEntity entity (Some specialization) (Some name) (etol entity) world
-                entityTds.RefWorld := world // must be set for property grid
-                world
 
             // change facet names
             | "FacetNames" ->

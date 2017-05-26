@@ -281,23 +281,23 @@ module WorldModule2 =
 
         /// Create a dissolve screen whose contents is loaded from the given layer file.
         [<FunctionBinding>]
-        static member createDissolveScreenFromLayerFile6 dispatcherName specializationOpt nameOpt dissolveData layerFilePath world =
-            let (dissolveScreen, world) = World.createDissolveScreen5 dispatcherName specializationOpt nameOpt dissolveData world
+        static member createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData layerFilePath world =
+            let (dissolveScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt dissolveData world
             let world = World.readLayerFromFile layerFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
         /// Create a dissolve screen whose contents is loaded from the given layer file.
         [<FunctionBinding>]
-        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt dissolveData layerFilePath world =
-            World.createDissolveScreenFromLayerFile6 typeof<'d>.Name specializationOpt nameOpt dissolveData layerFilePath world
+        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveData layerFilePath world =
+            World.createDissolveScreenFromLayerFile6 typeof<'d>.Name nameOpt dissolveData layerFilePath world
 
         /// Create a splash screen that transitions to the given destination upon completion.
         [<FunctionBinding>]
-        static member createSplashScreen6 dispatcherName specializationOpt nameOpt splashData destination world =
+        static member createSplashScreen6 dispatcherName nameOpt splashData destination world =
             let cameraEyeSize = World.getEyeSize world
-            let (splashScreen, world) = World.createDissolveScreen5 dispatcherName specializationOpt nameOpt splashData.DissolveData world
-            let (splashLayer, world) = World.createLayer<LayerDispatcher> None (Some "SplashLayer") splashScreen world
-            let (splashLabel, world) = World.createEntity<LabelDispatcher> None (Some "SplashLabel") splashLayer world
+            let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashData.DissolveData world
+            let (splashLayer, world) = World.createLayer<LayerDispatcher> (Some "SplashLayer") splashScreen world
+            let (splashLabel, world) = World.createEntity<LabelDispatcher> (Some "SplashLabel") (None, ()) splashLayer world
             let world = splashLabel.SetSize cameraEyeSize world
             let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
             let world = splashLabel.SetLabelImage splashData.SplashImage world
@@ -307,8 +307,8 @@ module WorldModule2 =
 
         /// Create a splash screen that transitions to the given destination upon completion.
         [<FunctionBinding>]
-        static member createSplashScreen<'d when 'd :> ScreenDispatcher> specializationOpt nameOpt splashData destination world =
-            World.createSplashScreen6 typeof<'d>.Name specializationOpt nameOpt splashData destination world
+        static member createSplashScreen<'d when 'd :> ScreenDispatcher> nameOpt splashData destination world =
+            World.createSplashScreen6 typeof<'d>.Name nameOpt splashData destination world
 
         static member private handleSubscribeAndUnsubscribe event world =
             // here we need to update the event publish flags for entities based on whether there are subscriptions to
@@ -751,7 +751,7 @@ module WorldModule2 =
                 AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty SymbolStore.empty userState
 
             // make the world
-            let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState None (snd defaultGameDispatcher)
+            let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState (snd defaultGameDispatcher)
             
             // subscribe to subscribe and unsubscribe events
             let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
@@ -763,14 +763,14 @@ module WorldModule2 =
         /// Make a default world with a default screen, layer, and entity, such as for testing.
         static member makeDefault () =
             let world = World.makeEmpty ()
-            let world = World.createScreen None (Some Simulants.DefaultScreen.ScreenName) world |> snd
-            let world = World.createLayer None (Some Simulants.DefaultLayer.LayerName) Simulants.DefaultScreen world |> snd
-            let world = World.createEntity None (Some Simulants.DefaultEntity.EntityName) Simulants.DefaultLayer world |> snd
+            let world = World.createScreen (Some Simulants.DefaultScreen.ScreenName) world |> snd
+            let world = World.createLayer (Some Simulants.DefaultLayer.LayerName) Simulants.DefaultScreen world |> snd
+            let world = World.createEntity (Some Simulants.DefaultEntity.EntityName) (None, ()) Simulants.DefaultLayer world |> snd
             world
 
         /// Try to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member attemptMake standAlone gameSpecializationOpt tickRate userState (plugin : NuPlugin) sdlDeps =
+        static member attemptMake standAlone tickRate userState (plugin : NuPlugin) sdlDeps =
 
             // ensure game engine is initialized
             // TODO: P1: parameterize hard-coded boolean
@@ -856,7 +856,7 @@ module WorldModule2 =
                         AmbientState.make tickRate assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
 
                     // make the world
-                    let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState gameSpecializationOpt activeGameDispatcher
+                    let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState activeGameDispatcher
 
                     // subscribe to subscribe and unsubscribe events
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world

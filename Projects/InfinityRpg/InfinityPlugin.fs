@@ -25,7 +25,7 @@ type InfinityRpgPlugin () =
          CharacterCameraFacet () :> Facet]
 
     override this.MakeOverlayRoutes () =
-        [typeof<ButtonDispatcher>.Name, OverlayDescriptor.makeVanilla (Some "InfinityButtonDispatcher")]
+        [typeof<ButtonDispatcher>.Name, Some "InfinityButtonDispatcher"]
         
     override this.GetStandAloneGameDispatcherName () =
         typeof<InfinityDispatcher>.Name

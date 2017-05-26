@@ -39,7 +39,7 @@ and LayerPropertyDescriptor (property, attributes) =
         // HACK: in order to put the Events as the last category, I start all the other categories with an unprinted
         // \r character as here - https://bytes.com/topic/c-sharp/answers/214456-q-ordering-sorting-category-text-propertygrid
         if propertyName.Length > 2 && propertyName.StartsWith "On" && Char.IsUpper propertyName.[2] then "Events"
-        elif propertyName = "Name" || propertyName = "Specialization" then "\rAmbient Properties"
+        elif propertyName = "Name" then "\rAmbient Properties"
         elif propertyName = "Persistent" || propertyName = "Script" || propertyName = "ScriptOpt" || propertyName = "Depth" || propertyName = "Visible" then "\rScene Properties"
         else "\rXtension Properties"
 
@@ -89,15 +89,6 @@ and LayerPropertyDescriptor (property, attributes) =
                 MessageBox.Show
                     ("Changing the name of a layer after it has been created is not yet implemented.",
                      "Cannot change layer name in Gaia.",
-                     MessageBoxButtons.OK) |>
-                    ignore
-                world
-            
-            // change the specialization property
-            | "Specialization" ->
-                MessageBox.Show
-                    ("Changing the specialization of a layer after it has been created is not yet implemented.",
-                     "Cannot change layer specialization in Gaia.",
                      MessageBoxButtons.OK) |>
                     ignore
                 world

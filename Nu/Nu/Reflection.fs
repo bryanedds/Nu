@@ -21,12 +21,11 @@ module Reflection =
         | Some name -> name
         | None -> scstring<Guid> id
 
-    /// Derive a simulant id, specializatoin, and name from an optional specialization and name.
-    let deriveIdAndSpecializationAndName specializationOpt nameOpt =
+    /// Derive a simulant id and name from an optional name.
+    let deriveIdAndName nameOpt =
         let id = makeGuid ()
-        let specialization = match specializationOpt with Some s -> s | None -> Constants.Engine.EmptySpecialization
         let name = deriveName nameOpt id
-        (id, specialization, name)
+        (id, name)
 
     /// Is a property with the given name persistent?
     let isPropertyPersistentByName (propertyName : string) =

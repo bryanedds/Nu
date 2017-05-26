@@ -35,7 +35,6 @@ module Constants =
         let (*Literal*) EntityTreeDepth = 3
         let (*Literal*) EntityTreeSize = Vector2 (single ^ Math.Pow (2.0, 16.0))
         let (*Literal*) EntityTreeBounds = Vector4 (EntityTreeSize.X * -0.5f, EntityTreeSize.Y * -0.5f, EntityTreeSize.X * 0.5f, EntityTreeSize.Y * 0.5f)
-        let (*Literal*) EmptySpecialization = ""
         let (*Literal*) InvalidId = Guid.Empty
         let (*Literal*) SubsystemMapConfig = Functional
         let (*Literal*) TaskletListConfig = Functional

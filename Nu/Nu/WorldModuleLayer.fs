@@ -119,7 +119,6 @@ module WorldModuleLayer =
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
         static member internal getLayerName layer world = (World.getLayerState layer world).Name
         static member internal getLayerDispatcherNp layer world = (World.getLayerState layer world).DispatcherNp
-        static member internal getLayerSpecialization layer world = (World.getLayerState layer world).Specialization
         static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
         static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> { layerState with Persistent = value }) Property? Persistent layer world
         static member internal getLayerCreationTimeStampNp layer world = (World.getLayerState layer world).CreationTimeStampNp
@@ -157,7 +156,6 @@ module WorldModuleLayer =
                 | "Id" -> Some { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world }
                 | "Name" -> Some { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world }
                 | "DispatcherNp" -> Some { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcherNp layer world }
-                | "Specialization" -> Some { PropertyType = typeof<string>; PropertyValue = World.getLayerSpecialization layer world }
                 | "Persistent" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world }
                 | "CreationTimeStampNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStampNp layer world }
                 | "Imperative" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getLayerImperative layer world }
@@ -181,7 +179,6 @@ module WorldModuleLayer =
             | "Id" -> { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world }
             | "Name" -> { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world }
             | "DispatcherNp" -> { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcherNp layer world }
-            | "Specialization" -> { PropertyType = typeof<string>; PropertyValue = World.getLayerSpecialization layer world }
             | "Persistent" -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world }
             | "CreationTimeStampNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStampNp layer world }
             | "Imperative" -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerImperative layer world }
@@ -208,7 +205,6 @@ module WorldModuleLayer =
                 | "Id" -> (false, world)
                 | "Name" -> (false, world)
                 | "DispatcherNp" -> (false, world)
-                | "Specialization" -> (false, world)
                 | "Persistent" -> (true, World.setLayerPersistent (property.PropertyValue :?> bool) layer world)
                 | "CreationTimeStampNp" -> (false, world)
                 | "Imperative" -> (false, world)
@@ -237,7 +233,6 @@ module WorldModuleLayer =
             | "Id" -> failwith ^ "Cannot change layer " + propertyName + "."
             | "Name" -> failwith ^ "Cannot change layer " + propertyName + "."
             | "DispatcherNp" -> failwith ^ "Cannot change layer " + propertyName + "."
-            | "Specialization" -> failwith ^ "Cannot change layer " + propertyName + "."
             | "Persistent" -> World.setLayerPersistent (property.PropertyValue :?> bool) layer world
             | "CreationTimeStampNp" -> failwith ^ "Cannot change layer " + propertyName + "."
             | "Imperative" -> failwith ^ "Cannot change layer " + propertyName + "."
@@ -308,21 +303,21 @@ module WorldModuleLayer =
 
         /// Create a layer and add it to the world.
         [<FunctionBinding ("createLayer")>]
-        static member createLayer5 dispatcherName specializationOpt nameOpt (screen : Screen) world =
+        static member createLayer4 dispatcherName nameOpt (screen : Screen) world =
             let dispatchers = World.getLayerDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None -> failwith ^ "Could not find a LayerDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
-            let layerState = LayerState.make specializationOpt nameOpt dispatcher
+            let layerState = LayerState.make nameOpt dispatcher
             let layerState = Reflection.attachProperties LayerState.copy dispatcher layerState
             let layer = Layer (screen.ScreenAddress -<<- ntoa<Layer> layerState.Name)
             let world = World.addLayer false layerState layer world
             (layer, world)
 
         /// Create a layer and add it to the world.
-        static member createLayer<'d when 'd :> LayerDispatcher> specializationOpt nameOpt screen world =
-            World.createLayer5 typeof<'d>.Name specializationOpt nameOpt screen world
+        static member createLayer<'d when 'd :> LayerDispatcher> nameOpt screen world =
+            World.createLayer4 typeof<'d>.Name nameOpt screen world
 
         static member internal writeLayer4 writeEntities layer layerDescriptor world =
             let layerState = World.getLayerState layer world
@@ -346,7 +341,7 @@ module WorldModuleLayer =
                     Map.find dispatcherName dispatchers
 
             // make the layer state and populate its properties
-            let layerState = LayerState.make None None dispatcher
+            let layerState = LayerState.make None dispatcher
             let layerState = Reflection.attachProperties LayerState.copy layerState.DispatcherNp layerState
             let layerState = Reflection.readPropertiesToTarget LayerState.copy layerDescriptor.LayerProperties layerState
 
