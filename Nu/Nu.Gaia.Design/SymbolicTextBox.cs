@@ -89,7 +89,7 @@ namespace Nu.Gaia.Design
             get
             {
                 var keywordsSplit = keywords0.Split(' ').Distinct().ToArray();
-                Array.Sort(keywordsSplit);
+                Array.Sort(keywordsSplit, StringComparer.Ordinal);
                 var keywordsSorted = string.Join(AutoCSeparator.ToString(), keywordsSplit);
                 return keywordsSorted;
             }
