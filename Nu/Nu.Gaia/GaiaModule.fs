@@ -597,7 +597,7 @@ module Gaia =
                     | "(No Overlay)" -> None
                     | "(Default Overlay)" -> Some dispatcherName
                     | overlayName -> Some overlayName
-                let (entity, world) = World.createEntity5 dispatcherName None (None, ()) selectedLayer world
+                let (entity, world) = World.createEntity5 dispatcherName None (overlayNameOpt, ()) selectedLayer world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =
@@ -611,10 +611,6 @@ module Gaia =
                       Depth = getCreationDepth form }
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
                 let world = entity.PropagatePhysics world
-                let world =
-                    match World.trySetEntityOverlayNameOpt overlayNameOpt entity world with
-                    | Right world -> world
-                    | Left error -> MessageBox.Show (error, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore; world
                 RefWorld := world // must be set for property grid
                 let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
                 form.entityPropertyGrid.SelectedObject <- entityTds
@@ -895,9 +891,10 @@ module Gaia =
                 else form.evalInputTextBox.Text
             let exprsStr = Symbol.OpenSymbolsStr + "\n" + exprsStr + "\n" + Symbol.CloseSymbolsStr
             try let exprs = scvalue<Scripting.Expr array> exprsStr
-                let localFrame = Simulants.Game.GetScriptFrameNp world
+                let selectedLayer = (World.getUserValue world).SelectedLayer
+                let localFrame = selectedLayer.GetScriptFrameNp world
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Scripting.Expr>).PrettyPrinter
-                let (evaleds, world) = World.evalManyWithLogging exprs localFrame Simulants.Game world
+                let (evaleds, world) = World.evalManyWithLogging exprs localFrame selectedLayer world
                 let evaledStrs = Array.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
                 let evaledsStr = String.concat "\n" evaledStrs
                 form.evalOutputTextBox.ReadOnly <- false

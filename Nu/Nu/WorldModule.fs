@@ -407,7 +407,7 @@ module WorldModule =
         static member internal dispatchersToOverlayRoutes entityDispatchers =
             entityDispatchers |>
             Map.toValueListBy getTypeName |>
-            List.map (fun typeName -> (typeName, Some typeName))
+            List.map (fun typeName -> (typeName, None))
 
     type World with // Caching
 

@@ -77,8 +77,16 @@ module RelationModule =
 
         /// Resolve a relationship to an address.
         static member resolve<'a, 'b> (address : 'a Address) (relation : 'b Relation) =
-            let names = List.project id (Address.getNames address) relation.NameOpts
-            Address.makeFromList<'b> names
+            // OPTIMIZATION: using array for speed.
+            let addressNames = Array.ofList (Address.getNames address)
+            let nameOpts = Array.ofList relation.NameOpts
+            for i in 0 .. Math.Min (addressNames.Length, nameOpts.Length) - 1 do
+                match nameOpts.[i] with
+                | None -> nameOpts.[i] <- Some addressNames.[i]
+                | Some _ -> ()
+            match Array.definitizePlus nameOpts with
+            | (true, names) -> Address.makeFromList<'b> (List.ofArray names)
+            | (false, _) -> failwith ("Invalid relation resolution for address '" + string address + "' and relation '" + string relation + "'.")
 
         interface 'a Relation IEquatable with
             member this.Equals that =
