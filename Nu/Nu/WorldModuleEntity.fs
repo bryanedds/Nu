@@ -719,11 +719,10 @@ module WorldModuleEntity =
 
         /// Create an entity and add it to the world.
         [<FunctionBinding ("createEntity")>]
-        static member createEntity5 dispatcherName nameOpt overlayNameOpt (layer : Layer) world =
+        static member createEntity5 dispatcherName nameOpt overlayNameDescriptor (layer : Layer) world =
 
             // grab overlay dependencies
             let overlayer = World.getOverlayer world
-            let overlayRouter = World.getOverlayRouter world
 
             // find the entity's dispatcher
             let dispatchers = World.getEntityDispatchers world
@@ -732,11 +731,13 @@ module WorldModuleEntity =
                 | Some dispatcher -> dispatcher
                 | None -> failwith ^ "Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
 
-            // try to route the overlay name
-            let _ : unit = snd overlayNameOpt
+            // compute the optional overlay name
             let overlayNameOpt =
-                if Option.isSome (fst overlayNameOpt) then (fst overlayNameOpt)
-                else OverlayRouter.findOverlayNameOpt dispatcherName overlayRouter
+                match overlayNameDescriptor with
+                | NoOverlay -> None
+                | RoutedOverlay -> Option.flatten (World.tryFindRoutedOverlayNameOpt dispatcherName world)
+                | DefaultOverlay -> Some (Option.getOrDefault dispatcherName (Option.flatten (World.tryFindRoutedOverlayNameOpt dispatcherName world)))
+                | ExplicitOverlay overlayName -> Some overlayName
 
             // make the bare entity state (with name as id if none is provided)
             let entityState = EntityState.make nameOpt overlayNameOpt dispatcher
@@ -820,7 +821,6 @@ module WorldModuleEntity =
 
             // grab overlay dependencies
             let overlayer = World.getOverlayer world
-            let overlayRouter = World.getOverlayRouter world
 
             // create the dispatcher
             let dispatcherName = entityDescriptor.EntityDispatcher
@@ -838,7 +838,10 @@ module WorldModuleEntity =
                     (dispatcherName, dispatcher)
 
             // try to route the overlay name
-            let overlayNameOpt = OverlayRouter.findOverlayNameOpt dispatcherName overlayRouter
+            let overlayNameOpt =
+                match World.tryFindRoutedOverlayNameOpt dispatcherName world with
+                | Some overlayNameOpt -> overlayNameOpt
+                | None -> None
 
             // make the bare entity state with name as id
             let entityState = EntityState.make None overlayNameOpt dispatcher
@@ -897,8 +900,7 @@ module WorldModuleEntity =
             let entityDescriptor = { entityDescriptor with EntityDispatcher = entityDispatcherName }
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OverlayNameOpt" && propertyType = typeof<string option> then
-                    let overlayRouter = World.getOverlayRouter world
-                    let defaultOverlayNameOpt = OverlayRouter.findOverlayNameOpt entityDispatcherName overlayRouter
+                    let defaultOverlayNameOpt = Option.flatten (World.tryFindRoutedOverlayNameOpt entityDispatcherName world)
                     defaultOverlayNameOpt <> (propertyValue :?> string option)
                 else
                     let overlayer = World.getOverlayer world

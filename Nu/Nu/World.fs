@@ -297,7 +297,7 @@ module WorldModule2 =
             let cameraEyeSize = World.getEyeSize world
             let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashData.DissolveData world
             let (splashLayer, world) = World.createLayer<LayerDispatcher> (Some "SplashLayer") splashScreen world
-            let (splashLabel, world) = World.createEntity<LabelDispatcher> (Some "SplashLabel") (None, ()) splashLayer world
+            let (splashLabel, world) = World.createEntity<LabelDispatcher> (Some "SplashLabel") DefaultOverlay splashLayer world
             let world = splashLabel.SetSize cameraEyeSize world
             let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
             let world = splashLabel.SetLabelImage splashData.SplashImage world
@@ -765,7 +765,7 @@ module WorldModule2 =
             let world = World.makeEmpty ()
             let world = World.createScreen (Some Simulants.DefaultScreen.ScreenName) world |> snd
             let world = World.createLayer (Some Simulants.DefaultLayer.LayerName) Simulants.DefaultScreen world |> snd
-            let world = World.createEntity (Some Simulants.DefaultEntity.EntityName) (None, ()) Simulants.DefaultLayer world |> snd
+            let world = World.createEntity (Some Simulants.DefaultEntity.EntityName) DefaultOverlay Simulants.DefaultLayer world |> snd
             world
 
         /// Try to make the world, returning either a Right World on success, or a Left string

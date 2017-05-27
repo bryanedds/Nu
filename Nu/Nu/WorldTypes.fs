@@ -79,6 +79,13 @@ type [<StructuralEquality; NoComparison>] TileData =
       TileSetTileOpt : TmxTilesetTile option
       TilePosition : Vector2i }
 
+/// Describes the shape of a desired overlay.
+type OverlayNameDescriptor =
+    | NoOverlay
+    | RoutedOverlay
+    | DefaultOverlay
+    | ExplicitOverlay of string
+
 /// Specifies that a module contains functions that need to be considered for binding generation.
 type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
     ModuleBindingAttribute () =

@@ -118,6 +118,10 @@ module AmbientStateModule =
         /// Get the overlay router.
         let getOverlayRouter state =
             state.OverlayRouter
+    
+        /// Get the overlay router.
+        let getOverlayRouterBy by state =
+            by state.OverlayRouter
 
         /// Get a value from the symbol store.
         let getSymbolStoreBy by state =
