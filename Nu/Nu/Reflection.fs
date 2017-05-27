@@ -411,8 +411,8 @@ module Reflection =
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
         attachIntrinsicFacetsViaNames copyTarget dispatcherMap facetMap instrinsicFacetNames target
 
-    /// Create intrinsic overlays.
-    let createIntrinsicOverlays requiresFacetNames sourceTypes =
+    /// Make intrinsic overlays.
+    let makeIntrinsicOverlays requiresFacetNames sourceTypes =
 
         // get the unique, decomposed source types
         let sourceTypeHashSet = HashSet HashIdentity.Structural

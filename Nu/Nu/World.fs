@@ -343,13 +343,13 @@ module WorldModule2 =
                 | _ -> world
             | _ -> world
 
-        static member private createIntrinsicOverlays facets entityDispatchers =
+        static member private makeIntrinsicOverlays facets entityDispatchers =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
             let facets = Map.toValueListBy (fun facet -> facet :> obj) facets
             let entityDispatchers = Map.toValueListBy box entityDispatchers
             let sources = facets @ entityDispatchers
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
-            Reflection.createIntrinsicOverlays requiresFacetNames sourceTypes
+            Reflection.makeIntrinsicOverlays requiresFacetNames sourceTypes
 
         /// Try to reload the overlayer currently in use by the world.
         [<FunctionBinding>]
@@ -364,7 +364,7 @@ module WorldModule2 =
                 let oldOverlayer = World.getOverlayer world
                 let entityDispatchers = World.getEntityDispatchers world
                 let facets = World.getFacets world
-                let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
+                let intrinsicOverlays = World.makeIntrinsicOverlays facets entityDispatchers
                 match Overlayer.tryMakeFromFile intrinsicOverlays outputOverlayerFilePath with
                 | Right overlayer ->
                 
@@ -839,7 +839,7 @@ module WorldModule2 =
                     Subsystems.make subsystemMap
 
                 // attempt to make the overlayer
-                let intrinsicOverlays = World.createIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
+                let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
                 match Overlayer.tryMakeFromFile intrinsicOverlays Assets.OverlayerFilePath with
                 | Right overlayer ->
 
