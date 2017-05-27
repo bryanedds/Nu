@@ -82,8 +82,9 @@ module Gaia =
 
     let private populateOverlayComboBox (form : GaiaForm) world =
         form.overlayComboBox.Items.Clear ()
-        form.overlayComboBox.Items.Add "(No Overlay)" |> ignore
         form.overlayComboBox.Items.Add "(Default Overlay)" |> ignore
+        form.overlayComboBox.Items.Add "(Routed Overlay)" |> ignore
+        form.overlayComboBox.Items.Add "(No Overlay)" |> ignore
         for overlay in World.getExtrinsicOverlays world do
             form.overlayComboBox.Items.Add overlay.OverlayName |> ignore
         form.overlayComboBox.SelectedIndex <- 0
@@ -592,12 +593,13 @@ module Gaia =
             try let world = pushPastWorld world world
                 let selectedLayer = (World.getUserValue world).SelectedLayer
                 let dispatcherName = form.createEntityComboBox.Text
-                let overlayNameOpt =
+                let overlayNameDescriptor =
                     match form.overlayComboBox.Text with
-                    | "(No Overlay)" -> None
-                    | "(Default Overlay)" -> Some dispatcherName
-                    | overlayName -> Some overlayName
-                let (entity, world) = World.createEntity5 dispatcherName None (overlayNameOpt, ()) selectedLayer world
+                    | "(Default Overlay)" -> DefaultOverlay
+                    | "(Routed Overlay)" -> RoutedOverlay
+                    | "(No Overlay)" -> NoOverlay
+                    | overlayName -> ExplicitOverlay overlayName
+                let (entity, world) = World.createEntity5 dispatcherName None overlayNameDescriptor selectedLayer world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =

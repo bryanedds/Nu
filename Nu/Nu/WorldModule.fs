@@ -357,6 +357,14 @@ module WorldModule =
         static member internal getOverlayRouter world =
             World.getAmbientStateBy AmbientState.getOverlayRouter world
 
+        static member internal getOverlayRouterBy by world =
+            let overlayRouter = World.getOverlayRouter world
+            by overlayRouter
+
+        /// Try to get the routed optional overlay name.
+        static member tryFindRoutedOverlayNameOpt dispatcherName state =
+            World.getOverlayRouterBy (OverlayRouter.tryFindOverlayNameOpt dispatcherName) state
+
         static member internal getSymbolStoreBy by world =
             World.getAmbientStateBy (AmbientState.getSymbolStoreBy by) world
 
