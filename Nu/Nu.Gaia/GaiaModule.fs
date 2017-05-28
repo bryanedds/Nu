@@ -67,20 +67,35 @@ module Gaia =
                     else node.Collapse ())
             treeState
 
-    let private addTreeViewNode (form : GaiaForm) (entity : Entity) world =
-        let entityCategoryName = getTypeName ^ entity.GetDispatcherNp world
-        let treeCategory = form.treeView.Nodes.[entityCategoryName]
-        let treeCategoryNodeName = scstring entity.EntityAddress
-        if not ^ treeCategory.Nodes.ContainsKey treeCategoryNodeName then
-            let treeCategoryNode = TreeNode (entity.GetName world)
-            treeCategoryNode.Name <- treeCategoryNodeName
-            treeCategory.Nodes.Add treeCategoryNode |> ignore
-        else () // when changing an entity name, entity will be added twice - once from win forms, once from world
+    let private addEntityTreeViewNode (form : GaiaForm) (entity : Entity) world =
+        let entityGroupName = getTypeName (entity.GetDispatcherNp world)
+        let treeGroup = form.entityTreeView.Nodes.[entityGroupName]
+        let treeGroupNodeName = scstring entity.EntityAddress
+        if treeGroup.Nodes.ContainsKey treeGroupNodeName
+        then () // when changing an entity name, entity will be added twice - once from win forms, once from world
+        else
+            let treeGroupNode = TreeNode (entity.GetName world)
+            treeGroupNode.Name <- treeGroupNodeName
+            treeGroup.Nodes.Add treeGroupNode |> ignore
 
-    let private clearTreeViewNodes (form : GaiaForm) =
-        form.treeView.Nodes.Clear ()
+    let private removeEntityTreeViewNode (form : GaiaForm) (entity : Participant) (_ : World) =
+        match form.entityTreeView.Nodes.Find (scstring entity.ParticipantAddress, true) with
+        | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
+        | treeNodes -> form.entityTreeView.Nodes.Remove treeNodes.[0]
 
-    let private populateOverlayComboBox (form : GaiaForm) world =
+    let private setEntityTreeViewSelectionToEntityPropertyGridSelection (form : GaiaForm) =
+        match form.entityPropertyGrid.SelectedObject with
+        | :? EntityTypeDescriptorSource as entityTds ->
+            match form.entityTreeView.Nodes.Find (scstring entityTds.DescribedEntity.EntityAddress, true) with
+            | [||] -> form.entityTreeView.SelectedNode <- null
+            | nodes ->
+                let node = nodes.[0]
+                if node.Parent.IsExpanded
+                then form.entityTreeView.SelectedNode <- node; node.EnsureVisible ()
+                else form.entityTreeView.SelectedNode <- null
+        | _ -> form.entityTreeView.SelectedNode <- null
+
+    let private refreshOverlayComboBox (form : GaiaForm) world =
         form.overlayComboBox.Items.Clear ()
         form.overlayComboBox.Items.Add "(Default Overlay)" |> ignore
         form.overlayComboBox.Items.Add "(Routed Overlay)" |> ignore
@@ -89,28 +104,46 @@ module Gaia =
             form.overlayComboBox.Items.Add overlay.OverlayName |> ignore
         form.overlayComboBox.SelectedIndex <- 0
 
-    let private populateCreateComboBox (form : GaiaForm) world =
+    let private refreshCreateComboBox (form : GaiaForm) world =
         form.createEntityComboBox.Items.Clear ()
         for dispatcherKvp in World.getEntityDispatchers world do
             form.createEntityComboBox.Items.Add dispatcherKvp.Key |> ignore
         form.createEntityComboBox.SelectedIndex <- 0
 
-    let private populateTreeViewLayers (form : GaiaForm) world =
+    let private refreshEntityTreeView (form : GaiaForm) world =
+        let treeState = getExpansionState form.entityTreeView
+        form.entityTreeView.Nodes.Clear ()
         for dispatcherKvp in World.getEntityDispatchers world do
             let treeNode = TreeNode dispatcherKvp.Key
             treeNode.Name <- treeNode.Text
-            form.treeView.Nodes.Add treeNode |> ignore
-
-    let private populateTreeViewNodes (form : GaiaForm) world =
+            form.entityTreeView.Nodes.Add treeNode |> ignore
         let selectedLayer = (World.getUserValue world).SelectedLayer
         for entity in World.getEntities selectedLayer world do
-            addTreeViewNode form entity world
+            addEntityTreeViewNode form entity world
+        restoreExpansionState form.entityTreeView treeState
+        setEntityTreeViewSelectionToEntityPropertyGridSelection form
 
-    let private populateLayerTabs (form : GaiaForm) world =
+    let private refreshHierarchyTreeView (form : GaiaForm) world =
+        let treeState = getExpansionState form.hierarchyTreeView
+        form.hierarchyTreeView.Nodes.Clear ()
+        let layers = World.getLayers Simulants.EditorScreen world
+        for layer in layers do
+            let layerNode = TreeNode layer.LayerName
+            layerNode.Name <- scstring layer
+            form.hierarchyTreeView.Nodes.Add layerNode |> ignore
+            let entities = World.getEntities layer world
+            for entity in entities do
+                let entityNode = TreeNode entity.EntityName
+                entityNode.Name <- scstring entity
+                layerNode.Nodes.Add entityNode |> ignore
+        restoreExpansionState form.hierarchyTreeView treeState
+        //setHierarchyTreeViewSelectionToEntityPropertyGridSelection form
+
+    let private refreshLayerTabs (form : GaiaForm) world =
 
         // add layers imperatively to preserve existing layer tabs 
         let layers = World.getLayers Simulants.EditorScreen world
-        let layerTabPages = form.layerTabs.TabPages
+        let layerTabPages = form.layerTabControl.TabPages
         for layer in layers do
             let layerName = layer.LayerName
             if not ^ layerTabPages.ContainsKey layerName then
@@ -121,35 +154,15 @@ module Gaia =
             if Seq.notExists (fun (layer : Layer) -> layer.LayerName = layerTabPage.Name) layers then
                 layerTabPages.RemoveByKey layerTabPage.Name
 
-    let private setTreeViewSelectionToEntityPropertyGridSelection (form : GaiaForm) =
-        match form.entityPropertyGrid.SelectedObject with
-        | :? EntityTypeDescriptorSource as entityTds ->
-            match form.treeView.Nodes.Find (scstring entityTds.DescribedEntity.EntityAddress, true) with
-            | [||] -> form.treeView.SelectedNode <- null
-            | nodes ->
-                let node = nodes.[0]
-                if node.Parent.IsExpanded
-                then form.treeView.SelectedNode <- node; node.EnsureVisible ()
-                else form.treeView.SelectedNode <- null
-        | _ -> form.treeView.SelectedNode <- null
-
     let private selectEntity (form : GaiaForm) entity world =
-        let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
         RefWorld := world // must be set for property grid
+        let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
         form.entityPropertyGrid.SelectedObject <- entityTds
         form.propertyTabControl.SelectTab 0 // show entity properties
 
     let private deselectEntity (form : GaiaForm) world =
         RefWorld := world // must be set for property grid
         form.entityPropertyGrid.SelectedObject <- null
-
-    let private refreshTreeView (form : GaiaForm) world =
-        let treeState = getExpansionState form.treeView
-        clearTreeViewNodes form
-        populateTreeViewLayers form world
-        populateTreeViewNodes form world
-        restoreExpansionState form.treeView treeState
-        setTreeViewSelectionToEntityPropertyGridSelection form
 
     let private refreshEntityPropertyGrid (form : GaiaForm) world =
         match form.entityPropertyGrid.SelectedObject with
@@ -178,15 +191,13 @@ module Gaia =
             else deselectLayer form world
         | _ -> ()
 
-    let private refreshLayerTabs (form : GaiaForm) world =
-        populateLayerTabs form world
-
     let private refreshFormOnUndoRedo (form : GaiaForm) world =
         form.tickingButton.Checked <- false
         refreshEntityPropertyGrid form world
         refreshLayerPropertyGrid form world
         refreshLayerTabs form world
-        refreshTreeView form world
+        refreshEntityTreeView form world
+        refreshHierarchyTreeView form world
 
     let private canEditWithMouse (form : GaiaForm) world =
         World.isTicking world &&
@@ -203,14 +214,14 @@ module Gaia =
 
     let private handleNuEntityRegister (form : GaiaForm) evt world =
         let entity = Entity (atoa evt.Publisher.ParticipantAddress)
-        addTreeViewNode form entity world
+        addEntityTreeViewNode form entity world
+        refreshHierarchyTreeView form world
         selectEntity form entity world
         (Cascade, world)
 
     let private handleNuEntityUnregistering (form : GaiaForm) evt world =
-        match form.treeView.Nodes.Find (scstring evt.Publisher.ParticipantAddress, true) with
-        | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
-        | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
+        removeEntityTreeViewNode form evt.Publisher world
+        refreshHierarchyTreeView form world
         match form.entityPropertyGrid.SelectedObject with
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
@@ -312,13 +323,14 @@ module Gaia =
             if not (layer.GetExists world) then
                 let (layer, world) = World.readLayer layerDescriptor None Simulants.EditorScreen world
                 let layerName = layer.GetName world
-                form.layerTabs.SelectedTab.Text <- layerName
-                form.layerTabs.SelectedTab.Name <- layerName
+                form.layerTabControl.SelectedTab.Text <- layerName
+                form.layerTabControl.SelectedTab.Name <- layerName
                 let world = World.updateUserValue (fun editorState -> { editorState with SelectedLayer = layer }) world
                 let world = subscribeToEntityEvents form world
 
-                // refresh tree view
-                refreshTreeView form world
+                // refresh tree views
+                refreshEntityTreeView form world
+                refreshHierarchyTreeView form world
                 world
             
             // handle load failure
@@ -519,7 +531,7 @@ module Gaia =
         let overlayDir = Path.Combine (targetDir, "..\\..")
         match World.tryReloadOverlays overlayDir targetDir world with
         | Right (overlayer, world) ->
-            populateOverlayComboBox form world
+            refreshOverlayComboBox form world
             Right (overlayer, world)
         | Left _ as error -> error
 
@@ -551,7 +563,7 @@ module Gaia =
 
     let private handleFormEntityPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
-        setTreeViewSelectionToEntityPropertyGridSelection form
+        setEntityTreeViewSelectionToEntityPropertyGridSelection form
 
     let private handleFormEntityPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
@@ -573,18 +585,46 @@ module Gaia =
     let private handleFormPropertyApplyClick (form : GaiaForm) (_ : EventArgs) =
         applyPropertyEditor form
 
-    let private handleFormTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormEntityTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            if  isNotNull form.treeView.SelectedNode &&
-                form.treeView.SelectedNode.Level = 1 then
-                let entity = Entity (Address.makeFromString form.treeView.SelectedNode.Name)
-                match Address.getNames entity.EntityAddress with
+            if  isNotNull form.entityTreeView.SelectedNode &&
+                form.entityTreeView.SelectedNode.Level = 1 then
+                let address = Address.makeFromString form.entityTreeView.SelectedNode.Name
+                match Address.getNames address with
                 | [_; _; _] ->
-                    RefWorld := world // must be set for property grid
-                    let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
-                    form.entityPropertyGrid.SelectedObject <- entityTds
-                    form.propertyTabControl.SelectTab 0 // show entity properties
+                    let entity = Entity address
+                    selectEntity form entity world
                     world
+                | _ -> world // don't have an entity address
+            else world
+
+    let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
+        addWorldChanger ^ fun world ->
+            if isNotNull form.hierarchyTreeView.SelectedNode then
+                let address = Address.makeFromString form.hierarchyTreeView.SelectedNode.Name
+                match Address.getNames address with
+                | [_; _] ->
+
+                    // select the layer of the selected entity
+                    let layer = Layer (atoa address)
+                    let layerTabIndex = form.layerTabControl.TabPages.IndexOfKey layer.LayerName
+                    form.layerTabControl.SelectTab layerTabIndex
+                    world
+
+                | [_; _; _] ->
+
+                    // get a handle to the selected entity
+                    let entity = Entity (atoa address)
+
+                    // select the layer of the selected entity
+                    let layer = etol entity
+                    let layerTabIndex = form.layerTabControl.TabPages.IndexOfKey layer.LayerName
+                    form.layerTabControl.SelectTab layerTabIndex
+
+                    // select the entity in the property grid
+                    selectEntity form entity world
+                    world
+
                 | _ -> world // don't have an entity address
             else world
 
@@ -613,9 +653,7 @@ module Gaia =
                       Depth = getCreationDepth form }
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
                 let world = entity.PropagatePhysics world
-                RefWorld := world // must be set for property grid
-                let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
-                form.entityPropertyGrid.SelectedObject <- entityTds
+                selectEntity form entity world
                 world
             with exn ->
                 let world = World.choose world
@@ -644,7 +682,8 @@ module Gaia =
                 try if String.length layerName = 0 then failwith "Layer name cannot be empty in Gaia due to WinForms limitations."
                     let world = World.createLayer4 layerDispatcherName (Some layerName) Simulants.EditorScreen world |> snd
                     refreshLayerTabs form world
-                    form.layerTabs.SelectTab (form.layerTabs.TabPages.IndexOfKey layerName)
+                    refreshHierarchyTreeView form world
+                    form.layerTabControl.SelectTab (form.layerTabControl.TabPages.IndexOfKey layerName)
                     world
                 with exn ->
                     let world = World.choose world
@@ -678,7 +717,7 @@ module Gaia =
 
     let private handleFormClose (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            match form.layerTabs.TabPages.Count with
+            match form.layerTabControl.TabPages.Count with
             | 1 ->
                 MessageBox.Show ("Cannot close the only remaining layer.", "Layer close error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
@@ -687,10 +726,10 @@ module Gaia =
                 let layer = (World.getUserValue world).SelectedLayer
                 let world = World.destroyLayerImmediate layer world
                 deselectEntity form world
-                form.layerTabs.TabPages.RemoveByKey layer.LayerName
+                form.layerTabControl.TabPages.RemoveByKey layer.LayerName
                 World.updateUserValue (fun editorState ->
-                    let layerTabs = form.layerTabs
-                    let layerTab = layerTabs.SelectedTab
+                    let layerTabControl = form.layerTabControl
+                    let layerTab = layerTabControl.SelectedTab
                     { editorState with SelectedLayer = stol Simulants.EditorScreen layerTab.Text })
                     world
 
@@ -799,7 +838,7 @@ module Gaia =
         addWorldChanger ^ fun world ->
             let world = unsubscribeFromEntityEvents world
             deselectEntity form world
-            refreshTreeView form world
+            refreshEntityTreeView form world
             refreshEntityPropertyGrid form world
             refreshLayerPropertyGrid form world
             world
@@ -807,12 +846,12 @@ module Gaia =
     let private handleFormLayerTabSelected (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             let selectedLayer =
-                let layerTabs = form.layerTabs
-                let layerTab = layerTabs.SelectedTab
+                let layerTabControl = form.layerTabControl
+                let layerTab = layerTabControl.SelectedTab
                 stol Simulants.EditorScreen layerTab.Text
             let world = World.updateUserValue (fun editorState -> { editorState with SelectedLayer = selectedLayer}) world
             let world = subscribeToEntityEvents form world
-            refreshTreeView form world
+            refreshEntityTreeView form world
             refreshEntityPropertyGrid form world
             selectLayer form selectedLayer world
             world
@@ -1037,10 +1076,11 @@ module Gaia =
 
     let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
         RefWorld := attachToWorld targetDir form !RefWorld
-        populateOverlayComboBox form !RefWorld
-        populateCreateComboBox form !RefWorld
-        populateTreeViewLayers form !RefWorld
-        populateLayerTabs form !RefWorld
+        refreshOverlayComboBox form !RefWorld
+        refreshCreateComboBox form !RefWorld
+        refreshEntityTreeView form !RefWorld
+        refreshHierarchyTreeView form !RefWorld
+        refreshLayerTabs form !RefWorld
         selectLayer form Simulants.DefaultLayer !RefWorld
         form.tickingButton.CheckState <- CheckState.Unchecked
         tryRun3 runWhile sdlDeps (form : GaiaForm)
@@ -1077,9 +1117,8 @@ module Gaia =
         form.rotationSnapTextBox.Text <- scstring Constants.Editor.DefaultRotationSnap
         form.createDepthTextBox.Text <- scstring Constants.Editor.DefaultCreationDepth
 
-        // sort tree view nodes with a bias against guids
-        form.treeView.Sorted <- true
-        form.treeView.TreeViewNodeSorter <-
+        // build tree view sorter
+        let treeViewSorter =
             { new IComparer with
                 member this.Compare (left, right) =
                     let leftName = ((left :?> TreeNode).Name.Split Constants.Address.Separator) |> Array.last
@@ -1087,6 +1126,14 @@ module Gaia =
                     let leftNameBiased = if String.isGuid leftName then "~" + leftName else leftName
                     let rightNameBiased = if String.isGuid rightName then "~" + rightName else rightName
                     String.CompareOrdinal (leftNameBiased, rightNameBiased) }
+
+        // sort entity tree view nodes with a bias against guids
+        form.entityTreeView.Sorted <- true
+        form.entityTreeView.TreeViewNodeSorter <- treeViewSorter
+
+        // same for hierarchy tree view...
+        form.hierarchyTreeView.Sorted <- true
+        form.hierarchyTreeView.TreeViewNodeSorter <- treeViewSorter
 
         // set up events handlers
         form.exitToolStripMenuItem.Click.Add (handleFormExit form)
@@ -1108,7 +1155,8 @@ module Gaia =
         form.loadAssetGraphButton.Click.Add (handleLoadAssetGraphClick form)
         form.saveOverlayerButton.Click.Add (handleSaveOverlayerClick form)
         form.loadOverlayerButton.Click.Add (handleLoadOverlayerClick form)
-        form.treeView.AfterSelect.Add (handleFormTreeViewNodeSelect form)
+        form.entityTreeView.AfterSelect.Add (handleFormEntityTreeViewNodeSelect form)
+        form.hierarchyTreeView.AfterSelect.Add (handleFormHierarchyTreeViewNodeSelect form)
         form.createEntityButton.Click.Add (handleFormCreateEntity false form)
         form.createToolStripMenuItem.Click.Add (handleFormCreateEntity false form)
         form.createContextMenuItem.Click.Add (handleFormCreateEntity true form)
@@ -1134,8 +1182,8 @@ module Gaia =
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
         form.resetCameraButton.Click.Add (handleFormResetCamera form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
-        form.layerTabs.Deselected.Add (handleFormLayerTabDeselected form)
-        form.layerTabs.Selected.Add (handleFormLayerTabSelected form)
+        form.layerTabControl.Deselected.Add (handleFormLayerTabDeselected form)
+        form.layerTabControl.Selected.Add (handleFormLayerTabSelected form)
         form.evalButton.Click.Add (handleEvalClick form)
         form.clearOutputButton.Click.Add (handleClearOutputClick form)
         form.createEntityComboBox.SelectedIndexChanged.Add (handleCreateEntityComboBoxSelectedIndexChanged form)
