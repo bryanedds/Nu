@@ -10,7 +10,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module MountFacetModule =
+module NodeFacetModule =
 
     type Entity with
     
@@ -38,7 +38,7 @@ module MountFacetModule =
             | Some nodeRelation -> (this.Resolve nodeRelation).GetExists world
             | None -> false
 
-    type MountFacet () =
+    type NodeFacet () =
         inherit Facet ()
 
         static let updatePropertyFromLocal3 propertyName (entity : Entity) world =
@@ -589,7 +589,7 @@ module NodeDispatcherModule =
         inherit EntityDispatcher ()
 
         static member IntrinsicFacetNames =
-            [typeof<MountFacet>.Name]
+            [typeof<NodeFacet>.Name]
 
 [<AutoOpen>]
 module EffectDispatcherModule =
@@ -633,7 +633,7 @@ module GuiDispatcherModule =
             (handling, world)
 
         static member IntrinsicFacetNames =
-            [typeof<MountFacet>.Name
+            [typeof<NodeFacet>.Name
              typeof<ScriptFacet>.Name]
 
         static member PropertyDefinitions =
