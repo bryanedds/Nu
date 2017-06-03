@@ -94,8 +94,7 @@ module NodeFacetModule =
             let data = evt.Data : EntityChangeData
             (Cascade, updatePropertyFromNode data.PropertyName node entity world)
 
-        static let rec handleNodeChange evt world =
-            let entity = evt.Subscriber : Entity
+        static let subscribeToNodePropertyChanges (entity : Entity) world =
             let world = (entity.GetNodeUnsubscribeNp world) world
             match entity.GetNodeOpt world with
             | Some nodeRelation ->
@@ -106,6 +105,9 @@ module NodeFacetModule =
                 let (unsubscribe4, world) = World.monitorPlus handleNodePropertyChange node.Enabled.Change entity world
                 entity.SetNodeUnsubscribeNp (unsubscribe4 >> unsubscribe3 >> unsubscribe2 >> unsubscribe) world
             | None -> world
+
+        static let handleNodeChange evt world =
+            subscribeToNodePropertyChanges evt.Subscriber world
 
         static member PropertyDefinitions =
             [Define? NodeOpt (None : Entity Relation option)
@@ -122,6 +124,7 @@ module NodeFacetModule =
             let world = World.monitorPlus handleLocalPropertyChange entity.DepthLocal.Change entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.Change entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.EnabledLocal.Change entity world |> snd
+            let world = subscribeToNodePropertyChanges entity world
             world
 
         override facet.Unregister (entity, world) =
