@@ -18,7 +18,7 @@ type internal OverlayState =
 /// An overlay.
 [<Syntax
     ("EntityDispatcher GuiDispatcher",
-     "MountFacet EffectFacet ScriptFacet RigidBodyFacet StaticSpriteFacet AnimatedSpriteFacet",
+     "NodeFacet EffectFacet ScriptFacet RigidBodyFacet StaticSpriteFacet AnimatedSpriteFacet",
      "", "", "",
      Constants.PrettyPrinter.StructuredThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]
