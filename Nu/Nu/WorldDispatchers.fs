@@ -10,132 +10,6 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module NodeFacetModule =
-
-    type Entity with
-    
-        member this.GetNodeOpt world : Entity Relation option = this.Get Property? NodeOpt world
-        member this.SetNodeOpt (value : Entity Relation option) world = this.Set Property? NodeOpt value world
-        member this.NodeOpt = PropertyTag.make this Property? NodeOpt this.GetNodeOpt this.SetNodeOpt
-        member this.GetPositionLocal world : Vector2 = this.Get Property? PositionLocal world
-        member this.SetPositionLocal (value : Vector2) world = this.Set Property? PositionLocal value world
-        member this.PositionLocal = PropertyTag.make this Property? PositionLocal this.GetPositionLocal this.SetPositionLocal
-        member this.GetDepthLocal world : single = this.Get Property? DepthLocal world
-        member this.SetDepthLocal (value : single) world = this.Set Property? DepthLocal value world
-        member this.DepthLocal = PropertyTag.make this Property? DepthLocal this.GetDepthLocal this.SetDepthLocal
-        member this.GetVisibleLocal world : bool = this.Get Property? VisibleLocal world
-        member this.SetVisibleLocal (value : bool) world = this.Set Property? VisibleLocal value world
-        member this.VisibleLocal = PropertyTag.make this Property? VisibleLocal this.GetVisibleLocal this.SetVisibleLocal
-        member this.GetEnabledLocal world : bool = this.Get Property? EnabledLocal world
-        member this.SetEnabledLocal (value : bool) world = this.Set Property? EnabledLocal value world
-        member this.EnabledLocal = PropertyTag.make this Property? EnabledLocal this.GetEnabledLocal this.SetEnabledLocal
-        member private this.GetNodeUnsubscribeNp world : World -> World = this.Get Property? NodeUnsubscribeNp world
-        member private this.SetNodeUnsubscribeNp (value : World -> World) world = this.Set Property? NodeUnsubscribeNp value world
-        member private this.NodeUnsubscribeNp = PropertyTag.make this Property? NodeUnsubscribeNp this.GetNodeUnsubscribeNp this.SetNodeUnsubscribeNp
-
-        member private this.GetNodes2 nodes world =
-            let nodeOpt =
-                if this.HasFacet typeof<NodeFacet> world
-                then Option.map this.Resolve (this.GetNodeOpt world)
-                else None
-            match nodeOpt with
-            | Some node -> node.GetNodes2 (node :: nodes) world
-            | None -> nodes
-        
-        member this.GetNodes world =
-            this.GetNodes2 [] world
-
-        member this.NodeExists world =
-            match this.GetNodeOpt world with
-            | Some nodeRelation -> (this.Resolve nodeRelation).GetExists world
-            | None -> false
-
-    and NodeFacet () =
-        inherit Facet ()
-
-        static let updatePropertyFromLocal3 propertyName (entity : Entity) world =
-            match propertyName with
-            | "Position" -> entity.SetPosition (entity.GetPositionLocal world) world
-            | "Depth" -> entity.SetDepth (entity.GetDepthLocal world) world
-            | "Visible" -> entity.SetVisible (entity.GetVisibleLocal world) world
-            | "Enabled" -> entity.SetEnabled (entity.GetEnabledLocal world) world
-            | _ -> world
-
-        static let updatePropertyFromLocal propertyName (node : Entity) (entity : Entity) world =
-            match propertyName with
-            | "PositionLocal" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
-            | "DepthLocal" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
-            | "VisibleLocal" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
-            | "EnabledLocal" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
-            | _ -> world
-
-        static let updatePropertyFromNode propertyName (node : Entity) (entity : Entity) world =
-            match propertyName with
-            | "Position" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
-            | "Depth" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
-            | "Visible" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
-            | "Enabled" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
-            | _ -> world
-
-        static let handleLocalPropertyChange evt world =
-            let entity = evt.Subscriber : Entity
-            let data = evt.Data : EntityChangeData
-            match entity.GetNodeOpt world with
-            | Some nodeRelation ->
-                let node = entity.Resolve nodeRelation
-                if World.entityExists node world
-                then (Cascade, updatePropertyFromLocal data.PropertyName node entity world)
-                else (Cascade, updatePropertyFromLocal3 data.PropertyName entity world)
-            | None -> (Cascade, updatePropertyFromLocal3 data.PropertyName entity world)
-
-        static let handleNodePropertyChange evt world =
-            let entity = evt.Subscriber : Entity
-            let node = evt.Publisher :?> Entity
-            let data = evt.Data : EntityChangeData
-            (Cascade, updatePropertyFromNode data.PropertyName node entity world)
-
-        static let subscribeToNodePropertyChanges (entity : Entity) world =
-            let world = (entity.GetNodeUnsubscribeNp world) world
-            match entity.GetNodeOpt world with
-            | Some nodeRelation ->
-                let node = entity.Resolve nodeRelation
-                let (unsubscribe, world) = World.monitorPlus handleNodePropertyChange node.Position.Change entity world
-                let (unsubscribe2, world) = World.monitorPlus handleNodePropertyChange node.Depth.Change entity world
-                let (unsubscribe3, world) = World.monitorPlus handleNodePropertyChange node.Visible.Change entity world
-                let (unsubscribe4, world) = World.monitorPlus handleNodePropertyChange node.Enabled.Change entity world
-                entity.SetNodeUnsubscribeNp (unsubscribe4 >> unsubscribe3 >> unsubscribe2 >> unsubscribe) world
-            | None -> world
-
-        static let handleNodeChange evt world =
-            subscribeToNodePropertyChanges evt.Subscriber world
-
-        static member PropertyDefinitions =
-            [Define? NodeOpt (None : Entity Relation option)
-             Define? PositionLocal Vector2.Zero
-             Define? DepthLocal 0.0f
-             Define? VisibleLocal true
-             Define? EnabledLocal true
-             Define? NodeUnsubscribeNp (id : World -> World)]
-
-        override facet.Register (entity, world) =
-            let world = entity.SetNodeUnsubscribeNp id world // ensure unsubscribe function reference doesn't get copied in Gaia...
-            let world = World.monitor handleNodeChange entity.NodeOpt.Change entity world
-            let world = World.monitorPlus handleLocalPropertyChange entity.PositionLocal.Change entity world |> snd
-            let world = World.monitorPlus handleLocalPropertyChange entity.DepthLocal.Change entity world |> snd
-            let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.Change entity world |> snd
-            let world = World.monitorPlus handleLocalPropertyChange entity.EnabledLocal.Change entity world |> snd
-            let world = subscribeToNodePropertyChanges entity world
-            world
-
-        override facet.Unregister (entity, world) =
-            (entity.GetNodeUnsubscribeNp world) world // NOTE: not sure if this is necessary.
-
-        override facet.TryGetCalculatedProperty (propertyName, entity, world) =
-            match propertyName with
-            | "NodeExists" -> Some { PropertyType = typeof<bool>; PropertyValue = entity.NodeExists world }
-            | _ -> None
-
-[<AutoOpen>]
 module EffectFacetModule =
 
     type EffectTags =
@@ -483,6 +357,140 @@ module RigidBodyFacetModule =
             | _ -> None
 
 [<AutoOpen>]
+module NodeFacetModule =
+
+    type Entity with
+    
+        member this.GetNodeOpt world : Entity Relation option = this.Get Property? NodeOpt world
+        member this.SetNodeOpt (value : Entity Relation option) world = this.Set Property? NodeOpt value world
+        member this.NodeOpt = PropertyTag.make this Property? NodeOpt this.GetNodeOpt this.SetNodeOpt
+        member this.GetPositionLocal world : Vector2 = this.Get Property? PositionLocal world
+        member this.SetPositionLocal (value : Vector2) world = this.Set Property? PositionLocal value world
+        member this.PositionLocal = PropertyTag.make this Property? PositionLocal this.GetPositionLocal this.SetPositionLocal
+        member this.GetDepthLocal world : single = this.Get Property? DepthLocal world
+        member this.SetDepthLocal (value : single) world = this.Set Property? DepthLocal value world
+        member this.DepthLocal = PropertyTag.make this Property? DepthLocal this.GetDepthLocal this.SetDepthLocal
+        member this.GetVisibleLocal world : bool = this.Get Property? VisibleLocal world
+        member this.SetVisibleLocal (value : bool) world = this.Set Property? VisibleLocal value world
+        member this.VisibleLocal = PropertyTag.make this Property? VisibleLocal this.GetVisibleLocal this.SetVisibleLocal
+        member this.GetEnabledLocal world : bool = this.Get Property? EnabledLocal world
+        member this.SetEnabledLocal (value : bool) world = this.Set Property? EnabledLocal value world
+        member this.EnabledLocal = PropertyTag.make this Property? EnabledLocal this.GetEnabledLocal this.SetEnabledLocal
+        member private this.GetNodeUnsubscribeNp world : World -> World = this.Get Property? NodeUnsubscribeNp world
+        member private this.SetNodeUnsubscribeNp (value : World -> World) world = this.Set Property? NodeUnsubscribeNp value world
+        member private this.NodeUnsubscribeNp = PropertyTag.make this Property? NodeUnsubscribeNp this.GetNodeUnsubscribeNp this.SetNodeUnsubscribeNp
+
+        member private this.GetNodes2 nodes world =
+            let nodeOpt =
+                if this.HasFacet typeof<NodeFacet> world
+                then Option.map this.Resolve (this.GetNodeOpt world)
+                else None
+            match nodeOpt with
+            | Some node -> node.GetNodes2 (node :: nodes) world
+            | None -> nodes
+        
+        member this.GetNodes world =
+            this.GetNodes2 [] world
+
+        member this.NodeExists world =
+            match this.GetNodeOpt world with
+            | Some nodeRelation -> (this.Resolve nodeRelation).GetExists world
+            | None -> false
+
+    and NodeFacet () =
+        inherit Facet ()
+
+        static let updatePropertyFromLocal3 propertyName (entity : Entity) world =
+            match propertyName with
+            | "Position" -> entity.SetPosition (entity.GetPositionLocal world) world
+            | "Depth" -> entity.SetDepth (entity.GetDepthLocal world) world
+            | "Visible" -> entity.SetVisible (entity.GetVisibleLocal world) world
+            | "Enabled" -> entity.SetEnabled (entity.GetEnabledLocal world) world
+            | _ -> world
+
+        static let updatePropertyFromLocal propertyName (node : Entity) (entity : Entity) world =
+            match propertyName with
+            | "PositionLocal" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
+            | "DepthLocal" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
+            | "VisibleLocal" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
+            | "EnabledLocal" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
+            | _ -> world
+
+        static let updatePropertyFromNode propertyName (node : Entity) (entity : Entity) world =
+            match propertyName with
+            | "Position" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
+            | "Depth" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
+            | "Visible" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
+            | "Enabled" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
+            | _ -> world
+
+        static let handleLocalPropertyChange evt world =
+            let entity = evt.Subscriber : Entity
+            let data = evt.Data : EntityChangeData
+            match entity.GetNodeOpt world with
+            | Some nodeRelation ->
+                let node = entity.Resolve nodeRelation
+                if World.entityExists node world
+                then (Cascade, updatePropertyFromLocal data.PropertyName node entity world)
+                else (Cascade, updatePropertyFromLocal3 data.PropertyName entity world)
+            | None -> (Cascade, updatePropertyFromLocal3 data.PropertyName entity world)
+
+        static let handleNodePropertyChange evt world =
+            let entity = evt.Subscriber : Entity
+            let node = evt.Publisher :?> Entity
+            let data = evt.Data : EntityChangeData
+            (Cascade, updatePropertyFromNode data.PropertyName node entity world)
+
+        static let subscribeToNodePropertyChanges (entity : Entity) world =
+            let oldWorld = world
+            let world = (entity.GetNodeUnsubscribeNp world) world
+            match entity.GetNodeOpt world with
+            | Some nodeRelation ->
+                let node = entity.Resolve nodeRelation
+                if node = entity then
+                    Log.trace "Cannot mount entity to itself."
+                    World.choose oldWorld
+                elif entity.HasFacet typeof<RigidBodyFacet> world then
+                    Log.trace "Mounting is not implemented for rigid bodies. Instead use physics constraints."
+                    World.choose oldWorld
+                else
+                    let (unsubscribe, world) = World.monitorPlus handleNodePropertyChange node.Position.Change entity world
+                    let (unsubscribe2, world) = World.monitorPlus handleNodePropertyChange node.Depth.Change entity world
+                    let (unsubscribe3, world) = World.monitorPlus handleNodePropertyChange node.Visible.Change entity world
+                    let (unsubscribe4, world) = World.monitorPlus handleNodePropertyChange node.Enabled.Change entity world
+                    entity.SetNodeUnsubscribeNp (unsubscribe4 >> unsubscribe3 >> unsubscribe2 >> unsubscribe) world
+            | None -> world
+
+        static let handleNodeChange evt world =
+            subscribeToNodePropertyChanges evt.Subscriber world
+
+        static member PropertyDefinitions =
+            [Define? NodeOpt (None : Entity Relation option)
+             Define? PositionLocal Vector2.Zero
+             Define? DepthLocal 0.0f
+             Define? VisibleLocal true
+             Define? EnabledLocal true
+             Define? NodeUnsubscribeNp (id : World -> World)]
+
+        override facet.Register (entity, world) =
+            let world = entity.SetNodeUnsubscribeNp id world // ensure unsubscribe function reference doesn't get copied in Gaia...
+            let world = World.monitor handleNodeChange entity.NodeOpt.Change entity world
+            let world = World.monitorPlus handleLocalPropertyChange entity.PositionLocal.Change entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.DepthLocal.Change entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.Change entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.EnabledLocal.Change entity world |> snd
+            let world = subscribeToNodePropertyChanges entity world
+            world
+
+        override facet.Unregister (entity, world) =
+            (entity.GetNodeUnsubscribeNp world) world // NOTE: not sure if this is necessary.
+
+        override facet.TryGetCalculatedProperty (propertyName, entity, world) =
+            match propertyName with
+            | "NodeExists" -> Some { PropertyType = typeof<bool>; PropertyValue = entity.NodeExists world }
+            | _ -> None
+
+[<AutoOpen>]
 module StaticSpriteFacetModule =
 
     type Entity with
@@ -598,15 +606,6 @@ module ImperativeDispatcherModule =
         interface Imperative
 
 [<AutoOpen>]
-module NodeDispatcherModule =
-
-    type NodeDispatcher () =
-        inherit EntityDispatcher ()
-
-        static member IntrinsicFacetNames =
-            [typeof<NodeFacet>.Name]
-
-[<AutoOpen>]
 module EffectDispatcherModule =
 
     type EffectDispatcher () =
@@ -617,6 +616,15 @@ module EffectDispatcherModule =
 
         static member IntrinsicFacetNames =
             [typeof<EffectFacet>.Name]
+
+[<AutoOpen>]
+module NodeDispatcherModule =
+
+    type NodeDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member IntrinsicFacetNames =
+            [typeof<NodeFacet>.Name]
 
 [<AutoOpen>]
 module GuiDispatcherModule =
