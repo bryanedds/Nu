@@ -32,13 +32,25 @@ module NodeFacetModule =
         member private this.GetNodeUnsubscribeNp world : World -> World = this.Get Property? NodeUnsubscribeNp world
         member private this.SetNodeUnsubscribeNp (value : World -> World) world = this.Set Property? NodeUnsubscribeNp value world
         member private this.NodeUnsubscribeNp = PropertyTag.make this Property? NodeUnsubscribeNp this.GetNodeUnsubscribeNp this.SetNodeUnsubscribeNp
+
+        member private this.GetNodes2 nodes world =
+            let nodeOpt =
+                if this.HasFacet typeof<NodeFacet> world
+                then Option.map this.Resolve (this.GetNodeOpt world)
+                else None
+            match nodeOpt with
+            | Some node -> node.GetNodes2 (node :: nodes) world
+            | None -> nodes
         
+        member this.GetNodes world =
+            this.GetNodes2 [] world
+
         member this.NodeExists world =
             match this.GetNodeOpt world with
             | Some nodeRelation -> (this.Resolve nodeRelation).GetExists world
             | None -> false
 
-    type NodeFacet () =
+    and NodeFacet () =
         inherit Facet ()
 
         static let updatePropertyFromLocal3 propertyName (entity : Entity) world =

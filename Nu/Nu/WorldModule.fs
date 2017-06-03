@@ -300,6 +300,17 @@ module WorldModule =
         static member addTasklets tasklets world =
             World.updateAmbientState (AmbientState.addTasklets tasklets) world
 
+        /// Schedule an operation to be executed by the engine at the given time.
+        [<FunctionBinding>]
+        static member schedule fn time world =
+            let tasklet = { ScheduledTime = time; Command = { Execute = fn }}
+            World.addTasklet tasklet world
+
+        /// Schedule an operation to be executed by the engine at the end of the current frame.
+        [<FunctionBinding>]
+        static member schedule2 fn world =
+            World.schedule fn (World.getTickTime world) world
+
         static member internal getMetadata world =
             AmbientState.getMetadata (World.getAmbientState world)
 

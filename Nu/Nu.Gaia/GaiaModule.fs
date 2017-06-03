@@ -7,6 +7,7 @@ open OpenTK
 open System
 open System.IO
 open System.Collections
+open System.Collections.Generic
 open System.ComponentModel
 open System.Linq
 open System.Reflection
@@ -133,9 +134,15 @@ module Gaia =
             form.hierarchyTreeView.Nodes.Add layerNode |> ignore
             let entities = World.getEntities layer world
             for entity in entities do
-                let entityNode = TreeNode entity.EntityName
-                entityNode.Name <- scstring entity
-                layerNode.Nodes.Add entityNode |> ignore
+                let mutable parentNode = layerNode
+                for entity in entity.GetNodes world @ [entity] do
+                    let entityNodeKey = scstring entity
+                    if not (parentNode.Nodes.ContainsKey entityNodeKey) then
+                        let entityNode = TreeNode entity.EntityName
+                        entityNode.Name <- entityNodeKey
+                        parentNode.Nodes.Add entityNode |> ignore
+                        parentNode <- entityNode
+                    else parentNode <- parentNode.Nodes.[entityNodeKey]
         restoreExpansionState form.hierarchyTreeView treeState
         //setHierarchyTreeViewSelectionToEntityPropertyGridSelection form
 
@@ -212,6 +219,10 @@ module Gaia =
             (Some entity, world)
         | None -> (None, world)
 
+    let private handleNuChangeNodeOpt form _ world =
+        refreshHierarchyTreeView form world
+        (Cascade, world)
+
     let private handleNuEntityRegister (form : GaiaForm) evt world =
         let entity = Entity (atoa evt.Publisher.ParticipantAddress)
         addEntityTreeViewNode form entity world
@@ -221,7 +232,7 @@ module Gaia =
 
     let private handleNuEntityUnregistering (form : GaiaForm) evt world =
         removeEntityTreeViewNode form evt.Publisher world
-        refreshHierarchyTreeView form world
+        let world = World.schedule2 (fun world -> refreshHierarchyTreeView form world; world) world
         match form.entityPropertyGrid.SelectedObject with
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
@@ -289,11 +300,13 @@ module Gaia =
 
     let private subscribeToEntityEvents form world =
         let selectedLayer = (World.getUserValue world).SelectedLayer
+        let world = World.subscribePlus Constants.SubscriptionKeys.ChangeNodeOpt (handleNuChangeNodeOpt form) (Events.EntityChange Property? NodeOpt ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
         let world = World.subscribePlus Constants.SubscriptionKeys.RegisterEntity (handleNuEntityRegister form) (Events.EntityRegister ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
         let world = World.subscribePlus Constants.SubscriptionKeys.UnregisteringEntity (handleNuEntityUnregistering form) (Events.EntityUnregistering ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
         world
 
     let private unsubscribeFromEntityEvents world =
+        let world = World.unsubscribe Constants.SubscriptionKeys.ChangeNodeOpt world
         let world = World.unsubscribe Constants.SubscriptionKeys.RegisterEntity world
         let world = World.unsubscribe Constants.SubscriptionKeys.UnregisteringEntity world
         world
