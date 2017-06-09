@@ -10,15 +10,11 @@ module Program =
         // initialize Nu
         Nu.init false
 
-
-        // this specifies the general configuration of the game engine. With this configuration,
-        // a new window is created with a title of "InfinityRpg".
-        let sdlConfig =
-            { ViewConfig = NewWindow { SdlWindowConfig.defaultConfig with WindowTitle = "InfinityRpg" }
-              ViewW = Constants.Render.ResolutionX
-              ViewH = Constants.Render.ResolutionY
-              RendererFlags = Constants.Render.DefaultRendererFlags
-              AudioChunkSize = Constants.Audio.DefaultBufferSize }
+        // this specifies the window configuration used to display the game.
+        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "InfinityRpg" }
+        
+        // this specifies the configuration of the game engine's use of SDL.
+        let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
 
         // after some configuration it is time to run the game. We're off and running!
         World.run (fun sdlDeps -> World.attemptMake true 1L () (InfinityRpgPlugin ()) sdlDeps) id id sdlConfig

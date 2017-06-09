@@ -15,7 +15,7 @@ module Nu =
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
     /// Initialize the game engine.
-    let init sync =
+    let init runSynchronously =
 
         // init only if needed
         if not Initialized then
@@ -23,12 +23,11 @@ module Nu =
             // make types load reflectively from pathed (non-static) assemblies
             AppDomain.CurrentDomain.AssemblyLoad.Add
                 (fun args -> LoadedAssemblies.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
-            AppDomain.CurrentDomain.add_AssemblyResolve ^ ResolveEventHandler
-                (fun _ args -> snd ^ LoadedAssemblies.TryGetValue args.Name)
+            AppDomain.CurrentDomain.add_AssemblyResolve (ResolveEventHandler
+                (fun _ args -> snd (LoadedAssemblies.TryGetValue args.Name)))
 
             // ensure the current culture is invariate
-            System.Threading.Thread.CurrentThread.CurrentCulture <-
-                System.Globalization.CultureInfo.InvariantCulture
+            Threading.Thread.CurrentThread.CurrentCulture <- Globalization.CultureInfo.InvariantCulture
 
             // init logging
             Log.init (Some "Log.txt")
@@ -90,7 +89,7 @@ module Nu =
 #endif
 
             // init Vsync with incoming parameter
-            Vsync.init sync
+            Vsync.init runSynchronously
 
             // init event world caching
             EventWorld.setEventAddressCaching true

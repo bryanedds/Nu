@@ -40,14 +40,11 @@ module Program =
         // initialize Nu with synchronous code disabled
         Nu.init false
         
-        // this specifies the general configuration of the game engine. With this configuration,
-        // a new window is created with a title of "BlazeVector".
-        let sdlConfig =
-            { ViewConfig = NewWindow { SdlWindowConfig.defaultConfig with WindowTitle = "BlazeVector" }
-              ViewW = Constants.Render.ResolutionX
-              ViewH = Constants.Render.ResolutionY
-              RendererFlags = Constants.Render.DefaultRendererFlags
-              AudioChunkSize = Constants.Audio.DefaultBufferSize }
+        // this specifies the window configuration used to display the game.
+        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "BlazeVector" }
+        
+        // this specifies the configuration of the game engine's use of SDL.
+        let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
 
         // this is a callback that attempts to make 'the world' in a functional programming
         // sense. In a Nu game, the world is represented as an abstract data type named World.
