@@ -451,7 +451,7 @@ module NodeFacetModule =
                     Log.trace "Cannot mount entity to itself."
                     World.choose oldWorld
                 elif entity.HasFacet typeof<RigidBodyFacet> world then
-                    Log.trace "Mounting is not implemented for rigid bodies. Instead use physics constraints."
+                    Log.trace "Cannot mount a rigid body entiyty onto another entity. Instead, consider using physics constraints."
                     World.choose oldWorld
                 else
                     let (unsubscribe, world) = World.monitorPlus handleNodePropertyChange node.Position.Change entity world
