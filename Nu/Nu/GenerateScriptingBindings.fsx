@@ -33,30 +33,6 @@ type MethodBinding =
       MethodParameters : (ParameterConversion * Type) array
       MethodReturn : ReturnConversion * Type }
 
-let modules =
-    [|WorldModule.ModuleType
-      WorldModuleGame.ModuleType
-      WorldModuleScreen.ModuleType
-      WorldModuleLayer.ModuleType
-      WorldModuleEntity.ModuleType
-      WorldEntityModule.ModuleType
-      WorldLayerModule.ModuleType
-      WorldScreenModule.ModuleType
-      WorldGameModule.ModuleType
-      WorldSimulantModule.ModuleType
-      WorldInputModule.ModuleType
-      WorldPhysicsModule.ModuleType
-      WorldRenderModule.ModuleType
-      WorldAudioModule.ModuleType
-      WorldModule2.ModuleType|]
-
-let methods =
-    modules |>
-    Array.map (fun (ty : Type) -> ty.GetMethods ()) |>
-    Array.concat |>
-    Array.filter (fun (mi : MethodInfo) -> mi.IsPublic) |>
-    Array.filter (fun (mi : MethodInfo) -> not mi.IsGenericMethod)
-
 let tryGetParameterConversion parCount parIndex (ty : Type) =
     match ty.Name with
     | "World" ->
@@ -122,7 +98,6 @@ let tryGenerateBindingCode binding =
     Some header
 
 let tryGenerateBindingsCode bindings =
-
     let header =
         "// Nu Game Engine.\n" +
         "// Copyright (C) Bryan Edds, 2013-2017.\n" +
@@ -138,14 +113,17 @@ let tryGenerateBindingsCode bindings =
         "module WorldScriptingBindings =\n" +
         "\n" +
         ""
-
     Some header
 
-let typesNames =
+let types =
     AppDomain.CurrentDomain.GetAssemblies () |>
     Array.filter (fun asm -> (asm.GetName ()).Name = "Nu") |>
     Array.head |>
-    fun asm ->
-        asm.GetTypes () |>
-        Array.filter (fun ty -> isNotNull (ty.GetCustomAttribute<ModuleBindingAttribute> ())) |>
-        Array.map (fun ty -> ty.Name)
+    fun asm -> asm.GetTypes () |> Array.filter (fun ty -> isNotNull (ty.GetCustomAttribute<ModuleBindingAttribute> ()))
+
+let methods =
+    types |>
+    Array.map (fun (ty : Type) -> ty.GetMethods ()) |>
+    Array.concat |>
+    Array.filter (fun mi -> isNotNull (mi. GetCustomAttribute<FunctionBindingAttribute> ())) |>
+    Array.map (fun mi -> mi.Name)
