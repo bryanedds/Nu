@@ -4,6 +4,7 @@
 #I __SOURCE_DIRECTORY__
 #load "Interactive.fsx"
 open System
+open System.IO
 open System.Reflection
 open Prime
 open Nu
@@ -28,10 +29,10 @@ type ReturnConversion =
     | SimulantToRelation
     | SeqToList of ReturnConversion
 
-type MethodBinding =
-    { MethodName : string
-      MethodParameters : (ParameterConversion * Type) array
-      MethodReturn : ReturnConversion * Type }
+type FunctionBinding =
+    { FunctionName : string
+      FunctionParameters : (string * ParameterConversion * Type) array
+      FunctionReturn : ReturnConversion * Type }
 
 let tryGetParameterConversion parCount parIndex (ty : Type) =
     match ty.Name with
@@ -77,27 +78,39 @@ let rec tryGetReturnConversion level (ty : Type) : ReturnConversion option =
     | _ -> Some NormalReturnConversion
 
 let tryGenerateBinding (method : MethodInfo) =
-    let pars = Array.map getType (method.GetParameters ())
-    let conversionOpts = Array.mapi (tryGetParameterConversion pars.Length) pars
+    let pars = method.GetParameters ()
+    let parTypes = Array.map getType pars
+    let parNames = Array.map (fun (par : ParameterInfo) -> par.Name) pars
+    let conversionOpts = Array.mapi (tryGetParameterConversion pars.Length) parTypes
     match Array.definitizePlus conversionOpts with
     | (true, conversions) ->
         let returnType = method.ReturnType
         match tryGetReturnConversion 0 returnType with
         | Some returnConversion ->
             Some
-                { MethodName = method.Name
-                  MethodParameters = Array.zip conversions pars
-                  MethodReturn = (returnConversion, returnType) }
+                { FunctionName = method.Name
+                  FunctionParameters = Array.zip3 parNames conversions parTypes
+                  FunctionReturn = (returnConversion, returnType) }
         | None -> None
     | (false, _) -> None
 
+let generateParameterList functionParameters =
+    let parNames = Array.map Triple.fst functionParameters : string array
+    String.Join (" ", parNames)
+
+//let tryGenerateParameterConversion
+
 let tryGenerateBindingCode binding =
     let header =
-        "   let " + binding.MethodName + " =\n" +
-        "\n"
+        "   let " + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + " =\n"
     Some header
 
 let tryGenerateBindingsCode bindings =
+    let bindingCodes =
+        bindings |>
+        Array.map tryGenerateBindingCode |>
+        Array.definitize |> // TODO: error output
+        fun strs -> String.Join ("\n", strs)
     let header =
         "// Nu Game Engine.\n" +
         "// Copyright (C) Bryan Edds, 2013-2017.\n" +
@@ -112,7 +125,7 @@ let tryGenerateBindingsCode bindings =
         "\n" +
         "module WorldScriptingBindings =\n" +
         "\n" +
-        ""
+        bindingCodes
     Some header
 
 let types =
@@ -121,9 +134,15 @@ let types =
     Array.head |>
     fun asm -> asm.GetTypes () |> Array.filter (fun ty -> isNotNull (ty.GetCustomAttribute<ModuleBindingAttribute> ()))
 
-let methods =
+let bindings =
     types |>
     Array.map (fun (ty : Type) -> ty.GetMethods ()) |>
     Array.concat |>
     Array.filter (fun mi -> isNotNull (mi. GetCustomAttribute<FunctionBindingAttribute> ())) |>
-    Array.map (fun mi -> mi.Name)
+    Array.map tryGenerateBinding |>
+    Array.definitize // TODO: error output
+
+let code =
+    tryGenerateBindingsCode bindings |>
+    Option.get |> // TODO: error output
+    fun code -> File.WriteAllText ("Bindings.fs", code)
