@@ -7,7 +7,7 @@ open System
 open System.IO
 open System.Reflection
 open Prime
-open Nu
+open global.Nu
 
 type ParameterConversion =
     | WorldParameter
@@ -88,7 +88,7 @@ let tryGenerateBinding (method : MethodInfo) =
         match tryGetReturnConversion 0 returnType with
         | Some returnConversion ->
             Some
-                { FunctionName = method.Name
+                { FunctionName = method.Name.Replace("World.", "").Replace(".Static", "")
                   FunctionParameters = Array.zip3 parNames conversions parTypes
                   FunctionReturn = (returnConversion, returnType) }
         | None -> None
@@ -102,7 +102,8 @@ let generateParameterList functionParameters =
 
 let tryGenerateBindingCode binding =
     let header =
-        "   let " + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + " =\n"
+        "   let " + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + " =\n" +
+        "       world\n"
     Some header
 
 let tryGenerateBindingsCode bindings =
@@ -121,7 +122,8 @@ let tryGenerateBindingsCode bindings =
         "open OpenTK\n" +
         "open Prime\n" +
         "open Prime.Scripting\n" +
-        "open Nu\n" +
+        "open global.Nu\n" +
+        "#nowarn \"1182\"\n" +
         "\n" +
         "module WorldScriptingBindings =\n" +
         "\n" +
@@ -145,4 +147,4 @@ let bindings =
 let code =
     tryGenerateBindingsCode bindings |>
     Option.get |> // TODO: error output
-    fun code -> File.WriteAllText ("Bindings.fs", code)
+    fun code -> File.WriteAllText ("../../ScriptingBindings.fs", code)

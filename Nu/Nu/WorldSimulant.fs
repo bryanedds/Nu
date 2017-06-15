@@ -77,7 +77,8 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         [<FunctionBinding>]
-        static member tryGetSimulantParent (simulant : Simulant) (_ : World) =
+        static member tryGetSimulantParent (simulant : Simulant) world =
+            ignore (world : World)
             match simulant with
             | :? Game -> None
             | :? Screen -> Some (Simulants.Game :> Simulant)
