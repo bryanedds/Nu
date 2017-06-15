@@ -11,7 +11,7 @@ open global.Nu
 
 type ParameterConversion =
     | WorldParameter
-    | NormalParameterConversion
+    | NormalParameterConversion of Type
     | RelationToEntity
     | RelationToLayer
     | RelationToScreen
@@ -45,7 +45,7 @@ let tryGetParameterConversion parCount parIndex (ty : Type) =
     | "Screen" -> Some RelationToScreen
     | "Game" -> None // no engine function should deal with the Game type directly
     | "Simulant" -> Some RelationToSimulant
-    | _ -> Some NormalParameterConversion
+    | _ -> Some (NormalParameterConversion ty)
 
 let rec tryGetReturnConversion level (ty : Type) : ReturnConversion option =
     match ty.Name with
@@ -87,7 +87,7 @@ let tryGenerateBinding (method : MethodInfo) =
         match tryGetReturnConversion 0 returnType with
         | Some returnConversion ->
             Some
-                { FunctionName = method.Name.Replace("World.", "").Replace(".Static", "")
+                { FunctionName = method.Name.Replace(".Static", "").Replace("World.", "")
                   FunctionParameters = Array.zip3 parNames conversions parTypes
                   FunctionReturn = (returnConversion, returnType) }
         | None -> None
@@ -100,7 +100,7 @@ let generateParameterList functionParameters =
 let tryGenerateParameterConversion (par : string) conversion =
     match conversion with
     | WorldParameter -> None
-    | NormalParameterConversion -> Some ("       let " + par + " = ScriptingWorld.tryExport (" + par + ".GetType ()) " + par + " world |> Option.get\n")
+    | NormalParameterConversion ty -> Some ("        let " + par + " = ScriptingWorld.tryExport (" + par + ".GetType ()) " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n")
     | RelationToEntity -> None
     | RelationToLayer -> None
     | RelationToScreen -> None
@@ -112,10 +112,13 @@ let tryGenerateBindingCode binding =
         Array.map (fun (par, conversion, ty) -> tryGenerateParameterConversion par conversion) binding.FunctionParameters |>
         Array.definitize |> // TODO: error output
         fun conversions -> String.Join ("", conversions)
+    let invocation =
+        "        let _ = World." + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + "\n"
     let header =
-        "   let " + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + " =\n" +
+        "    let " + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + " =\n" +
         conversions +
-        "       world\n"
+        invocation +
+        "        world\n"
     Some header
 
 let tryGenerateBindingsCode bindings =
@@ -135,8 +138,8 @@ let tryGenerateBindingsCode bindings =
         "open Prime\n" +
         "open Prime.Scripting\n" +
         "open global.Nu\n" +
-        "#nowarn \"1182\"\n" +
         "\n" +
+        "[<RequireQualifiedAccess>]\n" +
         "module WorldScriptingBindings =\n" +
         "\n" +
         bindingCodes

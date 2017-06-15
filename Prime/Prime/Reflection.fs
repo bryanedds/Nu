@@ -6,6 +6,7 @@ open System
 open System.ComponentModel
 open System.Collections
 open System.Collections.Generic
+open System.Text
 open System.Reflection
 open Microsoft.FSharp.Reflection
 
@@ -298,3 +299,16 @@ module TypeExtension =
         /// Get all the properties, preferring those that can be written to if there is a name clash.
         member this.GetPropertiesPreferWritable () =
             this.GetPropertiesByPreference (fun (property : PropertyInfo) -> property.CanWrite)
+
+        /// Get the generic name of the type, EG - Option<String>
+        member this.GetGenericName () : string =
+            let sb = StringBuilder ()
+            let name = this.Name
+            if this.IsGenericType then
+                let gargs = this.GetGenericArguments () |> Array.map (fun garg -> garg.GetGenericName ())
+                ignore (sb.Append (name.Substring (0, name.IndexOf '`')))
+                ignore (sb.Append "<")
+                ignore (sb.Append (String.Join (", ", gargs)))
+                ignore (sb.Append ">")
+                sb.ToString ()
+            else name

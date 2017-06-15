@@ -3,6 +3,9 @@
 
 namespace Prime
 
+/// Alternative type of option when its name is reified.
+type 'a FSharpOption = 'a option
+
 [<RequireQualifiedAccess>]
 module Option =
 
