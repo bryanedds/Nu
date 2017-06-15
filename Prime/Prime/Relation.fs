@@ -59,13 +59,22 @@ module RelationModule =
         private
             { NameOpts : string option list
               TypeCarrier : 'a -> unit }
-    
-        /// Make a relation from a '/' delimited string where '?' are empty.
-        /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
-        static member makeFromString<'a> (relationStr : string) =
-            let nameOptList = relationStr.Split Constants.Address.Separator |> List.ofSeq
-            let nameOpts = List.map (fun name -> match name with Constants.Relation.SlotStr -> None | _ -> Some name) nameOptList
+
+        /// Make a relation from a list of names where "?" names are empty.
+        static member makeFromList<'a> (names : string list) : 'a Relation =
+            let nameOpts = List.map (fun name -> match name with Constants.Relation.SlotStr -> None | _ -> Some name) names
             { NameOpts = nameOpts; TypeCarrier = fun (_ : 'a) -> () }
+
+        /// Make a relation from an address where "?" names are empty.
+        static member makeFromAddress<'a> (address : 'a Address) : 'a Relation =
+            let names = Address.getNames address
+            Relation.makeFromList<'a> names
+    
+        /// Make a relation from a '/' delimited string where '?' names are empty.
+        /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
+        static member makeFromString<'a> (relationStr : string) : 'a Relation =
+            let names = relationStr.Split Constants.Address.Separator |> List.ofSeq
+            Relation.makeFromList<'a> names
 
         /// Hash a Relation.
         static member hash (relation : 'a Relation) =
@@ -87,6 +96,21 @@ module RelationModule =
             match Array.definitizePlus nameOpts with
             | (true, names) -> Address.makeFromList<'b> (List.ofArray names)
             | (false, _) -> failwith ("Invalid relation resolution for address '" + string address + "' and relation '" + string relation + "'.")
+
+        /// Unresolve an address to the most general form in the context of another address.
+        static member unresolve<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Relation =
+            let names = Address.getNames address
+            let names2 = Address.getNames address2
+            let namesMatching =
+                let mutable namesMatching = 0
+                let mutable enr = (names :> _ seq).GetEnumerator ()
+                let mutable enr2 = (names2 :> _ seq).GetEnumerator ()
+                while (enr.MoveNext() && enr2.MoveNext ()) do
+                    if enr.Current = enr2.Current then
+                        namesMatching <- inc namesMatching
+                namesMatching
+            let names2' = List.trySkip namesMatching names2
+            { NameOpts = (List.append (List.init namesMatching (fun _ -> None)) (List.map Some names2')); TypeCarrier = fun (_ : 'b) -> () }
 
         interface 'a Relation IEquatable with
             member this.Equals that =

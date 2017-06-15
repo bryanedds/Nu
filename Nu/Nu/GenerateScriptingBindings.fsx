@@ -92,7 +92,8 @@ let tryGenerateParameterConversion (par : string) conversion (ty : Type) =
     | WorldParameter ->
         None
     | NormalParameterConversion ->
-        Some ("            let " + par + " = ScriptingWorld.tryExport (" + par + ".GetType ()) " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n")
+        Some
+            ("            let " + par + " = ScriptingWorld.tryExport (" + par + ".GetType ()) " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n")
     | RelationToEntity ->
         Some
             ("            let struct (" + par + ", world) =\n" +
