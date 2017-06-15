@@ -334,12 +334,10 @@ module WorldModule =
             Metadata.getTextureSizeAsVector2 assetTag (World.getMetadata world)
 
         /// Try to get the tile map metadata of the given asset.
-        [<FunctionBinding>]
         static member tryGetTileMapMetadata assetTag world =
             Metadata.tryGetTileMapMetadata assetTag (World.getMetadata world)
 
         /// Forcibly get the tile map metadata of the given asset (throwing on failure).
-        [<FunctionBinding>]
         static member getTileMapMetadata assetTag world =
             Metadata.getTileMapMetadata assetTag (World.getMetadata world)
 

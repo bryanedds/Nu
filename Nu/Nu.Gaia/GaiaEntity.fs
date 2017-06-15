@@ -48,12 +48,8 @@ and EntityPropertyDescriptor (property, attributes) =
         else "\rXtension Properties"
 
     override this.Description =
-        // HACK: lets user know the property's expected type
-        let typeName = propertyType.Name
-        let genericTypes = propertyType.GetGenericArguments ()
-        let genericTypeNameStrs = Array.map (fun (ty : Type) -> ty.Name) genericTypes
-        let genericTypeNamesStr = "<" + String.concat ", " genericTypeNameStrs + ">"
-        typeName.Replace ("`" + string (Array.length genericTypeNameStrs), genericTypeNamesStr)
+        // just lets user know the property's expected type
+        propertyType.GetGenericName ()
 
     override this.ComponentType = propertyType.DeclaringType
     override this.PropertyType = propertyType
