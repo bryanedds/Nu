@@ -291,23 +291,19 @@ module WorldModule =
             World.updateAmbientState (AmbientState.restoreTasklets tasklets) world
 
         /// Add a tasklet to be executed by the engine at the scheduled time.
-        [<FunctionBinding>]
         static member addTasklet tasklet world =
             World.updateAmbientState (AmbientState.addTasklet tasklet) world
 
         /// Add multiple tasklets to be executed by the engine at the scheduled times.
-        [<FunctionBinding>]
         static member addTasklets tasklets world =
             World.updateAmbientState (AmbientState.addTasklets tasklets) world
 
         /// Schedule an operation to be executed by the engine at the given time.
-        [<FunctionBinding>]
         static member schedule fn time world =
             let tasklet = { ScheduledTime = time; Command = { Execute = fn }}
             World.addTasklet tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame.
-        [<FunctionBinding>]
         static member schedule2 fn world =
             World.schedule fn (World.getTickTime world) world
 

@@ -16,7 +16,6 @@ type ParameterConversion =
     | RelationToLayer
     | RelationToScreen
     | RelationToSimulant
-    | LambdaToTasklet
     | ListToSeq of ParameterConversion
 
 type ReturnConversion =
@@ -79,7 +78,7 @@ let rec tryGetReturnConversion level (ty : Type) : ReturnConversion option =
 
 let tryGenerateBinding (method : MethodInfo) =
     let pars = method.GetParameters ()
-    let parTypes = Array.map getType pars
+    let parTypes = Array.map (fun (pi : ParameterInfo) -> pi.ParameterType) pars
     let parNames = Array.map (fun (par : ParameterInfo) -> par.Name) pars
     let conversionOpts = Array.mapi (tryGetParameterConversion pars.Length) parTypes
     match Array.definitizePlus conversionOpts with
@@ -98,11 +97,24 @@ let generateParameterList functionParameters =
     let parNames = Array.map Triple.fst functionParameters : string array
     String.Join (" ", parNames)
 
-//let tryGenerateParameterConversion
+let tryGenerateParameterConversion (par : string) conversion =
+    match conversion with
+    | WorldParameter -> None
+    | NormalParameterConversion -> Some ("       let " + par + " = ScriptingWorld.tryExport (" + par + ".GetType ()) " + par + " world |> Option.get\n")
+    | RelationToEntity -> None
+    | RelationToLayer -> None
+    | RelationToScreen -> None
+    | RelationToSimulant -> None
+    | ListToSeq _ -> None
 
 let tryGenerateBindingCode binding =
+    let conversions =
+        Array.map (fun (par, conversion, ty) -> tryGenerateParameterConversion par conversion) binding.FunctionParameters |>
+        Array.definitize |> // TODO: error output
+        fun conversions -> String.Join ("", conversions)
     let header =
         "   let " + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + " =\n" +
+        conversions +
         "       world\n"
     Some header
 
