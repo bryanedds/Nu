@@ -21,22 +21,26 @@ module WorldInputModule =
 
         /// Check that the given mouse button is down.
         [<FunctionBinding>]
-        static member isMouseButtonDown mouseButton (_ : World) =
+        static member isMouseButtonDown mouseButton world =
+            ignore (world : World)
             MouseState.isButtonDown mouseButton
 
         /// Get the position of the mouse.
         [<FunctionBinding>]
-        static member getMousePosition (_ : World) =
+        static member getMousePosition world =
+            ignore (world : World)
             MouseState.getPosition ()
 
         /// Get the position of the mouse in floating-point coordinates.
         [<FunctionBinding>]
-        static member getMousePositionF (_ : World) =
+        static member getMousePositionF world =
+            ignore (world : World)
             MouseState.getPositionF ()
 
         /// Check that the given keyboard key is down.
         [<FunctionBinding>]
-        static member isKeyboardKeyDown scanCode (_ : World) =
+        static member isKeyboardKeyDown scanCode world =
+            ignore (world : World)
             KeyboardState.isKeyDown scanCode
 
         // TODO: implement isKeyboardModifierActive.
