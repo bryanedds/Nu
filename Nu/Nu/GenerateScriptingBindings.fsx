@@ -11,22 +11,22 @@ open global.Nu
 
 type ParameterConversion =
     | WorldParameter
-    | NormalParameterConversion of Type
+    | NormalParameterConversion
     | RelationToEntity
     | RelationToLayer
     | RelationToScreen
     | RelationToSimulant
-    | ListToSeq of ParameterConversion
+    | ListToSeq
 
 type ReturnConversion =
     | WorldReturn
-    | TupleReturn of ReturnConversion array
-    | NormalReturnConversion
+    | SingleReturnConversion
+    | PairReturnConversion
     | EntityToRelation
     | LayerToRelation
     | ScreenToRelation
     | SimulantToRelation
-    | SeqToList of ReturnConversion
+    | SeqToList
 
 type FunctionBinding =
     { FunctionName : string
@@ -45,36 +45,26 @@ let tryGetParameterConversion parCount parIndex (ty : Type) =
     | "Screen" -> Some RelationToScreen
     | "Game" -> None // no engine function should deal with the Game type directly
     | "Simulant" -> Some RelationToSimulant
-    | _ -> Some (NormalParameterConversion ty)
+    | _ -> Some NormalParameterConversion
 
-let rec tryGetReturnConversion level (ty : Type) : ReturnConversion option =
-    match ty.Name with
-    | "World" ->
-        if level = 0
-        then Some WorldReturn
-        else None // no engine function that deals with multiple worlds should be exposed
-    | "Tuple" ->
-        if level = 0 then
-            let gargs = ty.GetGenericArguments ()
-            let gargLast = Array.last gargs
-            if gargLast.Name = "World" then
-                let subconversionOpts = Array.map (tryGetReturnConversion (inc level)) gargs
-                match Array.definitizePlus subconversionOpts with
-                | (true, subconversions) -> Some (TupleReturn subconversions)
-                | (false, _) -> None
-            else None // no engine function that deals with multiple worlds should be exposed
-        else
-            let gargs = ty.GetGenericArguments ()
-            let subconversionOpts = Array.map (tryGetReturnConversion (inc level)) gargs
+let rec tryGetReturnConversion (ty : Type) : ReturnConversion option =
+    match ty.GetGenericName () with
+    | "World" -> Some WorldReturn
+    | "Tuple`2" ->
+        let gargs = ty.GetGenericArguments ()
+        match gargs with
+        | [|garg0; garg1|] when garg1.Name = "World" ->
+            let subconversionOpts = Array.map tryGetReturnConversion gargs
             match Array.definitizePlus subconversionOpts with
-            | (true, subconversions) -> Some (TupleReturn subconversions)
+            | (true, subconversions) -> Some PairReturnConversion
             | (false, _) -> None
+        | _ -> None
     | "Address<Entity>" -> Some EntityToRelation
     | "Address<Layer>" -> Some LayerToRelation
     | "Address<Screen>" -> Some ScreenToRelation
     | "Address<Game>" -> None // no engine function should deal with the Game type directly
     | "Address<Simulant>" -> Some SimulantToRelation
-    | _ -> Some NormalReturnConversion
+    | _ -> Some SingleReturnConversion
 
 let tryGenerateBinding (method : MethodInfo) =
     let pars = method.GetParameters ()
@@ -84,7 +74,7 @@ let tryGenerateBinding (method : MethodInfo) =
     match Array.definitizePlus conversionOpts with
     | (true, conversions) ->
         let returnType = method.ReturnType
-        match tryGetReturnConversion 0 returnType with
+        match tryGetReturnConversion returnType with
         | Some returnConversion ->
             Some
                 { FunctionName = method.Name.Replace(".Static", "").Replace("World.", "")
@@ -97,36 +87,136 @@ let generateParameterList functionParameters =
     let parNames = Array.map Triple.fst functionParameters : string array
     String.Join (" ", parNames)
 
-let tryGenerateParameterConversion (par : string) conversion =
+let tryGenerateParameterConversion (par : string) conversion (ty : Type) =
     match conversion with
-    | WorldParameter -> None
-    | NormalParameterConversion ty -> Some ("        let " + par + " = ScriptingWorld.tryExport (" + par + ".GetType ()) " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n")
-    | RelationToEntity -> None
-    | RelationToLayer -> None
-    | RelationToScreen -> None
-    | RelationToSimulant -> None
-    | ListToSeq _ -> None
+    | WorldParameter ->
+        None
+    | NormalParameterConversion ->
+        Some ("            let " + par + " = ScriptingWorld.tryExport (" + par + ".GetType ()) " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n")
+    | RelationToEntity ->
+        Some
+            ("            let struct (" + par + ", world) =\n" +
+             "                let context = World.getScriptContext world\n" +
+             "                match World.evalInternal " + par + " world with\n" +
+             "                | struct (Scripting.String str, world)\n" +
+             "                | struct (Scripting.Keyword str, world) ->\n" +
+             "                    let relation = Relation.makeFromString str\n" +
+             "                    let address = Relation.resolve context.SimulantAddress relation\n" +
+             "                    struct (Entity address, world)\n" +
+             "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+             "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+    | RelationToLayer ->
+        Some
+            ("            let struct (" + par + ", world) =\n" +
+             "                let context = World.getScriptContext world\n" +
+             "                match World.evalInternal " + par + " world with\n" +
+             "                | struct (Scripting.String str, world)\n" +
+             "                | struct (Scripting.Keyword str, world) ->\n" +
+             "                    let relation = Relation.makeFromString str\n" +
+             "                    let address = Relation.resolve context.SimulantAddress relation\n" +
+             "                    struct (Layer address, world)\n" +
+             "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+             "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+    | RelationToScreen ->
+        Some
+            ("            let struct (" + par + ", world) =\n" +
+             "                let context = World.getScriptContext world\n" +
+             "                match World.evalInternal " + par + " world with\n" +
+             "                | struct (Scripting.String str, world)\n" +
+             "                | struct (Scripting.Keyword str, world) ->\n" +
+             "                    let relation = Relation.makeFromString str\n" +
+             "                    let address = Relation.resolve context.SimulantAddress relation\n" +
+             "                    struct (Screen address, world)\n" +
+             "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+             "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+    | RelationToSimulant ->
+        Some
+            ("            let struct (" + par + ", world) =\n" +
+             "                let context = World.getScriptContext world\n" +
+             "                match World.evalInternal " + par + " world with\n" +
+             "                | struct (Scripting.String str, world)\n" +
+             "                | struct (Scripting.Keyword str, world) ->\n" +
+             "                    let relation = Relation.makeFromString str\n" +
+             "                    let address = Relation.resolve context.SimulantAddress relation\n" +
+             "                    struct (World.deriveSimulant address, world)\n" +
+             "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+             "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+    | ListToSeq _ ->
+        None
 
-let tryGenerateBindingCode binding =
+let generateBindingFunction binding =
+    let functionAndExceptionHeader =
+        "    let " + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + " =\n" +
+        "        let oldWorld = world\n" +
+        "        try\n"
     let conversions =
-        Array.map (fun (par, conversion, ty) -> tryGenerateParameterConversion par conversion) binding.FunctionParameters |>
+        Array.map (fun (par, conversion, ty) -> tryGenerateParameterConversion par conversion ty) binding.FunctionParameters |>
         Array.definitize |> // TODO: error output
         fun conversions -> String.Join ("", conversions)
+    let returnConversion =
+        let (returnConversion, returnType) = binding.FunctionReturn
+        (match returnConversion with
+         | WorldReturn ->
+            Some "            struct (Scripting.Unit, result)\n"
+         | SingleReturnConversion ->
+            Some
+                ("            let value = result\n" +
+                 "            let value = ScriptingWorld.tryImport typeof<" + returnType.GetGenericName() + "> value world |> Option.get\n" +
+                 "            struct (value, world)\n")
+         | PairReturnConversion ->
+            Some
+                ("            let (value, world) = result\n" +
+                 "            let value = ScriptingWorld.tryImport typeof<" + returnType.GetGenericArguments().[0].GetGenericName() + "> value world |> Option.get\n" +
+                 "            struct (value, world)\n")
+         | EntityToRelation ->
+            None
+         | LayerToRelation ->
+            None
+         | ScreenToRelation ->
+            None
+         | SimulantToRelation ->
+            None
+         | SeqToList _ ->
+           None) |>
+        Option.get // TODO: error output
     let invocation =
-        "        let _ = World." + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + "\n"
-    let header =
-        "    let " + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + " =\n" +
-        conversions +
-        invocation +
-        "        world\n"
-    Some header
+        "            let result = World." + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + "\n"
+    let exceptionHandler =
+        "        with exn ->\n" +
+        "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Could not invoke binding '" + binding.FunctionName + "' due to: \" + scstring exn, None)\n" +
+        "            struct (violation, World.choose oldWorld)\n"
+    functionAndExceptionHeader +
+    conversions +
+    invocation +
+    returnConversion +
+    exceptionHandler
 
-let tryGenerateBindingsCode bindings =
-    let bindingCodes =
+let generateBindingMatcher binding =
+    let args = binding.FunctionParameters |> Array.allButLast |> Array.map Triple.fst
+    let argArray = "[|" + String.Join ("; ", args) + "|]"
+    "        | \"" + binding.FunctionName + "\" ->\n" +
+    "            match World.evalManyInternal exprs world with\n" +
+    "            | struct (" + argArray + " as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->\n" +
+    "                " + binding.FunctionName + " " + String.Join (" ", args) + " world\n" +
+    "            | _ ->\n" +
+    "                let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '" + binding.FunctionName + "' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
+    "                struct (violation, world)\n"
+
+let generateBindingsMatcher bindings =
+    let bindingMatchers =
         bindings |>
-        Array.map tryGenerateBindingCode |>
-        Array.definitize |> // TODO: error output
-        fun strs -> String.Join ("\n", strs)
+        Array.map generateBindingMatcher |>
+        fun bindings -> String.Join ("", bindings)
+    let matcher =
+        "    let bindings fnName exprs originOpt world =\n" +
+        "        match fnName with\n" +
+        bindingMatchers +
+        "        | _ ->\n" +
+        "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"No binding exists for '\" + " + "fnName" + " + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
+        "            struct (violation, world)\n"
+    matcher
+
+let generateBindingsCode bindings =
     let header =
         "// Nu Game Engine.\n" +
         "// Copyright (C) Bryan Edds, 2013-2017.\n" +
@@ -136,14 +226,20 @@ let tryGenerateBindingsCode bindings =
         "open System.Collections.Generic\n" +
         "open OpenTK\n" +
         "open Prime\n" +
-        "open Prime.Scripting\n" +
         "open global.Nu\n" +
         "\n" +
         "[<RequireQualifiedAccess>]\n" +
         "module WorldScriptingBindings =\n" +
-        "\n" +
-        bindingCodes
-    Some header
+        "\n"
+    let bindingCodes =
+        bindings |>
+        Array.map generateBindingFunction |>
+        fun strs -> String.Join ("\n", strs) + "\n"
+    let bindingsMatcher =
+        generateBindingsMatcher bindings
+    header +
+    bindingCodes +
+    bindingsMatcher
 
 let types =
     AppDomain.CurrentDomain.GetAssemblies () |>
@@ -160,6 +256,5 @@ let bindings =
     Array.definitize // TODO: error output
 
 let code =
-    tryGenerateBindingsCode bindings |>
-    Option.get |> // TODO: error output
+    generateBindingsCode bindings |>
     fun code -> File.WriteAllText ("../../ScriptingBindings.fs", code)
