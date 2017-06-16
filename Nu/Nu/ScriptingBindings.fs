@@ -95,12 +95,12 @@ module WorldScriptingBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryTransitionScreen' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let transitionScreen destinationAddress world =
+    let transitionScreen destination world =
         let oldWorld = world
         try
-            let struct (destinationAddress, world) =
+            let struct (destination, world) =
                 let context = World.getScriptContext world
-                match World.evalInternal destinationAddress world with
+                match World.evalInternal destination world with
                 | struct (Scripting.String str, world)
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
@@ -108,7 +108,7 @@ module WorldScriptingBindings =
                     struct (Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.transitionScreen destinationAddress world
+            let result = World.transitionScreen destination world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'transitionScreen' due to: " + scstring exn, None)
@@ -1277,7 +1277,7 @@ module WorldScriptingBindings =
         try
             let result = World.getSelectedScreen world
             let value = result
-            let value = ScriptingWorld.tryImport typeof<Screen> value world |> Option.get
+            let value = Scripting.String (scstring value)
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSelectedScreen' due to: " + scstring exn, None)
@@ -1631,8 +1631,8 @@ module WorldScriptingBindings =
                 struct (violation, world)
         | "transitionScreen" ->
             match World.evalManyInternal exprs world with
-            | struct ([|destinationAddress|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                transitionScreen destinationAddress world
+            | struct ([|destination|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
+                transitionScreen destination world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'transitionScreen' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)

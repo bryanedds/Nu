@@ -174,8 +174,8 @@ module WorldModule2 =
         /// Transition to the given screen (failing with an exception if another transition is in
         /// progress).
         [<FunctionBinding>]
-        static member transitionScreen destinationAddress world =
-            Option.get ^ World.tryTransitionScreen destinationAddress world
+        static member transitionScreen destination world =
+            Option.get ^ World.tryTransitionScreen destination world
             
         // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
         static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> handling destination (_ : Event<'a, 's>) world =
