@@ -485,8 +485,8 @@ type ConversionException (message : string, symbolOpt : Symbol option) =
     inherit Exception (message)
     member this.SymbolOpt = symbolOpt
     override this.ToString () =
-        message + "\r\n" +
-        (match symbolOpt with Some symbol -> SymbolOrigin.tryPrint (Symbol.tryGetOrigin symbol) + "\r\n" | _ -> "") +
+        message + "\n" +
+        (match symbolOpt with Some symbol -> SymbolOrigin.tryPrint (Symbol.tryGetOrigin symbol) + "\n" | _ -> "") +
         base.ToString ()
 
 [<AutoOpen>]
