@@ -9,29 +9,33 @@ open System.Reflection
 open Prime
 open global.Nu
 
-type ParameterConversion =
-    | WorldParameter
-    | NormalParameterConversion
+type ParameterConversionDetails =
+    | NormalParameter of Type
     | RelationToEntity
     | RelationToLayer
     | RelationToScreen
+    | RelationToGame
     | RelationToSimulant
-    | ListToSeq
+    | ListToSeq of Type
+
+type ParameterConversion =
+    | ValueParameter of ParameterConversionDetails
+    | WorldParameter
+
+type ReturnConversionDetails =
+    | NormalReturn of Type
+    | SimulantToRelation
+    | SeqToList of Type
 
 type ReturnConversion =
-    | WorldReturn
-    | SingleReturnConversion
-    | PairReturnConversion
-    | EntityToRelation
-    | LayerToRelation
-    | ScreenToRelation
-    | SimulantToRelation
-    | SeqToList
+    | PureReturn of ReturnConversionDetails
+    | MixedReturn of ReturnConversionDetails
+    | ImpureReturn
 
 type FunctionBinding =
     { FunctionName : string
-      FunctionParameters : (string * ParameterConversion * Type) array
-      FunctionReturn : ReturnConversion * Type }
+      FunctionParameters : (string * ParameterConversion) array
+      FunctionReturn : ReturnConversion }
 
 let tryGetParameterConversion parCount parIndex (ty : Type) =
     match ty.Name with
@@ -40,31 +44,36 @@ let tryGetParameterConversion parCount parIndex (ty : Type) =
         if parIndex = parCount - 1
         then Some WorldParameter
         else None
-    | "Entity" -> Some RelationToEntity
-    | "Layer" -> Some RelationToLayer
-    | "Screen" -> Some RelationToScreen
-    | "Game" -> None // no engine function should deal with the Game type directly
-    | "Simulant" -> Some RelationToSimulant
-    | _ -> Some NormalParameterConversion
+    | "Entity" -> Some (ValueParameter RelationToEntity)
+    | "Layer" -> Some (ValueParameter RelationToLayer)
+    | "Screen" -> Some (ValueParameter RelationToScreen)
+    | "Game" -> Some (ValueParameter RelationToGame)
+    | "Simulant" -> Some (ValueParameter RelationToSimulant)
+    | _ -> Some (ValueParameter (NormalParameter ty))
 
 let rec tryGetReturnConversion (ty : Type) : ReturnConversion option =
     match ty.GetGenericName () with
-    | "World" -> Some WorldReturn
+    | "World" -> Some ImpureReturn
     | "Tuple`2" ->
         let gargs = ty.GetGenericArguments ()
         match gargs with
-        | [|garg0; garg1|] when garg1.Name = "World" ->
-            let subconversionOpts = Array.map tryGetReturnConversion gargs
-            match Array.definitizePlus subconversionOpts with
-            | (true, subconversions) -> Some PairReturnConversion
-            | (false, _) -> None
+        | [|garg; garg2|] when garg2.Name = "World" ->
+            match
+                (match garg.GetGenericName () with
+                 | "Entity" | "Layer" | "Screen" | "Game" | "Simulant" -> Some SimulantToRelation
+                 | _ -> Some (NormalReturn garg)) with
+            | Some conversion ->
+                let subconversionOpts = Array.map tryGetReturnConversion gargs
+                match Array.definitizePlus subconversionOpts with
+                | (true, subconversions) ->
+                    match (tryGetReturnConversion garg, tryGetReturnConversion garg2) with
+                    | (Some rc, Some rc2) -> Some (MixedReturn conversion)
+                    | (_, _) -> None
+                | (false, _) -> None
+            | None -> None
         | _ -> None
-    | "Address<Entity>" -> Some EntityToRelation
-    | "Address<Layer>" -> Some LayerToRelation
-    | "Address<Screen>" -> Some ScreenToRelation
-    | "Address<Game>" -> None // no engine function should deal with the Game type directly
-    | "Address<Simulant>" -> Some SimulantToRelation
-    | _ -> Some SingleReturnConversion
+    | "Entity" | "Layer" | "Screen" | "Game" | "Simulant" -> Some (PureReturn SimulantToRelation)
+    | _ -> Some (PureReturn (NormalReturn ty))
 
 let tryGenerateBinding (method : MethodInfo) =
     let pars = method.GetParameters ()
@@ -78,71 +87,85 @@ let tryGenerateBinding (method : MethodInfo) =
         | Some returnConversion ->
             Some
                 { FunctionName = method.Name.Replace(".Static", "").Replace("World.", "")
-                  FunctionParameters = Array.zip3 parNames conversions parTypes
-                  FunctionReturn = (returnConversion, returnType) }
+                  FunctionParameters = Array.zip parNames conversions
+                  FunctionReturn = returnConversion }
         | None -> None
     | (false, _) -> None
 
 let generateParameterList functionParameters =
-    let parNames = Array.map Triple.fst functionParameters : string array
+    let parNames = Array.map fst functionParameters : string array
     String.Join (" ", parNames)
 
-let tryGenerateParameterConversion (par : string) conversion (ty : Type) =
+let rec tryGenerateParameterConversion (par : string) conversion =
     match conversion with
+    | ValueParameter rc ->
+        match rc with
+        | NormalParameter ty ->
+            Some
+                ("            let " + par + " = ScriptingWorld.tryExport (" + par + ".GetType ()) " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n")
+        | RelationToEntity ->
+            Some
+                ("            let struct (" + par + ", world) =\n" +
+                 "                let context = World.getScriptContext world\n" +
+                 "                match World.evalInternal " + par + " world with\n" +
+                 "                | struct (Scripting.String str, world)\n" +
+                 "                | struct (Scripting.Keyword str, world) ->\n" +
+                 "                    let relation = Relation.makeFromString str\n" +
+                 "                    let address = Relation.resolve context.SimulantAddress relation\n" +
+                 "                    struct (Entity address, world)\n" +
+                 "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+                 "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+        | RelationToLayer ->
+            Some
+                ("            let struct (" + par + ", world) =\n" +
+                 "                let context = World.getScriptContext world\n" +
+                 "                match World.evalInternal " + par + " world with\n" +
+                 "                | struct (Scripting.String str, world)\n" +
+                 "                | struct (Scripting.Keyword str, world) ->\n" +
+                 "                    let relation = Relation.makeFromString str\n" +
+                 "                    let address = Relation.resolve context.SimulantAddress relation\n" +
+                 "                    struct (Layer address, world)\n" +
+                 "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+                 "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+        | RelationToScreen ->
+            Some
+                ("            let struct (" + par + ", world) =\n" +
+                 "                let context = World.getScriptContext world\n" +
+                 "                match World.evalInternal " + par + " world with\n" +
+                 "                | struct (Scripting.String str, world)\n" +
+                 "                | struct (Scripting.Keyword str, world) ->\n" +
+                 "                    let relation = Relation.makeFromString str\n" +
+                 "                    let address = Relation.resolve context.SimulantAddress relation\n" +
+                 "                    struct (Screen address, world)\n" +
+                 "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+                 "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+        | RelationToGame ->
+            Some
+                ("            let struct (" + par + ", world) =\n" +
+                 "                let context = World.getScriptContext world\n" +
+                 "                match World.evalInternal " + par + " world with\n" +
+                 "                | struct (Scripting.String str, world)\n" +
+                 "                | struct (Scripting.Keyword str, world) ->\n" +
+                 "                    let relation = Relation.makeFromString str\n" +
+                 "                    let address = Relation.resolve context.SimulantAddress relation\n" +
+                 "                    struct (Game address, world)\n" +
+                 "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+                 "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+        | RelationToSimulant ->
+            Some
+                ("            let struct (" + par + ", world) =\n" +
+                 "                let context = World.getScriptContext world\n" +
+                 "                match World.evalInternal " + par + " world with\n" +
+                 "                | struct (Scripting.String str, world)\n" +
+                 "                | struct (Scripting.Keyword str, world) ->\n" +
+                 "                    let relation = Relation.makeFromString str\n" +
+                 "                    let address = Relation.resolve context.SimulantAddress relation\n" +
+                 "                    struct (World.deriveSimulant address, world)\n" +
+                 "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+                 "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+        | ListToSeq _ ->
+            None
     | WorldParameter ->
-        None
-    | NormalParameterConversion ->
-        Some
-            ("            let " + par + " = ScriptingWorld.tryExport (" + par + ".GetType ()) " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n")
-    | RelationToEntity ->
-        Some
-            ("            let struct (" + par + ", world) =\n" +
-             "                let context = World.getScriptContext world\n" +
-             "                match World.evalInternal " + par + " world with\n" +
-             "                | struct (Scripting.String str, world)\n" +
-             "                | struct (Scripting.Keyword str, world) ->\n" +
-             "                    let relation = Relation.makeFromString str\n" +
-             "                    let address = Relation.resolve context.SimulantAddress relation\n" +
-             "                    struct (Entity address, world)\n" +
-             "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
-             "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
-    | RelationToLayer ->
-        Some
-            ("            let struct (" + par + ", world) =\n" +
-             "                let context = World.getScriptContext world\n" +
-             "                match World.evalInternal " + par + " world with\n" +
-             "                | struct (Scripting.String str, world)\n" +
-             "                | struct (Scripting.Keyword str, world) ->\n" +
-             "                    let relation = Relation.makeFromString str\n" +
-             "                    let address = Relation.resolve context.SimulantAddress relation\n" +
-             "                    struct (Layer address, world)\n" +
-             "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
-             "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
-    | RelationToScreen ->
-        Some
-            ("            let struct (" + par + ", world) =\n" +
-             "                let context = World.getScriptContext world\n" +
-             "                match World.evalInternal " + par + " world with\n" +
-             "                | struct (Scripting.String str, world)\n" +
-             "                | struct (Scripting.Keyword str, world) ->\n" +
-             "                    let relation = Relation.makeFromString str\n" +
-             "                    let address = Relation.resolve context.SimulantAddress relation\n" +
-             "                    struct (Screen address, world)\n" +
-             "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
-             "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
-    | RelationToSimulant ->
-        Some
-            ("            let struct (" + par + ", world) =\n" +
-             "                let context = World.getScriptContext world\n" +
-             "                match World.evalInternal " + par + " world with\n" +
-             "                | struct (Scripting.String str, world)\n" +
-             "                | struct (Scripting.Keyword str, world) ->\n" +
-             "                    let relation = Relation.makeFromString str\n" +
-             "                    let address = Relation.resolve context.SimulantAddress relation\n" +
-             "                    struct (World.deriveSimulant address, world)\n" +
-             "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
-             "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
-    | ListToSeq _ ->
         None
 
 let generateBindingFunction binding =
@@ -151,34 +174,39 @@ let generateBindingFunction binding =
         "        let oldWorld = world\n" +
         "        try\n"
     let conversions =
-        Array.map (fun (par, conversion, ty) -> tryGenerateParameterConversion par conversion ty) binding.FunctionParameters |>
+        Array.map (fun (par, conversion) -> tryGenerateParameterConversion par conversion) binding.FunctionParameters |>
         Array.definitize |> // TODO: error output
         fun conversions -> String.Join ("", conversions)
     let returnConversion =
-        let (returnConversion, returnType) = binding.FunctionReturn
-        (match returnConversion with
-         | WorldReturn ->
+        (match binding.FunctionReturn with
+         | ImpureReturn ->
             Some "            struct (Scripting.Unit, result)\n"
-         | SingleReturnConversion ->
-            Some
-                ("            let value = result\n" +
-                 "            let value = ScriptingWorld.tryImport typeof<" + returnType.GetGenericName() + "> value world |> Option.get\n" +
-                 "            struct (value, world)\n")
-         | PairReturnConversion ->
-            Some
-                ("            let (value, world) = result\n" +
-                 "            let value = ScriptingWorld.tryImport typeof<" + returnType.GetGenericArguments().[0].GetGenericName() + "> value world |> Option.get\n" +
-                 "            struct (value, world)\n")
-         | EntityToRelation ->
-            None
-         | LayerToRelation ->
-            None
-         | ScreenToRelation ->
-            None
-         | SimulantToRelation ->
-            None
-         | SeqToList _ ->
-           None) |>
+         | MixedReturn rc ->
+            match rc with
+            | NormalReturn ty ->
+                Some
+                    ("            let (value, world) = result\n" +
+                     "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
+                     "            struct (value, world)\n")
+            | SimulantToRelation ->
+                Some
+                    ("            let (value, world) = result\n" +
+                     "            let value = Scripting.String (scstring value)\n" +
+                     "            struct (value, world)\n")
+            | SeqToList _ -> None
+         | PureReturn rc ->
+            match rc with
+            | NormalReturn ty ->
+                Some
+                    ("            let value = result\n" +
+                     "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
+                     "            struct (value, world)\n")
+            | SimulantToRelation ->
+                Some
+                    ("            let value = result\n" +
+                     "            let value = Scripting.String (scstring value)\n" +
+                     "            struct (value, world)\n")
+            | SeqToList _ -> None) |>
         Option.get // TODO: error output
     let invocation =
         "            let result = World." + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + "\n"
@@ -193,7 +221,7 @@ let generateBindingFunction binding =
     exceptionHandler
 
 let generateBindingMatcher binding =
-    let args = binding.FunctionParameters |> Array.allButLast |> Array.map Triple.fst
+    let args = binding.FunctionParameters |> Array.allButLast |> Array.map fst
     let argArray = "[|" + String.Join ("; ", args) + "|]"
     "        | \"" + binding.FunctionName + "\" ->\n" +
     "            match World.evalManyInternal exprs world with\n" +
