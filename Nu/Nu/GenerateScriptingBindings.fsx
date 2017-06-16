@@ -96,77 +96,37 @@ let generateParameterList functionParameters =
     let parNames = Array.map fst functionParameters : string array
     String.Join (" ", parNames)
 
-let rec tryGenerateParameterConversion (par : string) conversion =
+let generateRelationParameterConversion (par : string) (addressToSimulant : string) =
+    "            let struct (" + par + ", world) =\n" +
+    "                let context = World.getScriptContext world\n" +
+    "                match World.evalInternal " + par + " world with\n" +
+    "                | struct (Scripting.String str, world)\n" +
+    "                | struct (Scripting.Keyword str, world) ->\n" +
+    "                    let relation = Relation.makeFromString str\n" +
+    "                    let address = Relation.resolve context.SimulantAddress relation\n" +
+    "                    struct (" + addressToSimulant + " address, world)\n" +
+    "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+    "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n"
+
+let rec generateParameterConversionOpt (par : string) conversion =
     match conversion with
     | ValueParameter rc ->
         match rc with
         | NormalParameter ty ->
-            Some
-                ("            let " + par + " = ScriptingWorld.tryExport (" + par + ".GetType ()) " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n")
+            Some ("            let " + par + " = ScriptingWorld.tryExport (" + par + ".GetType ()) " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n")
         | RelationToEntity ->
-            Some
-                ("            let struct (" + par + ", world) =\n" +
-                 "                let context = World.getScriptContext world\n" +
-                 "                match World.evalInternal " + par + " world with\n" +
-                 "                | struct (Scripting.String str, world)\n" +
-                 "                | struct (Scripting.Keyword str, world) ->\n" +
-                 "                    let relation = Relation.makeFromString str\n" +
-                 "                    let address = Relation.resolve context.SimulantAddress relation\n" +
-                 "                    struct (Entity address, world)\n" +
-                 "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
-                 "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+            Some (generateRelationParameterConversion par "Entity")
         | RelationToLayer ->
-            Some
-                ("            let struct (" + par + ", world) =\n" +
-                 "                let context = World.getScriptContext world\n" +
-                 "                match World.evalInternal " + par + " world with\n" +
-                 "                | struct (Scripting.String str, world)\n" +
-                 "                | struct (Scripting.Keyword str, world) ->\n" +
-                 "                    let relation = Relation.makeFromString str\n" +
-                 "                    let address = Relation.resolve context.SimulantAddress relation\n" +
-                 "                    struct (Layer address, world)\n" +
-                 "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
-                 "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+            Some (generateRelationParameterConversion par "Layer")
         | RelationToScreen ->
-            Some
-                ("            let struct (" + par + ", world) =\n" +
-                 "                let context = World.getScriptContext world\n" +
-                 "                match World.evalInternal " + par + " world with\n" +
-                 "                | struct (Scripting.String str, world)\n" +
-                 "                | struct (Scripting.Keyword str, world) ->\n" +
-                 "                    let relation = Relation.makeFromString str\n" +
-                 "                    let address = Relation.resolve context.SimulantAddress relation\n" +
-                 "                    struct (Screen address, world)\n" +
-                 "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
-                 "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+            Some (generateRelationParameterConversion par "Screen")
         | RelationToGame ->
-            Some
-                ("            let struct (" + par + ", world) =\n" +
-                 "                let context = World.getScriptContext world\n" +
-                 "                match World.evalInternal " + par + " world with\n" +
-                 "                | struct (Scripting.String str, world)\n" +
-                 "                | struct (Scripting.Keyword str, world) ->\n" +
-                 "                    let relation = Relation.makeFromString str\n" +
-                 "                    let address = Relation.resolve context.SimulantAddress relation\n" +
-                 "                    struct (Game address, world)\n" +
-                 "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
-                 "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+            Some (generateRelationParameterConversion par "Game")
         | RelationToSimulant ->
-            Some
-                ("            let struct (" + par + ", world) =\n" +
-                 "                let context = World.getScriptContext world\n" +
-                 "                match World.evalInternal " + par + " world with\n" +
-                 "                | struct (Scripting.String str, world)\n" +
-                 "                | struct (Scripting.Keyword str, world) ->\n" +
-                 "                    let relation = Relation.makeFromString str\n" +
-                 "                    let address = Relation.resolve context.SimulantAddress relation\n" +
-                 "                    struct (World.deriveSimulant address, world)\n" +
-                 "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
-                 "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n")
+            Some (generateRelationParameterConversion par "World.deriveSimulant")
         | ListToSeq _ ->
             None
-    | WorldParameter ->
-        None
+    | WorldParameter -> None
 
 let generateBindingFunction binding =
     let functionAndExceptionHeader =
@@ -174,40 +134,34 @@ let generateBindingFunction binding =
         "        let oldWorld = world\n" +
         "        try\n"
     let conversions =
-        Array.map (fun (par, conversion) -> tryGenerateParameterConversion par conversion) binding.FunctionParameters |>
-        Array.definitize |> // TODO: error output
+        Array.map (fun (par, conversion) -> generateParameterConversionOpt par conversion) binding.FunctionParameters |>
+        Array.definitize |>
         fun conversions -> String.Join ("", conversions)
     let returnConversion =
-        (match binding.FunctionReturn with
-         | ImpureReturn ->
-            Some "            struct (Scripting.Unit, result)\n"
-         | MixedReturn rc ->
+        match binding.FunctionReturn with
+        | ImpureReturn -> "            struct (Scripting.Unit, result)\n"
+        | MixedReturn rc ->
             match rc with
             | NormalReturn ty ->
-                Some
-                    ("            let (value, world) = result\n" +
-                     "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
-                     "            struct (value, world)\n")
+                "            let (value, world) = result\n" +
+                "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
+                "            struct (value, world)\n"
             | SimulantToRelation ->
-                Some
-                    ("            let (value, world) = result\n" +
-                     "            let value = Scripting.String (scstring value)\n" +
-                     "            struct (value, world)\n")
-            | SeqToList _ -> None
-         | PureReturn rc ->
+                "            let (value, world) = result\n" +
+                "            let value = Scripting.String (scstring value)\n" +
+                "            struct (value, world)\n"
+            | SeqToList _ -> failwithnie ()
+        | PureReturn rc ->
             match rc with
             | NormalReturn ty ->
-                Some
-                    ("            let value = result\n" +
-                     "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
-                     "            struct (value, world)\n")
+                "            let value = result\n" +
+                "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
+                "            struct (value, world)\n"
             | SimulantToRelation ->
-                Some
-                    ("            let value = result\n" +
-                     "            let value = Scripting.String (scstring value)\n" +
-                     "            struct (value, world)\n")
-            | SeqToList _ -> None) |>
-        Option.get // TODO: error output
+                "            let value = result\n" +
+                "            let value = Scripting.String (scstring value)\n" +
+                "            struct (value, world)\n"
+            | SeqToList _ -> failwithnie ()
     let invocation =
         "            let result = World." + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + "\n"
     let exceptionHandler =
