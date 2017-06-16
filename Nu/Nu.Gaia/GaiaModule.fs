@@ -406,7 +406,7 @@ module Gaia =
                     let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                     let strEscaped = String.escape strUnescaped
                     let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
-                    form.propertyValueTextBox.Text <- strPretty + "\r\n"
+                    form.propertyValueTextBox.Text <- strPretty + "\n"
                     form.propertyValueTextBox.EmptyUndoBuffer ()
                     form.propertyValueTextBox.Keywords0 <- keywords0
                     form.propertyValueTextBox.Keywords1 <- keywords1
@@ -490,7 +490,7 @@ module Gaia =
     let private tryLoadPrelude (form : GaiaForm) world =
         match tryReloadPrelude form world with
         | Right (preludeStr, world) ->
-            form.preludeTextBox.Text <- preludeStr + "\r\n"
+            form.preludeTextBox.Text <- preludeStr + "\n"
             world
         | Left (error, world) ->
             MessageBox.Show ("Could not load prelude due to: " + error + "'.", "Failed to load prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
@@ -519,7 +519,7 @@ module Gaia =
             let selectionStart = form.assetGraphTextBox.SelectionStart
             let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
-            form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter + "\r\n"
+            form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter + "\n"
             form.assetGraphTextBox.SelectionStart <- selectionStart
             form.assetGraphTextBox.ScrollCaret ()
             world
@@ -554,7 +554,7 @@ module Gaia =
             let selectionStart = form.overlayerTextBox.SelectionStart
             let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Overlay>).PrettyPrinter
-            form.overlayerTextBox.Text <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter + "\r\n"
+            form.overlayerTextBox.Text <- PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter + "\n"
             form.overlayerTextBox.SelectionStart <- selectionStart
             form.overlayerTextBox.ScrollCaret ()
             world
@@ -841,7 +841,7 @@ module Gaia =
             match tryReloadAssetGraph form world with
             | Right (assetGraph, world) ->
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
-                form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter + "\r\n"
+                form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter + "\n"
                 world
             | Left (error, world) ->
                 MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
@@ -878,7 +878,7 @@ module Gaia =
             try let eventFilter = scvalue<EventFilter.Filter> form.eventFilterTextBox.Text
                 let world = World.setEventFilter eventFilter world
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<EventFilter.Filter>).PrettyPrinter
-                form.eventFilterTextBox.Text <- PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter + "\r\n"
+                form.eventFilterTextBox.Text <- PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter + "\n"
                 world
             with exn ->
                 let world = World.choose world
@@ -891,7 +891,7 @@ module Gaia =
             let eventFilterStr = scstring eventFilter
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<EventFilter.Filter>).PrettyPrinter
             let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
-            form.eventFilterTextBox.Text <- eventFilterPretty + "\r\n"
+            form.eventFilterTextBox.Text <- eventFilterPretty + "\n"
             form.eventFilterTextBox.EmptyUndoBuffer ()
             world
 

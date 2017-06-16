@@ -633,7 +633,7 @@
             this.evalInputTextBox.Name = "evalInputTextBox";
             this.evalInputTextBox.Size = new System.Drawing.Size(557, 174);
             this.evalInputTextBox.TabIndex = 0;
-            this.evalInputTextBox.Text = "; Evaluate script expressions here!\r\n[+ 2 2]";
+            this.evalInputTextBox.Text = "; Evaluate script expressions here!\n[+ 2 2]";
             this.evalInputTextBox.UseTabs = false;
             // 
             // splitContainer10

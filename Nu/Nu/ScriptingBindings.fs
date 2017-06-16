@@ -973,7 +973,23 @@ module WorldScriptingBindings =
     let destroyLayers layers world =
         let oldWorld = world
         try
-            let layers = ScriptingWorld.tryExport (layers.GetType ()) layers world |> Option.get :?> IEnumerable<Layer>
+            let struct (layers, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal layers world with
+                | struct (Scripting.List simulants, world) ->
+                    List.fold (fun struct (simulants, world) simulant ->
+                        match simulant with
+                        | Scripting.String str
+                        | Scripting.Keyword str ->
+                            let relation = Relation.makeFromString str
+                            let address = Relation.resolve context.SimulantAddress relation
+                            struct (Layer address :: simulants, world)
+                        | Scripting.Violation (_, error, _) -> failwith error
+                        | _ -> failwith "Relation must be either a String or Keyword.")
+                        struct ([], world)
+                        simulants
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Expecting a list of relations."
             let result = World.destroyLayers layers world
             struct (Scripting.Unit, result)
         with exn ->
@@ -1068,7 +1084,23 @@ module WorldScriptingBindings =
     let destroyEntities entities world =
         let oldWorld = world
         try
-            let entities = ScriptingWorld.tryExport (entities.GetType ()) entities world |> Option.get :?> IEnumerable<Entity>
+            let struct (entities, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal entities world with
+                | struct (Scripting.List simulants, world) ->
+                    List.fold (fun struct (simulants, world) simulant ->
+                        match simulant with
+                        | Scripting.String str
+                        | Scripting.Keyword str ->
+                            let relation = Relation.makeFromString str
+                            let address = Relation.resolve context.SimulantAddress relation
+                            struct (Entity address :: simulants, world)
+                        | Scripting.Violation (_, error, _) -> failwith error
+                        | _ -> failwith "Relation must be either a String or Keyword.")
+                        struct ([], world)
+                        simulants
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Expecting a list of relations."
             let result = World.destroyEntities entities world
             struct (Scripting.Unit, result)
         with exn ->
@@ -1079,7 +1111,23 @@ module WorldScriptingBindings =
         let oldWorld = world
         try
             let position = ScriptingWorld.tryExport (position.GetType ()) position world |> Option.get :?> Vector2
-            let entities = ScriptingWorld.tryExport (entities.GetType ()) entities world |> Option.get :?> IEnumerable<Entity>
+            let struct (entities, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal entities world with
+                | struct (Scripting.List simulants, world) ->
+                    List.fold (fun struct (simulants, world) simulant ->
+                        match simulant with
+                        | Scripting.String str
+                        | Scripting.Keyword str ->
+                            let relation = Relation.makeFromString str
+                            let address = Relation.resolve context.SimulantAddress relation
+                            struct (Entity address :: simulants, world)
+                        | Scripting.Violation (_, error, _) -> failwith error
+                        | _ -> failwith "Relation must be either a String or Keyword.")
+                        struct ([], world)
+                        simulants
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Expecting a list of relations."
             let result = World.tryPickEntity position entities world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpOption<Entity>> value world |> Option.get
