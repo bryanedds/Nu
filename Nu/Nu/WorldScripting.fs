@@ -284,7 +284,7 @@ module WorldScripting =
             | (false, _) -> evalBinding fnName exprs originOpt world
 
         static member internal initScripting () =
-            // TODO: tickRate tickTime getSimulantSelected simulantExists schedule"
+            // TODO: tickRate tickTime getSimulantSelected simulantExists schedule
             let extrinsics =
                 [("v2", World.evalV2Extrinsic)
                  ("index_Vector2", World.evalIndexV2Extrinsic)
