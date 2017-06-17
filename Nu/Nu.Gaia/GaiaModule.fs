@@ -903,7 +903,6 @@ module Gaia =
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<EventFilter.Filter>).PrettyPrinter
             let eventFilterPretty = PrettyPrinter.prettyPrint eventFilterStr prettyPrinter
             form.eventFilterTextBox.Text <- eventFilterPretty + "\n"
-            form.eventFilterTextBox.EmptyUndoBuffer ()
             world
 
     let private handleSavePreludeClick (form : GaiaForm) (_ : EventArgs) =
@@ -1253,6 +1252,12 @@ module Gaia =
         handleLoadPreludeClick form (EventArgs ())
         handleLoadAssetGraphClick form (EventArgs ())
         handleLoadOverlayerClick form (EventArgs ())
+
+        // clear undo buffers
+        form.eventFilterTextBox.EmptyUndoBuffer ()
+        form.preludeTextBox.EmptyUndoBuffer ()
+        form.assetGraphTextBox.EmptyUndoBuffer ()
+        form.overlayerTextBox.EmptyUndoBuffer ()
 
         // finally, show form
         form.Show ()
