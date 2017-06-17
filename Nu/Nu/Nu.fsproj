@@ -103,8 +103,8 @@
     <Compile Include="WorldDispatchers.fs" />
     <Compile Include="WorldModule2.fs" />
     <Compile Include="WorldBindings.fs" />
-    <Compile Include="World.fs" />
-    <Compile Include="Stream.fs" />
+    <Compile Include="WorldModule3.fs" />
+    <Compile Include="WorldStream.fs" />
     <Compile Include="ReflectionTests.fs" />
     <Compile Include="SpatialTreeTests.fs" />
     <Compile Include="EffectTests.fs" />
