@@ -961,11 +961,11 @@ module WorldModuleEntity =
                     if World.getEntityPublishChanges entity world
                     then World.publishEntityChanges entity oldWorld world
                     else world
-                Right world
+                (Right (), world)
             | (None, None) ->
-                Right world
+                (Right (), world)
             | (_, _) ->
-                Left "Could not set the entity's overlay name because setting an overlay to or from None is currently unimplemented."
+                (Left "Could not set the entity's overlay name because setting an overlay to or from None is currently unimplemented.", world)
 
         /// Try to set the entity's facet names.
         [<FunctionBinding>]
@@ -984,8 +984,8 @@ module WorldModuleEntity =
                     if World.getEntityPublishChanges entity world
                     then World.publishEntityChanges entity oldWorld world
                     else world
-                Right world
-            | Left error -> Left error
+                (Right (), world)
+            | Left error -> (Left error, world)
 
         /// View all of the properties of an entity.
         static member internal viewEntityProperties entity world =

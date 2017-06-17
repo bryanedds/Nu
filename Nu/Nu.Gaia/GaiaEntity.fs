@@ -106,8 +106,8 @@ and EntityPropertyDescriptor (property, attributes) =
                 let entity = entityTds.DescribedEntity
                 let world =
                     match World.trySetEntityFacetNames facetNames entity world with
-                    | Right world -> world
-                    | Left error -> Log.trace error; world
+                    | (Right (), world) -> world
+                    | (Left error, world) -> Log.trace error; world
                 entityTds.RefWorld := world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
                 world
@@ -119,8 +119,8 @@ and EntityPropertyDescriptor (property, attributes) =
                     match propertyName with
                     | "OverlayNameOpt" ->
                         match World.trySetEntityOverlayNameOpt (value :?> string option) entity world with
-                        | Right world -> world
-                        | Left error -> Log.trace error; world
+                        | (Right (), world) -> world
+                        | (Left error, world) -> Log.trace error; world
                     | _ -> EntityPropertyValue.setValue property value entity world
                 let world = entityTds.DescribedEntity.PropagatePhysics world
                 entityTds.RefWorld := world // must be set for property grid

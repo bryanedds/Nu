@@ -312,10 +312,11 @@ module Gaia =
         world
 
     let private trySaveSelectedLayer filePath world =
+        let oldWorld = world
         let selectedLayer = (World.getUserValue world).SelectedLayer
         try World.writeLayerToFile filePath selectedLayer world
         with exn ->
-            World.choose world |> ignore
+            World.choose oldWorld |> ignore
             MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
 
     let private tryLoadSelectedLayer (form : GaiaForm) filePath world =
@@ -493,23 +494,24 @@ module Gaia =
 
     let private tryLoadPrelude (form : GaiaForm) world =
         match tryReloadPrelude form world with
-        | Right (preludeStr, world) ->
+        | (Right preludeStr, world) ->
             form.preludeTextBox.Text <- preludeStr + "\n"
             world
-        | Left (error, world) ->
+        | (Left error, world) ->
             MessageBox.Show ("Could not load prelude due to: " + error + "'.", "Failed to load prelude", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private trySavePrelude (form : GaiaForm) world =
+        let oldWorld = world
         let editorState = World.getUserValue world
         let preludeSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let preludeFilePath = Path.Combine (preludeSourceDir, Assets.PreludeFilePath)
         try let preludeStr = form.preludeTextBox.Text.TrimEnd ()
             File.WriteAllText (preludeFilePath, preludeStr)
-            true
+            (true, world)
         with exn ->
             MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            false
+            (false, World.choose oldWorld)
 
     let private tryReloadAssetGraph (_ : GaiaForm) world =
         let editorState = World.getUserValue world
@@ -519,7 +521,7 @@ module Gaia =
 
     let private tryLoadAssetGraph (form : GaiaForm) world =
         match tryReloadAssetGraph form world with
-        | Right (assetGraph, world) ->
+        | (Right assetGraph, world) ->
             let selectionStart = form.assetGraphTextBox.SelectionStart
             let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
@@ -527,34 +529,35 @@ module Gaia =
             form.assetGraphTextBox.SelectionStart <- selectionStart
             form.assetGraphTextBox.ScrollCaret ()
             world
-        | Left (error, world) ->
+        | (Left error, world) ->
             MessageBox.Show ("Could not load asset graph due to: " + error + "'.", "Failed to load asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private trySaveAssetGraph (form : GaiaForm) world =
+        let oldWorld = world
         let editorState = World.getUserValue world
         let assetSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let assetGraphFilePath = Path.Combine (assetSourceDir, Assets.AssetGraphFilePath)
         try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
             File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
-            true
+            (true, world)
         with exn ->
             MessageBox.Show ("Could not save asset graph due to: " + scstring exn, "Failed to save asset graph", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            false
+            (false, World.choose oldWorld)
 
     let private tryReloadOverlays form world =
         let targetDir = (World.getUserValue world).TargetDir
         let overlayDir = Path.Combine (targetDir, "..\\..")
         match World.tryReloadOverlays overlayDir targetDir world with
-        | Right (overlayer, world) ->
+        | (Right overlayer, world) ->
             refreshOverlayComboBox form world
-            Right (overlayer, world)
-        | Left _ as error -> error
+            (Right overlayer, world)
+        | (Left error, world) -> (Left error, world)
 
     let private tryLoadOverlayer (form : GaiaForm) world =
         match tryReloadOverlays form world with
-        | Right (overlayer, world) ->
+        | (Right overlayer, world) ->
             let selectionStart = form.overlayerTextBox.SelectionStart
             let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Overlay>).PrettyPrinter
@@ -562,21 +565,22 @@ module Gaia =
             form.overlayerTextBox.SelectionStart <- selectionStart
             form.overlayerTextBox.ScrollCaret ()
             world
-        | Left (error, world) ->
+        | (Left error, world) ->
             MessageBox.Show ("Could not reload overlayer due to: " + error + "'.", "Failed to reload overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             world
 
     let private trySaveOverlayer (form : GaiaForm) world =
+        let oldWorld = world
         let editorState = World.getUserValue world
         let overlayerSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let overlayerFilePath = Path.Combine (overlayerSourceDir, Assets.OverlayerFilePath)
         try let overlays = scvalue<Overlay list> ^ form.overlayerTextBox.Text.TrimEnd ()
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Overlay>).PrettyPrinter
             File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
-            true
+            (true, world)
         with exn ->
             MessageBox.Show ("Could not save overlayer due to: " + scstring exn, "Failed to save overlayer", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            false
+            (false, oldWorld)
 
     let private handleFormEntityPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
@@ -647,6 +651,7 @@ module Gaia =
 
     let private handleFormCreateEntity atMouse (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
+            let oldWorld = world
             try let world = pushPastWorld world world
                 let selectedLayer = (World.getUserValue world).SelectedLayer
                 let dispatcherName = form.createEntityComboBox.Text
@@ -673,7 +678,7 @@ module Gaia =
                 selectEntity form entity world
                 world
             with exn ->
-                let world = World.choose world
+                let world = World.choose oldWorld
                 MessageBox.Show (scstring exn, "Could not create entity", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
@@ -693,6 +698,7 @@ module Gaia =
         layerCreationForm.dispatcherTextBox.Text <- typeof<LayerDispatcher>.Name
         layerCreationForm.okButton.Click.Add ^ fun _ ->
             addWorldChanger ^ fun world ->
+                let oldWorld = world
                 let world = pushPastWorld world world
                 let layerName = layerCreationForm.nameTextBox.Text
                 let layerDispatcherName = layerCreationForm.dispatcherTextBox.Text
@@ -703,7 +709,7 @@ module Gaia =
                     form.layerTabControl.SelectTab (form.layerTabControl.TabPages.IndexOfKey layerName)
                     world
                 with exn ->
-                    let world = World.choose world
+                    let world = World.choose oldWorld
                     MessageBox.Show ("Could not create layer due to: " + scstring exn, "Layer creation error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
             layerCreationForm.Close ()
@@ -843,11 +849,11 @@ module Gaia =
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             match tryReloadAssetGraph form world with
-            | Right (assetGraph, world) ->
+            | (Right assetGraph, world) ->
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
                 form.assetGraphTextBox.Text <- PrettyPrinter.prettyPrint (scstring assetGraph) prettyPrinter + "\n"
                 world
-            | Left (error, world) ->
+            | (Left error, world) ->
                 MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
@@ -879,13 +885,14 @@ module Gaia =
 
     let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
+            let oldWorld = world
             try let eventFilter = scvalue<EventFilter.Filter> form.eventFilterTextBox.Text
                 let world = World.setEventFilter eventFilter world
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<EventFilter.Filter>).PrettyPrinter
                 form.eventFilterTextBox.Text <- PrettyPrinter.prettyPrint (scstring eventFilter) prettyPrinter + "\n"
                 world
             with exn ->
-                let world = World.choose world
+                let world = World.choose oldWorld
                 MessageBox.Show ("Invalid event filter due to: " + scstring exn, "Invalid event filter", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
@@ -901,13 +908,14 @@ module Gaia =
 
     let private handleSavePreludeClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            if trySavePrelude form world then
+            match trySavePrelude form world with
+            | (true, world) ->
                 match tryReloadPrelude form world with
-                | Right (_, world) -> world
-                | Left (error, world) ->
+                | (Right _, world) -> world
+                | (Left error, world) ->
                     MessageBox.Show ("Prelude reload error due to: " + error + "'.", "Prelude reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
-            else World.choose world
+            | (false, world) -> world
 
     let private handleLoadPreludeClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
@@ -915,13 +923,14 @@ module Gaia =
 
     let private handleSaveAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            if trySaveAssetGraph form world then
+            match trySaveAssetGraph form world with
+            | (true, world) ->
                 match tryReloadAssetGraph form world with
-                | Right (_, world) -> world
-                | Left (error, world) ->
+                | (Right _, world) -> world
+                | (Left error, world) ->
                     MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
-            else World.choose world
+            | (false, world) -> world
 
     let private handleLoadAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
@@ -929,13 +938,14 @@ module Gaia =
 
     let private handleSaveOverlayerClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            if trySaveOverlayer form world then
+            match trySaveOverlayer form world with
+            | (true, world) ->
                 match tryReloadOverlays form world with
-                | Right (_, world) -> world
-                | Left (error, world) ->
+                | (Right _, world) -> world
+                | (Left error, world) ->
                     MessageBox.Show ("Overlayer reload error due to: " + error + "'.", "Overlayer reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
-            else World.choose world
+            | (false, world) -> world
 
     let private handleLoadOverlayerClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
