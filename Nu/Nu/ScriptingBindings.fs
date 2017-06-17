@@ -1191,7 +1191,7 @@ module WorldScriptingBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reassignEntity' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let trySetEntityFacetNames overlayNameOpt entity world =
+    let trySetEntityOverlayNameOpt overlayNameOpt entity world =
         let oldWorld = world
         try
             let overlayNameOpt = ScriptingWorld.tryExport (overlayNameOpt.GetType ()) overlayNameOpt world |> Option.get :?> FSharpOption<String>
@@ -1208,7 +1208,7 @@ module WorldScriptingBindings =
             let result = World.trySetEntityOverlayNameOptFromScript overlayNameOpt entity world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityFacetNames' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityOverlayNameOpt' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let trySetEntityFacetNames facetNames entity world =
@@ -2171,12 +2171,12 @@ module WorldScriptingBindings =
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'reassignEntity' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
-        | "trySetEntityFacetNames" ->
+        | "trySetEntityOverlayNameOpt" ->
             match World.evalManyInternal exprs world with
             | struct ([|overlayNameOpt; entity|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                trySetEntityFacetNames overlayNameOpt entity world
+                trySetEntityOverlayNameOpt overlayNameOpt entity world
             | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'trySetEntityFacetNames' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'trySetEntityOverlayNameOpt' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | "trySetEntityFacetNames" ->
             match World.evalManyInternal exprs world with
@@ -2506,7 +2506,7 @@ module WorldScriptingBindings =
         | "tryPickEntity"
         | "createEntity"
         | "reassignEntity"
-        | "trySetEntityFacetNames"
+        | "trySetEntityOverlayNameOpt"
         | "trySetEntityFacetNames"
         | "createLayer"
         | "getEyeCenter"
@@ -2564,7 +2564,7 @@ module WorldScriptingBindings =
         "readScreenFromFile getLayers destroyLayer destroyLayers " +
         "writeLayerToFile readLayerFromFile getEntities destroyEntity " +
         "destroyEntities tryPickEntity createEntity reassignEntity " +
-        "trySetEntityFacetNames trySetEntityFacetNames createLayer getEyeCenter " +
+        "trySetEntityOverlayNameOpt trySetEntityFacetNames createLayer getEyeCenter " +
         "setEyeCenter getEyeSize setEyeSize getSelectedScreenOpt " +
         "setSelectedScreenOpt getSelectedScreen setSelectedScreen getScreenTransitionDestinationOpt " +
         "getViewAbsolute getViewAbsoluteI getViewRelative getViewRelativeI " +
