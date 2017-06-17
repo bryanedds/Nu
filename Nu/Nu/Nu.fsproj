@@ -101,10 +101,10 @@
     <Compile Include="WorldAudio.fs" />
     <Compile Include="WorldScripting.fs" />
     <Compile Include="WorldDispatchers.fs" />
+    <Compile Include="WorldModule2.fs" />
+    <Compile Include="WorldBindings.fs" />
     <Compile Include="WorldInit.fs" />
-    <Compile Include="World.fs" />
     <Compile Include="Stream.fs" />
-    <Compile Include="ScriptingBindings.fs" />
     <Compile Include="ReflectionTests.fs" />
     <Compile Include="SpatialTreeTests.fs" />
     <Compile Include="EffectTests.fs" />
