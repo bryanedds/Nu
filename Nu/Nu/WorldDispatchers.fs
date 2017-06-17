@@ -1282,8 +1282,8 @@ module TileMapDispatcherModule =
                         | Some bodyProperties -> bodyProperties :: bodyPropertyList
                         | None -> bodyPropertyList)
                     [] tileLayer.Tiles |>
-                Array.ofSeq
-            else [||]
+                Seq.toList
+            else []
 
         let registerTileLayerPhysics (tileMap : Entity) tileMapData tileLayerIndex world tileLayer =
             let bodyPropertyList = getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex tileLayer world
@@ -1311,7 +1311,7 @@ module TileMapDispatcherModule =
                         else physicsIds
                     | None -> physicsIds)
                 [] tileLayer.Tiles |>
-            Array.ofSeq
+            Seq.toList
 
         let unregisterTileMapPhysics (tileMap : Entity) world =
             let tileMapAsset = tileMap.GetTileMapAsset world

@@ -110,11 +110,15 @@ let generateNormalParameterConversion (par : string) (ty : Type) =
 
 let generateNormalListParameterConversion (par : string) (ty : Type) =
     "            let struct (" + par + ", world) =\n" +
-    "                Seq.fold (fun struct (values, world) ->\n" +
-    "                    let value = ScriptingWorld.tryExport typeof<" + ty.GetGenericName () + "> " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n" +
-    "                    struct (value :: values, world))\n" +
-    "                    struct ([], world)\n" +
-    "                    " + par + "\n"
+    "                match World.evalInternal " + par + " world with\n" +
+    "                | struct (Scripting.List list, world) ->\n" +
+    "                    Seq.fold (fun struct (values, world) value ->\n" +
+    "                        let value = ScriptingWorld.tryExport typeof<" + ty.GetGenericName () + "> value world |> Option.get :?> " + ty.GetGenericName () + "\n" +
+    "                        struct (value :: values, world))\n" +
+    "                        struct ([], world)\n" +
+    "                        list\n" +
+    "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+    "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n"
 
 let generateRelationParameterConversion (par : string) (ty : Type) =
     let addressToSimulant = if ty.Name = "Simulant" then "World.deriveSimulant" else ty.Name
