@@ -85,6 +85,9 @@ module Nu =
             WorldScripting.isBinding <- WorldBindings.isBinding
             WorldScripting.evalBinding <- WorldBindings.evalBinding
 
+            // init scripting
+            World.initScripting ()
+
             // init debug view F# reach-arounds
 #if DEBUG
             Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
