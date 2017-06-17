@@ -1191,7 +1191,7 @@ module WorldScriptingBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reassignEntity' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let trySetEntityOverlayNameOpt overlayNameOpt entity world =
+    let trySetEntityOverlayNameOptFromScript overlayNameOpt entity world =
         let oldWorld = world
         try
             let overlayNameOpt = ScriptingWorld.tryExport (overlayNameOpt.GetType ()) overlayNameOpt world |> Option.get :?> FSharpOption<String>
@@ -1205,15 +1205,13 @@ module WorldScriptingBindings =
                     struct (Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.trySetEntityOverlayNameOpt overlayNameOpt entity world
-            let (value, world) = result
-            let value = ScriptingWorld.tryImport typeof<Either<String, Unit>> value world |> Option.get
-            struct (value, world)
+            let result = World.trySetEntityOverlayNameOptFromScript overlayNameOpt entity world
+            struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityOverlayNameOpt' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityOverlayNameOptFromScript' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let trySetEntityFacetNames facetNames entity world =
+    let trySetEntityFacetNamesFromScript facetNames entity world =
         let oldWorld = world
         try
             let facetNames = ScriptingWorld.tryExport (facetNames.GetType ()) facetNames world |> Option.get :?> FSharpSet<String>
@@ -1227,12 +1225,10 @@ module WorldScriptingBindings =
                     struct (Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.trySetEntityFacetNames facetNames entity world
-            let (value, world) = result
-            let value = ScriptingWorld.tryImport typeof<Either<String, Unit>> value world |> Option.get
-            struct (value, world)
+            let result = World.trySetEntityFacetNamesFromScript facetNames entity world
+            struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityFacetNames' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityFacetNamesFromScript' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let createLayer4 dispatcherName nameOpt screen world =
@@ -2175,19 +2171,19 @@ module WorldScriptingBindings =
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'reassignEntity' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
-        | "trySetEntityOverlayNameOpt" ->
+        | "trySetEntityOverlayNameOptFromScript" ->
             match World.evalManyInternal exprs world with
             | struct ([|overlayNameOpt; entity|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                trySetEntityOverlayNameOpt overlayNameOpt entity world
+                trySetEntityOverlayNameOptFromScript overlayNameOpt entity world
             | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'trySetEntityOverlayNameOpt' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'trySetEntityOverlayNameOptFromScript' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
-        | "trySetEntityFacetNames" ->
+        | "trySetEntityFacetNamesFromScript" ->
             match World.evalManyInternal exprs world with
             | struct ([|facetNames; entity|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                trySetEntityFacetNames facetNames entity world
+                trySetEntityFacetNamesFromScript facetNames entity world
             | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'trySetEntityFacetNames' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'trySetEntityFacetNamesFromScript' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | "createLayer4" ->
             match World.evalManyInternal exprs world with
@@ -2510,8 +2506,8 @@ module WorldScriptingBindings =
         | "tryPickEntity"
         | "createEntity5"
         | "reassignEntity"
-        | "trySetEntityOverlayNameOpt"
-        | "trySetEntityFacetNames"
+        | "trySetEntityOverlayNameOptFromScript"
+        | "trySetEntityFacetNamesFromScript"
         | "createLayer4"
         | "getEyeCenter"
         | "setEyeCenter"
@@ -2568,7 +2564,7 @@ module WorldScriptingBindings =
         "readScreenFromFile getLayers destroyLayer destroyLayers " +
         "writeLayerToFile readLayerFromFile getEntities destroyEntity " +
         "destroyEntities tryPickEntity createEntity5 reassignEntity " +
-        "trySetEntityOverlayNameOpt trySetEntityFacetNames createLayer4 getEyeCenter " +
+        "trySetEntityOverlayNameOptFromScript trySetEntityFacetNamesFromScript createLayer4 getEyeCenter " +
         "setEyeCenter getEyeSize setEyeSize getSelectedScreenOpt " +
         "setSelectedScreenOpt getSelectedScreen setSelectedScreen getScreenTransitionDestinationOpt " +
         "getViewAbsolute getViewAbsoluteI getViewRelative getViewRelativeI " +

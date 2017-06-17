@@ -931,7 +931,6 @@ module WorldModuleEntity =
             World.addTasklet tasklet world
 
         /// Try to set an entity's optional overlay name.
-        [<FunctionBinding>]
         static member trySetEntityOverlayNameOpt overlayNameOpt entity world =
             let oldEntityState = World.getEntityState entity world
             let oldOverlayNameOpt = oldEntityState.OverlayNameOpt
@@ -966,9 +965,15 @@ module WorldModuleEntity =
                 (Right (), world)
             | (_, _) ->
                 (Left "Could not set the entity's overlay name because setting an overlay to or from None is currently unimplemented.", world)
+            
+        /// Try to set the entity's facet names from script.
+        [<FunctionBinding ("trySetEntityFacetNames")>]
+        static member trySetEntityOverlayNameOptFromScript overlayNameOpt entity world =
+            match World.trySetEntityOverlayNameOpt overlayNameOpt entity world with
+            | (Right _, world) -> world
+            | (Left _, world) -> world
 
         /// Try to set the entity's facet names.
-        [<FunctionBinding>]
         static member trySetEntityFacetNames facetNames entity world =
             let entityState = World.getEntityState entity world
             match World.trySetFacetNames facetNames entityState (Some entity) world with
@@ -986,6 +991,13 @@ module WorldModuleEntity =
                     else world
                 (Right (), world)
             | Left error -> (Left error, world)
+            
+        /// Try to set the entity's facet names from script.
+        [<FunctionBinding ("trySetEntityFacetNames")>]
+        static member trySetEntityFacetNamesFromScript facetNames entity world =
+            match World.trySetEntityFacetNames facetNames entity world with
+            | (Right _, world) -> world
+            | (Left _, world) -> world
 
         /// View all of the properties of an entity.
         static member internal viewEntityProperties entity world =
