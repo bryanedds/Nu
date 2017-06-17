@@ -150,17 +150,18 @@ namespace Nu.Gaia.Design
                 // TODO: SelectChildSymbols();
                 e.SuppressKeyPress = true;
             }
-            else if (e.KeyCode == Keys.OemOpenBrackets)
-            {
-                // first, delete any selected text
-                if (SelectionStart != SelectionEnd)
-                    DeleteRange(SelectionStart, SelectionEnd - SelectionStart);
-
-                // next, insert open _and_ close brackets
-                InsertText(SelectionStart, "[]");
-                ++SelectionStart;
-                e.SuppressKeyPress = true;
-            }
+            // NOTE: auto [] completion feature disabled due to poor usability.
+            //else if (e.KeyCode == Keys.OemOpenBrackets)
+            //{
+            //    // first, delete any selected text
+            //    if (SelectionStart != SelectionEnd)
+            //        DeleteRange(SelectionStart, SelectionEnd - SelectionStart);
+            //
+            //    // next, insert open _and_ close brackets
+            //    InsertText(SelectionStart, "[]");
+            //    ++SelectionStart;
+            //    e.SuppressKeyPress = true;
+            //}
         }
 
         private void SymbolicTextBox_CharAdded(object sender, CharAddedEventArgs e)
