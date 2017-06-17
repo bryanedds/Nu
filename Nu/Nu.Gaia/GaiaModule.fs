@@ -34,7 +34,7 @@ module Gaia =
 
     let private getPickableEntities world =
         let selectedLayer = (World.getUserValue world).SelectedLayer
-        let (entities, world) = World.getEntitiesInView Simulants.EditorScreen world
+        let (entities, world) = World.getEntitiesInView2 Simulants.EditorScreen world
         let entitiesInLayer = Enumerable.ToList (Enumerable.Where (entities, fun entity -> etol entity = selectedLayer))
         (entitiesInLayer, world)
 
@@ -401,7 +401,11 @@ module Gaia =
                             (String.concat " " facetNames, "", PrettyPrinter.defaulted)
                         | _ ->
                             let syntax = SyntaxAttribute.getOrDefault ty
-                            (syntax.Keywords0, syntax.Keywords1, syntax.PrettyPrinter)
+                            let keywords0 =
+                                if ty = typeof<Scripting.Expr>
+                                then syntax.Keywords0 + " " + WorldScriptingBindings.BindingKeywords
+                                else syntax.Keywords0
+                            (keywords0, syntax.Keywords1, syntax.PrettyPrinter)
                     let selectionStart = form.propertyValueTextBox.SelectionStart
                     let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                     let strEscaped = String.escape strUnescaped
@@ -1213,11 +1217,11 @@ module Gaia =
         match typeof<Scripting.Expr>.GetCustomAttribute<SyntaxAttribute> true with
         | null -> ()
         | syntax ->
-            form.evalInputTextBox.Keywords0 <- syntax.Keywords0
+            form.evalInputTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldScriptingBindings.BindingKeywords
             form.evalInputTextBox.Keywords1 <- syntax.Keywords1
-            form.evalOutputTextBox.Keywords0 <- syntax.Keywords0
+            form.evalOutputTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldScriptingBindings.BindingKeywords
             form.evalOutputTextBox.Keywords1 <- syntax.Keywords1
-            form.preludeTextBox.Keywords0 <- syntax.Keywords0
+            form.preludeTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldScriptingBindings.BindingKeywords
             form.preludeTextBox.Keywords1 <- syntax.Keywords1
 
         // populate asset graph keywords

@@ -521,24 +521,42 @@ module WorldModule2 =
             (World.getLiveness world, world)
 
         static member private getEntities3 getElementsFromTree (screen : Screen) world =
-            let entityTree = selectedScreen.GetEntityTreeNp world
-            let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree selectedScreen world) entityTree
-            let world = selectedScreen.SetEntityTreeNpNoEvent entityTree world
+            let entityTree = screen.GetEntityTreeNp world
+            let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree screen world) entityTree
+            let world = screen.SetEntityTreeNpNoEvent entityTree world
             let entities : Entity HashSet = getElementsFromTree spatialTree
             (entities, world)
 
         [<FunctionBinding>]
-        static member getEntitiesInView (screen : Screen) world =
+        static member getEntitiesInView2 (screen : Screen) world =
             let viewBounds = World.getViewBoundsRelative world
-            World.getEntities3 (SpatialTree.getElementsInBounds viewBounds) selectedScreen world
+            World.getEntities3 (SpatialTree.getElementsInBounds viewBounds) screen world
 
         [<FunctionBinding>]
-        static member getEntitiesInBounds bounds (screen : Screen) world =
-            World.getEntities3 (SpatialTree.getElementsInBounds bounds) selectedScreen world
+        static member getEntitiesInBounds3 bounds (screen : Screen) world =
+            World.getEntities3 (SpatialTree.getElementsInBounds bounds) screen world
 
         [<FunctionBinding>]
-        static member getEntitiesAtPoint point (screen : Screen) world =
-            World.getEntities3 (SpatialTree.getElementsAtPoint point) selectedScreen world
+        static member getEntitiesAtPoint3 point (screen : Screen) world =
+            World.getEntities3 (SpatialTree.getElementsAtPoint point) screen world
+
+        [<FunctionBinding>]
+        static member getEntitiesInView world =
+            match World.getSelectedScreenOpt world with
+            | Some screen -> World.getEntitiesInView2 screen world
+            | None -> (HashSet (), world)
+
+        [<FunctionBinding>]
+        static member getEntitiesInBounds bounds world =
+            match World.getSelectedScreenOpt world with
+            | Some screen -> World.getEntitiesInBounds3 bounds screen world
+            | None -> (HashSet (), world)
+
+        [<FunctionBinding>]
+        static member getEntitiesAtPoint point world =
+            match World.getSelectedScreenOpt world with
+            | Some screen -> World.getEntitiesAtPoint3 point screen world
+            | None -> (HashSet (), world)
 
         static member private updateSimulants world =
             
@@ -549,7 +567,7 @@ module WorldModule2 =
                 // gather simulants. Note that we do not re-discover simulants during the update process because the
                 // engine is defined to discourage the removal of simulants in the middle of a frame.
                 let layers = World.getLayers selectedScreen world
-                let (entities, world) = World.getEntitiesInView selectedScreen world
+                let (entities, world) = World.getEntitiesInView2 selectedScreen world
 
                 // update simulants
                 let world = World.updateGame world
@@ -623,7 +641,7 @@ module WorldModule2 =
                     | IdlingState -> world
                 let layers = World.getLayers selectedScreen world
                 let world = Seq.fold (fun world layer -> World.actualizeLayer layer world) world layers
-                let (entities, world) = World.getEntitiesInView selectedScreen world
+                let (entities, world) = World.getEntitiesInView2 selectedScreen world
                 Seq.fold (fun world entity -> World.actualizeEntity entity world) world entities
             | None -> world
 

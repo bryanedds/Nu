@@ -210,7 +210,7 @@ let generateBindingsMatcher bindings =
         Array.map generateBindingMatcher |>
         fun bindings -> String.Join ("", bindings)
     let matcher =
-        "    let bindings fnName exprs originOpt world =\n" +
+        "    let evalBinding fnName exprs originOpt world =\n" +
         "        match fnName with\n" +
         bindingMatchers +
         "        | _ ->\n" +
@@ -219,6 +219,7 @@ let generateBindingsMatcher bindings =
     matcher
 
 let generateBindingsCode bindings =
+
     let header =
         "// Nu Game Engine.\n" +
         "// Copyright (C) Bryan Edds, 2013-2017.\n" +
@@ -233,15 +234,37 @@ let generateBindingsCode bindings =
         "[<RequireQualifiedAccess>]\n" +
         "module WorldScriptingBindings =\n" +
         "\n"
+
     let bindingCodes =
         bindings |>
         Array.map generateBindingFunction |>
         fun strs -> String.Join ("\n", strs) + "\n"
+
     let bindingsMatcher =
-        generateBindingsMatcher bindings
+        generateBindingsMatcher bindings + "\n"
+
+    let isBindingPredicate =
+        "    let isBinding fnName =\n" +
+        "        match fnName with\n" +
+        (bindings |> Array.map (fun binding -> "        | \"" + binding.FunctionName + "\"") |> fun bindingList -> String.Join ("\n", bindingList)) + " -> true\n" +
+        "        | _ -> false\n" +
+        "\n"
+
+    let bindingLists =
+        bindings |>
+        Array.map (fun binding -> binding.FunctionName) |>
+        (fun arr -> Array.splitInto ((Array.length arr) / 4) arr) |>
+        Array.map (fun bindingList -> "        \"" + String.Join (" ", bindingList)) |>
+        (fun bindingLists -> String.Join (" \" + \n", bindingLists) + "\"\n")
+
+    let bindingSyntax =
+        "    let [<Literal>] BindingKeywords =\n" + bindingLists
+
     header +
     bindingCodes +
-    bindingsMatcher
+    bindingsMatcher +
+    isBindingPredicate +
+    bindingSyntax
 
 let types =
     AppDomain.CurrentDomain.GetAssemblies () |>
