@@ -40,7 +40,6 @@ module WorldBindings =
         "trySetEntityOverlayNameOpt trySetEntityFacetNames createLayer getEyeCenter " +
         "setEyeCenter getEyeSize setEyeSize getSelectedScreenOpt " +
         "setSelectedScreenOpt getSelectedScreen setSelectedScreen getScreenTransitionDestinationOpt " +
-        "getViewAbsolute getViewAbsoluteI getViewRelative getViewRelativeI " +
         "getViewBoundsRelative getViewBoundsAbsolute getViewBounds isBoundsInView " +
         "mouseToScreen mouseToWorld mouseToEntity getTickRate " +
         "getTickRateF setTickRate resetTickTime getTickTime " +
@@ -138,10 +137,6 @@ module WorldBindings =
         | "getSelectedScreen"
         | "setSelectedScreen"
         | "getScreenTransitionDestinationOpt"
-        | "getViewAbsolute"
-        | "getViewAbsoluteI"
-        | "getViewRelative"
-        | "getViewRelativeI"
         | "getViewBoundsRelative"
         | "getViewBoundsAbsolute"
         | "getViewBounds"
@@ -1523,50 +1518,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getScreenTransitionDestinationOpt' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getViewAbsolute world =
-        let oldWorld = world
-        try
-            let result = World.getViewAbsolute world
-            let value = result
-            let value = ScriptingWorld.tryImport typeof<Matrix3> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewAbsolute' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let getViewAbsoluteI world =
-        let oldWorld = world
-        try
-            let result = World.getViewAbsoluteI world
-            let value = result
-            let value = ScriptingWorld.tryImport typeof<Matrix3> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewAbsoluteI' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let getViewRelative world =
-        let oldWorld = world
-        try
-            let result = World.getViewRelative world
-            let value = result
-            let value = ScriptingWorld.tryImport typeof<Matrix3> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewRelative' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let getViewRelativeI world =
-        let oldWorld = world
-        try
-            let result = World.getViewRelativeI world
-            let value = result
-            let value = ScriptingWorld.tryImport typeof<Matrix3> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewRelativeI' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
     let getViewBoundsRelative world =
         let oldWorld = world
         try
@@ -2419,34 +2370,6 @@ module WorldBindings =
                 getScreenTransitionDestinationOpt  world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'getScreenTransitionDestinationOpt' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | "getViewAbsolute" ->
-            match World.evalManyInternal exprs world with
-            | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                getViewAbsolute  world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'getViewAbsolute' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | "getViewAbsoluteI" ->
-            match World.evalManyInternal exprs world with
-            | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                getViewAbsoluteI  world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'getViewAbsoluteI' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | "getViewRelative" ->
-            match World.evalManyInternal exprs world with
-            | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                getViewRelative  world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'getViewRelative' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | "getViewRelativeI" ->
-            match World.evalManyInternal exprs world with
-            | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                getViewRelativeI  world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'getViewRelativeI' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | "getViewBoundsRelative" ->
             match World.evalManyInternal exprs world with

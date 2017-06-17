@@ -117,25 +117,21 @@ module WorldModuleGame =
             World.updateGameState (fun gameState -> { gameState with ScreenTransitionDestinationOpt = destination }) Property? ScreenTransitionDestinationOpt world
 
         /// Get the view of the eye in absolute terms (world space).
-        [<FunctionBinding>]
         static member getViewAbsolute world =
             Math.getViewAbsolute (World.getEyeCenter world) (World.getEyeSize world)
         
         /// Get the view of the eye in absolute terms (world space) with translation sliced on
         /// integers.
-        [<FunctionBinding>]
         static member getViewAbsoluteI world =
             Math.getViewAbsolute (World.getEyeCenter world) (World.getEyeSize world)
 
         /// The relative view of the eye with original single values. Due to the problems with
         /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
         /// coordinates is very, very bad for rendering.
-        [<FunctionBinding>]
         static member getViewRelative world =
             Math.getViewRelative (World.getEyeCenter world) (World.getEyeSize world)
 
         /// The relative view of the eye with translation sliced on integers. Good for rendering.
-        [<FunctionBinding>]
         static member getViewRelativeI world =
             Math.getViewRelativeI (World.getEyeCenter world) (World.getEyeSize world)
 
