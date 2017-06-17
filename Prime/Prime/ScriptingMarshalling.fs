@@ -266,7 +266,7 @@ module ScriptingMarshalling =
          (typeof<single>.Name, fun _ _ evaled -> match evaled with Single value -> value :> obj |> Some | _ -> None)
          (typeof<double>.Name, fun _ _ evaled -> match evaled with Double value -> value :> obj |> Some | _ -> None)
          (typeof<char>.Name, fun _ _ evaled -> match evaled with String value when value.Length = 1 -> value.[0] :> obj |> Some | _ -> None)
-         (typeof<string>.Name, fun _ _ evaled -> match evaled with String value -> value :> obj |> Some | _ -> None)
+         (typeof<string>.Name, fun _ _ evaled -> match evaled with String value -> value :> obj |> Some | Keyword value -> value :> obj |> Some | _ -> None)
          (typedefof<Guid>.Name, fun _ ty evaled -> tryExportGuid ty evaled)
          (typedefof<KeyValuePair<_, _>>.Name, tryExportKvp)
          (typedefof<_ Address>.Name, fun _ ty evaled -> tryExportAddress ty evaled)

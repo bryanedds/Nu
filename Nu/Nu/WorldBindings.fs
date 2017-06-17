@@ -270,10 +270,10 @@ module WorldBindings =
     let createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData layerFilePath world =
         let oldWorld = world
         try
-            let dispatcherName = ScriptingWorld.tryExport (dispatcherName.GetType ()) dispatcherName world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport (nameOpt.GetType ()) nameOpt world |> Option.get :?> FSharpOption<String>
-            let dissolveData = ScriptingWorld.tryExport (dissolveData.GetType ()) dissolveData world |> Option.get :?> DissolveData
-            let layerFilePath = ScriptingWorld.tryExport (layerFilePath.GetType ()) layerFilePath world |> Option.get :?> String
+            let dispatcherName = ScriptingWorld.tryExport typeof<String> dispatcherName world |> Option.get :?> String
+            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
+            let dissolveData = ScriptingWorld.tryExport typeof<DissolveData> dissolveData world |> Option.get :?> DissolveData
+            let layerFilePath = ScriptingWorld.tryExport typeof<String> layerFilePath world |> Option.get :?> String
             let result = World.createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData layerFilePath world
             let (value, world) = result
             let value = Scripting.String (scstring value)
@@ -285,9 +285,9 @@ module WorldBindings =
     let createDissolveScreenFromLayerFile nameOpt dissolveData layerFilePath world =
         let oldWorld = world
         try
-            let nameOpt = ScriptingWorld.tryExport (nameOpt.GetType ()) nameOpt world |> Option.get :?> FSharpOption<String>
-            let dissolveData = ScriptingWorld.tryExport (dissolveData.GetType ()) dissolveData world |> Option.get :?> DissolveData
-            let layerFilePath = ScriptingWorld.tryExport (layerFilePath.GetType ()) layerFilePath world |> Option.get :?> String
+            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
+            let dissolveData = ScriptingWorld.tryExport typeof<DissolveData> dissolveData world |> Option.get :?> DissolveData
+            let layerFilePath = ScriptingWorld.tryExport typeof<String> layerFilePath world |> Option.get :?> String
             let result = World.createDissolveScreenFromLayerFile nameOpt dissolveData layerFilePath world
             let (value, world) = result
             let value = Scripting.String (scstring value)
@@ -299,9 +299,9 @@ module WorldBindings =
     let createSplashScreen6 dispatcherName nameOpt splashData destination world =
         let oldWorld = world
         try
-            let dispatcherName = ScriptingWorld.tryExport (dispatcherName.GetType ()) dispatcherName world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport (nameOpt.GetType ()) nameOpt world |> Option.get :?> FSharpOption<String>
-            let splashData = ScriptingWorld.tryExport (splashData.GetType ()) splashData world |> Option.get :?> SplashData
+            let dispatcherName = ScriptingWorld.tryExport typeof<String> dispatcherName world |> Option.get :?> String
+            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
+            let splashData = ScriptingWorld.tryExport typeof<SplashData> splashData world |> Option.get :?> SplashData
             let struct (destination, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal destination world with
@@ -323,8 +323,8 @@ module WorldBindings =
     let createSplashScreen nameOpt splashData destination world =
         let oldWorld = world
         try
-            let nameOpt = ScriptingWorld.tryExport (nameOpt.GetType ()) nameOpt world |> Option.get :?> FSharpOption<String>
-            let splashData = ScriptingWorld.tryExport (splashData.GetType ()) splashData world |> Option.get :?> SplashData
+            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
+            let splashData = ScriptingWorld.tryExport typeof<SplashData> splashData world |> Option.get :?> SplashData
             let struct (destination, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal destination world with
@@ -367,7 +367,7 @@ module WorldBindings =
     let getEntitiesInBounds3 bounds screen world =
         let oldWorld = world
         try
-            let bounds = ScriptingWorld.tryExport (bounds.GetType ()) bounds world |> Option.get :?> Vector4
+            let bounds = ScriptingWorld.tryExport typeof<Vector4> bounds world |> Option.get :?> Vector4
             let struct (screen, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal screen world with
@@ -389,7 +389,7 @@ module WorldBindings =
     let getEntitiesAtPoint3 point screen world =
         let oldWorld = world
         try
-            let point = ScriptingWorld.tryExport (point.GetType ()) point world |> Option.get :?> Vector2
+            let point = ScriptingWorld.tryExport typeof<Vector2> point world |> Option.get :?> Vector2
             let struct (screen, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal screen world with
@@ -422,7 +422,7 @@ module WorldBindings =
     let getEntitiesInBounds bounds world =
         let oldWorld = world
         try
-            let bounds = ScriptingWorld.tryExport (bounds.GetType ()) bounds world |> Option.get :?> Vector4
+            let bounds = ScriptingWorld.tryExport typeof<Vector4> bounds world |> Option.get :?> Vector4
             let result = World.getEntitiesInBounds bounds world
             let (value, world) = result
             let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
@@ -434,7 +434,7 @@ module WorldBindings =
     let getEntitiesAtPoint point world =
         let oldWorld = world
         try
-            let point = ScriptingWorld.tryExport (point.GetType ()) point world |> Option.get :?> Vector2
+            let point = ScriptingWorld.tryExport typeof<Vector2> point world |> Option.get :?> Vector2
             let result = World.getEntitiesAtPoint point world
             let (value, world) = result
             let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
@@ -446,9 +446,9 @@ module WorldBindings =
     let playSong timeToFadeOutSongMs volume song world =
         let oldWorld = world
         try
-            let timeToFadeOutSongMs = ScriptingWorld.tryExport (timeToFadeOutSongMs.GetType ()) timeToFadeOutSongMs world |> Option.get :?> Int32
-            let volume = ScriptingWorld.tryExport (volume.GetType ()) volume world |> Option.get :?> Single
-            let song = ScriptingWorld.tryExport (song.GetType ()) song world |> Option.get :?> AssetTag
+            let timeToFadeOutSongMs = ScriptingWorld.tryExport typeof<Int32> timeToFadeOutSongMs world |> Option.get :?> Int32
+            let volume = ScriptingWorld.tryExport typeof<Single> volume world |> Option.get :?> Single
+            let song = ScriptingWorld.tryExport typeof<AssetTag> song world |> Option.get :?> AssetTag
             let result = World.playSong timeToFadeOutSongMs volume song world
             struct (Scripting.Unit, result)
         with exn ->
@@ -458,10 +458,10 @@ module WorldBindings =
     let playSong4 timeToFadeOutSongMs volume songPackageName songAssetName world =
         let oldWorld = world
         try
-            let timeToFadeOutSongMs = ScriptingWorld.tryExport (timeToFadeOutSongMs.GetType ()) timeToFadeOutSongMs world |> Option.get :?> Int32
-            let volume = ScriptingWorld.tryExport (volume.GetType ()) volume world |> Option.get :?> Single
-            let songPackageName = ScriptingWorld.tryExport (songPackageName.GetType ()) songPackageName world |> Option.get :?> String
-            let songAssetName = ScriptingWorld.tryExport (songAssetName.GetType ()) songAssetName world |> Option.get :?> String
+            let timeToFadeOutSongMs = ScriptingWorld.tryExport typeof<Int32> timeToFadeOutSongMs world |> Option.get :?> Int32
+            let volume = ScriptingWorld.tryExport typeof<Single> volume world |> Option.get :?> Single
+            let songPackageName = ScriptingWorld.tryExport typeof<String> songPackageName world |> Option.get :?> String
+            let songAssetName = ScriptingWorld.tryExport typeof<String> songAssetName world |> Option.get :?> String
             let result = World.playSong5 timeToFadeOutSongMs volume songPackageName songAssetName world
             struct (Scripting.Unit, result)
         with exn ->
@@ -471,8 +471,8 @@ module WorldBindings =
     let playSound volume sound world =
         let oldWorld = world
         try
-            let volume = ScriptingWorld.tryExport (volume.GetType ()) volume world |> Option.get :?> Single
-            let sound = ScriptingWorld.tryExport (sound.GetType ()) sound world |> Option.get :?> AssetTag
+            let volume = ScriptingWorld.tryExport typeof<Single> volume world |> Option.get :?> Single
+            let sound = ScriptingWorld.tryExport typeof<AssetTag> sound world |> Option.get :?> AssetTag
             let result = World.playSound volume sound world
             struct (Scripting.Unit, result)
         with exn ->
@@ -482,9 +482,9 @@ module WorldBindings =
     let playSound3 volume soundPackageName soundAssetName world =
         let oldWorld = world
         try
-            let volume = ScriptingWorld.tryExport (volume.GetType ()) volume world |> Option.get :?> Single
-            let soundPackageName = ScriptingWorld.tryExport (soundPackageName.GetType ()) soundPackageName world |> Option.get :?> String
-            let soundAssetName = ScriptingWorld.tryExport (soundAssetName.GetType ()) soundAssetName world |> Option.get :?> String
+            let volume = ScriptingWorld.tryExport typeof<Single> volume world |> Option.get :?> Single
+            let soundPackageName = ScriptingWorld.tryExport typeof<String> soundPackageName world |> Option.get :?> String
+            let soundAssetName = ScriptingWorld.tryExport typeof<String> soundAssetName world |> Option.get :?> String
             let result = World.playSound4 volume soundPackageName soundAssetName world
             struct (Scripting.Unit, result)
         with exn ->
@@ -494,7 +494,7 @@ module WorldBindings =
     let fadeOutSong timeToFadeOutSongMs world =
         let oldWorld = world
         try
-            let timeToFadeOutSongMs = ScriptingWorld.tryExport (timeToFadeOutSongMs.GetType ()) timeToFadeOutSongMs world |> Option.get :?> Int32
+            let timeToFadeOutSongMs = ScriptingWorld.tryExport typeof<Int32> timeToFadeOutSongMs world |> Option.get :?> Int32
             let result = World.fadeOutSong timeToFadeOutSongMs world
             struct (Scripting.Unit, result)
         with exn ->
@@ -513,7 +513,7 @@ module WorldBindings =
     let hintAudioPackageUse packageName world =
         let oldWorld = world
         try
-            let packageName = ScriptingWorld.tryExport (packageName.GetType ()) packageName world |> Option.get :?> String
+            let packageName = ScriptingWorld.tryExport typeof<String> packageName world |> Option.get :?> String
             let result = World.hintAudioPackageUse packageName world
             struct (Scripting.Unit, result)
         with exn ->
@@ -523,7 +523,7 @@ module WorldBindings =
     let hintAudioPackageDisuse packageName world =
         let oldWorld = world
         try
-            let packageName = ScriptingWorld.tryExport (packageName.GetType ()) packageName world |> Option.get :?> String
+            let packageName = ScriptingWorld.tryExport typeof<String> packageName world |> Option.get :?> String
             let result = World.hintAudioPackageDisuse packageName world
             struct (Scripting.Unit, result)
         with exn ->
@@ -542,7 +542,7 @@ module WorldBindings =
     let hintRenderPackageUse packageName world =
         let oldWorld = world
         try
-            let packageName = ScriptingWorld.tryExport (packageName.GetType ()) packageName world |> Option.get :?> String
+            let packageName = ScriptingWorld.tryExport typeof<String> packageName world |> Option.get :?> String
             let result = World.hintRenderPackageUse packageName world
             struct (Scripting.Unit, result)
         with exn ->
@@ -552,7 +552,7 @@ module WorldBindings =
     let hintRenderPackageDisuse packageName world =
         let oldWorld = world
         try
-            let packageName = ScriptingWorld.tryExport (packageName.GetType ()) packageName world |> Option.get :?> String
+            let packageName = ScriptingWorld.tryExport typeof<String> packageName world |> Option.get :?> String
             let result = World.hintRenderPackageDisuse packageName world
             struct (Scripting.Unit, result)
         with exn ->
@@ -571,7 +571,7 @@ module WorldBindings =
     let bodyExists physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.bodyExists physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Boolean> value world |> Option.get
@@ -583,7 +583,7 @@ module WorldBindings =
     let getBodyContactNormals physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.getBodyContactNormals physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpList<Vector2>> value world |> Option.get
@@ -595,7 +595,7 @@ module WorldBindings =
     let getBodyLinearVelocity physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.getBodyLinearVelocity physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2> value world |> Option.get
@@ -607,7 +607,7 @@ module WorldBindings =
     let getBodyToGroundContactNormals physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.getBodyToGroundContactNormals physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpList<Vector2>> value world |> Option.get
@@ -619,7 +619,7 @@ module WorldBindings =
     let getBodyToGroundContactNormalOpt physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.getBodyToGroundContactNormalOpt physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpOption<Vector2>> value world |> Option.get
@@ -631,7 +631,7 @@ module WorldBindings =
     let getBodyToGroundContactTangentOpt physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.getBodyToGroundContactTangentOpt physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpOption<Vector2>> value world |> Option.get
@@ -643,7 +643,7 @@ module WorldBindings =
     let isBodyOnGround physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.isBodyOnGround physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Boolean> value world |> Option.get
@@ -665,8 +665,8 @@ module WorldBindings =
                     struct (Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let entityId = ScriptingWorld.tryExport (entityId.GetType ()) entityId world |> Option.get :?> Guid
-            let bodyProperties = ScriptingWorld.tryExport (bodyProperties.GetType ()) bodyProperties world |> Option.get :?> BodyProperties
+            let entityId = ScriptingWorld.tryExport typeof<Guid> entityId world |> Option.get :?> Guid
+            let bodyProperties = ScriptingWorld.tryExport typeof<BodyProperties> bodyProperties world |> Option.get :?> BodyProperties
             let result = World.createBody entity entityId bodyProperties world
             struct (Scripting.Unit, result)
         with exn ->
@@ -686,8 +686,8 @@ module WorldBindings =
                     struct (Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let entityId = ScriptingWorld.tryExport (entityId.GetType ()) entityId world |> Option.get :?> Guid
-            let bodiesProperties = ScriptingWorld.tryExport (bodiesProperties.GetType ()) bodiesProperties world |> Option.get :?> BodyProperties[]
+            let entityId = ScriptingWorld.tryExport typeof<Guid> entityId world |> Option.get :?> Guid
+            let bodiesProperties = ScriptingWorld.tryExport typeof<BodyProperties[]> bodiesProperties world |> Option.get :?> BodyProperties[]
             let result = World.createBodies entity entityId bodiesProperties world
             struct (Scripting.Unit, result)
         with exn ->
@@ -697,7 +697,7 @@ module WorldBindings =
     let destroyBody physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.destroyBody physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -707,7 +707,7 @@ module WorldBindings =
     let destroyBodies physicsIds world =
         let oldWorld = world
         try
-            let physicsIds = ScriptingWorld.tryExport (physicsIds.GetType ()) physicsIds world |> Option.get :?> PhysicsId[]
+            let physicsIds = ScriptingWorld.tryExport typeof<PhysicsId[]> physicsIds world |> Option.get :?> PhysicsId[]
             let result = World.destroyBodies physicsIds world
             struct (Scripting.Unit, result)
         with exn ->
@@ -717,8 +717,8 @@ module WorldBindings =
     let setBodyPosition position physicsId world =
         let oldWorld = world
         try
-            let position = ScriptingWorld.tryExport (position.GetType ()) position world |> Option.get :?> Vector2
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let position = ScriptingWorld.tryExport typeof<Vector2> position world |> Option.get :?> Vector2
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.setBodyPosition position physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -728,8 +728,8 @@ module WorldBindings =
     let setBodyRotation rotation physicsId world =
         let oldWorld = world
         try
-            let rotation = ScriptingWorld.tryExport (rotation.GetType ()) rotation world |> Option.get :?> Single
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let rotation = ScriptingWorld.tryExport typeof<Single> rotation world |> Option.get :?> Single
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.setBodyRotation rotation physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -739,8 +739,8 @@ module WorldBindings =
     let setBodyAngularVelocity angularVelocity physicsId world =
         let oldWorld = world
         try
-            let angularVelocity = ScriptingWorld.tryExport (angularVelocity.GetType ()) angularVelocity world |> Option.get :?> Single
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let angularVelocity = ScriptingWorld.tryExport typeof<Single> angularVelocity world |> Option.get :?> Single
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.setBodyAngularVelocity angularVelocity physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -750,8 +750,8 @@ module WorldBindings =
     let setBodyLinearVelocity linearVelocity physicsId world =
         let oldWorld = world
         try
-            let linearVelocity = ScriptingWorld.tryExport (linearVelocity.GetType ()) linearVelocity world |> Option.get :?> Vector2
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let linearVelocity = ScriptingWorld.tryExport typeof<Vector2> linearVelocity world |> Option.get :?> Vector2
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.setBodyLinearVelocity linearVelocity physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -761,8 +761,8 @@ module WorldBindings =
     let applyBodyAngularImpulse angularImpulse physicsId world =
         let oldWorld = world
         try
-            let angularImpulse = ScriptingWorld.tryExport (angularImpulse.GetType ()) angularImpulse world |> Option.get :?> Single
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let angularImpulse = ScriptingWorld.tryExport typeof<Single> angularImpulse world |> Option.get :?> Single
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.applyBodyAngularImpulse angularImpulse physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -772,8 +772,8 @@ module WorldBindings =
     let applyBodyLinearImpulse linearImpulse physicsId world =
         let oldWorld = world
         try
-            let linearImpulse = ScriptingWorld.tryExport (linearImpulse.GetType ()) linearImpulse world |> Option.get :?> Vector2
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let linearImpulse = ScriptingWorld.tryExport typeof<Vector2> linearImpulse world |> Option.get :?> Vector2
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.applyBodyLinearImpulse linearImpulse physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -783,8 +783,8 @@ module WorldBindings =
     let applyBodyForce force physicsId world =
         let oldWorld = world
         try
-            let force = ScriptingWorld.tryExport (force.GetType ()) force world |> Option.get :?> Vector2
-            let physicsId = ScriptingWorld.tryExport (physicsId.GetType ()) physicsId world |> Option.get :?> PhysicsId
+            let force = ScriptingWorld.tryExport typeof<Vector2> force world |> Option.get :?> Vector2
+            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
             let result = World.applyBodyForce force physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -794,7 +794,7 @@ module WorldBindings =
     let isMouseButtonDown mouseButton world =
         let oldWorld = world
         try
-            let mouseButton = ScriptingWorld.tryExport (mouseButton.GetType ()) mouseButton world |> Option.get :?> MouseButton
+            let mouseButton = ScriptingWorld.tryExport typeof<MouseButton> mouseButton world |> Option.get :?> MouseButton
             let result = World.isMouseButtonDown mouseButton world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Boolean> value world |> Option.get
@@ -828,7 +828,7 @@ module WorldBindings =
     let isKeyboardKeyDown scanCode world =
         let oldWorld = world
         try
-            let scanCode = ScriptingWorld.tryExport (scanCode.GetType ()) scanCode world |> Option.get :?> Int32
+            let scanCode = ScriptingWorld.tryExport typeof<Int32> scanCode world |> Option.get :?> Int32
             let result = World.isKeyboardKeyDown scanCode world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Boolean> value world |> Option.get
@@ -967,7 +967,7 @@ module WorldBindings =
     let writeGameToFile filePath world =
         let oldWorld = world
         try
-            let filePath = ScriptingWorld.tryExport (filePath.GetType ()) filePath world |> Option.get :?> String
+            let filePath = ScriptingWorld.tryExport typeof<String> filePath world |> Option.get :?> String
             let result = World.writeGameToFile filePath world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Void> value world |> Option.get
@@ -979,7 +979,7 @@ module WorldBindings =
     let readGameFromFile filePath world =
         let oldWorld = world
         try
-            let filePath = ScriptingWorld.tryExport (filePath.GetType ()) filePath world |> Option.get :?> String
+            let filePath = ScriptingWorld.tryExport typeof<String> filePath world |> Option.get :?> String
             let result = World.readGameFromFile filePath world
             struct (Scripting.Unit, result)
         with exn ->
@@ -1019,8 +1019,8 @@ module WorldBindings =
     let createScreen dispatcherName nameOpt world =
         let oldWorld = world
         try
-            let dispatcherName = ScriptingWorld.tryExport (dispatcherName.GetType ()) dispatcherName world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport (nameOpt.GetType ()) nameOpt world |> Option.get :?> FSharpOption<String>
+            let dispatcherName = ScriptingWorld.tryExport typeof<String> dispatcherName world |> Option.get :?> String
+            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
             let result = World.createScreen3 dispatcherName nameOpt world
             let (value, world) = result
             let value = Scripting.String (scstring value)
@@ -1032,9 +1032,9 @@ module WorldBindings =
     let createDissolveScreen dispatcherName nameOpt dissolveData world =
         let oldWorld = world
         try
-            let dispatcherName = ScriptingWorld.tryExport (dispatcherName.GetType ()) dispatcherName world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport (nameOpt.GetType ()) nameOpt world |> Option.get :?> FSharpOption<String>
-            let dissolveData = ScriptingWorld.tryExport (dissolveData.GetType ()) dissolveData world |> Option.get :?> DissolveData
+            let dispatcherName = ScriptingWorld.tryExport typeof<String> dispatcherName world |> Option.get :?> String
+            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
+            let dissolveData = ScriptingWorld.tryExport typeof<DissolveData> dissolveData world |> Option.get :?> DissolveData
             let result = World.createDissolveScreen5 dispatcherName nameOpt dissolveData world
             let (value, world) = result
             let value = Scripting.String (scstring value)
@@ -1046,7 +1046,7 @@ module WorldBindings =
     let writeScreenToFile filePath screen world =
         let oldWorld = world
         try
-            let filePath = ScriptingWorld.tryExport (filePath.GetType ()) filePath world |> Option.get :?> String
+            let filePath = ScriptingWorld.tryExport typeof<String> filePath world |> Option.get :?> String
             let struct (screen, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal screen world with
@@ -1068,8 +1068,8 @@ module WorldBindings =
     let readScreenFromFile filePath nameOpt world =
         let oldWorld = world
         try
-            let filePath = ScriptingWorld.tryExport (filePath.GetType ()) filePath world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport (nameOpt.GetType ()) nameOpt world |> Option.get :?> FSharpOption<String>
+            let filePath = ScriptingWorld.tryExport typeof<String> filePath world |> Option.get :?> String
+            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
             let result = World.readScreenFromFile filePath nameOpt world
             let (value, world) = result
             let value = Scripting.String (scstring value)
@@ -1147,7 +1147,7 @@ module WorldBindings =
     let writeLayerToFile filePath layer world =
         let oldWorld = world
         try
-            let filePath = ScriptingWorld.tryExport (filePath.GetType ()) filePath world |> Option.get :?> String
+            let filePath = ScriptingWorld.tryExport typeof<String> filePath world |> Option.get :?> String
             let struct (layer, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal layer world with
@@ -1169,8 +1169,8 @@ module WorldBindings =
     let readLayerFromFile filePath nameOpt screen world =
         let oldWorld = world
         try
-            let filePath = ScriptingWorld.tryExport (filePath.GetType ()) filePath world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport (nameOpt.GetType ()) nameOpt world |> Option.get :?> FSharpOption<String>
+            let filePath = ScriptingWorld.tryExport typeof<String> filePath world |> Option.get :?> String
+            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
             let struct (screen, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal screen world with
@@ -1258,7 +1258,7 @@ module WorldBindings =
     let tryPickEntity position entities world =
         let oldWorld = world
         try
-            let position = ScriptingWorld.tryExport (position.GetType ()) position world |> Option.get :?> Vector2
+            let position = ScriptingWorld.tryExport typeof<Vector2> position world |> Option.get :?> Vector2
             let struct (entities, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal entities world with
@@ -1287,9 +1287,9 @@ module WorldBindings =
     let createEntity dispatcherName nameOpt overlayNameDescriptor layer world =
         let oldWorld = world
         try
-            let dispatcherName = ScriptingWorld.tryExport (dispatcherName.GetType ()) dispatcherName world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport (nameOpt.GetType ()) nameOpt world |> Option.get :?> FSharpOption<String>
-            let overlayNameDescriptor = ScriptingWorld.tryExport (overlayNameDescriptor.GetType ()) overlayNameDescriptor world |> Option.get :?> OverlayNameDescriptor
+            let dispatcherName = ScriptingWorld.tryExport typeof<String> dispatcherName world |> Option.get :?> String
+            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
+            let overlayNameDescriptor = ScriptingWorld.tryExport typeof<OverlayNameDescriptor> overlayNameDescriptor world |> Option.get :?> OverlayNameDescriptor
             let struct (layer, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal layer world with
@@ -1321,7 +1321,7 @@ module WorldBindings =
                     struct (Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let nameOpt = ScriptingWorld.tryExport (nameOpt.GetType ()) nameOpt world |> Option.get :?> FSharpOption<String>
+            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
             let struct (layer, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal layer world with
@@ -1341,7 +1341,7 @@ module WorldBindings =
     let trySetEntityOverlayNameOpt overlayNameOpt entity world =
         let oldWorld = world
         try
-            let overlayNameOpt = ScriptingWorld.tryExport (overlayNameOpt.GetType ()) overlayNameOpt world |> Option.get :?> FSharpOption<String>
+            let overlayNameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> overlayNameOpt world |> Option.get :?> FSharpOption<String>
             let struct (entity, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal entity world with
@@ -1361,7 +1361,7 @@ module WorldBindings =
     let trySetEntityFacetNames facetNames entity world =
         let oldWorld = world
         try
-            let facetNames = ScriptingWorld.tryExport (facetNames.GetType ()) facetNames world |> Option.get :?> FSharpSet<String>
+            let facetNames = ScriptingWorld.tryExport typeof<FSharpSet<String>> facetNames world |> Option.get :?> FSharpSet<String>
             let struct (entity, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal entity world with
@@ -1381,8 +1381,8 @@ module WorldBindings =
     let createLayer dispatcherName nameOpt screen world =
         let oldWorld = world
         try
-            let dispatcherName = ScriptingWorld.tryExport (dispatcherName.GetType ()) dispatcherName world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport (nameOpt.GetType ()) nameOpt world |> Option.get :?> FSharpOption<String>
+            let dispatcherName = ScriptingWorld.tryExport typeof<String> dispatcherName world |> Option.get :?> String
+            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
             let struct (screen, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal screen world with
@@ -1415,7 +1415,7 @@ module WorldBindings =
     let setEyeCenter value world =
         let oldWorld = world
         try
-            let value = ScriptingWorld.tryExport (value.GetType ()) value world |> Option.get :?> Vector2
+            let value = ScriptingWorld.tryExport typeof<Vector2> value world |> Option.get :?> Vector2
             let result = World.setEyeCenter value world
             struct (Scripting.Unit, result)
         with exn ->
@@ -1436,7 +1436,7 @@ module WorldBindings =
     let setEyeSize value world =
         let oldWorld = world
         try
-            let value = ScriptingWorld.tryExport (value.GetType ()) value world |> Option.get :?> Vector2
+            let value = ScriptingWorld.tryExport typeof<Vector2> value world |> Option.get :?> Vector2
             let result = World.setEyeSize value world
             struct (Scripting.Unit, result)
         with exn ->
@@ -1457,7 +1457,7 @@ module WorldBindings =
     let setSelectedScreenOpt value world =
         let oldWorld = world
         try
-            let value = ScriptingWorld.tryExport (value.GetType ()) value world |> Option.get :?> FSharpOption<Screen>
+            let value = ScriptingWorld.tryExport typeof<FSharpOption<Screen>> value world |> Option.get :?> FSharpOption<Screen>
             let result = World.setSelectedScreenOpt value world
             struct (Scripting.Unit, result)
         with exn ->
@@ -1574,7 +1574,7 @@ module WorldBindings =
     let getViewBounds viewType world =
         let oldWorld = world
         try
-            let viewType = ScriptingWorld.tryExport (viewType.GetType ()) viewType world |> Option.get :?> ViewType
+            let viewType = ScriptingWorld.tryExport typeof<ViewType> viewType world |> Option.get :?> ViewType
             let result = World.getViewBounds viewType world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector4> value world |> Option.get
@@ -1586,8 +1586,8 @@ module WorldBindings =
     let isBoundsInView viewType bounds world =
         let oldWorld = world
         try
-            let viewType = ScriptingWorld.tryExport (viewType.GetType ()) viewType world |> Option.get :?> ViewType
-            let bounds = ScriptingWorld.tryExport (bounds.GetType ()) bounds world |> Option.get :?> Vector4
+            let viewType = ScriptingWorld.tryExport typeof<ViewType> viewType world |> Option.get :?> ViewType
+            let bounds = ScriptingWorld.tryExport typeof<Vector4> bounds world |> Option.get :?> Vector4
             let result = World.isBoundsInView viewType bounds world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Boolean> value world |> Option.get
@@ -1599,7 +1599,7 @@ module WorldBindings =
     let mouseToScreen mousePosition world =
         let oldWorld = world
         try
-            let mousePosition = ScriptingWorld.tryExport (mousePosition.GetType ()) mousePosition world |> Option.get :?> Vector2
+            let mousePosition = ScriptingWorld.tryExport typeof<Vector2> mousePosition world |> Option.get :?> Vector2
             let result = World.mouseToScreen mousePosition world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2> value world |> Option.get
@@ -1611,8 +1611,8 @@ module WorldBindings =
     let mouseToWorld viewType mousePosition world =
         let oldWorld = world
         try
-            let viewType = ScriptingWorld.tryExport (viewType.GetType ()) viewType world |> Option.get :?> ViewType
-            let mousePosition = ScriptingWorld.tryExport (mousePosition.GetType ()) mousePosition world |> Option.get :?> Vector2
+            let viewType = ScriptingWorld.tryExport typeof<ViewType> viewType world |> Option.get :?> ViewType
+            let mousePosition = ScriptingWorld.tryExport typeof<Vector2> mousePosition world |> Option.get :?> Vector2
             let result = World.mouseToWorld viewType mousePosition world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2> value world |> Option.get
@@ -1624,9 +1624,9 @@ module WorldBindings =
     let mouseToEntity viewType entityPosition mousePosition world =
         let oldWorld = world
         try
-            let viewType = ScriptingWorld.tryExport (viewType.GetType ()) viewType world |> Option.get :?> ViewType
-            let entityPosition = ScriptingWorld.tryExport (entityPosition.GetType ()) entityPosition world |> Option.get :?> Vector2
-            let mousePosition = ScriptingWorld.tryExport (mousePosition.GetType ()) mousePosition world |> Option.get :?> Vector2
+            let viewType = ScriptingWorld.tryExport typeof<ViewType> viewType world |> Option.get :?> ViewType
+            let entityPosition = ScriptingWorld.tryExport typeof<Vector2> entityPosition world |> Option.get :?> Vector2
+            let mousePosition = ScriptingWorld.tryExport typeof<Vector2> mousePosition world |> Option.get :?> Vector2
             let result = World.mouseToEntity viewType entityPosition mousePosition world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2> value world |> Option.get
@@ -1660,7 +1660,7 @@ module WorldBindings =
     let setTickRate tickRate world =
         let oldWorld = world
         try
-            let tickRate = ScriptingWorld.tryExport (tickRate.GetType ()) tickRate world |> Option.get :?> Int64
+            let tickRate = ScriptingWorld.tryExport typeof<Int64> tickRate world |> Option.get :?> Int64
             let result = World.setTickRate tickRate world
             struct (Scripting.Unit, result)
         with exn ->
@@ -1732,7 +1732,7 @@ module WorldBindings =
     let tryGetTextureSize assetTag world =
         let oldWorld = world
         try
-            let assetTag = ScriptingWorld.tryExport (assetTag.GetType ()) assetTag world |> Option.get :?> AssetTag
+            let assetTag = ScriptingWorld.tryExport typeof<AssetTag> assetTag world |> Option.get :?> AssetTag
             let result = World.tryGetTextureSize assetTag world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpOption<Vector2i>> value world |> Option.get
@@ -1744,7 +1744,7 @@ module WorldBindings =
     let getTextureSize assetTag world =
         let oldWorld = world
         try
-            let assetTag = ScriptingWorld.tryExport (assetTag.GetType ()) assetTag world |> Option.get :?> AssetTag
+            let assetTag = ScriptingWorld.tryExport typeof<AssetTag> assetTag world |> Option.get :?> AssetTag
             let result = World.getTextureSize assetTag world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2i> value world |> Option.get
@@ -1756,7 +1756,7 @@ module WorldBindings =
     let tryGetTextureSizeAsVector2 assetTag world =
         let oldWorld = world
         try
-            let assetTag = ScriptingWorld.tryExport (assetTag.GetType ()) assetTag world |> Option.get :?> AssetTag
+            let assetTag = ScriptingWorld.tryExport typeof<AssetTag> assetTag world |> Option.get :?> AssetTag
             let result = World.tryGetTextureSizeAsVector2 assetTag world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpOption<Vector2>> value world |> Option.get
@@ -1768,7 +1768,7 @@ module WorldBindings =
     let getTextureSizeAsVector2 assetTag world =
         let oldWorld = world
         try
-            let assetTag = ScriptingWorld.tryExport (assetTag.GetType ()) assetTag world |> Option.get :?> AssetTag
+            let assetTag = ScriptingWorld.tryExport typeof<AssetTag> assetTag world |> Option.get :?> AssetTag
             let result = World.getTextureSizeAsVector2 assetTag world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2> value world |> Option.get
