@@ -308,7 +308,7 @@ module WorldScriptingBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let playSong5 timeToFadeOutSongMs volume songPackageName songAssetName world =
+    let playSong4 timeToFadeOutSongMs volume songPackageName songAssetName world =
         let oldWorld = world
         try
             let timeToFadeOutSongMs = ScriptingWorld.tryExport (timeToFadeOutSongMs.GetType ()) timeToFadeOutSongMs world |> Option.get :?> Int32
@@ -318,7 +318,7 @@ module WorldScriptingBindings =
             let result = World.playSong5 timeToFadeOutSongMs volume songPackageName songAssetName world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong5' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong4' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let playSound volume sound world =
@@ -332,7 +332,7 @@ module WorldScriptingBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSound' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let playSound4 volume soundPackageName soundAssetName world =
+    let playSound3 volume soundPackageName soundAssetName world =
         let oldWorld = world
         try
             let volume = ScriptingWorld.tryExport (volume.GetType ()) volume world |> Option.get :?> Single
@@ -341,7 +341,7 @@ module WorldScriptingBindings =
             let result = World.playSound4 volume soundPackageName soundAssetName world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSound4' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSound3' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let fadeOutSong timeToFadeOutSongMs world =
@@ -869,7 +869,7 @@ module WorldScriptingBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyScreen' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createScreen3 dispatcherName nameOpt world =
+    let createScreen dispatcherName nameOpt world =
         let oldWorld = world
         try
             let dispatcherName = ScriptingWorld.tryExport (dispatcherName.GetType ()) dispatcherName world |> Option.get :?> String
@@ -879,10 +879,10 @@ module WorldScriptingBindings =
             let value = Scripting.String (scstring value)
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createScreen3' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createScreen' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createDissolveScreen5 dispatcherName nameOpt dissolveData world =
+    let createDissolveScreen dispatcherName nameOpt dissolveData world =
         let oldWorld = world
         try
             let dispatcherName = ScriptingWorld.tryExport (dispatcherName.GetType ()) dispatcherName world |> Option.get :?> String
@@ -893,7 +893,7 @@ module WorldScriptingBindings =
             let value = Scripting.String (scstring value)
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createDissolveScreen5' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createDissolveScreen' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let writeScreenToFile filePath screen world =
@@ -1137,7 +1137,7 @@ module WorldScriptingBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryPickEntity' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createEntity5 dispatcherName nameOpt overlayNameDescriptor layer world =
+    let createEntity dispatcherName nameOpt overlayNameDescriptor layer world =
         let oldWorld = world
         try
             let dispatcherName = ScriptingWorld.tryExport (dispatcherName.GetType ()) dispatcherName world |> Option.get :?> String
@@ -1158,7 +1158,7 @@ module WorldScriptingBindings =
             let value = Scripting.String (scstring value)
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createEntity5' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createEntity' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let reassignEntity entity nameOpt layer world =
@@ -1191,7 +1191,7 @@ module WorldScriptingBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reassignEntity' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let trySetEntityOverlayNameOptFromScript overlayNameOpt entity world =
+    let trySetEntityFacetNames overlayNameOpt entity world =
         let oldWorld = world
         try
             let overlayNameOpt = ScriptingWorld.tryExport (overlayNameOpt.GetType ()) overlayNameOpt world |> Option.get :?> FSharpOption<String>
@@ -1208,10 +1208,10 @@ module WorldScriptingBindings =
             let result = World.trySetEntityOverlayNameOptFromScript overlayNameOpt entity world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityOverlayNameOptFromScript' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityFacetNames' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let trySetEntityFacetNamesFromScript facetNames entity world =
+    let trySetEntityFacetNames facetNames entity world =
         let oldWorld = world
         try
             let facetNames = ScriptingWorld.tryExport (facetNames.GetType ()) facetNames world |> Option.get :?> FSharpSet<String>
@@ -1228,10 +1228,10 @@ module WorldScriptingBindings =
             let result = World.trySetEntityFacetNamesFromScript facetNames entity world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityFacetNamesFromScript' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityFacetNames' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createLayer4 dispatcherName nameOpt screen world =
+    let createLayer dispatcherName nameOpt screen world =
         let oldWorld = world
         try
             let dispatcherName = ScriptingWorld.tryExport (dispatcherName.GetType ()) dispatcherName world |> Option.get :?> String
@@ -1251,7 +1251,7 @@ module WorldScriptingBindings =
             let value = Scripting.String (scstring value)
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createLayer4' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createLayer' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let getEyeCenter world =
@@ -1758,12 +1758,12 @@ module WorldScriptingBindings =
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'playSong' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
-        | "playSong5" ->
+        | "playSong4" ->
             match World.evalManyInternal exprs world with
             | struct ([|timeToFadeOutSongMs; volume; songPackageName; songAssetName|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                playSong5 timeToFadeOutSongMs volume songPackageName songAssetName world
+                playSong4 timeToFadeOutSongMs volume songPackageName songAssetName world
             | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'playSong5' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'playSong4' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | "playSound" ->
             match World.evalManyInternal exprs world with
@@ -1772,12 +1772,12 @@ module WorldScriptingBindings =
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'playSound' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
-        | "playSound4" ->
+        | "playSound3" ->
             match World.evalManyInternal exprs world with
             | struct ([|volume; soundPackageName; soundAssetName|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                playSound4 volume soundPackageName soundAssetName world
+                playSound3 volume soundPackageName soundAssetName world
             | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'playSound4' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'playSound3' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | "fadeOutSong" ->
             match World.evalManyInternal exprs world with
@@ -2066,19 +2066,19 @@ module WorldScriptingBindings =
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'destroyScreen' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
-        | "createScreen3" ->
+        | "createScreen" ->
             match World.evalManyInternal exprs world with
             | struct ([|dispatcherName; nameOpt|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                createScreen3 dispatcherName nameOpt world
+                createScreen dispatcherName nameOpt world
             | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'createScreen3' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'createScreen' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
-        | "createDissolveScreen5" ->
+        | "createDissolveScreen" ->
             match World.evalManyInternal exprs world with
             | struct ([|dispatcherName; nameOpt; dissolveData|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                createDissolveScreen5 dispatcherName nameOpt dissolveData world
+                createDissolveScreen dispatcherName nameOpt dissolveData world
             | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'createDissolveScreen5' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'createDissolveScreen' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | "writeScreenToFile" ->
             match World.evalManyInternal exprs world with
@@ -2157,12 +2157,12 @@ module WorldScriptingBindings =
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'tryPickEntity' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
-        | "createEntity5" ->
+        | "createEntity" ->
             match World.evalManyInternal exprs world with
             | struct ([|dispatcherName; nameOpt; overlayNameDescriptor; layer|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                createEntity5 dispatcherName nameOpt overlayNameDescriptor layer world
+                createEntity dispatcherName nameOpt overlayNameDescriptor layer world
             | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'createEntity5' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'createEntity' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | "reassignEntity" ->
             match World.evalManyInternal exprs world with
@@ -2171,26 +2171,26 @@ module WorldScriptingBindings =
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'reassignEntity' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
-        | "trySetEntityOverlayNameOptFromScript" ->
+        | "trySetEntityFacetNames" ->
             match World.evalManyInternal exprs world with
             | struct ([|overlayNameOpt; entity|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                trySetEntityOverlayNameOptFromScript overlayNameOpt entity world
+                trySetEntityFacetNames overlayNameOpt entity world
             | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'trySetEntityOverlayNameOptFromScript' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'trySetEntityFacetNames' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
-        | "trySetEntityFacetNamesFromScript" ->
+        | "trySetEntityFacetNames" ->
             match World.evalManyInternal exprs world with
             | struct ([|facetNames; entity|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                trySetEntityFacetNamesFromScript facetNames entity world
+                trySetEntityFacetNames facetNames entity world
             | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'trySetEntityFacetNamesFromScript' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'trySetEntityFacetNames' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
-        | "createLayer4" ->
+        | "createLayer" ->
             match World.evalManyInternal exprs world with
             | struct ([|dispatcherName; nameOpt; screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                createLayer4 dispatcherName nameOpt screen world
+                createLayer dispatcherName nameOpt screen world
             | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'createLayer4' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'createLayer' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | "getEyeCenter" ->
             match World.evalManyInternal exprs world with
@@ -2447,9 +2447,9 @@ module WorldScriptingBindings =
         | "getEntitiesInBounds"
         | "getEntitiesAtPoint"
         | "playSong"
-        | "playSong5"
+        | "playSong4"
         | "playSound"
-        | "playSound4"
+        | "playSound3"
         | "fadeOutSong"
         | "stopSong"
         | "hintAudioPackageUse"
@@ -2491,8 +2491,8 @@ module WorldScriptingBindings =
         | "readGameFromFile"
         | "getScreens"
         | "destroyScreen"
-        | "createScreen3"
-        | "createDissolveScreen5"
+        | "createScreen"
+        | "createDissolveScreen"
         | "writeScreenToFile"
         | "readScreenFromFile"
         | "getLayers"
@@ -2504,11 +2504,11 @@ module WorldScriptingBindings =
         | "destroyEntity"
         | "destroyEntities"
         | "tryPickEntity"
-        | "createEntity5"
+        | "createEntity"
         | "reassignEntity"
-        | "trySetEntityOverlayNameOptFromScript"
-        | "trySetEntityFacetNamesFromScript"
-        | "createLayer4"
+        | "trySetEntityFacetNames"
+        | "trySetEntityFacetNames"
+        | "createLayer"
         | "getEyeCenter"
         | "setEyeCenter"
         | "getEyeSize"
@@ -2549,7 +2549,7 @@ module WorldScriptingBindings =
         "tryTransitionScreen transitionScreen createDissolveScreenFromLayerFile6 createDissolveScreenFromLayerFile " +
         "createSplashScreen6 createSplashScreen getEntitiesInView2 getEntitiesInBounds3 " +
         "getEntitiesAtPoint3 getEntitiesInView getEntitiesInBounds getEntitiesAtPoint " +
-        "playSong playSong5 playSound playSound4 " +
+        "playSong playSong4 playSound playSound3 " +
         "fadeOutSong stopSong hintAudioPackageUse hintAudioPackageDisuse " +
         "reloadAudioAssets hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets " +
         "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " +
@@ -2560,11 +2560,11 @@ module WorldScriptingBindings =
         "getMousePositionF isKeyboardKeyDown getSimulantSelected tryGetSimulantParent " +
         "getSimulantChildren getSimulantExists getEntities1 getLayers1 " +
         "isSimulantSelected writeGameToFile readGameFromFile getScreens " +
-        "destroyScreen createScreen3 createDissolveScreen5 writeScreenToFile " +
+        "destroyScreen createScreen createDissolveScreen writeScreenToFile " +
         "readScreenFromFile getLayers destroyLayer destroyLayers " +
         "writeLayerToFile readLayerFromFile getEntities destroyEntity " +
-        "destroyEntities tryPickEntity createEntity5 reassignEntity " +
-        "trySetEntityOverlayNameOptFromScript trySetEntityFacetNamesFromScript createLayer4 getEyeCenter " +
+        "destroyEntities tryPickEntity createEntity reassignEntity " +
+        "trySetEntityFacetNames trySetEntityFacetNames createLayer getEyeCenter " +
         "setEyeCenter getEyeSize setEyeSize getSelectedScreenOpt " +
         "setSelectedScreenOpt getSelectedScreen setSelectedScreen getScreenTransitionDestinationOpt " +
         "getViewAbsolute getViewAbsoluteI getViewRelative getViewRelativeI " +

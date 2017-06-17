@@ -93,9 +93,9 @@ type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
 
 /// Specifies that a module contains functions that need to be considered for binding generation.
 type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
-    FunctionBindingAttribute (altName : string) =
+    FunctionBindingAttribute (bindingName : string) =
     inherit Attribute ()
-    member this.AltName = altName
+    member this.BindingName = bindingName
     new () = FunctionBindingAttribute ""
 
 [<AutoOpen>]

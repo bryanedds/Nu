@@ -32,6 +32,7 @@ type ReturnConversion =
 
 type FunctionBinding =
     { FunctionName : string
+      FunctionBindingName : string
       FunctionParameters : (string * ParameterConversion) array
       FunctionReturn : ReturnConversion }
 
@@ -81,6 +82,11 @@ let rec tryGetReturnConversion (ty : Type) : ReturnConversion option =
     | _ -> Some (PureReturn (NormalReturn ty))
 
 let tryGenerateBinding (method : MethodInfo) =
+    let functionName = method.Name.Replace(".Static", "").Replace("World.", "")
+    let functionBindingName =
+        match (method.GetCustomAttribute<FunctionBindingAttribute> ()).BindingName with
+        | "" -> functionName
+        | bindingName -> bindingName
     let pars = method.GetParameters ()
     let parTypes = Array.map (fun (pi : ParameterInfo) -> pi.ParameterType) pars
     let parNames = Array.map (fun (par : ParameterInfo) -> par.Name) pars
@@ -89,7 +95,8 @@ let tryGenerateBinding (method : MethodInfo) =
     match tryGetReturnConversion returnType with
     | Some returnConversion ->
         Some
-            { FunctionName = method.Name.Replace(".Static", "").Replace("World.", "")
+            { FunctionName = functionName
+              FunctionBindingName = functionBindingName
               FunctionParameters = Array.zip parNames conversions
               FunctionReturn = returnConversion }
     | None -> None
@@ -155,7 +162,7 @@ let rec generateParameterConversionOpt (par : string) conversion =
 let generateBindingFunction binding =
     
     let functionAndExceptionHeader =
-        "    let " + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + " =\n" +
+        "    let " + binding.FunctionBindingName + " " + generateParameterList binding.FunctionParameters + " =\n" +
         "        let oldWorld = world\n" +
         "        try\n"
     
@@ -209,7 +216,7 @@ let generateBindingFunction binding =
     
     let exceptionHandler =
         "        with exn ->\n" +
-        "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Could not invoke binding '" + binding.FunctionName + "' due to: \" + scstring exn, None)\n" +
+        "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Could not invoke binding '" + binding.FunctionBindingName + "' due to: \" + scstring exn, None)\n" +
         "            struct (violation, World.choose oldWorld)\n"
     
     functionAndExceptionHeader +
@@ -226,12 +233,12 @@ let generateBindingMatcher binding =
         Array.map fst
     
     let argArray = "[|" + String.Join ("; ", args) + "|]"
-    "        | \"" + binding.FunctionName + "\" ->\n" +
+    "        | \"" + binding.FunctionBindingName + "\" ->\n" +
     "            match World.evalManyInternal exprs world with\n" +
     "            | struct (" + argArray + " as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->\n" +
-    "                " + binding.FunctionName + " " + String.Join (" ", args) + " world\n" +
+    "                " + binding.FunctionBindingName + " " + String.Join (" ", args) + " world\n" +
     "            | _ ->\n" +
-    "                let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '" + binding.FunctionName + "' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
+    "                let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '" + binding.FunctionBindingName + "' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
     "                struct (violation, world)\n"
 
 let generateBindingsMatcher bindings =
@@ -282,13 +289,13 @@ let generateBindingsCode bindings =
     let isBindingPredicate =
         "    let isBinding fnName =\n" +
         "        match fnName with\n" +
-        (bindings |> Array.map (fun binding -> "        | \"" + binding.FunctionName + "\"") |> fun bindingList -> String.Join ("\n", bindingList)) + " -> true\n" +
+        (bindings |> Array.map (fun binding -> "        | \"" + binding.FunctionBindingName + "\"") |> fun bindingList -> String.Join ("\n", bindingList)) + " -> true\n" +
         "        | _ -> false\n" +
         "\n"
 
     let bindingLists =
         bindings |>
-        Array.map (fun binding -> binding.FunctionName) |>
+        Array.map (fun binding -> binding.FunctionBindingName) |>
         (fun arr -> Array.splitInto ((Array.length arr) / 4) arr) |>
         Array.map (fun bindingList -> "        \"" + String.Join (" ", bindingList)) |>
         (fun bindingLists -> String.Join (" \" +\n", bindingLists) + "\"\n")
