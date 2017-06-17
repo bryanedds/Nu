@@ -237,6 +237,7 @@
 
 #| Nu Script Extensions. TODO: import Prelude.script rather than pasting it above? |#
 
+; Vector2 extensions.
 [define toEmpty_Vector2 [_] [v2 0f 0f]]
 [define toIdentity_Vector2 [_] [v2 1f 1f]]
 [define toMin_Vector2 [_] [v2 [toMin -s-] [toMin -s-]]]
@@ -262,7 +263,6 @@
 [define atan_Vector2 [v] [v2 [atan v.X] [atan v.Y]]]
 [define length_Vector2 [v] [sqrt [+ [sqr v.X] [sqr v.Y]]]]
 [define normal_Vector2 [v] [/ v [length v]]]
-
 [define =_Vector2 [u v] [&& [= u.X v.X] [= u.Y v.Y]]]
 [define <>_Vector2 [u v] [&& [<> u.X v.X] [<> u.Y v.Y]]]
 [define <_Vector2 [u v] [&& [< u.X v.X] [< u.Y v.Y]]]
@@ -275,9 +275,47 @@
 [define /_Vector2 [u v] [v2 [/ u.X v.X] [/ u.Y v.Y]]]
 [define %_Vector2 [u v] [v2 [% u.X v.X] [% u.Y v.Y]]]
 [define dot_Vector2 [u v] [+ [* u.X v.X] [* u.Y v.Y]]]
+[define -v2- [v2 0f 0f]]
 
-; The V2 type indicator.
-[define -2- [v2 0f 0f]]
+; Vector2i extensions.
+[define toEmpty_Vector2i [_] [v2i 0 0]]
+[define toIdentity_Vector2i [_] [v2i 1 1]]
+[define toMin_Vector2i [_] [v2i [toMin -s-] [toMin -s-]]]
+[define toMax_Vector2i [_] [v2i [toMax -s-] [toMax -s-]]]
+[define inc_Vector2i [v] [v2i [inc v.X] [inc v.Y]]]
+[define dec_Vector2i [v] [v2i [dec v.X] [dec v.Y]]]
+[define negate_Vector2i [v] [v2i [negate v.X] [negate v.Y]]]
+[define pow_Vector2i [v] [v2i [pow v.X] [pow v.Y]]]
+[define root_Vector2i [v] [v2i [root v.X] [root v.Y]]]
+[define sqr_Vector2i [v] [v2i [sqr v.X] [sqr v.Y]]]
+[define sqrt_Vector2i [v] [v2i [sqrt v.X] [sqrt v.Y]]]
+[define floor_Vector2i [v] [v2i [floor v.X] [floor v.Y]]]
+[define ceiling_Vector2i [v] [v2i [ceiling v.X] [ceiling v.Y]]]
+[define truncate_Vector2i [v] [v2i [truncate v.X] [truncate v.Y]]]
+[define round_Vector2i [v] [v2i [round v.X] [round v.Y]]]
+[define exp_Vector2i [v] [v2i [exp v.X] [exp v.Y]]]
+[define log_Vector2i [v] [v2i [log v.X] [log v.Y]]]
+[define sin_Vector2i [v] [v2i [sin v.X] [sin v.Y]]]
+[define cos_Vector2i [v] [v2i [cos v.X] [cos v.Y]]]
+[define tan_Vector2i [v] [v2i [tan v.X] [tan v.Y]]]
+[define asin_Vector2i [v] [v2i [asin v.X] [asin v.Y]]]
+[define acos_Vector2i [v] [v2i [acos v.X] [acos v.Y]]]
+[define atan_Vector2i [v] [v2i [atan v.X] [atan v.Y]]]
+[define length_Vector2i [v] [sqrt [+ [sqr v.X] [sqr v.Y]]]]
+[define normal_Vector2i [v] [/ v [length v]]]
+[define =_Vector2i [u v] [&& [= u.X v.X] [= u.Y v.Y]]]
+[define <>_Vector2i [u v] [&& [<> u.X v.X] [<> u.Y v.Y]]]
+[define <_Vector2i [u v] [&& [< u.X v.X] [< u.Y v.Y]]]
+[define >_Vector2i [u v] [&& [> u.X v.X] [> u.Y v.Y]]]
+[define <=_Vector2i [u v] [&& [<= u.X v.X] [<= u.Y v.Y]]]
+[define >=_Vector2i [u v] [&& [>= u.X v.X] [>= u.Y v.Y]]]
+[define +_Vector2i [u v] [v2i [+ u.X v.X] [+ u.Y v.Y]]]
+[define -_Vector2i [u v] [v2i [- u.X v.X] [- u.Y v.Y]]]
+[define *_Vector2i [u v] [v2i [* u.X v.X] [* u.Y v.Y]]]
+[define /_Vector2i [u v] [v2i [/ u.X v.X] [/ u.Y v.Y]]]
+[define %_Vector2i [u v] [v2i [% u.X v.X] [% u.Y v.Y]]]
+[define dot_Vector2i [u v] [+ [* u.X v.X] [* u.Y v.Y]]]
+[define -v2i- [v2 0f 0f]]
 
 ; The game.
 [define game nil]

@@ -149,6 +149,44 @@ type Vector4Converter () =
         | :? Vector4 -> source
         | _ -> failconv "Invalid Vector4Converter conversion from source." None
 
+/// The Vector2i value that can be plugged into the scripting language.
+type [<CustomEquality; CustomComparison>] Vector2iPluggable =
+    { Vector2i : Vector2i }
+
+    static member equals left right =
+        left.Vector2i = right.Vector2i
+
+    static member compare left right =
+        compare (left.Vector2i.X, left.Vector2i.Y) (right.Vector2i.X, right.Vector2i.Y)
+
+    override this.GetHashCode () =
+        hash this.Vector2i
+
+    override this.Equals that =
+        match that with
+        | :? Vector2iPluggable as that -> Vector2iPluggable.equals this that
+        | _ -> failwithumf ()
+
+    interface Vector2iPluggable IComparable with
+        member this.CompareTo that =
+            Vector2iPluggable.compare this that
+
+    interface Scripting.Pluggable with
+
+        member this.CompareTo that =
+            match that with
+            | :? Vector2iPluggable as that -> (this :> Vector2iPluggable IComparable).CompareTo that
+            | _ -> failwithumf ()
+
+        member this.TypeName =
+            "Vector2i"
+
+        member this.ToSymbol () =
+            let v2i = Symbol.Atom ("v2i", None)
+            let x = Symbol.Number (string this.Vector2i.X, None)
+            let y = Symbol.Number (string this.Vector2i.Y, None)
+            Symbol.Symbols ([v2i; x; y], None)
+
 /// Converts Vector2i types.
 type Vector2iConverter () =
     inherit TypeConverter ()

@@ -164,8 +164,9 @@ module WorldScripting =
 
         static member internal isExtrinsic fnName =
             match fnName with
-            // TODO: | "tickRate" | "tickTime" | "getSimulantSelected" | "simulantExists"
+            // TODO: | "tickRate" | "tickTime" | "getSimulantSelected" | "simulantExists" | "schedule"
             | "v2" | "index_Vector2" | "update_Vector2"
+            | "v2i" | "index_Vector2i" | "update_Vector2i"
             | "get" | "set"
             | "monitor" -> true
             | _ -> isBinding fnName
@@ -207,6 +208,42 @@ module WorldScripting =
                         | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2.", originOpt), world)
                     | _ -> failwithumf ()
                 | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 target, a keyword index of X or Y, and a Single value.", originOpt), world)
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | "v2i" ->
+                match World.evalManyInternal exprs world with
+                | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|Int x; Int y|], world) -> struct (Pluggable { Vector2i = Vector2i (x, y) }, world)
+                | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an Int for the both arguments.", originOpt), world)
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | "index_Vector2i" ->
+                match World.evalManyInternal exprs world with
+                | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|Keyword indexer; Pluggable pluggable|], world) ->
+                    match pluggable with
+                    | :? Vector2iPluggable as v2i ->
+                        match indexer with
+                        | "X" -> struct (Int v2i.Vector2i.X, world)
+                        | "Y" -> struct (Int v2i.Vector2i.Y, world)
+                        | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2i.", originOpt), world)
+                    | _ -> failwithumf ()
+                | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2i index.", originOpt), world)
+                | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | "update_Vector2i" ->
+                match World.evalManyInternal exprs world with
+                | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+                | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+                | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+                | struct ([|Keyword indexer; Int i; Pluggable pluggable|], world) ->
+                    match pluggable with
+                    | :? Vector2iPluggable as v2i ->
+                        match indexer with
+                        | "X" -> struct (Pluggable { Vector2i = Vector2i (i, v2i.Vector2i.Y) }, world)
+                        | "Y" -> struct (Pluggable { Vector2i = Vector2i (v2i.Vector2i.X, i) }, world)
+                        | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2i.", originOpt), world)
+                    | _ -> failwithumf ()
+                | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2i target, a keyword index of X or Y, and an Int value.", originOpt), world)
                 | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             | "get" ->
                 match World.evalManyInternal exprs world with
