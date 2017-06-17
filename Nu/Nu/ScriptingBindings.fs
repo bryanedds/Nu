@@ -17,6 +17,153 @@ open global.Nu
 [<RequireQualifiedAccess>]
 module WorldScriptingBindings =
 
+    let [<Literal>] BindingKeywords =
+        "tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning selectScreen " +
+        "tryTransitionScreen transitionScreen createDissolveScreenFromLayerFile6 createDissolveScreenFromLayerFile " +
+        "createSplashScreen6 createSplashScreen getEntitiesInView2 getEntitiesInBounds3 " +
+        "getEntitiesAtPoint3 getEntitiesInView getEntitiesInBounds getEntitiesAtPoint " +
+        "playSong playSong4 playSound playSound3 " +
+        "fadeOutSong stopSong hintAudioPackageUse hintAudioPackageDisuse " +
+        "reloadAudioAssets hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets " +
+        "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " +
+        "getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround createBody " +
+        "createBodies destroyBody destroyBodies setBodyPosition " +
+        "setBodyRotation setBodyAngularVelocity setBodyLinearVelocity applyBodyAngularImpulse " +
+        "applyBodyLinearImpulse applyBodyForce isMouseButtonDown getMousePosition " +
+        "getMousePositionF isKeyboardKeyDown getSimulantSelected tryGetSimulantParent " +
+        "getSimulantChildren getSimulantExists getEntities1 getLayers1 " +
+        "isSimulantSelected writeGameToFile readGameFromFile getScreens " +
+        "destroyScreen createScreen createDissolveScreen writeScreenToFile " +
+        "readScreenFromFile getLayers destroyLayer destroyLayers " +
+        "writeLayerToFile readLayerFromFile getEntities destroyEntity " +
+        "destroyEntities tryPickEntity createEntity reassignEntity " +
+        "trySetEntityOverlayNameOpt trySetEntityFacetNames createLayer getEyeCenter " +
+        "setEyeCenter getEyeSize setEyeSize getSelectedScreenOpt " +
+        "setSelectedScreenOpt getSelectedScreen setSelectedScreen getScreenTransitionDestinationOpt " +
+        "getViewAbsolute getViewAbsoluteI getViewRelative getViewRelativeI " +
+        "getViewBoundsRelative getViewBoundsAbsolute getViewBounds isBoundsInView " +
+        "mouseToScreen mouseToWorld mouseToEntity getTickRate " +
+        "getTickRateF setTickRate resetTickTime getTickTime " +
+        "isTicking getUpdateCount getLiveness exit " +
+        "tryGetTextureSize getTextureSize tryGetTextureSizeAsVector2 getTextureSizeAsVector2"
+
+    isBinding <- fun fnName ->
+        match fnName with
+        | "tryGetIsSelectedScreenIdling"
+        | "tryGetIsSelectedScreenTransitioning"
+        | "isSelectedScreenIdling"
+        | "isSelectedScreenTransitioning"
+        | "selectScreen"
+        | "tryTransitionScreen"
+        | "transitionScreen"
+        | "createDissolveScreenFromLayerFile6"
+        | "createDissolveScreenFromLayerFile"
+        | "createSplashScreen6"
+        | "createSplashScreen"
+        | "getEntitiesInView2"
+        | "getEntitiesInBounds3"
+        | "getEntitiesAtPoint3"
+        | "getEntitiesInView"
+        | "getEntitiesInBounds"
+        | "getEntitiesAtPoint"
+        | "playSong"
+        | "playSong4"
+        | "playSound"
+        | "playSound3"
+        | "fadeOutSong"
+        | "stopSong"
+        | "hintAudioPackageUse"
+        | "hintAudioPackageDisuse"
+        | "reloadAudioAssets"
+        | "hintRenderPackageUse"
+        | "hintRenderPackageDisuse"
+        | "reloadRenderAssets"
+        | "bodyExists"
+        | "getBodyContactNormals"
+        | "getBodyLinearVelocity"
+        | "getBodyToGroundContactNormals"
+        | "getBodyToGroundContactNormalOpt"
+        | "getBodyToGroundContactTangentOpt"
+        | "isBodyOnGround"
+        | "createBody"
+        | "createBodies"
+        | "destroyBody"
+        | "destroyBodies"
+        | "setBodyPosition"
+        | "setBodyRotation"
+        | "setBodyAngularVelocity"
+        | "setBodyLinearVelocity"
+        | "applyBodyAngularImpulse"
+        | "applyBodyLinearImpulse"
+        | "applyBodyForce"
+        | "isMouseButtonDown"
+        | "getMousePosition"
+        | "getMousePositionF"
+        | "isKeyboardKeyDown"
+        | "getSimulantSelected"
+        | "tryGetSimulantParent"
+        | "getSimulantChildren"
+        | "getSimulantExists"
+        | "getEntities1"
+        | "getLayers1"
+        | "isSimulantSelected"
+        | "writeGameToFile"
+        | "readGameFromFile"
+        | "getScreens"
+        | "destroyScreen"
+        | "createScreen"
+        | "createDissolveScreen"
+        | "writeScreenToFile"
+        | "readScreenFromFile"
+        | "getLayers"
+        | "destroyLayer"
+        | "destroyLayers"
+        | "writeLayerToFile"
+        | "readLayerFromFile"
+        | "getEntities"
+        | "destroyEntity"
+        | "destroyEntities"
+        | "tryPickEntity"
+        | "createEntity"
+        | "reassignEntity"
+        | "trySetEntityOverlayNameOpt"
+        | "trySetEntityFacetNames"
+        | "createLayer"
+        | "getEyeCenter"
+        | "setEyeCenter"
+        | "getEyeSize"
+        | "setEyeSize"
+        | "getSelectedScreenOpt"
+        | "setSelectedScreenOpt"
+        | "getSelectedScreen"
+        | "setSelectedScreen"
+        | "getScreenTransitionDestinationOpt"
+        | "getViewAbsolute"
+        | "getViewAbsoluteI"
+        | "getViewRelative"
+        | "getViewRelativeI"
+        | "getViewBoundsRelative"
+        | "getViewBoundsAbsolute"
+        | "getViewBounds"
+        | "isBoundsInView"
+        | "mouseToScreen"
+        | "mouseToWorld"
+        | "mouseToEntity"
+        | "getTickRate"
+        | "getTickRateF"
+        | "setTickRate"
+        | "resetTickTime"
+        | "getTickTime"
+        | "isTicking"
+        | "getUpdateCount"
+        | "getLiveness"
+        | "exit"
+        | "tryGetTextureSize"
+        | "getTextureSize"
+        | "tryGetTextureSizeAsVector2"
+        | "getTextureSizeAsVector2" -> true
+        | _ -> false
+
     let tryGetIsSelectedScreenIdling world =
         let oldWorld = world
         try
@@ -1630,7 +1777,7 @@ module WorldScriptingBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSizeAsVector2' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let evalBinding fnName exprs originOpt world =
+    WorldScripting.evalBinding <- fun fnName exprs originOpt world ->
         match fnName with
         | "tryGetIsSelectedScreenIdling" ->
             match World.evalManyInternal exprs world with
@@ -2426,150 +2573,3 @@ module WorldScriptingBindings =
         | _ ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "No binding exists for '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
             struct (violation, world)
-
-    let isBinding fnName =
-        match fnName with
-        | "tryGetIsSelectedScreenIdling"
-        | "tryGetIsSelectedScreenTransitioning"
-        | "isSelectedScreenIdling"
-        | "isSelectedScreenTransitioning"
-        | "selectScreen"
-        | "tryTransitionScreen"
-        | "transitionScreen"
-        | "createDissolveScreenFromLayerFile6"
-        | "createDissolveScreenFromLayerFile"
-        | "createSplashScreen6"
-        | "createSplashScreen"
-        | "getEntitiesInView2"
-        | "getEntitiesInBounds3"
-        | "getEntitiesAtPoint3"
-        | "getEntitiesInView"
-        | "getEntitiesInBounds"
-        | "getEntitiesAtPoint"
-        | "playSong"
-        | "playSong4"
-        | "playSound"
-        | "playSound3"
-        | "fadeOutSong"
-        | "stopSong"
-        | "hintAudioPackageUse"
-        | "hintAudioPackageDisuse"
-        | "reloadAudioAssets"
-        | "hintRenderPackageUse"
-        | "hintRenderPackageDisuse"
-        | "reloadRenderAssets"
-        | "bodyExists"
-        | "getBodyContactNormals"
-        | "getBodyLinearVelocity"
-        | "getBodyToGroundContactNormals"
-        | "getBodyToGroundContactNormalOpt"
-        | "getBodyToGroundContactTangentOpt"
-        | "isBodyOnGround"
-        | "createBody"
-        | "createBodies"
-        | "destroyBody"
-        | "destroyBodies"
-        | "setBodyPosition"
-        | "setBodyRotation"
-        | "setBodyAngularVelocity"
-        | "setBodyLinearVelocity"
-        | "applyBodyAngularImpulse"
-        | "applyBodyLinearImpulse"
-        | "applyBodyForce"
-        | "isMouseButtonDown"
-        | "getMousePosition"
-        | "getMousePositionF"
-        | "isKeyboardKeyDown"
-        | "getSimulantSelected"
-        | "tryGetSimulantParent"
-        | "getSimulantChildren"
-        | "getSimulantExists"
-        | "getEntities1"
-        | "getLayers1"
-        | "isSimulantSelected"
-        | "writeGameToFile"
-        | "readGameFromFile"
-        | "getScreens"
-        | "destroyScreen"
-        | "createScreen"
-        | "createDissolveScreen"
-        | "writeScreenToFile"
-        | "readScreenFromFile"
-        | "getLayers"
-        | "destroyLayer"
-        | "destroyLayers"
-        | "writeLayerToFile"
-        | "readLayerFromFile"
-        | "getEntities"
-        | "destroyEntity"
-        | "destroyEntities"
-        | "tryPickEntity"
-        | "createEntity"
-        | "reassignEntity"
-        | "trySetEntityOverlayNameOpt"
-        | "trySetEntityFacetNames"
-        | "createLayer"
-        | "getEyeCenter"
-        | "setEyeCenter"
-        | "getEyeSize"
-        | "setEyeSize"
-        | "getSelectedScreenOpt"
-        | "setSelectedScreenOpt"
-        | "getSelectedScreen"
-        | "setSelectedScreen"
-        | "getScreenTransitionDestinationOpt"
-        | "getViewAbsolute"
-        | "getViewAbsoluteI"
-        | "getViewRelative"
-        | "getViewRelativeI"
-        | "getViewBoundsRelative"
-        | "getViewBoundsAbsolute"
-        | "getViewBounds"
-        | "isBoundsInView"
-        | "mouseToScreen"
-        | "mouseToWorld"
-        | "mouseToEntity"
-        | "getTickRate"
-        | "getTickRateF"
-        | "setTickRate"
-        | "resetTickTime"
-        | "getTickTime"
-        | "isTicking"
-        | "getUpdateCount"
-        | "getLiveness"
-        | "exit"
-        | "tryGetTextureSize"
-        | "getTextureSize"
-        | "tryGetTextureSizeAsVector2"
-        | "getTextureSizeAsVector2" -> true
-        | _ -> false
-
-    let [<Literal>] BindingKeywords =
-        "tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning selectScreen " +
-        "tryTransitionScreen transitionScreen createDissolveScreenFromLayerFile6 createDissolveScreenFromLayerFile " +
-        "createSplashScreen6 createSplashScreen getEntitiesInView2 getEntitiesInBounds3 " +
-        "getEntitiesAtPoint3 getEntitiesInView getEntitiesInBounds getEntitiesAtPoint " +
-        "playSong playSong4 playSound playSound3 " +
-        "fadeOutSong stopSong hintAudioPackageUse hintAudioPackageDisuse " +
-        "reloadAudioAssets hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets " +
-        "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " +
-        "getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround createBody " +
-        "createBodies destroyBody destroyBodies setBodyPosition " +
-        "setBodyRotation setBodyAngularVelocity setBodyLinearVelocity applyBodyAngularImpulse " +
-        "applyBodyLinearImpulse applyBodyForce isMouseButtonDown getMousePosition " +
-        "getMousePositionF isKeyboardKeyDown getSimulantSelected tryGetSimulantParent " +
-        "getSimulantChildren getSimulantExists getEntities1 getLayers1 " +
-        "isSimulantSelected writeGameToFile readGameFromFile getScreens " +
-        "destroyScreen createScreen createDissolveScreen writeScreenToFile " +
-        "readScreenFromFile getLayers destroyLayer destroyLayers " +
-        "writeLayerToFile readLayerFromFile getEntities destroyEntity " +
-        "destroyEntities tryPickEntity createEntity reassignEntity " +
-        "trySetEntityOverlayNameOpt trySetEntityFacetNames createLayer getEyeCenter " +
-        "setEyeCenter getEyeSize setEyeSize getSelectedScreenOpt " +
-        "setSelectedScreenOpt getSelectedScreen setSelectedScreen getScreenTransitionDestinationOpt " +
-        "getViewAbsolute getViewAbsoluteI getViewRelative getViewRelativeI " +
-        "getViewBoundsRelative getViewBoundsAbsolute getViewBounds isBoundsInView " +
-        "mouseToScreen mouseToWorld mouseToEntity getTickRate " +
-        "getTickRateF setTickRate resetTickTime getTickTime " +
-        "isTicking getUpdateCount getLiveness exit " +
-        "tryGetTextureSize getTextureSize tryGetTextureSizeAsVector2 getTextureSizeAsVector2"
