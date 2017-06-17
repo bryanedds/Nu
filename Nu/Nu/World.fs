@@ -167,15 +167,15 @@ module WorldModule2 =
                     let world = World.setScreenTransitionDestinationOpt (Some destination) world
                     let world = World.setScreenTransitionState OutgoingState selectedScreen world
                     let world = World.subscribePlus<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish ->- selectedScreen) selectedScreen world |> snd
-                    Some world
-                else let _ = World.choose world in None
-            | None -> None
+                    (true, world)
+                else (false, world)
+            | None -> (false, world)
 
         /// Transition to the given screen (failing with an exception if another transition is in
         /// progress).
         [<FunctionBinding>]
         static member transitionScreen destination world =
-            Option.get ^ World.tryTransitionScreen destination world
+            World.tryTransitionScreen destination world |> snd
             
         // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
         static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> handling destination (_ : Event<'a, 's>) world =
@@ -197,8 +197,8 @@ module WorldModule2 =
         static member private handleAsScreenTransitionPlus<'a, 's when 's :> Simulant>
             handling destination (_ : Event<'a, 's>) world =
             match World.tryTransitionScreen destination world with
-            | Some world -> (handling, world)
-            | None ->
+            | (true, world) -> (handling, world)
+            | (false, world) ->
                 Log.trace ^ "Program Error: Invalid screen transition for destination address '" + scstring destination.ScreenAddress + "'."
                 (handling, world)
 
@@ -352,7 +352,6 @@ module WorldModule2 =
             Reflection.makeIntrinsicOverlays requiresFacetNames sourceTypes
 
         /// Try to reload the overlayer currently in use by the world.
-        [<FunctionBinding>]
         static member tryReloadOverlays inputDirectory outputDirectory world =
             
             // attempt to reload overlay file
@@ -372,27 +371,25 @@ module WorldModule2 =
                     let world = World.setOverlayer overlayer world
                     let entities = World.getEntities1 world
                     let world = Seq.fold (World.applyEntityOverlay oldOverlayer overlayer) world entities
-                    Right (overlayer, world)
+                    (Right overlayer, world)
 
                 // propagate errors
-                | Left error -> Left (error, world)
-            with exn -> Left (scstring exn, World.choose world)
+                | Left error -> (Left error, world)
+            with exn -> (Left (scstring exn), World.choose world)
 
         /// Try to reload the prelude currently in use by the world.
-        [<FunctionBinding>]
         static member tryReloadPrelude inputDirectory outputDirectory world =
             let inputPreludeFilePath = Path.Combine (inputDirectory, Assets.PreludeFilePath)
             let outputPreludeFilePath = Path.Combine (outputDirectory, Assets.PreludeFilePath)
             try File.Copy (inputPreludeFilePath, outputPreludeFilePath, true)
                 match World.tryEvalPrelude world with
-                | Right struct (preludeStr, world) -> Right (preludeStr, world)
-                | Left struct (error, world) -> Left (error, world)
-            with exn -> Left (scstring exn, World.choose world)
+                | Right struct (preludeStr, world) -> (Right preludeStr, world)
+                | Left struct (error, world) -> (Left error, world)
+            with exn -> (Left (scstring exn), World.choose world)
 
         /// Attempt to reload the asset graph.
         /// Currently does not support reloading of song assets, and possibly others that are
         /// locked by the engine's subsystems.
-        [<FunctionBinding>]
         static member tryReloadAssetGraph inputDirectory outputDirectory refinementDirectory world =
             
             // attempt to reload asset graph file
@@ -412,11 +409,11 @@ module WorldModule2 =
                     let world = World.reloadAudioAssets world
                     let world = World.reloadSymbols world
                     let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishAssetsReload" EventTrace.empty) Simulants.Game world
-                    Right (assetGraph, world)
+                    (Right assetGraph, world)
         
                 // propagate errors
-                | Left error -> Left (error, world)
-            with exn -> Left (scstring exn, World.choose world)
+                | Left error -> (Left error, world)
+            with exn -> (Left (scstring exn), World.choose world)
 
         /// A hack for the physics subsystem that allows an old world value to displace the current
         /// one and have its physics values propagated to the imperative physics subsystem.

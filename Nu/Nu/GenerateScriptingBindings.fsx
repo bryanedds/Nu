@@ -12,7 +12,7 @@ open global.Nu
 type ParameterConversionDetails =
     | NormalParameter of Type
     | NormalSeqParameter of Type
-    | RelationToSimulant of Type
+    | RelationParameter of Type
     | RelationSeqParameter of Type
 
 type ParameterConversion =
@@ -21,9 +21,9 @@ type ParameterConversion =
 
 type ReturnConversionDetails =
     | NormalReturn of Type
-    | NormalSeqToList of Type
-    | SimulantToRelation
-    | SimulantSeqToList of Type
+    | NormalListReturn of Type
+    | SimulantReturn
+    | SimulantHashSetReturn
 
 type ReturnConversion =
     | PureReturn of ReturnConversionDetails
@@ -38,24 +38,29 @@ type FunctionBinding =
 let getParameterConversion (ty : Type) =
     match ty.Name with
     | "World" -> WorldParameter
-    | "Entity" | "Layer" | "Screen" | "Game" | "Simulant" -> ValueParameter (RelationToSimulant ty)
+    | "Entity" | "Layer" | "Screen" | "Game" | "Simulant" -> ValueParameter (RelationParameter ty)
     | "IEnumerable`1" | "FSharpList`1" ->
         let itemType = (ty.GetGenericArguments ()).[0]
-        if typeof<Simulant>.IsAssignableFrom itemType
-        then ValueParameter (RelationSeqParameter ty)
-        else ValueParameter (NormalSeqParameter ty)
+        if not (typeof<Simulant>.IsAssignableFrom itemType)
+        then ValueParameter (NormalSeqParameter ty)
+        else ValueParameter (RelationSeqParameter ty)
     | _ -> ValueParameter (NormalParameter ty)
 
 let rec tryGetReturnConversion (ty : Type) : ReturnConversion option =
-    match ty.GetGenericName () with
+    match ty.Name with
     | "World" -> Some ImpureReturn
     | "Tuple`2" ->
         let gargs = ty.GetGenericArguments ()
         match gargs with
         | [|garg; garg2|] when garg2.Name = "World" ->
             match
-                (match garg.GetGenericName () with
-                 | "Entity" | "Layer" | "Screen" | "Game" | "Simulant" -> Some SimulantToRelation
+                (match garg.Name with
+                 | "Entity" | "Layer" | "Screen" | "Game" | "Simulant" -> Some SimulantReturn
+                 | "IEnumerable`1" | "FSharpList`1"| "HashSet`1"  ->
+                     let itemType = (garg.GetGenericArguments ()).[0]
+                     if typeof<Simulant>.IsAssignableFrom itemType
+                     then Some SimulantHashSetReturn
+                     else Some (NormalListReturn garg)
                  | _ -> Some (NormalReturn garg)) with
             | Some conversion ->
                 let subconversionOpts = Array.map tryGetReturnConversion gargs
@@ -67,7 +72,12 @@ let rec tryGetReturnConversion (ty : Type) : ReturnConversion option =
                 | (false, _) -> None
             | None -> None
         | _ -> None
-    | "Entity" | "Layer" | "Screen" | "Game" | "Simulant" -> Some (PureReturn SimulantToRelation)
+    | "IEnumerable`1" | "FSharpList`1" | "HashSet`1" ->
+        let itemType = (ty.GetGenericArguments ()).[0]
+        if not (typeof<Simulant>.IsAssignableFrom itemType)
+        then Some (PureReturn (NormalListReturn ty))
+        else Some (PureReturn SimulantHashSetReturn)
+    | "Entity" | "Layer" | "Screen" | "Game" | "Simulant" -> Some (PureReturn SimulantReturn)
     | _ -> Some (PureReturn (NormalReturn ty))
 
 let tryGenerateBinding (method : MethodInfo) =
@@ -138,7 +148,7 @@ let rec generateParameterConversionOpt (par : string) conversion =
         match rc with
         | NormalParameter ty -> Some (generateNormalParameterConversion par ty)
         | NormalSeqParameter ty -> Some (generateNormalListParameterConversion par (ty.GetGenericArguments ()).[0])
-        | RelationToSimulant ty -> Some (generateRelationParameterConversion par ty)
+        | RelationParameter ty -> Some (generateRelationParameterConversion par ty)
         | RelationSeqParameter ty -> Some (generateRelationListParameterConversion par (ty.GetGenericArguments ()).[0])
     | WorldParameter -> None
 
@@ -163,24 +173,36 @@ let generateBindingFunction binding =
                 "            let (value, world) = result\n" +
                 "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
                 "            struct (value, world)\n"
-            | NormalSeqToList _ -> failwithnie ()
-            | SimulantToRelation ->
+            | NormalListReturn ty ->
+                "            let (value, world) = result\n" +
+                "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
+                "            struct (value, world)\n"
+            | SimulantReturn ->
                 "            let (value, world) = result\n" +
                 "            let value = Scripting.String (scstring value)\n" +
                 "            struct (value, world)\n"
-            | SimulantSeqToList _ -> failwithnie ()
+            | SimulantHashSetReturn ->
+                "            let (value, world) = result\n" +
+                "            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))\n" +
+                "            struct (value, world)\n"
         | PureReturn rc ->
             match rc with
             | NormalReturn ty ->
                 "            let value = result\n" +
                 "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
                 "            struct (value, world)\n"
-            | NormalSeqToList _ -> failwithnie ()
-            | SimulantToRelation ->
+            | NormalListReturn ty ->
+                "            let value = result\n" +
+                "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
+                "            struct (value, world)\n"
+            | SimulantReturn ->
                 "            let value = result\n" +
                 "            let value = Scripting.String (scstring value)\n" +
                 "            struct (value, world)\n"
-            | SimulantSeqToList _ -> failwithnie ()
+            | SimulantHashSetReturn ->
+                "            let value = result\n" +
+                "            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))\n" +
+                "            struct (value, world)\n"
     
     let invocation =
         "            let result = World." + binding.FunctionName + " " + generateParameterList binding.FunctionParameters + "\n"
@@ -232,11 +254,11 @@ let generateBindingsCode bindings =
         "// Nu Game Engine.\n" +
         "// Copyright (C) Bryan Edds, 2013-2017.\n" +
         "\n" +
-        "/////////////////////////////////////////////////////////////////////////////////////////////////////\n" +
+        "//*************************************************************************************************//\n" +
         "//                                                                                                 //\n" +
         "// NOTE: This code is GENERATED by 'GenerateScriptingBindings.fsx'! Do NOT edit this code by hand! //\n" +
         "//                                                                                                 //\n" +
-        "/////////////////////////////////////////////////////////////////////////////////////////////////////\n" +
+        "//*************************************************************************************************//\n" +
         "\n" +
         "namespace Nu\n" +
         "open System\n" +

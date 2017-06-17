@@ -208,11 +208,11 @@ type IPhysicsEngine =
     /// Check that the physics engine contain the body with the given physics id.
     abstract BodyExists : PhysicsId -> bool
     /// Get the contact normals of the body with the given physics id.
-    abstract GetBodyContactNormals : PhysicsId -> Vector2 array
+    abstract GetBodyContactNormals : PhysicsId -> Vector2 list
     /// Get the linear velocity of the body with the given physics id.
     abstract GetBodyLinearVelocity : PhysicsId -> Vector2
     /// Get the contact normals where the body with the given physics id is touching the ground.
-    abstract GetBodyToGroundContactNormals : PhysicsId -> Vector2 array
+    abstract GetBodyToGroundContactNormals : PhysicsId -> Vector2 list
     /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
     abstract GetBodyToGroundContactNormalOpt : PhysicsId -> Vector2 option
     /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
@@ -490,31 +490,27 @@ module PhysicsEngineModule =
                 physicsEngine.Bodies.ContainsKey physicsId
     
             member physicsEngine.GetBodyContactNormals physicsId =
-                let contacts = PhysicsEngine.getBodyContacts physicsId physicsEngine
-                Array.map
-                    (fun (contact : Contact) ->
-                        let normal = fst ^ contact.GetWorldManifold ()
-                        Vector2 (normal.X, normal.Y))
-                    contacts
+                PhysicsEngine.getBodyContacts physicsId physicsEngine |>
+                Array.map (fun (contact : Contact) -> let normal = fst ^ contact.GetWorldManifold () in Vector2 (normal.X, normal.Y)) |>
+                Array.toList
     
             member physicsEngine.GetBodyLinearVelocity physicsId =
                 let body = physicsEngine.Bodies.[physicsId]
                 PhysicsEngine.toPixelV2 body.LinearVelocity
     
             member physicsEngine.GetBodyToGroundContactNormals physicsId =
-                let normals = (physicsEngine :> IPhysicsEngine).GetBodyContactNormals physicsId
-                Array.filter
+                List.filter
                     (fun normal ->
                         let theta = Vector2.Dot (normal, Vector2.UnitY) |> double |> Math.Acos |> Math.Abs
                         theta < Math.PI * 0.25)
-                    normals
+                    ((physicsEngine :> IPhysicsEngine).GetBodyContactNormals physicsId)
     
             member physicsEngine.GetBodyToGroundContactNormalOpt physicsId =
                 let groundNormals = (physicsEngine :> IPhysicsEngine).GetBodyToGroundContactNormals physicsId
                 match groundNormals with
-                | [||] -> None
+                | [] -> None
                 | _ ->
-                    let averageNormal = Array.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
+                    let averageNormal = List.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
                     Some averageNormal
     
             member physicsEngine.GetBodyToGroundContactTangentOpt physicsId =
@@ -524,7 +520,7 @@ module PhysicsEngineModule =
     
             member physicsEngine.IsBodyOnGround physicsId =
                 let groundNormals = (physicsEngine :> IPhysicsEngine).GetBodyToGroundContactNormals physicsId
-                Array.notEmpty groundNormals
+                List.notEmpty groundNormals
     
             member physicsEngine.ClearMessages () =
                 let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }
