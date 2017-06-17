@@ -106,12 +106,12 @@ let generateParameterList (functionParameters : (string * ParameterConversion) a
     String.Join (" ", parNames)
 
 let generateNormalParameterConversion (par : string) (ty : Type) =
-    "            let " + par + " = ScriptingWorld.tryExport (" + par + ".GetType ()) " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n"
+    "            let " + par + " = ScriptingWorld.tryExport typeof<" + ty.GetGenericName () + "> " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n"
 
 let generateNormalListParameterConversion (par : string) (ty : Type) =
     "            let struct (" + par + ", world) =\n" +
     "                Seq.fold (fun struct (values, world) ->\n" +
-    "                    let value = ScriptingWorld.tryExport (" + par + ".GetType ()) " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n" +
+    "                    let value = ScriptingWorld.tryExport typeof<" + ty.GetGenericName () + "> " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n" +
     "                    struct (value :: values, world))\n" +
     "                    struct ([], world)\n" +
     "                    " + par + "\n"
