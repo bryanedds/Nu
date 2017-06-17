@@ -110,7 +110,8 @@ module ScriptingMarshalling =
         | (false, _) -> None
 
     and Importers : Dictionary<string, (Type -> obj -> Expr option) -> Type -> obj -> Expr option> =
-        [(typeof<unit>.Name, (fun _ _ _ -> Unit |> Some))
+        [(typeof<Void>.Name, (fun _ _ _ -> Unit |> Some))
+         (typeof<unit>.Name, (fun _ _ _ -> Unit |> Some))
          (typeof<bool>.Name, (fun _ _ (value : obj) -> match value with :? bool as bool -> Some (Bool bool) | _ -> None))
          (typeof<int>.Name, (fun _ _ (value : obj) -> match value with :? int as int -> Some (Int int) | _ -> None))
          (typeof<int64>.Name, (fun _ _ (value : obj) -> match value with :? int64 as int64 -> Some (Int64 int64) | _ -> None))
@@ -259,7 +260,8 @@ module ScriptingMarshalling =
         | _ -> None
 
     and Exporters : Dictionary<string, (Type -> Expr -> obj option) -> Type -> Expr -> obj option> =
-        [(typeof<unit>.Name, fun _ _ _ -> () :> obj |> Some)
+        [(typeof<Void>.Name, fun _ _ _ -> null :> obj |> Some) // TODO: consider if () would work instead of null.
+         (typeof<unit>.Name, fun _ _ _ -> () :> obj |> Some)
          (typeof<bool>.Name, fun _ _ evaled -> match evaled with Bool value -> value :> obj |> Some | _ -> None)
          (typeof<int>.Name, fun _ _ evaled -> match evaled with Int value -> value :> obj |> Some | _ -> None)
          (typeof<int64>.Name, fun _ _ evaled -> match evaled with Int64 value -> value :> obj |> Some | _ -> None)
