@@ -189,9 +189,9 @@ module ScriptingWorld =
         | "codata" -> evalDoublet evalCodata fnName evaledArgs originOpt world
         | "toCodata" -> evalSinglet evalToCodata fnName evaledArgs originOpt world
         | "list" -> evalList fnName evaledArgs originOpt world
-        | "toList" -> evalSinglet evalToList fnName evaledArgs originOpt world
+        | "toList" -> evalSinglet (evalToList evalApply) fnName evaledArgs originOpt world
         | "ring" -> evalRing fnName evaledArgs originOpt world
-        | "toRing" -> evalSinglet evalToRing fnName evaledArgs originOpt world
+        | "toRing" -> evalSinglet (evalToRing evalApply) fnName evaledArgs originOpt world
         | "add" -> evalDoublet evalCons fnName evaledArgs originOpt world
         | "remove" -> evalDoublet evalRemove fnName evaledArgs originOpt world
         | "toTable" -> evalSinglet evalToTable fnName evaledArgs originOpt world

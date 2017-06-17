@@ -976,9 +976,21 @@ module ScriptingPrimitives =
     let evalList _ evaledArgs _ world =
         struct (List (List.ofArray evaledArgs), world)
 
-    let evalToList fnName evaledArg originOpt world =
+    let rec evalCodataToList evalApply fnName originOpt list codata world =
+        match evalCodataTryUncons evalApply fnName originOpt codata world with
+        | Right (Right struct (head, tail, world)) -> evalCodataToList evalApply fnName originOpt (head :: list) tail world
+        | Right (Left world) -> Right (Left struct (list, world))
+        | Left struct (error, world) -> Left (struct (error, world))
+
+    let evalToList evalApply fnName evaledArg originOpt world =
         match evaledArg with
         | String str -> struct (List (str |> Seq.map (string >> String) |> List.ofSeq), world)
+        | Option opt -> struct (List (match opt with Some value -> [value] | None -> []), world)
+        | Codata codata ->
+            match evalCodataToList evalApply fnName originOpt [] codata world with
+            | Right (Right struct (_, _, list, world)) -> struct (List (List.rev list), world)
+            | Right (Left struct (list, world)) -> struct (List (List.rev list), world)
+            | Left error -> error
         | List _ as list -> struct (list, world)
         | Ring set -> struct (List (List.ofSeq set), world)
         | Table map -> struct (List (map |> Map.toListBy (fun k v -> Tuple [|k; v|])), world)
@@ -988,9 +1000,15 @@ module ScriptingPrimitives =
     let evalRing _ evaledArgs _ world =
         struct (Ring (Set.ofArray evaledArgs), world)
 
-    let evalToRing fnName evaledArg originOpt world =
+    let evalToRing evalApply fnName evaledArg originOpt world =
         match evaledArg with
         | String str -> struct (Ring (str |> Seq.map (string >> String) |> Set.ofSeq), world)
+        | Option opt -> struct (Ring (match opt with Some value -> Set.singleton value | None -> Set.empty), world)
+        | Codata codata ->
+            match evalCodataToList evalApply fnName originOpt [] codata world with
+            | Right (Right struct (_, _, list, world)) -> struct (Ring (Set.ofList list), world)
+            | Right (Left struct (list, world)) -> struct (Ring (Set.ofList list), world)
+            | Left error -> error
         | List list -> struct (Ring (Set.ofList list), world)
         | Ring _ as ring -> struct (ring, world)
         | Table map -> struct (Ring (map |> Map.toSeqBy (fun k v -> Tuple [|k; v|]) |> Set.ofSeq), world)
