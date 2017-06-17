@@ -165,7 +165,9 @@ namespace Nu.Gaia.Design
 
         private void SymbolicTextBox_CharAdded(object sender, CharAddedEventArgs e)
         {
-            AutoCShow(true);
+            // NOTE: autocomplete is disabled when there are too many keywords due to a performance
+            // bug in Scintilla IDE.
+            if (AutoCWords.Split(' ').Length <= 32) AutoCShow(true);
         }
 
         private void SymbolicTextBox_UpdateUI(object sender, UpdateUIEventArgs e)
