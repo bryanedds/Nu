@@ -230,12 +230,12 @@ module WorldScriptingBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryReloadAssetGraph' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getEntitiesInView selectedScreen world =
+    let getEntitiesInView2 screen world =
         let oldWorld = world
         try
-            let struct (selectedScreen, world) =
+            let struct (screen, world) =
                 let context = World.getScriptContext world
-                match World.evalInternal selectedScreen world with
+                match World.evalInternal screen world with
                 | struct (Scripting.String str, world)
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
@@ -243,7 +243,62 @@ module WorldScriptingBindings =
                     struct (Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.getEntitiesInView selectedScreen world
+            let result = World.getEntitiesInView2 screen world
+            let value = result
+            let value = ScriptingWorld.tryImport typeof<Tuple<HashSet<Entity>, World>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesInView2' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getEntitiesInBounds3 bounds screen world =
+        let oldWorld = world
+        try
+            let bounds = ScriptingWorld.tryExport (bounds.GetType ()) bounds world |> Option.get :?> Vector4
+            let struct (screen, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal screen world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (Screen address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.getEntitiesInBounds3 bounds screen world
+            let value = result
+            let value = ScriptingWorld.tryImport typeof<Tuple<HashSet<Entity>, World>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesInBounds3' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getEntitiesAtPoint3 point screen world =
+        let oldWorld = world
+        try
+            let point = ScriptingWorld.tryExport (point.GetType ()) point world |> Option.get :?> Vector2
+            let struct (screen, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal screen world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (Screen address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.getEntitiesAtPoint3 point screen world
+            let value = result
+            let value = ScriptingWorld.tryImport typeof<Tuple<HashSet<Entity>, World>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesAtPoint3' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getEntitiesInView world =
+        let oldWorld = world
+        try
+            let result = World.getEntitiesInView world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Tuple<HashSet<Entity>, World>> value world |> Option.get
             struct (value, world)
@@ -251,21 +306,11 @@ module WorldScriptingBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesInView' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getEntitiesInBounds bounds selectedScreen world =
+    let getEntitiesInBounds bounds world =
         let oldWorld = world
         try
             let bounds = ScriptingWorld.tryExport (bounds.GetType ()) bounds world |> Option.get :?> Vector4
-            let struct (selectedScreen, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal selectedScreen world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.getEntitiesInBounds bounds selectedScreen world
+            let result = World.getEntitiesInBounds bounds world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Tuple<HashSet<Entity>, World>> value world |> Option.get
             struct (value, world)
@@ -273,21 +318,11 @@ module WorldScriptingBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesInBounds' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getEntitiesAtPoint point selectedScreen world =
+    let getEntitiesAtPoint point world =
         let oldWorld = world
         try
             let point = ScriptingWorld.tryExport (point.GetType ()) point world |> Option.get :?> Vector2
-            let struct (selectedScreen, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal selectedScreen world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.getEntitiesAtPoint point selectedScreen world
+            let result = World.getEntitiesAtPoint point world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Tuple<HashSet<Entity>, World>> value world |> Option.get
             struct (value, world)
@@ -1633,7 +1668,7 @@ module WorldScriptingBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSizeAsVector2' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let bindings fnName exprs originOpt world =
+    let evalBinding fnName exprs originOpt world =
         match fnName with
         | "tryGetIsSelectedScreenIdling" ->
             match World.evalManyInternal exprs world with
@@ -1733,24 +1768,45 @@ module WorldScriptingBindings =
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'tryReloadAssetGraph' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
+        | "getEntitiesInView2" ->
+            match World.evalManyInternal exprs world with
+            | struct ([|screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
+                getEntitiesInView2 screen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'getEntitiesInView2' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | "getEntitiesInBounds3" ->
+            match World.evalManyInternal exprs world with
+            | struct ([|bounds; screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
+                getEntitiesInBounds3 bounds screen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'getEntitiesInBounds3' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | "getEntitiesAtPoint3" ->
+            match World.evalManyInternal exprs world with
+            | struct ([|point; screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
+                getEntitiesAtPoint3 point screen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'getEntitiesAtPoint3' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
         | "getEntitiesInView" ->
             match World.evalManyInternal exprs world with
-            | struct ([|selectedScreen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                getEntitiesInView selectedScreen world
+            | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
+                getEntitiesInView  world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'getEntitiesInView' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | "getEntitiesInBounds" ->
             match World.evalManyInternal exprs world with
-            | struct ([|bounds; selectedScreen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                getEntitiesInBounds bounds selectedScreen world
+            | struct ([|bounds|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
+                getEntitiesInBounds bounds world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'getEntitiesInBounds' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | "getEntitiesAtPoint" ->
             match World.evalManyInternal exprs world with
-            | struct ([|point; selectedScreen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-                getEntitiesAtPoint point selectedScreen world
+            | struct ([|point|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
+                getEntitiesAtPoint point world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding 'getEntitiesAtPoint' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2429,3 +2485,154 @@ module WorldScriptingBindings =
         | _ ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "No binding exists for '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
             struct (violation, world)
+
+    let isBinding fnName =
+        match fnName with
+        | "tryGetIsSelectedScreenIdling"
+        | "tryGetIsSelectedScreenTransitioning"
+        | "isSelectedScreenIdling"
+        | "isSelectedScreenTransitioning"
+        | "selectScreen"
+        | "tryTransitionScreen"
+        | "transitionScreen"
+        | "createDissolveScreenFromLayerFile6"
+        | "createDissolveScreenFromLayerFile"
+        | "createSplashScreen6"
+        | "createSplashScreen"
+        | "tryReloadOverlays"
+        | "tryReloadPrelude"
+        | "tryReloadAssetGraph"
+        | "getEntitiesInView2"
+        | "getEntitiesInBounds3"
+        | "getEntitiesAtPoint3"
+        | "getEntitiesInView"
+        | "getEntitiesInBounds"
+        | "getEntitiesAtPoint"
+        | "playSong"
+        | "playSong5"
+        | "playSound"
+        | "playSound4"
+        | "fadeOutSong"
+        | "stopSong"
+        | "hintAudioPackageUse"
+        | "hintAudioPackageDisuse"
+        | "reloadAudioAssets"
+        | "hintRenderPackageUse"
+        | "hintRenderPackageDisuse"
+        | "reloadRenderAssets"
+        | "bodyExists"
+        | "getBodyContactNormals"
+        | "getBodyLinearVelocity"
+        | "getBodyToGroundContactNormals"
+        | "getBodyToGroundContactNormalOpt"
+        | "getBodyToGroundContactTangentOpt"
+        | "isBodyOnGround"
+        | "createBody"
+        | "createBodies"
+        | "destroyBody"
+        | "destroyBodies"
+        | "setBodyPosition"
+        | "setBodyRotation"
+        | "setBodyAngularVelocity"
+        | "setBodyLinearVelocity"
+        | "applyBodyAngularImpulse"
+        | "applyBodyLinearImpulse"
+        | "applyBodyForce"
+        | "isMouseButtonDown"
+        | "getMousePosition"
+        | "getMousePositionF"
+        | "isKeyboardKeyDown"
+        | "getSimulantSelected"
+        | "tryGetSimulantParent"
+        | "getSimulantChildren"
+        | "getSimulantExists"
+        | "getEntities1"
+        | "getLayers1"
+        | "isSimulantSelected"
+        | "writeGameToFile"
+        | "readGameFromFile"
+        | "getScreens"
+        | "destroyScreen"
+        | "createScreen3"
+        | "createDissolveScreen5"
+        | "writeScreenToFile"
+        | "readScreenFromFile"
+        | "getLayers"
+        | "destroyLayer"
+        | "destroyLayers"
+        | "writeLayerToFile"
+        | "readLayerFromFile"
+        | "getEntities"
+        | "destroyEntity"
+        | "destroyEntities"
+        | "tryPickEntity"
+        | "createEntity5"
+        | "reassignEntity"
+        | "trySetEntityOverlayNameOpt"
+        | "trySetEntityFacetNames"
+        | "createLayer4"
+        | "getEyeCenter"
+        | "setEyeCenter"
+        | "getEyeSize"
+        | "setEyeSize"
+        | "getSelectedScreenOpt"
+        | "setSelectedScreenOpt"
+        | "getSelectedScreen"
+        | "setSelectedScreen"
+        | "getScreenTransitionDestinationOpt"
+        | "getViewAbsolute"
+        | "getViewAbsoluteI"
+        | "getViewRelative"
+        | "getViewRelativeI"
+        | "getViewBoundsRelative"
+        | "getViewBoundsAbsolute"
+        | "getViewBounds"
+        | "isBoundsInView"
+        | "mouseToScreen"
+        | "mouseToWorld"
+        | "mouseToEntity"
+        | "getTickRate"
+        | "getTickRateF"
+        | "setTickRate"
+        | "resetTickTime"
+        | "getTickTime"
+        | "isTicking"
+        | "getUpdateCount"
+        | "getLiveness"
+        | "exit"
+        | "tryGetTextureSize"
+        | "getTextureSize"
+        | "tryGetTextureSizeAsVector2"
+        | "getTextureSizeAsVector2" -> true
+        | _ -> false
+
+    let [<Literal>] BindingKeywords =
+        "tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning " + 
+        "selectScreen tryTransitionScreen transitionScreen createDissolveScreenFromLayerFile6 " + 
+        "createDissolveScreenFromLayerFile createSplashScreen6 createSplashScreen tryReloadOverlays " + 
+        "tryReloadPrelude tryReloadAssetGraph getEntitiesInView2 getEntitiesInBounds3 " + 
+        "getEntitiesAtPoint3 getEntitiesInView getEntitiesInBounds getEntitiesAtPoint " + 
+        "playSong playSong5 playSound playSound4 " + 
+        "fadeOutSong stopSong hintAudioPackageUse hintAudioPackageDisuse " + 
+        "reloadAudioAssets hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets " + 
+        "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " + 
+        "getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround createBody " + 
+        "createBodies destroyBody destroyBodies setBodyPosition " + 
+        "setBodyRotation setBodyAngularVelocity setBodyLinearVelocity applyBodyAngularImpulse " + 
+        "applyBodyLinearImpulse applyBodyForce isMouseButtonDown getMousePosition " + 
+        "getMousePositionF isKeyboardKeyDown getSimulantSelected tryGetSimulantParent " + 
+        "getSimulantChildren getSimulantExists getEntities1 getLayers1 " + 
+        "isSimulantSelected writeGameToFile readGameFromFile getScreens " + 
+        "destroyScreen createScreen3 createDissolveScreen5 writeScreenToFile " + 
+        "readScreenFromFile getLayers destroyLayer destroyLayers " + 
+        "writeLayerToFile readLayerFromFile getEntities destroyEntity " + 
+        "destroyEntities tryPickEntity createEntity5 reassignEntity " + 
+        "trySetEntityOverlayNameOpt trySetEntityFacetNames createLayer4 getEyeCenter " + 
+        "setEyeCenter getEyeSize setEyeSize getSelectedScreenOpt " + 
+        "setSelectedScreenOpt getSelectedScreen setSelectedScreen getScreenTransitionDestinationOpt " + 
+        "getViewAbsolute getViewAbsoluteI getViewRelative getViewRelativeI " + 
+        "getViewBoundsRelative getViewBoundsAbsolute getViewBounds isBoundsInView " + 
+        "mouseToScreen mouseToWorld mouseToEntity getTickRate " + 
+        "getTickRateF setTickRate resetTickTime getTickTime " + 
+        "isTicking getUpdateCount getLiveness exit " + 
+        "tryGetTextureSize getTextureSize tryGetTextureSizeAsVector2 getTextureSizeAsVector2"
