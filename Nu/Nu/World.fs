@@ -15,7 +15,7 @@ module Nu =
     let mutable private Initialized = false
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
-    /// Initialize the game engine.
+    /// Initialize the Nu game engine.
     let init runSynchronously =
 
         // init only if needed
