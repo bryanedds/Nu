@@ -229,7 +229,7 @@ let generateBindingFunction binding =
     returnConversion +
     exceptionHandler
 
-let generateBindingMatcher binding =
+let generateBindingFunction' binding =
     
     let args =
         binding.FunctionParameters |>
@@ -237,33 +237,43 @@ let generateBindingMatcher binding =
         Array.map fst
     
     let argArray = "[|" + String.Join ("; ", args) + "|]"
-    "        | \"" + binding.FunctionBindingName + "\" ->\n" +
-    "            match World.evalManyInternal exprs world with\n" +
-    "            | struct (" + argArray + " as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->\n" +
-    "                " + binding.FunctionBindingName + " " + String.Join (" ", args) + " world\n" +
-    "            | _ ->\n" +
-    "                let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '" + binding.FunctionBindingName + "' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
-    "                struct (violation, world)\n"
-
-let generateBindingsMatcher bindings =
     
-    let bindingMatchers =
-        bindings |>
-        Array.map generateBindingMatcher |>
-        fun bindings -> String.Join ("", bindings)
-    
-    "    let evalBinding fnName exprs originOpt world =\n" +
-    "        match fnName with\n" +
-    bindingMatchers +
+    "    let eval" + String.capitalize binding.FunctionBindingName + "Binding fnName exprs originOpt world =\n" +
+    "        match World.evalManyInternal exprs world with\n" +
+    "        | struct (" + argArray + " as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->\n" +
+    "            " + binding.FunctionBindingName + " " + String.Join (" ", args) + " world\n" +
     "        | _ ->\n" +
+    "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '\" + " + "fnName" + " + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
+    "            struct (violation, world)\n"
+
+let generateIsBinding () =
+    "    let isBinding fnName =\n" +
+    "        WorldScripting.Bindings.ContainsKey fnName\n"
+
+let generateEvalBinding () =
+    "    let evalBinding fnName exprs originOpt world =\n" +
+    "        match WorldScripting.Bindings.TryGetValue fnName with\n" +
+    "        | (true, binding) -> binding fnName exprs originOpt world\n" +
+    "        | (false, _) ->\n" +
     "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"No binding exists for '\" + " + "fnName" + " + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
     "            struct (violation, world)\n"
 
-let generateIsBindingPredicate bindings =
-    "    let isBinding fnName =\n" +
-    "        match fnName with\n" +
-    (bindings |> Array.map (fun binding -> "        | \"" + binding.FunctionBindingName + "\"") |> fun bindingList -> String.Join ("\n", bindingList)) + " -> true\n" +
-    "        | _ -> false\n"
+let generateInitBindings bindings =
+
+    let bindingDispatchers =
+        bindings |>
+        Array.map (fun binding -> "             (\"" + binding.FunctionName + "\", eval" + String.capitalize binding.FunctionBindingName + "Binding)\n") |>
+        fun dispatchers -> String.Join ("", dispatchers)
+
+    "    let initBindings () =\n" +
+    "        let bindings =\n" +
+    "            [\n" +
+    bindingDispatchers +
+    "            ] |>\n" +
+    "            dictPlus\n" +
+    "        WorldScripting.Bindings <- bindings\n" +
+    "        WorldScripting.isBinding <- isBinding\n" +
+    "        WorldScripting.evalBinding <- evalBinding\n"
 
 let generateBindingSyntax bindings =
 
@@ -302,22 +312,32 @@ let generateBindingsCode bindings =
     let bindingSyntax =
         generateBindingSyntax bindings + "\n"
 
-    let isBindingPredicate =
-        generateIsBindingPredicate bindings + "\n"
-
-    let bindingCodes =
+    let bindingFunctions =
         bindings |>
         Array.map generateBindingFunction |>
-        fun strs -> String.Join ("\n", strs) + "\n"
+        fun functions -> String.Join ("\n", functions) + "\n"
 
-    let bindingsMatcher =
-        generateBindingsMatcher bindings
+    let bindingFunctions' =
+        bindings |>
+        Array.map generateBindingFunction' |>
+        fun functions -> String.Join ("\n", functions) + "\n"
+
+    let isBinding =
+        generateIsBinding () + "\n"
+
+    let evalBinding =
+        generateEvalBinding () + "\n"
+
+    let initBindings =
+        generateInitBindings bindings
 
     header +
     bindingSyntax +
-    isBindingPredicate +
-    bindingCodes +
-    bindingsMatcher
+    bindingFunctions +
+    bindingFunctions' +
+    isBinding +
+    evalBinding +
+    initBindings
 
 let types =
     AppDomain.CurrentDomain.GetAssemblies () |>

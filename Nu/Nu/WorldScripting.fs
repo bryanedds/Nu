@@ -19,6 +19,9 @@ module WorldScripting =
     let mutable Extrinsics =
         Unchecked.defaultof<Dictionary<string, string -> Expr array -> SymbolOrigin option -> World -> struct (Expr * World)>>
 
+    let mutable Bindings =
+        Unchecked.defaultof<Dictionary<string, string -> Expr array -> SymbolOrigin option -> World -> struct (Expr * World)>>
+
     let mutable internal isBinding =
         Unchecked.defaultof<string -> bool>
 
@@ -276,7 +279,8 @@ module WorldScripting =
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             
         static member internal isExtrinsic fnName =
-            Extrinsics.ContainsKey fnName
+            if Extrinsics.ContainsKey fnName then true
+            else isBinding fnName
 
         static member internal evalExtrinsic fnName exprs originOpt world =
             match Extrinsics.TryGetValue fnName with

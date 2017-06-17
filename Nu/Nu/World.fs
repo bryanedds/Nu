@@ -81,12 +81,9 @@ module Nu =
                 let world = World.setScriptContext oldScriptContext world
                 (evaleds, world)
 
-            // init scripting bindings
-            WorldScripting.isBinding <- WorldBindings.isBinding
-            WorldScripting.evalBinding <- WorldBindings.evalBinding
-
             // init scripting
             World.initScripting ()
+            WorldBindings.initBindings ()
 
             // init debug view F# reach-arounds
 #if DEBUG
