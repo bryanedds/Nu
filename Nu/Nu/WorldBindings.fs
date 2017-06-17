@@ -687,7 +687,16 @@ module WorldBindings =
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let entityId = ScriptingWorld.tryExport typeof<Guid> entityId world |> Option.get :?> Guid
-            let bodiesProperties = ScriptingWorld.tryExport typeof<BodyProperties[]> bodiesProperties world |> Option.get :?> BodyProperties[]
+            let struct (bodiesProperties, world) =
+                match World.evalInternal bodiesProperties world with
+                | struct (Scripting.List list, world) ->
+                    Seq.fold (fun struct (values, world) value ->
+                        let value = ScriptingWorld.tryExport typeof<BodyProperties> value world |> Option.get :?> BodyProperties
+                        struct (value :: values, world))
+                        struct ([], world)
+                        list
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.createBodies entity entityId bodiesProperties world
             struct (Scripting.Unit, result)
         with exn ->
@@ -707,7 +716,16 @@ module WorldBindings =
     let destroyBodies physicsIds world =
         let oldWorld = world
         try
-            let physicsIds = ScriptingWorld.tryExport typeof<PhysicsId[]> physicsIds world |> Option.get :?> PhysicsId[]
+            let struct (physicsIds, world) =
+                match World.evalInternal physicsIds world with
+                | struct (Scripting.List list, world) ->
+                    Seq.fold (fun struct (values, world) value ->
+                        let value = ScriptingWorld.tryExport typeof<PhysicsId> value world |> Option.get :?> PhysicsId
+                        struct (value :: values, world))
+                        struct ([], world)
+                        list
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.destroyBodies physicsIds world
             struct (Scripting.Unit, result)
         with exn ->
