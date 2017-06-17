@@ -404,7 +404,7 @@ module Gaia =
                             let syntax = SyntaxAttribute.getOrDefault ty
                             let keywords0 =
                                 if ty = typeof<Scripting.Expr>
-                                then syntax.Keywords0 + " " + WorldScriptingBindings.BindingKeywords
+                                then syntax.Keywords0 + " " + WorldBindings.BindingKeywords
                                 else syntax.Keywords0
                             (keywords0, syntax.Keywords1, syntax.PrettyPrinter)
                     let selectionStart = form.propertyValueTextBox.SelectionStart
@@ -1227,11 +1227,11 @@ module Gaia =
         match typeof<Scripting.Expr>.GetCustomAttribute<SyntaxAttribute> true with
         | null -> ()
         | syntax ->
-            form.evalInputTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldScriptingBindings.BindingKeywords
+            form.evalInputTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldBindings.BindingKeywords
             form.evalInputTextBox.Keywords1 <- syntax.Keywords1
-            form.evalOutputTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldScriptingBindings.BindingKeywords
+            form.evalOutputTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldBindings.BindingKeywords
             form.evalOutputTextBox.Keywords1 <- syntax.Keywords1
-            form.preludeTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldScriptingBindings.BindingKeywords
+            form.preludeTextBox.Keywords0 <- syntax.Keywords0 + " " + WorldBindings.BindingKeywords
             form.preludeTextBox.Keywords1 <- syntax.Keywords1
 
         // populate asset graph keywords
