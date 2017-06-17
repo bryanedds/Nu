@@ -248,12 +248,29 @@ let generateBindingsMatcher bindings =
         Array.map generateBindingMatcher |>
         fun bindings -> String.Join ("", bindings)
     
-    "    let evalBinding fnName exprs originOpt world =\n" +
+    "    WorldScripting.evalBinding <- fun fnName exprs originOpt world ->\n" +
     "        match fnName with\n" +
     bindingMatchers +
     "        | _ ->\n" +
     "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"No binding exists for '\" + " + "fnName" + " + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
     "            struct (violation, world)\n"
+
+let generateIsBindingPredicate bindings =
+    "    isBinding <- fun fnName ->\n" +
+    "        match fnName with\n" +
+    (bindings |> Array.map (fun binding -> "        | \"" + binding.FunctionBindingName + "\"") |> fun bindingList -> String.Join ("\n", bindingList)) + " -> true\n" +
+    "        | _ -> false\n"
+
+let generateBindingSyntax bindings =
+
+    let bindingLists =
+        bindings |>
+        Array.map (fun binding -> binding.FunctionBindingName) |>
+        (fun arr -> Array.splitInto ((Array.length arr) / 4) arr) |>
+        Array.map (fun bindingList -> "        \"" + String.Join (" ", bindingList)) |>
+        (fun bindingLists -> String.Join (" \" +\n", bindingLists) + "\"\n")
+
+    "    let [<Literal>] BindingKeywords =\n" + bindingLists
 
 let generateBindingsCode bindings =
 
@@ -278,36 +295,25 @@ let generateBindingsCode bindings =
         "module WorldScriptingBindings =\n" +
         "\n"
 
+    let bindingSyntax =
+        generateBindingSyntax bindings + "\n"
+
+    let isBindingPredicate =
+        generateIsBindingPredicate bindings + "\n"
+
     let bindingCodes =
         bindings |>
         Array.map generateBindingFunction |>
         fun strs -> String.Join ("\n", strs) + "\n"
 
     let bindingsMatcher =
-        generateBindingsMatcher bindings + "\n"
-
-    let isBindingPredicate =
-        "    let isBinding fnName =\n" +
-        "        match fnName with\n" +
-        (bindings |> Array.map (fun binding -> "        | \"" + binding.FunctionBindingName + "\"") |> fun bindingList -> String.Join ("\n", bindingList)) + " -> true\n" +
-        "        | _ -> false\n" +
-        "\n"
-
-    let bindingLists =
-        bindings |>
-        Array.map (fun binding -> binding.FunctionBindingName) |>
-        (fun arr -> Array.splitInto ((Array.length arr) / 4) arr) |>
-        Array.map (fun bindingList -> "        \"" + String.Join (" ", bindingList)) |>
-        (fun bindingLists -> String.Join (" \" +\n", bindingLists) + "\"\n")
-
-    let bindingSyntax =
-        "    let [<Literal>] BindingKeywords =\n" + bindingLists
+        generateBindingsMatcher bindings
 
     header +
-    bindingCodes +
-    bindingsMatcher +
+    bindingSyntax +
     isBindingPredicate +
-    bindingSyntax
+    bindingCodes +
+    bindingsMatcher
 
 let types =
     AppDomain.CurrentDomain.GetAssemblies () |>

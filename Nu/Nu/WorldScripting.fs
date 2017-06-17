@@ -16,6 +16,12 @@ open Nu
 [<AutoOpen>]
 module WorldScripting =
 
+    let mutable internal isBinding =
+        Unchecked.defaultof<string -> bool>
+
+    let mutable internal evalBinding =
+        Unchecked.defaultof<string -> Expr array -> SymbolOrigin option -> World -> struct (Expr * World)>
+
     type World with
 
         static member internal evalInternal expr world : struct (Expr * World) =
@@ -162,7 +168,7 @@ module WorldScripting =
             | "v2" | "index_Vector2" | "update_Vector2"
             | "get" | "set"
             | "monitor" -> true
-            | _ -> false
+            | _ -> isBinding fnName
 
         static member internal evalExtrinsic fnName exprs originOpt world =
             match fnName with
@@ -234,4 +240,4 @@ module WorldScripting =
                 | struct ([|_; Violation _ as v|], world) -> struct (v, world)
                 | struct ([|evaled; evaled2|], world) -> World.evalMonitor fnName evaled evaled2 originOpt world
                 | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
-            | _ -> failwithumf ()
+            | _ -> evalBinding fnName exprs originOpt world
