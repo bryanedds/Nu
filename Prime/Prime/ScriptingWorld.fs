@@ -240,6 +240,7 @@ module ScriptingWorld =
         struct (Record (name, map, fields), world)
 
     and evalBinding<'w when 'w :> 'w ScriptingWorld> expr name cachedBinding originOpt (world : 'w) =
+        // TODO: P1: do a LOT of optimization here!
         match tryGetBinding name cachedBinding world with
         | None ->
             if world.IsExtrinsic name then struct (expr, world)
