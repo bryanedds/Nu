@@ -11,8 +11,6 @@ module ScriptingTests =
         { ScriptingEnv : Scripting.Env }
         interface TestWorld ScriptingWorld with
             member this.GetEnv () = this.ScriptingEnv
-            member this.UpdateEnv updater = { this with ScriptingEnv = updater this.ScriptingEnv }
-            member this.UpdateEnvPlus updater = let struct (result, env) = updater this.ScriptingEnv in struct (result, { this with ScriptingEnv = env })
             member this.IsExtrinsic _ = false
             member this.EvalExtrinsic _ _ _ = failwithumf ()
             member this.TryImport _ _ = failwithnie ()

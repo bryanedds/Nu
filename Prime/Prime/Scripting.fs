@@ -728,8 +728,8 @@ module Scripting =
         type [<NoEquality; NoComparison>] Env =
             private
                 { GlobalFrame : DeclarationFrame
-                  LocalFrame : DeclarationFrame
-                  ProceduralFrames : ProceduralFrame list }
+                  mutable LocalFrame : DeclarationFrame
+                  mutable ProceduralFrames : ProceduralFrame list }
     
         [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
         module Env =
@@ -741,7 +741,7 @@ module Scripting =
                 env.LocalFrame
 
             let setLocalFrame localFrame env =
-                { env with LocalFrame = localFrame }
+                env.LocalFrame <- localFrame
 
             let getGlobalFrame env =
                 env.GlobalFrame
@@ -750,7 +750,7 @@ module Scripting =
                 Array.create size BottomBinding
 
             let private addProceduralFrame frame env =
-                { env with ProceduralFrames = frame :: env.ProceduralFrames }
+                env.ProceduralFrames <- frame :: env.ProceduralFrames
 
             let private tryGetDeclarationBinding name env =
                 match env.LocalFrame.TryGetValue name with
@@ -806,8 +806,8 @@ module Scripting =
                 let isTopLevel = List.isEmpty env.ProceduralFrames
                 if isTopLevel then
                     env.LocalFrame.ForceAdd (name, value)
-                    struct (true, env)
-                else struct (false, env)
+                    true
+                else false
     
             let addProceduralBinding appendType name value env =
                 match appendType with
@@ -817,9 +817,7 @@ module Scripting =
                     addProceduralFrame frame env
                 | AddToHeadFrame offset ->
                     match env.ProceduralFrames with
-                    | frame :: _ ->
-                        frame.[offset] <- struct (name, value)
-                        env
+                    | frame :: _ -> frame.[offset] <- struct (name, value)
                     | [] -> failwithumf ()
     
             let addProceduralBindings appendType bindings env =
@@ -838,19 +836,18 @@ module Scripting =
                         for binding in bindings do
                             frame.[index] <- binding
                             index <- index + 1
-                        env
                     | [] -> failwithumf ()
 
             let removeProceduralBindings env =
                 match env.ProceduralFrames with
                 | [] -> failwithumf ()
-                | _ :: tail -> { env with ProceduralFrames = tail }
+                | _ :: tail -> env.ProceduralFrames <- tail
 
             let getProceduralFrames env =
                 env.ProceduralFrames
 
             let setProceduralFrames proceduralFrames env =
-                { env with ProceduralFrames = proceduralFrames }
+                env.ProceduralFrames <- proceduralFrames
     
             let make () =
                 // NOTE: local frame starts out the same as the global frame so that prelude

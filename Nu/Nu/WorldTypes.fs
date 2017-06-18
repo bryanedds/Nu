@@ -1024,8 +1024,6 @@ module WorldTypes =
 
         interface World ScriptingWorld with
             member this.GetEnv () = this.ScriptingEnv
-            member this.UpdateEnv updater = { this with ScriptingEnv = updater this.ScriptingEnv }
-            member this.UpdateEnvPlus updater = let struct (result, env) = updater this.ScriptingEnv in struct (result, { this with ScriptingEnv = env })
             member this.IsExtrinsic fnName = this.Dispatchers.IsExtrinsic fnName
             member this.EvalExtrinsic fnName originOpt exprs = this.Dispatchers.EvalExtrinsic fnName exprs originOpt this
 
