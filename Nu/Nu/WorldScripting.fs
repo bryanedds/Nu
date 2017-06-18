@@ -154,14 +154,14 @@ module WorldScripting =
             let oldLocalFrame = World.getLocalFrame world
             let oldScriptContext = World.getScriptContext world
             let globalFrame = World.getGlobalFrame world
-            let world = World.setLocalFrame globalFrame world
+            World.setLocalFrame globalFrame world
             match World.tryEvalScript Assets.PreludeFilePath world with
             | Right struct (scriptStr, _, world) ->
-                let world = World.setLocalFrame oldLocalFrame world
+                World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 Right struct (scriptStr, world)
             | Left struct (error, world) ->
-                let world = World.setLocalFrame oldLocalFrame world
+                World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 Left struct (error, world)
 

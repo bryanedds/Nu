@@ -41,10 +41,10 @@ module Nu =
             WorldModule.eval <- fun expr localFrame scriptingContext world ->
                 let oldLocalFrame = World.getLocalFrame world
                 let oldScriptContext = World.getScriptContext world
-                let world = World.setLocalFrame localFrame world
+                World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptingContext world
                 let struct (evaled, world) = World.evalInternal expr world
-                let world = World.setLocalFrame oldLocalFrame world
+                World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 (evaled, world)
 
@@ -52,10 +52,10 @@ module Nu =
             WorldModule.evalMany <- fun exprs localFrame scriptingContext world ->
                 let oldLocalFrame = World.getLocalFrame world
                 let oldScriptContext = World.getScriptContext world
-                let world = World.setLocalFrame localFrame world
+                World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptingContext world
                 let struct (evaleds, world) = World.evalManyInternal exprs world
-                let world = World.setLocalFrame oldLocalFrame world
+                World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 (evaleds, world)
 
@@ -63,10 +63,10 @@ module Nu =
             WorldModule.evalWithLogging <- fun expr localFrame scriptingContext world ->
                 let oldLocalFrame = World.getLocalFrame world
                 let oldScriptContext = World.getScriptContext world
-                let world = World.setLocalFrame localFrame world
+                World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptingContext world
                 let struct (evaled, world) = World.evalWithLoggingInternal expr world
-                let world = World.setLocalFrame oldLocalFrame world
+                World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 (evaled, world)
 
@@ -74,10 +74,10 @@ module Nu =
             WorldModule.evalManyWithLogging <- fun exprs localFrame scriptingContext world ->
                 let oldLocalFrame = World.getLocalFrame world
                 let oldScriptContext = World.getScriptContext world
-                let world = World.setLocalFrame localFrame world
+                World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptingContext world
                 let struct (evaleds, world) = World.evalManyWithLoggingInternal exprs world
-                let world = World.setLocalFrame oldLocalFrame world
+                World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world
                 (evaleds, world)
 

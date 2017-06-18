@@ -18,8 +18,6 @@ open Prime.ScriptingPrimitives
 type 'w ScriptingWorld =
     interface
         abstract member GetEnv : unit -> Env
-        abstract member UpdateEnv : (Env -> Env) -> 'w
-        abstract member UpdateEnvPlus : (Env -> struct ('a * Env)) -> struct ('a * 'w)
         abstract member IsExtrinsic : string -> bool
         abstract member EvalExtrinsic : string -> SymbolOrigin option -> Expr array -> struct (Expr * 'w)
         abstract member TryImport : Type -> obj -> Expr option
@@ -39,22 +37,22 @@ module ScriptingWorld =
         Env.tryGetBinding name cachedBinding (world.GetEnv ())
 
     let tryAddDeclarationBinding<'w when 'w :> 'w ScriptingWorld> name value (world : 'w) =
-        world.UpdateEnvPlus (Env.tryAddDeclarationBinding name value)
+        Env.tryAddDeclarationBinding name value (world.GetEnv ())
 
     let addProceduralBinding<'w when 'w :> 'w ScriptingWorld> appendType name value (world : 'w) =
-        world.UpdateEnv (Env.addProceduralBinding appendType name value)
+        Env.addProceduralBinding appendType name value (world.GetEnv ())
 
     let addProceduralBindings<'w when 'w :> 'w ScriptingWorld> appendType bindings (world : 'w) =
-        world.UpdateEnv (Env.addProceduralBindings appendType bindings)
+        Env.addProceduralBindings appendType bindings (world.GetEnv ())
 
     let removeProceduralBindings<'w when 'w :> 'w ScriptingWorld> (world : 'w) =
-        world.UpdateEnv (Env.removeProceduralBindings)
+        Env.removeProceduralBindings (world.GetEnv ())
 
     let getProceduralFrames<'w when 'w :> 'w ScriptingWorld> (world : 'w) =
         Env.getProceduralFrames (world.GetEnv ())
 
     let setProceduralFrames<'w when 'w :> 'w ScriptingWorld> proceduralFrames (world : 'w) =
-        world.UpdateEnv (Env.setProceduralFrames proceduralFrames)
+        Env.setProceduralFrames proceduralFrames (world.GetEnv ())
 
     let getGlobalFrame<'w when 'w :> 'w ScriptingWorld> (world : 'w) =
         Env.getGlobalFrame (world.GetEnv ())
@@ -63,7 +61,7 @@ module ScriptingWorld =
         Env.getLocalFrame (world.GetEnv ())
 
     let setLocalFrame<'w when 'w :> 'w ScriptingWorld> localFrame (world : 'w) =
-        world.UpdateEnv (Env.setLocalFrame localFrame)
+        Env.setLocalFrame localFrame (world.GetEnv ())
 
     let tryImport<'w when 'w :> 'w ScriptingWorld> ty value (world : 'w) =
         tryImport world.TryImport ty value
@@ -354,19 +352,20 @@ module ScriptingWorld =
                     match framesOpt with
                     | Some frames ->
                         let framesCurrent = getProceduralFrames world
-                        let world = setProceduralFrames (frames :?> ProceduralFrame list) world
+                        setProceduralFrames (frames :?> ProceduralFrame list) world
                         struct (Some framesCurrent, world)
                     | None -> struct (None, world)
                 let struct (evaled, world) =
                     if evaledTail.Length = parsCount then
                         let bindings = Array.map2 (fun par evaledArg -> struct (par, evaledArg)) pars evaledTail
-                        let world = addProceduralBindings (AddToNewFrame parsCount) bindings world
+                        addProceduralBindings (AddToNewFrame parsCount) bindings world
                         let struct (evaled, world) = eval body world
-                        struct (evaled, removeProceduralBindings world)
+                        removeProceduralBindings world
+                        struct (evaled, world)
                     else struct (Violation (["MalformedLambdaInvocation"], "Wrong number of arguments.", originOpt), world)
                 match framesCurrentOpt with
                 | Some framesCurrent ->
-                    let world = setProceduralFrames framesCurrent world
+                    setProceduralFrames framesCurrent world
                     struct (evaled, world)
                 | None -> struct (evaled, world)
             | Violation _ as error -> struct (error, world)
@@ -407,12 +406,15 @@ module ScriptingWorld =
             | VariableBinding (name, body) ->
                 let struct (evaled, world) = eval body world
                 addProceduralBinding (AddToNewFrame 1) name evaled world
+                world
             | FunctionBinding (name, args, body) ->
                 let frames = getProceduralFrames world :> obj
                 let fn = Fun (args, args.Length, body, true, Some frames, originOpt)
                 addProceduralBinding (AddToNewFrame 1) name fn world
+                world
         let struct (evaled, world) = eval body world
-        struct (evaled, removeProceduralBindings world)
+        removeProceduralBindings world
+        struct (evaled, world)
 
     and evalLetMany4 bindingsHead bindingsTail bindingsCount body originOpt world =
         let world =
@@ -420,24 +422,29 @@ module ScriptingWorld =
             | VariableBinding (name, body) ->
                 let struct (bodyValue, world) = eval body world
                 addProceduralBinding (AddToNewFrame bindingsCount) name bodyValue world
+                world
             | FunctionBinding (name, args, body) ->
                 let frames = getProceduralFrames world :> obj
                 let fn = Fun (args, args.Length, body, true, Some frames, originOpt)
                 addProceduralBinding (AddToNewFrame bindingsCount) name fn world
+                world
         let world =
             List.foldi (fun i world binding ->
                 match binding with
                 | VariableBinding (name, body) ->
                     let struct (bodyValue, world) = eval body world
                     addProceduralBinding (AddToHeadFrame ^ inc i) name bodyValue world
+                    world
                 | FunctionBinding (name, args, body) ->
                     let frames = getProceduralFrames world :> obj
                     let fn = Fun (args, args.Length, body, true, Some frames, originOpt)
-                    addProceduralBinding (AddToHeadFrame ^ inc i) name fn world)
+                    addProceduralBinding (AddToHeadFrame ^ inc i) name fn world
+                    world)
                 world
                 bindingsTail
         let struct (evaled, world) = eval body world
-        struct (evaled, removeProceduralBindings world)
+        removeProceduralBindings world
+        struct (evaled, world)
         
     and evalLet binding body originOpt world =
         evalLet4 binding body originOpt world
@@ -520,11 +527,11 @@ module ScriptingWorld =
             match binding with
             | VariableBinding (name, body) ->
                 let struct (evaled, world) = eval body world
-                tryAddDeclarationBinding name evaled world
+                struct (tryAddDeclarationBinding name evaled world, world)
             | FunctionBinding (name, args, body) ->
                 let frames = getProceduralFrames world :> obj
                 let fn = Fun (args, args.Length, body, true, Some frames, originOpt)
-                tryAddDeclarationBinding name fn world
+                struct (tryAddDeclarationBinding name fn world, world)
         if bound
         then struct (Unit, world)
         else struct (Violation (["InvalidDeclaration"], "Can make declarations only at the top-level.", None), world)

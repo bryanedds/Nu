@@ -28,13 +28,13 @@ module Seq =
 
     /// Convert option values to definite values, returning an additional flag to indicate that all values were some.
     let definitizePlus opts =
-        let (flag, list) =
+        let struct (flag, list) =
             Seq.foldBack
-                (fun opt (allDefinite, values) ->
+                (fun opt struct (allDefinite, values) ->
                     match opt with
-                    | Some value -> (allDefinite, value :: values)
-                    | None -> (false, values))
-                opts (true, [])
+                    | Some value -> struct (allDefinite, value :: values)
+                    | None -> struct (false, values))
+                opts struct (true, [])
         (flag, Seq.ofList list)
 
     /// Fold with two inputs (plus state).
@@ -44,10 +44,10 @@ module Seq =
 
     /// Fold, now with a counter!
     let foldi folder state seq =
-        let (_, result) =
+        let struct (_, result) =
             Seq.fold
-                (fun (i, state) item -> (i + 1, folder i state item))
-                (0, state)
+                (fun struct (i, state) item -> struct (i + 1, folder i state item))
+                struct (0, state)
                 seq
         result
 
@@ -136,6 +136,6 @@ module Seq =
                 if pred head
                 then splitInner pred (head :: left) right (Seq.tail seq)
                 else splitInner pred left (head :: right) (Seq.tail seq)
-            | None -> (left, right)
-        let (list, list2) = splitInner pred [] [] seq
+            | None -> struct (left, right)
+        let struct (list, list2) = splitInner pred [] [] seq
         (List.rev list, List.rev list2)
