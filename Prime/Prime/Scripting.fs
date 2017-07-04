@@ -761,19 +761,19 @@ module Scripting =
                 | (true, value) -> Some value
     
             let private tryGetProceduralBinding name env =
-                let refOffset = ref -1
-                let refOptIndex = ref None
+                let offsetRef = ref -1
+                let indexOptRef = ref None
                 let optBinding =
                     List.tryFindPlus
                         (fun frame ->
-                            refOffset := !refOffset + 1
-                            refOptIndex := Array.tryFindIndexBack (fun struct (bindingName, _) -> name.Equals bindingName) frame // OPTIMIZATION: faster than (=) here
-                            match !refOptIndex with
+                            offsetRef := !offsetRef + 1
+                            indexOptRef := Array.tryFindIndexBack (fun struct (bindingName, _) -> name.Equals bindingName) frame // OPTIMIZATION: faster than (=) here
+                            match !indexOptRef with
                             | Some index -> Some frame.[index]
                             | None -> None)
                         env.ProceduralFrames
                 match optBinding with
-                | Some struct (_, binding) -> Some (struct (binding, !refOffset, (!refOptIndex).Value))
+                | Some struct (_, binding) -> Some (struct (binding, !offsetRef, (!indexOptRef).Value))
                 | None -> None
 
             let tryGetBinding name cachedBinding env =
