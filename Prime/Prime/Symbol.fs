@@ -139,7 +139,7 @@ module Symbol =
     
     let readAtomChars = many1 (noneOf (StructureChars + WhitespaceChars))
     let readStringChars = many (noneOf [CloseStringChar])
-    let (readSymbol : Parser<Symbol, SymbolState>, private refReadSymbol : Parser<Symbol, SymbolState> ref) = createParserForwardedToRef ()
+    let (readSymbol : Parser<Symbol, SymbolState>, private readSymbolRef : Parser<Symbol, SymbolState> ref) = createParserForwardedToRef ()
 
     let readAtom =
         parse {
@@ -227,7 +227,7 @@ module Symbol =
         attempt readAtom <|>
         readSymbols
 
-    do refReadSymbol :=
+    do readSymbolRef :=
         chainl1 readSymbolBirecursive readIndex
 
     let rec writeSymbol symbol =

@@ -21,7 +21,7 @@ open Nu.Gaia.Design
 module Gaia =
 
     // globals needed to sync Nu with WinForms
-    let private RefWorld = ref Unchecked.defaultof<World>
+    let private WorldRef = ref Unchecked.defaultof<World>
     let private WorldChangers = WorldChangers ()
 
     let addWorldChanger worldChanger =
@@ -96,6 +96,17 @@ module Gaia =
                 else form.entityTreeView.SelectedNode <- null
         | _ -> form.entityTreeView.SelectedNode <- null
 
+    let private setHierarchyTreeViewSelectionToEntityPropertyGridSelection (form : GaiaForm) =
+        match form.entityPropertyGrid.SelectedObject with
+        | :? EntityTypeDescriptorSource as entityTds ->
+            match form.hierarchyTreeView.Nodes.Find (scstring entityTds.DescribedEntity.EntityAddress, true) with
+            | [||] -> form.entityTreeView.SelectedNode <- null
+            | entityNodes ->
+                let entityNode = entityNodes.[0]
+                form.hierarchyTreeView.SelectedNode <- entityNode
+                entityNode.EnsureVisible ()
+        | _ -> form.hierarchyTreeView.SelectedNode <- null
+
     let private refreshOverlayComboBox (form : GaiaForm) world =
         form.overlayComboBox.Items.Clear ()
         form.overlayComboBox.Items.Add "(Default Overlay)" |> ignore
@@ -144,7 +155,7 @@ module Gaia =
                         parentNode <- entityNode
                     else parentNode <- parentNode.Nodes.[entityNodeKey]
         restoreExpansionState form.hierarchyTreeView treeState
-        //setHierarchyTreeViewSelectionToEntityPropertyGridSelection form
+        setHierarchyTreeViewSelectionToEntityPropertyGridSelection form
 
     let private refreshLayerTabs (form : GaiaForm) world =
 
@@ -162,37 +173,37 @@ module Gaia =
                 layerTabPages.RemoveByKey layerTabPage.Name
 
     let private selectEntity (form : GaiaForm) entity world =
-        RefWorld := world // must be set for property grid
-        let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
+        WorldRef := world // must be set for property grid
+        let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; WorldRef = WorldRef }
         form.entityPropertyGrid.SelectedObject <- entityTds
         form.propertyTabControl.SelectTab 0 // show entity properties
 
     let private deselectEntity (form : GaiaForm) world =
-        RefWorld := world // must be set for property grid
+        WorldRef := world // must be set for property grid
         form.entityPropertyGrid.SelectedObject <- null
 
     let private refreshEntityPropertyGrid (form : GaiaForm) world =
         match form.entityPropertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
-            entityTds.RefWorld := world // must be set for property grid
+            entityTds.WorldRef := world // must be set for property grid
             if entityTds.DescribedEntity.GetExists world
             then form.entityPropertyGrid.Refresh ()
             else deselectEntity form world
         | _ -> ()
 
     let private selectLayer (form : GaiaForm) layer world =
-        let layerTds = { DescribedLayer = layer; Form = form; WorldChangers = WorldChangers; RefWorld = RefWorld }
-        RefWorld := world // must be set for property grid
+        let layerTds = { DescribedLayer = layer; Form = form; WorldChangers = WorldChangers; WorldRef = WorldRef }
+        WorldRef := world // must be set for property grid
         form.layerPropertyGrid.SelectedObject <- layerTds
 
     let private deselectLayer (form : GaiaForm) world =
-        RefWorld := world // must be set for property grid
+        WorldRef := world // must be set for property grid
         form.layerPropertyGrid.SelectedObject <- null
 
     let private refreshLayerPropertyGrid (form : GaiaForm) world =
         match form.layerPropertyGrid.SelectedObject with
         | :? LayerTypeDescriptorSource as layerTds ->
-            layerTds.RefWorld := world // must be set for property grid
+            layerTds.WorldRef := world // must be set for property grid
             if layerTds.DescribedLayer.GetExists world
             then form.layerPropertyGrid.Refresh ()
             else deselectLayer form world
@@ -394,11 +405,11 @@ module Gaia =
                     let (keywords0, keywords1, prettyPrinter) =
                         match selectedGridItem.Label with
                         | "OverlayNameOpt" ->
-                            let overlays = World.getIntrinsicOverlays !RefWorld @ World.getExtrinsicOverlays !RefWorld
+                            let overlays = World.getIntrinsicOverlays !WorldRef @ World.getExtrinsicOverlays !WorldRef
                             let overlayNames = List.map (fun overlay -> overlay.OverlayName) overlays
                             (String.concat " " overlayNames, "", PrettyPrinter.defaulted)
                         | "FacetNames" ->
-                            let facetNames = !RefWorld |> World.getFacets |> Map.toKeyList
+                            let facetNames = !WorldRef |> World.getFacets |> Map.toKeyList
                             (String.concat " " facetNames, "", PrettyPrinter.defaulted)
                         | _ ->
                             let syntax = SyntaxAttribute.getOrDefault ty
@@ -585,6 +596,7 @@ module Gaia =
     let private handleFormEntityPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
         setEntityTreeViewSelectionToEntityPropertyGridSelection form
+        setHierarchyTreeViewSelectionToEntityPropertyGridSelection form
 
     let private handleFormEntityPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
@@ -597,8 +609,8 @@ module Gaia =
 
     let private handlePropertyTabControlSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
         if form.propertyTabControl.SelectedIndex = 0
-        then refreshEntityPropertyGrid form !RefWorld
-        else refreshLayerPropertyGrid form !RefWorld
+        then refreshEntityPropertyGrid form !WorldRef
+        else refreshLayerPropertyGrid form !WorldRef
 
     let private handleFormPropertyRefreshClick (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
@@ -837,7 +849,7 @@ module Gaia =
                 let entity = entityTds.DescribedEntity
                 let world = entity.SetSize (entity.GetQuickSize world) world
                 let world = entity.PropagatePhysics world
-                entityTds.RefWorld := world // must be set for property grid
+                entityTds.WorldRef := world // must be set for property grid
                 form.entityPropertyGrid.Refresh ()
                 world
             | _ -> Log.trace ^ "Invalid quick size operation (likely a code issue in Gaia)."; world
@@ -1082,11 +1094,11 @@ module Gaia =
     let rec private tryRun3 runWhile sdlDeps (form : GaiaForm) =
         try World.runWithoutCleanUp
                 runWhile
-                (fun world -> let world = updateEditorWorld form world in (RefWorld := world; world))
+                (fun world -> let world = updateEditorWorld form world in (WorldRef := world; world))
                 (fun world -> form.displayPanel.Invalidate (); world)
                 sdlDeps
                 Running
-                !RefWorld |>
+                !WorldRef |>
                 ignore
         with exn ->
             match MessageBox.Show
@@ -1096,18 +1108,18 @@ module Gaia =
                  MessageBoxIcon.Error) with
             | DialogResult.Yes ->
                 form.undoButton.PerformClick ()
-                RefWorld := World.choose !RefWorld
+                WorldRef := World.choose !WorldRef
                 tryRun3 runWhile sdlDeps form
-            | _ -> RefWorld := World.choose !RefWorld
+            | _ -> WorldRef := World.choose !WorldRef
 
     let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
-        RefWorld := attachToWorld targetDir form !RefWorld
-        refreshOverlayComboBox form !RefWorld
-        refreshCreateComboBox form !RefWorld
-        refreshEntityTreeView form !RefWorld
-        refreshHierarchyTreeView form !RefWorld
-        refreshLayerTabs form !RefWorld
-        selectLayer form Simulants.DefaultLayer !RefWorld
+        WorldRef := attachToWorld targetDir form !WorldRef
+        refreshOverlayComboBox form !WorldRef
+        refreshCreateComboBox form !WorldRef
+        refreshEntityTreeView form !WorldRef
+        refreshHierarchyTreeView form !WorldRef
+        refreshLayerTabs form !WorldRef
+        selectLayer form Simulants.DefaultLayer !WorldRef
         form.tickingButton.CheckState <- CheckState.Unchecked
         tryRun3 runWhile sdlDeps (form : GaiaForm)
 
@@ -1289,9 +1301,9 @@ module Gaia =
 
     /// Run Gaia from the F# evaluator.
     let runFromRepl runWhile targetDir sdlDeps form world =
-        RefWorld := world
+        WorldRef := world
         run3 runWhile targetDir sdlDeps form
-        !RefWorld
+        !WorldRef
 
     /// Run Gaia in isolation.
     let run () =
@@ -1301,7 +1313,7 @@ module Gaia =
         | Right sdlDeps ->
             match attemptMakeWorld plugin sdlDeps with
             | Right world ->
-                RefWorld := world
+                WorldRef := world
                 let _ = run3 tautology targetDir sdlDeps form
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error

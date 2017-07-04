@@ -16,7 +16,7 @@ type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTy
     { DescribedEntity : Entity
       Form : GaiaForm
       WorldChangers : WorldChangers
-      RefWorld : World ref }
+      WorldRef : World ref }
 
 and EntityPropertyDescriptor (property, attributes) =
     inherit System.ComponentModel.PropertyDescriptor (
@@ -66,7 +66,7 @@ and EntityPropertyDescriptor (property, attributes) =
         | null -> null // WHY THE FUCK IS THIS EVER null???
         | source ->
             let entityTds = source :?> EntityTypeDescriptorSource
-            EntityPropertyValue.getValue property entityTds.DescribedEntity !entityTds.RefWorld
+            EntityPropertyValue.getValue property entityTds.DescribedEntity !entityTds.WorldRef
 
     override this.SetValue (source, value) =
         
@@ -90,7 +90,7 @@ and EntityPropertyDescriptor (property, attributes) =
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
                     let entity = entityTds.DescribedEntity
                     let world = World.reassignEntity entity (Some name) (etol entity) world
-                    entityTds.RefWorld := world // must be set for property grid
+                    entityTds.WorldRef := world // must be set for property grid
                     world
                 else
                     MessageBox.Show
@@ -108,7 +108,7 @@ and EntityPropertyDescriptor (property, attributes) =
                     match World.trySetEntityFacetNames facetNames entity world with
                     | (Right (), world) -> world
                     | (Left error, world) -> Log.trace error; world
-                entityTds.RefWorld := world // must be set for property grid
+                entityTds.WorldRef := world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
                 world
 
@@ -123,13 +123,13 @@ and EntityPropertyDescriptor (property, attributes) =
                         | (Left error, world) -> Log.trace error; world
                     | _ -> EntityPropertyValue.setValue property value entity world
                 let world = entityTds.DescribedEntity.PropagatePhysics world
-                entityTds.RefWorld := world // must be set for property grid
+                entityTds.WorldRef := world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
                 world)
 
         // NOTE: in order to update the view immediately, we have to apply the changer twice,
         // once immediately and once in the update function
-        entityTds.RefWorld := changer !entityTds.RefWorld
+        entityTds.WorldRef := changer !entityTds.WorldRef
         entityTds.WorldChangers.Add changer |> ignore
 
 and EntityTypeDescriptor (sourceOpt : obj) =
@@ -138,7 +138,7 @@ and EntityTypeDescriptor (sourceOpt : obj) =
     override this.GetProperties () =
         let contextOpt =
             match sourceOpt with
-            | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity, !source.RefWorld)
+            | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity, !source.WorldRef)
             | _ -> None
         let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
         let propertyDescriptors = EntityPropertyValue.getPropertyDescriptors makePropertyDescriptor contextOpt
