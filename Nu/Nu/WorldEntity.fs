@@ -191,7 +191,7 @@ module WorldEntityModule =
                 let facets = entity.GetFacetsNp world
                 let world = dispatcher.PostUpdate (entity, world)
                 let world = List.foldBack (fun (facet : Facet) world -> facet.PostUpdate (entity, world)) facets world
-                if World.getEntityPublishUpdatesNp entity world then
+                if World.getEntityPublishPostUpdatesNp entity world then
                     let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
                     World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateAddress eventTrace Simulants.Game false world
                 else world)
