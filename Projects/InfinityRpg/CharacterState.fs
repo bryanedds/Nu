@@ -231,7 +231,7 @@ type [<StructuralEquality; NoComparison>] ActivityState =
         | Navigation _ | NoActivity -> false
 
     static member isNotActing activity =
-        not ^ ActivityState.isActing activity
+        not (ActivityState.isActing activity)
 
     static member isNavigating activity =
         match activity with
@@ -239,7 +239,7 @@ type [<StructuralEquality; NoComparison>] ActivityState =
         | Navigation _ -> true
 
     static member isNotNavigating activity =
-        not ^ ActivityState.isNavigating activity
+        not (ActivityState.isNavigating activity)
 
     static member isNavigatingPath activity =
         match activity with

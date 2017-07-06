@@ -46,7 +46,7 @@ type AddressConverter (targetType : Type) =
                 let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
                 makeFromStringFunctionGeneric.Invoke (null, [|fullName|])
             | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
-                failconv "Expected Symbol or String for conversion to Address." ^ Some addressSymbol
+                failconv "Expected Symbol or String for conversion to Address." (Some addressSymbol)
         | _ ->
             if targetType.IsInstanceOfType source then source
             else failconv "Invalid AddressConverter conversion from source." None
@@ -116,7 +116,7 @@ module AddressModule =
     
         /// Concatenate two addresses, forcing the type of first address.
         static member acatff<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'a Address =
-            Address.acatf address ^ Address.atooa address2
+            Address.acatf address (Address.atooa address2)
 
         /// Concatenate two addresses, taking the type of the second address.
         static member acats<'a> (address : obj Address) (address2 : 'a Address) : 'a Address =
@@ -203,7 +203,7 @@ module AddressModule =
             
         /// Take the tail of an address.
         let tail<'a, 'b> (address : 'a Address) =
-            makeFromList<'b> ^ List.tail address.Names
+            makeFromList<'b> (List.tail address.Names)
 
         /// Take a name of an address.
         let item index address =
@@ -211,15 +211,15 @@ module AddressModule =
 
         /// Take an address composed of the name of an address minus a skipped amount of names.
         let skip<'a, 'b> n (address : 'a Address) =
-            makeFromList<'b> ^ List.skip n address.Names
+            makeFromList<'b> (List.skip n address.Names)
 
         /// Take an address composed of the given number of names of an address.
         let take<'a, 'b> n (address : 'a Address) =
-            makeFromList<'b> ^ List.take n address.Names
+            makeFromList<'b> (List.take n address.Names)
 
         /// Take an address composed of the given number of names of an address.
         let tryTake<'a, 'b> n (address : 'a Address) =
-            makeFromList<'b> ^ List.tryTake n address.Names
+            makeFromList<'b> (List.tryTake n address.Names)
 
         /// Take the last name of an address.
         let last address =
@@ -227,7 +227,7 @@ module AddressModule =
 
         /// Take an address composed of all but the last name of an address.
         let allButLast<'a, 'b> (address : 'a Address) =
-            makeFromList<'b> ^ List.allButLast address.Names
+            makeFromList<'b> (List.allButLast address.Names)
 
         /// Get the length of an address by its names.
         let length address =

@@ -123,7 +123,7 @@ module WorldEntityModule =
 
         /// Check that an entity is in the camera's view.
         member this.GetInView world =
-            if not ^ this.GetOmnipresent world then
+            if not (this.GetOmnipresent world) then
                 World.isBoundsInView
                     (this.GetViewType world)
                     (this.GetBoundsOverflow world)
@@ -212,16 +212,16 @@ module WorldEntityModule =
         static member getEntities (layer : Layer) world =
             match Address.getNames layer.LayerAddress with
             | [screenName; layerName] ->
-                let layerDirectoryOpt = UMap.tryFindFast screenName ^ World.getScreenDirectory world
+                let layerDirectoryOpt = UMap.tryFindFast screenName (World.getScreenDirectory world)
                 if FOption.isSome layerDirectoryOpt then
                     let layerDirectory = FOption.get layerDirectoryOpt
                     let entityDirectoryOpt = UMap.tryFindFast layerName layerDirectory.Value
                     if FOption.isSome entityDirectoryOpt then
                         let entityDirectory = FOption.get entityDirectoryOpt
                         UMap.fold (fun state _ entityAddress -> Entity entityAddress :: state) [] entityDirectory.Value :> _ seq
-                    else failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
-                else failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
-            | _ -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
+                    else failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
+                else failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
+            | _ -> failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
 
         /// Destroy an entity in the world at the end of the current update.
         [<FunctionBinding>]
@@ -319,7 +319,7 @@ module WorldEntityModule =
             let properties = typeof<EntityState>.GetProperties ()
             let typeConverterAttribute = TypeConverterAttribute typeof<SymbolicConverter>
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty ^ property.GetCustomAttributes<ExtensionAttribute> ()) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty (property.GetCustomAttributes<ExtensionAttribute> ())) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
             let propertyDescriptors = Seq.map (fun property -> makePropertyDescriptor (EntityPropertyInfo property, [|typeConverterAttribute|])) properties
             let propertyDescriptors =

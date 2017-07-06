@@ -154,7 +154,7 @@ module EventSystemModule =
                 let addressStr = scstring address
                 let traceRev = List.rev trace // for efficiency during normal execution, trace is cons'd up into a reversed list
                 if EventFilter.filter addressStr traceRev eventSystem.EventFilter then
-                    eventSystem.EventTracer ^ addressStr + "|" + scstring traceRev
+                    eventSystem.EventTracer (addressStr + "|" + scstring traceRev)
 
         /// Push an event address to the list for cycle-detection.
         let pushEventAddress<'w> eventAddress (eventSystem : 'w EventSystem) =

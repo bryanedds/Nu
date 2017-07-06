@@ -41,7 +41,7 @@ module AmbientStateModule =
 
         /// Get the tick rate as a floating-point value.
         let getTickRateF state =
-            single ^ getTickRate state
+            single (getTickRate state)
 
         /// Set the tick rate.
         let setTickRateImmediate tickRate state =
@@ -137,7 +137,7 @@ module AmbientStateModule =
 
         /// Update the symbol store.
         let updateSymbolStore updater state =
-            let camera = updater ^ getSymbolStore state
+            let camera = updater (getSymbolStore state)
             { state with SymbolStore = camera }
     
         /// Get the user-defined state value, cast to 'a.

@@ -47,7 +47,7 @@ module OccupationMap =
         else occupationMap
 
     let occupyByAdjacentCharacters positionM characterPositions occupationMap =
-        Seq.fold (flip ^ occupyByAdjacentCharacter positionM) occupationMap characterPositions
+        Seq.fold (flip (occupyByAdjacentCharacter positionM)) occupationMap characterPositions
 
     let unoccupyByCharacter characterPosition occupationMap =
         let characterPositionM = vftovm characterPosition
@@ -92,7 +92,7 @@ module OccupationMap =
         // OPTIMIZATION: populate node neghbors imperatively for speed
         Map.iter
             (fun positionM node -> 
-                let neighborPositionMs = List.ofSeq ^ getOpenNeighborPositionMsAtPositionM positionM occupationMap
+                let neighborPositionMs = List.ofSeq (getOpenNeighborPositionMsAtPositionM positionM occupationMap)
                 let neighbors =
                     List.fold
                         (fun neighbors neighborPositionM ->

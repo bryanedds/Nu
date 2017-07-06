@@ -40,7 +40,7 @@ module UserStateModule =
                     let imperativeConverter = SymbolicConverter typeof<bool>
                     let imperative = imperativeConverter.ConvertFrom imperativeSymbol :?> bool
                     { Type = valueType; Value = value; Imperative = imperative } :> obj
-                | _ -> failconv "Invalid UserState conversion from source." ^ Some symbol
+                | _ -> failconv "Invalid UserState conversion from source." (Some symbol)
             | :? UserState -> source
             | _ -> failconv "Invalid UserState conversion from source." None
 

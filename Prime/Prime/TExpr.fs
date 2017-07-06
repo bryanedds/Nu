@@ -65,7 +65,7 @@ type TExprBuilder<'env> () =
         this.Bind (this.Return (), f)
 
     member this.While (guard, body) =
-        if not ^ guard ()
+        if not (guard ())
         then this.Zero ()
         else this.Bind (body, fun () -> this.While (guard, body))
 

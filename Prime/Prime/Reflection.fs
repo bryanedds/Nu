@@ -118,7 +118,7 @@ module Reflection =
 
     let objToObjList (source : obj) =
         let iEnumerable = source :?> IEnumerable
-        List.ofSeq ^ enumerable<obj> iEnumerable
+        List.ofSeq (enumerable<obj> iEnumerable)
 
     let objToKeyValuePair (source : obj) =
         let kvpType = source.GetType ()
@@ -135,7 +135,7 @@ module Reflection =
 
     let objToComparableSet (source : obj) =
         let iEnumerable = source :?> IEnumerable
-        Set.ofSeq ^ enumerable<IComparable> iEnumerable
+        Set.ofSeq (enumerable<IComparable> iEnumerable)
 
     let objsToKeyValuePair fst snd (pairType : Type) =
         Activator.CreateInstance (pairType, [|fst; snd|])
@@ -189,7 +189,7 @@ module Type =
     let GetTypeUnqualified name =
         match TryGetTypeUnqualified name with
         | Some ty -> ty
-        | None -> failwith ^ "Could not find type with unqualified name '" + name + "'."
+        | None -> failwith ("Could not find type with unqualified name '" + name + "'.")
 
     /// Get the first property that is signalled to be preferred by the 'preference' predicate.
     let GetPropertyByPreference (preference, properties) =
@@ -220,7 +220,7 @@ module TypeExtension =
                 if (unionCases.[0].GetFields ()).Length = 0
                 then FSharpValue.MakeUnion (unionCases.[0], [||])
                 else failwithumf ()
-            elif isNotNull ^ this.GetConstructor [||] then Activator.CreateInstance ()
+            elif isNotNull (this.GetConstructor [||]) then Activator.CreateInstance ()
             else failwithumf ()
 
         /// Get the type descriptor for this type as returned by the global TypeDescriptor.
@@ -238,7 +238,7 @@ module TypeExtension =
                 this.GetCustomAttributes (typeof<TypeConverterAttribute>, true) |>
                 Array.map (fun attr -> attr :?> TypeConverterAttribute) |>
                 Array.append globalConverterAttributes
-            if not ^ Array.isEmpty typeConverterAttributes then
+            if not (Array.isEmpty typeConverterAttributes) then
                 let typeConverterAttribute = Array.head typeConverterAttributes
                 let typeConverterTypeName = typeConverterAttribute.ConverterTypeName
                 let typeConverterType = Type.GetType typeConverterTypeName

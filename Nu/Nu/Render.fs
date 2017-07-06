@@ -217,24 +217,24 @@ module RendererModule =
                     | Some inset ->
                         sourceRect.x <- int inset.X
                         sourceRect.y <- int inset.Y
-                        sourceRect.w <- int ^ inset.Z - inset.X
-                        sourceRect.h <- int ^ inset.W - inset.Y
+                        sourceRect.w <- int (inset.Z - inset.X)
+                        sourceRect.h <- int (inset.W - inset.Y)
                     | None ->
                         sourceRect.x <- 0
                         sourceRect.y <- 0
                         sourceRect.w <- textureSizeX
                         sourceRect.h <- textureSizeY
                     let mutable destRect = SDL.SDL_Rect ()
-                    destRect.x <- int ^ positionView.X + eyeSize.X * 0.5f
-                    destRect.y <- int ^ -positionView.Y + eyeSize.Y * 0.5f - sizeView.Y // negation for right-handedness
+                    destRect.x <- int (positionView.X + eyeSize.X * 0.5f)
+                    destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f - sizeView.Y) // negation for right-handedness
                     destRect.w <- int sizeView.X
                     destRect.h <- int sizeView.Y
                     let rotation = double -sprite.Rotation * Constants.Math.RadiansToDegrees // negation for right-handedness
                     let mutable rotationCenter = SDL.SDL_Point ()
-                    rotationCenter.x <- int ^ sizeView.X * 0.5f
-                    rotationCenter.y <- int ^ sizeView.Y * 0.5f
-                    SDL.SDL_SetTextureColorMod (texture, byte ^ 255.0f * color.X, byte ^ 255.0f * color.Y, byte ^ 255.0f * color.Z) |> ignore
-                    SDL.SDL_SetTextureAlphaMod (texture, byte ^ 255.0f * color.W) |> ignore
+                    rotationCenter.x <- int (sizeView.X * 0.5f)
+                    rotationCenter.y <- int (sizeView.Y * 0.5f)
+                    SDL.SDL_SetTextureColorMod (texture, byte (255.0f * color.X), byte (255.0f * color.Y), byte (255.0f * color.Z)) |> ignore
+                    SDL.SDL_SetTextureAlphaMod (texture, byte (255.0f * color.W)) |> ignore
                     let renderResult =
                         SDL.SDL_RenderCopyEx (
                             renderer.RenderContext,
@@ -279,9 +279,9 @@ module RendererModule =
                 match renderAsset with
                 | TextureAsset texture ->
                     // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
-                    let refTileSourceRect = ref ^ SDL.SDL_Rect ()
-                    let refTileDestRect = ref ^ SDL.SDL_Rect ()
-                    let refTileRotationCenter = ref ^ SDL.SDL_Point ()
+                    let refTileSourceRect = ref (SDL.SDL_Rect ())
+                    let refTileDestRect = ref (SDL.SDL_Rect ())
+                    let refTileRotationCenter = ref (SDL.SDL_Point ())
                     Seq.iteri
                         (fun n (tile : TmxLayerTile) ->
                             let mapRun = mapSize.X
@@ -297,8 +297,8 @@ module RendererModule =
                                 let gidPosition = gid * tileSourceSize.X
                                 let tileSourcePosition =
                                     Vector2
-                                        (single ^ gidPosition % tileSetWidth,
-                                         single ^ gidPosition / tileSetWidth * tileSourceSize.Y)
+                                        (single (gidPosition % tileSetWidth),
+                                         single (gidPosition / tileSetWidth * tileSourceSize.Y))
                                 let mutable sourceRect = SDL.SDL_Rect ()
                                 sourceRect.x <- int tileSourcePosition.X
                                 sourceRect.y <- int tileSourcePosition.Y
@@ -311,8 +311,8 @@ module RendererModule =
                                 destRect.h <- int tileSize.Y
                                 let rotation = double -tileRotation * Constants.Math.RadiansToDegrees // negation for right-handedness
                                 let mutable rotationCenter = SDL.SDL_Point ()
-                                rotationCenter.x <- int ^ tileSize.X * 0.5f
-                                rotationCenter.y <- int ^ tileSize.Y * 0.5f
+                                rotationCenter.x <- int (tileSize.X * 0.5f)
+                                rotationCenter.y <- int (tileSize.Y * 0.5f)
                                 refTileSourceRect := sourceRect
                                 refTileDestRect := destRect
                                 refTileRotationCenter := rotationCenter
@@ -342,10 +342,10 @@ module RendererModule =
                 match renderAsset with
                 | FontAsset (font, _) ->
                     let mutable renderColor = SDL.SDL_Color ()
-                    renderColor.r <- byte ^ color.X * 255.0f
-                    renderColor.g <- byte ^ color.Y * 255.0f
-                    renderColor.b <- byte ^ color.Z * 255.0f
-                    renderColor.a <- byte ^ color.W * 255.0f
+                    renderColor.r <- byte (color.X * 255.0f)
+                    renderColor.g <- byte (color.Y * 255.0f)
+                    renderColor.b <- byte (color.Z * 255.0f)
+                    renderColor.a <- byte (color.W * 255.0f)
                     // NOTE: the resource implications (perf and vram fragmentation?) of creating and destroying a
                     // texture one or more times a frame must be understood! Although, maybe it all happens in software
                     // and vram frag would not be a concern in the first place... perf could still be, however.
@@ -359,8 +359,8 @@ module RendererModule =
                         sourceRect.w <- textureSizeX
                         sourceRect.h <- textureSizeY
                         let mutable destRect = SDL.SDL_Rect ()
-                        destRect.x <- int ^ positionView.X + eyeSize.X * 0.5f
-                        destRect.y <- int ^ -positionView.Y + eyeSize.Y * 0.5f - single textureSizeY // negation for right-handedness
+                        destRect.x <- int (positionView.X + eyeSize.X * 0.5f)
+                        destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f - single textureSizeY) // negation for right-handedness
                         destRect.w <- textureSizeX
                         destRect.h <- textureSizeY
                         if textTexture <> IntPtr.Zero then SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect) |> ignore
@@ -396,8 +396,8 @@ module RendererModule =
                     Seq.sortWith Renderer.sortDescriptors |> // Seq.sort is stable, unlike Array.sort...
                     Array.ofSeq
                 let layeredDescriptors = Array.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
-                let viewAbsolute = Matrix3.InvertView ^ Math.getViewAbsoluteI eyeCenter eyeSize
-                let viewRelative = Matrix3.InvertView ^ Math.getViewRelativeI eyeCenter eyeSize
+                let viewAbsolute = Matrix3.InvertView (Math.getViewAbsoluteI eyeCenter eyeSize)
+                let viewRelative = Matrix3.InvertView (Math.getViewRelativeI eyeCenter eyeSize)
                 Array.fold (Renderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize) renderer layeredDescriptors
             | _ ->
                 Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")

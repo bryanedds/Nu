@@ -39,8 +39,8 @@ module Gaia =
         (entitiesInLayer, world)
 
     let private getSnaps (form : GaiaForm) =
-        let positionSnap = snd ^ Int32.TryParse form.positionSnapTextBox.Text
-        let rotationSnap = snd ^ Int32.TryParse form.rotationSnapTextBox.Text
+        let positionSnap = snd (Int32.TryParse form.positionSnapTextBox.Text)
+        let rotationSnap = snd (Int32.TryParse form.rotationSnapTextBox.Text)
         (positionSnap, rotationSnap)
     
     let private getCreationDepth (form : GaiaForm) =
@@ -164,7 +164,7 @@ module Gaia =
         let layerTabPages = form.layerTabControl.TabPages
         for layer in layers do
             let layerName = layer.LayerName
-            if not ^ layerTabPages.ContainsKey layerName then
+            if not (layerTabPages.ContainsKey layerName) then
                 layerTabPages.Add (layerName, layerName)
     
         // remove layers imperatively to preserve existing layer tabs 
@@ -264,7 +264,7 @@ module Gaia =
         (handled, world)
 
     let private handleNuEntityDragBegin (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        if not ^ canEditWithMouse form world then
+        if not (canEditWithMouse form world) then
             let handled = if World.isTicking world then Cascade else Resolve
             let mousePosition = World.getMousePositionF world
             match tryMousePick form mousePosition world with
@@ -374,12 +374,12 @@ module Gaia =
         form.Close ()
 
     let private handleFormCreateDepthPlusClick (form : GaiaForm) (_ : EventArgs) =
-        let depth = snd ^ Single.TryParse form.createDepthTextBox.Text
-        form.createDepthTextBox.Text <- scstring ^ depth + 1.0f
+        let depth = snd (Single.TryParse form.createDepthTextBox.Text)
+        form.createDepthTextBox.Text <- scstring (depth + 1.0f)
 
     let private handleFormCreateDepthMinusClick (form : GaiaForm) (_ : EventArgs) =
-        let depth = snd ^ Single.TryParse form.createDepthTextBox.Text
-        form.createDepthTextBox.Text <- scstring ^ depth - 1.0f
+        let depth = snd (Single.TryParse form.createDepthTextBox.Text)
+        form.createDepthTextBox.Text <- scstring (depth - 1.0f)
 
     let private refreshPropertyEditor (form : GaiaForm) =
         let activePropertyGrid =
@@ -466,8 +466,8 @@ module Gaia =
                                 form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
                             | None -> ()
                         | None -> ()
-                        Log.trace ^ "Invalid apply property operation due to: " + scstring exn
-                    | exn -> Log.trace ^ "Invalid apply property operation due to: " + scstring exn
+                        Log.trace ("Invalid apply property operation due to: " + scstring exn)
+                    | exn -> Log.trace ("Invalid apply property operation due to: " + scstring exn)
                 | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
         | :? LayerTypeDescriptorSource as layerTds ->
             match activePropertyGrid.SelectedGridItem with
@@ -492,8 +492,8 @@ module Gaia =
                                 form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
                             | None -> ()
                         | None -> ()
-                        Log.trace ^ "Invalid apply property operation due to: " + scstring exn
-                    | exn -> Log.trace ^ "Invalid apply property operation due to: " + scstring exn
+                        Log.trace ("Invalid apply property operation due to: " + scstring exn)
+                    | exn -> Log.trace ("Invalid apply property operation due to: " + scstring exn)
                 | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
         | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
 
@@ -585,7 +585,7 @@ module Gaia =
         let editorState = World.getUserValue world
         let overlayerSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let overlayerFilePath = Path.Combine (overlayerSourceDir, Assets.OverlayerFilePath)
-        try let overlays = scvalue<Overlay list> ^ form.overlayerTextBox.Text.TrimEnd ()
+        try let overlays = scvalue<Overlay list> (form.overlayerTextBox.Text.TrimEnd ())
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Overlay>).PrettyPrinter
             File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
             (true, world)
@@ -816,7 +816,7 @@ module Gaia =
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds -> World.copyEntityToClipboard entityTds.DescribedEntity world; world
-            | _ -> Log.trace ^ "Invalid copy operation (likely a code issue in Gaia)."; world
+            | _ -> Log.trace ("Invalid copy operation (likely a code issue in Gaia)."); world
 
     let private handleFormCut (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
@@ -827,7 +827,7 @@ module Gaia =
                 let world = World.cutEntityToClipboard entityTds.DescribedEntity world
                 deselectEntity form world
                 world
-            | _ -> Log.trace ^ "Invalid cut operation (likely a code issue in Gaia)."; world
+            | _ -> Log.trace ("Invalid cut operation (likely a code issue in Gaia)."); world
 
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
@@ -852,7 +852,7 @@ module Gaia =
                 entityTds.WorldRef := world // must be set for property grid
                 form.entityPropertyGrid.Refresh ()
                 world
-            | _ -> Log.trace ^ "Invalid quick size operation (likely a code issue in Gaia)."; world
+            | _ -> Log.trace ("Invalid quick size operation (likely a code issue in Gaia)."); world
 
     let private handleFormResetCamera (_ : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
@@ -1040,7 +1040,7 @@ module Gaia =
             if List.isEmpty (World.getUserValue world).PastWorlds then
                 form.undoButton.Enabled <- false
                 form.undoToolStripMenuItem.Enabled <- false
-        elif not ^ List.isEmpty (World.getUserValue world).PastWorlds then
+        elif not (List.isEmpty (World.getUserValue world).PastWorlds) then
             form.undoButton.Enabled <- true
             form.undoToolStripMenuItem.Enabled <- true
 
@@ -1050,7 +1050,7 @@ module Gaia =
             if List.isEmpty editorState.FutureWorlds then
                 form.redoButton.Enabled <- false
                 form.redoToolStripMenuItem.Enabled <- false
-        elif not ^ List.isEmpty editorState.FutureWorlds then
+        elif not (List.isEmpty editorState.FutureWorlds) then
             form.redoButton.Enabled <- true
             form.redoToolStripMenuItem.Enabled <- true
 
@@ -1086,8 +1086,8 @@ module Gaia =
                     let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world |> snd
                     let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world |> snd
                     subscribeToEntityEvents form world
-                else failwith ^ "Cannot attach Gaia to a world with no layers inside the '" + scstring Simulants.EditorScreen + "' screen."
-            else failwith ^ "Cannot attach Gaia to a world with a screen selected other than '" + scstring Simulants.EditorScreen + "'."
+                else failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring Simulants.EditorScreen + "' screen.")
+            else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring Simulants.EditorScreen + "'.")
         | :? EditorState -> world // NOTE: conclude world is already attached
         | _ -> failwith "Cannot attach Gaia to a world that has a user state of a type other than unit or EditorState."
 

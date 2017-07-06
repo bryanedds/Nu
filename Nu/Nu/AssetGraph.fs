@@ -21,7 +21,7 @@ module Refinement =
         match str with
         | "PsdToPng" -> PsdToPng
         | "OldSchool" -> OldSchool
-        | _ -> failwith ^ "Invalid refinement '" + str + "'."
+        | _ -> failwith ("Invalid refinement '" + str + "'.")
 
 /// Describes a means for looking up an asset.
 type AssetTag =
@@ -111,7 +111,7 @@ module AssetGraphModule =
             let refinementFilePath = Path.Combine (refinementDirectory, refinementFileSubpath)
     
             // refine the asset
-            Directory.CreateDirectory ^ Path.GetDirectoryName refinementFilePath |> ignore
+            Directory.CreateDirectory (Path.GetDirectoryName refinementFilePath) |> ignore
             match refinement with
             | PsdToPng ->
                 use image = new MagickImage (intermediateFilePath)
@@ -150,7 +150,7 @@ module AssetGraphModule =
     
                 // build the asset if fully building or if it's out of date
                 if  fullBuild ||
-                    not ^ File.Exists outputFilePath ||
+                    not (File.Exists outputFilePath) ||
                     File.GetLastWriteTimeUtc inputFilePath > File.GetLastWriteTimeUtc outputFilePath then
     
                     // refine the asset
@@ -161,7 +161,7 @@ module AssetGraphModule =
                     // attempt to copy the intermediate asset if output file is out of date
                     let intermediateFilePath = Path.Combine (intermediateDirectory, intermediateFileSubpath)
                     let outputFilePath = Path.Combine (outputDirectory, intermediateFileSubpath)
-                    Directory.CreateDirectory ^ Path.GetDirectoryName outputFilePath |> ignore
+                    Directory.CreateDirectory (Path.GetDirectoryName outputFilePath) |> ignore
                     try File.Copy (intermediateFilePath, outputFilePath, true)
                     with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
     
@@ -211,7 +211,7 @@ module AssetGraphModule =
             | Some packageDescriptor ->
                 let assets = loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor
                 Right assets
-            | None -> Left ^ "Could not find package '" + packageName + "' in asset graph."
+            | None -> Left ("Could not find package '" + packageName + "' in asset graph.")
 
         /// Load all the available assets from an asset graph document.
         let loadAssets usingRawAssets associationOpt assetGraph =
@@ -249,7 +249,7 @@ module AssetGraphModule =
                 scvalue<Map<string, PackageDescriptor>> |>
                 make |>
                 Right
-            with exn -> Left ^ "Could not make asset graph from file '" + filePath + "' due to: " + scstring exn
+            with exn -> Left ("Could not make asset graph from file '" + filePath + "' due to: " + scstring exn)
 
 /// A graph of all the assets used in a game.
 type AssetGraph = AssetGraphModule.AssetGraph

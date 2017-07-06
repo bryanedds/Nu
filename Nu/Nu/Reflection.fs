@@ -29,9 +29,9 @@ module Reflection =
 
     /// Is a property with the given name persistent?
     let isPropertyPersistentByName (propertyName : string) =
-        not ^ propertyName.EndsWith ("Id", StringComparison.Ordinal) && // don't write an Id
-        not ^ propertyName.EndsWith ("Ids", StringComparison.Ordinal) && // don't write multiple Ids
-        not ^ propertyName.EndsWith ("Np", StringComparison.Ordinal) // don't write non-persistent properties
+        not (propertyName.EndsWith ("Id", StringComparison.Ordinal)) && // don't write an Id
+        not (propertyName.EndsWith ("Ids", StringComparison.Ordinal)) && // don't write multiple Ids
+        not (propertyName.EndsWith ("Np", StringComparison.Ordinal)) // don't write non-persistent properties
 
     /// Is the property of the given target persistent?
     let isPropertyPersistent (property : PropertyInfo) (target : 'a) =
@@ -72,7 +72,7 @@ module Reflection =
                     match definitionsProperty.GetValue null with
                     | :? (obj list) as definitions when List.isEmpty definitions -> []
                     | :? (PropertyDefinition list) as definitions -> definitions
-                    | _ -> failwith ^ "PropertyDefinitions property for type '" + targetType.Name + "' must be of type PropertyDefinition list."
+                    | _ -> failwith ("PropertyDefinitions property for type '" + targetType.Name + "' must be of type PropertyDefinition list.")
             PropertyDefinitionsCache.Add (targetType, definitions)
             definitions
 
@@ -294,7 +294,7 @@ module Reflection =
             match intrinsicFacetNames with
             | :? (obj list) as intrinsicFacetNames when List.isEmpty intrinsicFacetNames -> []
             | :? (string list) as intrinsicFacetNames -> intrinsicFacetNames
-            | _ -> failwith ^ "IntrinsicFacetNames property for type '" + targetType.Name + "' must be of type string list."
+            | _ -> failwith ("IntrinsicFacetNames property for type '" + targetType.Name + "' must be of type string list.")
 
     /// Get the intrinsic facet names of a target type.
     let getIntrinsicFacetNames (targetType : Type) =
@@ -339,7 +339,7 @@ module Reflection =
                     | null ->
                         xtension <- Xtension.detachProperty propertyName xtension
                         xtensionProperty.SetValue (target, xtension)
-                    | _ -> failwith ^ "Invalid property '" + propertyName + "' for target type '" + targetType.Name + "'."
+                    | _ -> failwith ("Invalid property '" + propertyName + "' for target type '" + targetType.Name + "'.")
             | _ -> ()
         target
 
@@ -367,12 +367,12 @@ module Reflection =
                 | Some reqdDispatcher ->
                     let reqdDispatcherType = reqdDispatcher.GetType ()
                     match targetType.GetProperty "DispatcherNp" with
-                    | null -> failwith ^ "Target '" + scstring target + "' does not implement dispatching in a compatible way."
+                    | null -> failwith ("Target '" + scstring target + "' does not implement dispatching in a compatible way.")
                     | dispatcherNpProperty ->
                         let dispatcher = dispatcherNpProperty.GetValue target
                         dispatchesAs reqdDispatcherType dispatcher
-                | None -> failwith ^ "Could not find required dispatcher '" + reqdDispatcherName + "' in dispatcher map."
-            | _ -> failwith ^ "Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string."
+                | None -> failwith ("Could not find required dispatcher '" + reqdDispatcherName + "' in dispatcher map.")
+            | _ -> failwith ("Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string.")
 
     /// Check for facet compatibility with the target's dispatcher.
     let isFacetCompatibleWithDispatcher dispatcherMap (facet : 'b) (target : 'a) =
@@ -390,16 +390,16 @@ module Reflection =
                 (fun facetName ->
                     match Map.tryFind facetName facetMap with
                     | Some facet -> facet
-                    | None -> failwith ^ "Could not find facet '" + facetName + "' in facet map.")
+                    | None -> failwith ("Could not find facet '" + facetName + "' in facet map."))
                 facetNames
         let targetType = target.GetType ()
         match targetType.GetPropertyWritable "FacetsNp" with
-        | null -> failwith ^ "Could not attach facet to type '" + targetType.Name + "'."
+        | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")
         | facetsNpProperty ->
             List.iter
                 (fun facet ->
-                    if not ^ isFacetCompatibleWithDispatcher dispatcherMap facet target
-                    then failwith ^ "Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'."
+                    if not (isFacetCompatibleWithDispatcher dispatcherMap facet target)
+                    then failwith ("Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'.")
                     else ())
                 facets
             facetsNpProperty.SetValue (target, facets)

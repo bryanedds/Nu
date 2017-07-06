@@ -19,7 +19,7 @@ module HashSetExtension =
 
         /// Try to add an item, returning false upon failure.
         member this.TryAdd item =
-            if not ^ this.Contains item
+            if not (this.Contains item)
             then this.Add item
             else false
 

@@ -31,13 +31,13 @@ module UListModule =
     module UList =
 
         let makeFromSeq config items =
-            { ListRef = ref ^ TList.makeFromSeq config items }
+            { ListRef = ref (TList.makeFromSeq config items) }
 
         let makeFromArray config items =
-            { ListRef = ref ^ TList.makeFromArray config items }
+            { ListRef = ref (TList.makeFromArray config items) }
 
         let makeEmpty<'a> config =
-            { ListRef = ref ^ TList.makeEmpty<'a> config }
+            { ListRef = ref (TList.makeEmpty<'a> config) }
 
         let getConfig list =
             let struct (result, tlist) = TList.getConfig !list.ListRef
@@ -48,16 +48,16 @@ module UListModule =
             list.[index]
 
         let set index value list =
-            { ListRef = ref ^ TList.set index value !list.ListRef }
+            { ListRef = ref (TList.set index value !list.ListRef) }
 
         let add value list =
-            { ListRef = ref ^ TList.add value !list.ListRef }
+            { ListRef = ref (TList.add value !list.ListRef) }
 
         let remove value list =
-            { ListRef = ref ^ TList.remove value !list.ListRef }
+            { ListRef = ref (TList.remove value !list.ListRef) }
 
         let clear list =
-            { ListRef = ref ^ TList.clear !list.ListRef }
+            { ListRef = ref (TList.clear !list.ListRef) }
 
         let isEmpty list =
             let struct (result, tlist) = TList.isEmpty !list.ListRef
@@ -65,7 +65,7 @@ module UListModule =
             result
 
         let notEmpty list =
-            not ^ isEmpty list
+            not (isEmpty list)
 
         let length list =
             let struct (result, tlist) = TList.length !list.ListRef
@@ -132,10 +132,10 @@ module UListModule =
 
         /// Add all the given values to the list.
         let addMany values list =
-            { ListRef = ref ^ TList.addMany values !list.ListRef }
+            { ListRef = ref (TList.addMany values !list.ListRef) }
 
         /// Remove all the given values from the list.
         let removeMany values list =
-            { ListRef = ref ^ TList.removeMany values !list.ListRef }
+            { ListRef = ref (TList.removeMany values !list.ListRef) }
 
 type 'a UList = 'a UListModule.UList

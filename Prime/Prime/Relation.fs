@@ -46,7 +46,7 @@ type RelationConverter (targetType : Type) =
                 let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((targetType.GetGenericArguments ()).[0])
                 makeFromStringFunctionGeneric.Invoke (null, [|fullName|])
             | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
-                failconv "Expected Symbol or String for conversion to Relation." ^ Some relationSymbol
+                failconv "Expected Symbol or String for conversion to Relation." (Some relationSymbol)
         | _ ->
             if targetType.IsInstanceOfType source then source
             else failconv "Invalid RelationConverter conversion from source." None

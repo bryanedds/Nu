@@ -30,7 +30,7 @@ module KeyedCacheModule =
             (getFreshKeyAndValue : unit -> KeyValuePair<'k, 'v>)
             cacheKey
             keyedCache =
-            if not ^ keyEquality keyedCache.CacheKey cacheKey then
+            if not (keyEquality keyedCache.CacheKey cacheKey) then
                 let freshKvp = getFreshKeyAndValue ()
                 keyedCache.CacheKey <- freshKvp.Key
                 keyedCache.CacheValue <- freshKvp.Value
@@ -47,7 +47,7 @@ module KeyedCacheModule =
             (getFreshKeyAndValue : FSharpFunc<unit, KeyValuePair<'k, 'v>>)
             cacheKey
             keyedCache =
-            if not ^ keyEquality.Invoke (keyedCache.CacheKey, cacheKey) then
+            if not (keyEquality.Invoke (keyedCache.CacheKey, cacheKey)) then
                 let freshKvp = getFreshKeyAndValue.Invoke ()
                 keyedCache.CacheKey <- freshKvp.Key
                 keyedCache.CacheValue <- freshKvp.Value

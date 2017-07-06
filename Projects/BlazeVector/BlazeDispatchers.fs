@@ -34,14 +34,14 @@ module BulletModule =
             else world
 
         static member PropertyDefinitions =
-            [Define? Size ^ Vector2 (20.0f, 20.0f)
+            [Define? Size (Vector2 (20.0f, 20.0f))
              Define? Omnipresent true
              Define? Density 0.25f
              Define? Restitution 0.5f
              Define? LinearDamping 0.0f
              Define? GravityScale 0.0f
              Define? IsBullet true
-             Define? CollisionBody ^ BodyCircle { Radius = 0.5f; Center = Vector2.Zero }
+             Define? CollisionBody (BodyCircle { Radius = 0.5f; Center = Vector2.Zero })
              Define? StaticImage Assets.PlayerBulletImage
              Define? Age 0L]
 
@@ -96,14 +96,14 @@ module EnemyModule =
             else world
 
         static member PropertyDefinitions =
-            [Define? Size ^ Vector2 (48.0f, 96.0f)
+            [Define? Size (Vector2 (48.0f, 96.0f))
              Define? FixedRotation true
              Define? LinearDamping 3.0f
              Define? GravityScale 0.0f
-             Define? CollisionBody ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
+             Define? CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
              Define? CelCount 6
              Define? CelRun 4
-             Define? CelSize ^ Vector2 (48.0f, 96.0f)
+             Define? CelSize (Vector2 (48.0f, 96.0f))
              Define? AnimationStutter 8L
              Define? AnimationSheet Assets.EnemyImage
              Define? Health 7]
@@ -157,7 +157,7 @@ module PlayerModule =
         static let handleSpawnBullet evt world =
             let player = evt.Subscriber : Entity
             if World.isTicking world then
-                if not ^ player.HasFallen world then
+                if not (player.HasFallen world) then
                     if World.getTickTime world % 5L = 0L
                     then shootBullet player world
                     else world
@@ -165,7 +165,7 @@ module PlayerModule =
             else world
 
         static let getLastTimeOnGround (player : Entity) world =
-            if not ^ World.isBodyOnGround (player.GetPhysicsId world) world
+            if not (World.isBodyOnGround (player.GetPhysicsId world) world)
             then player.GetLastTimeOnGroundNp world
             else World.getTickTime world
 
@@ -202,14 +202,14 @@ module PlayerModule =
             else world
 
         static member PropertyDefinitions =
-            [Define? Size ^ Vector2 (48.0f, 96.0f)
+            [Define? Size (Vector2 (48.0f, 96.0f))
              Define? FixedRotation true
              Define? LinearDamping 3.0f
              Define? GravityScale 0.0f
-             Define? CollisionBody ^ BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero }
+             Define? CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
              Define? CelCount 16
              Define? CelRun 4
-             Define? CelSize ^ Vector2 (48.0f, 96.0f)
+             Define? CelSize (Vector2 (48.0f, 96.0f))
              Define? AnimationStutter 3L
              Define? AnimationSheet Assets.PlayerImage
              Define? LastTimeOnGroundNp Int64.MinValue

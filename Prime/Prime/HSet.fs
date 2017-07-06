@@ -191,7 +191,7 @@ module HSetModule =
     
         /// Check that an HSet is empty.
         let notEmpty set =
-            not ^ HNode.isEmpty set.Node
+            not (HNode.isEmpty set.Node)
     
         /// Add a value with the key to an HSet.
         let add (value : 'a) set =
