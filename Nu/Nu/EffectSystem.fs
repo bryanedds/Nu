@@ -86,14 +86,14 @@ module EffectSystemModule =
             | Linear ->
                 value + scale (value2 - value, progress)
             | Random ->
-                let rand = Rand.makeFromInt ^ int ^ (Math.Max (double progress, 0.000000001)) * double Int32.MaxValue
-                let randValue = fst ^ Rand.nextSingle rand
+                let rand = Rand.makeFromInt (int ((Math.Max (double progress, 0.000000001)) * double Int32.MaxValue))
+                let randValue = fst (Rand.nextSingle rand)
                 value + scale (value2 - value, randValue)
             | Chaos ->
-                let chaosValue = single ^ effectSystem.Chaos.NextDouble ()
+                let chaosValue = single (effectSystem.Chaos.NextDouble ())
                 value + scale (value2 - value, chaosValue)
             | Ease ->
-                let progressEase = single ^ Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0)
+                let progressEase = single (Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0))
                 value + scale (value2 - value, progressEase)
             | EaseIn ->
                 let progressScaled = float progress * Math.PI * 0.5
@@ -138,7 +138,7 @@ module EffectSystemModule =
                 let celY = celJ * celSize.Y
                 let celPosition = Vector2 (single celX, single celY)
                 let celSize = Vector2 (single celSize.X, single celSize.Y)
-                Some ^ Math.makeBounds celPosition celSize
+                Some (Math.makeBounds celPosition celSize)
             else None
 
         let evalArgument (argument : Argument) : Definition =
@@ -159,10 +159,10 @@ module EffectSystemModule =
                     match definition.DefinitionBody with
                     | SymbolicCompressionA resource -> evalResource resource effectSystem
                     | _ ->
-                        Log.info ^ "Expected Resource for definition '" + definitionName + "."
+                        Log.info ("Expected Resource for definition '" + definitionName + ".")
                         scvalue<AssetTag> Assets.DefaultImageString
                 | None ->
-                    Log.info ^ "Could not find definition with name '" + definitionName + "'."
+                    Log.info ("Could not find definition with name '" + definitionName + "'.")
                     scvalue<AssetTag> Assets.DefaultImageString
 
         let rec private iterateArtifacts incrementAspects content slice effectSystem =
@@ -259,8 +259,8 @@ module EffectSystemModule =
                 | Some definition ->
                     match definition.DefinitionBody with
                     | SymbolicCompressionB (SymbolicCompressionA aspect) -> evalAspect aspect slice effectSystem
-                    | _ -> Log.info ^ "Expected Aspect for definition '" + definitionName + "'."; slice
-                | None -> Log.info ^ "Could not find definition with name '" + definitionName + "'."; slice
+                    | _ -> Log.info ("Expected Aspect for definition '" + definitionName + "'."); slice
+                | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); slice
         
         and private evalAspects aspects slice effectSystem =
             Array.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
@@ -276,8 +276,8 @@ module EffectSystemModule =
                         let effectSystem = { effectSystem with EffectEnv = Map.addMany localDefinitionEntries effectSystem.EffectEnv }
                         evalContent content slice effectSystem
                     | None -> Log.info "Wrong number of arguments provided to ExpandContent."; effectSystem
-                | _ -> Log.info ^ "Expected Content for definition '" + definitionName + "'."; effectSystem
-            | None -> Log.info ^ "Could not find definition with name '" + definitionName + "'."; effectSystem
+                | _ -> Log.info ("Expected Content for definition '" + definitionName + "'."); effectSystem
+            | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); effectSystem
 
         and private evalStaticSprite resource aspects content slice effectSystem =
 
@@ -464,7 +464,7 @@ module EffectSystemModule =
                 with exn ->
                     let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Effect>).PrettyPrinter
                     let effectStr = PrettyPrinter.prettyPrint (scstring effect) prettyPrinter
-                    Log.debug ^ "Error in effect:\n" + effectStr + "\r\ndue to: " + scstring exn
+                    Log.debug ("Error in effect:\n" + effectStr + "\r\ndue to: " + scstring exn)
                     effectSystem
             else effectSystem
 

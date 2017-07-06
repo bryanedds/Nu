@@ -27,10 +27,10 @@ module USetModule =
     module USet =
 
         let makeFromSeq<'a when 'a : equality> config items =
-            { SetRef = ref ^ TSet.makeFromSeq<'a> config items }
+            { SetRef = ref (TSet.makeFromSeq<'a> config items) }
 
         let makeEmpty<'a when 'a : equality> config =
-            { SetRef = ref ^ TSet.makeEmpty<'a> config }
+            { SetRef = ref (TSet.makeEmpty<'a> config) }
 
         let getConfig set =
             let struct (result, tset) = TSet.getConfig !set.SetRef
@@ -38,21 +38,21 @@ module USetModule =
             result
 
         let add value set =
-            { SetRef = ref ^ TSet.add value !set.SetRef }
+            { SetRef = ref (TSet.add value !set.SetRef) }
 
         let remove value set =
-            { SetRef = ref ^ TSet.remove value !set.SetRef }
+            { SetRef = ref (TSet.remove value !set.SetRef) }
 
         let clear set =
-            { SetRef = ref ^ TSet.clear !set.SetRef }
+            { SetRef = ref (TSet.clear !set.SetRef) }
     
         /// Add all the given values to the set.
         let addMany values set =
-            { SetRef = ref ^ TSet.addMany values !set.SetRef }
+            { SetRef = ref (TSet.addMany values !set.SetRef) }
     
         /// Remove all the given values from the set.
         let removeMany values set =
-            { SetRef = ref ^ TSet.removeMany values !set.SetRef }
+            { SetRef = ref (TSet.removeMany values !set.SetRef) }
 
         let isEmpty set =
             let struct (result, tset) = TSet.isEmpty !set.SetRef
@@ -60,7 +60,7 @@ module USetModule =
             result
 
         let notEmpty set =
-            not ^ isEmpty set
+            not (isEmpty set)
 
         let contains value set =
             let struct (result, tset) = TSet.contains value !set.SetRef

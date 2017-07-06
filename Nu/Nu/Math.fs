@@ -89,7 +89,7 @@ type Vector2Converter () =
         | :? Symbol as symbol ->
             match symbol with
             | Symbols ([Number (x, _); Number (y, _)], _) -> Vector2 (Single.Parse x, Single.Parse y) :> obj
-            | _ -> failconv "Invalid Vector2Converter conversion from source." ^ Some symbol
+            | _ -> failconv "Invalid Vector2Converter conversion from source." (Some symbol)
         | :? Vector2 -> source
         | _ -> failconv "Invalid Vector2Converter conversion from source." None
 
@@ -117,7 +117,7 @@ type Vector3Converter () =
         | :? Symbol as symbol ->
             match symbol with
             | Symbols ([Number (x, _); Number (y, _); Number (z, _)], _) -> Vector3 (Single.Parse x, Single.Parse y, Single.Parse z) :> obj
-            | _ -> failconv "Invalid Vector3Converter conversion from source." ^ Some symbol
+            | _ -> failconv "Invalid Vector3Converter conversion from source." (Some symbol)
         | :? Vector3 -> source
         | _ -> failconv "Invalid Vector3Converter conversion from source." None
 
@@ -145,7 +145,7 @@ type Vector4Converter () =
         | :? Symbol as symbol ->
             match symbol with
             | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) -> Vector4 (Single.Parse x, Single.Parse y, Single.Parse z, Single.Parse w) :> obj
-            | _ -> failconv "Invalid Vector4Converter conversion from source." ^ Some symbol
+            | _ -> failconv "Invalid Vector4Converter conversion from source." (Some symbol)
         | :? Vector4 -> source
         | _ -> failconv "Invalid Vector4Converter conversion from source." None
 
@@ -211,7 +211,7 @@ type Vector2iConverter () =
         | :? Symbol as symbol ->
             match symbol with
             | Symbols ([Number (x, _); Number (y, _)], _) -> Vector2i (Int32.Parse x, Int32.Parse y) :> obj
-            | _ -> failconv "Invalid Vector2iConverter conversion from source." ^ Some symbol
+            | _ -> failconv "Invalid Vector2iConverter conversion from source." (Some symbol)
         | :? Vector2i -> source
         | _ -> failconv "Invalid Vector2iConverter conversion from source." None
 
@@ -268,7 +268,7 @@ module Math =
 
     /// Snap an single float value to an offset.
     let snapF offset (value : single) =
-        single (snap offset ^ int value)
+        single (snap offset (int value))
 
     /// Snap an Vector2 value to an offset.
     let snap2F offset (v2 : Vector2) =
@@ -332,5 +332,5 @@ module Math =
     /// The relative view of the eye with translation sliced on integers. Good for rendering.
     let getViewRelativeI (eyeCenter : Vector2) (_ : Vector2) =
         let translation = eyeCenter
-        let translationI = Vector2 (single ^ int translation.X, single ^ int translation.Y)
+        let translationI = Vector2 (single (int translation.X), single (int translation.Y))
         Matrix3.CreateFromTranslation translationI

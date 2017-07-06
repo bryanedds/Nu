@@ -24,8 +24,8 @@ module WorldModuleGame =
         static member private setGameState gameState world =
 #if DEBUG
             // NOTE: this check will always succeed!
-            if not ^ World.qualifyEventContext Address.empty world then
-                failwith ^ "Cannot set the state of a game in an unqualifed event context."
+            if not (World.qualifyEventContext Address.empty world) then
+                failwith "Cannot set the state of a game in an unqualifed event context."
 #endif
             World.choose { world with GameState = gameState }
 
@@ -96,7 +96,7 @@ module WorldModuleGame =
         /// Get the currently selected screen (failing with an exception if there isn't one).
         [<FunctionBinding>]
         static member getSelectedScreen world =
-            Option.get ^ World.getSelectedScreenOpt world
+            Option.get (World.getSelectedScreenOpt world)
         
         /// Set the currently selected screen. Be careful using this function directly as you may
         /// be wanting to use the higher-level World.transitionScreen function instead.
@@ -202,7 +202,7 @@ module WorldModuleGame =
                 match symbolOpt with
                 | Some symbol ->
                     try let script = valueize<'a> symbol in Some script
-                    with exn -> Log.debug ^ "Failed to convert symbol '" + scstring symbol + "' to value due to: " + scstring exn; None
+                    with exn -> Log.debug ("Failed to convert symbol '" + scstring symbol + "' to value due to: " + scstring exn); None
                 | None -> None
             (scriptOpt, world)
 
@@ -297,10 +297,10 @@ module WorldModuleGame =
 
         static member internal setGameProperty propertyName property world =
             match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> failwith ^ "Cannot change game " + propertyName + "."
-            | "DispatcherNp" -> failwith ^ "Cannot change game " + propertyName + "."
-            | "CreationTimeStampNp" -> failwith ^ "Cannot change game " + propertyName + "."
-            | "Imperative" -> failwith ^ "Cannot change game " + propertyName + "."
+            | "Id" -> failwith ("Cannot change game " + propertyName + ".")
+            | "DispatcherNp" -> failwith ("Cannot change game " + propertyName + ".")
+            | "CreationTimeStampNp" -> failwith ("Cannot change game " + propertyName + ".")
+            | "Imperative" -> failwith ("Cannot change game " + propertyName + ".")
             | "ScriptOpt" -> World.setGameScriptOpt (property.PropertyValue :?> AssetTag option) world
             | "Script" -> World.setGameScript (property.PropertyValue :?> Scripting.Expr array) world
             | "ScriptFrameNp" -> world
@@ -331,7 +331,7 @@ module WorldModuleGame =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ^ "Could not find GameDispatcher '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
+                    Log.info ("Could not find GameDispatcher '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
                     let dispatcherName = typeof<GameDispatcher>.Name
                     Map.find dispatcherName dispatchers
 

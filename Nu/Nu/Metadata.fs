@@ -44,7 +44,7 @@ module MetadataModule =
                 raise (TileSetPropertyNotFoundException errorMessage)
 
         let private generateTextureMetadata asset =
-            if not ^ File.Exists asset.FilePath then
+            if not (File.Exists asset.FilePath) then
                 let errorMessage = "Failed to load Bitmap due to missing file '" + asset.FilePath + "'."
                 Log.trace errorMessage
                 InvalidMetadata errorMessage
@@ -81,7 +81,7 @@ module MetadataModule =
                 | ".tmx" -> generateTileMapMetadata asset
                 | ".wav" -> SoundMetadata
                 | ".ogg" -> SongMetadata
-                | _ -> InvalidMetadata ^ "Could not load asset metadata '" + scstring asset + "' due to unknown extension '" + extension + "'."
+                | _ -> InvalidMetadata ("Could not load asset metadata '" + scstring asset + "' due to unknown extension '" + extension + "'.")
             (asset.AssetTag.AssetName, metadata)
 
         let private tryGenerateMetadataSubmap packageName assetGraph =

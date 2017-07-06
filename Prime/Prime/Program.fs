@@ -91,7 +91,7 @@ module Program =
         // run dictionary timings
         let dic = Dictionary<string, string * string> ()
         runMapTimings
-            (fun entries -> Array.iter (fun (k, v) -> if not ^ dic.ContainsKey k then dic.Add (k, v)) entries)
+            (fun entries -> Array.iter (fun (k, v) -> if not (dic.ContainsKey k) then dic.Add (k, v)) entries)
             (fun entries () -> Array.iter (fun (k, _) -> dic.[k] |> ignore) entries)
             ".NET Dictionary"
 

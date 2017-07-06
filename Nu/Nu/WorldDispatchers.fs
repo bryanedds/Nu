@@ -338,8 +338,8 @@ module RigidBodyFacetModule =
                   LinearVelocity = entity.GetLinearVelocity world
                   LinearDamping = entity.GetLinearDamping world
                   GravityScale = entity.GetGravityScale world
-                  CollisionCategories = Physics.categorizeCollisionMask ^ entity.GetCollisionCategories world
-                  CollisionMask = Physics.categorizeCollisionMask ^ entity.GetCollisionMask world
+                  CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
+                  CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   IsBullet = entity.GetIsBullet world
                   IsSensor = entity.GetIsSensor world }
             World.createBody entity (entity.GetId world) bodyProperties world
@@ -612,7 +612,7 @@ module EffectDispatcherModule =
         inherit EntityDispatcher ()
 
         static member PropertyDefinitions =
-            [Define? Effect ^ scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]"]
+            [Define? Effect (scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
         static member IntrinsicFacetNames =
             [typeof<EffectFacet>.Name]
@@ -662,7 +662,7 @@ module GuiDispatcherModule =
         static member PropertyDefinitions =
             [Define? ViewType Absolute
              Define? AlwaysUpdate true
-             Define? DisabledColor ^ Vector4 0.75f
+             Define? DisabledColor (Vector4 0.75f)
              Define? SwallowMouseLeft true]
 
         override dispatcher.Register (gui, world) =
@@ -932,7 +932,7 @@ module ToggleDispatcherModule =
                 if  toggle.GetVisibleLayered world &&
                     Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
                     if toggle.GetEnabled world && wasPressed then
-                        let world = toggle.SetOpen (not ^ toggle.GetOpen world) world
+                        let world = toggle.SetOpen (not (toggle.GetOpen world)) world
                         let eventAddress = if toggle.GetOpen world then Events.Open else Events.Closed
                         let eventTrace = EventTrace.record "ToggleDispatcher" "handleMouseLeftUp" EventTrace.empty
                         let world = World.publish () (eventAddress ->- toggle) eventTrace toggle world
@@ -1238,8 +1238,8 @@ module TileMapDispatcherModule =
             { BodyId = makeGuidFromInts tli ti
               Position =
                 Vector2
-                    (single ^ td.TilePosition.X + tmd.TileSize.X / 2,
-                     single ^ td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y)
+                    (single (td.TilePosition.X + tmd.TileSize.X / 2),
+                     single (td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y))
               Rotation = tm.GetRotation world
               Shape = tileShape
               BodyType = BodyType.Static
@@ -1254,8 +1254,8 @@ module TileMapDispatcherModule =
               LinearVelocity = Vector2.Zero
               LinearDamping = 0.0f
               GravityScale = 0.0f
-              CollisionCategories = Physics.categorizeCollisionMask ^ tm.GetCollisionCategories world
-              CollisionMask = Physics.categorizeCollisionMask ^ tm.GetCollisionMask world
+              CollisionCategories = Physics.categorizeCollisionMask (tm.GetCollisionCategories world)
+              CollisionMask = Physics.categorizeCollisionMask (tm.GetCollisionMask world)
               IsBullet = false
               IsSensor = false }
 
@@ -1391,5 +1391,5 @@ module TileMapDispatcherModule =
 
         override dispatcher.GetQuickSize (tileMap, world) =
             match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with
-            | Some (_, _, map) -> Vector2 (single ^ map.Width * map.TileWidth, single ^ map.Height * map.TileHeight)
+            | Some (_, _, map) -> Vector2 (single (map.Width * map.TileWidth), single (map.Height * map.TileHeight))
             | None -> Constants.Engine.DefaultEntitySize

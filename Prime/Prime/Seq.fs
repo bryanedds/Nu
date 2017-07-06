@@ -10,7 +10,7 @@ module Seq =
 
     /// Check that a sequence is not empty.
     let rec notEmpty seq =
-        not ^ Seq.isEmpty seq
+        not (Seq.isEmpty seq)
 
     /// Get Some head of the seq or None.
     let inline tryHead seq =
@@ -126,7 +126,7 @@ module Seq =
 
     /// Check that a predicate passes for NO items in a sequence.
     let rec notExists pred seq =
-        not ^ Seq.exists pred seq
+        not (Seq.exists pred seq)
 
     /// Split a sequence on a predicate.
     let split pred seq =

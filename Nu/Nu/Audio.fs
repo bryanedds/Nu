@@ -119,7 +119,7 @@ module AudioPlayerModule =
                 | WavAsset _ ->
                     Log.info ("Cannot play wav file as song '" + scstring song + "'.")
                 | OggAsset oggAsset ->
-                    SDL_mixer.Mix_VolumeMusic (int ^ playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
+                    SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
                     SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) |> ignore // Mix_PlayMusic seems to somtimes cause audio 'popping' when starting a song, so a fade is used instead... |> ignore
                 { audioPlayer with CurrentSongOpt = Some playSongMessage }
             else
@@ -149,7 +149,7 @@ module AudioPlayerModule =
             if FOption.isSome audioAssetOpt then
                 match FOption.get audioAssetOpt with
                 | WavAsset wavAsset ->
-                    SDL_mixer.Mix_VolumeChunk (wavAsset, int ^ playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME) |> ignore
+                    SDL_mixer.Mix_VolumeChunk (wavAsset, int (playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
                     SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0) |> ignore
                 | OggAsset _ -> Log.info ("Cannot play ogg file as sound '" + scstring sound + "'.")
                 audioPlayer

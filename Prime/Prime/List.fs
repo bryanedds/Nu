@@ -14,7 +14,7 @@ module List =
 
     /// Check that a list is not empty.
     let inline notEmpty list =
-        not ^ List.isEmpty list
+        not (List.isEmpty list)
 
     /// Make a singleton list.
     let inline singleton value =

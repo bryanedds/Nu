@@ -13,7 +13,7 @@ module Map =
 
     /// Check that a map is not empty.
     let rec notEmpty map =
-        not ^ Map.isEmpty map
+        not (Map.isEmpty map)
 
     /// Make a singleton map.
     let singleton key value =

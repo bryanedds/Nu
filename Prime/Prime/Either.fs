@@ -97,7 +97,7 @@ module Either =
     let mapLeft mapper eir =
         match eir with
         | Right r -> Right r
-        | Left l -> Left ^ mapper l
+        | Left l -> Left (mapper l)
 
     /// Map over the right side of an Either value.
     let mapRight mapper eir =

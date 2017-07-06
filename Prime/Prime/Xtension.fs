@@ -20,7 +20,7 @@ module XtensionModule =
         /// Try to get the default value for a given xtension member, returning None when defaulting is disallowed.
         static member private tryGetDefaultValue (this : Xtension) propertyName : 'a =
             if this.CanDefault then scdefaultof ()
-            else failwith ^ "Xtension property '" + propertyName + "' does not exist and no default is permitted because CanDefault is false."
+            else failwith ("Xtension property '" + propertyName + "' does not exist and no default is permitted because CanDefault is false.")
 
         /// The dynamic look-up operator for an Xtension.
         /// Example:
@@ -35,7 +35,7 @@ module XtensionModule =
                 let property = FOption.get propertyOpt
                 match property.PropertyValue with
                 | :? 'a as propertyValue -> propertyValue
-                | _ -> failwith ^ "Xtension property '" + propertyName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'a>.Name + "'."
+                | _ -> failwith ("Xtension property '" + propertyName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'a>.Name + "'.")
 
             else
 

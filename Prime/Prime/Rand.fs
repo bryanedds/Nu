@@ -38,7 +38,7 @@ module RandModule =
         /// Get the next random value as a double type.
         let nextDouble rand =
             let rand = advance rand
-            let sampleDouble = double ^ sample rand
+            let sampleDouble = double (sample rand)
             let sampleDoubleMax = double UInt64.MaxValue
             let number = sampleDouble / sampleDoubleMax
             (number, rand)

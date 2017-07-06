@@ -41,7 +41,7 @@ open Nu.Stream
 open Nu.Gaia
 
 // set current directly to local for execution in VS F# interactive
-Directory.SetCurrentDirectory ^ __SOURCE_DIRECTORY__ + "../bin/Debug"
+Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "../bin/Debug")
 
 // initialize Nu
 Nu.init false

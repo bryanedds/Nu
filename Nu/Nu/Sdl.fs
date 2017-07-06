@@ -138,7 +138,7 @@ module SdlDepsModule =
 #if MIX_INIT_OGG
                                 (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line fails on 32-bit builds.. WHY?
 #else
-                                (fun () -> SDL_mixer.Mix_Init ^ enum<SDL_mixer.MIX_InitFlags> 0)
+                                (fun () -> SDL_mixer.Mix_Init (enum<SDL_mixer.MIX_InitFlags> 0))
 #endif
                                 (fun () -> SDL_mixer.Mix_Quit (); destroy ()) with
                             | Left error -> Left error
@@ -158,7 +158,7 @@ module Sdl =
     let update handleEvent handleUpdate world =
         if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
             let mutable result = (Running, world)
-            let polledEvent = ref ^ SDL.SDL_Event ()
+            let polledEvent = ref (SDL.SDL_Event ())
             while
                 SDL.SDL_PollEvent polledEvent <> 0 &&
                 (match fst result with Running -> true | Exiting -> false) do
@@ -211,7 +211,7 @@ module Sdl =
             Constants.Engine.SuccessExitCode
         with exn ->
             let world = handleChoose world
-            Log.trace ^ scstring exn
+            Log.trace (scstring exn)
             handleExit world
             Constants.Engine.FailureExitCode
 

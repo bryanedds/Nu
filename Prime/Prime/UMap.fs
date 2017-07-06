@@ -27,10 +27,10 @@ module UMapModule =
     module UMap =
 
         let makeFromSeq<'k, 'v when 'k : equality> config entries =
-            { MapRef = ref ^ TMap.makeFromSeq<'k, 'v> config entries }
+            { MapRef = ref (TMap.makeFromSeq<'k, 'v> config entries) }
 
         let makeEmpty<'k, 'v when 'k : equality> config =
-            { MapRef = ref ^ TMap.makeEmpty<'k, 'v> config }
+            { MapRef = ref (TMap.makeEmpty<'k, 'v> config) }
 
         let getConfig map =
             let struct (result, tmap) = TMap.getConfig !map.MapRef
@@ -38,10 +38,10 @@ module UMapModule =
             result
 
         let add key value map =
-            { MapRef = ref ^ TMap.add key value !map.MapRef }
+            { MapRef = ref (TMap.add key value !map.MapRef) }
 
         let remove key map =
-            { MapRef = ref ^ TMap.remove key !map.MapRef }
+            { MapRef = ref (TMap.remove key !map.MapRef) }
 
         let isEmpty map =
             let struct (result, tmap) = TMap.isEmpty !map.MapRef
@@ -49,7 +49,7 @@ module UMapModule =
             result
 
         let notEmpty map =
-            not ^ isEmpty map
+            not (isEmpty map)
 
         let tryFindFast key map =
             let struct (valueOpt, tmap) = TMap.tryFindFast key !map.MapRef
@@ -73,11 +73,11 @@ module UMapModule =
 
         /// Add all the given entries to the map.
         let addMany entries map =
-            { MapRef = ref ^ TMap.addMany entries !map.MapRef }
+            { MapRef = ref (TMap.addMany entries !map.MapRef) }
     
         /// Remove all values with the given keys from the map.
         let removeMany keys map =
-            { MapRef = ref ^ TMap.removeMany keys !map.MapRef }
+            { MapRef = ref (TMap.removeMany keys !map.MapRef) }
 
         let toSeq (map : UMap<_, _>) =
             map :> _ seq

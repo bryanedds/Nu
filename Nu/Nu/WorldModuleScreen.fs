@@ -43,7 +43,7 @@ module WorldModuleScreen =
                     else
                         let layerDirectory = KeyValuePair (screen.ScreenAddress, UMap.makeEmpty Constants.Engine.SimulantMapConfig)
                         UMap.add screenName layerDirectory world.ScreenDirectory
-                | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
+                | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
             let screenStates = UMap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
@@ -51,16 +51,16 @@ module WorldModuleScreen =
             let screenDirectory =
                 match Address.getNames screen.ScreenAddress with
                 | [screenName] -> UMap.remove screenName world.ScreenDirectory
-                | _ -> failwith ^ "Invalid screen address '" + scstring screen.ScreenAddress + "'."
+                | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
             let screenStates = UMap.remove screen.ScreenAddress world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
         static member private screenStateSetter screenState (screen : Screen) world =
 #if DEBUG
-            if not ^ UMap.containsKey screen.ScreenAddress world.ScreenStates then
-                failwith ^ "Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'"
-            if not ^ World.qualifyEventContext (atooa screen.ScreenAddress) world then
-                failwith ^ "Cannot set the state of a screen in an unqualifed event context."
+            if not (UMap.containsKey screen.ScreenAddress world.ScreenStates) then
+                failwith ("Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'")
+            if not (World.qualifyEventContext (atooa screen.ScreenAddress) world) then
+                failwith "Cannot set the state of a screen in an unqualifed event context."
 #endif
             let screenStates = UMap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenStates = screenStates }
@@ -82,7 +82,7 @@ module WorldModuleScreen =
         static member internal getScreenState screen world =
             let screenStateOpt = World.getScreenStateOpt screen world
             if FOption.isSome screenStateOpt then FOption.get screenStateOpt
-            else failwith ^ "Could not find screen with address '" + scstring screen.ScreenAddress + "'."
+            else failwith ("Could not find screen with address '" + scstring screen.ScreenAddress + "'.")
 
         static member internal setScreenState screenState screen world =
             World.screenStateSetter screenState screen world
@@ -99,7 +99,7 @@ module WorldModuleScreen =
 
         /// Check that a screen exists in the world.
         static member internal screenExists screen world =
-            FOption.isSome ^ World.getScreenStateOpt screen world
+            FOption.isSome (World.getScreenStateOpt screen world)
 
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
@@ -227,12 +227,12 @@ module WorldModuleScreen =
 
         static member internal setScreenProperty propertyName property screen world =
             match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> failwith ^ "Cannot change screen " + propertyName + "."
-            | "Name" -> failwith ^ "Cannot change screen " + propertyName + "."
-            | "DispatcherNp" -> failwith ^ "Cannot change screen " + propertyName + "."
+            | "Id" -> failwith ("Cannot change screen " + propertyName + ".")
+            | "Name" -> failwith ("Cannot change screen " + propertyName + ".")
+            | "DispatcherNp" -> failwith ("Cannot change screen " + propertyName + ".")
             | "Persistent" -> World.setScreenPersistent (property.PropertyValue :?> bool) screen world
-            | "CreationTimeStampNp" -> failwith ^ "Cannot change screen " + propertyName + "."
-            | "Imperative" -> failwith ^ "Cannot change screen " + propertyName + "."
+            | "CreationTimeStampNp" -> failwith ("Cannot change screen " + propertyName + ".")
+            | "Imperative" -> failwith ("Cannot change screen " + propertyName + ".")
             | "ScriptOpt" -> World.setScreenScriptOpt (property.PropertyValue :?> AssetTag option) screen world
             | "Script" -> World.setScreenScript (property.PropertyValue :?> Scripting.Expr array) screen world
             | "ScriptFrameNp" -> world
@@ -287,11 +287,11 @@ module WorldModuleScreen =
             World.choose world
 
         static member internal addScreen mayReplace screenState screen world =
-            let isNew = not ^ World.screenExists screen world
+            let isNew = not (World.screenExists screen world)
             if isNew || mayReplace then
                 let world = World.addScreenState screenState screen world
                 if isNew then World.registerScreen screen world else world
-            else failwith ^ "Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'."
+            else failwith ("Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'.")
 
         static member internal removeScreen3 removeLayers screen world =
             if World.screenExists screen world then
@@ -317,7 +317,7 @@ module WorldModuleScreen =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ^ "Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
+                    Log.info ("Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
                     let dispatcherName = typeof<ScreenDispatcher>.Name
                     Map.find dispatcherName dispatchers
 

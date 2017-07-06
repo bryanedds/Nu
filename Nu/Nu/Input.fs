@@ -61,7 +61,7 @@ module KeyboardState =
 
     /// Check that the given keyboard key is down.
     let isKeyDown scanCode =
-        let keyboardStatePtr = fst ^ SDL.SDL_GetKeyboardState ()
+        let keyboardStatePtr = fst (SDL.SDL_GetKeyboardState ())
         let keyboardStatePtr = NativeInterop.NativePtr.ofNativeInt keyboardStatePtr
         let state = NativeInterop.NativePtr.get<byte> keyboardStatePtr scanCode
         state = byte 1

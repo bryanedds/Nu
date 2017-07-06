@@ -452,10 +452,10 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] second stream = map snd stream
 
     /// Transform a stream's pairs by a mapping of its fst values.
-    let [<DebuggerHidden; DebuggerStepThrough>] mapFirst mapper stream = map (fun a -> (mapper ^ fst a, snd a)) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] mapFirst mapper stream = map (fun a -> (mapper (fst a), snd a)) stream
 
     /// Transform a stream of pairs by a mapping of its snd values.
-    let [<DebuggerHidden; DebuggerStepThrough>] mapSecond mapper stream = map (fun a -> (fst a, mapper ^ snd a)) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] mapSecond mapper stream = map (fun a -> (fst a, mapper (snd a))) stream
 
     /// Transform a stream by duplicating its data into pairs.
     let [<DebuggerHidden; DebuggerStepThrough>] duplicate stream = map (fun a -> (a, a)) stream

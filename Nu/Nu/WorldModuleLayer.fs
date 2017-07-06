@@ -47,8 +47,8 @@ module WorldModuleLayer =
                             let entityDirectory' = (KeyValuePair (layer.LayerAddress, UMap.makeEmpty Constants.Engine.SimulantMapConfig))
                             let layerDirectory' = UMap.add layerName entityDirectory' layerDirectory.Value
                             UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
-                    else failwith ^ "Cannot add layer '" + scstring layer.LayerAddress + "' to non-existent screen."
-                | _ -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
+                    else failwith ("Cannot add layer '" + scstring layer.LayerAddress + "' to non-existent screen.")
+                | _ -> failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
             let layerStates = UMap.add layer.LayerAddress layerState world.LayerStates
             World.choose { world with ScreenDirectory = screenDirectory; LayerStates = layerStates }
 
@@ -61,17 +61,17 @@ module WorldModuleLayer =
                         let layerDirectory = FOption.get layerDirectoryOpt
                         let layerDirectory' = UMap.remove layerName layerDirectory.Value
                         UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
-                    else failwith ^ "Cannot remove layer '" + scstring layer.LayerAddress + "' from non-existent screen."
-                | _ -> failwith ^ "Invalid layer address '" + scstring layer.LayerAddress + "'."
+                    else failwith ("Cannot remove layer '" + scstring layer.LayerAddress + "' from non-existent screen.")
+                | _ -> failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
             let layerStates = UMap.remove layer.LayerAddress world.LayerStates
             World.choose { world with ScreenDirectory = screenDirectory; LayerStates = layerStates }
 
         static member private layerStateSetter layerState (layer : Layer) world =
 #if DEBUG
-            if not ^ UMap.containsKey layer.LayerAddress world.LayerStates then
-                failwith ^ "Cannot set the state of a non-existent layer '" + scstring layer.LayerAddress + "'"
-            if not ^ World.qualifyEventContext (atooa layer.LayerAddress) world then
-                failwith ^ "Cannot set the state of a layer in an unqualifed event context."
+            if not (UMap.containsKey layer.LayerAddress world.LayerStates) then
+                failwith ("Cannot set the state of a non-existent layer '" + scstring layer.LayerAddress + "'")
+            if not (World.qualifyEventContext (atooa layer.LayerAddress) world) then
+                failwith "Cannot set the state of a layer in an unqualifed event context."
 #endif
             let layerStates = UMap.add layer.LayerAddress layerState world.LayerStates
             World.choose { world with LayerStates = layerStates }
@@ -93,7 +93,7 @@ module WorldModuleLayer =
         static member private getLayerState layer world =
             let layerStateOpt = World.getLayerStateOpt layer world
             if FOption.isSome layerStateOpt then FOption.get layerStateOpt
-            else failwith ^ "Could not find layer with address '" + scstring layer.LayerAddress + "'."
+            else failwith ("Could not find layer with address '" + scstring layer.LayerAddress + "'.")
 
         static member internal getLayerXtensionProperties layer world =
             let layerState = World.getLayerState layer world
@@ -114,7 +114,7 @@ module WorldModuleLayer =
 
         /// Check that a layer exists in the world.
         static member internal layerExists layer world =
-            FOption.isSome ^ World.getLayerStateOpt layer world
+            FOption.isSome (World.getLayerStateOpt layer world)
 
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
         static member internal getLayerName layer world = (World.getLayerState layer world).Name
@@ -230,12 +230,12 @@ module WorldModuleLayer =
 
         static member internal setLayerProperty propertyName property layer world =
             match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> failwith ^ "Cannot change layer " + propertyName + "."
-            | "Name" -> failwith ^ "Cannot change layer " + propertyName + "."
-            | "DispatcherNp" -> failwith ^ "Cannot change layer " + propertyName + "."
+            | "Id" -> failwith ("Cannot change layer " + propertyName + ".")
+            | "Name" -> failwith ("Cannot change layer " + propertyName + ".")
+            | "DispatcherNp" -> failwith ("Cannot change layer " + propertyName + ".")
             | "Persistent" -> World.setLayerPersistent (property.PropertyValue :?> bool) layer world
-            | "CreationTimeStampNp" -> failwith ^ "Cannot change layer " + propertyName + "."
-            | "Imperative" -> failwith ^ "Cannot change layer " + propertyName + "."
+            | "CreationTimeStampNp" -> failwith ("Cannot change layer " + propertyName + ".")
+            | "Imperative" -> failwith ("Cannot change layer " + propertyName + ".")
             | "ScriptOpt" -> World.setLayerScriptOpt (property.PropertyValue :?> AssetTag option) layer world
             | "Script" -> World.setLayerScript (property.PropertyValue :?> Scripting.Expr array) layer world
             | "ScriptFrameNp" -> world
@@ -288,11 +288,11 @@ module WorldModuleLayer =
             World.choose world
 
         static member private addLayer mayReplace layerState layer world =
-            let isNew = not ^ World.layerExists layer world
+            let isNew = not (World.layerExists layer world)
             if isNew || mayReplace then
                 let world = World.addLayerState layerState layer world
                 if isNew then World.registerLayer layer world else world
-            else failwith ^ "Adding a layer that the world already contains at address '" + scstring layer.LayerAddress + "'."
+            else failwith ("Adding a layer that the world already contains at address '" + scstring layer.LayerAddress + "'.")
 
         static member internal removeLayer3 removeEntities layer world =
             if World.layerExists layer world then
@@ -308,7 +308,7 @@ module WorldModuleLayer =
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
-                | None -> failwith ^ "Could not find a LayerDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
+                | None -> failwith ("Could not find a LayerDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
             let layerState = LayerState.make nameOpt dispatcher
             let layerState = Reflection.attachProperties LayerState.copy dispatcher layerState
             let layer = Layer (screen.ScreenAddress -<<- ntoa<Layer> layerState.Name)
@@ -336,7 +336,7 @@ module WorldModuleLayer =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ^ "Could not find LayerDispatcher '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
+                    Log.info ("Could not find LayerDispatcher '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
                     let dispatcherName = typeof<LayerDispatcher>.Name
                     Map.find dispatcherName dispatchers
 

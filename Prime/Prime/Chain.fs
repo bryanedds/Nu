@@ -61,7 +61,7 @@ module Chain =
 
     /// Get the world as transformed via 'by'.
     let [<DebuggerHidden; DebuggerStepThrough>] getBy by : Chain<'e, 'a, 'g, 'w> =
-        Chain (fun world -> (world, Right ^ by world))
+        Chain (fun world -> (world, Right (by world)))
 
     /// Set the world.
     let [<DebuggerHidden; DebuggerStepThrough>] set world : Chain<'e, unit, 'g, 'w> =

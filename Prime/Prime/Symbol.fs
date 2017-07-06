@@ -492,4 +492,4 @@ type ConversionException (message : string, symbolOpt : Symbol option) =
 [<AutoOpen>]
 module ConversionExceptionOperators =
     let failconv message symbol =
-        raise ^ ConversionException (message, symbol)
+        raise (ConversionException (message, symbol))

@@ -266,7 +266,7 @@ module PhysicsEngineModule =
     
         static member private handleCollision
             physicsEngine (fixture : Dynamics.Fixture) (fixture2 : Dynamics.Fixture) (contact : Dynamics.Contacts.Contact) =
-            let normal = fst ^ contact.GetWorldManifold ()
+            let normal = fst (contact.GetWorldManifold ())
             let bodyCollisionMessage =
                 { SourceParticipant = fixture.Body.UserData :?> Participant
                   SourceParticipant2 = fixture2.Body.UserData :?> Participant
@@ -308,8 +308,8 @@ module PhysicsEngineModule =
             let body =
                 Factories.BodyFactory.CreateRectangle
                     (physicsEngine.PhysicsContext,
-                     PhysicsEngine.toPhysicsPolygonDiameter ^ bodyBox.Extent.X * 2.0f,
-                     PhysicsEngine.toPhysicsPolygonDiameter ^ bodyBox.Extent.Y * 2.0f,
+                     PhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.X * 2.0f),
+                     PhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.Y * 2.0f),
                      bodyProperties.Density,
                      PhysicsEngine.toPhysicsV2 bodyBox.Center,
                      0.0f,
@@ -373,7 +373,7 @@ module PhysicsEngineModule =
             body.add_OnCollision (fun fn fn2 collision -> PhysicsEngine.handleCollision physicsEngine fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
     
             // attempt to add the body
-            if not ^ physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; BodyId = bodyProperties.BodyId }, body) then
+            if not (physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; BodyId = bodyProperties.BodyId }, body)) then
                 Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
     
         static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
@@ -491,7 +491,7 @@ module PhysicsEngineModule =
     
             member physicsEngine.GetBodyContactNormals physicsId =
                 PhysicsEngine.getBodyContacts physicsId physicsEngine |>
-                Array.map (fun (contact : Contact) -> let normal = fst ^ contact.GetWorldManifold () in Vector2 (normal.X, normal.Y)) |>
+                Array.map (fun (contact : Contact) -> let normal = fst (contact.GetWorldManifold ()) in Vector2 (normal.X, normal.Y)) |>
                 Array.toList
     
             member physicsEngine.GetBodyLinearVelocity physicsId =
@@ -515,7 +515,7 @@ module PhysicsEngineModule =
     
             member physicsEngine.GetBodyToGroundContactTangentOpt physicsId =
                 match (physicsEngine :> IPhysicsEngine).GetBodyToGroundContactNormalOpt physicsId with
-                | Some normal -> Some ^ Vector2 (normal.Y, -normal.X)
+                | Some normal -> Some (Vector2 (normal.Y, -normal.X))
                 | None -> None
     
             member physicsEngine.IsBodyOnGround physicsId =

@@ -178,11 +178,11 @@ module OverlayerModule =
 
         /// Check that a property should be serialized.
         let shouldPropertySerialize overlayName facetNames propertyName propertyType target overlayer =
-            not ^ isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer
+            not (isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer)
 
         /// Check that a property should be serialized.
         let shouldPropertySerialize5 facetNames propertyName propertyType target overlayer =
-            not ^ isPropertyOverlaid5 facetNames propertyName propertyType target overlayer
+            not (isPropertyOverlaid5 facetNames propertyName propertyType target overlayer)
 
         /// Get intrinsic overlays.
         let getIntrinsicOverlays overlayer =
@@ -214,7 +214,7 @@ module OverlayerModule =
                     String.unescape |>
                     scvalue<Overlay list>
                 make intrinsicOverlays extrinsicOverlays |> Right
-            with exn -> Left ^ "Could not make overlayer from file '" + filePath + "' due to: " + scstring exn
+            with exn -> Left ("Could not make overlayer from file '" + filePath + "' due to: " + scstring exn)
 
 /// Defines the manner in which overlays are applied to targets.
 type Overlayer = OverlayerModule.Overlayer

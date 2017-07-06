@@ -260,7 +260,7 @@ module EventWorld =
 #if DEBUG
                     let eventAddresses = getEventAddresses world
                     let cycleDetected = List.containsTriplicates eventAddresses
-                    if cycleDetected then Log.info ^ "Event cycle detected in '" + scstring eventAddresses + "'."
+                    if cycleDetected then Log.info ("Event cycle detected in '" + scstring eventAddresses + "'.")
 #else
                     let cycleDetected = false
 #endif
@@ -315,7 +315,7 @@ module EventWorld =
     /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
     let subscribePlus<'a, 's, 'g, 'w when 's :> Participant and 'g :> Participant and 'w :> EventWorld<'g, 'w>>
         subscriptionKey (subscription : Event<'a, 's> -> 'w -> Handling * 'w) (eventAddress : 'a Address) (subscriber : 's) (world : 'w) =
-        if not ^ Address.isEmpty eventAddress then
+        if not (Address.isEmpty eventAddress) then
             let objEventAddress = atooa eventAddress
             let (subscriptions, unsubscriptions) = (getSubscriptions world, getUnsubscriptions world)
             let subscriptions =

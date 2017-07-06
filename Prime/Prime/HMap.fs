@@ -31,7 +31,7 @@ module HMapModule =
     module private HNode =
 
         let inline failwithKeyNotFound (k : 'k) =
-            raise ^ KeyNotFoundException ^ "Could not find HMap key '" + k.ToString () + "'."
+            raise (KeyNotFoundException ^ "Could not find HMap key '" + k.ToString () + "'.")
 
         /// OPTIMIZATION: Array.Clone () is not used since it's been profiled to be slower
         let inline private cloneArray (arr : HNode<'k, 'v> array) =
@@ -203,7 +203,7 @@ module HMapModule =
     
         /// Check that an HMap is empty.
         let notEmpty map =
-            not ^ HNode.isEmpty map.Node
+            not (HNode.isEmpty map.Node)
     
         /// Add a value with the key to an HMap.
         let add (key : 'k) (value : 'v) map =
@@ -249,7 +249,7 @@ module HMapModule =
             
         /// Combine the contents of two HMaps, taking an item from the second map in the case of a key conflict.
         let concat map map2 =
-            Seq.fold (flip ^ uncurry add) map map2
+            Seq.fold (flip (uncurry add)) map map2
     
         /// Fold over an HMap.
         let fold folder state (map : HMap<'k, 'v>) =

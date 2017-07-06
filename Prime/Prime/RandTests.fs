@@ -10,7 +10,7 @@ module RandTests =
     let [<Literal>] Samples = 32768
 
     let makeSamples (next : Rand -> ('n * Rand)) =
-        let randRef = ref ^ Rand.make ()
+        let randRef = ref (Rand.make ())
         [for _ in 0 .. Samples - 1 do
             let (n, r) = next !randRef
             randRef := r

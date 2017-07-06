@@ -39,7 +39,7 @@ type SymbolicConverter (printing : bool, pointType : Type) =
         | Some typeConverter ->
 
             // symbolize user-defined type
-            if not ^ typeConverter.CanConvertTo typeof<Symbol>
+            if not (typeConverter.CanConvertTo typeof<Symbol>)
             then failconv ("Cannot convert type '" + getTypeName source + "' to Prime.Symbol.") None
             else typeConverter.ConvertTo (source, typeof<Symbol>) :?> Symbol
 
@@ -80,7 +80,7 @@ type SymbolicConverter (printing : bool, pointType : Type) =
             // symbolize array
             elif sourceType.IsArray then
                 let items = Reflection.objToObjList source
-                let symbols = List.map (toSymbol ^ sourceType.GetElementType ()) items
+                let symbols = List.map (toSymbol (sourceType.GetElementType ())) items
                 Symbols (symbols, None)
 
             // symbolize unit
@@ -147,7 +147,7 @@ type SymbolicConverter (printing : bool, pointType : Type) =
             elif FSharpType.IsUnion sourceType then
                 let (unionCase, unionFields) = FSharpValue.GetUnionFields (source, sourceType)
                 let unionFieldInfos = unionCase.GetFields ()
-                if not ^ Array.isEmpty unionFields then
+                if not (Array.isEmpty unionFields) then
                     let unionFieldSymbols = Array.mapi (fun i unionField -> toSymbol unionFieldInfos.[i].PropertyType unionField) unionFields
                     let unionSymbols = Array.cons (Atom (unionCase.Name, None)) unionFieldSymbols
                     Symbols (List.ofArray unionSymbols, None)
@@ -178,7 +178,7 @@ type SymbolicConverter (printing : bool, pointType : Type) =
             | Atom (str, _) | Number (str, _) | String (str, _) ->
                 (TypeDescriptor.GetConverter destType).ConvertFromString str
             | Quote (_, _) | Symbols (_, _) ->
-                failconv "Expected Symbol, Number, or String for conversion to .NET primitive." ^ Some symbol
+                failconv "Expected Symbol, Number, or String for conversion to .NET primitive." (Some symbol)
 
         // desymbolize string
         elif destType = typeof<string> then
@@ -194,7 +194,7 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                 then Symbol.OpenStringStr + Symbol.distillate str + Symbol.CloseStringStr :> obj
                 else str :> obj
             | Quote (_, _) | Symbols (_, _) ->
-                failconv "Expected Symbol, Number, or String for conversion to string." ^ Some symbol
+                failconv "Expected Symbol, Number, or String for conversion to string." (Some symbol)
 
         // desymbolize Symbol (no tranformation)
         elif destType = typeof<Symbol> then
@@ -207,7 +207,7 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                 // desymbolize user-defined type
                 if typeConverter.CanConvertFrom typeof<Symbol>
                 then typeConverter.ConvertFrom symbol
-                else failconv ("Expected ability to convert from Symbol for custom type converter '" + getTypeName typeConverter + "'.") ^ Some symbol
+                else failconv ("Expected ability to convert from Symbol for custom type converter '" + getTypeName typeConverter + "'.") (Some symbol)
 
             | None ->
 
@@ -215,16 +215,16 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                 if destType.IsArray then
                     match symbol with
                     | Symbols (symbols, _) ->
-                        let elements = List.map (fromSymbol ^ destType.GetElementType ()) symbols
+                        let elements = List.map (fromSymbol (destType.GetElementType ())) symbols
                         Reflection.objsToArray destType elements
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
-                        failconv "Expected Symbols for conversion to array." ^ Some symbol
+                        failconv "Expected Symbols for conversion to array." (Some symbol)
 
                 // desymbolize unit
                 elif destType.Name = typeof<unit>.Name then
                     match symbol with
                     | Symbols ([], _) -> () :> obj
-                    | _ -> failconv "Expected empty Symbols for conversion to unit." ^ Some symbol
+                    | _ -> failconv "Expected empty Symbols for conversion to unit." (Some symbol)
 
                 // desymbolize list
                 elif destType.Name = typedefof<_ list>.Name then
@@ -235,7 +235,7 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                         let elements = List.map (fromSymbol elementType) symbols
                         Reflection.objsToList destType elements
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
-                        failconv "Expected Symbols for conversion to list." ^ Some symbol
+                        failconv "Expected Symbols for conversion to list." (Some symbol)
 
                 // desymbolize Set
                 elif destType.Name = typedefof<_ Set>.Name then
@@ -246,7 +246,7 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                         let elements = List.map (fromSymbol elementType) symbols
                         Reflection.objsToSet destType elements
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
-                        failconv "Expected Symbols for conversion to Set." ^ Some symbol
+                        failconv "Expected Symbols for conversion to Set." (Some symbol)
 
                 // desymbolize Map
                 elif destType.Name = typedefof<Map<_, _>>.Name then
@@ -260,7 +260,7 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                             Reflection.pairsToMap destType pairs
                         | _ -> failwithumf ()
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
-                        failconv "Expected Symbols for conversion to Map." ^ Some symbol
+                        failconv "Expected Symbols for conversion to Map." (Some symbol)
 
                 // desymbolize SymbolicCompression
                 elif destType.Name = typedefof<SymbolicCompression<_, _>>.Name then
@@ -281,9 +281,9 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                                 let b = fromSymbol bType symbol
                                 let compressionUnion = (FSharpType.GetUnionCases destType).[1]
                                 FSharpValue.MakeUnion (compressionUnion, [|b|])
-                        | _ -> failconv "Expected Atom value for SymbolicCompression union name." ^ Some symbol
+                        | _ -> failconv "Expected Atom value for SymbolicCompression union name." (Some symbol)
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
-                        failconv "Expected Symbols for conversion to SymbolicCompression." ^ Some symbol
+                        failconv "Expected Symbols for conversion to SymbolicCompression." (Some symbol)
 
                 // desymbolize Tuple
                 elif FSharpType.IsTuple destType then
@@ -294,7 +294,7 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                         let elements = padWithDefaults' elementTypes elements
                         FSharpValue.MakeTuple (elements, destType)
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
-                        failconv "Expected Symbols for conversion to Tuple." ^ Some symbol
+                        failconv "Expected Symbols for conversion to Tuple." (Some symbol)
 
                 // desymbolize Record
                 elif FSharpType.IsRecord destType then
@@ -315,14 +315,14 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                                                 | None -> info.PropertyType.GetDefaultValue ())
                                             fieldInfos
                                     FSharpValue.MakeRecord (destType, fields)
-                                else failconv "Expected Symbols in pairs for expanded Record" ^ Some symbol
+                                else failconv "Expected Symbols in pairs for expanded Record" (Some symbol)
                             else
                                 let fieldInfos = FSharpType.GetRecordFields destType
                                 let fields = symbols |> Array.ofList |> Array.mapi (fun i fieldSymbol -> fromSymbol fieldInfos.[i].PropertyType fieldSymbol)
                                 let fields = padWithDefaults fieldInfos fields
                                 FSharpValue.MakeRecord (destType, fields)
                         | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
-                            failconv "Expected Symbols for conversion to unexpanded Record." ^ Some symbol
+                            failconv "Expected Symbols for conversion to unexpanded Record." (Some symbol)
 
                 // desymbolize Union
                 elif FSharpType.IsUnion destType && destType <> typeof<string list> then
@@ -333,7 +333,7 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                         | Some unionCase -> FSharpValue.MakeUnion (unionCase, [||])
                         | None ->
                             let unionNames = unionCases |> Array.map (fun unionCase -> unionCase.Name) |> String.concat " | "
-                            failconv ("Expected one of the following Atom values for Union name: '" + unionNames + "'.") ^ Some symbol
+                            failconv ("Expected one of the following Atom values for Union name: '" + unionNames + "'.") (Some symbol)
                     | Symbols (symbols, _) ->
                         match symbols with
                         | (Atom (symbolHead, _)) :: symbolTail ->
@@ -346,13 +346,13 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                                 FSharpValue.MakeUnion (unionCase, unionValues)
                             | None ->
                                 let unionNames = unionCases |> Array.map (fun unionCase -> unionCase.Name) |> String.concat " | "
-                                failconv ("Expected one of the following Atom values for Union name: '" + unionNames + "'.") ^ Some symbol
+                                failconv ("Expected one of the following Atom values for Union name: '" + unionNames + "'.") (Some symbol)
                         | (Number (_, _) | String (_, _) | Quote (_, _) | Symbols (_, _)) :: _ ->
-                            failconv "Expected Atom value for Union name." ^ Some symbol
+                            failconv "Expected Atom value for Union name." (Some symbol)
                         | [] ->
-                            failconv "Expected Atom value for Union name." ^ Some symbol
+                            failconv "Expected Atom value for Union name." (Some symbol)
                     | Number (_, _) | String (_, _) | Quote (_, _) ->
-                        failconv "Expected Atom or Symbols value for conversion to Union." ^ Some symbol
+                        failconv "Expected Atom or Symbols value for conversion to Union." (Some symbol)
 
                 // desymbolize vanilla .NET type
                 else
@@ -360,7 +360,7 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                     | Atom (str, _) | Number (str, _) | String (str, _) ->
                         (TypeDescriptor.GetConverter destType).ConvertFromString str
                     | Quote (_, _) | Symbols (_, _) ->
-                        failconv ("Expected Atom, Number, or String value for conversion to vanilla .NET type '" + destType.Name + "'.") ^ Some symbol
+                        failconv ("Expected Atom, Number, or String value for conversion to vanilla .NET type '" + destType.Name + "'.") (Some symbol)
 
     let fromString (destType : Type) (source : string) =
         let symbol = Symbol.fromString source

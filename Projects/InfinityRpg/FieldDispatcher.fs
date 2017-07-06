@@ -21,7 +21,7 @@ module FieldDispatcherModule =
         static let DefaultRand = Rand.make ()
         static let DefaultSizeM = Vector2i (4, 4)
         static let DefaultPathEdgesM = [(Vector2i (1, 1), Vector2i (2, 2))]
-        static let DefaultFieldMap = fst ^ FieldMap.make Assets.FieldTileSheetImage DefaultSizeM DefaultPathEdgesM DefaultRand
+        static let DefaultFieldMap = fst (FieldMap.make Assets.FieldTileSheetImage DefaultSizeM DefaultPathEdgesM DefaultRand)
 
         static let getTileInsetOpt (tileSheetPositionM : Vector2i) =
             let tileOffset = vmtovf tileSheetPositionM

@@ -90,9 +90,9 @@ module WorldModuleEntity =
                             let entityDirectory' = UMap.add entityName entity.EntityAddress entityDirectory.Value
                             let layerDirectory' = UMap.add layerName (KeyValuePair (entityDirectory.Key, entityDirectory')) layerDirectory.Value
                             UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
-                        else failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent layer."
-                    else failwith ^ "Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent screen."
-                | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
+                        else failwith ("Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent layer.")
+                    else failwith ("Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent screen.")
+                | _ -> failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
             let entityStates = UMap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
@@ -109,18 +109,18 @@ module WorldModuleEntity =
                             let entityDirectory' = UMap.remove entityName entityDirectory.Value
                             let layerDirectory' = UMap.add layerName (KeyValuePair (entityDirectory.Key, entityDirectory')) layerDirectory.Value
                             UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
-                        else failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent layer."
-                    else failwith ^ "Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent screen."
-                | _ -> failwith ^ "Invalid entity address '" + scstring entity.EntityAddress + "'."
+                        else failwith ("Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent layer.")
+                    else failwith ("Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent screen.")
+                | _ -> failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
             let entityStates = UMap.remove entity.EntityAddress world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
         static member private entityStateSetter entityState (entity : Entity) world =
 #if DEBUG
-            if not ^ UMap.containsKey entity.EntityAddress world.EntityStates then
-                failwith ^ "Cannot set the state of a non-existent entity '" + scstring entity.EntityAddress + "'"
-            if not ^ World.qualifyEventContext (atooa entity.EntityAddress) world then
-                failwith ^ "Cannot set the state of an entity in an unqualifed event context."
+            if not (UMap.containsKey entity.EntityAddress world.EntityStates) then
+                failwith ("Cannot set the state of a non-existent entity '" + scstring entity.EntityAddress + "'")
+            if not (World.qualifyEventContext (atooa entity.EntityAddress) world) then
+                failwith "Cannot set the state of an entity in an unqualifed event context."
 #endif
             let entityStates = UMap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with EntityStates = entityStates }
@@ -151,7 +151,7 @@ module WorldModuleEntity =
 #if DEBUG
             match World.getEntityStateOpt entity world with
             | Some entityState -> entityState
-            | None -> failwith ^ "Could not find entity with address '" + scstring entity.EntityAddress + "'."
+            | None -> failwith ("Could not find entity with address '" + scstring entity.EntityAddress + "'.")
 #else
             World.entityStateFinder entity world
 #endif
@@ -201,7 +201,7 @@ module WorldModuleEntity =
             else world
 
         static member internal entityExists entity world =
-            Option.isSome ^ World.getEntityStateOpt entity world
+            Option.isSome (World.getEntityStateOpt entity world)
 
         static member private getEntityStateBoundsMax entityState =
             // TODO: get up off yer arse and write an algorithm for tight-fitting bounds...
@@ -287,7 +287,7 @@ module WorldModuleEntity =
             let facets = World.getFacets world
             match Map.tryFind facetName facets with
             | Some facet -> Right facet
-            | None -> Left ^ "Invalid facet name '" + facetName + "'."
+            | None -> Left ("Invalid facet name '" + facetName + "'.")
 
         static member private isFacetCompatibleWithEntity entityDispatcherMap facet (entityState : EntityState) =
             // Note a facet is incompatible with any other facet if it contains any properties that has
@@ -311,7 +311,7 @@ module WorldModuleEntity =
 
             // get the property definition name counts of the facet to remove
             let facetType = facetToRemove.GetType ()
-            let facetPropertyDefinitions = Map.singleton facetType.Name ^ Reflection.getPropertyDefinitions facetType
+            let facetPropertyDefinitions = Map.singleton facetType.Name (Reflection.getPropertyDefinitions facetType)
             let facetPropertyDefinitionNameCounts = Reflection.getPropertyNameCounts facetPropertyDefinitions
 
             // compute the difference of the counts
@@ -374,7 +374,7 @@ module WorldModuleEntity =
                     let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
-            | None -> let _ = World.choose world in Left ^ "Failure to remove facet '" + facetName + "' from entity."
+            | None -> let _ = World.choose world in Left ("Failure to remove facet '" + facetName + "' from entity.")
 
         static member private tryAddFacet facetName (entityState : EntityState) entityOpt world =
             match World.tryGetFacet facetName world with
@@ -402,7 +402,7 @@ module WorldModuleEntity =
                         let world = World.withEventContext (fun world -> facet.Register (entity, world)) entity world
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
-                else let _ = World.choose world in Left ^ "Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'."
+                else let _ = World.choose world in Left ("Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'.")
             | Left error -> Left error
 
         static member private tryRemoveFacets facetNamesToRemove entityState entityOpt world =
@@ -461,7 +461,7 @@ module WorldModuleEntity =
                     let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState oldOverlayer overlayer
                     let world = World.setEntityState entityState entity world
                     World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
-                | Left error -> Log.info ^ "There was an issue in applying a reloaded overlay: " + error; world
+                | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error); world
             | None -> world
 
         static member internal tryGetEntityCalculatedProperty propertyName entity world =
@@ -580,15 +580,15 @@ module WorldModuleEntity =
 
         static member internal setEntityProperty propertyName property entity world =
             match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> failwith ^ "Cannot change entity " + propertyName + "."
-            | "Name" -> failwith ^ "Cannot change entity " + propertyName + "."
+            | "Id" -> failwith ("Cannot change entity " + propertyName + ".")
+            | "Name" -> failwith ("Cannot change entity " + propertyName + ".")
             | "UserState" -> World.setEntityUserState (property.PropertyValue :?> UserState) entity world
-            | "DispatcherNp" -> failwith ^ "Cannot change entity " + propertyName + "."
+            | "DispatcherNp" -> failwith ("Cannot change entity " + propertyName + ".")
             | "Persistent" -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world
-            | "CreationTimeStampNp" -> failwith ^ "Cannot change entity " + propertyName + "."
-            | "Imperative" -> failwith ^ "Cannot change entity " + propertyName + "."
-            | "CachableNp" -> failwith ^ "Cannot change entity " + propertyName + "."
-            | "OverlayNameOpt" -> failwith ^ "Cannot change entity " + propertyName + " dynamically."
+            | "CreationTimeStampNp" -> failwith ("Cannot change entity " + propertyName + ".")
+            | "Imperative" -> failwith ("Cannot change entity " + propertyName + ".")
+            | "CachableNp" -> failwith ("Cannot change entity " + propertyName + ".")
+            | "OverlayNameOpt" -> failwith ("Cannot change entity " + propertyName + " dynamically.")
             | "Position" -> World.setEntityPosition (property.PropertyValue :?> Vector2) entity world
             | "Size" -> World.setEntitySize (property.PropertyValue :?> Vector2) entity world
             | "Rotation" -> World.setEntityRotation (property.PropertyValue :?> single) entity world
@@ -600,10 +600,10 @@ module WorldModuleEntity =
             | "Omnipresent" -> World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world
             | "AlwaysUpdate" -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world
             | "PublishChanges" -> World.setEntityPublishChanges (property.PropertyValue :?> bool) entity world
-            | "PublishUpdatesNp" -> failwith ^ "Cannot change entity " + propertyName + "."
-            | "PublishPostUpdatesNp" -> failwith ^ "Cannot change entity " + propertyName + "."
-            | "FacetNames" -> failwith ^ "Cannot change entity " + propertyName + " dynamically."
-            | "FacetsNp" -> failwith ^ "Cannot change entity " + propertyName + ". dynamically"
+            | "PublishUpdatesNp" -> failwith ("Cannot change entity " + propertyName + ".")
+            | "PublishPostUpdatesNp" -> failwith ("Cannot change entity " + propertyName + ".")
+            | "FacetNames" -> failwith ("Cannot change entity " + propertyName + " dynamically.")
+            | "FacetsNp" -> failwith ("Cannot change entity " + propertyName + ". dynamically")
             | _ -> World.updateEntityState (EntityState.setProperty propertyName property) true propertyName entity world
 
         /// Get the maxima bounds of the entity as determined by size, position, rotation, and overflow.
@@ -683,7 +683,7 @@ module WorldModuleEntity =
         static member internal addEntity mayReplace entityState entity world =
 
             // add entity only if it is new or is explicitly able to be replaced
-            let isNew = not ^ World.entityExists entity world
+            let isNew = not (World.entityExists entity world)
             if isNew || mayReplace then
 
                 // get old world for entity tree rebuild and change events
@@ -712,7 +712,7 @@ module WorldModuleEntity =
                 else world
 
             // handle failure
-            else failwith ^ "Adding an entity that the world already contains at address '" + scstring entity.EntityAddress + "'."
+            else failwith ("Adding an entity that the world already contains at address '" + scstring entity.EntityAddress + "'.")
 
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
         /// the entity's existence. Consider using World.destroyEntity instead.
@@ -731,7 +731,7 @@ module WorldModuleEntity =
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
-                | None -> failwith ^ "Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
+                | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
 
             // compute the optional overlay name
             let overlayNameOpt =
@@ -831,12 +831,12 @@ module WorldModuleEntity =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> (dispatcherName, dispatcher)
                 | None ->
-                    Log.info ^ "Could not locate dispatcher '" + dispatcherName + "'."
+                    Log.info ("Could not locate dispatcher '" + dispatcherName + "'.")
                     let dispatcherName = typeof<EntityDispatcher>.Name
                     let dispatcher =
                         match Map.tryFind dispatcherName dispatchers with
                         | Some dispatcher -> dispatcher
-                        | None -> failwith ^ "Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?"
+                        | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
                     (dispatcherName, dispatcher)
 
             // try to route the overlay name

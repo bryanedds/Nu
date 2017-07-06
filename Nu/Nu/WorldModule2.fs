@@ -51,7 +51,7 @@ module WorldModule2 =
         [<FunctionBinding>]
         static member tryGetIsSelectedScreenIdling world =
             match World.getSelectedScreenOpt world with
-            | Some selectedScreen -> Some ^ selectedScreen.IsIdling world
+            | Some selectedScreen -> Some (selectedScreen.IsIdling world)
             | None -> None
 
         /// Try to check that the selected screen is transitioning.
@@ -71,7 +71,7 @@ module WorldModule2 =
         /// is selected).
         [<FunctionBinding>]
         static member isSelectedScreenTransitioning world =
-            not ^ World.isSelectedScreenIdling world
+            not (World.isSelectedScreenIdling world)
 
         static member private setScreenTransitionState state (screen : Screen) world =
             let world = screen.SetTransitionStateNp state world
@@ -158,7 +158,7 @@ module WorldModule2 =
             match World.tryTransitionScreen destination world with
             | (true, world) -> (handling, world)
             | (false, world) ->
-                Log.trace ^ "Program Error: Invalid screen transition for destination address '" + scstring destination.ScreenAddress + "'."
+                Log.trace ("Program Error: Invalid screen transition for destination address '" + scstring destination.ScreenAddress + "'.")
                 (handling, world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
@@ -171,7 +171,7 @@ module WorldModule2 =
             if transitionTicks = transition.TransitionLifetime then
                 (true, screen.SetTransitionTicksNp 0L world)
             elif transitionTicks > transition.TransitionLifetime then
-                Log.debug ^ "TransitionLifetime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of TickRate."
+                Log.debug ("TransitionLifetime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of TickRate.")
                 (true, screen.SetTransitionTicksNp 0L world)
             else (false, screen.SetTransitionTicksNp (transitionTicks + World.getTickRate world) world)
 
@@ -412,7 +412,7 @@ module WorldModule2 =
                 let world = tasklet.Command.Execute world
                 (taskletsNotRun, world)
             elif tickTime > tasklet.ScheduledTime then
-                Log.debug ^ "Tasklet leak found for time '" + scstring tickTime + "'."
+                Log.debug ("Tasklet leak found for time '" + scstring tickTime + "'.")
                 (taskletsNotRun, world)
             else (UList.add tasklet taskletsNotRun, world)
 
