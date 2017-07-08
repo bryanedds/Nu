@@ -525,6 +525,11 @@ module Scripting =
                     | "nil" -> Keyword String.Empty :> obj
                     | "empty" -> Codata Empty :> obj
                     | "Index" -> Binding ("index", ref UncachedBinding, originOpt) :> obj
+                    | "NaN" -> Single Single.NaN :> obj // NOTE: can't tell the difference between a single NaN and a double NaN!
+                    | "Infinity" -> Double Double.PositiveInfinity :> obj
+                    | "-Infinity" -> Double Double.NegativeInfinity :> obj
+                    | "Infinityf" -> Single Single.PositiveInfinity :> obj
+                    | "-Infinityf" -> Single Single.NegativeInfinity :> obj
                     | _ ->
                         let firstChar = str.[0]
                         if firstChar = Constants.Relation.Slot || Char.IsUpper firstChar

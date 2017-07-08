@@ -121,6 +121,46 @@ type Vector3Converter () =
         | :? Vector3 -> source
         | _ -> failconv "Invalid Vector3Converter conversion from source." None
 
+/// The Vector4 value that can be plugged into the scripting language.
+type [<CustomEquality; CustomComparison>] Vector4Pluggable =
+    { Vector4 : Vector4 }
+
+    static member equals left right =
+        left.Vector4 = right.Vector4
+
+    static member compare left right =
+        compare (left.Vector4.X, left.Vector4.Y) (right.Vector4.X, right.Vector4.Y)
+
+    override this.GetHashCode () =
+        hash this.Vector4
+
+    override this.Equals that =
+        match that with
+        | :? Vector4Pluggable as that -> Vector4Pluggable.equals this that
+        | _ -> failwithumf ()
+
+    interface Vector4Pluggable IComparable with
+        member this.CompareTo that =
+            Vector4Pluggable.compare this that
+
+    interface Scripting.Pluggable with
+
+        member this.CompareTo that =
+            match that with
+            | :? Vector4Pluggable as that -> (this :> Vector4Pluggable IComparable).CompareTo that
+            | _ -> failwithumf ()
+
+        member this.TypeName =
+            "Vector4"
+
+        member this.ToSymbol () =
+            let v4 = Symbol.Atom ("v4", None)
+            let x = Symbol.Number (string this.Vector4.X, None)
+            let y = Symbol.Number (string this.Vector4.Y, None)
+            let z = Symbol.Number (string this.Vector4.Z, None)
+            let w = Symbol.Number (string this.Vector4.W, None)
+            Symbol.Symbols ([v4; x; y; z; w], None)
+
 /// Converts Vector4 types.
 type Vector4Converter () =
     inherit TypeConverter ()
