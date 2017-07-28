@@ -43,14 +43,20 @@ module WorldModuleEntity =
             let entityStateOpt = UMap.tryFindFast entity.EntityAddress world.EntityStates
             KeyValuePair (KeyValuePair (entity.EntityAddress, world.EntityStates), entityStateOpt)
 
-    // Avoids clojure allocation in tight-loop
-    let private keyEquality = KeyEquality ()
+    /// Dynamic property getters.
+    let internal Getters = Dictionary<string, Entity -> World -> Property> HashIdentity.Structural
 
-    // Avoids clojure allocation in tight-loop
-    let private getFreshKeyAndValue = GetFreshKeyAndValue ()
+    /// Dynamic property setters.
+    let internal Setters = Dictionary<string, Property -> Entity -> World -> bool * World> HashIdentity.Structural
 
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
     let mutable private Clipboard : obj option = None
+
+    // avoids clojure allocation in tight-loop
+    let private keyEquality = KeyEquality ()
+
+    // avoids clojure allocation in tight-loop
+    let private getFreshKeyAndValue = GetFreshKeyAndValue ()
 
     type World with
 
@@ -475,136 +481,49 @@ module WorldModuleEntity =
 
         static member internal tryGetEntityProperty propertyName entity world =
             if World.entityExists entity world then
-                match propertyName with // OPTIMIZATION: string match for speed
-                | "Id" -> Some { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world }
-                | "Name" -> Some { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world }
-                | "UserState" -> Some { PropertyType = typeof<UserState>; PropertyValue = World.getEntityUserState entity world }
-                | "DispatcherNp" -> Some { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcherNp entity world }
-                | "Persistent" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world }
-                | "CreationTimeStampNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStampNp entity world }
-                | "Imperative" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world }
-                | "CachableNp" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityCachableNp entity world }
-                | "OverlayNameOpt" -> Some { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world }
-                | "Position" -> Some { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world }
-                | "Size" -> Some { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world }
-                | "Rotation" -> Some { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world }
-                | "Depth" -> Some { PropertyType = typeof<single>; PropertyValue = World.getEntityDepth entity world }
-                | "Overflow" -> Some { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world }
-                | "ViewType" -> Some { PropertyType = typeof<ViewType>; PropertyValue = World.getEntityViewType entity world }
-                | "Visible" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world }
-                | "Enabled" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world }
-                | "Omnipresent" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world }
-                | "AlwaysUpdate" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world }
-                | "PublishChanges" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChanges entity world }
-                | "PublishUpdatesNp" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdatesNp entity world }
-                | "PublishPostUpdatesNp" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdatesNp entity world }
-                | "FacetNames" -> Some { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world }
-                | "FacetsNp" -> Some { PropertyType = typeof<Facet list>; PropertyValue = World.getEntityFacetsNp entity world }
-                | _ ->
+                match Getters.TryGetValue propertyName with
+                | (false, _) ->
                     match EntityState.tryGetProperty propertyName (World.getEntityState entity world) with
                     | None -> World.tryGetEntityCalculatedProperty propertyName entity world
                     | Some _ as propertyOpt -> propertyOpt
+                | (true, getter) -> Some (getter entity world)
             else None
 
         static member internal getEntityProperty propertyName entity world =
-            match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world }
-            | "Name" -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world }
-            | "UserState" -> { PropertyType = typeof<UserState>; PropertyValue = World.getEntityUserState entity world }
-            | "DispatcherNp" -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcherNp entity world }
-            | "Persistent" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world }
-            | "CreationTimeStampNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStampNp entity world }
-            | "Imperative" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world }
-            | "CachableNp" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCachableNp entity world }
-            | "OverlayNameOpt" -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world }
-            | "Position" -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world }
-            | "Size" -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world }
-            | "Rotation" -> { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world }
-            | "Depth" -> { PropertyType = typeof<single>; PropertyValue = World.getEntityDepth entity world }
-            | "Overflow" -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world }
-            | "ViewType" -> { PropertyType = typeof<ViewType>; PropertyValue = World.getEntityViewType entity world }
-            | "Visible" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world }
-            | "Enabled" -> { PropertyType = typeof<bool>; PropertyValue =World.getEntityEnabled entity world }
-            | "Omnipresent" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world }
-            | "AlwaysUpdate" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world }
-            | "PublishChanges" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChanges entity world }
-            | "PublishUpdatesNp" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdatesNp entity world }
-            | "PublishPostUpdatesNp" -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdatesNp entity world }
-            | "FacetNames" -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world }
-            | "FacetsNp" -> { PropertyType = typeof<Facet list>; PropertyValue = World.getEntityFacetsNp entity world }
-            | _ ->
+            match Getters.TryGetValue propertyName with
+            | (false, _) ->
                 match EntityState.tryGetProperty propertyName (World.getEntityState entity world) with
                 | None ->
                     match World.tryGetEntityCalculatedProperty propertyName entity world with
                     | None -> failwithf "Could not find property '%s'." propertyName
                     | Some property -> property
                 | Some property -> property
+            | (true, getter) -> getter entity world
 
         static member internal trySetEntityProperty propertyName property entity world =
             if World.entityExists entity world then
-                match propertyName with // OPTIMIZATION: string match for speed
-                | "Id" -> (false, world)
-                | "Name" -> (false, world)
-                | "UserState" -> (true, World.setEntityUserState (property.PropertyValue :?> UserState) entity world)
-                | "DispatcherNp" -> (false, world)
-                | "Persistent" -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
-                | "CreationTimeStampNp" -> (false, world)
-                | "Imperative" -> (false, world)
-                | "CachableNp" -> (false, world)
-                | "OverlayNameOpt" -> (false, world)
-                | "Position" -> (true, World.setEntityPosition (property.PropertyValue :?> Vector2) entity world)
-                | "Size" -> (true, World.setEntitySize (property.PropertyValue :?> Vector2) entity world)
-                | "Rotation" -> (true, World.setEntityRotation (property.PropertyValue :?> single) entity world)
-                | "Depth" -> (true, World.setEntityDepth (property.PropertyValue :?> single) entity world)
-                | "Overflow" -> (true, World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world)
-                | "ViewType" -> (true, World.setEntityViewType (property.PropertyValue :?> ViewType) entity world)
-                | "Visible" -> (true, World.setEntityVisible (property.PropertyValue :?> bool) entity world)
-                | "Enabled" -> (true, World.setEntityEnabled (property.PropertyValue :?> bool) entity world)
-                | "Omnipresent" -> (true, World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world)
-                | "AlwaysUpdate" -> (true, World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
-                | "PublishChanges" -> (true, World.setEntityPublishChanges (property.PropertyValue :?> bool) entity world)
-                | "PublishUpdatesNp" -> (false, world)
-                | "PublishPostUpdatesNp" -> (false, world)
-                | "FacetNames" -> (false, world)
-                | "FacetsNp" -> (false, world)
-                | _ ->
-                    // HACK: needed to mutate a flag to get the success state out of an updateEntityState callback...
-                    let mutable success = false
+                match Setters.TryGetValue propertyName with
+                | (false, _) ->
+                    let mutable success = false // bit of a hack to get additional state out of the lambda
                     let world =
                         World.updateEntityState (fun entityState ->
                             let (successInner, entityState) = EntityState.trySetProperty propertyName property entityState
-                            success <- successInner; entityState)
+                            success <- successInner
+                            entityState)
                             true propertyName entity world
                     (success, world)
+                | (true, setter) -> setter property entity world
             else (false, world)
 
         static member internal setEntityProperty propertyName property entity world =
-            match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> failwith ("Cannot change entity " + propertyName + ".")
-            | "Name" -> failwith ("Cannot change entity " + propertyName + ".")
-            | "UserState" -> World.setEntityUserState (property.PropertyValue :?> UserState) entity world
-            | "DispatcherNp" -> failwith ("Cannot change entity " + propertyName + ".")
-            | "Persistent" -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world
-            | "CreationTimeStampNp" -> failwith ("Cannot change entity " + propertyName + ".")
-            | "Imperative" -> failwith ("Cannot change entity " + propertyName + ".")
-            | "CachableNp" -> failwith ("Cannot change entity " + propertyName + ".")
-            | "OverlayNameOpt" -> failwith ("Cannot change entity " + propertyName + " dynamically.")
-            | "Position" -> World.setEntityPosition (property.PropertyValue :?> Vector2) entity world
-            | "Size" -> World.setEntitySize (property.PropertyValue :?> Vector2) entity world
-            | "Rotation" -> World.setEntityRotation (property.PropertyValue :?> single) entity world
-            | "Depth" -> World.setEntityDepth (property.PropertyValue :?> single) entity world
-            | "Overflow" -> World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world
-            | "ViewType" -> World.setEntityViewType (property.PropertyValue :?> ViewType) entity world
-            | "Visible" -> World.setEntityVisible (property.PropertyValue :?> bool) entity world
-            | "Enabled" -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world
-            | "Omnipresent" -> World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world
-            | "AlwaysUpdate" -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world
-            | "PublishChanges" -> World.setEntityPublishChanges (property.PropertyValue :?> bool) entity world
-            | "PublishUpdatesNp" -> failwith ("Cannot change entity " + propertyName + ".")
-            | "PublishPostUpdatesNp" -> failwith ("Cannot change entity " + propertyName + ".")
-            | "FacetNames" -> failwith ("Cannot change entity " + propertyName + " dynamically.")
-            | "FacetsNp" -> failwith ("Cannot change entity " + propertyName + ". dynamically")
-            | _ -> World.updateEntityState (EntityState.setProperty propertyName property) true propertyName entity world
+            if World.entityExists entity world then
+                match Setters.TryGetValue propertyName with
+                | (false, _) -> World.updateEntityState (EntityState.setProperty propertyName property) true propertyName entity world
+                | (true, setter) ->
+                    match setter property entity world with
+                    | (true, world) -> world
+                    | (false, _) -> failwith ("Cannot change entity property " + propertyName + ".")
+            else world
 
         /// Get the maxima bounds of the entity as determined by size, position, rotation, and overflow.
         static member internal getEntityBoundsMax entity world =
@@ -1062,3 +981,62 @@ module WorldModuleEntity =
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
             | None -> (None, world)
+
+    /// Initialize property getters.
+    let private initGetters () =
+        Getters.Add ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
+        Getters.Add ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })
+        Getters.Add ("UserState", fun entity world -> { PropertyType = typeof<UserState>; PropertyValue = World.getEntityUserState entity world })
+        Getters.Add ("DispatcherNp", fun entity world -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcherNp entity world })
+        Getters.Add ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
+        Getters.Add ("CreationTimeStampNp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStampNp entity world })
+        Getters.Add ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
+        Getters.Add ("CachableNp", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCachableNp entity world })
+        Getters.Add ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
+        Getters.Add ("Position", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world })
+        Getters.Add ("Size", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world })
+        Getters.Add ("Rotation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world })
+        Getters.Add ("Depth", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityDepth entity world })
+        Getters.Add ("Overflow", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world })
+        Getters.Add ("ViewType", fun entity world -> { PropertyType = typeof<ViewType>; PropertyValue = World.getEntityViewType entity world })
+        Getters.Add ("Visible", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world })
+        Getters.Add ("Enabled", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world })
+        Getters.Add ("Omnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world })
+        Getters.Add ("AlwaysUpdate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world })
+        Getters.Add ("PublishChanges", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChanges entity world })
+        Getters.Add ("PublishUpdatesNp", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdatesNp entity world })
+        Getters.Add ("PublishPostUpdatesNp", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdatesNp entity world })
+        Getters.Add ("FacetNames", fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world })
+        Getters.Add ("FacetsNp", fun entity world -> { PropertyType = typeof<Facet list>; PropertyValue = World.getEntityFacetsNp entity world })
+
+    /// Initialize property setters.
+    let private initSetters () =
+        Setters.Add ("Id", fun _ _ world -> (false, world))
+        Setters.Add ("Name", fun _ _ world -> (false, world))
+        Setters.Add ("UserState", fun property entity world -> (true, World.setEntityUserState (property.PropertyValue :?> UserState) entity world))
+        Setters.Add ("DispatcherNp", fun _ _ world -> (false, world))
+        Setters.Add ("Persistent", fun property entity world -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world))
+        Setters.Add ("CreationTimeStampNp", fun _ _ world -> (false, world))
+        Setters.Add ("Imperative", fun _ _ world -> (false, world))
+        Setters.Add ("CachableNp", fun _ _ world -> (false, world))
+        Setters.Add ("OverlayNameOpt", fun _ _ world -> (false, world))
+        Setters.Add ("Position", fun property entity world -> (true, World.setEntityPosition (property.PropertyValue :?> Vector2) entity world))
+        Setters.Add ("Size", fun property entity world -> (true, World.setEntitySize (property.PropertyValue :?> Vector2) entity world))
+        Setters.Add ("Rotation", fun property entity world -> (true, World.setEntityRotation (property.PropertyValue :?> single) entity world))
+        Setters.Add ("Depth", fun property entity world -> (true, World.setEntityDepth (property.PropertyValue :?> single) entity world))
+        Setters.Add ("Overflow", fun property entity world -> (true, World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world))
+        Setters.Add ("ViewType", fun property entity world -> (true, World.setEntityViewType (property.PropertyValue :?> ViewType) entity world))
+        Setters.Add ("Visible", fun property entity world -> (true, World.setEntityVisible (property.PropertyValue :?> bool) entity world))
+        Setters.Add ("Enabled", fun property entity world -> (true, World.setEntityEnabled (property.PropertyValue :?> bool) entity world))
+        Setters.Add ("Omnipresent", fun property entity world -> (true, World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world))
+        Setters.Add ("AlwaysUpdate", fun property entity world -> (true, World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world))
+        Setters.Add ("PublishChanges", fun property entity world -> (true, World.setEntityPublishChanges (property.PropertyValue :?> bool) entity world))
+        Setters.Add ("PublishUpdatesNp", fun _ _ world -> (false, world))
+        Setters.Add ("PublishPostUpdatesNp", fun _ _ world -> (false, world))
+        Setters.Add ("FacetNames", fun _ _ world -> (false, world))
+        Setters.Add ("FacetsNp", fun _ _ world -> (false, world))
+
+    /// Initialize getters and setters
+    let internal init () =
+        initGetters ()
+        initSetters ()

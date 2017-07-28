@@ -36,6 +36,12 @@ module Nu =
             // initialize math module
             Math.init ()
 
+            // init simulant modules
+            WorldModuleGame.init ()
+            WorldModuleScreen.init ()
+            WorldModuleLayer.init ()
+            WorldModuleEntity.init ()
+
             // init eval F# reach-arounds
             // TODO: remove duplicated code with the following 4 functions...
             WorldModule.eval <- fun expr localFrame scriptingContext world ->

@@ -254,8 +254,7 @@ module WorldEntityModule =
             Array.ofSeq |>
             Array.rev |>
             Array.map (fun (entity : Entity) -> entity.GetSortingPriority world) |>
-            Seq.sortWith SortPriority.compare |> // Seq.sort is stable, unlike Array.sort...
-            Array.ofSeq |>
+            Array.sortStableWith SortPriority.compare |>
             Array.map (fun p -> p.SortTarget :?> Entity)
 
         /// Try to pick an entity at the given position.

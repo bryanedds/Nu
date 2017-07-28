@@ -3,12 +3,19 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open OpenTK
 open Prime
 open Nu
 
 [<AutoOpen; ModuleBinding>]
 module WorldModuleGame =
+
+    /// Dynamic property getters.
+    let internal Getters = Dictionary<string, World -> Property> HashIdentity.Structural
+
+    /// Dynamic property setters.
+    let internal Setters = Dictionary<string, Property -> World -> bool * World> HashIdentity.Structural
 
     type World with
 
@@ -222,97 +229,44 @@ module WorldModuleGame =
             dispatcher.TryGetCalculatedProperty (propertyName, game, world)
 
         static member internal tryGetGameProperty propertyName world =
-            match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> Some { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world }
-            | "DispatcherNp" -> Some { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcherNp world }
-            | "CreationTimeStampNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStampNp world }
-            | "Imperative" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getGameImperative world }
-            | "ScriptOpt" -> Some { PropertyType = typeof<AssetTag option>; PropertyValue = World.getGameScriptOpt world }
-            | "Script" -> Some { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getGameScript world }
-            | "ScriptFrameNp" -> Some { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScript world }
-            | "OnRegister" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnRegister world }
-            | "OnUnregister" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUnregister world }
-            | "OnUpdate" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUpdate world }
-            | "OnPostUpdate" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnPostUpdate world }
-            | "SelectedScreenOpt" -> Some { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world }
-            | "ScreenTransitionDestinationOpt" -> Some { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world }
-            | "EyeCenter" -> Some { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter world }
-            | "EyeSize" -> Some { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize world }
-            | _ ->
+            match Getters.TryGetValue propertyName with
+            | (false, _) ->
                 match GameState.tryGetProperty propertyName (World.getGameState world) with
                 | None -> World.tryGetGameCalculatedProperty propertyName world
                 | Some _ as propertyOpt -> propertyOpt
+            | (true, getter) -> Some (getter world)
 
         static member internal getGameProperty propertyName world =
-            match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world }
-            | "DispatcherNp" -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcherNp world }
-            | "CreationTimeStampNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStampNp world }
-            | "Imperative" -> { PropertyType = typeof<bool>; PropertyValue = World.getGameImperative world }
-            | "ScriptOpt" -> { PropertyType = typeof<AssetTag option>; PropertyValue = World.getGameScriptOpt world }
-            | "Script" -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getGameScript world }
-            | "ScriptFrameNp" -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrameNp world }
-            | "OnRegister" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnRegister world }
-            | "OnUnregister" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUnregister world }
-            | "OnUpdate" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUpdate world }
-            | "OnPostUpdate" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnPostUpdate world }
-            | "SelectedScreenOpt" -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world }
-            | "ScreenTransitionDestinationOpt" -> { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world }
-            | "EyeCenter" -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter world }
-            | "EyeSize" -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize world }
-            | _ ->
+            match Getters.TryGetValue propertyName with
+            | (false, _) ->
                 match GameState.tryGetProperty propertyName (World.getGameState world) with
                 | None ->
                     match World.tryGetGameCalculatedProperty propertyName world with
                     | None -> failwithf "Could not find property '%s'." propertyName
                     | Some property -> property
                 | Some property -> property
+            | (true, getter) -> getter world
 
         static member internal trySetGameProperty propertyName property world =
-            match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> (false, world)
-            | "DispatcherNp" -> (false, world)
-            | "CreationTimeStampNp" -> (false, world)
-            | "Imperative" -> (false, world)
-            | "ScriptOpt" -> (true, World.setGameScriptOpt (property.PropertyValue :?> AssetTag option) world)
-            | "Script" -> (true, World.setGameScript (property.PropertyValue :?> Scripting.Expr array) world)
-            | "ScriptFrameNp" -> (false, world)
-            | "OnRegister" -> (true, World.setGameOnRegister (property.PropertyValue :?> Scripting.Expr) world)
-            | "OnUnregister" -> (true, World.setGameOnUnregister (property.PropertyValue :?> Scripting.Expr) world)
-            | "OnUpdate" -> (true, World.setGameOnUpdate (property.PropertyValue :?> Scripting.Expr) world)
-            | "OnPostUpdate" -> (true, World.setGameOnPostUpdate (property.PropertyValue :?> Scripting.Expr) world)
-            | "SelectedScreenOpt" -> (true, World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world)
-            | "ScreenTransitionDestinationOpt" -> (true, World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world)
-            | "EyeCenter" -> (true, World.setEyeCenter (property.PropertyValue :?> Vector2) world)
-            | "EyeSize" -> (true, World.setEyeSize (property.PropertyValue :?> Vector2) world)
-            | _ ->
-                // HACK: needed to mutate a flag to get the success state out of an updateGameState callback...
-                let mutable success = false
+            match Setters.TryGetValue propertyName with
+            | (false, _) ->
+                let mutable success = false // bit of a hack to get additional state out of the lambda
                 let world =
-                    World.updateGameState (fun gameState ->
-                        let (successInner, gameState) = GameState.trySetProperty propertyName property gameState
-                        success <- successInner; gameState)
+                    World.updateGameState (fun entityState ->
+                        let (successInner, entityState) = GameState.trySetProperty propertyName property entityState
+                        success <- successInner
+                        entityState)
                         propertyName world
                 (success, world)
+            | (true, setter) -> setter property world
 
         static member internal setGameProperty propertyName property world =
-            match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> failwith ("Cannot change game " + propertyName + ".")
-            | "DispatcherNp" -> failwith ("Cannot change game " + propertyName + ".")
-            | "CreationTimeStampNp" -> failwith ("Cannot change game " + propertyName + ".")
-            | "Imperative" -> failwith ("Cannot change game " + propertyName + ".")
-            | "ScriptOpt" -> World.setGameScriptOpt (property.PropertyValue :?> AssetTag option) world
-            | "Script" -> World.setGameScript (property.PropertyValue :?> Scripting.Expr array) world
-            | "ScriptFrameNp" -> world
-            | "OnRegister" -> World.setGameOnRegister (property.PropertyValue :?> Scripting.Expr) world
-            | "OnUnregister" -> World.setGameOnUnregister (property.PropertyValue :?> Scripting.Expr) world
-            | "OnUpdate" -> World.setGameOnUpdate (property.PropertyValue :?> Scripting.Expr) world
-            | "OnPostUpdate" -> World.setGameOnPostUpdate (property.PropertyValue :?> Scripting.Expr) world
-            | "SelectedScreenOpt" -> World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world
-            | "ScreenTransitionDestinationOpt" -> World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world
-            | "EyeCenter" -> World.setEyeCenter (property.PropertyValue :?> Vector2) world
-            | "EyeSize" -> World.setEyeSize (property.PropertyValue :?> Vector2) world
-            | _ -> World.updateGameState (GameState.setProperty propertyName property) propertyName world
+            match Setters.TryGetValue propertyName with
+            | (false, _) -> World.updateGameState (GameState.setProperty propertyName property) propertyName world
+            | (true, setter) ->
+                match setter property world with
+                | (true, world) -> world
+                | (false, _) -> failwith ("Cannot change game property " + propertyName + ".")
 
         static member internal writeGame3 writeScreens gameDescriptor world =
             let gameState = World.getGameState world
@@ -354,3 +308,44 @@ module WorldModuleGame =
             let state = World.getGameState world
             let properties = World.getProperties state
             Array.ofList properties
+
+    /// Initialize property getters.
+    let private initGetters () =
+        Getters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
+        Getters.Add ("DispatcherNp", fun world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcherNp world })
+        Getters.Add ("CreationTimeStampNp", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStampNp world })
+        Getters.Add ("Imperative", fun world -> { PropertyType = typeof<bool>; PropertyValue = World.getGameImperative world })
+        Getters.Add ("ScriptOpt", fun world -> { PropertyType = typeof<AssetTag option>; PropertyValue = World.getGameScriptOpt world })
+        Getters.Add ("Script", fun world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getGameScript world })
+        Getters.Add ("ScriptFrameNp", fun world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScript world })
+        Getters.Add ("OnRegister", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnRegister world })
+        Getters.Add ("OnUnregister", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUnregister world })
+        Getters.Add ("OnUpdate", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUpdate world })
+        Getters.Add ("OnPostUpdate", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnPostUpdate world })
+        Getters.Add ("SelectedScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
+        Getters.Add ("ScreenTransitionDestinationOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world })
+        Getters.Add ("EyeCenter", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter world })
+        Getters.Add ("EyeSize", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize world })
+
+    /// Initialize property setters.
+    let private initSetters () =
+        Setters.Add ("Id", fun _ world -> (false, world))
+        Setters.Add ("DispatcherNp", fun _ world -> (false, world))
+        Setters.Add ("CreationTimeStampNp", fun _ world -> (false, world))
+        Setters.Add ("Imperative", fun _ world -> (false, world))
+        Setters.Add ("ScriptOpt", fun property world -> (true, World.setGameScriptOpt (property.PropertyValue :?> AssetTag option) world))
+        Setters.Add ("Script", fun property world -> (true, World.setGameScript (property.PropertyValue :?> Scripting.Expr array) world))
+        Setters.Add ("ScriptFrameNp", fun _ world -> (false, world))
+        Setters.Add ("OnRegister", fun property world -> (true, World.setGameOnRegister (property.PropertyValue :?> Scripting.Expr) world))
+        Setters.Add ("OnUnregister", fun property world -> (true, World.setGameOnUnregister (property.PropertyValue :?> Scripting.Expr) world))
+        Setters.Add ("OnUpdate", fun property world -> (true, World.setGameOnUpdate (property.PropertyValue :?> Scripting.Expr) world))
+        Setters.Add ("OnPostUpdate", fun property world -> (true, World.setGameOnPostUpdate (property.PropertyValue :?> Scripting.Expr) world))
+        Setters.Add ("SelectedScreenOpt", fun property world -> (true, World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world))
+        Setters.Add ("ScreenTransitionDestinationOpt", fun property world -> (true, World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world))
+        Setters.Add ("EyeCenter", fun property world -> (true, World.setEyeCenter (property.PropertyValue :?> Vector2) world))
+        Setters.Add ("EyeSize", fun property world -> (true, World.setEyeSize (property.PropertyValue :?> Vector2) world))
+
+    /// Initialize getters and setters
+    let internal init () =
+        initGetters ()
+        initSetters ()

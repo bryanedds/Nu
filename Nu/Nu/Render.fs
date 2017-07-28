@@ -279,9 +279,9 @@ module RendererModule =
                 match renderAsset with
                 | TextureAsset texture ->
                     // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
-                    let refTileSourceRect = ref (SDL.SDL_Rect ())
-                    let refTileDestRect = ref (SDL.SDL_Rect ())
-                    let refTileRotationCenter = ref (SDL.SDL_Point ())
+                    let tileSourceRectRef = ref (SDL.SDL_Rect ())
+                    let tileDestRectRef = ref (SDL.SDL_Rect ())
+                    let tileRotationCenterRef = ref (SDL.SDL_Point ())
                     Seq.iteri
                         (fun n (tile : TmxLayerTile) ->
                             let mapRun = mapSize.X
@@ -313,10 +313,10 @@ module RendererModule =
                                 let mutable rotationCenter = SDL.SDL_Point ()
                                 rotationCenter.x <- int (tileSize.X * 0.5f)
                                 rotationCenter.y <- int (tileSize.Y * 0.5f)
-                                refTileSourceRect := sourceRect
-                                refTileDestRect := destRect
-                                refTileRotationCenter := rotationCenter
-                                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, refTileSourceRect, refTileDestRect, rotation, refTileRotationCenter, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
+                                tileSourceRectRef := sourceRect
+                                tileDestRectRef := destRect
+                                tileRotationCenterRef := rotationCenter
+                                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
                                 if renderResult <> 0 then Log.info ("Render error - could not render texture for tile '" + scstring descriptor + "' due to '" + SDL.SDL_GetError () + "."))
                         tiles
                     renderer
@@ -393,8 +393,7 @@ module RendererModule =
                 let renderDescriptorsSorted =
                     renderDescriptors |>
                     Array.rev |>
-                    Seq.sortWith Renderer.sortDescriptors |> // Seq.sort is stable, unlike Array.sort...
-                    Array.ofSeq
+                    Array.sortStableWith Renderer.sortDescriptors
                 let layeredDescriptors = Array.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
                 let viewAbsolute = Matrix3.InvertView (Math.getViewAbsoluteI eyeCenter eyeSize)
                 let viewRelative = Matrix3.InvertView (Math.getViewRelativeI eyeCenter eyeSize)
