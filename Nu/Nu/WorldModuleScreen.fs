@@ -4,12 +4,17 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open OpenTK
 open Prime
 open Nu
 
 [<AutoOpen; ModuleBinding>]
 module WorldModuleScreen =
+
+    /// Dynamic property getters.
+    let internal Getters = Dictionary<string, Screen -> World -> Property> HashIdentity.Structural
+
+    /// Dynamic property setters.
+    let internal Setters = Dictionary<string, Property -> Screen -> World -> bool * World> HashIdentity.Structural
 
     type World with
     
@@ -143,108 +148,49 @@ module WorldModuleScreen =
 
         static member internal tryGetScreenProperty propertyName screen world =
             if World.screenExists screen world then
-                match propertyName with // OPTIMIZATION: string match for speed
-                | "Id" -> Some { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world }
-                | "Name" -> Some { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world }
-                | "DispatcherNp" -> Some { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcherNp screen world }
-                | "Persistent" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world }
-                | "CreationTimeStampNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStampNp screen world }
-                | "Imperative" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getScreenImperative screen world }
-                | "ScriptOpt" -> Some { PropertyType = typeof<AssetTag option>; PropertyValue = World.getScreenScriptOpt screen world }
-                | "Script" -> Some { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getScreenScript screen world }
-                | "ScriptFrameNp" -> Some { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrameNp screen world }
-                | "OnRegister" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnRegister screen world }
-                | "OnUnregister" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUnregister screen world }
-                | "OnUpdate" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUpdate screen world }
-                | "OnPostUpdate" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnPostUpdate screen world }
-                | "TransitionStateNp" -> Some { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionStateNp screen world }
-                | "TransitionTicksNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getScreenTransitionTicksNp screen world }
-                | "Incoming" -> Some { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world }
-                | "Outgoing" -> Some { PropertyType = typeof<Transition>; PropertyValue = World.getScreenOutgoing screen world }
-                | _ ->
+                match Getters.TryGetValue propertyName with
+                | (false, _) ->
                     match ScreenState.tryGetProperty propertyName (World.getScreenState screen world) with
                     | None -> World.tryGetScreenCalculatedProperty propertyName screen world
                     | Some _ as propertyOpt -> propertyOpt
+                | (true, getter) -> Some (getter screen world)
             else None
 
         static member internal getScreenProperty propertyName screen world =
-            match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world }
-            | "Name" -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world }
-            | "DispatcherNp" -> { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcherNp screen world }
-            | "Persistent" -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world }
-            | "CreationTimeStampNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStampNp screen world }
-            | "Imperative" -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenImperative screen world }
-            | "ScriptOpt" -> { PropertyType = typeof<AssetTag option>; PropertyValue = World.getScreenScriptOpt screen world }
-            | "Script" -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getScreenScript screen world }
-            | "ScriptFrameNp" -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrameNp screen world }
-            | "OnRegister" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnRegister screen world }
-            | "OnUnregister" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUnregister screen world }
-            | "OnUpdate" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUpdate screen world }
-            | "OnPostUpdate" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnPostUpdate screen world }
-            | "TransitionStateNp" -> { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionStateNp screen world }
-            | "TransitionTicksNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenTransitionTicksNp screen world }
-            | "Incoming" -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world }
-            | "Outgoing" -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenOutgoing screen world }
-            | _ ->
+            match Getters.TryGetValue propertyName with
+            | (false, _) ->
                 match ScreenState.tryGetProperty propertyName (World.getScreenState screen world) with
                 | None ->
                     match World.tryGetScreenCalculatedProperty propertyName screen world with
                     | None -> failwithf "Could not find property '%s'." propertyName
                     | Some property -> property
                 | Some property -> property
+            | (true, getter) -> getter screen world
 
         static member internal trySetScreenProperty propertyName property screen world =
             if World.screenExists screen world then
-                match propertyName with // OPTIMIZATION: string match for speed
-                | "Id" -> (false, world)
-                | "Name" -> (false, world)
-                | "DispatcherNp" -> (false, world)
-                | "Persistent" -> (true, World.setScreenPersistent (property.PropertyValue :?> bool) screen world)
-                | "CreationTimeStampNp" -> (false, world)
-                | "Imperative" -> (false, world)
-                | "ScriptOpt" -> (true, World.setScreenScriptOpt (property.PropertyValue :?> AssetTag option) screen world)
-                | "Script" -> (true, World.setScreenScript (property.PropertyValue :?> Scripting.Expr array) screen world)
-                | "ScriptFrameNp" -> (false, world)
-                | "OnRegister" -> (true, World.setScreenOnRegister (property.PropertyValue :?> Scripting.Expr) screen world)
-                | "OnUnregister" -> (true, World.setScreenOnUnregister (property.PropertyValue :?> Scripting.Expr) screen world)
-                | "OnUpdate" -> (true, World.setScreenOnUpdate (property.PropertyValue :?> Scripting.Expr) screen world)
-                | "OnPostUpdate" -> (true, World.setScreenOnPostUpdate (property.PropertyValue :?> Scripting.Expr) screen world)
-                | "TransitionStateNp" -> (true, World.setScreenTransitionStateNp (property.PropertyValue :?> TransitionState) screen world)
-                | "TransitionTicksNp" -> (true, World.setScreenTransitionTicksNp (property.PropertyValue :?> int64) screen world)
-                | "Incoming" -> (true, World.setScreenIncoming (property.PropertyValue :?> Transition) screen world)
-                | "Outgoing" -> (true, World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world)
-                | _ ->
-                    // HACK: needed to mutate a flag to get the success state out of an updateScreenState callback...
-                    let mutable success = false
+                match Setters.TryGetValue propertyName with
+                | (false, _) ->
+                    let mutable success = false // bit of a hack to get additional state out of the lambda
                     let world =
                         World.updateScreenState (fun screenState ->
                             let (successInner, screenState) = ScreenState.trySetProperty propertyName property screenState
-                            success <- successInner; screenState)
+                            success <- successInner
+                            screenState)
                             propertyName screen world
                     (success, world)
+                | (true, setter) -> setter property screen world
             else (false, world)
 
         static member internal setScreenProperty propertyName property screen world =
-            match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> failwith ("Cannot change screen " + propertyName + ".")
-            | "Name" -> failwith ("Cannot change screen " + propertyName + ".")
-            | "DispatcherNp" -> failwith ("Cannot change screen " + propertyName + ".")
-            | "Persistent" -> World.setScreenPersistent (property.PropertyValue :?> bool) screen world
-            | "CreationTimeStampNp" -> failwith ("Cannot change screen " + propertyName + ".")
-            | "Imperative" -> failwith ("Cannot change screen " + propertyName + ".")
-            | "ScriptOpt" -> World.setScreenScriptOpt (property.PropertyValue :?> AssetTag option) screen world
-            | "Script" -> World.setScreenScript (property.PropertyValue :?> Scripting.Expr array) screen world
-            | "ScriptFrameNp" -> world
-            | "OnRegister" -> World.setScreenOnRegister (property.PropertyValue :?> Scripting.Expr) screen world
-            | "OnUnregister" -> World.setScreenOnUnregister (property.PropertyValue :?> Scripting.Expr) screen world
-            | "OnUpdate" -> World.setScreenOnUpdate (property.PropertyValue :?> Scripting.Expr) screen world
-            | "OnPostUpdate" -> World.setScreenOnPostUpdate (property.PropertyValue :?> Scripting.Expr) screen world
-            | "TransitionStateNp" -> World.setScreenTransitionStateNp (property.PropertyValue :?> TransitionState) screen world
-            | "TransitionTicksNp" -> World.setScreenTransitionTicksNp (property.PropertyValue :?> int64) screen world
-            | "Incoming" -> World.setScreenIncoming (property.PropertyValue :?> Transition) screen world
-            | "Outgoing" -> World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world
-            | _ -> World.updateScreenState (ScreenState.setProperty propertyName property) propertyName screen world
+            if World.screenExists screen world then
+                match Setters.TryGetValue propertyName with
+                | (false, _) -> World.updateScreenState (ScreenState.setProperty propertyName property) propertyName screen world
+                | (true, setter) ->
+                    match setter property screen world with
+                    | (true, world) -> world
+                    | (false, _) -> failwith ("Cannot change screen property " + propertyName + ".")
+            else world
 
         static member private screenOnRegisterChanged evt world =
             let screen = evt.Subscriber : Screen
@@ -349,3 +295,48 @@ module WorldModuleScreen =
             let state = World.getScreenState screen world
             let properties = World.getProperties state
             Array.ofList properties
+
+    /// Initialize property getters.
+    let private initGetters () =
+        Getters.Add ("Id", fun screen world -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world })
+        Getters.Add ("Name", fun screen world -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world })
+        Getters.Add ("DispatcherNp", fun screen world -> { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcherNp screen world })
+        Getters.Add ("Persistent", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world })
+        Getters.Add ("CreationTimeStampNp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStampNp screen world })
+        Getters.Add ("Imperative", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenImperative screen world })
+        Getters.Add ("ScriptOpt", fun screen world -> { PropertyType = typeof<AssetTag option>; PropertyValue = World.getScreenScriptOpt screen world })
+        Getters.Add ("Script", fun screen world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getScreenScript screen world })
+        Getters.Add ("ScriptFrameNp", fun screen world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrameNp screen world })
+        Getters.Add ("OnRegister", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnRegister screen world })
+        Getters.Add ("OnUnregister", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUnregister screen world })
+        Getters.Add ("OnUpdate", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUpdate screen world })
+        Getters.Add ("OnPostUpdate", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnPostUpdate screen world })
+        Getters.Add ("TransitionStateNp", fun screen world -> { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionStateNp screen world })
+        Getters.Add ("TransitionTicksNp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenTransitionTicksNp screen world })
+        Getters.Add ("Incoming", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world })
+        Getters.Add ("Outgoing", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenOutgoing screen world })
+
+    /// Initialize property setters.
+    let private initSetters () =
+        Setters.Add ("Id", fun _ _ world -> (false, world))
+        Setters.Add ("Name", fun _ _ world -> (false, world))
+        Setters.Add ("DispatcherNp", fun _ _ world -> (false, world))
+        Setters.Add ("Persistent", fun property screen world -> (true, World.setScreenPersistent (property.PropertyValue :?> bool) screen world))
+        Setters.Add ("CreationTimeStampNp", fun _ _ world -> (false, world))
+        Setters.Add ("Imperative", fun _ _ world -> (false, world))
+        Setters.Add ("ScriptOpt", fun property screen world -> (true, World.setScreenScriptOpt (property.PropertyValue :?> AssetTag option) screen world))
+        Setters.Add ("Script", fun property screen world -> (true, World.setScreenScript (property.PropertyValue :?> Scripting.Expr array) screen world))
+        Setters.Add ("ScriptFrameNp", fun _ _ world -> (false, world))
+        Setters.Add ("OnRegister", fun property screen world -> (true, World.setScreenOnRegister (property.PropertyValue :?> Scripting.Expr) screen world))
+        Setters.Add ("OnUnregister", fun property screen world -> (true, World.setScreenOnUnregister (property.PropertyValue :?> Scripting.Expr) screen world))
+        Setters.Add ("OnUpdate", fun property screen world -> (true, World.setScreenOnUpdate (property.PropertyValue :?> Scripting.Expr) screen world))
+        Setters.Add ("OnPostUpdate", fun property screen world -> (true, World.setScreenOnPostUpdate (property.PropertyValue :?> Scripting.Expr) screen world))
+        Setters.Add ("TransitionStateNp", fun property screen world -> (true, World.setScreenTransitionStateNp (property.PropertyValue :?> TransitionState) screen world))
+        Setters.Add ("TransitionTicksNp", fun property screen world -> (true, World.setScreenTransitionTicksNp (property.PropertyValue :?> int64) screen world))
+        Setters.Add ("Incoming", fun property screen world -> (true, World.setScreenIncoming (property.PropertyValue :?> Transition) screen world))
+        Setters.Add ("Outgoing", fun property screen world -> (true, World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world))
+
+    /// Initialize getters and setters
+    let internal init () =
+        initGetters ()
+        initSetters ()

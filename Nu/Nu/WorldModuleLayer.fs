@@ -4,12 +4,17 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open OpenTK
 open Prime
 open Nu
 
 [<AutoOpen; ModuleBinding>]
 module WorldModuleLayer =
+
+    /// Dynamic property getters.
+    let internal Getters = Dictionary<string, Layer -> World -> Property> HashIdentity.Structural
+
+    /// Dynamic property setters.
+    let internal Setters = Dictionary<string, Property -> Layer -> World -> bool * World> HashIdentity.Structural
 
     type World with
     
@@ -152,100 +157,49 @@ module WorldModuleLayer =
 
         static member internal tryGetLayerProperty propertyName layer world =
             if World.layerExists layer world then
-                match propertyName with // OPTIMIZATION: string match for speed
-                | "Id" -> Some { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world }
-                | "Name" -> Some { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world }
-                | "DispatcherNp" -> Some { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcherNp layer world }
-                | "Persistent" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world }
-                | "CreationTimeStampNp" -> Some { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStampNp layer world }
-                | "Imperative" -> Some { PropertyType = typeof<bool>; PropertyValue = World.getLayerImperative layer world }
-                | "ScriptOpt" -> Some { PropertyType = typeof<AssetTag option>; PropertyValue = World.getLayerScriptOpt layer world }
-                | "Script" -> Some { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getLayerScript layer world }
-                | "ScriptFrameNp" -> Some { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScript layer world }
-                | "OnRegister" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnRegister layer world }
-                | "OnUnregister" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUnregister layer world }
-                | "OnUpdate" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUpdate layer world }
-                | "OnPostUpdate" -> Some { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnPostUpdate layer world }
-                | "Depth" -> Some { PropertyType = typeof<single>; PropertyValue = World.getLayerDepth layer world }
-                | "Visible" -> Some { PropertyType = typeof<single>; PropertyValue = World.getLayerVisible layer world }
-                | _ ->
+                match Getters.TryGetValue propertyName with
+                | (false, _) ->
                     match LayerState.tryGetProperty propertyName (World.getLayerState layer world) with
                     | None -> World.tryGetLayerCalculatedProperty propertyName layer world
                     | Some _ as propertyOpt -> propertyOpt
+                | (true, getter) -> Some (getter layer world)
             else None
 
         static member internal getLayerProperty propertyName layer world =
-            match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world }
-            | "Name" -> { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world }
-            | "DispatcherNp" -> { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcherNp layer world }
-            | "Persistent" -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world }
-            | "CreationTimeStampNp" -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStampNp layer world }
-            | "Imperative" -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerImperative layer world }
-            | "ScriptOpt" -> { PropertyType = typeof<AssetTag option>; PropertyValue = World.getLayerScriptOpt layer world }
-            | "Script" -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getLayerScript layer world }
-            | "ScriptFrameNp" -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScript layer world }
-            | "OnRegister" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnRegister layer world }
-            | "OnUnregister" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUnregister layer world }
-            | "OnUpdate" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUpdate layer world }
-            | "OnPostUpdate" -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnPostUpdate layer world }
-            | "Depth" -> { PropertyType = typeof<single>; PropertyValue = World.getLayerDepth layer world }
-            | "Visible" -> { PropertyType = typeof<single>; PropertyValue = World.getLayerVisible layer world }
-            | _ ->
+            match Getters.TryGetValue propertyName with
+            | (false, _) ->
                 match LayerState.tryGetProperty propertyName (World.getLayerState layer world) with
                 | None ->
                     match World.tryGetLayerCalculatedProperty propertyName layer world with
                     | None -> failwithf "Could not find property '%s'." propertyName
                     | Some property -> property
                 | Some property -> property
+            | (true, getter) -> getter layer world
 
         static member internal trySetLayerProperty propertyName property layer world =
             if World.layerExists layer world then
-                match propertyName with // OPTIMIZATION: string match for speed
-                | "Id" -> (false, world)
-                | "Name" -> (false, world)
-                | "DispatcherNp" -> (false, world)
-                | "Persistent" -> (true, World.setLayerPersistent (property.PropertyValue :?> bool) layer world)
-                | "CreationTimeStampNp" -> (false, world)
-                | "Imperative" -> (false, world)
-                | "ScriptOpt" -> (true, World.setLayerScriptOpt (property.PropertyValue :?> AssetTag option) layer world)
-                | "Script" -> (true, World.setLayerScript (property.PropertyValue :?> Scripting.Expr array) layer world)
-                | "ScriptFrameNp" -> (false, world)
-                | "OnRegister" -> (true, World.setLayerOnRegister (property.PropertyValue :?> Scripting.Expr) layer world)
-                | "OnUnregister" -> (true, World.setLayerOnUnregister (property.PropertyValue :?> Scripting.Expr) layer world)
-                | "OnUpdate" -> (true, World.setLayerOnUpdate (property.PropertyValue :?> Scripting.Expr) layer world)
-                | "OnPostUpdate" -> (true, World.setLayerOnPostUpdate (property.PropertyValue :?> Scripting.Expr) layer world)
-                | "Depth" -> (true, World.setLayerDepth (property.PropertyValue :?> single) layer world)
-                | "Visible" -> (true, World.setLayerVisible (property.PropertyValue :?> bool) layer world)
-                | _ ->
-                    // HACK: needed to mutate a flag to get the success state out of an updateLayerState callback...
-                    let mutable success = false
+                match Setters.TryGetValue propertyName with
+                | (false, _) ->
+                    let mutable success = false // bit of a hack to get additional state out of the lambda
                     let world =
                         World.updateLayerState (fun layerState ->
                             let (successInner, layerState) = LayerState.trySetProperty propertyName property layerState
-                            success <- successInner; layerState)
+                            success <- successInner
+                            layerState)
                             propertyName layer world
                     (success, world)
+                | (true, setter) -> setter property layer world
             else (false, world)
 
         static member internal setLayerProperty propertyName property layer world =
-            match propertyName with // OPTIMIZATION: string match for speed
-            | "Id" -> failwith ("Cannot change layer " + propertyName + ".")
-            | "Name" -> failwith ("Cannot change layer " + propertyName + ".")
-            | "DispatcherNp" -> failwith ("Cannot change layer " + propertyName + ".")
-            | "Persistent" -> World.setLayerPersistent (property.PropertyValue :?> bool) layer world
-            | "CreationTimeStampNp" -> failwith ("Cannot change layer " + propertyName + ".")
-            | "Imperative" -> failwith ("Cannot change layer " + propertyName + ".")
-            | "ScriptOpt" -> World.setLayerScriptOpt (property.PropertyValue :?> AssetTag option) layer world
-            | "Script" -> World.setLayerScript (property.PropertyValue :?> Scripting.Expr array) layer world
-            | "ScriptFrameNp" -> world
-            | "OnRegister" -> World.setLayerOnRegister (property.PropertyValue :?> Scripting.Expr) layer world
-            | "OnUnregister" -> World.setLayerOnUnregister (property.PropertyValue :?> Scripting.Expr) layer world
-            | "OnUpdate" -> World.setLayerOnUpdate (property.PropertyValue :?> Scripting.Expr) layer world
-            | "OnPostUpdate" -> World.setLayerOnPostUpdate (property.PropertyValue :?> Scripting.Expr) layer world
-            | "Depth" -> World.setLayerDepth (property.PropertyValue :?> single) layer world
-            | "Visible" -> World.setLayerVisible (property.PropertyValue :?> bool) layer world
-            | _ -> World.updateLayerState (LayerState.setProperty propertyName property) propertyName layer world
+            if World.layerExists layer world then
+                match Setters.TryGetValue propertyName with
+                | (false, _) -> World.updateLayerState (LayerState.setProperty propertyName property) propertyName layer world
+                | (true, setter) ->
+                    match setter property layer world with
+                    | (true, world) -> world
+                    | (false, _) -> failwith ("Cannot change layer property " + propertyName + ".")
+            else world
 
         static member private layerOnRegisterChanged evt world =
             let layer = evt.Subscriber : Layer
@@ -364,3 +318,44 @@ module WorldModuleLayer =
             let state = World.getLayerState layer world
             let properties = World.getProperties state
             Array.ofList properties
+
+    /// Initialize property getters.
+    let private initGetters () =
+        Getters.Add ("Id", fun layer world -> { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world })
+        Getters.Add ("Name", fun layer world -> { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world })
+        Getters.Add ("DispatcherNp", fun layer world -> { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcherNp layer world })
+        Getters.Add ("Persistent", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world })
+        Getters.Add ("CreationTimeStampNp", fun layer world -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStampNp layer world })
+        Getters.Add ("Imperative", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerImperative layer world })
+        Getters.Add ("ScriptOpt", fun layer world -> { PropertyType = typeof<AssetTag option>; PropertyValue = World.getLayerScriptOpt layer world })
+        Getters.Add ("Script", fun layer world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getLayerScript layer world })
+        Getters.Add ("ScriptFrameNp", fun layer world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScript layer world })
+        Getters.Add ("OnRegister", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnRegister layer world })
+        Getters.Add ("OnUnregister", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUnregister layer world })
+        Getters.Add ("OnUpdate", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUpdate layer world })
+        Getters.Add ("OnPostUpdate", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnPostUpdate layer world })
+        Getters.Add ("Depth", fun layer world -> { PropertyType = typeof<single>; PropertyValue = World.getLayerDepth layer world })
+        Getters.Add ("Visible", fun layer world -> { PropertyType = typeof<single>; PropertyValue = World.getLayerVisible layer world })
+
+    /// Initialize property setters.
+    let private initSetters () =
+        Setters.Add ("Id", fun _ _ world -> (false, world))
+        Setters.Add ("Name", fun _ _ world -> (false, world))
+        Setters.Add ("DispatcherNp", fun _ _ world -> (false, world))
+        Setters.Add ("Persistent", fun property layer world -> (true, World.setLayerPersistent (property.PropertyValue :?> bool) layer world))
+        Setters.Add ("CreationTimeStampNp", fun _ _ world -> (false, world))
+        Setters.Add ("Imperative", fun _ _ world -> (false, world))
+        Setters.Add ("ScriptOpt", fun property layer world -> (true, World.setLayerScriptOpt (property.PropertyValue :?> AssetTag option) layer world))
+        Setters.Add ("Script", fun property layer world -> (true, World.setLayerScript (property.PropertyValue :?> Scripting.Expr array) layer world))
+        Setters.Add ("ScriptFrameNp", fun _ _ world -> (false, world))
+        Setters.Add ("OnRegister", fun property layer world -> (true, World.setLayerOnRegister (property.PropertyValue :?> Scripting.Expr) layer world))
+        Setters.Add ("OnUnregister", fun property layer world -> (true, World.setLayerOnUnregister (property.PropertyValue :?> Scripting.Expr) layer world))
+        Setters.Add ("OnUpdate", fun property layer world -> (true, World.setLayerOnUpdate (property.PropertyValue :?> Scripting.Expr) layer world))
+        Setters.Add ("OnPostUpdate", fun property layer world -> (true, World.setLayerOnPostUpdate (property.PropertyValue :?> Scripting.Expr) layer world))
+        Setters.Add ("Depth", fun property layer world -> (true, World.setLayerDepth (property.PropertyValue :?> single) layer world))
+        Setters.Add ("Visible", fun property layer world -> (true, World.setLayerVisible (property.PropertyValue :?> bool) layer world))
+
+    /// Initialize getters and setters
+    let internal init () =
+        initGetters ()
+        initSetters ()

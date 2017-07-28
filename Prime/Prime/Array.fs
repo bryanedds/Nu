@@ -78,3 +78,15 @@ module Array =
     /// A more tolerant and open-minded skip.
     let trySkip (count : int) (arr : _ array) =
         Seq.trySkip count arr |> Array.ofSeq
+
+    /// Perform a sort on elements, preserving order of equal elements.
+    let sortStableWith sorter (arr : _ array) =
+        arr |> Seq.sortWith sorter |> Array.ofSeq
+
+    /// Perform a sort on elements, preserving order of equal elements.
+    let sortStableBy by (arr : _ array) =
+        arr |> Seq.sortBy by |> Array.ofSeq
+
+    /// Perform a sort on elements, preserving order of equal elements.
+    let sortStable (arr : _ array) =
+        arr |> Seq.sort |> Array.ofSeq
