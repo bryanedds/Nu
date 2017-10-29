@@ -6,14 +6,12 @@ open System
 open Prime
 
 /// Describes whether an in-flight event has been resolved or should cascade to down-stream handlers.
-/// TODO: P1: make this a struct when F# allows it.
-type Handling =
+type [<Struct>] Handling =
     | Resolve
     | Cascade
 
 /// Specifies whether an event-based application is running or exiting.
-/// TODO: P1: make this a struct when F# allows it.
-type Liveness =
+type [<Struct>] Liveness =
     | Running
     | Exiting
 

@@ -8,7 +8,7 @@ open System.ComponentModel
 open Prime
 module Scripting =
 
-    type BindingType =
+    type [<Struct>] BindingType =
         | UnknownBindingType
         | Intrinsic
         | Extrinsic
@@ -19,24 +19,24 @@ module Scripting =
         abstract member TypeName : string
         abstract member ToSymbol : unit -> Symbol
 
-    and [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoComparison>] CachedBinding =
+    and [<Struct; NoComparison>] CachedBinding =
         | UncachedBinding
         | DeclarationBinding of Expr
         | ProceduralBinding of int * int
 
-    and Binding =
-        | VariableBinding of string * Expr
-        | FunctionBinding of string * string array * Expr
+    and [<Struct; NoComparison>] Binding =
+        | VariableBinding of VarName : string * VarValue : Expr
+        | FunctionBinding of FunName : string * FunArgs : string array * FunLambda : Expr
+
+    and [<Struct; NoComparison>] Breakpoint =
+        { mutable BreakEnabled : bool
+          mutable BreakCondition : Expr }
 
     and [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Codata =
         | Empty
         | Add of Codata * Codata
         | Unfold of Expr * Expr
         | Conversion of Expr list
-
-    and [<Struct>] Breakpoint =
-        { mutable BreakEnabled : bool
-          mutable BreakCondition : Expr }
 
     and [<Syntax
             ((* Built-in Identifiers *)

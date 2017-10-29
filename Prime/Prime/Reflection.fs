@@ -17,10 +17,9 @@ type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
     member this.DefaultValue = defaultValue
 
 /// An evaluatable expression for defining a property.
-/// TODO: P1: make this a struct when F# allows it.
-type [<NoEquality; NoComparison>] PropertyExpr =
-    | DefineExpr of obj
-    | VariableExpr of (unit -> obj)
+type [<Struct; NoEquality; NoComparison>] PropertyExpr =
+    | DefineExpr of DefineExpr : obj
+    | VariableExpr of VariableExpr : (unit -> obj)
 
     /// Evaluate a property expression.
     static member eval expr =

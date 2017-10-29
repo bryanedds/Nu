@@ -33,8 +33,8 @@ module ScriptingWorld =
     let inline annotateWorld<'w when 'w :> 'w ScriptingWorld> (_ : 'w) =
         () // NOTE: simply infers that a type is a world.
 
-    let tryGetBinding<'w when 'w :> 'w ScriptingWorld> name cachedBinding cachedBindingType (world : 'w) =
-        Env.tryGetBinding name cachedBinding cachedBindingType (world.GetEnv ())
+    let tryGetBinding<'w when 'w :> 'w ScriptingWorld> name cachedBinding bindingType (world : 'w) =
+        Env.tryGetBinding name cachedBinding bindingType (world.GetEnv ())
 
     let tryAddDeclarationBinding<'w when 'w :> 'w ScriptingWorld> name value (world : 'w) =
         Env.tryAddDeclarationBinding name value (world.GetEnv ())
@@ -242,14 +242,14 @@ module ScriptingWorld =
         let fields = evaledPairs |> List.map snd |> Array.ofList
         struct (Record (name, map, fields), world)
 
-    and evalBinding<'w when 'w :> 'w ScriptingWorld> expr name cachedBinding cachedBindingType originOpt (world : 'w) =
-        match tryGetBinding name cachedBinding cachedBindingType world with
+    and evalBinding<'w when 'w :> 'w ScriptingWorld> expr name cachedBinding bindingType originOpt (world : 'w) =
+        match tryGetBinding name cachedBinding bindingType world with
         | None ->
-            match !cachedBindingType with
+            match !bindingType with
             | UnknownBindingType ->
-                if isIntrinsic<'w> name then cachedBindingType := Intrinsic; struct (expr, world)
-                elif world.IsExtrinsic name then cachedBindingType := Extrinsic; struct (expr, world)
-                else cachedBindingType := Environmental; struct (expr, world)
+                if isIntrinsic<'w> name then bindingType := Intrinsic; struct (expr, world)
+                elif world.IsExtrinsic name then bindingType := Extrinsic; struct (expr, world)
+                else bindingType := Environmental; struct (expr, world)
             | Intrinsic -> struct (expr, world)
             | Extrinsic -> struct (expr, world)
             | Environmental -> struct (Violation (["NonexistentBinding"], "Non-existent binding '" + name + "'.", originOpt), world)
@@ -345,19 +345,19 @@ module ScriptingWorld =
                 let struct (tailEvaled, world) = evalMany exprsTail world
                 let union = Union (keyword, tailEvaled)
                 struct (union, world)
-            | Binding (fnName, _, cachedBindingType, originOpt) ->
+            | Binding (fnName, _, bindingType, originOpt) ->
                 // NOTE: when evaluation leads here, we infer that we have either an extrinsic or intrinsic function,
                 // otherwise it would have led to the Fun case...
-                match cachedBindingType.Value with
+                match bindingType.Value with
                 | UnknownBindingType ->
                     // NOTE: I'm not sure if the code should ever make it here...
                     // TODO: see if we can replace the following code with failwithumf...
                     if isIntrinsic<'w> fnName then
-                        cachedBindingType := Intrinsic
+                        bindingType := Intrinsic
                         let struct (tailEvaled, world) = evalMany exprsTail world
                         evalIntrinsic fnName tailEvaled originOpt world
                     elif world.IsExtrinsic fnName then
-                        cachedBindingType := Extrinsic
+                        bindingType := Extrinsic
                         let exprsTail = Array.tail exprs
                         evalExtrinsic fnName exprsTail originOpt world
                     else failwithumf ()
@@ -583,7 +583,7 @@ module ScriptingWorld =
         | UnionUnevaled (name, exprs) -> evalUnionUnevaled name exprs world
         | TableUnevaled exprPairs -> evalTableUnevaled exprPairs world
         | RecordUnevaled (name, exprPairs) -> evalRecordUnevaled name exprPairs world
-        | Binding (name, cachedBinding, cachedBindingType, originOpt) as expr -> evalBinding expr name cachedBinding cachedBindingType originOpt world
+        | Binding (name, cachedBinding, bindingType, originOpt) as expr -> evalBinding expr name cachedBinding bindingType originOpt world
         | TryUpdate (expr, expr2, expr3, _, originOpt) -> evalTryUpdate "tryUpdate" expr expr2 expr3 originOpt world
         | Update (expr, expr2, expr3, _, originOpt) -> evalUpdate "update" expr expr2 expr3 originOpt world
         | Apply (exprs, _, originOpt) -> evalApply exprs originOpt world

@@ -18,17 +18,16 @@ type [<Struct; StructuralEquality; NoComparison>] Transform =
 /// Depicts whether a view is purposed to render in relative or absolute space. For
 /// example, Gui entities are rendered in absolute space since they remain still no matter
 /// where the camera moves, and vice versa for non-Gui entities.
-/// TODO: P1: make this a struct when F# allows it.
 [<Syntax
     ("Absolute Relative", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
-type ViewType =
+type [<Struct>] ViewType =
     | Absolute
     | Relative
 
 /// The Vector2 value that can be plugged into the scripting language.
-type [<CustomEquality; CustomComparison>] Vector2Pluggable =
+type [<Struct; CustomEquality; CustomComparison>] Vector2Pluggable =
     { Vector2 : Vector2 }
 
     static member equals left right =
@@ -122,7 +121,7 @@ type Vector3Converter () =
         | _ -> failconv "Invalid Vector3Converter conversion from source." None
 
 /// The Vector4 value that can be plugged into the scripting language.
-type [<CustomEquality; CustomComparison>] Vector4Pluggable =
+type [<Struct; CustomEquality; CustomComparison>] Vector4Pluggable =
     { Vector4 : Vector4 }
 
     static member equals left right =
@@ -190,7 +189,7 @@ type Vector4Converter () =
         | _ -> failconv "Invalid Vector4Converter conversion from source." None
 
 /// The Vector2i value that can be plugged into the scripting language.
-type [<CustomEquality; CustomComparison>] Vector2iPluggable =
+type [<Struct; CustomEquality; CustomComparison>] Vector2iPluggable =
     { Vector2i : Vector2i }
 
     static member equals left right =
