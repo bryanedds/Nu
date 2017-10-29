@@ -46,11 +46,11 @@ type [<Struct; StructuralEquality; NoComparison>] TextDescriptor =
 
 /// Describes how to render a layered 'thing' to the rendering system.
 /// TODO: P1: make this a struct when F# allows it.
-type [<StructuralEquality; NoComparison>] LayeredDescriptor =
-    | SpriteDescriptor of SpriteDescriptor
-    | SpritesDescriptor of SpriteDescriptor array
-    | TileLayerDescriptor of TileLayerDescriptor
-    | TextDescriptor of TextDescriptor
+type [<Struct; StructuralEquality; NoComparison>] LayeredDescriptor =
+    | SpriteDescriptor of SpriteDescriptor : SpriteDescriptor
+    | SpritesDescriptor of SpriteDescriptors : SpriteDescriptor array
+    | TileLayerDescriptor of TileLayerDescriptor : TileLayerDescriptor
+    | TextDescriptor of TextDescriptor : TextDescriptor
 
 /// Describes how to render a layerable 'thing' to the rendering system.
 type [<Struct; StructuralEquality; NoComparison>] LayerableDescriptor =

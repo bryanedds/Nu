@@ -7,8 +7,7 @@ open Prime
 open OpenTK
 module Effects =
 
-    // TODO: P1: make this a struct when F# allows it.
-    type Algorithm =
+    type [<Struct>] Algorithm =
         | Const
         | Linear
         | Random
@@ -19,8 +18,7 @@ module Effects =
         | Sin
         | Cos
 
-    // TODO: P1: make this a struct when F# allows it.
-    type LogicApplicator =
+    type [<Struct>] LogicApplicator =
         | Or
         | Nor
         | Xor
@@ -28,8 +26,7 @@ module Effects =
         | Nand
         | Equal
 
-    // TODO: P1: make this a struct when F# allows it.
-    type TweenApplicator =
+    type [<Struct>] TweenApplicator =
         | Sum
         | Delta
         | Scale
@@ -90,17 +87,15 @@ module Effects =
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
-
-    // TODO: P1: make this a struct when F# allows it.
-    type Playback =
+            
+    type [<Struct>] Playback =
         | Once
         | Loop
         | Bounce
-
-    // TODO: P1: make this a struct when F# allows it.
-    type Repetition =
-        | Cycle of int
-        | Iterate of int
+        
+    type [<Struct>] Repetition =
+        | Cycle of Cycles : int
+        | Iterate of Iterations : int
 
     type [<Struct>] Rate =
         Rate of single

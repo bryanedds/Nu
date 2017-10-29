@@ -9,8 +9,7 @@ open Prime
 open Nu
 
 /// Describes a mouse button.
-/// TODO: P1: make this a struct when F# allows it.
-type MouseButton =
+type [<Struct>] MouseButton =
     | MouseLeft
     | MouseCenter
     | MouseRight
