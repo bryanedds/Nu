@@ -179,8 +179,7 @@ module WorldModule3 =
                   LayerDispatchers = World.makeDefaultLayerDispatchers ()
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
                   Facets = World.makeDefaultFacets ()
-                  IsExtrinsic = World.isExtrinsic
-                  EvalExtrinsic = World.evalExtrinsic
+                  TryGetExtrinsic = World.tryGetExtrinsic
                   UpdateEntityInEntityTree = World.updateEntityInEntityTree
                   RebuildEntityTree = World.rebuildEntityTree }
 
@@ -257,8 +256,7 @@ module WorldModule3 =
                       LayerDispatchers = Map.addMany pluginLayerDispatchers (World.makeDefaultLayerDispatchers ())
                       EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
                       Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
-                      IsExtrinsic = World.isExtrinsic
-                      EvalExtrinsic = World.evalExtrinsic
+                      TryGetExtrinsic = World.tryGetExtrinsic
                       UpdateEntityInEntityTree = World.updateEntityInEntityTree
                       RebuildEntityTree = World.rebuildEntityTree }
 

@@ -246,17 +246,11 @@ let generateBindingFunction' binding =
     "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '\" + " + "fnName" + " + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
     "            struct (violation, world)\n"
 
-let generateIsBinding () =
-    "    let isBinding fnName =\n" +
-    "        WorldScripting.Bindings.ContainsKey fnName\n"
-
-let generateEvalBinding () =
-    "    let evalBinding fnName exprs originOpt world =\n" +
+let generateTryGetBinding () =
+    "    let tryGetBinding fnName =\n" +
     "        match WorldScripting.Bindings.TryGetValue fnName with\n" +
-    "        | (true, binding) -> binding fnName exprs originOpt world\n" +
-    "        | (false, _) ->\n" +
-    "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"No binding exists for '\" + " + "fnName" + " + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
-    "            struct (violation, world)\n"
+    "        | (true, binding) -> FOption.some binding\n" +
+    "        | (false, _) -> FOption.none ()\n"
 
 let generateInitBindings bindings =
 
@@ -271,9 +265,7 @@ let generateInitBindings bindings =
     bindingDispatchers +
     "            ] |>\n" +
     "            dictPlus\n" +
-    "        WorldScripting.Bindings <- bindings\n" +
-    "        WorldScripting.isBinding <- isBinding\n" +
-    "        WorldScripting.evalBinding <- evalBinding\n"
+    "        WorldScripting.Bindings <- bindings\n"
 
 let generateBindingSyntax bindings =
 
@@ -322,11 +314,8 @@ let generateBindingsCode bindings =
         Array.map generateBindingFunction' |>
         fun functions -> String.Join ("\n", functions) + "\n"
 
-    let isBinding =
-        generateIsBinding () + "\n"
-
-    let evalBinding =
-        generateEvalBinding () + "\n"
+    let tryGetBinding =
+        generateTryGetBinding () + "\n"
 
     let initBindings =
         generateInitBindings bindings
@@ -335,8 +324,7 @@ let generateBindingsCode bindings =
     bindingSyntax +
     bindingFunctions +
     bindingFunctions' +
-    isBinding +
-    evalBinding +
+    tryGetBinding +
     initBindings
 
 let types =

@@ -18,8 +18,7 @@ open Prime.ScriptingPrimitives
 type 'w ScriptingWorld =
     interface
         abstract member GetEnv : unit -> Env
-        abstract member IsExtrinsic : string -> bool
-        abstract member EvalExtrinsic : string -> Expr array -> SymbolOrigin option -> struct (Expr * 'w)
+        abstract member TryGetExtrinsic : string -> (string -> Expr array -> SymbolOrigin option -> 'w -> struct (Expr * 'w)) FOption
         abstract member TryImport : Type -> obj -> Expr option
         abstract member TryExport : Type -> Expr -> obj option
         end
@@ -178,10 +177,6 @@ module ScriptingWorld =
             intrinsics
         else Intrinsics :?> Dictionary<string, string -> Expr array -> SymbolOrigin option -> 'w -> struct (Expr * 'w)>
 
-    and isIntrinsic<'w when 'w :> 'w ScriptingWorld> fnName =
-        let intrinsics = getIntrinsics<'w> ()
-        intrinsics.ContainsKey fnName
-
     and internal evalIntrinsicInner<'w when 'w :> 'w ScriptingWorld> fnName argsEvaled originOpt (world : 'w) =
         let intrinsics = getIntrinsics ()
         match intrinsics.TryGetValue fnName with
@@ -206,14 +201,6 @@ module ScriptingWorld =
             | Violation _ as error -> struct (error, world)
             | _ -> struct (Violation (["InvalidOverload"], "Could not find overload for '" + fnName + "' for target.", originOpt), world)
         else struct (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
-
-    and evalIntrinsic fnName argsEvaled originOpt world =
-        match evalIntrinsicInner fnName argsEvaled originOpt world with
-        | struct (Violation _, world) -> evalOverload fnName argsEvaled originOpt world
-        | success -> success
-
-    and evalExtrinsic<'w when 'w :> 'w ScriptingWorld> fnName args originOpt (world : 'w) =
-        world.EvalExtrinsic fnName args originOpt
 
     and evalUnionUnevaled name exprs world =
         let struct (evaleds, world) = evalMany exprs world
@@ -247,8 +234,8 @@ module ScriptingWorld =
         | None ->
             match !bindingType with
             | UnknownBindingType ->
-                if isIntrinsic<'w> name then bindingType := Intrinsic; struct (expr, world)
-                elif world.IsExtrinsic name then bindingType := Extrinsic; struct (expr, world)
+                if (getIntrinsics<'w> ()).ContainsKey name then bindingType := Intrinsic; struct (expr, world)
+                elif FOption.isSome (world.TryGetExtrinsic name) then bindingType := Extrinsic; struct (expr, world)
                 else bindingType := Environmental; struct (expr, world)
             | Intrinsic -> struct (expr, world)
             | Extrinsic -> struct (expr, world)
@@ -347,26 +334,21 @@ module ScriptingWorld =
                 struct (union, world)
             | Binding (fnName, _, bindingType, originOpt) ->
                 // NOTE: when evaluation leads here, we infer that we have either an extrinsic or intrinsic function,
-                // otherwise it would have led to the Fun case...
+                // otherwise it would have led to the Fun case... Also, binding type should be decided by this point.
                 match bindingType.Value with
                 | UnknownBindingType ->
-                    // NOTE: I'm not sure if the code should ever make it here...
-                    // TODO: see if we can replace the following code with failwithumf...
-                    if isIntrinsic<'w> fnName then
-                        bindingType := Intrinsic
-                        let struct (tailEvaled, world) = evalMany exprsTail world
-                        evalIntrinsic fnName tailEvaled originOpt world
-                    elif world.IsExtrinsic fnName then
-                        bindingType := Extrinsic
-                        let exprsTail = Array.tail exprs
-                        evalExtrinsic fnName exprsTail originOpt world
-                    else failwithumf ()
+                    failwithumf ()
                 | Intrinsic ->
-                    let struct (tailEvaled, world) = evalMany exprsTail world
-                    evalIntrinsic fnName tailEvaled originOpt world
+                    let struct (argsEvaled, world) = evalMany exprsTail world
+                    match evalIntrinsicInner fnName argsEvaled originOpt world with
+                    | struct (Violation _, world) -> evalOverload fnName argsEvaled originOpt world
+                    | success -> success
                 | Extrinsic ->
-                    let exprsTail = Array.tail exprs
-                    evalExtrinsic fnName exprsTail originOpt world
+                    let args = Array.tail exprs
+                    let extrinsicOpt = world.TryGetExtrinsic fnName
+                    if FOption.isSome extrinsicOpt
+                    then extrinsicOpt.Value fnName args originOpt world
+                    else failwithumf ()
                 | Environmental ->
                     failwithumf ()
             | Fun (pars, parsCount, body, _, framesOpt, originOpt) ->

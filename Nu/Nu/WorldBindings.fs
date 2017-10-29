@@ -2505,15 +2505,10 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
             struct (violation, world)
 
-    let isBinding fnName =
-        WorldScripting.Bindings.ContainsKey fnName
-
-    let evalBinding fnName exprs originOpt world =
+    let tryGetBinding fnName =
         match WorldScripting.Bindings.TryGetValue fnName with
-        | (true, binding) -> binding fnName exprs originOpt world
-        | (false, _) ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "No binding exists for '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        | (true, binding) -> FOption.some binding
+        | (false, _) -> FOption.none ()
 
     let initBindings () =
         let bindings =
@@ -2630,5 +2625,3 @@ module WorldBindings =
             ] |>
             dictPlus
         WorldScripting.Bindings <- bindings
-        WorldScripting.isBinding <- isBinding
-        WorldScripting.evalBinding <- evalBinding
