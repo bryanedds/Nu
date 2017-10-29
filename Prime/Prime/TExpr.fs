@@ -4,8 +4,7 @@
 namespace Prime
 open System
 
-// TODO: P1: Move to its own file?
-type TConfig =
+type [<Struct>] TConfig =
     | BasedOnBuild
     | Functional
     | Imperative
@@ -25,7 +24,6 @@ module TConfig =
 
 type TExpr<'a, 'env> = 'env -> struct ('a * 'env)
 
-// TODO: P1: Make operations work on struct tuples in next version of F#.
 type TExprBuilder<'env> () =
 
     member inline this.Bind (expr : TExpr<'a, 'env>, lift : 'a -> TExpr<'b, 'env>) : TExpr<'b, 'env> =

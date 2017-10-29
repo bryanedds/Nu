@@ -142,12 +142,12 @@ namespace Nu.Gaia.Design
             }
             else if (e.Alt && e.KeyCode == Keys.Up)
             {
-                // TODO: SelectParentSymbols();
+                // TODO: P1: SelectParentSymbols();
                 e.SuppressKeyPress = true;
             }
             else if (e.Alt && e.KeyCode == Keys.Down)
             {
-                // TODO: SelectChildSymbols();
+                // TODO: P1: SelectChildSymbols();
                 e.SuppressKeyPress = true;
             }
             // NOTE: auto [] completion feature disabled due to poor usability.

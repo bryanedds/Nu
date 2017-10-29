@@ -8,12 +8,6 @@ open System.ComponentModel
 open Prime
 module Scripting =
 
-    type [<Struct>] BindingType =
-        | UnknownBindingType
-        | Intrinsic
-        | Extrinsic
-        | Environmental
-
     type Pluggable =
         inherit IComparable
         abstract member TypeName : string
@@ -23,6 +17,12 @@ module Scripting =
         | UncachedBinding
         | DeclarationBinding of Expr
         | ProceduralBinding of int * int
+
+    and [<Struct; NoComparison>] BindingType =
+        | UnknownBindingType
+        | Intrinsic
+        | Extrinsic
+        | Environmental
 
     and [<Struct; NoComparison>] Binding =
         | VariableBinding of VarName : string * VarValue : Expr
@@ -795,16 +795,15 @@ module Scripting =
                         match tryGetDeclarationBinding name env with
                         | Some binding as bindingOpt ->
 #if DEBUG
+                            // NOTE: when debugging, we allow declaration bindings to be redefined, thus we can't cache
                             ignore binding
 #else
-                            let newCachedBinding = DeclarationBinding binding
-                            cachedBinding := newCachedBinding
+                            cachedBinding := DeclarationBinding binding
 #endif
                             bindingOpt
                         | None -> None
                     | Some struct (binding, offset, index) ->
-                        let newCachedBinding = ProceduralBinding (offset, index)
-                        cachedBinding := newCachedBinding
+                        cachedBinding := ProceduralBinding (offset, index)
                         Some binding
                 | DeclarationBinding binding ->
                     Some binding
@@ -859,7 +858,7 @@ module Scripting =
 
             let setProceduralFrames proceduralFrames env =
                 env.ProceduralFrames <- proceduralFrames
-    
+
             let make () =
                 // NOTE: local frame starts out the same as the global frame so that prelude
                 // functions are defined globally
