@@ -15,19 +15,19 @@ module Program =
     
     What follows is a matrix of engine systems and the authoring language they provide to the user -
 
-    system          | language      | editor
-    -----------------------------------------------
-    simulants defs  | s-expr DSL    | Gaia
-    event filtering | s-expr DSL    | Gaia
-    collision bodies| s-expr DSL    | Gaia
-    overlay         | s-expr DSL    | Visual Studio & Gaia
-    asset graph     | s-expr DSL    | Visual Studio & Gaia
-    script lang(WIP)| s-expr DSL    | Visual Studio & Gaia
-    effect system   | s-expr DSL    | Gaia & Aether (TBA)
-    mind(TBA)       | s-expr DSL    | Gaia & Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
-    interactions    | F# (chains)   | Visual Studio
-    subsystems      | F#            | Visual Studio
-    dispatchers     | F#            | Visual Studio
+    system          | language      |            editor
+    -----------------------------------------------------------
+    simulants defs  | s-expr DSL                | Gaia
+    event filtering | s-expr DSL                | Gaia
+    collision bodies| s-expr DSL                | Gaia
+    overlay         | s-expr DSL                | Visual Studio & Gaia
+    asset graph     | s-expr DSL                | Visual Studio & Gaia
+    script language | s-expr DSL                | Visual Studio & Gaia
+    effect system   | s-expr DSL                | Gaia & Aether (TBA)
+    mind (TBA)      | s-expr DSL                | Gaia & Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
+    interactions    | F# (chains)               | Visual Studio
+    subsystems      | F#                        | Visual Studio
+    ECS             | F# (facets / dispatchers) | Visual Studio
 
     The advantages and limitations that fall out of this is as such -
 

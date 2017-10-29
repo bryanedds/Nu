@@ -10,28 +10,28 @@ open Prime.ScriptingBinary
 open Prime.ScriptingMarshalling
 module ScriptingPrimitives =
 
-    let evalSinglet fn fnName evaledArgs originOpt world =
-        match evaledArgs with
+    let evalSinglet fn fnName argsEvaled originOpt world =
+        match argsEvaled with
         | [|evaledArg|] -> fn fnName evaledArg originOpt world
         | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Function '" + fnName + "' requires 1 argument.", originOpt), world)
 
-    let evalDoublet fn fnName evaledArgs originOpt world =
-        match evaledArgs with
+    let evalDoublet fn fnName argsEvaled originOpt world =
+        match argsEvaled with
         | [|evaledArg; evaledArg2|] -> fn fnName evaledArg evaledArg2 originOpt world
         | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Function '" + fnName + "' requires 2 arguments.", originOpt), world)
 
-    let evalTriplet fn fnName evaledArgs originOpt world =
-        match evaledArgs with
+    let evalTriplet fn fnName argsEvaled originOpt world =
+        match argsEvaled with
         | [|evaledArg; evaledArg2; evaledArg3|] -> fn fnName evaledArg evaledArg2 evaledArg3 originOpt world
         | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Function '" + fnName + "' requires 3 arguments.", originOpt), world)
 
-    let evalQuadlet fn fnName evaledArgs originOpt world =
-        match evaledArgs with
+    let evalQuadlet fn fnName argsEvaled originOpt world =
+        match argsEvaled with
         | [|evaledArg; evaledArg2; evaledArg3; evaledArg4|] -> fn fnName evaledArg evaledArg2 evaledArg3 evaledArg4 originOpt world
         | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Function '" + fnName + "' requires 4 arguments.", originOpt), world)
 
-    let evalQuintet fn fnName evaledArgs originOpt world =
-        match evaledArgs with
+    let evalQuintet fn fnName argsEvaled originOpt world =
+        match argsEvaled with
         | [|evaledArg; evaledArg2; evaledArg3; evaledArg4; evaledArg5|] -> fn fnName evaledArg evaledArg2 evaledArg3 evaledArg4 evaledArg5 originOpt world
         | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Function '" + fnName + "' requires 5 arguments.", originOpt), world)
 
@@ -164,8 +164,8 @@ module ScriptingPrimitives =
         | Violation _ as violation -> struct (violation, world)
         | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Union or Record value.", originOpt), world)
 
-    let evalTuple _ evaledArgs _ world =
-        struct (Tuple evaledArgs, world)
+    let evalTuple _ argsEvaled _ world =
+        struct (Tuple argsEvaled, world)
 
     let evalPair _ (_ : string) evaledArg evaledArg2 world =
         struct (Tuple [|evaledArg; evaledArg2|], world)
@@ -342,26 +342,26 @@ module ScriptingPrimitives =
         | Violation _ as violation -> struct (violation, world)
         | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
 
-    let evalTryHead evalApply fnName evaledArgs originOpt world =
-        match evalTryUnconsInner evalApply fnName evaledArgs originOpt world with
+    let evalTryHead evalApply fnName argsEvaled originOpt world =
+        match evalTryUnconsInner evalApply fnName argsEvaled originOpt world with
         | Right (Right struct (head, _, world)) -> struct (head, world)
         | Right (Left world) -> struct (Option None, world)
         | Left error -> error
 
-    let evalHead evalApply fnName evaledArgs originOpt world =
-        match evalTryUnconsInner evalApply fnName evaledArgs originOpt world with
+    let evalHead evalApply fnName argsEvaled originOpt world =
+        match evalTryUnconsInner evalApply fnName argsEvaled originOpt world with
         | Right (Right struct (head, _, world)) -> struct (head, world)
         | Right (Left world) -> struct (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Cannot apply " + fnName + " to a container with no elements.", originOpt), world)
         | Left error -> error
 
-    let evalTryTail evalApply fnName evaledArgs originOpt world =
-        match evalTryUnconsInner evalApply fnName evaledArgs originOpt world with
+    let evalTryTail evalApply fnName argsEvaled originOpt world =
+        match evalTryUnconsInner evalApply fnName argsEvaled originOpt world with
         | Right (Right struct (_, tail, world)) -> struct (tail, world)
         | Right (Left world) -> struct (Option None, world)
         | Left error -> error
 
-    let evalTail evalApply fnName evaledArgs originOpt world =
-        match evalTryUnconsInner evalApply fnName evaledArgs originOpt world with
+    let evalTail evalApply fnName argsEvaled originOpt world =
+        match evalTryUnconsInner evalApply fnName argsEvaled originOpt world with
         | Right (Right struct (_, tail, world)) -> struct (tail, world)
         | Right (Left world) -> struct (Violation (["OutOfRangeArgument"; String.capitalize fnName], "Cannot apply " + fnName + " to a container with no elements.", originOpt), world)
         | Left error -> error
@@ -796,7 +796,7 @@ module ScriptingPrimitives =
             struct (Add (leftMapped, rightMapped), world)
         | Unfold (unfolder, codata) ->
             let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
-            let args = [|unfolder; Binding ("state", ref UncachedBinding, originOpt)|]
+            let args = [|unfolder; Binding ("state", ref UncachedBinding, ref Environmental, originOpt)|]
             let unfolder = Unfold (Fun ([|"state"|], 1, Apply (args, breakpoint, originOpt), false, None, originOpt), codata)
             struct (unfolder, world)
         | Conversion list ->
@@ -973,8 +973,8 @@ module ScriptingPrimitives =
         | Violation _ as error -> struct (error, world)
         | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
 
-    let evalList _ evaledArgs _ world =
-        struct (List (List.ofArray evaledArgs), world)
+    let evalList _ argsEvaled _ world =
+        struct (List (List.ofArray argsEvaled), world)
 
     let rec evalCodataToList evalApply fnName originOpt list codata world =
         match evalCodataTryUncons evalApply fnName originOpt codata world with
@@ -997,8 +997,8 @@ module ScriptingPrimitives =
         | Violation _ as error -> struct (error, world)
         | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Cannot apply " + fnName + " to a non-container.", originOpt), world)
 
-    let evalRing _ evaledArgs _ world =
-        struct (Ring (Set.ofArray evaledArgs), world)
+    let evalRing _ argsEvaled _ world =
+        struct (Ring (Set.ofArray argsEvaled), world)
 
     let evalToRing evalApply fnName evaledArg originOpt world =
         match evaledArg with
