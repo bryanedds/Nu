@@ -11,8 +11,7 @@ module ScriptingTests =
         { ScriptingEnv : Scripting.Env }
         interface TestWorld ScriptingWorld with
             member this.GetEnv () = this.ScriptingEnv
-            member this.IsExtrinsic _ = false
-            member this.EvalExtrinsic _ _ _ = failwithumf ()
+            member this.TryGetExtrinsic _ = failwithumf ()
             member this.TryImport _ _ = failwithnie ()
             member this.TryExport _ _ = failwithnie ()
         static member make () = { ScriptingEnv = Scripting.EnvModule.Env.make () }

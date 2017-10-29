@@ -22,12 +22,6 @@ module WorldScripting =
     let mutable Bindings =
         Unchecked.defaultof<Dictionary<string, string -> Expr array -> SymbolOrigin option -> World -> struct (Expr * World)>>
 
-    let mutable internal isBinding =
-        Unchecked.defaultof<string -> bool>
-
-    let mutable internal evalBinding =
-        Unchecked.defaultof<string -> Expr array -> SymbolOrigin option -> World -> struct (Expr * World)>
-
     type World with
 
         static member internal evalInternal expr world : struct (Expr * World) =
@@ -323,14 +317,13 @@ module WorldScripting =
             | struct ([|evaled; evaled2|], world) -> World.evalMonitor fnName evaled evaled2 originOpt world
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
             
-        static member internal isExtrinsic fnName =
-            if Extrinsics.ContainsKey fnName then true
-            else isBinding fnName
-
-        static member internal evalExtrinsic fnName exprs originOpt world =
+        static member internal tryGetExtrinsic fnName =
             match Extrinsics.TryGetValue fnName with
-            | (true, extrinsic) -> extrinsic fnName exprs originOpt world
-            | (false, _) -> evalBinding fnName exprs originOpt world
+            | (true, extrinsic) -> FOption.some extrinsic
+            | (false, _) ->
+                match Bindings.TryGetValue fnName with
+                | (true, binding) -> FOption.some binding
+                | (false, _) -> FOption.none ()
 
         static member internal initScripting () =
             let extrinsics =

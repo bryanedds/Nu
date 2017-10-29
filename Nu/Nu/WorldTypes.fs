@@ -972,8 +972,7 @@ module WorldTypes =
           LayerDispatchers : Map<string, LayerDispatcher>
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
-          IsExtrinsic : string -> bool
-          EvalExtrinsic : string -> Scripting.Expr array -> SymbolOrigin option -> World -> struct (Scripting.Expr * World)
+          TryGetExtrinsic : string -> (string -> Scripting.Expr array -> SymbolOrigin option -> World -> struct (Scripting.Expr * World)) FOption
           UpdateEntityInEntityTree : bool -> ViewType -> Vector4 -> Entity -> World -> World -> World
           RebuildEntityTree : Screen -> World -> Entity SpatialTree }
     
@@ -1024,8 +1023,7 @@ module WorldTypes =
 
         interface World ScriptingWorld with
             member this.GetEnv () = this.ScriptingEnv
-            member this.IsExtrinsic fnName = this.Dispatchers.IsExtrinsic fnName
-            member this.EvalExtrinsic fnName exprs originOpt = this.Dispatchers.EvalExtrinsic fnName exprs originOpt this
+            member this.TryGetExtrinsic fnName = this.Dispatchers.TryGetExtrinsic fnName
 
             member this.TryImport ty value =
                 match (ty.Name, value) with
