@@ -48,7 +48,7 @@ module KeyedCacheModule =
             cacheKey
             keyedCache =
             if not (keyEquality.Invoke (keyedCache.CacheKey, cacheKey)) then
-                let freshKvp = getFreshKeyAndValue.Invoke ()
+                let freshKvp = getFreshKeyAndValue ()
                 keyedCache.CacheKey <- freshKvp.Key
                 keyedCache.CacheValue <- freshKvp.Value
                 freshKvp.Value

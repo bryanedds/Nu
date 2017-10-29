@@ -503,8 +503,8 @@ module ScriptingUnary =
           Table = fun _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a Table to a String.", originOpt)
           Record = fun _ _ _ originOpt -> Violation (["InvalidArgumentType"; "String"], "Cannot convert a Record to a String.", originOpt) }
 
-    let evalBoolUnary fn fnName evaledArgs originOpt (world : 'w) =
-        match evaledArgs with
+    let evalBoolUnary fn fnName argsEvaled originOpt (world : 'w) =
+        match argsEvaled with
         | [|evaledArg|] ->
             match evaledArg with
             | Bool bool -> struct (Bool (fn bool), world)
@@ -531,7 +531,7 @@ module ScriptingUnary =
         | Violation _ as violation -> struct (violation, world)
         | _ -> struct (Violation (["InvalidArgumentType"; (String.capitalize fnName)], "Cannot apply an unary function on an incompatible value.", originOpt), world)
 
-    let evalUnary fns fnName evaledArgs originOpt (world : 'w) =
-        match evaledArgs with
+    let evalUnary fns fnName argsEvaled originOpt (world : 'w) =
+        match argsEvaled with
         | [|evaledArg|] -> evalUnaryInner fns fnName evaledArg originOpt world
         | _ -> struct (Violation (["InvalidArgumentCount"; (String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 1 argument required.", originOpt), world)

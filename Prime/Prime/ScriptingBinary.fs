@@ -282,7 +282,7 @@ module ScriptingBinary =
         | (_, (Violation _ as violation)) -> struct (violation, world)
         | _ -> struct (Violation (["InvalidArgumentType"; (String.capitalize fnName)], "Cannot apply a binary function on unlike or incompatible values.", originOpt), world)
 
-    let evalBinary fns fnName evaledArgs originOpt (world : 'w) =
-        match evaledArgs with
+    let evalBinary fns fnName argsEvaled originOpt (world : 'w) =
+        match argsEvaled with
         | [|evaledLeft; evaledRight|] -> evalBinaryInner fns fnName evaledLeft evaledRight originOpt world
         | _ -> struct (Violation (["InvalidArgumentCount"; (String.capitalize fnName)], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)

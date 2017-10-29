@@ -19,7 +19,7 @@ type 'w ScriptingWorld =
     interface
         abstract member GetEnv : unit -> Env
         abstract member IsExtrinsic : string -> bool
-        abstract member EvalExtrinsic : string -> SymbolOrigin option -> Expr array -> struct (Expr * 'w)
+        abstract member EvalExtrinsic : string -> Expr array -> SymbolOrigin option -> struct (Expr * 'w)
         abstract member TryImport : Type -> obj -> Expr option
         abstract member TryExport : Type -> Expr -> obj option
         end
@@ -33,8 +33,8 @@ module ScriptingWorld =
     let inline annotateWorld<'w when 'w :> 'w ScriptingWorld> (_ : 'w) =
         () // NOTE: simply infers that a type is a world.
 
-    let tryGetBinding<'w when 'w :> 'w ScriptingWorld> name cachedBinding (world : 'w) =
-        Env.tryGetBinding name cachedBinding (world.GetEnv ())
+    let tryGetBinding<'w when 'w :> 'w ScriptingWorld> name cachedBinding cachedBindingType (world : 'w) =
+        Env.tryGetBinding name cachedBinding cachedBindingType (world.GetEnv ())
 
     let tryAddDeclarationBinding<'w when 'w :> 'w ScriptingWorld> name value (world : 'w) =
         Env.tryAddDeclarationBinding name value (world.GetEnv ())
@@ -178,39 +178,42 @@ module ScriptingWorld =
             intrinsics
         else Intrinsics :?> Dictionary<string, string -> Expr array -> SymbolOrigin option -> 'w -> struct (Expr * 'w)>
 
-    and isIntrinsic<'w when 'w :> 'w ScriptingWorld>  fnName =
+    and isIntrinsic<'w when 'w :> 'w ScriptingWorld> fnName =
         let intrinsics = getIntrinsics<'w> ()
         intrinsics.ContainsKey fnName
 
-    and internal evalIntrinsicInner<'w when 'w :> 'w ScriptingWorld>  fnName evaledArgs originOpt (world : 'w) =
+    and internal evalIntrinsicInner<'w when 'w :> 'w ScriptingWorld> fnName argsEvaled originOpt (world : 'w) =
         let intrinsics = getIntrinsics ()
         match intrinsics.TryGetValue fnName with
-        | (true, intrinsic) -> intrinsic fnName evaledArgs originOpt world
+        | (true, intrinsic) -> intrinsic fnName argsEvaled originOpt world
         | (false, _) -> struct (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
 
-    and evalIntrinsic fnName evaledArgs originOpt world =
-        match evalIntrinsicInner fnName evaledArgs originOpt world with
-        | struct (Violation _, world) -> evalOverload fnName evaledArgs originOpt world
-        | success -> success
-
-    and evalOverload fnName evaledArgs originOpt world =
-        if Array.notEmpty evaledArgs then
-            match Array.last evaledArgs with
+    and evalOverload fnName argsEvaled originOpt world =
+        if Array.notEmpty argsEvaled then
+            match Array.last argsEvaled with
             | Pluggable pluggable ->
                 let pluggableTypeName = pluggable.TypeName
                 let xfnName = fnName + "_" + pluggableTypeName
-                let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
-                let evaleds = Array.cons xfnBinding evaledArgs
+                let xfnBinding = Binding (xfnName, ref UncachedBinding, ref UnknownBindingType, None)
+                let evaleds = Array.cons xfnBinding argsEvaled
                 evalApply evaleds originOpt world
             | Union (name, _)
             | Record (name, _, _) ->
                 let xfnName = fnName + "_" + name
-                let xfnBinding = Binding (xfnName, ref UncachedBinding, None)
-                let evaleds = Array.cons xfnBinding evaledArgs
+                let xfnBinding = Binding (xfnName, ref UncachedBinding, ref UnknownBindingType, None)
+                let evaleds = Array.cons xfnBinding argsEvaled
                 evalApply evaleds originOpt world
             | Violation _ as error -> struct (error, world)
             | _ -> struct (Violation (["InvalidOverload"], "Could not find overload for '" + fnName + "' for target.", originOpt), world)
         else struct (Violation (["InvalidFunctionTargetBinding"], "Cannot apply the non-existent binding '" + fnName + "'.", originOpt), world)
+
+    and evalIntrinsic fnName argsEvaled originOpt world =
+        match evalIntrinsicInner fnName argsEvaled originOpt world with
+        | struct (Violation _, world) -> evalOverload fnName argsEvaled originOpt world
+        | success -> success
+
+    and evalExtrinsic<'w when 'w :> 'w ScriptingWorld> fnName args originOpt (world : 'w) =
+        world.EvalExtrinsic fnName args originOpt
 
     and evalUnionUnevaled name exprs world =
         let struct (evaleds, world) = evalMany exprs world
@@ -239,13 +242,17 @@ module ScriptingWorld =
         let fields = evaledPairs |> List.map snd |> Array.ofList
         struct (Record (name, map, fields), world)
 
-    and evalBinding<'w when 'w :> 'w ScriptingWorld> expr name cachedBinding originOpt (world : 'w) =
-        // TODO: P1: do a LOT of optimization here!
-        match tryGetBinding name cachedBinding world with
+    and evalBinding<'w when 'w :> 'w ScriptingWorld> expr name cachedBinding cachedBindingType originOpt (world : 'w) =
+        match tryGetBinding name cachedBinding cachedBindingType world with
         | None ->
-            if world.IsExtrinsic name then struct (expr, world)
-            elif isIntrinsic<'w> name then struct (expr, world)
-            else struct (Violation (["NonexistentBinding"], "Non-existent binding '" + name + "'.", originOpt), world)
+            match !cachedBindingType with
+            | UnknownBindingType ->
+                if isIntrinsic<'w> name then cachedBindingType := Intrinsic; struct (expr, world)
+                elif world.IsExtrinsic name then cachedBindingType := Extrinsic; struct (expr, world)
+                else cachedBindingType := Environmental; struct (expr, world)
+            | Intrinsic -> struct (expr, world)
+            | Extrinsic -> struct (expr, world)
+            | Environmental -> struct (Violation (["NonexistentBinding"], "Non-existent binding '" + name + "'.", originOpt), world)
         | Some binding -> struct (binding, world)
 
     and evalUpdateIntInner fnName index target value originOpt world =
@@ -332,23 +339,38 @@ module ScriptingWorld =
     and evalApply<'w when 'w :> 'w ScriptingWorld> (exprs : Expr array) (originOpt : SymbolOrigin option) (world : 'w) : struct (Expr * 'w) =
         if Array.notEmpty exprs then
             let (exprsHead, exprsTail) = (Array.head exprs, Array.tail exprs)
-            let struct (evaledHead, world) = eval exprsHead world in annotateWorld world // force the type checker to see the world as it is
-            match evaledHead with
+            let struct (headEvaled, world) = eval exprsHead world in annotateWorld world // force the type checker to see the world as it is
+            match headEvaled with
             | Keyword keyword ->
-                let struct (evaledTail, world) = evalMany exprsTail world
-                let union = Union (keyword, evaledTail)
+                let struct (tailEvaled, world) = evalMany exprsTail world
+                let union = Union (keyword, tailEvaled)
                 struct (union, world)
-            | Binding (fnName, _, originOpt) ->
-                // NOTE: when evaluation leads here, we can (actually must) infer that we have
-                // either an extrinsic or intrinsic function.
-                if world.IsExtrinsic fnName then
+            | Binding (fnName, _, cachedBindingType, originOpt) ->
+                // NOTE: when evaluation leads here, we infer that we have either an extrinsic or intrinsic function,
+                // otherwise it would have led to the Fun case...
+                match cachedBindingType.Value with
+                | UnknownBindingType ->
+                    // NOTE: I'm not sure if the code should ever make it here...
+                    // TODO: see if we can replace the following code with failwithumf...
+                    if isIntrinsic<'w> fnName then
+                        cachedBindingType := Intrinsic
+                        let struct (tailEvaled, world) = evalMany exprsTail world
+                        evalIntrinsic fnName tailEvaled originOpt world
+                    elif world.IsExtrinsic fnName then
+                        cachedBindingType := Extrinsic
+                        let exprsTail = Array.tail exprs
+                        evalExtrinsic fnName exprsTail originOpt world
+                    else failwithumf ()
+                | Intrinsic ->
+                    let struct (tailEvaled, world) = evalMany exprsTail world
+                    evalIntrinsic fnName tailEvaled originOpt world
+                | Extrinsic ->
                     let exprsTail = Array.tail exprs
-                    world.EvalExtrinsic fnName originOpt exprsTail
-                else
-                    let struct (evaledTail, world) = evalMany exprsTail world
-                    evalIntrinsic fnName evaledTail originOpt world
+                    evalExtrinsic fnName exprsTail originOpt world
+                | Environmental ->
+                    failwithumf ()
             | Fun (pars, parsCount, body, _, framesOpt, originOpt) ->
-                let struct (evaledTail, world) = evalMany exprsTail world
+                let struct (tailEvaled, world) = evalMany exprsTail world
                 let struct (framesCurrentOpt, world) =
                     match framesOpt with
                     | Some frames ->
@@ -357,8 +379,8 @@ module ScriptingWorld =
                         struct (Some framesCurrent, world)
                     | None -> struct (None, world)
                 let struct (evaled, world) =
-                    if evaledTail.Length = parsCount then
-                        let bindings = Array.map2 (fun par evaledArg -> struct (par, evaledArg)) pars evaledTail
+                    if tailEvaled.Length = parsCount then
+                        let bindings = Array.map2 (fun par evaledArg -> struct (par, evaledArg)) pars tailEvaled
                         addProceduralBindings (AddToNewFrame parsCount) bindings world
                         let struct (evaled, world) = eval body world
                         removeProceduralBindings world
@@ -370,7 +392,7 @@ module ScriptingWorld =
                     struct (evaled, world)
                 | None -> struct (evaled, world)
             | Violation _ as error -> struct (error, world)
-            | _ -> struct (Violation (["MalformedApplication"], "Cannot apply the non-binding '" + scstring evaledHead + "'.", originOpt), world)
+            | _ -> struct (Violation (["MalformedApplication"], "Cannot apply the non-binding '" + scstring headEvaled + "'.", originOpt), world)
         else struct (Unit, world)
 
     and evalApplyAnd exprs originOpt world =
@@ -561,7 +583,7 @@ module ScriptingWorld =
         | UnionUnevaled (name, exprs) -> evalUnionUnevaled name exprs world
         | TableUnevaled exprPairs -> evalTableUnevaled exprPairs world
         | RecordUnevaled (name, exprPairs) -> evalRecordUnevaled name exprPairs world
-        | Binding (name, cachedBinding, originOpt) as expr -> evalBinding expr name cachedBinding originOpt world
+        | Binding (name, cachedBinding, cachedBindingType, originOpt) as expr -> evalBinding expr name cachedBinding cachedBindingType originOpt world
         | TryUpdate (expr, expr2, expr3, _, originOpt) -> evalTryUpdate "tryUpdate" expr expr2 expr3 originOpt world
         | Update (expr, expr2, expr3, _, originOpt) -> evalUpdate "update" expr expr2 expr3 originOpt world
         | Apply (exprs, _, originOpt) -> evalApply exprs originOpt world

@@ -11,6 +11,16 @@ open Nu
 [<AutoOpen; ModuleBinding>]
 module WorldModuleEntity =
 
+    /// Dynamic property getters.
+    let internal Getters = Dictionary<string, Entity -> World -> Property> HashIdentity.Structural
+
+    /// Dynamic property setters.
+    let internal Setters = Dictionary<string, Property -> Entity -> World -> bool * World> HashIdentity.Structural
+
+    /// Mutable clipboard that allows its state to persist beyond undo / redo.
+    let mutable private Clipboard : obj option = None
+
+    // avoids closure allocation in tight-loop
     type private KeyEquality () =
         inherit OptimizedClosures.FSharpFunc<
             KeyValuePair<
@@ -26,37 +36,14 @@ module WorldModuleEntity =
              entityStateKey2 : KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>) =
             refEq entityStateKey.Key entityStateKey2.Key &&
             refEq entityStateKey.Value entityStateKey2.Value
-
-    type private GetFreshKeyAndValue () =
-        inherit FSharpFunc<
-            Unit,
-            KeyValuePair<
-                KeyValuePair<
-                    Entity Address,
-                    UMap<Entity Address, EntityState>>,
-                EntityState FOption>> ()
-        let mutable entity = Unchecked.defaultof<Entity>
-        let mutable world = Unchecked.defaultof<World>
-        member this.Entity with get () = entity and set value = entity <- value
-        member this.World with get () = world and set value = world <- value
-        override this.Invoke _ =
-            let entityStateOpt = UMap.tryFindFast entity.EntityAddress world.EntityStates
-            KeyValuePair (KeyValuePair (entity.EntityAddress, world.EntityStates), entityStateOpt)
-
-    /// Dynamic property getters.
-    let internal Getters = Dictionary<string, Entity -> World -> Property> HashIdentity.Structural
-
-    /// Dynamic property setters.
-    let internal Setters = Dictionary<string, Property -> Entity -> World -> bool * World> HashIdentity.Structural
-
-    /// Mutable clipboard that allows its state to persist beyond undo / redo.
-    let mutable private Clipboard : obj option = None
-
-    // avoids clojure allocation in tight-loop
     let private keyEquality = KeyEquality ()
 
-    // avoids clojure allocation in tight-loop
-    let private getFreshKeyAndValue = GetFreshKeyAndValue ()
+    // avoids closure allocation in tight-loop
+    let mutable private getFreshKeyAndValueEntity = Unchecked.defaultof<Entity>
+    let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
+    let private getFreshKeyAndValue _ =
+        let entityStateOpt = UMap.tryFindFast getFreshKeyAndValueEntity.EntityAddress getFreshKeyAndValueWorld.EntityStates
+        KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity.EntityAddress, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
 
     type World with
 
@@ -64,16 +51,16 @@ module WorldModuleEntity =
             // OPTIMIZATION: a ton of optimization has gone down in here...!
             let entityStateOpt = entity.EntityStateOpt
             if isNull (entityStateOpt :> obj) then
-                getFreshKeyAndValue.Entity <- entity
-                getFreshKeyAndValue.World <- world
+                getFreshKeyAndValueEntity <- entity
+                getFreshKeyAndValueWorld <- world
                 let entityStateOpt =
                     KeyedCache.getValueFast
                         keyEquality
                         getFreshKeyAndValue
                         (KeyValuePair (entity.EntityAddress, world.EntityStates))
                         (World.getEntityCachedOpt world)
-                getFreshKeyAndValue.Entity <- Unchecked.defaultof<Entity>
-                getFreshKeyAndValue.World <- Unchecked.defaultof<World>
+                getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
+                getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
                 if FOption.isSome entityStateOpt then
                     let entityState = FOption.get entityStateOpt
                     if  entityState.CachableNp &&

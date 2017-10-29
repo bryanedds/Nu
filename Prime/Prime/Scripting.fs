@@ -8,6 +8,12 @@ open System.ComponentModel
 open Prime
 module Scripting =
 
+    type BindingType =
+        | UnknownBindingType
+        | Intrinsic
+        | Extrinsic
+        | Environmental
+
     type Pluggable =
         inherit IComparable
         abstract member TypeName : string
@@ -113,7 +119,7 @@ module Scripting =
         | RecordUnevaled of string * (string * Expr) list
 
         (* Special Forms *)
-        | Binding of string * CachedBinding ref * SymbolOrigin option
+        | Binding of string * CachedBinding ref * BindingType ref * SymbolOrigin option
         | TryUpdate of Expr * Expr * Expr * Breakpoint * SymbolOrigin option
         | Update of Expr * Expr * Expr * Breakpoint * SymbolOrigin option
         | Apply of Expr array * Breakpoint * SymbolOrigin option
@@ -155,7 +161,7 @@ module Scripting =
             | UnionUnevaled _
             | TableUnevaled _
             | RecordUnevaled _ -> None
-            | Binding (_, _, originOpt)
+            | Binding (_, _, _, originOpt)
             | TryUpdate (_, _, _, _, originOpt)
             | Update (_, _, _, _, originOpt)
             | Apply (_, _, originOpt)
@@ -195,7 +201,7 @@ module Scripting =
             | (UnionUnevaled (leftName, leftExprs), UnionUnevaled (rightName, rightExprs)) -> (leftName, leftExprs) = (rightName, rightExprs)
             | (TableUnevaled left, TableUnevaled right) -> left = right
             | (RecordUnevaled (leftName, leftExprs), RecordUnevaled (rightName, rightExprs)) -> (leftName, leftExprs) = (rightName, rightExprs)
-            | (Binding (left, _, _), Binding (right, _, _)) -> left = right
+            | (Binding (left, _, _, _), Binding (right, _, _, _)) -> left = right
             | (TryUpdate (leftExpr, leftExpr2, leftExpr3, _, _), TryUpdate (rightExpr, rightExpr2, rightExpr3, _, _)) -> (leftExpr, leftExpr2, leftExpr3) = (rightExpr, rightExpr2, rightExpr3)
             | (Update (leftExpr, leftExpr2, leftExpr3, _, _), TryUpdate (rightExpr, rightExpr2, rightExpr3, _, _)) -> (leftExpr, leftExpr2, leftExpr3) = (rightExpr, rightExpr2, rightExpr3)
             | (Apply (left, _, _), Apply (right, _, _)) -> left = right
@@ -424,7 +430,7 @@ module Scripting =
                     let nameSymbol = Atom (name, None)
                     let fieldSymbols = List.map (fun (name, field) -> Symbols ([Atom (name, None); this.ExprToSymbol field], None)) fields
                     Symbols (recordSymbol :: nameSymbol :: fieldSymbols, None) :> obj
-                | Binding (name, _, originOpt) ->
+                | Binding (name, _, _, originOpt) ->
                     if name = "index" then Atom ("Index", originOpt) :> obj
                     else Atom (name, originOpt) :> obj
                 | TryUpdate (expr, expr2, expr3, _, originOpt) ->
@@ -524,7 +530,7 @@ module Scripting =
                     | "none" | "None" -> Option None :> obj
                     | "nil" -> Keyword String.Empty :> obj
                     | "empty" -> Codata Empty :> obj
-                    | "Index" -> Binding ("index", ref UncachedBinding, originOpt) :> obj
+                    | "Index" -> Binding ("index", ref UncachedBinding, ref UnknownBindingType, originOpt) :> obj
                     | "NaN" -> Single Single.NaN :> obj // NOTE: can't tell the difference between a single NaN and a double NaN!
                     | "Infinity" -> Double Double.PositiveInfinity :> obj
                     | "-Infinity" -> Double Double.NegativeInfinity :> obj
@@ -534,7 +540,7 @@ module Scripting =
                         let firstChar = str.[0]
                         if firstChar = Constants.Relation.Slot || Char.IsUpper firstChar
                         then Keyword str :> obj
-                        else Binding (str, ref UncachedBinding, originOpt) :> obj
+                        else Binding (str, ref UncachedBinding, ref UnknownBindingType, originOpt) :> obj
                 | Number (str, originOpt) ->
                     match Int32.TryParse str with
                     | (false, _) ->
@@ -781,7 +787,7 @@ module Scripting =
                 | Some struct (_, binding) -> Some (struct (binding, !offsetRef, (!indexOptRef).Value))
                 | None -> None
 
-            let tryGetBinding name cachedBinding env =
+            let tryGetBinding name cachedBinding (_ : BindingType ref) env =
                 match !cachedBinding with
                 | UncachedBinding ->
                     match tryGetProceduralBinding name env with

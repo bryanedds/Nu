@@ -106,7 +106,7 @@ module WorldTypes =
         { OldWorldWithOldState : World }
 
     /// Describes the information needed to sort simulants.
-    /// OPTIMIZATION: carries related entity to avoid GC pressure.
+    /// OPTIMIZATION: carries related simulant to avoid GC pressure.
     and [<Struct; CustomEquality; CustomComparison>] SortPriority =
         { SortDepth : single
           SortTarget : Simulant }
@@ -1025,7 +1025,7 @@ module WorldTypes =
         interface World ScriptingWorld with
             member this.GetEnv () = this.ScriptingEnv
             member this.IsExtrinsic fnName = this.Dispatchers.IsExtrinsic fnName
-            member this.EvalExtrinsic fnName originOpt exprs = this.Dispatchers.EvalExtrinsic fnName exprs originOpt this
+            member this.EvalExtrinsic fnName exprs originOpt = this.Dispatchers.EvalExtrinsic fnName exprs originOpt this
 
             member this.TryImport ty value =
                 match (ty.Name, value) with
