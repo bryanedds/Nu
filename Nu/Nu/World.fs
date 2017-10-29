@@ -126,7 +126,7 @@ module WorldModule3 =
             Map.ofList [World.pairWithName (LayerDispatcher ())]
 
         static member private makeDefaultEntityDispatchers () =
-            // TODO: see if we can reflectively generate these
+            // TODO: consider if we shoud reflectively generate these
             Map.ofListBy World.pairWithName ^
                 [EntityDispatcher ()
                  ImperativeDispatcher () :> EntityDispatcher
@@ -146,6 +146,7 @@ module WorldModule3 =
                  TileMapDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
+            // TODO: consider if we shoud reflectively generate these
             Map.ofList
                 [(typeof<NodeFacet>.Name, NodeFacet () :> Facet)
                  (typeof<EffectFacet>.Name, EffectFacet () :> Facet)

@@ -444,7 +444,7 @@ module WorldTypes =
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
             let eyeCenter = Vector2.Zero
-            // TODO: P1: see if the following is too hard-coded?
+            // TODO: P1: consider if eyeSize is too hard-coded
             let eyeSize = Vector2 (single Constants.Render.DefaultResolutionX, single Constants.Render.DefaultResolutionY)
             { Id = makeGuid ()
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()

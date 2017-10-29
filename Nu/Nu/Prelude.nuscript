@@ -235,7 +235,7 @@
 ; Mathematical constant e as a single value.
 [define e 2.71828f]
 
-#| Nu Script Extensions. TODO: import Prelude.script rather than pasting it above? |#
+#| Nu Script Extensions. |#
 
 ; Vector2 extensions.
 [define toEmpty_Vector2 [_] [v2 0f 0f]]

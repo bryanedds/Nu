@@ -45,7 +45,6 @@ type [<Struct; StructuralEquality; NoComparison>] TextDescriptor =
       Color : Vector4 }
 
 /// Describes how to render a layered 'thing' to the rendering system.
-/// TODO: P1: make this a struct when F# allows it.
 type [<Struct; StructuralEquality; NoComparison>] LayeredDescriptor =
     | SpriteDescriptor of SpriteDescriptor : SpriteDescriptor
     | SpritesDescriptor of SpriteDescriptors : SpriteDescriptor array

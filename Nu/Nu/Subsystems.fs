@@ -13,8 +13,7 @@ type SubsystemMessage = obj
 type SubsystemResult = obj
 
 /// The type of subsystem. Dictates where subsystem's processing happens in the game loop.
-/// TODO: P1: make this a struct when F# allows it.
-type SubsystemType =
+type [<Struct>] SubsystemType =
     | UpdateType
     | RenderType
     | AudioType
