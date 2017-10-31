@@ -398,24 +398,6 @@ module WorldTypes =
         interface SimulantDescriptor with
             member this.Children = []
 
-    /// A simulant in the world.
-    and Simulant =
-        interface
-            inherit Participant
-            abstract member SimulantAddress : Simulant Address
-            end
-
-    /// Operators for the Simulant type.
-    and SimulantOperators =
-        private
-            | SimulantOperators
-
-        /// Concatenate two addresses, forcing the type of first address.
-        static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
-
-        /// Concatenate two addresses, takings the type of first address.
-        static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
-
     /// Generalized interface for simulant state.
     and SimulantState =
         interface
@@ -757,12 +739,23 @@ module WorldTypes =
         interface SimulantState with
             member this.GetXtension () = this.Xtension
 
-    /// The null simulant.
-    and private NullSimulant () =
-        interface Simulant with
-            member this.ParticipantAddress = Address.empty
-            member this.SimulantAddress = Address.empty
+    /// A simulant in the world.
+    and Simulant =
+        interface
+            inherit Participant
+            abstract member SimulantAddress : Simulant Address
             end
+
+    /// Operators for the Simulant type.
+    and SimulantOperators =
+        private
+            | SimulantOperators
+
+        /// Concatenate two addresses, forcing the type of first address.
+        static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
+
+        /// Concatenate two addresses, takings the type of first address.
+        static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =
