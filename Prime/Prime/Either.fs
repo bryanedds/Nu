@@ -12,9 +12,9 @@ type Either<'l, 'r> =
 
 /// Builds an either monad.
 type EitherBuilder () =
-    member inline this.Bind (a, f) = match a with Right r -> f r | Left l -> Left l
     member inline this.Return a = Right a
     member inline this.ReturnFrom a = a
+    member inline this.Bind (a, f) = match a with Right r -> f r | Left l -> Left l
     member this.Using (d, b) = use u = d in b u
     member this.TryWith (b, h) = try b () with exn -> h exn
     member this.TryFinally (b, h) = try b () finally h ()
@@ -49,15 +49,15 @@ module EitherBuilderModule =
 
 [<RequireQualifiedAccess>]
 module Either =
-    
-    /// Monadic bind for Either.
-    let bind a f = either.Bind (a, f)
 
     /// Monadic return for Either.
-    let returnM a = either.Return a
+    let inline returnM a = either.Return a
 
     /// Monadic 'return from' for Either.
-    let returnFrom a = either.ReturnFrom a
+    let inline returnFrom a = either.ReturnFrom a
+
+    /// Monadic bind for Either.
+    let inline bind a f = either.Bind (a, f)
 
     /// Query whether an Either value is a Left value.
     let isLeft eir =
