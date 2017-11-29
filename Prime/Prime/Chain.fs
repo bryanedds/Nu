@@ -26,16 +26,6 @@ type ChainBuilder () =
     [<DebuggerHidden; DebuggerStepThrough>]
     member this.Bind (m : Chain<'e, 'a, 'g, 'w>, cont : 'a -> Chain<'e, 'b, 'g, 'w>) : Chain<'e, 'b, 'g, 'w> =
         Chain (fun world ->
-
-            // match m with Chain f -> 
-            //    f world (function
-            //        | world, Left m ->    ...
-            //        | world, Right v ->    ...    ) 
-
-            // Async<'T> = ('T -> unit) -> unit
-            // Async<'T> = ('T -> unit) * (exn -> unit) -> unit
-            // ???? Async<'T> = ('T * 'W -> 'W) -> unit
-
             match (match m with Chain f -> f world) with
             //                             ^--- NOTE: unbounded recursion here
             | (world, Left m) -> (world, Left (fun e -> this.Bind (m e, cont)))
