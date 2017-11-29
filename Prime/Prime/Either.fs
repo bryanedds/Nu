@@ -26,37 +26,6 @@ module Either =
     /// Monadic 'return from' for Either.
     let returnFrom a = a
 
-    /// Builds an either monad.
-    type Builder () =
-        member inline this.Bind (a, f) = bind a f
-        member inline this.Return a = returnM a
-        member inline this.ReturnFrom a = returnFrom a
-        member this.Using (d, b) = use u = d in b u
-        member this.TryWith (b, h) = try b () with exn -> h exn
-        member this.TryFinally (b, h) = try b () finally h ()
-        member this.Delay f = f ()
-        member this.Run f = f ()
-        member this.Zero () = Right ()
-        member this.Yield a = Right a
-        member this.YieldFrom e = e
-        member this.Combine (a, b) = this.Bind (a, b)
-
-        member this.While (g, b) =
-            if g ()
-            then match b () with Right () -> this.While (g, b) | error -> error
-            else this.Zero ()
-
-        member this.For (sequence : _ seq, body) =
-            use enr = sequence.GetEnumerator ()
-            let mutable errorOpt = None
-            while enr.MoveNext () && Option.isNone errorOpt do
-                match body enr.Current with
-                | Right () -> ()
-                | left -> errorOpt <- Some left
-            match errorOpt with
-            | Some error -> error
-            | None -> this.Zero ()
-
     /// Query whether an Either value is a Left value.
     let isLeft eir =
         match eir with
@@ -102,7 +71,7 @@ module Either =
     /// Map over the right side of an Either value.
     let mapRight mapper eir =
         match eir with
-        | Right r -> Right ^ mapper r
+        | Right r -> Right (mapper r)
         | Left l -> Left l
 
     /// Split a sequences of Either values into a pair of left and right value lists.
@@ -126,6 +95,37 @@ module Either =
         match eir with
         | Right value -> pickFst value
         | Left value -> pickSnd value
+
+    /// Builds an either monad.
+    type Builder () =
+        member inline this.Bind (a, f) = bind a f
+        member inline this.Return a = returnM a
+        member inline this.ReturnFrom a = returnFrom a
+        member this.Using (d, b) = use u = d in b u
+        member this.TryWith (b, h) = try b () with exn -> h exn
+        member this.TryFinally (b, h) = try b () finally h ()
+        member this.Delay f = f ()
+        member this.Run f = f ()
+        member this.Zero () = Right ()
+        member this.Yield a = Right a
+        member this.YieldFrom e = e
+        member this.Combine (a, b) = this.Bind (a, b)
+
+        member this.While (g, b) =
+            if g ()
+            then match b () with Right () -> this.While (g, b) | error -> error
+            else this.Zero ()
+
+        member this.For (sequence : _ seq, body) =
+            use enr = sequence.GetEnumerator ()
+            let mutable errorOpt = None
+            while enr.MoveNext () && Option.isNone errorOpt do
+                match body enr.Current with
+                | Right () -> ()
+                | left -> errorOpt <- Some left
+            match errorOpt with
+            | Some error -> error
+            | None -> this.Zero ()
 
 [<AutoOpen>]
 module EitherOperators =
