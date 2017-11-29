@@ -229,7 +229,7 @@ module TypeExtension =
         /// Try to get a custom type converter for the given type.
         member this.TryGetCustomTypeConverter () =
             let globalConverterAttributes =
-                [|for attribute in TypeDescriptor.GetAttributes this do
+                [| for attribute in TypeDescriptor.GetAttributes this do
                     match attribute with
                     | :? TypeConverterAttribute as tca -> yield tca
                     | _ -> () |]

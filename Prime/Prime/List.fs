@@ -98,7 +98,8 @@ module List =
             match list2 with
             | [] -> false
             | head2 :: tail2 ->
-                if pred head head2 then forall2Plus pred tail tail2
+                if pred head head2
+                then forall2Plus pred tail tail2
                 else false
 
     /// Threads a computation state through the adjacent members of a list.
@@ -299,8 +300,7 @@ module List =
     /// Compute the 'power set' of a list.
     /// Example - [0, 1, 2] becomes [[]; [0]; [0; 1]; [0; 1; 2]]
     let power list =
-        [for x in 0 .. List.length list do
-            yield List.take x list]
+        [for x in 0 .. List.length list do yield List.take x list]
 
     /// Compare a list of strings lexicographically.
     let rec inline compareStrings (list : string list) (list2 : string list) =

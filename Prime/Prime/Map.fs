@@ -21,10 +21,7 @@ module Map =
     
     /// Add multiple values to a map.
     let addMany kvps map =
-        Seq.fold
-            (fun map (key, value) -> Map.add key value map)
-            map
-            kvps
+        Seq.fold (fun map (key, value) -> Map.add key value map) map kvps
     
     /// Make a map from a seq by a function.
     let ofSeqBy by seq =
