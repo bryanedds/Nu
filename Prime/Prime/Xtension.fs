@@ -9,7 +9,7 @@ open Prime
 module XtensionModule =
 
     /// Xtensions (and their supporting types) are a dynamic, functional, and convenient way
-    /// to implement dynamic properties.
+    /// to implement dynamic / designer properties.
     type [<NoEquality; NoComparison>] Xtension =
         private
             { Properties : PropertyMap
@@ -34,7 +34,11 @@ module XtensionModule =
                 // return property directly if the return type matches, otherwise the default value for that type
                 let property = FOption.get propertyOpt
                 match property.PropertyValue with
-                | :? 'a as propertyValue -> propertyValue
+                | :? DesignerProperty as desProperty ->
+                    match desProperty.DesignerValue with
+                    | :? 'a as propertyValue -> propertyValue
+                    | _ -> failwith ("Xtension property '" + propertyName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'a>.Name + "'.")
+                | :? 'a as value -> value
                 | _ -> failwith ("Xtension property '" + propertyName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'a>.Name + "'.")
 
             else
@@ -46,15 +50,26 @@ module XtensionModule =
         /// Example:
         ///     let xtn = xtn.Position <- Vector2 (4.0, 5.0).
         static member (?<-) (xtension, propertyName, value : 'a) =
+            if typeof<'a> = typeof<DesignerProperty> then failwith "Cannot directly set an Xtension property to a DesignerProperty."
             let propertyOpt = UMap.tryFindFast propertyName xtension.Properties
             if FOption.isSome propertyOpt then
                 let mutable property = FOption.get propertyOpt
                 if xtension.Sealed && property.PropertyType <> typeof<'a> then failwith "Cannot change the type of a sealed Xtension's property."
-                if xtension.Imperative then property.PropertyValue <- value :> obj; xtension
+                if xtension.Imperative then
+                    match property.PropertyValue with
+                    | :? DesignerProperty as desProperty -> desProperty.DesignerValue <- value :> obj
+                    | _ -> property.PropertyValue <- value :> obj
+                    xtension
                 else
-                    let property = { property with PropertyValue = value :> obj }
-                    let properties = UMap.add propertyName property xtension.Properties
-                    { xtension with Properties = properties }
+                    match property.PropertyValue with
+                    | :? DesignerProperty as desProperty ->
+                        let property = { property with PropertyValue = { desProperty with DesignerValue = value }}
+                        let properties = UMap.add propertyName property xtension.Properties
+                        { xtension with Properties = properties }
+                    | _ ->
+                        let property = { property with PropertyValue = value :> obj }
+                        let properties = UMap.add propertyName property xtension.Properties
+                        { xtension with Properties = properties }
             else
                 if xtension.Sealed then failwith "Cannot add property to a sealed Xtension."
                 let property = { PropertyType = typeof<'a>; PropertyValue = value :> obj }
@@ -63,7 +78,7 @@ module XtensionModule =
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Xtension =
-
+    
         /// The TConfig of Xtension's T/U structures.
         let Config = Functional
     
@@ -109,7 +124,7 @@ module XtensionModule =
                 if not xtension.Sealed
                 then (true, { xtension with Properties = UMap.add name property xtension.Properties })
                 else (false, xtension)
-    
+
         /// Set a property on an Xtension.
         let setProperty name property xtension =
             match trySetProperty name property xtension with

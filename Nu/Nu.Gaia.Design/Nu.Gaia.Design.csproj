@@ -41,7 +41,7 @@
       <HintPath>..\Nu.Dependencies\ScintillaNET\ScintillaNET.dll</HintPath>
     </Reference>
     <Reference Include="ScintillaNET FindReplaceDialog">
-      <HintPath>..\Nu.Dependencies\ScintillaNET-FindReplace\Release\ScintillaNET FindReplaceDialog.dll</HintPath>
+      <HintPath>..\Nu.Dependencies\ScintillaNET-FindReplace\Debug\ScintillaNET FindReplaceDialog.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

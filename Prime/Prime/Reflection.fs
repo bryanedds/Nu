@@ -83,10 +83,15 @@ type [<Struct; StructuralEquality; NoComparison>] PropertyDescriptor =
     { PropertyName : string
       PropertyType : Type }
 
-/// An Xtension property.
+/// A vanilla property.
 type [<Struct; StructuralEquality; NoComparison>] Property =
     { mutable PropertyType : Type
       mutable PropertyValue : obj }
+
+/// A designer-defined property.
+type [<NoEquality; NoComparison>] DesignerProperty =
+    { mutable DesignerType : Type
+      mutable DesignerValue : obj }
 
 /// A map of propertyies.
 /// NOTE: Xtension uses UMap because it's slightly faster when used in the Nu game engine, but

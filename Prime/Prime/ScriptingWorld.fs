@@ -323,6 +323,7 @@ module ScriptingWorld =
         | Right success -> success
         | Left error -> error
 
+    // TODO: decompose this function - it's too hard to read
     and evalApply<'w when 'w :> 'w ScriptingWorld> (exprs : Expr array) (originOpt : SymbolOrigin option) (world : 'w) : struct (Expr * 'w) =
         if Array.notEmpty exprs then
             let (exprsHead, exprsTail) = (Array.head exprs, Array.tail exprs)
