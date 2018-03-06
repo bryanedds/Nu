@@ -40,7 +40,8 @@
     <Reference Include="ScintillaNET">
       <HintPath>..\Nu.Dependencies\ScintillaNET\ScintillaNET.dll</HintPath>
     </Reference>
-    <Reference Include="ScintillaNET FindReplaceDialog">
+    <Reference Include="ScintillaNET FindReplaceDialog, Version=1.4.0.26906, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Nu.Dependencies\ScintillaNET-FindReplace\Debug\ScintillaNET FindReplaceDialog.dll</HintPath>
     </Reference>
     <Reference Include="System" />
@@ -93,7 +94,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <None Include="app.config" />
+    <None Include="App.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
