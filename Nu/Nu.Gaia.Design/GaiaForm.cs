@@ -1,5 +1,4 @@
-﻿using ScintillaNET_FindReplaceDialog;
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 
 namespace Nu.Gaia.Design
 {

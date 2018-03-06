@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.Linq;
 using ScintillaNET;
-using ScintillaNET_FindReplaceDialog;
+//using ScintillaNET_FindReplaceDialog;
 using System.Windows.Forms;
 
 namespace Nu.Gaia.Design
@@ -50,8 +50,8 @@ namespace Nu.Gaia.Design
             CharAdded += SymbolicTextBox_CharAdded;
 
             // Implement find/replace
-            MyFindReplace = new FindReplace(this);
-            KeyDown += SymbolicTextBox_KeyDown;
+            //MyFindReplace = new FindReplace(this);
+            //KeyDown += SymbolicTextBox_KeyDown;
         }
 
         public string Keywords0
@@ -99,29 +99,29 @@ namespace Nu.Gaia.Design
         {
             if (e.Control && !e.Shift && e.KeyCode == Keys.F)
             {
-                MyFindReplace.ShowIncrementalSearch();
-                e.SuppressKeyPress = true;
+                //MyFindReplace.ShowIncrementalSearch();
+                //e.SuppressKeyPress = true;
             }
             else if (e.Control && !e.Shift && e.KeyCode == Keys.H)
             {
-                MyFindReplace.ShowReplace();
-                e.SuppressKeyPress = true;
+                //MyFindReplace.ShowReplace();
+                //e.SuppressKeyPress = true;
             }
             else if (e.Control && e.Shift && e.KeyCode == Keys.F)
             {
-                MyFindReplace.ShowFind();
-                e.SuppressKeyPress = true;
+                //MyFindReplace.ShowFind();
+                //e.SuppressKeyPress = true;
             }
             else if (e.Control && e.Shift && e.KeyCode == Keys.H)
             {
-                MyFindReplace.ShowReplace();
-                e.SuppressKeyPress = true;
+                //MyFindReplace.ShowReplace();
+                //e.SuppressKeyPress = true;
             }
             else if (e.Control && e.KeyCode == Keys.G)
             {
-                GoTo MyGoTo = new GoTo(this);
-                MyGoTo.ShowGoToDialog();
-                e.SuppressKeyPress = true;
+                //GoTo MyGoTo = new GoTo(this);
+                //MyGoTo.ShowGoToDialog();
+                //e.SuppressKeyPress = true;
             }
             else if (e.Control && e.KeyCode == Keys.F3)
             {
@@ -132,8 +132,8 @@ namespace Nu.Gaia.Design
             }
             else if (e.Control && e.KeyCode == Keys.Escape)
             {
-                MyFindReplace.ClearAllHighlights();
-                e.SuppressKeyPress = true;
+                //MyFindReplace.ClearAllHighlights();
+                //e.SuppressKeyPress = true;
             }
             else if (e.Control && e.KeyCode == Keys.Space)
             {
@@ -240,6 +240,6 @@ namespace Nu.Gaia.Design
         private string keywords1 = string.Empty;
         private string keywordsImplicit = "True False Some None Right Left";
         private int lastSelectionPos = 0;
-        private FindReplace MyFindReplace;
+        //private FindReplace MyFindReplace;
     }
 }

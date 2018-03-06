@@ -77,6 +77,13 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                 let valueSymbol = toSymbol gargs.[1] kvp.Value
                 Symbols ([keySymbol; valueSymbol], None)
 
+            // symbolize DesignerProperty
+            elif sourceType = typeof<DesignerProperty> then
+                let property = source :?> DesignerProperty
+                let nameAtom = Atom (property.DesignerType.AssemblyQualifiedName, None)
+                let valueSymbol = toSymbol property.DesignerType property.DesignerValue
+                Symbols ([nameAtom; valueSymbol], None)
+
             // symbolize array
             elif sourceType.IsArray then
                 let items = Reflection.objToObjList source
@@ -211,8 +218,18 @@ type SymbolicConverter (printing : bool, pointType : Type) =
 
             | None ->
 
+                // desymbolize DesignerProperty
+                if destType = typeof<DesignerProperty> then
+                    match symbol with
+                    | Symbols ([Atom (aqTypeName, _); valueSymbol], _) ->
+                        let ty = Type.GetType(aqTypeName)
+                        let value = fromSymbol ty valueSymbol
+                        { DesignerType = ty; DesignerValue = value } :> obj
+                    | _ ->
+                        failconv "Expected Symbols containing an assembly-qualified type name Atom and a symbol value." (Some symbol)
+
                 // desymbolize array
-                if destType.IsArray then
+                elif destType.IsArray then
                     match symbol with
                     | Symbols (symbols, _) ->
                         let elements = List.map (fromSymbol (destType.GetElementType ())) symbols
@@ -221,7 +238,7 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                         failconv "Expected Symbols for conversion to array." (Some symbol)
 
                 // desymbolize unit
-                elif destType.Name = typeof<unit>.Name then
+                elif destType = typeof<unit> then
                     match symbol with
                     | Symbols ([], _) -> () :> obj
                     | _ -> failconv "Expected empty Symbols for conversion to unit." (Some symbol)
@@ -298,31 +315,31 @@ type SymbolicConverter (printing : bool, pointType : Type) =
 
                 // desymbolize Record
                 elif FSharpType.IsRecord destType then
-                        match symbol with
-                        | Symbols (symbols, _) ->
-                            if destType.IsDefined (typeof<SymbolicExpansionAttribute>, true) then
-                                let fieldInfos = FSharpType.GetRecordFields destType
-                                if List.forall (function Symbols ([Atom _; _], _) -> true | _ -> false) symbols then
-                                    let fieldMap =
-                                        symbols |>
-                                        List.map (function Symbols ([Atom (fieldName, _); fieldSymbol], _) -> (fieldName, fieldSymbol) | _ -> failwithumf ()) |>
-                                        Map.ofList
-                                    let fields =
-                                        Array.map
-                                            (fun (info : PropertyInfo) ->
-                                                match Map.tryFind info.Name fieldMap with
-                                                | Some fieldSymbol -> fromSymbol info.PropertyType fieldSymbol
-                                                | None -> info.PropertyType.GetDefaultValue ())
-                                            fieldInfos
-                                    FSharpValue.MakeRecord (destType, fields)
-                                else failconv "Expected Symbols in pairs for expanded Record" (Some symbol)
-                            else
-                                let fieldInfos = FSharpType.GetRecordFields destType
-                                let fields = symbols |> Array.ofList |> Array.mapi (fun i fieldSymbol -> fromSymbol fieldInfos.[i].PropertyType fieldSymbol)
-                                let fields = padWithDefaults fieldInfos fields
+                    match symbol with
+                    | Symbols (symbols, _) ->
+                        if destType.IsDefined (typeof<SymbolicExpansionAttribute>, true) then
+                            let fieldInfos = FSharpType.GetRecordFields destType
+                            if List.forall (function Symbols ([Atom _; _], _) -> true | _ -> false) symbols then
+                                let fieldMap =
+                                    symbols |>
+                                    List.map (function Symbols ([Atom (fieldName, _); fieldSymbol], _) -> (fieldName, fieldSymbol) | _ -> failwithumf ()) |>
+                                    Map.ofList
+                                let fields =
+                                    Array.map
+                                        (fun (info : PropertyInfo) ->
+                                            match Map.tryFind info.Name fieldMap with
+                                            | Some fieldSymbol -> fromSymbol info.PropertyType fieldSymbol
+                                            | None -> info.PropertyType.GetDefaultValue ())
+                                        fieldInfos
                                 FSharpValue.MakeRecord (destType, fields)
-                        | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
-                            failconv "Expected Symbols for conversion to unexpanded Record." (Some symbol)
+                            else failconv "Expected Symbols in pairs for expanded Record" (Some symbol)
+                        else
+                            let fieldInfos = FSharpType.GetRecordFields destType
+                            let fields = symbols |> Array.ofList |> Array.mapi (fun i fieldSymbol -> fromSymbol fieldInfos.[i].PropertyType fieldSymbol)
+                            let fields = padWithDefaults fieldInfos fields
+                            FSharpValue.MakeRecord (destType, fields)
+                    | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
+                        failconv "Expected Symbols for conversion to unexpanded Record." (Some symbol)
 
                 // desymbolize Union
                 elif FSharpType.IsUnion destType && destType <> typeof<string list> then
