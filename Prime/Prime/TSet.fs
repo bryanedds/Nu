@@ -82,7 +82,7 @@ module TSetModule =
 
         let makeFromSeq<'a when 'a : equality> config (items : 'a seq) =
             if TConfig.isFunctional config then
-                let hashSet = hashsetPlus items
+                let hashSet = hashSetPlus items
                 let hashSetOrigin = HashSet<'a> (hashSet, HashIdentity.Structural)
                 let set =
                     { TSetOpt = Unchecked.defaultof<'a TSet>
@@ -96,7 +96,7 @@ module TSetModule =
             else 
                 { TSetOpt = Unchecked.defaultof<'a TSet>
                   TConfig = config
-                  HashSet = hashsetPlus items
+                  HashSet = hashSetPlus items
                   HashSetOrigin = HashSet<'a> HashIdentity.Structural
                   Logs = []
                   LogsLength = 0 }

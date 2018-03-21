@@ -45,6 +45,7 @@ and EntityPropertyDescriptor (property, attributes) =
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) nodeProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "\rPhysics Properties"
+        elif propertyType = typeof<DesignerProperty> then "\rDesigner Properties"
         else "\rXtension Properties"
 
     override this.Description =

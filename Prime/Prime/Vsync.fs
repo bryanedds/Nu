@@ -8,7 +8,7 @@ open System.Threading
 open System.Threading.Tasks
 open Prime
 
-/// Async is missing a couple of functions, as we know...
+/// Async extensions.
 module Async =
 
     /// Creates an asynchronous operation that runs 'f' over computation of 'a'.

@@ -8,6 +8,7 @@ open System
 module RandModule =
 
     /// An immutable random number generator using the xorshift* algorithm.
+    /// TODO: P1: consider changing this to be exclusive of MaxValue.
     type [<StructuralEquality; NoComparison>] Rand =
         private
             { RandState : uint64 }
