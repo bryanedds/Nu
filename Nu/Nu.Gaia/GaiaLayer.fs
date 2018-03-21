@@ -46,11 +46,7 @@ and LayerPropertyDescriptor (property, attributes) =
 
     override this.Description =
         // HACK: lets user know the property's expected type
-        let typeName = propertyType.Name
-        let genericTypes = propertyType.GetGenericArguments ()
-        let genericTypeNameStrs = Array.map (fun (ty : Type) -> ty.Name) genericTypes
-        let genericTypeNamesStr = "<" + String.concat ", " genericTypeNameStrs + ">"
-        typeName.Replace ("`" + string (Array.length genericTypeNameStrs), genericTypeNamesStr)
+        Reflection.getSimplifiedTypeName propertyType
 
     override this.ComponentType = propertyType.DeclaringType
     override this.PropertyType = propertyType
