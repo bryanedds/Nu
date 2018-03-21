@@ -142,6 +142,14 @@ module Reflection =
         List.concat |>
         Map.ofListBy (fun definition -> (definition.PropertyName, definition)) |>
         Map.toValueList
+
+    /// A hack to retreive a simplified generic type name
+    let getSimplifiedTypeName (ty : Type) =
+        let typeName = ty.Name
+        let genericTypes = ty.GetGenericArguments ()
+        let genericTypeNameStrs = Array.map (fun (ty : Type) -> ty.Name) genericTypes
+        let genericTypeNamesStr = "<" + String.concat ", " genericTypeNameStrs + ">"
+        typeName.Replace ("`" + string (Array.length genericTypeNameStrs), genericTypeNamesStr)
         
     /// Try to read the target's member property from property descriptors.
     let private tryReadMemberProperty propertyDescriptors (property : PropertyInfo) target =
