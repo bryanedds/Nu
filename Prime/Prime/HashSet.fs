@@ -27,13 +27,13 @@ module HashSetExtension =
 module HashSetOperators =
 
     /// Make a concrete HashSet instance populated with the given items and using vanilla hashing.
-    let hashset items =
+    let hashSet items =
         let hashSet = HashSet ()
         for item in items do hashSet.TryAdd item |> ignore
         hashSet
 
     /// Make a concrete HashSet instance populated with the given items and using structural hashing.
-    let hashsetPlus items =
+    let hashSetPlus items =
         let hashSet = HashSet HashIdentity.Structural
         for item in items do hashSet.TryAdd item |> ignore
         hashSet

@@ -64,13 +64,13 @@ module Scripting =
              "let fun if match select try do break get set define " +
 
              (* Prelude Identifiers *)
-             // TODO: "substring update curry compose sort replace slice split " +
              "-u- -b- -i- -L- -f- -d- -s- -K- -T- -U- -o- -l- -r- -t- -R- -F- " +
              "isUnit isBool isInt isInt64 isSingle isDouble isString " +
              "isKeyword isTuple isUnion isOption isList isRing isTable isRecord isFunction " +
              "id flip isZero isIdentity isPositive isNegative isPositiveInfinity isNegativeInfinity isNaN " +
              "min max compare sign abs fst! snd! rev foldBackWhile foldBacki foldBack " +
              "reduceWhile reducei reduce definitize filter takeWhile take skipWhile skip " +
+             // TODO: "substring update curry compose sort replace slice split " +
              "countBy count notContains exists notExists zipBy zip pi e v2Zero v2Identity",
 
              (* Unions *)
@@ -795,9 +795,10 @@ module Scripting =
                         match tryGetDeclarationBinding name env with
                         | Some binding as bindingOpt ->
 #if DEBUG
-                            // NOTE: when debugging, we allow declaration bindings to be redefined, thus we can't cache
+                            // NOTE: when debugging, we allow declaration bindings to be redefined, thus we can't cache...
                             ignore binding
 #else
+                            // ...otherwise we can cache since bindings will be immutable
                             cachedBinding := DeclarationBinding binding
 #endif
                             bindingOpt

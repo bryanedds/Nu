@@ -313,13 +313,13 @@ module ScriptingWorld =
                 | struct (Violation _, _) as error -> Left error
                 | struct (_, _) as success -> Right success
 
-    and evalTryUpdate fnName indexerExpr targetExpr valueExpr originOpt world =
-        match evalUpdateInner fnName indexerExpr targetExpr valueExpr originOpt world with
+    and evalTryUpdate indexerExpr targetExpr valueExpr originOpt world =
+        match evalUpdateInner "tryUpdate" indexerExpr targetExpr valueExpr originOpt world with
         | Right struct (evaled, world) -> struct (Option (Some evaled), world)
         | Left struct (_, world) -> struct (Option None, world)
 
-    and evalUpdate fnName indexerExpr targetExpr valueExpr originOpt world =
-        match evalUpdateInner fnName indexerExpr targetExpr valueExpr originOpt world with
+    and evalUpdate indexerExpr targetExpr valueExpr originOpt world =
+        match evalUpdateInner "update" indexerExpr targetExpr valueExpr originOpt world with
         | Right success -> success
         | Left error -> error
 
@@ -567,8 +567,8 @@ module ScriptingWorld =
         | TableUnevaled exprPairs -> evalTableUnevaled exprPairs world
         | RecordUnevaled (name, exprPairs) -> evalRecordUnevaled name exprPairs world
         | Binding (name, cachedBinding, bindingType, originOpt) as expr -> evalBinding expr name cachedBinding bindingType originOpt world
-        | TryUpdate (expr, expr2, expr3, _, originOpt) -> evalTryUpdate "tryUpdate" expr expr2 expr3 originOpt world
-        | Update (expr, expr2, expr3, _, originOpt) -> evalUpdate "update" expr expr2 expr3 originOpt world
+        | TryUpdate (expr, expr2, expr3, _, originOpt) -> evalTryUpdate expr expr2 expr3 originOpt world
+        | Update (expr, expr2, expr3, _, originOpt) -> evalUpdate expr expr2 expr3 originOpt world
         | Apply (exprs, _, originOpt) -> evalApply exprs originOpt world
         | ApplyAnd (exprs, _, originOpt) -> evalApplyAnd exprs originOpt world
         | ApplyOr (exprs, _, originOpt) -> evalApplyOr exprs originOpt world

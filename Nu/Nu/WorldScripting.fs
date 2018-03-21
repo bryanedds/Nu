@@ -69,9 +69,15 @@ module WorldScripting =
             | Right struct (simulant, world) ->
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some property ->
-                    match ScriptingWorld.tryImport property.PropertyType property.PropertyValue world with
-                    | Some propertyValue -> struct (propertyValue, world)
-                    | None -> struct (Violation (["InvalidPropertyValue"; "Get"], "Property value could not be imported into scripting environment.", originOpt), world)
+                    match property.PropertyValue with
+                    | :? DesignerProperty as dp ->
+                        match ScriptingWorld.tryImport dp.DesignerType dp.DesignerValue world with
+                        | Some propertyValue -> struct (propertyValue, world)
+                        | None -> struct (Violation (["InvalidPropertyValue"; "Get"], "Property value could not be imported into scripting environment.", originOpt), world)
+                    | _ ->
+                        match ScriptingWorld.tryImport property.PropertyType property.PropertyValue world with
+                        | Some propertyValue -> struct (propertyValue, world)
+                        | None -> struct (Violation (["InvalidPropertyValue"; "Get"], "Property value could not be imported into scripting environment.", originOpt), world)
                 | None -> struct (Violation (["InvalidProperty"; "Get"], "Simulant or property value could not be found.", originOpt), world)
             | Left error -> error
 
@@ -96,13 +102,24 @@ module WorldScripting =
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some property ->
                     let struct (propertyValue, world) = World.evalInternal propertyValueExpr world
-                    match ScriptingWorld.tryExport property.PropertyType propertyValue world with
-                    | Some propertyValue ->
-                        let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                        match World.trySetSimulantProperty propertyName property simulant world with
-                        | (true, world) -> struct (Unit, world)
-                        | (false, world) -> struct (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
-                    | None -> struct (Violation (["InvalidPropertyValue"; "Set"], "Property value could not be exported into Simulant property.", originOpt), world)
+                    match property.PropertyValue with
+                    | :? DesignerProperty as dp ->
+                        match ScriptingWorld.tryExport property.PropertyType propertyValue world with
+                        | Some propertyValue ->
+                            let propertyValue = { dp with DesignerValue = propertyValue }
+                            let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
+                            match World.trySetSimulantProperty propertyName property simulant world with
+                            | (true, world) -> struct (Unit, world)
+                            | (false, world) -> struct (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
+                        | None -> struct (Violation (["InvalidPropertyValue"; "Set"], "Property value could not be exported into Simulant property.", originOpt), world)
+                    | _ ->
+                        match ScriptingWorld.tryExport property.PropertyType propertyValue world with
+                        | Some propertyValue ->
+                            let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
+                            match World.trySetSimulantProperty propertyName property simulant world with
+                            | (true, world) -> struct (Unit, world)
+                            | (false, world) -> struct (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
+                        | None -> struct (Violation (["InvalidPropertyValue"; "Set"], "Property value could not be exported into Simulant property.", originOpt), world)
                 | None -> struct (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
             | Left error -> error
 

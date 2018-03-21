@@ -59,7 +59,7 @@ module AddressModule =
     type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
         private
             { Names : string list
-              HashCode : int // OPTIMIZATION: hash cached for speed
+              HashCode : int // OPTIMIZATION: hash is cached for speed
               TypeCarrier : 'a -> unit }
     
         /// Make an address from a '/' delimited string.

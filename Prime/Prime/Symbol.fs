@@ -30,7 +30,7 @@ module SymbolOrigin =
         "[Ln: " + string origin.Stop.Line + ", Col: " + string origin.Stop.Column + "]"
 
     let printContext origin =
-        try // there's a lot of shit that can go wrong in here...
+        try // there's more than one thing that can go wrong in here...
             let sourceLines = origin.Source.Text.Split '\n'
             let problemLineIndex = int origin.Start.Line - 1
             let problemLinesStartCount = problemLineIndex - Math.Max (0, problemLineIndex - 3)
@@ -50,7 +50,7 @@ module SymbolOrigin =
                 String.replicate (int origin.Start.Column - 1) " " +
                 if origin.Start.Line = origin.Stop.Line
                 then String.replicate (int origin.Stop.Column - int origin.Start.Column) "^"
-                else "^^^^^^^"
+                else "^^^^^^^" // just use lots of carets...
             problemLinesStart + problemUnderline + problemLinesStop
         with exn ->
             // ...and I don't feel like dealing with all the specifics.
@@ -244,9 +244,9 @@ module Symbol =
         | Symbols (symbols, _) ->
             match symbols with
             | [Atom (str, _); Number _ as indexer; target] when str = IndexExpansion ->
-                 writeSymbol target + IndexStr + OpenSymbolsStr + writeSymbol indexer + CloseSymbolsStr
+                writeSymbol target + IndexStr + OpenSymbolsStr + writeSymbol indexer + CloseSymbolsStr
             | [Atom (str, _); indexer; target] when str = IndexExpansion ->
-                 writeSymbol target + IndexStr + writeSymbol indexer
+                writeSymbol target + IndexStr + writeSymbol indexer
             | _ ->
                 OpenSymbolsStr + String.concat " " (List.map writeSymbol symbols) + CloseSymbolsStr
 
@@ -409,7 +409,7 @@ module PrettyPrinter =
                             elif i > 0 then " "
                             else ""
                         elif headered then
-                            if i = (dec symbolsLength) then "\n" + String.init (inc depth) (fun _ -> " ")
+                            if i = dec symbolsLength then "\n" + String.init (inc depth) (fun _ -> " ")
                             elif i > 0 then " "
                             else ""
                         else

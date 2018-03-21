@@ -54,7 +54,7 @@ type RelationConverter (targetType : Type) =
 [<AutoOpen>]
 module RelationModule =
 
-    /// A relation that can be resolved to an address via projection.
+    /// A relation that can be resolved to an address via contextual resolution.
     type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>] 'a Relation =
         private
             { NameOpts : string option list

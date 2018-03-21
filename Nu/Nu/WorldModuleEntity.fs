@@ -470,7 +470,8 @@ module WorldModuleEntity =
             if World.entityExists entity world then
                 match Getters.TryGetValue propertyName with
                 | (false, _) ->
-                    match EntityState.tryGetProperty propertyName (World.getEntityState entity world) with
+                    let entityState = World.getEntityState entity world
+                    match EntityState.tryGetProperty propertyName entityState with
                     | None -> World.tryGetEntityCalculatedProperty propertyName entity world
                     | Some _ as propertyOpt -> propertyOpt
                 | (true, getter) -> Some (getter entity world)
@@ -479,7 +480,8 @@ module WorldModuleEntity =
         static member internal getEntityProperty propertyName entity world =
             match Getters.TryGetValue propertyName with
             | (false, _) ->
-                match EntityState.tryGetProperty propertyName (World.getEntityState entity world) with
+                let entityState = World.getEntityState entity world
+                match EntityState.tryGetProperty propertyName entityState with
                 | None ->
                     match World.tryGetEntityCalculatedProperty propertyName entity world with
                     | None -> failwithf "Could not find property '%s'." propertyName

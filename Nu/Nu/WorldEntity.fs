@@ -302,7 +302,10 @@ module WorldEntityModule =
                 match property with
                 | EntityPropertyDescriptor propertyDescriptor -> propertyDescriptor.PropertyName
                 | EntityPropertyInfo propertyInfo -> propertyInfo.Name
-            (World.getEntityProperty propertyName entity world).PropertyValue
+            let property = World.getEntityProperty propertyName entity world
+            match property.PropertyValue with
+            | :? DesignerProperty as dp -> dp.DesignerValue
+            | value -> value
 
         /// Set the entity's property value.
         static member setValue property propertyValue (entity : Entity) world =
@@ -310,7 +313,13 @@ module WorldEntityModule =
                 match property with
                 | EntityPropertyDescriptor propertyDescriptor -> (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType)
                 | EntityPropertyInfo propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)
-            World.setEntityProperty propertyName { PropertyType = propertyType; PropertyValue = propertyValue } entity world
+            let propertyOld = World.getEntityProperty propertyName entity world
+            match propertyOld.PropertyValue with
+            | :? DesignerProperty as dp ->
+                let propertyValue = { dp with DesignerValue = propertyValue }
+                let propertyValue = { PropertyType = typeof<DesignerProperty>; PropertyValue = propertyValue }
+                World.setEntityProperty propertyName propertyValue entity world
+            | _ -> World.setEntityProperty propertyName { PropertyType = propertyType; PropertyValue = propertyValue } entity world
 
         /// Get the property descriptors of as constructed from the given function in the given context.
         static member getPropertyDescriptors makePropertyDescriptor contextOpt =

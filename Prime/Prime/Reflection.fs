@@ -38,9 +38,9 @@ type [<Struct; NoEquality; NoComparison>] PropertyDefinition =
         if propertyDefinition.PropertyName = "FacetNames" then failwith "FacetNames cannot be an intrinsic property."
         if propertyDefinition.PropertyName = "OverlayNameOpt" then failwith "OverlayNameOpt cannot be an intrinsic property."
         if Array.exists (fun gta -> gta = typeof<obj>) propertyDefinition.PropertyType.GenericTypeArguments then
-            failwith ^
-                "Generic property definition lacking type information for property '" + propertyDefinition.PropertyName + "'. " +
-                "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options."
+            failwith
+                ("Generic property definition lacking type information for property '" + propertyDefinition.PropertyName + "'. " +
+                 "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options.")
 
     /// Make a property definition.
     static member make propertyName propertyType propertyExpr =

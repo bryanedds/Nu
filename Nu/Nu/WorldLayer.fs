@@ -241,7 +241,10 @@ module WorldLayerModule =
                 match property with
                 | LayerPropertyDescriptor propertyDescriptor -> propertyDescriptor.PropertyName
                 | LayerPropertyInfo propertyInfo -> propertyInfo.Name
-            (World.getLayerProperty propertyName layer world).PropertyValue
+            let property = World.getLayerProperty propertyName layer world
+            match property.PropertyValue with
+            | :? DesignerProperty as dp -> dp.DesignerValue
+            | value -> value
 
         /// Set the layer's property value.
         static member setValue property propertyValue (layer : Layer) world =
@@ -249,7 +252,13 @@ module WorldLayerModule =
                 match property with
                 | LayerPropertyDescriptor propertyDescriptor -> (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType)
                 | LayerPropertyInfo propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)
-            World.setLayerProperty propertyName { PropertyType = propertyType; PropertyValue = propertyValue } layer world
+            let propertyOld = World.getLayerProperty propertyName layer world
+            match propertyOld.PropertyValue with
+            | :? DesignerProperty as dp ->
+                let propertyValue = { dp with DesignerValue = propertyValue }
+                let propertyValue = { PropertyType = typeof<DesignerProperty>; PropertyValue = propertyValue }
+                World.setLayerProperty propertyName propertyValue layer world
+            | _ -> World.setLayerProperty propertyName { PropertyType = propertyType; PropertyValue = propertyValue } layer world
 
         /// Get the property descriptors of as constructed from the given function in the given context.
         static member getPropertyDescriptors makePropertyDescriptor contextOpt =
