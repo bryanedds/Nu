@@ -152,7 +152,7 @@ module List =
         List.choose id opts
 
     /// Convert option values to definite values, returning an additional flag to indicate that all value were some.
-    let definitizePlus opts =
+    let definitizePlus (opts : _ list)=
         let (flag, seq) = Seq.definitizePlus opts
         (flag, List.ofSeq seq)
 

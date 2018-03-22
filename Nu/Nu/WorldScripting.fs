@@ -4,8 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open System.Diagnostics
-open System.IO
+open FSharp.Reflection
 open OpenTK
 open Prime
 open Prime.Scripting
@@ -159,6 +158,79 @@ module WorldScripting =
                 | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Relation for its 2nd argument.", originOpt), world)
             | Violation _ as error -> struct (error, world)
             | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Function for its 1st argument.", originOpt), world)
+
+        /// Attempt to get a static type that matches the given expression.
+        static member tryGetType expr =
+            match expr with
+            | Scripting.Violation _ -> None
+            | Scripting.Unit -> Some typeof<unit>
+            | Scripting.Bool _ -> Some typeof<bool>
+            | Scripting.Int _ -> Some typeof<int>
+            | Scripting.Int64 _ -> Some typeof<int64>
+            | Scripting.Single _ -> Some typeof<single>
+            | Scripting.Double _ -> Some typeof<double>
+            | Scripting.String _ -> Some typeof<string>
+            | Scripting.Keyword _ -> None
+            | Scripting.Pluggable value ->
+                // TODO: P1: use a virtual dispatching?
+                match value with
+                | :? Vector2Pluggable -> Some typeof<Vector2>
+                | :? Vector4Pluggable -> Some typeof<Vector4>
+                | :? Vector2iPluggable -> Some typeof<Vector2i>
+                | _ -> None
+            | Scripting.Tuple value ->
+                let typeOpts = Array.map World.tryGetType value
+                match Array.definitizePlus typeOpts with
+                | (true, types) -> Some (FSharpType.MakeTupleType types)
+                | (false, _) -> None
+            | Scripting.Option value ->
+                match value with
+                | Some value' -> World.tryGetType value'
+                | None -> None
+            | Scripting.List values ->
+                let typeOpts = List.map World.tryGetType values
+                match List.definitizePlus typeOpts with
+                | (true, types) ->
+                    match types with
+                    | head :: tail ->
+                        if List.notExists (fun item -> item <> head) tail
+                        then Some (typedefof<_ list>.MakeGenericType [|head|])
+                        else None
+                    | [] -> None
+                | (false, _) -> None
+            | Scripting.Ring values ->
+                let typeOpts = List.map World.tryGetType (List.ofSeq values)
+                match List.definitizePlus typeOpts with
+                | (true, types) ->
+                    match types with
+                    | head :: tail ->
+                        if List.notExists (fun item -> item <> head) tail
+                        then Some (typedefof<_ Set>.MakeGenericType [|head|])
+                        else None
+                    | [] -> None
+                | (false, _) -> None
+            | Scripting.Table values ->
+                let keyOpts = List.map World.tryGetType (Map.toKeyList values)
+                match List.definitizePlus keyOpts with
+                | (true, keyTypes) ->
+                    match keyTypes with
+                    | keyHead :: keyTail ->
+                        if List.notExists (fun item -> item <> keyHead) keyTail then
+                            let valOpts = List.map World.tryGetType (Map.toValueList values)
+                            match List.definitizePlus valOpts with
+                            | (true, valTypes) ->
+                                match valTypes with
+                                | valHead :: valTail ->
+                                    if List.notExists (fun item -> item <> valHead) valTail
+                                    then Some (typedefof<Map<_, _>>.MakeGenericType [|keyHead; valHead|])
+                                    else None
+                                | [] -> None
+                            | (false, _) -> None
+                        else None
+                    | [] -> None
+                | (false, _) -> None
+            | Scripting.Record _ -> None
+            | _ -> None
 
         /// Attempt to evaluate the scripting prelude.
         static member tryEvalPrelude world =

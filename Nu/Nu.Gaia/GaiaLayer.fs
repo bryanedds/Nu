@@ -46,7 +46,7 @@ and LayerPropertyDescriptor (property, attributes) =
 
     override this.Description =
         // HACK: lets user know the property's expected type
-        Reflection.getSimplifiedTypeName propertyType
+        Reflection.getSimplifiedTypeNameHack propertyType
 
     override this.ComponentType = propertyType.DeclaringType
     override this.PropertyType = propertyType

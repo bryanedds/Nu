@@ -3,7 +3,6 @@
 
 namespace Prime
 open System
-open System.ComponentModel
 open System.Text
 
 [<RequireQualifiedAccess>]

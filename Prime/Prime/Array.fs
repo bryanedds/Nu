@@ -63,7 +63,7 @@ module Array =
         Array.choose id opts
 
     /// Convert option values to definite values, returning an additional flag to indicate that all values were some.
-    let definitizePlus opts =
+    let definitizePlus (opts : _ array) =
         let (flag, seq) = Seq.definitizePlus opts
         (flag, Array.ofSeq seq)
 
