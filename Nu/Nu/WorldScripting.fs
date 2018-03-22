@@ -201,9 +201,9 @@ module WorldScripting =
                 match Array.definitizePlus typeOpts with
                 | (true, types) -> Some (FSharpType.MakeTupleType types)
                 | (false, _) -> None
-            | Scripting.Option value ->
-                match value with
-                | Some value' -> World.tryGetType value'
+            | Scripting.Option opt ->
+                match opt with
+                | Some value -> World.tryGetType value
                 | None -> None
             | Scripting.List values ->
                 let typeOpts = List.map World.tryGetType values
