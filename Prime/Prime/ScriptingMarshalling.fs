@@ -5,7 +5,6 @@ namespace Prime
 open System
 open System.Collections.Generic
 open System.ComponentModel
-open System.Diagnostics
 open FSharp.Reflection
 open Prime
 open Prime.Scripting

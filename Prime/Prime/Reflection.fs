@@ -210,22 +210,29 @@ module TypeExtension =
     /// Type extension for Type.
     type Type with
 
-        /// Get the default value for a type.
+        /// Attempt to get the default value for a type.
         /// Never returns null.
-        member this.GetDefaultValue () =
-            if this.IsPrimitive then Activator.CreateInstance this
-            elif this = typeof<string> then String.Empty :> obj
-            elif this.Name = typedefof<_ array>.Name then Reflection.objsToArray this [||]
-            elif this.Name = typedefof<_ list>.Name then Reflection.objsToList this []
-            elif this.Name = typedefof<_ Set>.Name then Reflection.objsToSet this Set.empty
-            elif this.Name = typedefof<Map<_, _>>.Name then Reflection.pairsToMap this Map.empty
+        member this.TryGetDefaultValue () =
+            if this.IsPrimitive then Some (Activator.CreateInstance this)
+            elif this = typeof<string> then Some (String.Empty :> obj)
+            elif this.Name = typedefof<_ array>.Name then Some (Reflection.objsToArray this [||])
+            elif this.Name = typedefof<_ list>.Name then Some (Reflection.objsToList this [])
+            elif this.Name = typedefof<_ Set>.Name then Some (Reflection.objsToSet this Set.empty)
+            elif this.Name = typedefof<Map<_, _>>.Name then Some (Reflection.pairsToMap this Map.empty)
             elif FSharpType.IsUnion this then
                 let unionCases = FSharpType.GetUnionCases this
                 if (unionCases.[0].GetFields ()).Length = 0
-                then FSharpValue.MakeUnion (unionCases.[0], [||])
-                else failwithumf ()
-            elif isNotNull (this.GetConstructor [||]) then Activator.CreateInstance ()
-            else failwithumf ()
+                then Some (FSharpValue.MakeUnion (unionCases.[0], [||]))
+                else None
+            elif isNotNull (this.GetConstructor [||]) then Some (Activator.CreateInstance ())
+            else None
+
+        /// Get the default value for a type.
+        /// Never returns null.
+        member this.GetDefaultValue () =
+            match this.TryGetDefaultValue () with
+            | Some value -> value
+            | None -> failwithumf ()
 
         /// Get the type descriptor for this type as returned by the global TypeDescriptor.
         member this.GetTypeDescriptor () =

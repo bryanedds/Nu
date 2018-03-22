@@ -992,25 +992,40 @@ module Gaia =
     let private handleCreateEntityComboBoxSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
         form.overlayComboBox.SelectedIndex <- 0
 
-    let private handleEntityDesignerPropertyAddClick (form : GaiaForm) (_ : EventArgs) =
-        let propertyTypeText = form.entityDesignerPropertyTypeComboBox.Text
-        if propertyTypeText.StartsWith "_ : " then
-            ()
-        else
-            let world = !WorldRef
-            let expr = scvalue<Scripting.Expr> propertyTypeText
-            let selectedLayer = (World.getUserValue world).SelectedLayer
-            let localFrame = selectedLayer.GetScriptFrameNp world
-            let (evaled, world) = World.evalWithLogging expr localFrame selectedLayer world
-            match evaled with
-            | Scripting.Violation (_, msg, _) ->
-                MessageBox.Show
-                    ("Could not add designer property '" + propertyTypeText + "' due to:" + msg,
-                     "Invalid Designer Property",
-                     MessageBoxButtons.OK) |>
-                    ignore
-            | _ -> ()
-            WorldRef := world
+    let private handleEntityDesignerPropertyAddClick defaulting (form : GaiaForm) (_ : EventArgs) =
+        addWorldChanger ^ fun world ->
+            let propertyTypeText = form.entityDesignerPropertyTypeComboBox.Text
+            match form.entityPropertyGrid.SelectedObject with
+            | null -> world
+            | :? EntityTypeDescriptorSource as entityTds ->
+                let entity = entityTds.DescribedEntity
+                match Array.toList (propertyTypeText.Split ([|" : "|], StringSplitOptions.None)) with
+                | [] ->
+                    MessageBox.Show
+                        ("Could not add designer property '" + propertyTypeText + "'. Please provide an example expression or choose one from the list.",
+                         "Invalid Designer Property",
+                         MessageBoxButtons.OK) |>
+                        ignore
+                    world
+                | exprStr :: _ ->
+                    let expr = scvalue<Scripting.Expr> exprStr
+                    let selectedLayer = (World.getUserValue world).SelectedLayer
+                    let localFrame = selectedLayer.GetScriptFrameNp world
+                    let (evaled, world) = World.evalWithLogging expr localFrame selectedLayer world
+                    match World.tryGetType evaled with
+                    | Some dt ->
+                        let dvOpt =
+                            if defaulting
+                            then dt.TryGetDefaultValue ()
+                            else ScriptingWorld.tryExport dt expr world
+                        match dvOpt with
+                        | Some dv ->
+                            let dp = { DesignerType = dt; DesignerValue = dv }
+                            let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = dp }
+                            entity.SetProperty form.entityDesignerPropertyNameTextBox.Text property world
+                        | None -> world
+                    | None -> world
+            | _ -> world
 
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.YesNo) with
@@ -1245,7 +1260,8 @@ module Gaia =
         form.evalButton.Click.Add (handleEvalClick form)
         form.clearOutputButton.Click.Add (handleClearOutputClick form)
         form.createEntityComboBox.SelectedIndexChanged.Add (handleCreateEntityComboBoxSelectedIndexChanged form)
-        form.entityDesignerPropertyAddButton.Click.Add (handleEntityDesignerPropertyAddClick form)
+        form.entityDesignerPropertyAddButton.Click.Add (handleEntityDesignerPropertyAddClick false form)
+        form.entityDesignerPropertyDefaultButton.Click.Add (handleEntityDesignerPropertyAddClick true form)
         form.Closing.Add (handleFormClosing form)
 
         // populate event filter keywords
@@ -1287,45 +1303,23 @@ module Gaia =
         handleLoadOverlayerClick form (EventArgs ())
 
         // populate entity designer property types
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("[list 1 2 3]") |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<bool>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<char>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<int>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<int64>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<single>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<double>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<string>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<Vector2>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<Vector4>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<Vector2i>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<bool option>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<char option>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<int option>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<int64 option>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<single option>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<double option>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<string option>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<Vector2 option>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<Vector4 option>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<Vector2i option>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<bool Set>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<char Set>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<int Set>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<int64 Set>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<single Set>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<double Set>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<string Set>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<bool list>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<int list>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<char list>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<int64 list>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<single list>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<double list>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<string list>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<Vector2 list>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<Vector4 list>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.Items.Add ("_ : " + Reflection.getSimplifiedTypeName typeof<Vector2i list>) |> ignore
-        form.entityDesignerPropertyTypeComboBox.SelectedIndex <- 0
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("false : bool") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("true : bool") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("0 : int") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("0L : int64") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("0f : single") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("0d : double") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("\"\" : string") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[v2 0f 0f] : Vector2") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[v4 0f 0f 0f 0f] : Vector4") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[v2i 0 0] : Vector2i") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[some 0] : int option") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[list 0] : int list") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[ring 0] : int Set") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[table [0 \"\"]] : Map<int, string>") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[tuple 0 0] : int * int") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[record BodyBox [Center [v2 0f 0f]] [Extent [v1 1f 1f]]] : BodyBox") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[BodyBox [v2 0f 0f] [v1 1f 1f]] : BodyShape") |> ignore
 
         // clear undo buffers
         form.eventFilterTextBox.EmptyUndoBuffer ()
