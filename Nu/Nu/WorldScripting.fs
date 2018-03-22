@@ -229,7 +229,6 @@ module WorldScripting =
                         else None
                     | [] -> None
                 | (false, _) -> None
-            | Scripting.Record _ -> None
             | _ -> None
 
         /// Attempt to evaluate the scripting prelude.
