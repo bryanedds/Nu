@@ -160,6 +160,7 @@ module WorldScripting =
             | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Function for its 1st argument.", originOpt), world)
 
         /// Attempt to get a static type that matches the given expression.
+        /// TODO: P1: move the major portion of this to Prime.Scripting.
         static member tryGetType expr =
             match expr with
             | Scripting.Violation _ -> None
@@ -170,7 +171,24 @@ module WorldScripting =
             | Scripting.Single _ -> Some typeof<single>
             | Scripting.Double _ -> Some typeof<double>
             | Scripting.String _ -> Some typeof<string>
-            | Scripting.Keyword _ -> None
+            | Scripting.Keyword keyword ->
+                let types =
+                    AppDomain.CurrentDomain.GetAssemblies () |>
+                    Array.map (fun asm -> asm.GetTypes ()) |>
+                    Array.concat
+                let candidateUnions =
+                    types |>
+                    Array.map (fun ty -> FSharpType.GetUnionCases ty) |>
+                    Array.concat |>
+                    Array.filter (fun uc -> uc.Name = keyword) |>
+                    Array.map (fun uc -> uc.DeclaringType)
+                let candidateTypes =
+                    types |>
+                    Array.filter (fun ty -> ty.Name = keyword) |>
+                    Array.filter (fun ty -> ty.GenericTypeArguments.Length = 0) |> // generic algebraic data types not yet supported...
+                    Array.append candidateUnions
+                // just take the first found type for now...
+                Array.tryHead candidateTypes
             | Scripting.Pluggable value ->
                 // TODO: P1: use a virtual dispatching?
                 match value with
