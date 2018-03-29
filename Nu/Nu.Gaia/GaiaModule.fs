@@ -482,14 +482,10 @@ module Gaia =
 
     // TODO: factor away some of the code duplication in this function!
     let private applyPropertyEditor (form : GaiaForm) =
-        let activePropertyGrid =
-            if form.propertyTabControl.SelectedIndex = 0
-            then form.entityPropertyGrid
-            else form.layerPropertyGrid
-        match activePropertyGrid.SelectedObject with
+        match form.entityPropertyGrid.SelectedObject with
         | null -> ()
         | :? EntityTypeDescriptorSource as entityTds ->
-            match activePropertyGrid.SelectedGridItem with
+            match form.entityPropertyGrid.SelectedGridItem with
             | null -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
             | selectedGridItem ->
                 match selectedGridItem.GridItemType with
@@ -519,7 +515,7 @@ module Gaia =
                     | exn -> Log.trace ("Invalid apply property operation due to: " + scstring exn)
                 | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
         | :? LayerTypeDescriptorSource as layerTds ->
-            match activePropertyGrid.SelectedGridItem with
+            match form.layerPropertyGrid.SelectedGridItem with
             | null -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
             | selectedGridItem ->
                 match selectedGridItem.GridItemType with
