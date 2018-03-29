@@ -8,10 +8,5 @@ namespace Nu.Gaia.Design
         {
             InitializeComponent();
         }
-
-        private void entityDesignerPropertyRemoveButton_Click(object sender, System.EventArgs e)
-        {
-
-        }
     }
 }

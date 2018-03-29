@@ -511,8 +511,18 @@ module WorldModuleEntity =
                 | (true, setter) ->
                     match setter property entity world with
                     | (true, world) -> world
-                    | (false, _) -> failwith ("Cannot change entity property " + propertyName + ".")
+                    | (false, _) -> failwith ("Cannot change entity property '" + propertyName + "'.")
             else world
+
+        static member internal attachEntityProperty propertyName property entity world =
+            if World.entityExists entity world
+            then World.updateEntityState (EntityState.attachProperty propertyName property) true propertyName entity world
+            else failwith ("Cannot attach entity property '" + propertyName + "'; entity '" + entity.EntityName + "' is not found.")
+
+        static member internal detachEntityProperty propertyName entity world =
+            if World.entityExists entity world
+            then World.updateEntityState (EntityState.detachProperty propertyName) true propertyName entity world
+            else failwith ("Cannot detach entity property '" + propertyName + "'; entity '" + entity.EntityName + "' is not found.")
 
         /// Get the maxima bounds of the entity as determined by size, position, rotation, and overflow.
         static member internal getEntityBoundsMax entity world =

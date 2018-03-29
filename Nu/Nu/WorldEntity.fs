@@ -91,6 +91,12 @@ module WorldEntityModule =
         /// Set a property value with explicit type.
         member this.SetProperty propertyName property world = World.setEntityProperty propertyName property this world
 
+        /// Attach a property.
+        member this.AttachProperty propertyName property world = World.attachEntityProperty propertyName property this world
+
+        /// Detach a property.
+        member this.DetachProperty propertyName world = World.detachEntityProperty propertyName this world
+
         /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world = World.setEntityProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world
 
@@ -303,9 +309,7 @@ module WorldEntityModule =
                 | EntityPropertyDescriptor propertyDescriptor -> propertyDescriptor.PropertyName
                 | EntityPropertyInfo propertyInfo -> propertyInfo.Name
             let property = World.getEntityProperty propertyName entity world
-            match property.PropertyValue with
-            | :? DesignerProperty as dp -> dp.DesignerValue
-            | value -> value
+            property.PropertyValue
 
         /// Set the entity's property value.
         static member setValue property propertyValue (entity : Entity) world =
@@ -313,13 +317,8 @@ module WorldEntityModule =
                 match property with
                 | EntityPropertyDescriptor propertyDescriptor -> (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType)
                 | EntityPropertyInfo propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)
-            let propertyOld = World.getEntityProperty propertyName entity world
-            match propertyOld.PropertyValue with
-            | :? DesignerProperty as dp ->
-                let propertyValue = { dp with DesignerValue = propertyValue }
-                let propertyValue = { PropertyType = typeof<DesignerProperty>; PropertyValue = propertyValue }
-                World.setEntityProperty propertyName propertyValue entity world
-            | _ -> World.setEntityProperty propertyName { PropertyType = propertyType; PropertyValue = propertyValue } entity world
+            let property = { PropertyType = propertyType; PropertyValue = propertyValue }
+            World.setEntityProperty propertyName property entity world
 
         /// Get the property descriptors of as constructed from the given function in the given context.
         static member getPropertyDescriptors makePropertyDescriptor contextOpt =
