@@ -51,8 +51,7 @@ and EntityPropertyDescriptor (property, attributes) =
         let nodeProperties = Reflection.getPropertyDefinitions typeof<NodeFacet>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if propertyName.Length > 2 && propertyName.StartsWith "On" && Char.IsUpper propertyName.[2] then "Events"
-        elif    propertyName = "Name" || propertyName = "UserState" || propertyName = "OverlayNameOpt" ||
-                propertyName = "FacetNames" || propertyName = "PublishChanges" then "\rAmbient Properties"
+        elif propertyName = "Name" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" || propertyName = "PublishChanges" then "\rAmbient Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) nodeProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "\rPhysics Properties"
@@ -60,7 +59,7 @@ and EntityPropertyDescriptor (property, attributes) =
         else "\rXtension Properties"
 
     override this.Description =
-        // just lets user know the property's expected type
+        // merely lets user know the property's expected type
         propertyType.GetGenericName ()
 
     override this.ComponentType = propertyType.DeclaringType
@@ -72,7 +71,6 @@ and EntityPropertyDescriptor (property, attributes) =
     override this.IsReadOnly =
         not propertyCanWrite ||
         not (Reflection.isPropertyPersistentByName propertyName) ||
-        propertyName = "UserState" ||
         propertyType = typeof<DesignerProperty>
 
     override this.GetValue source =
