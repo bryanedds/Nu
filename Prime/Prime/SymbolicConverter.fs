@@ -9,7 +9,7 @@ open System.Reflection
 open Microsoft.FSharp.Reflection
 open Prime
 
-/// Expands a record so that its property are named.
+/// Expands a record so that its fields are named.
 type SymbolicExpansionAttribute () =
     inherit Attribute ()
 
@@ -207,7 +207,9 @@ type SymbolicConverter (printing : bool, pointType : Type) =
         elif destType = typeof<Symbol> then
             symbol :> obj
 
+        // desymbolize other...
         else
+            
             match destType.TryGetCustomTypeConverter () with
             | Some typeConverter ->
 
@@ -224,7 +226,8 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                     | Symbols ([String (aqTypeName, _); valueSymbol], _) ->
                         let ty = Type.GetType(aqTypeName)
                         let value = fromSymbol ty valueSymbol
-                        { DesignerType = ty; DesignerValue = value } :> obj
+                        let property = { DesignerType = ty; DesignerValue = value }
+                        property :> obj
                     | _ ->
                         failconv "Expected Symbols containing an assembly-qualified type name String and a symbol value." (Some symbol)
 
