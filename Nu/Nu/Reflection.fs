@@ -140,8 +140,7 @@ module Reflection =
         getReflectivePropertyContainerTypes |>
         List.map getPropertyDefinitions |>
         List.concat |>
-        Map.ofListBy (fun definition -> (definition.PropertyName, definition)) |>
-        Map.toValueList
+        Map.ofListBy (fun definition -> (definition.PropertyName, definition))
 
     /// A hack to retreive a simplified generic type name
     let getSimplifiedTypeNameHack (ty : Type) =
@@ -161,28 +160,38 @@ module Reflection =
                 property.SetValue (target, propertyValue)
         | None -> ()
         
-    /// Read one of a target's xtension properties from property descriptors.
-    let private readXtensionProperty xtension propertyDescriptors (target : 'a) (definition : PropertyDefinition) =
+    /// Read one of a target's xtension properties.
+    let private readXtensionProperty
+        (xtension : Xtension)
+        (propertyDefinitions : Map<string, PropertyDefinition>)
+        (target : 'a)
+        (propertyName : string)
+        (propertySymbol : Symbol) =
         let targetType = target.GetType ()
-        if Array.notExists
-            (fun (property : PropertyInfo) -> property.Name = definition.PropertyName)
-            (targetType.GetProperties ()) then
-            match Map.tryFind definition.PropertyName propertyDescriptors with
-            | Some (propertySymbol : Symbol) ->
-                let converter = SymbolicConverter (false, definition.PropertyType)
+        if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) (targetType.GetProperties ()) then
+            match Map.tryFind propertyName propertyDefinitions with
+            | Some propertyDefinition ->
+                let converter = SymbolicConverter (false, propertyDefinition.PropertyType)
                 if converter.CanConvertFrom typeof<Symbol> then
-                    let property = { PropertyType = definition.PropertyType; PropertyValue = converter.ConvertFrom propertySymbol }
-                    Xtension.attachProperty definition.PropertyName property xtension
-                else
-                    Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + definition.PropertyType.Name + "'.")
-                    xtension
-            | None -> xtension
+                    let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = converter.ConvertFrom propertySymbol }
+                    Xtension.attachProperty propertyName property xtension
+                else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyDefinition.PropertyType.Name + "'."); xtension
+            | None ->
+                let propertyType = typeof<DesignerProperty>
+                let converter = SymbolicConverter (false, propertyType)
+                if converter.CanConvertFrom typeof<Symbol> then
+                    let property = { PropertyType = propertyType; PropertyValue = converter.ConvertFrom propertySymbol }
+                    Xtension.attachProperty propertyName property xtension
+                else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyType.Name + "'."); xtension
         else xtension
         
     /// Read a target's xtension properties from property descriptors.
-    let private readXtensionProperties xtension propertyDescriptors (target : 'a) =
+    let private readXtensionProperties xtension (propertyDescriptors : Map<string, Symbol>) (target : 'a) =
         let definitions = getReflectivePropertyDefinitions target
-        List.fold (fun xtension -> readXtensionProperty xtension propertyDescriptors target) xtension definitions
+        Map.fold
+            (fun xtension -> readXtensionProperty xtension definitions target)
+            xtension
+            propertyDescriptors
         
     /// Read a target's Xtension from property descriptors.
     let private readXtension (copyTarget : 'a -> 'a) propertyDescriptors target =
