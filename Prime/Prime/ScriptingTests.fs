@@ -27,7 +27,7 @@ module ScriptingTests =
             Scripting.Unit
 
     let eval exprStr =
-        let converter = SymbolicConverter (true, typeof<Scripting.Expr>)
+        let converter = SymbolicConverter (true, None, typeof<Scripting.Expr>)
         let evaled = evalPartial exprStr
         let evaledSymbol = converter.ConvertTo (evaled, typeof<Symbol>) :?> Symbol
         Symbol.toString evaledSymbol

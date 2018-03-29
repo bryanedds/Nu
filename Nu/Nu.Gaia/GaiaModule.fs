@@ -381,64 +381,106 @@ module Gaia =
         let depth = snd (Single.TryParse form.createDepthTextBox.Text)
         form.createDepthTextBox.Text <- scstring (depth - 1.0f)
 
+    // TODO: factor away some of the code duplication in this function!
     let private refreshPropertyEditor (form : GaiaForm) =
-        let activePropertyGrid =
-            if form.propertyTabControl.SelectedIndex = 0
-            then form.entityPropertyGrid
-            else form.layerPropertyGrid
-        match (activePropertyGrid.SelectedObject, activePropertyGrid.SelectedGridItem) with
-        | (null, _) | (_, null) ->
-            form.propertyEditor.Enabled <- false
-            form.propertyNameLabel.Text <- String.Empty
-            form.propertyDescriptionTextBox.Text <- String.Empty
-            form.propertyValueTextBox.Text <- String.Empty
-            form.propertyValueTextBox.EmptyUndoBuffer ()
-        | (_, selectedGridItem) ->
-            match selectedGridItem.GridItemType with
-            | GridItemType.Property ->
-                let ty = selectedGridItem.PropertyDescriptor.PropertyType
-                let typeConverter = SymbolicConverter (true, ty)
-                form.propertyEditor.Enabled <- true
-                form.propertyNameLabel.Text <- selectedGridItem.Label
-                form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                if isNotNull selectedGridItem.Value || isNullTrueValue ty then
-                    let (keywords0, keywords1, prettyPrinter) =
-                        match selectedGridItem.Label with
-                        | "OverlayNameOpt" ->
-                            let overlays = World.getIntrinsicOverlays !WorldRef @ World.getExtrinsicOverlays !WorldRef
-                            let overlayNames = List.map (fun overlay -> overlay.OverlayName) overlays
-                            (String.concat " " overlayNames, "", PrettyPrinter.defaulted)
-                        | "FacetNames" ->
-                            let facetNames = !WorldRef |> World.getFacets |> Map.toKeyList
-                            (String.concat " " facetNames, "", PrettyPrinter.defaulted)
-                        | _ ->
+        if form.propertyTabControl.SelectedIndex = 0 then
+            match (form.entityPropertyGrid.SelectedObject, form.entityPropertyGrid.SelectedGridItem) with
+            | (null, _) | (_, null) ->
+                form.propertyEditor.Enabled <- false
+                form.propertyNameLabel.Text <- String.Empty
+                form.propertyDescriptionTextBox.Text <- String.Empty
+                form.propertyValueTextBox.Text <- String.Empty
+                form.propertyValueTextBox.EmptyUndoBuffer ()
+            | (selectedEntityTds, selectedGridItem) ->
+                match selectedGridItem.GridItemType with
+                | GridItemType.Property ->
+                    let designTypeOpt =
+                        match selectedGridItem.PropertyDescriptor.GetValue selectedEntityTds with
+                        | :? DesignerProperty as dp -> Some dp.DesignerType
+                        | _ -> None
+                    let ty = selectedGridItem.PropertyDescriptor.PropertyType
+                    let typeConverter = SymbolicConverter (true, designTypeOpt, ty)
+                    form.propertyEditor.Enabled <- true
+                    form.propertyNameLabel.Text <- selectedGridItem.Label
+                    form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
+                    if isNotNull selectedGridItem.Value || isNullTrueValue ty then
+                        let (keywords0, keywords1, prettyPrinter) =
+                            match selectedGridItem.Label with
+                            | "OverlayNameOpt" ->
+                                let overlays = World.getIntrinsicOverlays !WorldRef @ World.getExtrinsicOverlays !WorldRef
+                                let overlayNames = List.map (fun overlay -> overlay.OverlayName) overlays
+                                (String.concat " " overlayNames, "", PrettyPrinter.defaulted)
+                            | "FacetNames" ->
+                                let facetNames = !WorldRef |> World.getFacets |> Map.toKeyList
+                                (String.concat " " facetNames, "", PrettyPrinter.defaulted)
+                            | _ ->
+                                let syntax = SyntaxAttribute.getOrDefault ty
+                                let keywords0 =
+                                    if ty = typeof<Scripting.Expr>
+                                    then syntax.Keywords0 + " " + WorldBindings.BindingKeywords
+                                    else syntax.Keywords0
+                                (keywords0, syntax.Keywords1, syntax.PrettyPrinter)
+                        let selectionStart = form.propertyValueTextBox.SelectionStart
+                        let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
+                        let strEscaped = String.escape strUnescaped
+                        let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
+                        form.propertyValueTextBox.Text <- strPretty + "\n"
+                        form.propertyValueTextBox.EmptyUndoBuffer ()
+                        form.propertyValueTextBox.Keywords0 <- keywords0
+                        form.propertyValueTextBox.Keywords1 <- keywords1
+                        form.propertyValueTextBox.SelectionStart <- selectionStart
+                        form.propertyValueTextBox.ScrollCaret ()
+                | _ ->
+                    form.propertyEditor.Enabled <- false
+                    form.propertyNameLabel.Text <- String.Empty
+                    form.propertyDescriptionTextBox.Text <- String.Empty
+                    form.propertyValueTextBox.Text <- String.Empty
+                    form.propertyValueTextBox.EmptyUndoBuffer ()
+        else // assume layer
+            match (form.layerPropertyGrid.SelectedObject, form.layerPropertyGrid.SelectedGridItem) with
+            | (null, _) | (_, null) ->
+                form.propertyEditor.Enabled <- false
+                form.propertyNameLabel.Text <- String.Empty
+                form.propertyDescriptionTextBox.Text <- String.Empty
+                form.propertyValueTextBox.Text <- String.Empty
+                form.propertyValueTextBox.EmptyUndoBuffer ()
+            | (_, selectedGridItem) ->
+                match selectedGridItem.GridItemType with
+                | GridItemType.Property ->
+                    let ty = selectedGridItem.PropertyDescriptor.PropertyType
+                    let typeConverter = SymbolicConverter (true, None, ty)
+                    form.propertyEditor.Enabled <- true
+                    form.propertyNameLabel.Text <- selectedGridItem.Label
+                    form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
+                    if isNotNull selectedGridItem.Value || isNullTrueValue ty then
+                        let (keywords0, keywords1, prettyPrinter) =
                             let syntax = SyntaxAttribute.getOrDefault ty
                             let keywords0 =
                                 if ty = typeof<Scripting.Expr>
                                 then syntax.Keywords0 + " " + WorldBindings.BindingKeywords
                                 else syntax.Keywords0
                             (keywords0, syntax.Keywords1, syntax.PrettyPrinter)
-                    let selectionStart = form.propertyValueTextBox.SelectionStart
-                    let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
-                    let strEscaped = String.escape strUnescaped
-                    let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
-                    form.propertyValueTextBox.Text <- strPretty + "\n"
+                        let selectionStart = form.propertyValueTextBox.SelectionStart
+                        let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
+                        let strEscaped = String.escape strUnescaped
+                        let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
+                        form.propertyValueTextBox.Text <- strPretty + "\n"
+                        form.propertyValueTextBox.EmptyUndoBuffer ()
+                        form.propertyValueTextBox.Keywords0 <- keywords0
+                        form.propertyValueTextBox.Keywords1 <- keywords1
+                        form.propertyValueTextBox.SelectionStart <- selectionStart
+                        form.propertyValueTextBox.ScrollCaret ()
+                | _ ->
+                    form.propertyEditor.Enabled <- false
+                    form.propertyNameLabel.Text <- String.Empty
+                    form.propertyDescriptionTextBox.Text <- String.Empty
+                    form.propertyValueTextBox.Text <- String.Empty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
-                    form.propertyValueTextBox.Keywords0 <- keywords0
-                    form.propertyValueTextBox.Keywords1 <- keywords1
-                    form.propertyValueTextBox.SelectionStart <- selectionStart
-                    form.propertyValueTextBox.ScrollCaret ()
-            | _ ->
-                form.propertyEditor.Enabled <- false
-                form.propertyNameLabel.Text <- String.Empty
-                form.propertyDescriptionTextBox.Text <- String.Empty
-                form.propertyValueTextBox.Text <- String.Empty
-                form.propertyValueTextBox.EmptyUndoBuffer ()
 
     let private refreshEntityPropertyDesigner (form : GaiaForm) =
         form.entityPropertyDesigner.Enabled <- isNotNull form.entityPropertyGrid.SelectedObject
 
-    // TODO: get rid of the code duplication in this function!
+    // TODO: factor away some of the code duplication in this function!
     let private applyPropertyEditor (form : GaiaForm) =
         let activePropertyGrid =
             if form.propertyTabControl.SelectedIndex = 0
@@ -453,7 +495,11 @@ module Gaia =
                 match selectedGridItem.GridItemType with
                 | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
                     let propertyDescriptor = selectedGridItem.PropertyDescriptor :?> EntityPropertyDescriptor
-                    let typeConverter = SymbolicConverter (true, selectedGridItem.PropertyDescriptor.PropertyType)
+                    let designTypeOpt =
+                        match propertyDescriptor.GetValue entityTds with
+                        | :? DesignerProperty as dp -> Some dp.DesignerType
+                        | _ -> None
+                    let typeConverter = SymbolicConverter (true, designTypeOpt, propertyDescriptor.PropertyType)
                     try form.propertyValueTextBox.EndUndoAction ()
                         let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
                         let strUnescaped = String.unescape strEscaped
@@ -479,7 +525,7 @@ module Gaia =
                 match selectedGridItem.GridItemType with
                 | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
                     let propertyDescriptor = selectedGridItem.PropertyDescriptor :?> LayerPropertyDescriptor
-                    let typeConverter = SymbolicConverter (true, selectedGridItem.PropertyDescriptor.PropertyType)
+                    let typeConverter = SymbolicConverter (true, None, selectedGridItem.PropertyDescriptor.PropertyType)
                     try form.propertyValueTextBox.EndUndoAction ()
                         let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
                         let strUnescaped = String.unescape strEscaped

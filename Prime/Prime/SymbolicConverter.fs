@@ -18,7 +18,7 @@ type SymbolicCompression<'a, 'b> =
     | SymbolicCompressionA of 'a
     | SymbolicCompressionB of 'b
 
-type SymbolicConverter (printing : bool, pointType : Type) =
+type SymbolicConverter (printing : bool, designTypeOpt : Type option, pointType : Type) =
     inherit TypeConverter ()
 
     let padWithDefaults' (fieldTypes : Type array) (values : obj array) =
@@ -82,7 +82,8 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                 let property = source :?> DesignerProperty
                 let nameString = String (property.DesignerType.AssemblyQualifiedName, None)
                 let valueSymbol = toSymbol property.DesignerType property.DesignerValue
-                Symbols ([nameString; valueSymbol], None)
+                if Option.isSome designTypeOpt then valueSymbol
+                else Symbols ([nameString; valueSymbol], None)
 
             // symbolize array
             elif sourceType.IsArray then
@@ -222,9 +223,13 @@ type SymbolicConverter (printing : bool, pointType : Type) =
 
                 // desymbolize DesignerProperty
                 if destType = typeof<DesignerProperty> then
-                    match symbol with
-                    | Symbols ([String (aqTypeName, _); valueSymbol], _) ->
-                        let ty = Type.GetType(aqTypeName)
+                    match (designTypeOpt, symbol) with
+                    | (Some ty, valueSymbol) ->
+                        let value = fromSymbol ty valueSymbol
+                        let property = { DesignerType = ty; DesignerValue = value }
+                        property :> obj
+                    | (None, Symbols ([String (aqTypeName, _); valueSymbol], _)) ->
+                        let ty = Type.GetType aqTypeName
                         let value = fromSymbol ty valueSymbol
                         let property = { DesignerType = ty; DesignerValue = value }
                         property :> obj
@@ -422,4 +427,4 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                 | _ -> failconv "Invalid SymbolicConverter conversion from string." None
             else source
 
-    new (pointType : Type) = SymbolicConverter (false, pointType)
+    new (pointType : Type) = SymbolicConverter (false, None, pointType)
