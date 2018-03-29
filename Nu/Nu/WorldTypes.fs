@@ -240,8 +240,7 @@ module WorldTypes =
         inherit SimulantDispatcher ()
     
         static member PropertyDefinitions =
-            [Define? UserState (UserState.make () false)
-             Define? Persistent true
+            [Define? Persistent true
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
              Define? Rotation 0.0f
@@ -648,7 +647,6 @@ module WorldTypes =
         { Id : Guid
           Name : string
           mutable Xtension : Xtension
-          mutable UserState : UserState
           DispatcherNp : EntityDispatcher
           mutable Persistent : bool
           CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
@@ -677,7 +675,6 @@ module WorldTypes =
             { Id = id
               Name = name
               Xtension = if imperative then Xtension.makeImperative () else Xtension.makeSafe ()
-              UserState = UserState.make () imperative
               DispatcherNp = dispatcher
               Persistent = true
               CreationTimeStampNp = Core.getTimeStamp ()

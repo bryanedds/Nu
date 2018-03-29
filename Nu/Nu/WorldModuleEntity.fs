@@ -218,10 +218,6 @@ module WorldModuleEntity =
         // NOTE: Wouldn't macros be nice?
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
-        static member internal getEntityUserState entity world = (World.getEntityState entity world).UserState
-        static member internal setEntityUserState value entity world = World.updateEntityState (fun entityState -> if UserState.getImperative entityState.UserState then entityState.UserState <- value; entityState else { entityState with UserState = value }) false Property? UserState entity world
-        static member internal getEntityUserValue<'a> entity world = UserState.get<'a> (World.getEntityState entity world).UserState
-        static member internal setEntityUserValue<'a> value entity world = World.updateEntityState (fun entityState -> if UserState.getImperative entityState.UserState then ignore (UserState.set<'a> value entityState.UserState); entityState else { entityState with UserState = UserState.set<'a> value entityState.UserState }) false Property? UserValue entity world
         static member internal getEntityDispatcherNp entity world = (World.getEntityState entity world).DispatcherNp
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Persistent <- value; entityState else { entityState with Persistent = value }) false Property? Persistent entity world
@@ -985,7 +981,6 @@ module WorldModuleEntity =
     let private initGetters () =
         Getters.Add ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
         Getters.Add ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })
-        Getters.Add ("UserState", fun entity world -> { PropertyType = typeof<UserState>; PropertyValue = World.getEntityUserState entity world })
         Getters.Add ("DispatcherNp", fun entity world -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcherNp entity world })
         Getters.Add ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
         Getters.Add ("CreationTimeStampNp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStampNp entity world })
@@ -1012,7 +1007,6 @@ module WorldModuleEntity =
     let private initSetters () =
         Setters.Add ("Id", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
-        Setters.Add ("UserState", fun property entity world -> (true, World.setEntityUserState (property.PropertyValue :?> UserState) entity world))
         Setters.Add ("DispatcherNp", fun _ _ world -> (false, world))
         Setters.Add ("Persistent", fun property entity world -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world))
         Setters.Add ("CreationTimeStampNp", fun _ _ world -> (false, world))
