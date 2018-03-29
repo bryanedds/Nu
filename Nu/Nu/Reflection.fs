@@ -154,7 +154,7 @@ module Reflection =
     let private tryReadMemberProperty propertyDescriptors (property : PropertyInfo) target =
         match Map.tryFind property.Name propertyDescriptors with
         | Some (propertySymbol : Symbol) ->
-            let converter = SymbolicConverter (false, property.PropertyType)
+            let converter = SymbolicConverter (false, None, property.PropertyType)
             if converter.CanConvertFrom typeof<Symbol> then
                 let propertyValue = converter.ConvertFrom propertySymbol
                 property.SetValue (target, propertyValue)
@@ -171,14 +171,14 @@ module Reflection =
         if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) (targetType.GetProperties ()) then
             match Map.tryFind propertyName propertyDefinitions with
             | Some propertyDefinition ->
-                let converter = SymbolicConverter (false, propertyDefinition.PropertyType)
+                let converter = SymbolicConverter (false, None, propertyDefinition.PropertyType)
                 if converter.CanConvertFrom typeof<Symbol> then
                     let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = converter.ConvertFrom propertySymbol }
                     Xtension.attachProperty propertyName property xtension
                 else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyDefinition.PropertyType.Name + "'."); xtension
             | None ->
                 let propertyType = typeof<DesignerProperty>
-                let converter = SymbolicConverter (false, propertyType)
+                let converter = SymbolicConverter (false, None, propertyType)
                 if converter.CanConvertFrom typeof<Symbol> then
                     let property = { PropertyType = propertyType; PropertyValue = converter.ConvertFrom propertySymbol }
                     Xtension.attachProperty propertyName property xtension
@@ -275,7 +275,7 @@ module Reflection =
             let propertyValue = property.PropertyValue
             if  isPropertyPersistentByName propertyName &&
                 shouldWriteProperty propertyName propertyType propertyValue then
-                let converter = SymbolicConverter (false, propertyType)
+                let converter = SymbolicConverter (false, None, propertyType)
                 let propertySymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
                 Map.add propertyName propertySymbol propertyDescriptors
             else propertyDescriptors)
@@ -286,7 +286,7 @@ module Reflection =
     let private writeMemberProperty (propertyValue : obj) (property : PropertyInfo) shouldWriteProperty propertyDescriptors (target : 'a) =
         if  isPropertyPersistent property target &&
             shouldWriteProperty property.Name property.PropertyType propertyValue then
-            let converter = SymbolicConverter (false, property.PropertyType)
+            let converter = SymbolicConverter (false, None, property.PropertyType)
             let valueSymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
             Map.add property.Name valueSymbol propertyDescriptors
         else propertyDescriptors
@@ -457,7 +457,7 @@ module Reflection =
                             (fun definition overlayProperties ->
                                 match definition.PropertyExpr with
                                 | DefineExpr value ->
-                                    let converter = SymbolicConverter (false, definition.PropertyType)
+                                    let converter = SymbolicConverter (false, None, definition.PropertyType)
                                     let overlayProperty = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
                                     Map.add definition.PropertyName overlayProperty overlayProperties
                                 | VariableExpr _ -> overlayProperties)

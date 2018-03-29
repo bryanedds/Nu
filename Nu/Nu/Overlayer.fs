@@ -66,7 +66,7 @@ module OverlayerModule =
                     | (targetProperty, _) -> Some (targetProperty.GetValue target)
                 match propertyValueOpt with
                 | Some propertyValue ->
-                    let converter = SymbolicConverter (false, propertyType)
+                    let converter = SymbolicConverter (false, None, propertyType)
                     if converter.CanConvertFrom typeof<Symbol> then
                         let overlayValue = converter.ConvertFrom propertySymbol
                         if overlayValue = propertyValue then Overlaid else Altered
@@ -109,7 +109,7 @@ module OverlayerModule =
 
         let private tryApplyOverlayToRecordProperty facetNames property (propertySymbol : Symbol) oldOverlayName target oldOverlayer =
             if shouldApplyOverlay oldOverlayName facetNames property target oldOverlayer then
-                let converter = SymbolicConverter (false, property.PropertyType)
+                let converter = SymbolicConverter (false, None, property.PropertyType)
                 if converter.CanConvertFrom typeof<Symbol> then
                     let propertyValue = converter.ConvertFrom propertySymbol
                     property.SetValue (target, propertyValue)
@@ -140,7 +140,7 @@ module OverlayerModule =
                     let xtension =
                         List.foldBack (fun (propertyName, propertyType, propertySymbol : Symbol) xtension ->
                             if isPropertyOverlaid oldOverlayName facetNames propertyName propertyType target oldOverlayer then
-                                let converter = SymbolicConverter (true, propertyType)
+                                let converter = SymbolicConverter (true, None, propertyType)
                                 let propertyValue = converter.ConvertFrom propertySymbol
                                 let property = { PropertyType = propertyType; PropertyValue = propertyValue;  }
                                 Xtension.attachProperty propertyName property xtension

@@ -1,7 +1,6 @@
 ﻿namespace Prime
 open System
 open System.ComponentModel
-open System.Reflection
 
 [<AutoOpen>]
 module UserStateModule =

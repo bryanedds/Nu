@@ -22,25 +22,25 @@ type [<StructuralEquality; NoComparison>] ComplexUnion =
 module SymbolTests =
     
     let [<Fact>] canConvertStringToAtom () =
-        let converter = SymbolicConverter (true, typeof<Symbol>)
+        let converter = SymbolicConverter (true, None, typeof<Symbol>)
         match converter.ConvertFromString "atom" :?> Symbol with
         | Atom (str, _) -> Assert.Equal<string> ("atom", str)
         | _ -> Assert.True false
     
     let [<Fact>] canConvertStringToNumber () =
-        let converter = SymbolicConverter (true, typeof<Symbol>)
+        let converter = SymbolicConverter (true, None, typeof<Symbol>)
         match converter.ConvertFromString "0" :?> Symbol with
         | Number (str, _) -> Assert.Equal<string> ("0", str)
         | _ -> Assert.True false
     
     let [<Fact>] canConvertStringToNegativeNumber () =
-        let converter = SymbolicConverter (true, typeof<Symbol>)
+        let converter = SymbolicConverter (true, None, typeof<Symbol>)
         match converter.ConvertFromString "-1" :?> Symbol with
         | Number (str, _) -> Assert.Equal<string> ("-1", str)
         | _ -> Assert.True false
     
     let [<Fact>] canConvertStringToString () =
-        let converter = SymbolicConverter (true, typeof<Symbol>)
+        let converter = SymbolicConverter (true, None, typeof<Symbol>)
         match converter.ConvertFromString "\"str\"" :?> Symbol with
         | String (str, _) -> Assert.Equal<string> ("str", str)
         | _ -> Assert.True false
