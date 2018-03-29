@@ -80,9 +80,9 @@ type SymbolicConverter (printing : bool, pointType : Type) =
             // symbolize DesignerProperty
             elif sourceType = typeof<DesignerProperty> then
                 let property = source :?> DesignerProperty
-                let nameAtom = Atom (property.DesignerType.AssemblyQualifiedName, None)
+                let nameString = String (property.DesignerType.AssemblyQualifiedName, None)
                 let valueSymbol = toSymbol property.DesignerType property.DesignerValue
-                Symbols ([nameAtom; valueSymbol], None)
+                Symbols ([nameString; valueSymbol], None)
 
             // symbolize array
             elif sourceType.IsArray then
@@ -221,12 +221,12 @@ type SymbolicConverter (printing : bool, pointType : Type) =
                 // desymbolize DesignerProperty
                 if destType = typeof<DesignerProperty> then
                     match symbol with
-                    | Symbols ([Atom (aqTypeName, _); valueSymbol], _) ->
+                    | Symbols ([String (aqTypeName, _); valueSymbol], _) ->
                         let ty = Type.GetType(aqTypeName)
                         let value = fromSymbol ty valueSymbol
                         { DesignerType = ty; DesignerValue = value } :> obj
                     | _ ->
-                        failconv "Expected Symbols containing an assembly-qualified type name Atom and a symbol value." (Some symbol)
+                        failconv "Expected Symbols containing an assembly-qualified type name String and a symbol value." (Some symbol)
 
                 // desymbolize array
                 elif destType.IsArray then

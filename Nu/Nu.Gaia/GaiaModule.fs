@@ -435,6 +435,9 @@ module Gaia =
                 form.propertyValueTextBox.Text <- String.Empty
                 form.propertyValueTextBox.EmptyUndoBuffer ()
 
+    let private refreshEntityPropertyDesigner (form : GaiaForm) =
+        form.entityPropertyDesigner.Enabled <- isNotNull form.entityPropertyGrid.SelectedObject
+
     // TODO: get rid of the code duplication in this function!
     let private applyPropertyEditor (form : GaiaForm) =
         let activePropertyGrid =
@@ -595,6 +598,7 @@ module Gaia =
 
     let private handleFormEntityPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
+        refreshEntityPropertyDesigner form
         setEntityTreeViewSelectionToEntityPropertyGridSelection form
         setHierarchyTreeViewSelectionToEntityPropertyGridSelection form
 
@@ -1017,14 +1021,28 @@ module Gaia =
                         let dvOpt =
                             if defaulting
                             then dt.TryGetDefaultValue ()
-                            else ScriptingWorld.tryExport dt expr world
+                            else ScriptingWorld.tryExport dt evaled world
                         match dvOpt with
                         | Some dv ->
                             let dp = { DesignerType = dt; DesignerValue = dv }
                             let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = dp }
-                            entity.SetProperty form.entityDesignerPropertyNameTextBox.Text property world
+                            let world = entity.AttachProperty form.entityDesignerPropertyNameTextBox.Text property world
+                            form.entityPropertyGrid.Refresh ()
+                            // TODO: something like this - form.entityPropertyGrid.SelectedGridItem <- form.entityPropertyGrid.[?]
+                            world
                         | None -> world
                     | None -> world
+            | _ -> world
+
+    let private handleEntityDesignerPropertyRemoveClick (form : GaiaForm) (_ : EventArgs) =
+        addWorldChanger ^ fun world ->
+            match form.entityPropertyGrid.SelectedObject with
+            | null -> world
+            | :? EntityTypeDescriptorSource as entityTds ->
+                let entity = entityTds.DescribedEntity
+                let world = entity.DetachProperty form.entityDesignerPropertyNameTextBox.Text world
+                form.entityPropertyGrid.Refresh ()
+                world
             | _ -> world
 
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
@@ -1033,7 +1051,7 @@ module Gaia =
         | _ -> ()
 
     let private updateEntityDrag (form : GaiaForm) world =
-        if not ^ canEditWithMouse form world then
+        if not (canEditWithMouse form world) then
             match (World.getUserValue world).DragEntityState with
             | DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) ->
                 let (positionSnap, _) = getSnaps form
@@ -1262,6 +1280,7 @@ module Gaia =
         form.createEntityComboBox.SelectedIndexChanged.Add (handleCreateEntityComboBoxSelectedIndexChanged form)
         form.entityDesignerPropertyAddButton.Click.Add (handleEntityDesignerPropertyAddClick false form)
         form.entityDesignerPropertyDefaultButton.Click.Add (handleEntityDesignerPropertyAddClick true form)
+        form.entityDesignerPropertyRemoveButton.Click.Add (handleEntityDesignerPropertyRemoveClick form)
         form.Closing.Add (handleFormClosing form)
 
         // populate event filter keywords

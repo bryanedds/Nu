@@ -1,0 +1,250 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ScintillaNET FindReplaceDialog</name>
+    </assembly>
+    <members>
+        <member name="T:ScintillaNET_FindReplaceDialog.CharacterRange">
+            <summary>
+            Specifies a range of characters. If the cpMin and cpMax members are equal, the range is empty.
+            The range includes everything if cpMin is 0 and cpMax is –1.
+            </summary>
+        </member>
+        <member name="F:ScintillaNET_FindReplaceDialog.CharacterRange.cpMin">
+            <summary>
+            Character position index immediately preceding the first character in the range.
+            </summary>
+        </member>
+        <member name="F:ScintillaNET_FindReplaceDialog.CharacterRange.cpMax">
+            <summary>
+            Character position immediately following the last character in the range.
+            </summary>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.CharacterRange.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Specifies a range of characters. If the cpMin and cpMax members are equal, the range is empty.
+            The range includes everything if cpMin is 0 and cpMax is –1.
+            </summary>
+            <param name="Min">The minimum, or start position.</param>
+            <param name="Max">The maximum, or end position.</param>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.FindAllResults.FindAllResultsPanel.#ctor">
+            <summary>
+            Creates a new instance of FindAllResultsPanel
+            </summary>
+        </member>
+        <member name="P:ScintillaNET_FindReplaceDialog.FindAllResults.FindAllResultsPanel.Scintilla">
+            <summary>
+            Gets or sets the Scintilla control that was searched to generate the find results.
+            Allows the FindAllResults list to be double clicked and results indicated in the original Scintilla.
+            </summary>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.FindAllResults.FindAllResultsPanel.UpdateFindAllResults(ScintillaNET_FindReplaceDialog.FindReplace,System.Collections.Generic.List{ScintillaNET_FindReplaceDialog.CharacterRange})">
+            <summary>
+            Updates the find all results panel
+            </summary>
+            <param name="FindReplace">The FindReplace instance used to generate the find results.</param>
+            <param name="FindAllResults"></param>
+        </member>
+        <member name="F:ScintillaNET_FindReplaceDialog.FindAllResults.FindAllResultsPanel.components">
+            <summary> 
+            Required designer variable.
+            </summary>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.FindAllResults.FindAllResultsPanel.Dispose(System.Boolean)">
+            <summary> 
+            Clean up any resources being used.
+            </summary>
+            <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.FindAllResults.FindAllResultsPanel.InitializeComponent">
+            <summary> 
+            Required method for Designer support - do not modify 
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="T:ScintillaNET_FindReplaceDialog.FindOption">
+            <summary>
+                Controls find behavior for non-regular expression searches
+            </summary>
+        </member>
+        <member name="F:ScintillaNET_FindReplaceDialog.FindOption.WholeWord">
+            <summary>
+                Find must match the whole word
+            </summary>
+        </member>
+        <member name="F:ScintillaNET_FindReplaceDialog.FindOption.MatchCase">
+            <summary>
+                Find must match the case of the expression
+            </summary>
+        </member>
+        <member name="F:ScintillaNET_FindReplaceDialog.FindOption.WordStart">
+            <summary>
+                Only match the _start of a word
+            </summary>
+        </member>
+        <member name="F:ScintillaNET_FindReplaceDialog.FindOption.RegularExpression">
+            <summary>
+                Not used in ScintillaNET
+            </summary>
+        </member>
+        <member name="F:ScintillaNET_FindReplaceDialog.FindOption.Posix">
+            <summary>
+                Not used in ScintillaNET
+            </summary>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.FindReplace.#ctor(ScintillaNET.Scintilla)">
+            <summary>
+            Creates an instance of the FindReplace class.
+            </summary>
+            <param name="scintilla">The Scintilla class to which the FindReplace class is attached.</param>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.FindReplace.#ctor">
+            <summary>
+            Creates an instance of the FindReplace class.
+            </summary>
+        </member>
+        <member name="E:ScintillaNET_FindReplaceDialog.FindReplace.KeyPressed">
+            <summary>
+            Triggered when a key is pressed on the Find and Replace Dialog.
+            </summary>
+        </member>
+        <member name="T:ScintillaNET_FindReplaceDialog.FindReplace.KeyPressedHandler">
+            <summary>
+            Handler for the key press on a Find and Replace Dialog.
+            </summary>
+            <param name="sender">The sender.</param>
+            <param name="e">The key info of the key(s) pressed.</param>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.FindReplace.ClearAllHighlights">
+            <summary>
+            Clears highlights from the entire document
+            </summary>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.FindReplace.HighlightAll(System.Collections.Generic.List{ScintillaNET_FindReplaceDialog.CharacterRange})">
+            <summary>
+            Highlight ranges in the document.
+            </summary>
+            <param name="Ranges">List of ranges to which highlighting should be applied.</param>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.FindReplace.CreateIncrementalSearcherInstance">
+            <summary>
+            Creates and returns a new <see cref="P:ScintillaNET_FindReplaceDialog.FindReplace.IncrementalSearcher" /> object.
+            </summary>
+            <returns>A new <see cref="P:ScintillaNET_FindReplaceDialog.FindReplace.IncrementalSearcher" /> object.</returns>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.FindReplace.CreateWindowInstance">
+            <summary>
+            Creates and returns a new <see cref="T:ScintillaNET_FindReplaceDialog.FindReplaceDialog" /> object.
+            </summary>
+            <returns>A new <see cref="T:ScintillaNET_FindReplaceDialog.FindReplaceDialog" /> object.</returns>
+        </member>
+        <member name="P:ScintillaNET_FindReplaceDialog.FindReplaceDialog.AutoPosition">
+            <summary>
+            Gets or sets whether the dialog should automatically move away from the current
+            selection to prevent obscuring it.
+            </summary>
+            <returns>true to automatically move away from the current selection; otherwise, false.</returns>
+        </member>
+        <member name="F:ScintillaNET_FindReplaceDialog.FindReplaceDialog.components">
+            <summary>
+            Required designer variable.
+            </summary>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.FindReplaceDialog.Dispose(System.Boolean)">
+            <summary>
+            Clean up any resources being used.
+            </summary>
+            <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.FindReplaceDialog.InitializeComponent">
+            <summary>
+            Required method for Designer support - do not modify
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="P:ScintillaNET_FindReplaceDialog.IncrementalSearcher.AutoPosition">
+            <summary>
+            Gets or sets whether the control should automatically move away from the current
+            selection to prevent obscuring it.
+            </summary>
+            <returns>true to automatically move away from the current selection; otherwise, false.
+            If ToolItem is enabled, this defaults to false.</returns>
+        </member>
+        <member name="F:ScintillaNET_FindReplaceDialog.IncrementalSearcher.components">
+            <summary> 
+            Required designer variable.
+            </summary>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.IncrementalSearcher.Dispose(System.Boolean)">
+            <summary> 
+            Clean up any resources being used.
+            </summary>
+            <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.IncrementalSearcher.InitializeComponent">
+            <summary> 
+            Required method for Designer support - do not modify 
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="F:ScintillaNET_FindReplaceDialog.GoToDialog.components">
+            <summary>
+            Required designer variable.
+            </summary>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.GoToDialog.Dispose(System.Boolean)">
+            <summary>
+            Clean up any resources being used.
+            </summary>
+            <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        </member>
+        <member name="M:ScintillaNET_FindReplaceDialog.GoToDialog.InitializeComponent">
+            <summary>
+            Required method for Designer support - do not modify
+            the contents of this method with the code editor.
+            </summary>
+        </member>
+        <member name="T:ScintillaNET_FindReplaceDialog.Properties.Resources">
+            <summary>
+              A strongly-typed resource class, for looking up localized strings, etc.
+            </summary>
+        </member>
+        <member name="P:ScintillaNET_FindReplaceDialog.Properties.Resources.ResourceManager">
+            <summary>
+              Returns the cached ResourceManager instance used by this class.
+            </summary>
+        </member>
+        <member name="P:ScintillaNET_FindReplaceDialog.Properties.Resources.Culture">
+            <summary>
+              Overrides the current thread's CurrentUICulture property for all
+              resource lookups using this strongly typed resource class.
+            </summary>
+        </member>
+        <member name="P:ScintillaNET_FindReplaceDialog.Properties.Resources.Clock">
+            <summary>
+              Looks up a localized resource of type System.Drawing.Bitmap.
+            </summary>
+        </member>
+        <member name="P:ScintillaNET_FindReplaceDialog.Properties.Resources.DeleteHS">
+            <summary>
+              Looks up a localized resource of type System.Drawing.Bitmap.
+            </summary>
+        </member>
+        <member name="P:ScintillaNET_FindReplaceDialog.Properties.Resources.GoToNextMessage">
+            <summary>
+              Looks up a localized resource of type System.Drawing.Bitmap.
+            </summary>
+        </member>
+        <member name="P:ScintillaNET_FindReplaceDialog.Properties.Resources.GoToPreviousMessage">
+            <summary>
+              Looks up a localized resource of type System.Drawing.Bitmap.
+            </summary>
+        </member>
+        <member name="P:ScintillaNET_FindReplaceDialog.Properties.Resources.LineColorHS">
+            <summary>
+              Looks up a localized resource of type System.Drawing.Bitmap.
+            </summary>
+        </member>
+    </members>
+</doc>
