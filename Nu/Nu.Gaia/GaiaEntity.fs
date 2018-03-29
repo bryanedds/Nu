@@ -23,9 +23,20 @@ and EntityPropertyDescriptor (property, attributes) =
         (match property with EntityPropertyDescriptor xfd -> xfd.PropertyName | EntityPropertyInfo pi -> pi.Name),
         attributes)
 
-    let propertyName = match property with EntityPropertyDescriptor pd -> pd.PropertyName | EntityPropertyInfo pi -> pi.Name
-    let propertyType = match property with EntityPropertyDescriptor pd -> pd.PropertyType | EntityPropertyInfo pi -> pi.PropertyType
-    let propertyCanWrite = match property with EntityPropertyDescriptor _ -> true | EntityPropertyInfo xfd -> xfd.CanWrite
+    let propertyName =
+        match property with
+        | EntityPropertyDescriptor pd -> pd.PropertyName
+        | EntityPropertyInfo pi -> pi.Name
+
+    let propertyType =
+        match property with
+        | EntityPropertyDescriptor pd -> pd.PropertyType
+        | EntityPropertyInfo pi -> pi.PropertyType
+
+    let propertyCanWrite =
+        match property with
+        | EntityPropertyDescriptor _ -> true
+        | EntityPropertyInfo xfd -> xfd.CanWrite
 
     let pushPastWorld pastWorld world =
         World.updateUserValue
@@ -60,7 +71,9 @@ and EntityPropertyDescriptor (property, attributes) =
 
     override this.IsReadOnly =
         not propertyCanWrite ||
-        not (Reflection.isPropertyPersistentByName propertyName)
+        not (Reflection.isPropertyPersistentByName propertyName) ||
+        propertyName = "UserState" ||
+        propertyType = typeof<DesignerProperty>
 
     override this.GetValue source =
         match source with
