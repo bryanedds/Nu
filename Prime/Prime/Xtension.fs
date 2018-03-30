@@ -34,8 +34,8 @@ module XtensionModule =
                 // return property directly if the return type matches, otherwise the default value for that type
                 let property = FOption.get propertyOpt
                 match property.PropertyValue with
-                | :? DesignerProperty as desProperty ->
-                    match desProperty.DesignerValue with
+                | :? DesignerProperty as dp ->
+                    match dp.DesignerValue with
                     | :? 'a as propertyValue -> propertyValue
                     | _ -> failwith ("Xtension property '" + propertyName + "' of type '" + property.PropertyType.Name + "' is not of the expected type '" + typeof<'a>.Name + "'.")
                 | :? 'a as value -> value
@@ -57,13 +57,13 @@ module XtensionModule =
                 if xtension.Sealed && property.PropertyType <> typeof<'a> then failwith "Cannot change the type of a sealed Xtension's property."
                 if xtension.Imperative then
                     match property.PropertyValue with
-                    | :? DesignerProperty as desProperty -> desProperty.DesignerValue <- value :> obj
+                    | :? DesignerProperty as dp -> dp.DesignerValue <- value :> obj
                     | _ -> property.PropertyValue <- value :> obj
                     xtension
                 else
                     match property.PropertyValue with
-                    | :? DesignerProperty as desProperty ->
-                        let property = { property with PropertyValue = { desProperty with DesignerValue = value }}
+                    | :? DesignerProperty as dp ->
+                        let property = { property with PropertyValue = { dp with DesignerValue = value }}
                         let properties = UMap.add propertyName property xtension.Properties
                         { xtension with Properties = properties }
                     | _ ->

@@ -811,17 +811,23 @@ module WorldModuleEntity =
 
         /// Write an entity to an entity descriptor.
         static member writeEntity (entity : Entity) entityDescriptor world =
+            let overlayer = World.getOverlayer world
             let entityState = World.getEntityState entity world
             let entityDispatcherName = getTypeName entityState.DispatcherNp
             let entityDescriptor = { entityDescriptor with EntityDispatcher = entityDispatcherName }
+            let entityFacetNames = World.getEntityFacetNamesReflectively entityState
+            let overlaySymbolsOpt =
+                match entityState.OverlayNameOpt with
+                | Some overlayName -> Some (Overlayer.getOverlaySymbols overlayName entityFacetNames overlayer)
+                | None -> None
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OverlayNameOpt" && propertyType = typeof<string option> then
                     let defaultOverlayNameOpt = Option.flatten (World.tryFindRoutedOverlayNameOpt entityDispatcherName world)
                     defaultOverlayNameOpt <> (propertyValue :?> string option)
                 else
-                    let overlayer = World.getOverlayer world
-                    let facetNames = World.getEntityFacetNamesReflectively entityState
-                    Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entityState overlayer
+                    match overlaySymbolsOpt with
+                    | Some overlaySymbols -> Overlayer.shouldPropertySerialize propertyName propertyType entityState overlaySymbols
+                    | None -> true
             let getEntityProperties = Reflection.writePropertiesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
             { entityDescriptor with EntityProperties = getEntityProperties }
 
