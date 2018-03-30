@@ -20,40 +20,47 @@ module ScriptingMarshalling =
         | (true, tryImportFn) -> tryImportFn tryImportExt ty value
         | (false, _) ->
 
-            // failing that, try import as Tuple
-            if FSharpType.IsTuple ty then
-                let tupleElementTypes = FSharpType.GetTupleElements ty
-                let tupleFields = FSharpValue.GetTupleFields value
-                let tupleFieldOpts = Array.mapi (fun i tupleField -> tryImport tryImportExt tupleElementTypes.[i] tupleField) tupleFields
-                match Array.definitizePlus tupleFieldOpts with
-                | (true, tupleFields) -> Some (Tuple tupleFields)
-                | (false, _) -> None
+            // try to import as extension value
+            match tryImportExt ty value with
+            | None ->
 
-            // or as Record
-            elif FSharpType.IsRecord ty then
-                let recordFieldInfos = FSharpType.GetRecordFields ty
-                let recordFields = FSharpValue.GetRecordFields value
-                let recordFieldOpts = Array.mapi (fun i recordField -> tryImport tryImportExt recordFieldInfos.[i].PropertyType recordField) recordFields
-                match Array.definitizePlus recordFieldOpts with
-                | (true, recordFields) ->
-                    let recordName = match ty.Name.IndexOf '`' with -1 -> ty.Name | index -> ty.Name.Substring (0, index)
-                    let recordFieldMap = recordFieldInfos |> Array.mapi (fun i (field : Reflection.PropertyInfo) -> (field.Name, i)) |> Map.ofArray
-                    Some (Record (recordName, recordFieldMap, recordFields))
-                | (false, _) -> None
-
-            // or as Union
-            elif FSharpType.IsUnion ty then
-                let (unionCase, unionFields) = FSharpValue.GetUnionFields (value, ty)
-                let unionFieldInfos = unionCase.GetFields ()
-                if not ^ Array.isEmpty unionFields then
-                    let unionFieldOpts = Array.mapi (fun i unionField -> tryImport tryImportExt unionFieldInfos.[i].PropertyType unionField) unionFields
-                    match Array.definitizePlus unionFieldOpts with
-                    | (true, unionFields) -> Some (Union (unionCase.Name, unionFields))
+                // failing that, try import as Tuple
+                if FSharpType.IsTuple ty then
+                    let tupleElementTypes = FSharpType.GetTupleElements ty
+                    let tupleFields = FSharpValue.GetTupleFields value
+                    let tupleFieldOpts = Array.mapi (fun i tupleField -> tryImport tryImportExt tupleElementTypes.[i] tupleField) tupleFields
+                    match Array.definitizePlus tupleFieldOpts with
+                    | (true, tupleFields) -> Some (Tuple tupleFields)
                     | (false, _) -> None
-                else Some (Union (unionCase.Name, [||]))
 
-            // otherwise, we have no conversion
-            else None
+                // or as Record
+                elif FSharpType.IsRecord ty then
+                    let recordFieldInfos = FSharpType.GetRecordFields ty
+                    let recordFields = FSharpValue.GetRecordFields value
+                    let recordFieldOpts = Array.mapi (fun i recordField -> tryImport tryImportExt recordFieldInfos.[i].PropertyType recordField) recordFields
+                    match Array.definitizePlus recordFieldOpts with
+                    | (true, recordFields) ->
+                        let recordName = match ty.Name.IndexOf '`' with -1 -> ty.Name | index -> ty.Name.Substring (0, index)
+                        let recordFieldMap = recordFieldInfos |> Array.mapi (fun i (field : Reflection.PropertyInfo) -> (field.Name, i)) |> Map.ofArray
+                        Some (Record (recordName, recordFieldMap, recordFields))
+                    | (false, _) -> None
+
+                // or as Union
+                elif FSharpType.IsUnion ty then
+                    let (unionCase, unionFields) = FSharpValue.GetUnionFields (value, ty)
+                    let unionFieldInfos = unionCase.GetFields ()
+                    if not ^ Array.isEmpty unionFields then
+                        let unionFieldOpts = Array.mapi (fun i unionField -> tryImport tryImportExt unionFieldInfos.[i].PropertyType unionField) unionFields
+                        match Array.definitizePlus unionFieldOpts with
+                        | (true, unionFields) -> Some (Union (unionCase.Name, unionFields))
+                        | (false, _) -> None
+                    else Some (Union (unionCase.Name, [||]))
+
+                // otherwise, we have no conversion
+                else None
+
+            // it's an extension value
+            | Some value -> Some value
 
     and tryImportGuid (_ : Type) (value : obj) =
         Some (String ((GuidConverter ()).ConvertToString value))
@@ -135,53 +142,60 @@ module ScriptingMarshalling =
         | (true, tryExport) -> tryExport tryExportExt ty value
         | (false, _) ->
 
-            // failing that, try export as Tuple
-            if FSharpType.IsTuple ty then
-                match value with
-                | Tuple fields
-                | Union (_, fields)
-                | Record (_, _, fields) ->
-                    let fieldInfos = FSharpType.GetTupleElements ty
-                    let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport tryExportExt fieldInfos.[i] fieldSymbol) fields
-                    match Array.definitizePlus fieldOpts with
-                    | (true, fields) -> Some (FSharpValue.MakeTuple (fields, ty))
-                    | (false, _) -> None
-                | _ -> None
+            // try to export as extension value
+            match tryExportExt ty value with
+            | None ->
 
-            // or as Record
-            elif FSharpType.IsRecord ty then
-                match value with
-                | Union (_, fields)
-                | Record (_, _, fields) ->
-                    let fieldInfos = FSharpType.GetRecordFields ty
-                    let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport tryExportExt fieldInfos.[i].PropertyType fieldSymbol) fields
-                    match Array.definitizePlus fieldOpts with
-                    | (true, fields) -> Some (FSharpValue.MakeRecord (ty, fields))
-                    | (false, _) -> None
-                | _ -> None
-
-            // or as Union
-            elif FSharpType.IsUnion ty && ty <> typeof<string list> then
-                let unionCases = FSharpType.GetUnionCases ty
-                match value with
-                | Keyword name ->
-                    match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = name) unionCases with
-                    | Some unionCase -> Some (FSharpValue.MakeUnion (unionCase, [||]))
-                    | None -> None
-                | Union (name, fields)
-                | Record (name, _, fields) ->
-                    match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = name) unionCases with
-                    | Some unionCase ->
-                        let unionFieldInfos = unionCase.GetFields ()
-                        let unionValueOpts = Array.mapi (fun i unionSymbol -> tryExport tryExportExt unionFieldInfos.[i].PropertyType unionSymbol) fields
-                        match Array.definitizePlus unionValueOpts with
-                        | (true, unionValues) -> Some (FSharpValue.MakeUnion (unionCase, unionValues))
+                // failing that, try export as Tuple
+                if FSharpType.IsTuple ty then
+                    match value with
+                    | Tuple fields
+                    | Union (_, fields)
+                    | Record (_, _, fields) ->
+                        let fieldInfos = FSharpType.GetTupleElements ty
+                        let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport tryExportExt fieldInfos.[i] fieldSymbol) fields
+                        match Array.definitizePlus fieldOpts with
+                        | (true, fields) -> Some (FSharpValue.MakeTuple (fields, ty))
                         | (false, _) -> None
-                    | None -> None
-                | _ -> None
+                    | _ -> None
 
-            // otherwise, we have no conversion
-            else None
+                // or as Record
+                elif FSharpType.IsRecord ty then
+                    match value with
+                    | Union (_, fields)
+                    | Record (_, _, fields) ->
+                        let fieldInfos = FSharpType.GetRecordFields ty
+                        let fieldOpts = Array.mapi (fun i fieldSymbol -> tryExport tryExportExt fieldInfos.[i].PropertyType fieldSymbol) fields
+                        match Array.definitizePlus fieldOpts with
+                        | (true, fields) -> Some (FSharpValue.MakeRecord (ty, fields))
+                        | (false, _) -> None
+                    | _ -> None
+
+                // or as Union
+                elif FSharpType.IsUnion ty && ty <> typeof<string list> then
+                    let unionCases = FSharpType.GetUnionCases ty
+                    match value with
+                    | Keyword name ->
+                        match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = name) unionCases with
+                        | Some unionCase -> Some (FSharpValue.MakeUnion (unionCase, [||]))
+                        | None -> None
+                    | Union (name, fields)
+                    | Record (name, _, fields) ->
+                        match Array.tryFind (fun (unionCase : UnionCaseInfo) -> unionCase.Name = name) unionCases with
+                        | Some unionCase ->
+                            let unionFieldInfos = unionCase.GetFields ()
+                            let unionValueOpts = Array.mapi (fun i unionSymbol -> tryExport tryExportExt unionFieldInfos.[i].PropertyType unionSymbol) fields
+                            match Array.definitizePlus unionValueOpts with
+                            | (true, unionValues) -> Some (FSharpValue.MakeUnion (unionCase, unionValues))
+                            | (false, _) -> None
+                        | None -> None
+                    | _ -> None
+
+                // otherwise, we have no conversion
+                else None
+
+            // it's an extension value
+            | Some value -> Some value
 
     and tryExportGuid (_ : Type) (address : Expr) =
         match address with
