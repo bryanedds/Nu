@@ -89,7 +89,7 @@ type [<Struct; StructuralEquality; NoComparison>] Property =
       mutable PropertyValue : obj }
 
 /// A designer-defined property.
-type [<NoEquality; NoComparison>] DesignerProperty =
+type [<StructuralEquality; NoComparison>] DesignerProperty =
     { mutable DesignerType : Type
       mutable DesignerValue : obj }
 
