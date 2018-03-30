@@ -8,7 +8,8 @@ open System.Diagnostics
 [<RequireQualifiedAccess>]
 module Log =
 
-    let mutable private Initialized = false
+    let mutable private Initialized =
+        false
 
     let private getUtcNowStr () =
         let now = DateTime.UtcNow

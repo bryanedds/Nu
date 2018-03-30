@@ -133,8 +133,7 @@ module MetadataModule =
 
         /// Try to get the tile map metadata of the given asset.
         let tryGetTileMapMetadata assetTag metadata =
-            let assetOpt = tryGetMetadata assetTag metadata
-            match assetOpt with
+            match tryGetMetadata assetTag metadata with
             | Some (TileMapMetadata (filePath, images, tmxMap)) -> Some (filePath, images, tmxMap)
             | None -> None
             | _ -> None
