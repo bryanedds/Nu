@@ -12,6 +12,10 @@ open Prime
 [<AutoOpen>]
 module Operators =
 
+    /// The constant function.
+    /// No matter what you pass it, it evaluates to a constant value.
+    let constant a _ = a
+
     /// The tautology function.
     /// No matter what you pass it, it evaluates to true.
     let tautology _ = true
