@@ -35,9 +35,8 @@ module DictionaryExtension =
 
         /// Try to add an entry, returning false upon failure.
         member this.TryAdd (key, value) =
-            if not (this.ContainsKey key) then
-                this.Add (key, value)
-                true
+            if not (this.ContainsKey key)
+            then this.Add (key, value); true
             else false
 
         /// Check value equality of dictionary.

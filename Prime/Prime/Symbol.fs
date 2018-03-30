@@ -264,7 +264,7 @@ module Symbol =
     /// "String with quoted spaces."
     ///
     /// (* Quoted value *)
-    /// `[Some 1]'
+    /// `[Some 1]
     /// 
     /// (* Symbols values *)
     /// []
@@ -295,7 +295,7 @@ module Symbol =
     /// "String with quoted spaces."
     ///
     /// (* Quoted value *)
-    /// `[Some 1]'
+    /// `[Some 1]
     /// 
     /// (* Symbols values *)
     /// []
@@ -303,7 +303,7 @@ module Symbol =
     /// [Left 0]
     /// [[0 1] [2 4]]
     /// [AnimationData 4 8]
-    /// [Gem `[Some 1]']
+    /// [Gem `[Some 1]]
     ///
     /// ...and so on.
     let rec toString symbol = writeSymbol symbol

@@ -22,7 +22,8 @@ module TConfig =
         | Functional -> true
         | Imperative -> false
 
-type TExpr<'a, 'env> = 'env -> struct ('a * 'env)
+type TExpr<'a, 'env> =
+    'env -> struct ('a * 'env)
 
 type TExprBuilder<'env> () =
 
