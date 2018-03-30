@@ -1048,32 +1048,40 @@ module Gaia =
                 match Array.toList (propertyTypeText.Split ([|" : "|], StringSplitOptions.None)) with
                 | [] ->
                     MessageBox.Show
-                        ("Could not add designer property '" + propertyTypeText + "'. Please provide an example expression or choose one from the list.",
+                        ("Could not add designer property '" + propertyTypeText + "'. Please provide an evaluatable expression or choose one from the list.",
                          "Invalid Designer Property",
                          MessageBoxButtons.OK) |>
                         ignore
                     world
                 | exprStr :: _ ->
-                    let expr = scvalue<Scripting.Expr> exprStr
-                    let selectedLayer = (World.getUserValue world).SelectedLayer
-                    let localFrame = selectedLayer.GetScriptFrameNp world
-                    let (evaled, world) = World.evalWithLogging expr localFrame selectedLayer world
-                    match World.tryGetType evaled with
-                    | Some dt ->
-                        let dvOpt =
-                            if defaulting
-                            then dt.TryGetDefaultValue ()
-                            else ScriptingWorld.tryExport dt evaled world
-                        match dvOpt with
-                        | Some dv ->
-                            let dp = { DesignerType = dt; DesignerValue = dv }
-                            let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = dp }
-                            let world = entity.AttachProperty form.entityDesignerPropertyNameTextBox.Text property world
-                            form.entityPropertyGrid.Refresh ()
-                            // TODO: something like this - form.entityPropertyGrid.SelectedGridItem <- form.entityPropertyGrid.[?]
-                            world
+                    try let expr = scvalue<Scripting.Expr> exprStr
+                        let selectedLayer = (World.getUserValue world).SelectedLayer
+                        let localFrame = selectedLayer.GetScriptFrameNp world
+                        let (evaled, world) = World.evalWithLogging expr localFrame selectedLayer world
+                        match World.tryGetType evaled with
+                        | Some dt ->
+                            let dvOpt =
+                                if defaulting
+                                then dt.TryGetDefaultValue ()
+                                else ScriptingWorld.tryExport dt evaled world
+                            match dvOpt with
+                            | Some dv ->
+                                let dp = { DesignerType = dt; DesignerValue = dv }
+                                let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = dp }
+                                let world = entity.AttachProperty form.entityDesignerPropertyNameTextBox.Text property world
+                                entityTds.WorldRef := world // must be set for property grid
+                                form.entityPropertyGrid.Refresh ()
+                                // TODO: something like this - form.entityPropertyGrid.SelectedGridItem <- form.entityPropertyGrid.[?]
+                                world
+                            | None -> world
                         | None -> world
-                    | None -> world
+                    with _ ->
+                        MessageBox.Show
+                            ("Could not add designer property '" + propertyTypeText + "'. Please provide an evaluatable expression or choose one from the list.",
+                             "Invalid Designer Property",
+                             MessageBoxButtons.OK) |>
+                            ignore
+                        world
             | _ -> world
 
     let private handleEntityDesignerPropertyRemoveClick (form : GaiaForm) (_ : EventArgs) =
@@ -1083,6 +1091,7 @@ module Gaia =
             | :? EntityTypeDescriptorSource as entityTds ->
                 let entity = entityTds.DescribedEntity
                 let world = entity.DetachProperty form.entityDesignerPropertyNameTextBox.Text world
+                entityTds.WorldRef := world // must be set for property grid
                 form.entityPropertyGrid.Refresh ()
                 world
             | _ -> world
