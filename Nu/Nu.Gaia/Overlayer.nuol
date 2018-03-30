@@ -1,7 +1,5 @@
 [[SampleOverlay
   [BlockDispatcher]
   [[BodyType Dynamic]
-   [DesignerProperty
-    ["Microsoft.FSharp.Collections.FSharpList`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]], FSharp.Core, Version=4.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" [0 1]]]
    [Friction 0.5]
    [IsSensor True]]]]
