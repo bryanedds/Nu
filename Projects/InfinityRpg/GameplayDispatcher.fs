@@ -117,7 +117,7 @@ module GameplayDispatcherModule =
                     currentNode,
                     goalNode,
                     (fun n n2 -> if n2.PositionM.Y <> n.PositionM.Y then 2.0f else 1.0f), // prefer horizontal walk to vertical for predictability
-                    (fun n -> 0.0f))
+                    (fun _ -> 0.0f))
             match navigationPathOpt with
             | null -> None
             | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
@@ -377,7 +377,7 @@ module GameplayDispatcherModule =
         static let runCharacterAction newActionDescriptor (character : Entity) world =
             // NOTE: currently just implements attack
             let chain = chain {
-                do! update ^ character.SetActivityState ^ Action newActionDescriptor
+                do! update ^ character.SetActivityState (Action newActionDescriptor)
                 do! during (ActivityState.isActing << character.GetActivityState) ^ chain {
                     do! update ^ fun world ->
                         let actionDescriptor =
@@ -468,7 +468,7 @@ module GameplayDispatcherModule =
                         cancelNavigation Simulants.Player world
                     else runEnemyNavigationActivities newEnemyNavigationActivities enemies world
 
-            // teh world
+            // fin
             world
 
         static let tryRunPlayerTurn playerInput world =
