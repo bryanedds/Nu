@@ -1020,13 +1020,25 @@ module WorldTypes =
                 | ("Vector2", (:? Vector2 as v2)) ->
                     let v2p = { Vector2 = v2 }
                     v2p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
+                | ("Vector4", (:? Vector4 as v4)) ->
+                    let v4p = { Vector4 = v4 }
+                    v4p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
+                | ("Vector2i", (:? Vector2i as v2i)) ->
+                    let v2ip = { Vector2i = v2i }
+                    v2ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | (_, _) -> None
-            
+
             member this.TryExport ty value =
                 match (ty.Name, value) with
                 | ("Vector2", Scripting.Pluggable pluggable) ->
                     let v2 = pluggable :?> Vector2Pluggable
                     v2.Vector2 :> obj |> Some
+                | ("Vector4", Scripting.Pluggable pluggable) ->
+                    let v4 = pluggable :?> Vector4Pluggable
+                    v4.Vector4 :> obj |> Some
+                | ("Vector2i", Scripting.Pluggable pluggable) ->
+                    let v2i = pluggable :?> Vector2iPluggable
+                    v2i.Vector2i :> obj |> Some
                 | (_, _) -> None
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
