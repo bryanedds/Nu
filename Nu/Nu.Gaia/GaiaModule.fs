@@ -1414,10 +1414,10 @@ module Gaia =
         form
 
     /// Attempt to make a world for use in the Gaia form.
-    // You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
+    /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
-    let attemptMakeWorld plugin sdlDeps =
-        let worldEir = World.attemptMake false 0L () plugin sdlDeps
+    let tryMakeWorld plugin sdlDeps =
+        let worldEir = World.tryMake false 0L () plugin sdlDeps
         match worldEir with
         | Right world ->
             let world = World.createScreen3 (plugin.GetEditorScreenDispatcherName ()) (Some Simulants.EditorScreen.ScreenName) world |> snd
@@ -1449,7 +1449,7 @@ module Gaia =
         use form = createForm ()
         match attemptMakeSdlDeps form with
         | Right sdlDeps ->
-            match attemptMakeWorld plugin sdlDeps with
+            match tryMakeWorld plugin sdlDeps with
             | Right world ->
                 WorldRef := world
                 let _ = run3 tautology targetDir sdlDeps form
