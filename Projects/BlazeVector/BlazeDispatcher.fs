@@ -21,7 +21,14 @@ module BlazeDispatcherModule =
             let world = World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
             World.transitionScreen Simulants.Gameplay world
 
-        // this function creates the BlazeVector title screen to the world
+        // this function creates the omniscreen (a screen that is always present)
+        static let createOmniscreen world =
+
+            // create an empty screen for the omniscreen (empty since we don't use it for anything).
+            let (omniscreen, world) = World.createScreen (Some Simulants.Omniscreen.ScreenName) world
+            World.setOmniscreen omniscreen world
+
+        // this function creates the BlazeVector title screen
         static let createTitleScreen world =
 
             // this creates a dissolve screen from the specified file with the given parameters
@@ -65,6 +72,7 @@ module BlazeDispatcherModule =
             let world = World.hintAudioPackageUse Assets.GuiPackageName world
 
             // create our screens
+            let world = createOmniscreen world
             let world = createTitleScreen world
             let world = createCreditsScreen world
             let world = createGameplayScreen world

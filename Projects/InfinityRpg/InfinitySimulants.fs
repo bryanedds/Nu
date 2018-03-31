@@ -5,6 +5,9 @@ open Nu
 open InfinityRpg
 module Simulants =
 
+    // omniscreen
+    let Omniscreen = !> "Omniscreen"
+
     // nu splash screen
     let Splash = !> "Splash"
 
