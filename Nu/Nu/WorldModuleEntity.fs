@@ -934,9 +934,12 @@ module WorldModuleEntity =
                 // OPTIMIZATION: attempts to avoid constructing a screen address on each call to decrease address hashing
                 // OPTIMIZATION: assumes a well-formed entity address with List.head on its names
                 let screen =
-                    match (World.getGameState world).SelectedScreenOpt with
-                    | Some screen when Address.getName screen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> screen
-                    | Some _ | None -> entity.EntityAddress |> Address.getNames |> List.head |> ntoa<Screen> |> Screen
+                    match (World.getGameState world).OmniscreenOpt with
+                    | Some omniscreen when Address.getName omniscreen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> omniscreen
+                    | Some _ | None ->
+                        match (World.getGameState world).SelectedScreenOpt with
+                        | Some screen when Address.getName screen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> screen
+                        | Some _ | None -> entity.EntityAddress |> Address.getNames |> List.head |> ntoa<Screen> |> Screen
 
                 // proceed to update entity in entity tree
                 let entityTree =

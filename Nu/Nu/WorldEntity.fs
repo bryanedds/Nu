@@ -120,9 +120,12 @@ module WorldEntityModule =
 
         /// Check that an entity is selected.
         member this.GetSelected world =
-            match (World.getGameState world).SelectedScreenOpt with
-            | Some screen -> Address.head this.EntityAddress = Address.head screen.ScreenAddress
-            | None -> false
+            match (World.getGameState world).OmniscreenOpt with
+            | Some omniscreen -> Address.head this.EntityAddress = Address.head omniscreen.ScreenAddress
+            | None ->
+                match (World.getGameState world).SelectedScreenOpt with
+                | Some screen -> Address.head this.EntityAddress = Address.head screen.ScreenAddress
+                | None -> false
 
         /// Check that an entity is in the camera's view.
         member this.GetInView world =

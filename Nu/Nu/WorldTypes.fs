@@ -417,6 +417,7 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
+          OmniscreenOpt : Screen option
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
           EyeCenter : Vector2
@@ -438,6 +439,7 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
+              OmniscreenOpt = None
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
               EyeCenter = eyeCenter

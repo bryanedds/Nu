@@ -89,6 +89,26 @@ module WorldModuleGame =
         static member setEyeSize value world =
             World.updateGameState (fun layerState -> { layerState with EyeSize = value }) Property? EyeSize world
 
+        /// Get the omniscreen, if any.
+        [<FunctionBinding>]
+        static member getOmniscreenOpt world =
+            (World.getGameState world).OmniscreenOpt
+        
+        /// Set the omniscreen or None.
+        [<FunctionBinding>]
+        static member setOmniscreenOpt value world =
+            World.updateGameState (fun layerState -> { layerState with OmniscreenOpt = value }) Property? OmniscreenOpt world
+
+        /// Get the omniscreen (failing with an exception if there isn't one).
+        [<FunctionBinding>]
+        static member getOmniscreen world =
+            Option.get (World.getOmniscreenOpt world)
+        
+        /// Set the omniscreen.
+        [<FunctionBinding>]
+        static member setOmniscreen value world =
+            World.setOmniscreenOpt (Some value) world
+
         /// Get the currently selected screen, if any.
         [<FunctionBinding>]
         static member getSelectedScreenOpt world =
@@ -108,8 +128,8 @@ module WorldModuleGame =
         /// Set the currently selected screen. Be careful using this function directly as you may
         /// be wanting to use the higher-level World.transitionScreen function instead.
         [<FunctionBinding>]
-        static member setSelectedScreen screen world =
-            World.setSelectedScreenOpt (Some screen) world
+        static member setSelectedScreen value world =
+            World.setSelectedScreenOpt (Some value) world
 
         /// Get the current destination screen if a screen transition is currently underway.
         [<FunctionBinding>]
@@ -322,6 +342,7 @@ module WorldModuleGame =
         Getters.Add ("OnUnregister", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUnregister world })
         Getters.Add ("OnUpdate", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUpdate world })
         Getters.Add ("OnPostUpdate", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnPostUpdate world })
+        Getters.Add ("OmniscreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniscreenOpt world })
         Getters.Add ("SelectedScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
         Getters.Add ("ScreenTransitionDestinationOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world })
         Getters.Add ("EyeCenter", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter world })
@@ -340,6 +361,7 @@ module WorldModuleGame =
         Setters.Add ("OnUnregister", fun property world -> (true, World.setGameOnUnregister (property.PropertyValue :?> Scripting.Expr) world))
         Setters.Add ("OnUpdate", fun property world -> (true, World.setGameOnUpdate (property.PropertyValue :?> Scripting.Expr) world))
         Setters.Add ("OnPostUpdate", fun property world -> (true, World.setGameOnPostUpdate (property.PropertyValue :?> Scripting.Expr) world))
+        Setters.Add ("OmniscreenOpt", fun property world -> (true, World.setOmniscreenOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("SelectedScreenOpt", fun property world -> (true, World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("ScreenTransitionDestinationOpt", fun property world -> (true, World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("EyeCenter", fun property world -> (true, World.setEyeCenter (property.PropertyValue :?> Vector2) world))
