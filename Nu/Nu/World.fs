@@ -220,9 +220,9 @@ module WorldModule3 =
             let world = World.createEntity (Some Simulants.DefaultEntity.EntityName) DefaultOverlay Simulants.DefaultLayer world |> snd
             world
 
-        /// Try to make the world, returning either a Right World on success, or a Left string
+        /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member attemptMake standAlone tickRate userState (plugin : NuPlugin) sdlDeps =
+        static member tryMake standAlone tickRate userState (plugin : NuPlugin) sdlDeps =
 
             // ensure game engine is initialized
             // TODO: P1: parameterize hard-coded boolean

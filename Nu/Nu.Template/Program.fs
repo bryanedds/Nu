@@ -48,14 +48,14 @@ module Program =
 
         // this is a callback that attempts to make 'the world' in a functional programming
         // sense. In a Nu game, the world is represented as an abstract data type named World.
-        let attemptMakeWorld sdlDeps =
+        let tryMakeWorld sdlDeps =
 
             // an instance of the above plugin
             let plugin = $safeprojectname$Plugin ()
 
             // here is an attempt to make the world with the various initial states, the engine
             // plugin, and SDL dependencies.
-            World.attemptMake true 1L () plugin sdlDeps
+            World.tryMake true 1L () plugin sdlDeps
 
         // after some configuration it is time to run the game. We're off and running!
-        World.run attemptMakeWorld id id sdlConfig
+        World.run tryMakeWorld id id sdlConfig
