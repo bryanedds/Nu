@@ -3,6 +3,9 @@ open Nu
 module Simulants =
 
     // here we derive a screen handle from its name so that we can interface with it in code
+    let Omniscreen = !> "Omniscreen"
+
+    // same as above, but for the splash screen
     let Splash = !> "Splash"
 
     // same as above, but for the title screen
