@@ -203,7 +203,10 @@ module WorldScripting =
                 | (false, _) -> None
             | Scripting.Option opt ->
                 match opt with
-                | Some value -> World.tryGetType value
+                | Some value ->
+                    match World.tryGetType value with
+                    | Some ty -> Some (typedefof<_ option>.MakeGenericType [|ty|])
+                    | None -> None
                 | None -> None
             | Scripting.List values ->
                 let typeOpts = List.map World.tryGetType values

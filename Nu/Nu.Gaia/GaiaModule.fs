@@ -1071,10 +1071,23 @@ module Gaia =
                                 let world = entity.AttachProperty form.entityDesignerPropertyNameTextBox.Text property world
                                 entityTds.WorldRef := world // must be set for property grid
                                 form.entityPropertyGrid.Refresh ()
-                                // TODO: something like this - form.entityPropertyGrid.SelectedGridItem <- form.entityPropertyGrid.[?]
                                 world
-                            | None -> world
-                        | None -> world
+                            | None ->
+                                MessageBox.Show
+                                    ("Could not add default value for designer property '" + propertyTypeText + "'. ",
+                                     "Invalid Designer Property",
+                                     MessageBoxButtons.OK) |>
+                                    ignore
+                                world
+                        | None ->
+                            MessageBox.Show
+                                ("Could not add designer property '" + propertyTypeText + "'. " +
+                                 "Expression does not articulate enough information to infer a static F# type. " +
+                                 "Please provide a fully articulated expression or choose one from the list.",
+                                 "Invalid Designer Property",
+                                 MessageBoxButtons.OK) |>
+                                ignore
+                            world
                     with _ ->
                         MessageBox.Show
                             ("Could not add designer property '" + propertyTypeText + "'. Please provide an evaluatable expression or choose one from the list.",
