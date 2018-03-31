@@ -93,12 +93,6 @@ module WorldLayerModule =
 
     type World with
 
-        static member private removeLayer layer world =
-            let removeEntities layer world =
-                let entities = World.getEntities layer world
-                World.destroyEntitiesImmediate entities world
-            World.removeLayer3 removeEntities layer world
-
         static member internal updateLayer (layer : Layer) world =
             World.withEventContext (fun world ->
                 
@@ -155,7 +149,10 @@ module WorldLayerModule =
         /// Destroy a layer in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// layer's existence. Consider using World.destroyLayer instead.
         static member destroyLayerImmediate layer world =
-            World.removeLayer layer world
+            let destroyEntitiesImmediate layer world =
+                let entities = World.getEntities layer world
+                World.destroyEntitiesImmediate entities world
+            World.removeLayer3 destroyEntitiesImmediate layer world
 
         /// Destroy a layer in the world at the end of the current update.
         [<FunctionBinding>]

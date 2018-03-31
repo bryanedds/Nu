@@ -190,7 +190,7 @@ module AssetGraphModule =
                                     filePaths |>
                                 List.ofArray
                             assets @ assetsRev
-                        with exn -> Log.info ("Invalid directory '" + directory + "'."); [])
+                        with _ -> Log.info ("Invalid directory '" + directory + "'."); [])
                     [] packageDescriptor |>
                 List.rev
             match associationOpt with
