@@ -171,24 +171,25 @@ module WorldScripting =
             | Scripting.Single _ -> Some typeof<single>
             | Scripting.Double _ -> Some typeof<double>
             | Scripting.String _ -> Some typeof<string>
-            | Scripting.Keyword keyword ->
-                let types =
+            | Scripting.Keyword keyword
+            | Scripting.Union (keyword, _) ->
+                let typeOpt =
                     AppDomain.CurrentDomain.GetAssemblies () |>
-                    Array.map (fun asm -> asm.GetTypes ()) |>
-                    Array.concat
-                let candidateUnions =
-                    types |>
-                    Array.map (fun ty -> FSharpType.GetUnionCases ty) |>
+                    Array.map (fun asm -> Array.filter FSharpType.IsUnion (asm.GetTypes ())) |>
                     Array.concat |>
-                    Array.filter (fun uc -> uc.Name = keyword) |>
-                    Array.map (fun uc -> uc.DeclaringType)
-                let candidateTypes =
-                    types |>
                     Array.filter (fun ty -> ty.Name = keyword) |>
                     Array.filter (fun ty -> ty.GenericTypeArguments.Length = 0) |> // generic algebraic data types not yet supported...
-                    Array.append candidateUnions
-                // just take the first found type for now...
-                Array.tryHead candidateTypes
+                    Array.tryHead // just take the first found type for now...
+                typeOpt
+            | Scripting.Record (keyword, _, _) ->
+                let typeOpt =
+                    AppDomain.CurrentDomain.GetAssemblies () |>
+                    Array.map (fun asm -> Array.filter FSharpType.IsRecord (asm.GetTypes ())) |>
+                    Array.concat |>
+                    Array.filter (fun ty -> ty.Name = keyword) |>
+                    Array.filter (fun ty -> ty.GenericTypeArguments.Length = 0) |> // generic algebraic data types not yet supported...
+                    Array.tryHead // just take the first found type for now...
+                typeOpt
             | Scripting.Pluggable value ->
                 // TODO: P1: use a virtual dispatching?
                 match value with

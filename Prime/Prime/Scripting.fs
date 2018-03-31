@@ -596,8 +596,7 @@ module Scripting =
                                 if List.forall (function Symbols ([Atom _; _], _) -> true | _ -> false) cases then
                                     let definitions = List.map (function Symbols ([Atom (fieldName, _); fieldValue], _) -> (fieldName, fieldValue) | _ -> failwithumf ()) cases
                                     let definitions = List.map (fun (fieldName, fieldValue) -> (fieldName, this.SymbolToExpr fieldValue)) definitions
-                                    let map = definitions |> List.mapi (fun i (fieldName, _) -> (fieldName, i)) |> Map.ofList
-                                    Record (name, map, definitions |> List.map snd |> Array.ofList) :> obj
+                                    RecordUnevaled (name, definitions) :> obj
                                 else Violation (["InvalidForm"; "Record"], "Invalid Record form. Requires 1 or more field definitions.", originOpt) :> obj
                             | _ -> Violation (["InvalidForm"; "Record"], "Invalid Record form. Requires 1 name and 1 or more field definitions.", originOpt) :> obj
                         | "tryUpdate" ->
