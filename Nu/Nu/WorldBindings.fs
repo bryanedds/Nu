@@ -38,7 +38,8 @@ module WorldBindings =
         "writeLayerToFile readLayerFromFile getEntities destroyEntity " +
         "destroyEntities tryPickEntity createEntity reassignEntity " +
         "trySetEntityOverlayNameOpt trySetEntityFacetNames createLayer getEyeCenter " +
-        "setEyeCenter getEyeSize setEyeSize getSelectedScreenOpt " +
+        "setEyeCenter getEyeSize setEyeSize getOmniscreenOpt " +
+        "setOmniscreenOpt getOmniscreen setOmniscreen getSelectedScreenOpt " +
         "setSelectedScreenOpt getSelectedScreen setSelectedScreen getScreenTransitionDestinationOpt " +
         "getViewBoundsRelative getViewBoundsAbsolute getViewBounds isBoundsInView " +
         "mouseToScreen mouseToWorld mouseToEntity getTickRate " +
@@ -1343,6 +1344,57 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEyeSize' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let getOmniscreenOpt world =
+        let oldWorld = world
+        try
+            let result = World.getOmniscreenOpt world
+            let value = result
+            let value = ScriptingWorld.tryImport typeof<FSharpOption<Screen>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getOmniscreenOpt' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let setOmniscreenOpt value world =
+        let oldWorld = world
+        try
+            let value = ScriptingWorld.tryExport typeof<FSharpOption<Screen>> value world |> Option.get :?> FSharpOption<Screen>
+            let result = World.setOmniscreenOpt value world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setOmniscreenOpt' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getOmniscreen world =
+        let oldWorld = world
+        try
+            let result = World.getOmniscreen world
+            let value = result
+            let value = Scripting.String (scstring value)
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getOmniscreen' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let setOmniscreen value world =
+        let oldWorld = world
+        try
+            let struct (value, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal value world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (Screen address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.setOmniscreen value world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setOmniscreen' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
     let getSelectedScreenOpt world =
         let oldWorld = world
         try
@@ -1375,12 +1427,12 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSelectedScreen' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let setSelectedScreen screen world =
+    let setSelectedScreen value world =
         let oldWorld = world
         try
-            let struct (screen, world) =
+            let struct (value, world) =
                 let context = World.getScriptContext world
-                match World.evalInternal screen world with
+                match World.evalInternal value world with
                 | struct (Scripting.String str, world)
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
@@ -1388,7 +1440,7 @@ module WorldBindings =
                     struct (Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.setSelectedScreen screen world
+            let result = World.setSelectedScreen value world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setSelectedScreen' due to: " + scstring exn, None)
@@ -2305,6 +2357,38 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
             struct (violation, world)
 
+    let evalGetOmniscreenOptBinding fnName exprs originOpt world =
+        match World.evalManyInternal exprs world with
+        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
+            getOmniscreenOpt  world
+        | _ ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+            struct (violation, world)
+
+    let evalSetOmniscreenOptBinding fnName exprs originOpt world =
+        match World.evalManyInternal exprs world with
+        | struct ([|value|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
+            setOmniscreenOpt value world
+        | _ ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+            struct (violation, world)
+
+    let evalGetOmniscreenBinding fnName exprs originOpt world =
+        match World.evalManyInternal exprs world with
+        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
+            getOmniscreen  world
+        | _ ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+            struct (violation, world)
+
+    let evalSetOmniscreenBinding fnName exprs originOpt world =
+        match World.evalManyInternal exprs world with
+        | struct ([|value|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
+            setOmniscreen value world
+        | _ ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+            struct (violation, world)
+
     let evalGetSelectedScreenOptBinding fnName exprs originOpt world =
         match World.evalManyInternal exprs world with
         | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
@@ -2331,8 +2415,8 @@ module WorldBindings =
 
     let evalSetSelectedScreenBinding fnName exprs originOpt world =
         match World.evalManyInternal exprs world with
-        | struct ([|screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            setSelectedScreen screen world
+        | struct ([|value|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
+            setSelectedScreen value world
         | _ ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
             struct (violation, world)
@@ -2597,6 +2681,10 @@ module WorldBindings =
              ("setEyeCenter", evalSetEyeCenterBinding)
              ("getEyeSize", evalGetEyeSizeBinding)
              ("setEyeSize", evalSetEyeSizeBinding)
+             ("getOmniscreenOpt", evalGetOmniscreenOptBinding)
+             ("setOmniscreenOpt", evalSetOmniscreenOptBinding)
+             ("getOmniscreen", evalGetOmniscreenBinding)
+             ("setOmniscreen", evalSetOmniscreenBinding)
              ("getSelectedScreenOpt", evalGetSelectedScreenOptBinding)
              ("setSelectedScreenOpt", evalSetSelectedScreenOptBinding)
              ("getSelectedScreen", evalGetSelectedScreenBinding)

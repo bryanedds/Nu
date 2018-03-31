@@ -498,68 +498,106 @@ module WorldModule2 =
 
         [<FunctionBinding>]
         static member getEntitiesInView world =
-            match World.getSelectedScreenOpt world with
-            | Some screen -> World.getEntitiesInView2 screen world
-            | None -> (HashSet (), world)
+            let entities = HashSet<Entity> HashIdentity.Structural
+            let world =
+                match World.getOmniscreenOpt world with
+                | Some omniscreen ->
+                    let (entities2, world) = World.getEntitiesInView2 omniscreen world
+                    entities.UnionWith entities2
+                    world
+                | None -> world
+            let world =
+                match World.getSelectedScreenOpt world with
+                | Some screen ->
+                    let (entities2, world) = World.getEntitiesInView2 screen world
+                    entities.UnionWith entities2
+                    world
+                | None -> world
+            (entities, world)
 
         [<FunctionBinding>]
         static member getEntitiesInBounds bounds world =
-            match World.getSelectedScreenOpt world with
-            | Some screen -> World.getEntitiesInBounds3 bounds screen world
-            | None -> (HashSet (), world)
+            let entities = HashSet<Entity> HashIdentity.Structural
+            let world =
+                match World.getOmniscreenOpt world with
+                | Some omniscreen ->
+                    let (entities2, world) = World.getEntitiesInBounds3 bounds omniscreen world
+                    entities.UnionWith entities2
+                    world
+                | None -> world
+            let world =
+                match World.getSelectedScreenOpt world with
+                | Some screen ->
+                    let (entities2, world) = World.getEntitiesInBounds3 bounds screen world
+                    entities.UnionWith entities2
+                    world
+                | None -> world
+            (entities, world)
 
         [<FunctionBinding>]
         static member getEntitiesAtPoint point world =
-            match World.getSelectedScreenOpt world with
-            | Some screen -> World.getEntitiesAtPoint3 point screen world
-            | None -> (HashSet (), world)
+            let entities = HashSet<Entity> HashIdentity.Structural
+            let world =
+                match World.getOmniscreenOpt world with
+                | Some omniscreen ->
+                    let (entities2, world) = World.getEntitiesAtPoint3 point omniscreen world
+                    entities.UnionWith entities2
+                    world
+                | None -> world
+            let world =
+                match World.getSelectedScreenOpt world with
+                | Some screen ->
+                    let (entities2, world) = World.getEntitiesAtPoint3 point screen world
+                    entities.UnionWith entities2
+                    world
+                | None -> world
+            (entities, world)
 
         static member private updateSimulants world =
-            
-            // check for existence of screen; otherwise just operate on game
-            match World.getSelectedScreenOpt world with
-            | Some selectedScreen ->
-            
-                // gather simulants. Note that we do not re-discover simulants during the update process because the
-                // engine is defined to discourage the removal of simulants in the middle of a frame.
-                let layers = World.getLayers selectedScreen world
-                let (entities, world) = World.getEntitiesInView2 selectedScreen world
 
-                // update simulants
-                let world = World.updateGame world
-                let world = World.updateScreen selectedScreen world
-                let world = World.updateScreenTransition selectedScreen world
-                let world = Seq.fold (fun world layer -> World.updateLayer layer world) world layers
-                let world =
-                    Seq.fold (fun world (entity : Entity) ->
-                        if World.isTicking world || entity.GetAlwaysUpdate world
-                        then World.updateEntity entity world
-                        else world)
-                        world
-                        entities
+            // gather simulants
+            let screens = match World.getOmniscreenOpt world with Some omniscreen -> [omniscreen] | None -> []
+            let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
+            let screens = List.rev screens
+            let layers = Seq.concat (List.map (flip World.getLayers world) screens)
+            let entities = HashSet<Entity> HashIdentity.Structural
+            let world =
+                List.fold (fun world screen ->
+                    let (entities2, world) = World.getEntitiesInView2 screen world
+                    entities.UnionWith (entities2 :> _ seq)
+                    world)
+                    world
+                    screens
 
-                // post-update simulants
-                let world = World.postUpdateGame world
-                let world = World.postUpdateScreen selectedScreen world
-                let world = Seq.fold (fun world layer -> World.postUpdateLayer layer world) world layers
-                let world =
-                    Seq.fold (fun world (entity : Entity) ->
-                        if World.isTicking world || entity.GetAlwaysUpdate world
-                        then World.postUpdateEntity entity world
-                        else world)
-                        world
-                        entities
+            // update simulants breadth-first
+            let world = World.updateGame world
+            let world = List.fold (fun world screen -> World.updateScreen screen world) world screens
+            let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.updateScreenTransition selectedScreen world | None -> world
+            let world = Seq.fold (fun world layer -> World.updateLayer layer world) world layers
+            let world =
+                Seq.fold (fun world (entity : Entity) ->
+                    if World.isTicking world || entity.GetAlwaysUpdate world
+                    then World.updateEntity entity world
+                    else world)
+                    world
+                    entities
 
-                // fin
-                world
-            
-            // no screen; just operate on the game
-            | None ->
-               let world = World.updateGame world
-               let world = World.postUpdateGame world
-               world
+            // post-update simulants breadth-first
+            let world = World.postUpdateGame world
+            let world = List.fold (fun world screen -> World.postUpdateScreen screen world) world screens
+            let world = Seq.fold (fun world layer -> World.postUpdateLayer layer world) world layers
+            let world =
+                Seq.fold (fun world (entity : Entity) ->
+                    if World.isTicking world || entity.GetAlwaysUpdate world
+                    then World.postUpdateEntity entity world
+                    else world)
+                    world
+                    entities
 
-        static member private actualizeScreenTransition (_ : Vector2) (eyeSize : Vector2) (screen : Screen) transition world =
+            // fin
+            world
+
+        static member private actualizeScreenTransition5 (_ : Vector2) (eyeSize : Vector2) (screen : Screen) transition world =
             match transition.DissolveImageOpt with
             | Some dissolveImage ->
                 let progress = single (screen.GetTransitionTicksNp world) / single transition.TransitionLifetime
@@ -585,21 +623,43 @@ module WorldModule2 =
                     world
             | None -> world
 
+        static member private actualizeScreenTransition (screen : Screen) world =
+            match screen.GetTransitionStateNp world with
+            | IncomingState -> World.actualizeScreenTransition5 (World.getEyeCenter world) (World.getEyeSize world) screen (screen.GetIncoming world) world
+            | OutgoingState -> World.actualizeScreenTransition5 (World.getEyeCenter world) (World.getEyeSize world) screen (screen.GetOutgoing world) world
+            | IdlingState -> world
+
         static member private actualizeSimulants world =
+
+            // gather simulants
+            let screens = match World.getOmniscreenOpt world with Some omniscreen -> [omniscreen] | None -> []
+            let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
+            let screens = List.rev screens
+            let layers = Seq.concat (List.map (flip World.getLayers world) screens)
+            let entities = HashSet<Entity> HashIdentity.Structural
+            let world =
+                List.fold (fun world screen ->
+                    let (entities2, world) = World.getEntitiesInView2 screen world
+                    entities.UnionWith (entities2 :> _ seq)
+                    world)
+                    world
+                    screens
+
+            // actualize simulants breadth-first
             let world = World.actualizeGame world
-            match World.getSelectedScreenOpt world with
-            | Some selectedScreen ->
-                let world = World.actualizeScreen selectedScreen world
-                let world =
-                    match selectedScreen.GetTransitionStateNp world with
-                    | IncomingState -> World.actualizeScreenTransition (World.getEyeCenter world) (World.getEyeSize world) selectedScreen (selectedScreen.GetIncoming world) world
-                    | OutgoingState -> World.actualizeScreenTransition (World.getEyeCenter world) (World.getEyeSize world) selectedScreen (selectedScreen.GetOutgoing world) world
-                    | IdlingState -> world
-                let layers = World.getLayers selectedScreen world
-                let world = Seq.fold (fun world layer -> World.actualizeLayer layer world) world layers
-                let (entities, world) = World.getEntitiesInView2 selectedScreen world
-                Seq.fold (fun world entity -> World.actualizeEntity entity world) world entities
-            | None -> world
+            let world = List.fold (fun world screen -> World.actualizeScreen screen world) world screens
+            let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.actualizeScreenTransition selectedScreen world | None -> world
+            let world = Seq.fold (fun world layer -> World.actualizeLayer layer world) world layers
+            let world =
+                Seq.fold (fun world (entity : Entity) ->
+                    if World.isTicking world || entity.GetAlwaysUpdate world
+                    then World.actualizeEntity entity world
+                    else world)
+                    world
+                    entities
+
+            // fin
+            world
 
         static member private processUpdate handleUpdate world =
             let world = handleUpdate world

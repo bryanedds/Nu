@@ -84,9 +84,12 @@ module WorldScreenModule =
 
         /// Check that a screen is selected.
         member this.GetSelected world =
-            match (World.getGameState world).SelectedScreenOpt with
-            | Some screen -> Address.head this.ScreenAddress = Address.head screen.ScreenAddress
-            | None -> false
+            match (World.getGameState world).OmniscreenOpt with
+            | Some omniscreen -> Address.head this.ScreenAddress = Address.head omniscreen.ScreenAddress
+            | None ->
+                match (World.getGameState world).SelectedScreenOpt with
+                | Some screen -> Address.head this.ScreenAddress = Address.head screen.ScreenAddress
+                | None -> false
 
         /// Check that a screen exists in the world.
         member this.GetExists world = World.screenExists this world

@@ -40,6 +40,9 @@ module WorldGameModule =
         member this.GetOnPostUpdate world = World.getGameOnPostUpdate world
         member this.SetOnPostUpdate value world = World.setGameOnPostUpdate value world
         member this.OnPostUpdate = PropertyTag.make this Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate
+        member this.GetOmniscreenOpt world = World.getOmniscreenOpt world
+        member this.SetOmniscreenOpt value world = World.setOmniscreenOpt value world
+        member this.OmniscreenOpt = PropertyTag.make this Property? OmniscreenOpt this.GetOmniscreenOpt this.SetOmniscreenOpt
         member this.GetSelectedScreenOpt world = World.getSelectedScreenOpt world
         member this.SetSelectedScreenOpt value world = World.setSelectedScreenOpt value world
         member this.SelectedScreenOpt = PropertyTag.make this Property? SelectedScreenOpt this.GetSelectedScreenOpt this.SetSelectedScreenOpt
@@ -211,16 +214,19 @@ module WorldGameModule =
             Seq.map (fun screen -> World.getLayers screen world) |>
             Seq.concat
 
-        /// Determine if a simulant is contained by, or is the same as, the currently selected screen.
+        /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omniscreen.
         /// Game is always considered 'selected' as well.
         [<FunctionBinding>]
         static member isSimulantSelected (simulant : Simulant) world =
             match Address.getNames simulant.SimulantAddress with
             | [] -> true
             | screenName :: _ ->
-                match World.getSelectedScreenOpt world with
-                | Some screen -> Address.getName screen.ScreenAddress = screenName
-                | None -> false
+                match World.getOmniscreenOpt world with
+                | Some omniscreen -> Address.getName omniscreen.ScreenAddress = screenName
+                | None -> 
+                    match World.getSelectedScreenOpt world with
+                    | Some screen -> Address.getName screen.ScreenAddress = screenName
+                    | None -> false
 
         /// Write a game to a game descriptor.
         static member writeGame gameDescriptor world =
