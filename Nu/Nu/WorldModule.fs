@@ -440,7 +440,7 @@ module WorldModule =
         static member internal getEntityCachedOpt world =
             world.EntityCachedOpt
 
-    type World with // Scripting - TODO: document.
+    type World with // Scripting
 
         static member internal getGlobalFrame (world : World) =
             ScriptingWorld.getGlobalFrame world

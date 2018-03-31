@@ -102,12 +102,6 @@ module WorldScreenModule =
 
     type World with
 
-        static member private removeScreen screen world =
-            let removeLayers screen world =
-                let layers = World.getLayers screen world
-                World.destroyLayersImmediate layers world
-            World.removeScreen3 removeLayers screen world
-
         static member internal updateScreen (screen : Screen) world =
             World.withEventContext (fun world ->
                 
@@ -157,7 +151,10 @@ module WorldScreenModule =
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// screen's existence. Consider using World.destroyScreen instead.
         static member destroyScreenImmediate screen world =
-            World.removeScreen screen world
+            let destroyLayersImmediate screen world =
+                let layers = World.getLayers screen world
+                World.destroyLayersImmediate layers world
+            World.removeScreen3 destroyLayersImmediate screen world
 
         /// Destroy a screen in the world at the end of the current update.
         [<FunctionBinding>]

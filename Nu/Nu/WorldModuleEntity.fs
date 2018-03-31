@@ -412,6 +412,18 @@ module WorldModuleEntity =
                 (Right (entityState, world))
                 facetNamesToAdd
 
+        static member private updateEntityPublishEventFlag setFlag entity eventAddress world =
+            let publishUpdates =
+                let subscriptionsOpt = UMap.tryFindFast eventAddress (World.getSubscriptions world)
+                if FOption.isSome subscriptionsOpt then
+                    match FOption.get subscriptionsOpt with
+                    | [||] -> failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
+                    | _ -> true
+                else false
+            if World.entityExists entity world
+            then setFlag publishUpdates entity world
+            else world
+
         static member internal trySetFacetNames facetNames entityState entityOpt world =
             let intrinsicFacetNames = World.getEntityIntrinsicFacetNames entityState
             let extrinsicFacetNames = Set.fold (flip Set.remove) facetNames intrinsicFacetNames
@@ -520,12 +532,10 @@ module WorldModuleEntity =
             then World.updateEntityState (EntityState.detachProperty propertyName) true propertyName entity world
             else failwith ("Cannot detach entity property '" + propertyName + "'; entity '" + entity.EntityName + "' is not found.")
 
-        /// Get the maxima bounds of the entity as determined by size, position, rotation, and overflow.
         static member internal getEntityBoundsMax entity world =
             let entityState = World.getEntityState entity world
             World.getEntityStateBoundsMax entityState
 
-        /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         static member internal getEntityQuickSize (entity : Entity) world =
             let dispatcher = World.getEntityDispatcherNp entity world
             let facets = World.getEntityFacetsNp entity world
@@ -539,22 +549,9 @@ module WorldModuleEntity =
                 quickSize
                 facets
 
-        /// Get an entity's sorting priority.
         static member internal getEntitySortingPriority entity world =
             let entityState = World.getEntityState entity world
             { SortDepth = entityState.Depth; SortTarget = entity }
-
-        static member private updateEntityPublishEventFlag setFlag entity eventAddress world =
-            let publishUpdates =
-                let subscriptionsOpt = UMap.tryFindFast eventAddress (World.getSubscriptions world)
-                if FOption.isSome subscriptionsOpt then
-                    match FOption.get subscriptionsOpt with
-                    | [||] -> failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
-                    | _ -> true
-                else false
-            if World.entityExists entity world
-            then setFlag publishUpdates entity world
-            else world
 
         static member internal updateEntityPublishUpdateFlag entity world =
             World.updateEntityPublishEventFlag World.setEntityPublishUpdatesNp entity (atooa entity.UpdateAddress) world
@@ -631,7 +628,38 @@ module WorldModuleEntity =
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
         /// the entity's existence. Consider using World.destroyEntity instead.
         static member destroyEntityImmediate entity world =
-            World.removeEntity entity world
+
+            // ensure entity exists in the world
+            if World.entityExists entity world then
+                
+                // unregister entity
+                let world = World.unregisterEntity entity world
+
+                // get old world for entity tree rebuild
+                let oldWorld = world
+                
+                // mutate entity tree
+                let screen = entity.EntityAddress |> Address.head |> ntoa<Screen> |> Screen
+                let world =
+                    let entityTree =
+                        MutantCache.mutateMutant
+                            (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
+                            (fun entityTree ->
+                                let entityState = World.getEntityState entity oldWorld
+                                let entityMaxBounds = World.getEntityStateBoundsMax entityState
+                                SpatialTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                                entityTree)
+                            (World.getScreenEntityTreeNp screen world)
+                    World.setScreenEntityTreeNpNoEvent entityTree screen world
+
+                // remove cached entity event addresses
+                EventWorld.cleanEventAddressCache entity.EntityAddress
+
+                // remove the entity from the world
+                World.removeEntityState entity world
+
+            // pass
+            else world
 
         /// Create an entity and add it to the world.
         [<FunctionBinding ("createEntity")>]
@@ -697,40 +725,6 @@ module WorldModuleEntity =
         /// Create an entity and add it to the world.
         static member createEntity<'d when 'd :> EntityDispatcher> nameOpt overlayNameOpt layer world =
             World.createEntity5 typeof<'d>.Name nameOpt overlayNameOpt layer world
-
-        static member private removeEntity entity world =
-            
-            // ensure entity exists in the world
-            if World.entityExists entity world then
-                
-                // unregister entity
-                let world = World.unregisterEntity entity world
-
-                // get old world for entity tree rebuild
-                let oldWorld = world
-                
-                // mutate entity tree
-                let screen = entity.EntityAddress |> Address.head |> ntoa<Screen> |> Screen
-                let world =
-                    let entityTree =
-                        MutantCache.mutateMutant
-                            (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
-                            (fun entityTree ->
-                                let entityState = World.getEntityState entity oldWorld
-                                let entityMaxBounds = World.getEntityStateBoundsMax entityState
-                                SpatialTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
-                                entityTree)
-                            (World.getScreenEntityTreeNp screen world)
-                    World.setScreenEntityTreeNpNoEvent entityTree screen world
-
-                // remove cached entity event addresses
-                EventWorld.cleanEventAddressCache entity.EntityAddress
-
-                // remove the entity from the world
-                World.removeEntityState entity world
-
-            // pass
-            else world
 
         /// Read an entity from an entity descriptor.
         static member readEntity entityDescriptor nameOpt (layer : Layer) world =
@@ -835,7 +829,7 @@ module WorldModuleEntity =
         /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
         static member reassignEntityImmediate entity nameOpt (layer : Layer) world =
             let entityState = World.getEntityState entity world
-            let world = World.removeEntity entity world
+            let world = World.destroyEntityImmediate entity world
             let (id, name) = Reflection.deriveIdAndName nameOpt
             let entityState = { entityState with Id = id; Name = name }
             let transmutedEntity = Entity (layer.LayerAddress -<<- ntoa<Entity> name)
