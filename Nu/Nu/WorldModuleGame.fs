@@ -77,7 +77,7 @@ module WorldModuleGame =
         /// Set the current eye center.
         [<FunctionBinding>]
         static member setEyeCenter value world =
-            World.updateGameState (fun layerState -> { layerState with EyeCenter = value }) Property? EyeCenter world
+            World.updateGameState (fun gameState -> { gameState with EyeCenter = value }) Property? EyeCenter world
 
         /// Get the current eye size.
         [<FunctionBinding>]
@@ -87,7 +87,7 @@ module WorldModuleGame =
         /// Set the current eye size.
         [<FunctionBinding>]
         static member setEyeSize value world =
-            World.updateGameState (fun layerState -> { layerState with EyeSize = value }) Property? EyeSize world
+            World.updateGameState (fun gameState -> { gameState with EyeSize = value }) Property? EyeSize world
 
         /// Get the omniscreen, if any.
         [<FunctionBinding>]
@@ -97,7 +97,8 @@ module WorldModuleGame =
         /// Set the omniscreen or None.
         [<FunctionBinding>]
         static member setOmniscreenOpt value world =
-            World.updateGameState (fun layerState -> { layerState with OmniscreenOpt = value }) Property? OmniscreenOpt world
+            if Option.isSome value && World.getSelectedScreenOpt world = value then failwith "Cannot set Omniscreen to SelectedScreen."
+            World.updateGameState (fun gameState -> { gameState with OmniscreenOpt = value }) Property? OmniscreenOpt world
 
         /// Get the omniscreen (failing with an exception if there isn't one).
         [<FunctionBinding>]
@@ -118,7 +119,8 @@ module WorldModuleGame =
         /// you may be wanting to use the higher-level World.transitionScreen function instead.
         [<FunctionBinding>]
         static member setSelectedScreenOpt value world =
-            World.updateGameState (fun layerState -> { layerState with SelectedScreenOpt = value }) Property? SelectedScreenOpt world
+            if Option.isSome value && World.getOmniscreenOpt world = value then failwith "Cannot set SelectedScreen to Omniscreen."
+            World.updateGameState (fun gameState -> { gameState with SelectedScreenOpt = value }) Property? SelectedScreenOpt world
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
         [<FunctionBinding>]
