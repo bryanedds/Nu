@@ -233,7 +233,7 @@ module ScriptingMarshalling =
             | Some value ->
                 let valueType = (ty.GetGenericArguments ()).[0]
                 match tryExport tryExportExt valueType value with
-                | Some value -> Some (Some value :> obj)
+                | Some value -> Some (Activator.CreateInstance (ty, [|value|]))
                 | None -> None
             | None -> Some (None :> obj)
         | _ -> None
