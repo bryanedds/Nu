@@ -77,11 +77,6 @@ type SymbolicConverter (printing : bool, designTypeOpt : Type option, pointType 
                 let valueSymbol = toSymbol gargs.[1] kvp.Value
                 Symbols ([keySymbol; valueSymbol], None)
 
-            // symbolize Dictionary
-            elif sourceType.Name = typedefof<Dictionary<_, _>>.Name then
-                // TODO: P1: implement!
-                Symbols ([], None)
-
             // symbolize DesignerProperty
             elif sourceType = typeof<DesignerProperty> then
                 let property = source :?> DesignerProperty
@@ -291,11 +286,6 @@ type SymbolicConverter (printing : bool, designTypeOpt : Type option, pointType 
                         | _ -> failwithumf ()
                     | Atom (_, _) | Number (_, _) | String (_, _) | Quote (_, _) ->
                         failconv "Expected Symbols for conversion to Map." (Some symbol)
-
-                // desymbolize Dictionary
-                elif destType.Name = typedefof<Dictionary<_, _>>.Name then
-                    // TODO: P1: implement!
-                    Activator.CreateInstance destType 
 
                 // desymbolize SymbolicCompression
                 elif destType.Name = typedefof<SymbolicCompression<_, _>>.Name then
