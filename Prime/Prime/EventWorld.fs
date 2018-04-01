@@ -189,9 +189,9 @@ module EventWorld =
 
     let private getSubscriptionsSorted (publishSorter : SubscriptionSorter<'w>) eventAddress allowWildcard (world : 'w) =
         let eventSystem = getEventSystem world
-        let subscriptions = EventSystem.getSubscriptions eventSystem
+        let eventSubscriptions = EventSystem.getSubscriptions eventSystem
         let eventAddresses = getEventAddresses2 eventAddress allowWildcard
-        let subscriptionOpts = Array.map (fun eventAddress -> UMap.tryFindFast eventAddress subscriptions) eventAddresses
+        let subscriptionOpts = Array.map (fun eventAddress -> UMap.tryFindFast eventAddress eventSubscriptions) eventAddresses
         let subscriptionOpts = Array.filter FOption.isSome subscriptionOpts
         let subscriptions = Array.map FOption.get subscriptionOpts // TODO: consider fusing with filter by using filterBy
         let subscriptions = Array.concat subscriptions

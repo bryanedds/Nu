@@ -222,11 +222,11 @@ module WorldGameModule =
             | [] -> true
             | screenName :: _ ->
                 match World.getOmniscreenOpt world with
-                | Some omniscreen -> Address.getName omniscreen.ScreenAddress = screenName
-                | None -> 
+                | Some omniscreen when Address.getName omniscreen.ScreenAddress = screenName -> true
+                | _ -> 
                     match World.getSelectedScreenOpt world with
-                    | Some screen -> Address.getName screen.ScreenAddress = screenName
-                    | None -> false
+                    | Some screen when Address.getName screen.ScreenAddress = screenName -> true
+                    | _ -> false
 
         /// Write a game to a game descriptor.
         static member writeGame gameDescriptor world =
