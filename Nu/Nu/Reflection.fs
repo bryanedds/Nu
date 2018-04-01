@@ -177,12 +177,15 @@ module Reflection =
                     Xtension.attachProperty propertyName property xtension
                 else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyDefinition.PropertyType.Name + "'."); xtension
             | None ->
-                let propertyType = typeof<DesignerProperty>
-                let converter = SymbolicConverter (false, None, propertyType)
-                if converter.CanConvertFrom typeof<Symbol> then
-                    let property = { PropertyType = propertyType; PropertyValue = converter.ConvertFrom propertySymbol }
-                    Xtension.attachProperty propertyName property xtension
-                else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyType.Name + "'."); xtension
+                match propertySymbol with
+                | Symbols ([String (str, _); _], _) when isNotNull (Type.GetType str) ->
+                    let propertyType = typeof<DesignerProperty>
+                    let converter = SymbolicConverter (false, None, propertyType)
+                    if converter.CanConvertFrom typeof<Symbol> then
+                        let property = { PropertyType = propertyType; PropertyValue = converter.ConvertFrom propertySymbol }
+                        Xtension.attachProperty propertyName property xtension
+                    else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyType.Name + "'."); xtension
+                | _ -> xtension
         else xtension
         
     /// Read a target's xtension properties from property descriptors.

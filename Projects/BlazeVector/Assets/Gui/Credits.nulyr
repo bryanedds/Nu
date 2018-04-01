@@ -1,6 +1,5 @@
 [LayerDispatcher
  [[Name Gui]
-  [PublishChanges True]
   [Persistent True]]
  [[LabelDispatcher
    [[Position [-480 -272]]
