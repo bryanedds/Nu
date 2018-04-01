@@ -76,11 +76,11 @@ module WorldLayerModule =
         /// Check that a layer is selected.
         member this.GetSelected world =
             match (World.getGameState world).OmniscreenOpt with
-            | Some omniscreen -> Address.head this.LayerAddress = Address.head omniscreen.ScreenAddress
-            | None ->
+            | Some omniscreen when Address.head this.LayerAddress = Address.head omniscreen.ScreenAddress -> true
+            | _ ->
                 match (World.getGameState world).SelectedScreenOpt with
-                | Some screen -> Address.head this.LayerAddress = Address.head screen.ScreenAddress
-                | None -> false
+                | Some screen when Address.head this.LayerAddress = Address.head screen.ScreenAddress -> true
+                | _ -> false
 
         /// Check that a layer exists in the world.
         member this.GetExists world = World.layerExists this world
