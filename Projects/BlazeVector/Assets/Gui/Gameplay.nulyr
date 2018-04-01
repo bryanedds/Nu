@@ -1,6 +1,5 @@
-﻿[LayerDispatcher
+[LayerDispatcher
  [[Name Gui]
-  [PublishChanges True]
   [Persistent True]]
  [[ButtonDispatcher
    [[Name Back]

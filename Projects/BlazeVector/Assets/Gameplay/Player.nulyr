@@ -1,6 +1,5 @@
 [PlayerLayerDispatcher
  [[Name Layer]
-  [PublishChanges True]
   [Persistent True]]
  [[PlayerDispatcher
   [[Name Player]

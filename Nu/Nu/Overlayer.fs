@@ -79,11 +79,14 @@ module OverlayerModule =
                     | (targetProperty, _) -> Some (targetProperty.GetValue target)
                 match propertyValueOpt with
                 | Some propertyValue ->
-                    let converter = SymbolicConverter (false, None, propertyType)
-                    if converter.CanConvertFrom typeof<Symbol> then
-                        let overlayValue = converter.ConvertFrom propertySymbol
-                        if overlayValue = propertyValue then Overlaid else Altered
-                    else Bare
+                    match propertySymbol with
+                    | Symbols ([String (str, _); _], _) when isNotNull (Type.GetType str) ->
+                        let converter = SymbolicConverter (false, None, propertyType)
+                        if converter.CanConvertFrom typeof<Symbol> then
+                            let overlayValue = converter.ConvertFrom propertySymbol
+                            if overlayValue = propertyValue then Overlaid else Altered
+                        else Bare
+                    | _ -> Bare
                 | None -> Bare
             | None -> Bare
             
@@ -138,14 +141,17 @@ module OverlayerModule =
                             | None ->
                                 let recordProperties = targetType.GetProperties ()
                                 if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) recordProperties then
-                                    let propertyType = typeof<DesignerProperty>
-                                    match getPropertyState propertyName propertyType target oldOverlaySymbols with
-                                    | Bare | Overlaid ->
-                                        let converter = SymbolicConverter (true, None, propertyType)
-                                        let propertyValue = converter.ConvertFrom propertySymbol
-                                        let property = { PropertyType = propertyType; PropertyValue = propertyValue;  }
-                                        Xtension.attachProperty propertyName property xtension
-                                    | Altered -> xtension
+                                    match propertySymbol with
+                                    | Symbols ([String (str, _); _], _) when isNotNull (Type.GetType str) ->
+                                        let propertyType = typeof<DesignerProperty>
+                                        match getPropertyState propertyName propertyType target oldOverlaySymbols with
+                                        | Bare | Overlaid ->
+                                            let converter = SymbolicConverter (true, None, propertyType)
+                                            let propertyValue = converter.ConvertFrom propertySymbol
+                                            let property = { PropertyType = propertyType; PropertyValue = propertyValue;  }
+                                            Xtension.attachProperty propertyName property xtension
+                                        | Altered -> xtension
+                                    | _ -> xtension
                                 else xtension)
                             newOverlaySymbols
                             xtension
@@ -176,7 +182,7 @@ module OverlayerModule =
         let applyOverlay6 (copyTarget : 'a -> 'a) oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
             let target = copyTarget target
             let oldOverlaySymbols = getOverlaySymbols oldOverlayName facetNames oldOverlayer
-            let newOverlaySymbols = getOverlaySymbols newOverlayName facetNames newOverlayer
+            let newOverlaySymbols = getOverlaySymbols newOverlayName Seq.empty newOverlayer
             applyOverlayToProperties target oldOverlaySymbols newOverlaySymbols
             applyOverlayToXtension target oldOverlaySymbols newOverlaySymbols
             target
