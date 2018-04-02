@@ -9,8 +9,8 @@ type 'a FSharpOption = 'a option
 [<RequireQualifiedAccess>]
 module Option =
 
-    /// Join an option option.
-    let inline join opt =
+    /// Flatten an option option.
+    let inline flatten opt =
         match opt with
         | Some (Some s) -> Some s
         | Some None -> None
