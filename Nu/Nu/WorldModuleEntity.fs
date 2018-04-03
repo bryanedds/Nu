@@ -331,17 +331,12 @@ module WorldModuleEntity =
             let facetNames = List.map getTypeName entityState.FacetsNp
             Set.ofList facetNames
 
-        static member private tryRemoveFacet facetName entityState entityOpt world =
+        static member private tryRemoveFacet facetName entityState entity world =
             match List.tryFind (fun facet -> getTypeName facet = facetName) entityState.FacetsNp with
             | Some facet ->
-                let (entityState, world) =
-                    match entityOpt with
-                    | Some entity ->
-                        let world = World.setEntityState entityState entity world
-                        let world = World.withEventContext (fun world -> facet.Unregister (entity, world)) entity world
-                        let entityState = World.getEntityState entity world
-                        (entityState, world)
-                    | None -> (entityState, world)
+                let world = World.setEntityState entityState entity world
+                let world = World.withEventContext (fun world -> facet.Unregister (entity, world)) entity world
+                let entityState = World.getEntityState entity world
                 let propertyNames = World.getEntityPropertyDefinitionNamesToDetach entityState facet
                 let entityState = Reflection.detachPropertiesViaNames EntityState.copy propertyNames entityState
                 let entityState =
@@ -352,20 +347,17 @@ module WorldModuleEntity =
                         entityState.FacetsNp <- facets
                         entityState
                     else { entityState with FacetNames = facetNames; FacetsNp = facets }
-                match entityOpt with
-                | Some entity ->
-                    let oldWorld = world
-                    let oldEntityState = entityState
-                    let oldOmnipresent = oldEntityState.Omnipresent
-                    let oldViewType = oldEntityState.ViewType
-                    let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
-                    let world = World.setEntityState entityState entity world
-                    let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
-                    Right (World.getEntityState entity world, world)
-                | None -> Right (entityState, world)
+                let oldWorld = world
+                let oldEntityState = entityState
+                let oldOmnipresent = oldEntityState.Omnipresent
+                let oldViewType = oldEntityState.ViewType
+                let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
+                let world = World.setEntityState entityState entity world
+                let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
+                Right (World.getEntityState entity world, world)
             | None -> let _ = World.choose world in Left ("Failure to remove facet '" + facetName + "' from entity.")
 
-        static member private tryAddFacet facetName (entityState : EntityState) entityOpt world =
+        static member private tryAddFacet facetName (entityState : EntityState) entity world =
             match World.tryGetFacet facetName world with
             | Right facet ->
                 let entityDispatchers = World.getEntityDispatchers world
@@ -379,35 +371,32 @@ module WorldModuleEntity =
                             entityState
                         else { entityState with FacetNames = facetNames; FacetsNp = facets }
                     let entityState = Reflection.attachProperties EntityState.copy facet entityState
-                    match entityOpt with
-                    | Some entity ->
-                        let oldWorld = world
-                        let oldEntityState = entityState
-                        let oldOmnipresent = oldEntityState.Omnipresent
-                        let oldViewType = oldEntityState.ViewType
-                        let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
-                        let world = World.setEntityState entityState entity world
-                        let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
-                        let world = World.withEventContext (fun world -> facet.Register (entity, world)) entity world
-                        Right (World.getEntityState entity world, world)
-                    | None -> Right (entityState, world)
+                    let oldWorld = world
+                    let oldEntityState = entityState
+                    let oldOmnipresent = oldEntityState.Omnipresent
+                    let oldViewType = oldEntityState.ViewType
+                    let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
+                    let world = World.setEntityState entityState entity world
+                    let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
+                    let world = World.withEventContext (fun world -> facet.Register (entity, world)) entity world
+                    Right (World.getEntityState entity world, world)
                 else let _ = World.choose world in Left ("Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'.")
             | Left error -> Left error
 
-        static member private tryRemoveFacets facetNamesToRemove entityState entityOpt world =
+        static member private tryRemoveFacets facetNamesToRemove entityState entity world =
             Set.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
-                    | Right (entityState, world) -> World.tryRemoveFacet facetName entityState entityOpt world
+                    | Right (entityState, world) -> World.tryRemoveFacet facetName entityState entity world
                     | Left _ as left -> left)
                 (Right (entityState, world))
                 facetNamesToRemove
 
-        static member private tryAddFacets facetNamesToAdd entityState entityOpt world =
+        static member private tryAddFacets facetNamesToAdd entityState entity world =
             Set.fold
                 (fun eitherEntityStateWorld facetName ->
                     match eitherEntityStateWorld with
-                    | Right (entityState, world) -> World.tryAddFacet facetName entityState entityOpt world
+                    | Right (entityState, world) -> World.tryAddFacet facetName entityState entity world
                     | Left _ as left -> left)
                 (Right (entityState, world))
                 facetNamesToAdd
@@ -424,20 +413,20 @@ module WorldModuleEntity =
             then setFlag publishUpdates entity world
             else world
 
-        static member internal trySetFacetNames facetNames entityState entityOpt world =
+        static member internal trySetFacetNames facetNames entityState entity world =
             let intrinsicFacetNames = World.getEntityIntrinsicFacetNames entityState
             let extrinsicFacetNames = Set.fold (flip Set.remove) facetNames intrinsicFacetNames
             let facetNamesToRemove = Set.difference entityState.FacetNames extrinsicFacetNames
             let facetNamesToAdd = Set.difference extrinsicFacetNames entityState.FacetNames
-            match World.tryRemoveFacets facetNamesToRemove entityState entityOpt world with
-            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState entityOpt world
+            match World.tryRemoveFacets facetNamesToRemove entityState entity world with
+            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState entity world
             | Left _ as left -> left
 
-        static member internal trySynchronizeFacetsToNames oldFacetNames entityState entityOpt world =
+        static member internal trySynchronizeFacetsToNames oldFacetNames entityState entity world =
             let facetNamesToRemove = Set.difference oldFacetNames entityState.FacetNames
             let facetNamesToAdd = Set.difference entityState.FacetNames oldFacetNames
-            match World.tryRemoveFacets facetNamesToRemove entityState entityOpt world with
-            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState entityOpt world
+            match World.tryRemoveFacets facetNamesToRemove entityState entity world with
+            | Right (entityState, world) -> World.tryAddFacets facetNamesToAdd entityState entity world
             | Left _ as left -> left
 
         static member internal attachIntrinsicFacetsViaNames entityState world =
@@ -858,7 +847,7 @@ module WorldModuleEntity =
                 let (entityState, world) =
                     let oldFacetNames = entityState.FacetNames
                     let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy oldOverlayName overlayName entityState overlayer overlayer
-                    match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
+                    match World.trySynchronizeFacetsToNames oldFacetNames entityState entity world with
                     | Right (entityState, world) -> (entityState, world)
                     | Left error -> Log.debug error; (entityState, world)
                 let facetNames = World.getEntityFacetNamesReflectively entityState
@@ -890,7 +879,7 @@ module WorldModuleEntity =
         /// Try to set the entity's facet names.
         static member trySetEntityFacetNames facetNames entity world =
             let entityState = World.getEntityState entity world
-            match World.trySetFacetNames facetNames entityState (Some entity) world with
+            match World.trySetFacetNames facetNames entityState entity world with
             | Right (entityState, world) ->
                 let oldWorld = world
                 let oldEntityState = entityState
