@@ -361,9 +361,9 @@ module NodeFacetModule =
 
     type Entity with
     
-        member this.GetNodeOpt world : Entity Relation option = this.Get Property? NodeOpt world
-        member this.SetNodeOpt (value : Entity Relation option) world = this.Set Property? NodeOpt value world
-        member this.NodeOpt = PropertyTag.make this Property? NodeOpt this.GetNodeOpt this.SetNodeOpt
+        member this.GetParentNodeOpt world : Entity Relation option = this.Get Property? ParentNodeOpt world
+        member this.SetParentNodeOpt (value : Entity Relation option) world = this.Set Property? ParentNodeOpt value world
+        member this.ParentNodeOpt = PropertyTag.make this Property? ParentNodeOpt this.GetParentNodeOpt this.SetParentNodeOpt
         member this.GetPositionLocal world : Vector2 = this.Get Property? PositionLocal world
         member this.SetPositionLocal (value : Vector2) world = this.Set Property? PositionLocal value world
         member this.PositionLocal = PropertyTag.make this Property? PositionLocal this.GetPositionLocal this.SetPositionLocal
@@ -380,21 +380,21 @@ module NodeFacetModule =
         member private this.SetNodeUnsubscribeNp (value : World -> World) world = this.Set Property? NodeUnsubscribeNp value world
         member private this.NodeUnsubscribeNp = PropertyTag.make this Property? NodeUnsubscribeNp this.GetNodeUnsubscribeNp this.SetNodeUnsubscribeNp
 
-        member private this.GetNodes2 nodes world =
+        member private this.GetChildNodes2 nodes world =
             let nodeOpt =
                 if this.HasFacet typeof<NodeFacet> world
-                then Option.map this.Resolve (this.GetNodeOpt world)
+                then Option.map this.Resolve (this.GetParentNodeOpt world)
                 else None
             match nodeOpt with
-            | Some node -> node.GetNodes2 (node :: nodes) world
+            | Some node -> node.GetChildNodes2 (node :: nodes) world
             | None -> nodes
         
-        member this.GetNodes world =
-            this.GetNodes2 [] world
+        member this.GetChildNodes world =
+            this.GetChildNodes2 [] world
 
-        member this.NodeExists world =
-            match this.GetNodeOpt world with
-            | Some nodeRelation -> (this.Resolve nodeRelation).GetExists world
+        member this.ParentNodeExists world =
+            match this.GetParentNodeOpt world with
+            | Some relation -> (this.Resolve relation).GetExists world
             | None -> false
 
     and NodeFacet () =
@@ -427,9 +427,9 @@ module NodeFacetModule =
         static let handleLocalPropertyChange evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : EntityChangeData
-            match entity.GetNodeOpt world with
-            | Some nodeRelation ->
-                let node = entity.Resolve nodeRelation
+            match entity.GetParentNodeOpt world with
+            | Some relation ->
+                let node = entity.Resolve relation
                 if World.entityExists node world
                 then (Cascade, updatePropertyFromLocal data.PropertyName node entity world)
                 else (Cascade, updatePropertyFromLocal3 data.PropertyName entity world)
@@ -444,7 +444,7 @@ module NodeFacetModule =
         static let subscribeToNodePropertyChanges (entity : Entity) world =
             let oldWorld = world
             let world = (entity.GetNodeUnsubscribeNp world) world
-            match entity.GetNodeOpt world with
+            match entity.GetParentNodeOpt world with
             | Some nodeRelation ->
                 let node = entity.Resolve nodeRelation
                 if node = entity then
@@ -465,7 +465,7 @@ module NodeFacetModule =
             subscribeToNodePropertyChanges evt.Subscriber world
 
         static member PropertyDefinitions =
-            [Define? NodeOpt (None : Entity Relation option)
+            [Define? ParentNodeOpt (None : Entity Relation option)
              Define? PositionLocal Vector2.Zero
              Define? DepthLocal 0.0f
              Define? VisibleLocal true
@@ -474,7 +474,7 @@ module NodeFacetModule =
 
         override facet.Register (entity, world) =
             let world = entity.SetNodeUnsubscribeNp id world // ensure unsubscribe function reference doesn't get copied in Gaia...
-            let world = World.monitor handleNodeChange entity.NodeOpt.Change entity world
+            let world = World.monitor handleNodeChange entity.ParentNodeOpt.Change entity world
             let world = World.monitorPlus handleLocalPropertyChange entity.PositionLocal.Change entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.DepthLocal.Change entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.Change entity world |> snd
@@ -487,7 +487,7 @@ module NodeFacetModule =
 
         override facet.TryGetCalculatedProperty (propertyName, entity, world) =
             match propertyName with
-            | "NodeExists" -> Some { PropertyType = typeof<bool>; PropertyValue = entity.NodeExists world }
+            | "ParentNodeExists" -> Some { PropertyType = typeof<bool>; PropertyValue = entity.ParentNodeExists world }
             | _ -> None
 
 [<AutoOpen>]
