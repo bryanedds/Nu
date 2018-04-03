@@ -13,6 +13,7 @@ namespace OpenTK
             X = x;
             Y = y;
         }
+
         public Vector2i(int n)
         {
             X = n;

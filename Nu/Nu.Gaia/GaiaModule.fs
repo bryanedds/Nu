@@ -1322,6 +1322,7 @@ module Gaia =
         form.saveToolStripMenuItem.Click.Add (handleFormSave form)
         form.openToolStripMenuItem.Click.Add (handleFormOpen form)
         form.closeToolStripMenuItem.Click.Add (handleFormClose form)
+        form.pickParentNodeToolStripMenuItem.Click.Add (handleFormClose form)
         form.undoButton.Click.Add (handleFormUndo form)
         form.undoToolStripMenuItem.Click.Add (handleFormUndo form)
         form.redoButton.Click.Add (handleFormRedo form)
