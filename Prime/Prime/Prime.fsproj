@@ -136,7 +136,7 @@
     </Content>
     <None Include="Interactive.fsx" />
     <None Include="App.config" />
-    <Content Include="packages.config" />
+    <Content Include="Packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">
