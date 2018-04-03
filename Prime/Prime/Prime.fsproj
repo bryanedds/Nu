@@ -151,7 +151,7 @@
     <Reference Include="FsCheck.Xunit">
       <HintPath>..\Prime.Dependencies\FsCheck.Xunit\FsCheck.Xunit.dll</HintPath>
     </Reference>
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="FSharp.Core, Version=4.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
