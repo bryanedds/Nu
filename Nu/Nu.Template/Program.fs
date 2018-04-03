@@ -24,8 +24,8 @@ type $safeprojectname$Plugin () =
     inherit NuPlugin ()
 
     // make our game-specific game dispatcher...
-    override this.MakeGameDispatcherOpt () =
-        Some ($safeprojectname$Dispatcher () :> GameDispatcher)
+    override this.MakeGameDispatchers () =
+        [NuGame1Dispatcher () :> GameDispatcher]
 
     // specify the above game dispatcher to use
     override this.GetStandAloneGameDispatcherName () =
