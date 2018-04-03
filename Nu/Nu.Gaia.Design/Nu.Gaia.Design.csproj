@@ -57,6 +57,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssetPicker.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AssetPicker.Designer.cs">
+      <DependentUpon>AssetPicker.cs</DependentUpon>
+    </Compile>
+    <Compile Include="EntityPicker.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EntityPicker.Designer.cs">
+      <DependentUpon>EntityPicker.cs</DependentUpon>
+    </Compile>
     <Compile Include="GaiaForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -77,6 +89,12 @@
     <Compile Include="SelectablePanel.cs">
       <SubType>Component</SubType>
     </Compile>
+    <EmbeddedResource Include="AssetPicker.resx">
+      <DependentUpon>AssetPicker.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="EntityPicker.resx">
+      <DependentUpon>EntityPicker.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="GaiaForm.resx">
       <DependentUpon>GaiaForm.cs</DependentUpon>
       <SubType>Designer</SubType>
