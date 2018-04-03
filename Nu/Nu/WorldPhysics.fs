@@ -33,12 +33,12 @@ module WorldPhysicsModule =
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
                     let entity = bodyTransformMessage.SourceParticipant :?> Entity
-                    if entity.GetExists world
+                    if entity.Exists world
                     then PhysicsEngineSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
                     else world
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let entity = bodyCollisionMessage.SourceParticipant :?> Entity
-                    if entity.GetExists world then
+                    if entity.Exists world then
                         let collisionAddress = Events.Collision ->>- entity.EntityAddress
                         let collisionData =
                             { Normal = bodyCollisionMessage.Normal
