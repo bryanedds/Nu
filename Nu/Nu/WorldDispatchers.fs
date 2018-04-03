@@ -379,6 +379,39 @@ module NodeFacetModule =
         member private this.GetNodeUnsubscribeNp world : World -> World = this.Get Property? NodeUnsubscribeNp world
         member private this.SetNodeUnsubscribeNp (value : World -> World) world = this.Set Property? NodeUnsubscribeNp value world
         member private this.NodeUnsubscribeNp = PropertyTag.make this Property? NodeUnsubscribeNp this.GetNodeUnsubscribeNp this.SetNodeUnsubscribeNp
+        
+        member this.SetParentNodeOptWithAdjustment (value : Entity Relation option) world =
+            let world =
+                match (this.GetParentNodeOpt world, value) with
+                | (Some relationOld, Some relationNew) ->
+                    let parentOld = this.Resolve relationOld
+                    let parentNew = this.Resolve relationNew
+                    if parentOld.Exists world && parentNew.Exists world then
+                        let translation = this.GetPosition world + parentOld.GetPosition world - parentOld.GetPosition world
+                        this.SetPosition translation world
+                    else world
+                | (Some relationOld, None) ->
+                    let parentOld = this.Resolve relationOld
+                    if parentOld.Exists world then
+                        let translation = this.GetPosition world + parentOld.GetPosition world
+                        this.SetPosition translation world
+                    else world
+                | (None, Some relationNew) ->
+                    let parentNew = this.Resolve relationNew
+                    if parentNew.Exists world then
+                        let translation = this.GetPosition world - parentNew.GetPosition world
+                        this.SetPosition translation world
+                    else world
+                | (None, None) -> world
+            this.SetParentNodeOpt value world
+        
+        member this.GetChildNodes world =
+            this.GetChildNodes2 [] world
+
+        member this.ParentNodeExists world =
+            match this.GetParentNodeOpt world with
+            | Some relation -> (this.Resolve relation).Exists world
+            | None -> false
 
         member private this.GetChildNodes2 nodes world =
             let nodeOpt =
@@ -388,14 +421,6 @@ module NodeFacetModule =
             match nodeOpt with
             | Some node -> node.GetChildNodes2 (node :: nodes) world
             | None -> nodes
-        
-        member this.GetChildNodes world =
-            this.GetChildNodes2 [] world
-
-        member this.ParentNodeExists world =
-            match this.GetParentNodeOpt world with
-            | Some relation -> (this.Resolve relation).GetExists world
-            | None -> false
 
     and NodeFacet () =
         inherit Facet ()
