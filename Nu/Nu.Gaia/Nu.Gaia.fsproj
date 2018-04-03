@@ -10,6 +10,7 @@
     <RootNamespace>NuEdit</RootNamespace>
     <AssemblyName>Nu.Gaia</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Name>Nu.Gaia</Name>
     <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
     <TargetFrameworkProfile />
