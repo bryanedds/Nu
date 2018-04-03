@@ -21,6 +21,6 @@ module Constants =
     [<RequireQualifiedAccess>]
     module SubscriptionKeys =
 
-        let ChangeNodeOpt = makeGuid ()
         let RegisterEntity = makeGuid ()
         let UnregisteringEntity = makeGuid ()
+        let ChangeParentNodeOpt = makeGuid ()

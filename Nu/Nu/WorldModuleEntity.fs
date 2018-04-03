@@ -131,7 +131,7 @@ module WorldModuleEntity =
         static member private publishEntityChange propertyName (entity : Entity) (oldWorld : World) world =
             let changeEventAddress = ltoa ["Entity"; "Change"; propertyName; "Event"] ->>- entity.EntityAddress
             let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
-            let allowWildcard = propertyName = Property? NodeOpt
+            let allowWildcard = propertyName = "ParentNodeOpt"
             let changeData = { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld }
             World.publishPlus World.sortSubscriptionsByHierarchy changeData changeEventAddress eventTrace entity allowWildcard world
 

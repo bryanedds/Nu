@@ -146,7 +146,7 @@ module Gaia =
             let entities = World.getEntities layer world
             for entity in entities do
                 let mutable parentNode = layerNode
-                for entity in entity.GetNodes world @ [entity] do
+                for entity in entity.GetChildNodes world @ [entity] do
                     let entityNodeKey = scstring entity
                     if not (parentNode.Nodes.ContainsKey entityNodeKey) then
                         let entityNode = TreeNode entity.EntityName
@@ -230,7 +230,7 @@ module Gaia =
             (Some entity, world)
         | None -> (None, world)
 
-    let private handleNuChangeNodeOpt form _ world =
+    let private handleNuChangeParentNodeOpt form _ world =
         refreshHierarchyTreeView form world
         (Cascade, world)
 
@@ -274,7 +274,7 @@ module Gaia =
                     World.updateUserValue (fun editorState ->
                         let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
                         let entityPosition =
-                            if entity.HasFacet typeof<NodeFacet> world && entity.NodeExists world
+                            if entity.HasFacet typeof<NodeFacet> world && entity.ParentNodeExists world
                             then entity.GetPositionLocal world
                             else entity.GetPosition world
                         { editorState with DragEntityState = DragEntityPosition (entityPosition + mousePositionWorld, mousePositionWorld, entity) })
@@ -311,13 +311,13 @@ module Gaia =
 
     let private subscribeToEntityEvents form world =
         let selectedLayer = (World.getUserValue world).SelectedLayer
-        let world = World.subscribePlus Constants.SubscriptionKeys.ChangeNodeOpt (handleNuChangeNodeOpt form) (Events.EntityChange Property? NodeOpt ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
+        let world = World.subscribePlus Constants.SubscriptionKeys.ChangeParentNodeOpt (handleNuChangeParentNodeOpt form) (Events.EntityChange Property? NodeOpt ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
         let world = World.subscribePlus Constants.SubscriptionKeys.RegisterEntity (handleNuEntityRegister form) (Events.EntityRegister ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
         let world = World.subscribePlus Constants.SubscriptionKeys.UnregisteringEntity (handleNuEntityUnregistering form) (Events.EntityUnregistering ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
         world
 
     let private unsubscribeFromEntityEvents world =
-        let world = World.unsubscribe Constants.SubscriptionKeys.ChangeNodeOpt world
+        let world = World.unsubscribe Constants.SubscriptionKeys.ChangeParentNodeOpt world
         let world = World.unsubscribe Constants.SubscriptionKeys.RegisterEntity world
         let world = World.unsubscribe Constants.SubscriptionKeys.UnregisteringEntity world
         world
@@ -1124,7 +1124,7 @@ module Gaia =
                 let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                 let entityPositionSnapped = Math.snap2F positionSnap entityPosition
                 let world =
-                    if entity.HasFacet typeof<NodeFacet> world && entity.NodeExists world
+                    if entity.HasFacet typeof<NodeFacet> world && entity.ParentNodeExists world
                     then entity.SetPositionLocal entityPositionSnapped world
                     else entity.SetPosition entityPositionSnapped world
                 let world = entity.PropagatePhysics world
