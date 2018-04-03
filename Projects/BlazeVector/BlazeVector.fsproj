@@ -77,6 +77,7 @@
     <Content Include="Prelude.nuscript">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj">
@@ -110,7 +111,7 @@
       <HintPath>..\..\Nu\Nu.Dependencies\FSharpx.Core\FSharpx.Core.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="FSharp.Core, Version=4.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
     <Reference Include="SDL2#">
