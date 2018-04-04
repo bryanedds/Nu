@@ -78,7 +78,9 @@ and EntityPropertyDescriptor (property, attributes) =
         | null -> null // WHY THE FUCK IS THIS EVER null???
         | source ->
             let entityTds = source :?> EntityTypeDescriptorSource
-            EntityPropertyValue.getValue property entityTds.DescribedEntity !entityTds.WorldRef
+            match EntityPropertyValue.tryGetValue property entityTds.DescribedEntity !entityTds.WorldRef with
+            | Some value -> value
+            | None -> null
 
     override this.SetValue (source, value) =
         
@@ -133,7 +135,7 @@ and EntityPropertyDescriptor (property, attributes) =
                         match World.trySetEntityOverlayNameOpt (value :?> string option) entity world with
                         | (Right (), world) -> world
                         | (Left error, world) -> Log.trace error; world
-                    | _ -> EntityPropertyValue.setValue property value entity world
+                    | _ -> snd (EntityPropertyValue.trySetValue property value entity world)
                 let world = entityTds.DescribedEntity.PropagatePhysics world
                 entityTds.WorldRef := world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()

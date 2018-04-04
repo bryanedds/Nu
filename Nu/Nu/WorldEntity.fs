@@ -302,23 +302,24 @@ module WorldEntityModule =
             let properties = typeof<EntityState>.GetProperties property.Name
             Seq.exists (fun item -> item = property) properties
 
-        /// Get the entity's property value.
-        static member getValue property (entity : Entity) world =
+        /// Attempt to get the entity's property value.
+        static member tryGetValue property (entity : Entity) world =
             let propertyName =
                 match property with
                 | EntityPropertyDescriptor propertyDescriptor -> propertyDescriptor.PropertyName
                 | EntityPropertyInfo propertyInfo -> propertyInfo.Name
-            let property = World.getEntityProperty propertyName entity world
-            property.PropertyValue
+            match World.tryGetEntityProperty propertyName entity world with
+            | Some property -> Some property.PropertyValue
+            | None -> None
 
-        /// Set the entity's property value.
-        static member setValue property propertyValue (entity : Entity) world =
+        /// Attempt to set the entity's property value.
+        static member trySetValue property propertyValue (entity : Entity) world =
             let (propertyName, propertyType) =
                 match property with
                 | EntityPropertyDescriptor propertyDescriptor -> (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType)
                 | EntityPropertyInfo propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)
             let property = { PropertyType = propertyType; PropertyValue = propertyValue }
-            World.setEntityProperty propertyName property entity world
+            World.trySetEntityProperty propertyName property entity world
 
         /// Get the property descriptors of as constructed from the given function in the given context.
         static member getPropertyDescriptors makePropertyDescriptor contextOpt =
