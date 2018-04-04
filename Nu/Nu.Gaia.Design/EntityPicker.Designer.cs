@@ -99,11 +99,10 @@
         }
 
         #endregion
-
-        private System.Windows.Forms.TextBox searchTextBox;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.ListView entitiesListView;
-        private System.Windows.Forms.Button okButton;
-        private System.Windows.Forms.Button cancelButton;
+        public System.Windows.Forms.TextBox searchTextBox;
+        public System.Windows.Forms.ListView entitiesListView;
+        public System.Windows.Forms.Button okButton;
+        public System.Windows.Forms.Button cancelButton;
     }
 }
