@@ -26,6 +26,7 @@ module AmbientStateModule =
               UpdateCount : int64
               Liveness : Liveness
               Tasklets : 'w Tasklet UList
+              TaskletsProcessing : bool
               Metadata : Metadata
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter
@@ -85,11 +86,19 @@ module AmbientStateModule =
 
         /// Clear the tasklets from future processing.
         let clearTasklets state =
-            { state with Tasklets = UList.makeEmpty (UList.getConfig state.Tasklets) }
+            { state with
+                Tasklets = UList.makeEmpty (UList.getConfig state.Tasklets)
+                TaskletsProcessing = true }
 
         /// Restore the given tasklets from future processing.
         let restoreTasklets tasklets state =
-            { state with Tasklets = UList.makeFromSeq (UList.getConfig state.Tasklets) (Seq.append (state.Tasklets :> _ seq) (tasklets :> _ seq)) }
+            { state with
+                Tasklets = UList.makeFromSeq (UList.getConfig state.Tasklets) (Seq.append (state.Tasklets :> _ seq) (tasklets :> _ seq))
+                TaskletsProcessing = false }
+
+        /// Get the tasklets processing state.
+        let getTaskletsProcessing state =
+            state.TaskletsProcessing
 
         /// Add a tasklet to be executed at the scheduled time.
         let addTasklet tasklet state =
@@ -155,6 +164,7 @@ module AmbientStateModule =
               UpdateCount = 0L
               Liveness = Running
               Tasklets = UList.makeEmpty Constants.Engine.TaskletListConfig
+              TaskletsProcessing = false
               Metadata = assetMetadataMap
               OverlayRouter = overlayRouter
               Overlayer = overlayer

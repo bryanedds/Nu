@@ -290,6 +290,9 @@ module WorldModule =
         static member internal restoreTasklets tasklets world =
             World.updateAmbientState (AmbientState.restoreTasklets tasklets) world
 
+        static member internal getTaskletsProcessing world =
+            World.getAmbientStateBy AmbientState.getTaskletsProcessing world
+
         /// Add a tasklet to be executed by the engine at the scheduled time.
         static member addTasklet tasklet world =
             World.updateAmbientState (AmbientState.addTasklet tasklet) world
@@ -305,7 +308,8 @@ module WorldModule =
 
         /// Schedule an operation to be executed by the engine at the end of the current frame.
         static member schedule2 fn world =
-            World.schedule fn (World.getTickTime world) world
+            let taskletsProcessing = World.getTaskletsProcessing world
+            World.schedule fn (World.getTickTime world + if taskletsProcessing then 1L else 0L) world
 
         static member internal getMetadata world =
             AmbientState.getMetadata (World.getAmbientState world)
