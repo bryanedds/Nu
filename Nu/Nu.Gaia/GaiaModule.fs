@@ -1422,7 +1422,7 @@ module Gaia =
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[ring 0] : int Set") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[table [0 \"\"]] : Map<int, string>") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[tuple 0 0] : int * int") |> ignore
-        //form.entityDesignerPropertyTypeComboBox.Items.Add ("[BodyBox [v2 0f 0f] [v1 1f 1f]] : BodyShape") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[record BodyBox [Extent [v2 0f 0f]] [Center [v2 1f 1f]]] : BodyBox") |> ignore
 
         // clear undo buffers
         form.eventFilterTextBox.EmptyUndoBuffer ()
