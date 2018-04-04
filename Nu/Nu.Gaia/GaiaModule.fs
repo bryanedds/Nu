@@ -754,19 +754,24 @@ module Gaia =
         addWorldChanger ^ fun world ->
             let world = pushPastWorld world world
             match form.entityPropertyGrid.SelectedObject with
-            | :? EntityTypeDescriptorSource as entityTds ->
+            | :? EntityTypeDescriptorSource as entityTds when entityTds.DescribedEntity.HasFacet typeof<NodeFacet> world ->
                 use entityPicker = new EntityPicker ()
                 let selectedLayer = (World.getUserValue world).SelectedLayer
                 let entityNames =
                     World.getEntities selectedLayer world |>
+                    Seq.filter (fun entity -> entity.HasFacet typeof<NodeFacet> world) |>
                     Seq.map (fun entity -> entity.GetName world) |>
-                    Seq.map ListViewItem |>
                     Seq.toArray
-                entityPicker.entitiesListView.Items.AddRange entityNames
+                entityPicker.entityListBox.Items.AddRange (Array.map box entityNames)
                 entityPicker.okButton.Click.Add (fun _ -> entityPicker.Close ())
                 entityPicker.cancelButton.Click.Add (fun _ -> entityPicker.Close ())
-                let world = World.destroyEntity entityTds.DescribedEntity world
-                deselectEntity form world
+                entityPicker.searchTextBox.TextChanged.Add(fun _ ->
+                    entityPicker.entityListBox.Items.Clear ()
+                    for name in entityNames do
+                        if name.Contains entityPicker.searchTextBox.Text then
+                            entityPicker.entityListBox.Items.Add name |> ignore)
+                entityPicker.ShowDialog () |> ignore
+                entityTds |> ignore
                 world
             | _ -> world
 
@@ -1338,7 +1343,6 @@ module Gaia =
         form.deleteEntityButton.Click.Add (handleFormDeleteEntity form)
         form.deleteToolStripMenuItem.Click.Add (handleFormDeleteEntity form)
         form.deleteContextMenuItem.Click.Add (handleFormDeleteEntity form)
-        form.pickParentNodeToolStripMenuItem.Click.Add (handleFormPickParentNodeOpt form)
         form.newToolStripMenuItem.Click.Add (handleFormNew form)
         form.saveToolStripMenuItem.Click.Add (handleFormSave form)
         form.openToolStripMenuItem.Click.Add (handleFormOpen form)
@@ -1355,6 +1359,8 @@ module Gaia =
         form.copyContextMenuItem.Click.Add (handleFormCopy form)
         form.pasteToolStripMenuItem.Click.Add (handleFormPaste false form)
         form.pasteContextMenuItem.Click.Add (handleFormPaste true form)
+        form.pickParentNodeToolStripMenuItem.Click.Add (handleFormPickParentNodeOpt form)
+        form.pickParentNodeContextMenuItem.Click.Add (handleFormPickParentNodeOpt form)
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
         form.resetCameraButton.Click.Add (handleFormResetCamera form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
