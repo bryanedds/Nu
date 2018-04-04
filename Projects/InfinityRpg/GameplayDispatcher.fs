@@ -34,7 +34,7 @@ module GameplayDispatcherModule =
 
         static let getCharacters world =
             let entities = World.getEntities Simulants.Scene world
-            Seq.filter (fun (entity : Entity) -> entity.DispatchesAs typeof<CharacterDispatcher> world) entities
+            Seq.filter (fun (entity : Entity) -> entity.DispatchesAs<CharacterDispatcher> world) entities
 
         static let tryGetCharacterAtPosition position world =
             let characters = getCharacters world
@@ -48,7 +48,7 @@ module GameplayDispatcherModule =
 
         static let getEnemies world =
             let entities = World.getEntities Simulants.Scene world
-            Seq.filter (fun (entity : Entity) -> entity.DispatchesAs typeof<EnemyDispatcher> world) entities
+            Seq.filter (fun (entity : Entity) -> entity.DispatchesAs<EnemyDispatcher> world) entities
 
         static let makeAttackTurn targetPositionM =
             ActionTurn

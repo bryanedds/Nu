@@ -164,11 +164,17 @@ module WorldEntityModule =
                 this
                 world
 
-        /// Check that an entity uses a facet of type 'a.
-        member this.FacetedAs facetType world = List.exists (fun facet -> getType facet = facetType) (this.GetFacetsNp world)
+        /// Check that an entity uses a facet of the given type.
+        member this.FacetsAs (facetType, world) = List.exists (fun facet -> getType facet = facetType) (this.GetFacetsNp world)
 
-        /// Check that an entity dispatches in the same manner as the dispatcher with the target type.
-        member this.DispatchesAs dispatcherType world = Reflection.dispatchesAs dispatcherType (this.GetDispatcherNp world)
+        /// Check that an entity uses a facet of the given type.
+        member this.FacetsAs<'a> world = this.FacetsAs (typeof<'a>, world)
+
+        /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
+        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcherNp world)
+
+        /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
+        member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
 
         /// Resolve a relation in the context of an entity.
         member this.Resolve relation = Entity (Relation.resolve this.EntityAddress relation)

@@ -20,9 +20,13 @@ open Nu.Gaia.Design
 [<RequireQualifiedAccess>]
 module Gaia =
 
+    // literals... TODO: move to Constants
+    let [<Literal>] private NonePick = "\"None\""
+
     // globals needed to sync Nu with WinForms
     let private WorldRef = ref Unchecked.defaultof<World>
     let private WorldChangers = WorldChangers ()
+
 
     let addWorldChanger worldChanger =
         WorldChangers.Add worldChanger |> ignore
@@ -274,7 +278,7 @@ module Gaia =
                     World.updateUserValue (fun editorState ->
                         let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
                         let entityPosition =
-                            if entity.HasFacet typeof<NodeFacet> world && entity.ParentNodeExists world
+                            if entity.FacetsAs<NodeFacet> world && entity.ParentNodeExists world
                             then entity.GetPositionLocal world
                             else entity.GetPosition world
                         { editorState with DragEntityState = DragEntityPosition (entityPosition + mousePositionWorld, mousePositionWorld, entity) })
@@ -754,25 +758,34 @@ module Gaia =
         addWorldChanger ^ fun world ->
             let world = pushPastWorld world world
             match form.entityPropertyGrid.SelectedObject with
-            | :? EntityTypeDescriptorSource as entityTds when entityTds.DescribedEntity.HasFacet typeof<NodeFacet> world ->
+            | :? EntityTypeDescriptorSource as entityTds when entityTds.DescribedEntity.FacetsAs<NodeFacet> world ->
                 use entityPicker = new EntityPicker ()
                 let selectedLayer = (World.getUserValue world).SelectedLayer
                 let entityNames =
                     World.getEntities selectedLayer world |>
-                    Seq.filter (fun entity -> entity.HasFacet typeof<NodeFacet> world) |>
+                    Seq.filter (fun entity -> entity.FacetsAs<NodeFacet> world) |>
                     Seq.map (fun entity -> entity.GetName world) |>
+                    flip Seq.append [NonePick] |>
                     Seq.toArray
                 entityPicker.entityListBox.Items.AddRange (Array.map box entityNames)
-                entityPicker.okButton.Click.Add (fun _ -> entityPicker.Close ())
+                entityPicker.okButton.Click.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
                 entityPicker.cancelButton.Click.Add (fun _ -> entityPicker.Close ())
                 entityPicker.searchTextBox.TextChanged.Add(fun _ ->
                     entityPicker.entityListBox.Items.Clear ()
                     for name in entityNames do
-                        if name.Contains entityPicker.searchTextBox.Text then
+                        if name.Contains entityPicker.searchTextBox.Text || name = NonePick then
                             entityPicker.entityListBox.Items.Add name |> ignore)
-                entityPicker.ShowDialog () |> ignore
-                entityTds |> ignore
-                world
+                match entityPicker.ShowDialog () with
+                | DialogResult.OK ->
+                    match entityPicker.entityListBox.SelectedItem with
+                    | :? string as parentEntityName ->
+                        match parentEntityName with
+                        | NonePick -> entityTds.DescribedEntity.SetParentNodeOptWithAdjustment None world
+                        | _ ->
+                            let parentEntity = Relation.makeFromString ("?/?/" + parentEntityName)
+                            entityTds.DescribedEntity.SetParentNodeOptWithAdjustment (Some parentEntity) world
+                    | _ -> world
+                | _ -> world
             | _ -> world
 
     let private handleFormNew (form : GaiaForm) (_ : EventArgs) =
@@ -1149,7 +1162,7 @@ module Gaia =
                 let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                 let entityPositionSnapped = Math.snap2F positionSnap entityPosition
                 let world =
-                    if entity.HasFacet typeof<NodeFacet> world && entity.ParentNodeExists world
+                    if entity.FacetsAs<NodeFacet> world && entity.ParentNodeExists world
                     then entity.SetPositionLocal entityPositionSnapped world
                     else entity.SetPosition entityPositionSnapped world
                 let world = entity.PropagatePhysics world
