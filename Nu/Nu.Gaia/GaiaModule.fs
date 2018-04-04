@@ -404,7 +404,7 @@ module Gaia =
                         | _ -> None
                     let ty = selectedGridItem.PropertyDescriptor.PropertyType
                     let typeConverter = SymbolicConverter (true, designTypeOpt, ty)
-                    form.propertyEditor.Enabled <- true
+                    form.propertyEditor.Enabled <- not selectedGridItem.PropertyDescriptor.IsReadOnly
                     form.propertyNameLabel.Text <- selectedGridItem.Label
                     form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
                     if isNotNull selectedGridItem.Value || isNullTrueValue ty then
@@ -768,6 +768,7 @@ module Gaia =
                     flip Seq.append [NonePick] |>
                     Seq.toArray
                 entityPicker.entityListBox.Items.AddRange (Array.map box entityNames)
+                entityPicker.entityListBox.DoubleClick.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
                 entityPicker.okButton.Click.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
                 entityPicker.cancelButton.Click.Add (fun _ -> entityPicker.Close ())
                 entityPicker.searchTextBox.TextChanged.Add(fun _ ->
