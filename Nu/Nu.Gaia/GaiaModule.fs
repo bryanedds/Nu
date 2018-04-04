@@ -750,6 +750,26 @@ module Gaia =
                 world
             | _ -> world
 
+    let private handleFormPickParentNodeOpt (form : GaiaForm) (_ : EventArgs) =
+        addWorldChanger ^ fun world ->
+            let world = pushPastWorld world world
+            match form.entityPropertyGrid.SelectedObject with
+            | :? EntityTypeDescriptorSource as entityTds ->
+                use entityPicker = new EntityPicker ()
+                let selectedLayer = (World.getUserValue world).SelectedLayer
+                let entityNames =
+                    World.getEntities selectedLayer world |>
+                    Seq.map (fun entity -> entity.GetName world) |>
+                    Seq.map ListViewItem |>
+                    Seq.toArray
+                entityPicker.entitiesListView.Items.AddRange entityNames
+                entityPicker.okButton.Click.Add (fun _ -> entityPicker.Close ())
+                entityPicker.cancelButton.Click.Add (fun _ -> entityPicker.Close ())
+                let world = World.destroyEntity entityTds.DescribedEntity world
+                deselectEntity form world
+                world
+            | _ -> world
+
     let private handleFormNew (form : GaiaForm) (_ : EventArgs) =
         use layerCreationForm = new LayerCreationForm ()
         layerCreationForm.StartPosition <- FormStartPosition.CenterParent
@@ -1318,11 +1338,11 @@ module Gaia =
         form.deleteEntityButton.Click.Add (handleFormDeleteEntity form)
         form.deleteToolStripMenuItem.Click.Add (handleFormDeleteEntity form)
         form.deleteContextMenuItem.Click.Add (handleFormDeleteEntity form)
+        form.pickParentNodeToolStripMenuItem.Click.Add (handleFormPickParentNodeOpt form)
         form.newToolStripMenuItem.Click.Add (handleFormNew form)
         form.saveToolStripMenuItem.Click.Add (handleFormSave form)
         form.openToolStripMenuItem.Click.Add (handleFormOpen form)
         form.closeToolStripMenuItem.Click.Add (handleFormClose form)
-        form.pickParentNodeToolStripMenuItem.Click.Add (handleFormClose form)
         form.undoButton.Click.Add (handleFormUndo form)
         form.undoToolStripMenuItem.Click.Add (handleFormUndo form)
         form.redoButton.Click.Add (handleFormRedo form)

@@ -650,13 +650,7 @@ module WorldModule2 =
             let world = List.fold (fun world screen -> World.actualizeScreen screen world) world screens
             let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.actualizeScreenTransition selectedScreen world | None -> world
             let world = Seq.fold (fun world layer -> World.actualizeLayer layer world) world layers
-            let world =
-                Seq.fold (fun world (entity : Entity) ->
-                    if World.isTicking world || entity.GetAlwaysUpdate world
-                    then World.actualizeEntity entity world
-                    else world)
-                    world
-                    entities
+            let world = Seq.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
 
             // fin
             world
