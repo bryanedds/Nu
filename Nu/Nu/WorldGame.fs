@@ -110,8 +110,11 @@ module WorldGameModule =
         /// Transform the given mouse position to entity space.
         member this.MouseToEntity viewType entityPosition mousePosition world = World.mouseToEntity viewType entityPosition mousePosition world
 
-        /// Check that a layer dispatches in the same manner as the dispatcher with the target type.
-        member this.DispatchesAs (dispatcherTargetType : Type) world = Reflection.dispatchesAs dispatcherTargetType (this.GetDispatcherNp world)
+        /// Check that a game dispatches in the same manner as the dispatcher with the given type.
+        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcherNp world)
+
+        /// Check that a game dispatches in the same manner as the dispatcher with the given type.
+        member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
 
         /// Resolve a relation in the context of an entity.
         member this.Resolve relation = Game (Relation.resolve this.GameAddress relation)

@@ -388,19 +388,19 @@ module NodeFacetModule =
                     let parentNew = this.Resolve relationNew
                     if parentOld.Exists world && parentNew.Exists world then
                         let translation = this.GetPosition world + parentOld.GetPosition world - parentOld.GetPosition world
-                        this.SetPosition translation world
+                        this.SetPositionLocal translation world
                     else world
                 | (Some relationOld, None) ->
                     let parentOld = this.Resolve relationOld
                     if parentOld.Exists world then
-                        let translation = this.GetPosition world + parentOld.GetPosition world
+                        let translation = this.GetPositionLocal world + parentOld.GetPosition world
                         this.SetPosition translation world
                     else world
                 | (None, Some relationNew) ->
                     let parentNew = this.Resolve relationNew
                     if parentNew.Exists world then
                         let translation = this.GetPosition world - parentNew.GetPosition world
-                        this.SetPosition translation world
+                        this.SetPositionLocal translation world
                     else world
                 | (None, None) -> world
             this.SetParentNodeOpt value world
@@ -415,7 +415,7 @@ module NodeFacetModule =
 
         member private this.GetChildNodes2 nodes world =
             let nodeOpt =
-                if this.HasFacet typeof<NodeFacet> world
+                if this.FacetsAs<NodeFacet> world
                 then Option.map this.Resolve (this.GetParentNodeOpt world)
                 else None
             match nodeOpt with
@@ -475,8 +475,8 @@ module NodeFacetModule =
                 if node = entity then
                     Log.trace "Cannot mount entity to itself."
                     World.choose oldWorld
-                elif entity.HasFacet typeof<RigidBodyFacet> world then
-                    Log.trace "Cannot mount a rigid body entiyty onto another entity. Instead, consider using physics constraints."
+                elif entity.FacetsAs<RigidBodyFacet> world then
+                    Log.trace "Cannot mount a rigid body entity onto another entity. Instead, consider using physics constraints."
                     World.choose oldWorld
                 else
                     let (unsubscribe, world) = World.monitorPlus handleNodePropertyChange node.Position.Change entity world
