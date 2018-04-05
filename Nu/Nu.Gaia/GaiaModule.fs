@@ -385,7 +385,78 @@ module Gaia =
         let depth = snd (Single.TryParse form.createDepthTextBox.Text)
         form.createDepthTextBox.Text <- scstring (depth - 1.0f)
 
+    let private handlePropertyPickButton
+        (propertyDescriptor : System.ComponentModel.PropertyDescriptor)
+        (entityTds : EntityTypeDescriptorSource)
+        (form : GaiaForm)
+        world =
+        if propertyDescriptor.PropertyType = typeof<AssetTag> then
+            use assetPicker = new AssetPicker ()
+            let assetMap = World.getAssetMap world
+            for assetTag in assetMap do
+                let node = assetPicker.assetTreeView.Nodes.Add assetTag.Key
+                for assetName in assetTag.Value do
+                    node.Nodes.Add assetName |> ignore
+            assetPicker.assetTreeView.DoubleClick.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
+            assetPicker.okButton.Click.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
+            assetPicker.cancelButton.Click.Add (fun _ -> assetPicker.Close ())
+            assetPicker.searchTextBox.TextChanged.Add(fun _ ->
+                assetPicker.assetTreeView.Nodes.Clear ()
+                for assetTag in assetMap do
+                    let node = assetPicker.assetTreeView.Nodes.Add assetTag.Key
+                    for assetName in assetTag.Value do
+                        if assetName.Contains assetPicker.searchTextBox.Text then
+                            node.Nodes.Add assetName |> ignore
+                assetPicker.assetTreeView.ExpandAll ())
+            match assetPicker.ShowDialog () with
+            | DialogResult.OK ->
+                match assetPicker.assetTreeView.SelectedNode with
+                | null -> world
+                | selectedNode ->
+                    match selectedNode.Parent with
+                    | null -> world
+                    | selectedNodeParent ->
+                        let assetTag = { PackageName = selectedNodeParent.Text; AssetName = selectedNode.Text }
+                        form.propertyValueTextBox.Text <- scstring assetTag
+                        form.propertyApplyButton.PerformClick ()
+                        world
+            | _ -> world
+        elif propertyDescriptor.PropertyType = typeof<Entity Relation option> then
+            use entityPicker = new EntityPicker ()
+            let selectedLayer = (World.getUserValue world).SelectedLayer
+            let entityNames =
+                World.getEntities selectedLayer world |>
+                Seq.filter (fun entity -> entity.FacetsAs<NodeFacet> world) |>
+                Seq.map (fun entity -> entity.GetName world) |>
+                flip Seq.append [NonePick] |>
+                Seq.toArray
+            entityPicker.entityListBox.Items.AddRange (Array.map box entityNames)
+            entityPicker.entityListBox.DoubleClick.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
+            entityPicker.okButton.Click.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
+            entityPicker.cancelButton.Click.Add (fun _ -> entityPicker.Close ())
+            entityPicker.searchTextBox.TextChanged.Add(fun _ ->
+                entityPicker.entityListBox.Items.Clear ()
+                for name in entityNames do
+                    if name.Contains entityPicker.searchTextBox.Text || name = NonePick then
+                        entityPicker.entityListBox.Items.Add name |> ignore)
+            match entityPicker.ShowDialog () with
+            | DialogResult.OK ->
+                match entityPicker.entityListBox.SelectedItem with
+                | :? string as parentEntityName ->
+                    match parentEntityName with
+                    | NonePick -> entityTds.DescribedEntity.SetParentNodeOptWithAdjustment None world
+                    | _ ->
+                        let parentRelation = Relation.makeFromString ("?/?/" + parentEntityName)
+                        form.propertyValueTextBox.Text <- scstring parentRelation
+                        if propertyDescriptor.Name = "ParentNodeOpt"
+                        then entityTds.DescribedEntity.SetParentNodeOptWithAdjustment (Some parentRelation) world
+                        else (form.propertyApplyButton.PerformClick (); world)
+                | _ -> world
+            | _ -> world
+        else world
+
     // TODO: factor away some of the code duplication in this function!
+    let mutable private propertyPickButtonClickHandler = Unchecked.defaultof<EventHandler>
     let private refreshPropertyEditor (form : GaiaForm) =
         if form.propertyTabControl.SelectedIndex = 0 then
             match (form.entityPropertyGrid.SelectedObject, form.entityPropertyGrid.SelectedGridItem) with
@@ -396,6 +467,7 @@ module Gaia =
                 form.propertyValueTextBox.Text <- String.Empty
                 form.propertyValueTextBox.EmptyUndoBuffer ()
             | (selectedEntityTds, selectedGridItem) ->
+                let selectedEntityTds = selectedEntityTds :?> EntityTypeDescriptorSource // unbox manually
                 match selectedGridItem.GridItemType with
                 | GridItemType.Property ->
                     let designTypeOpt =
@@ -434,12 +506,20 @@ module Gaia =
                         form.propertyValueTextBox.Keywords1 <- keywords1
                         form.propertyValueTextBox.SelectionStart <- selectionStart
                         form.propertyValueTextBox.ScrollCaret ()
+                        form.propertyPickButton.Enabled <-
+                            selectedGridItem.PropertyDescriptor.PropertyType = typeof<AssetTag> ||
+                            selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option>
+                        form.propertyPickButton.Click.RemoveHandler propertyPickButtonClickHandler
+                        propertyPickButtonClickHandler <- EventHandler (fun _ _ -> addWorldChanger ^ handlePropertyPickButton selectedGridItem.PropertyDescriptor selectedEntityTds form)
+                        form.propertyPickButton.Click.AddHandler propertyPickButtonClickHandler
                 | _ ->
                     form.propertyEditor.Enabled <- false
                     form.propertyNameLabel.Text <- String.Empty
                     form.propertyDescriptionTextBox.Text <- String.Empty
                     form.propertyValueTextBox.Text <- String.Empty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
+                    form.propertyPickButton.Enabled <- false
+                    form.propertyPickButton.Click.RemoveHandler propertyPickButtonClickHandler
         else // assume layer
             match (form.layerPropertyGrid.SelectedObject, form.layerPropertyGrid.SelectedGridItem) with
             | (null, _) | (_, null) ->
@@ -474,12 +554,14 @@ module Gaia =
                         form.propertyValueTextBox.Keywords1 <- keywords1
                         form.propertyValueTextBox.SelectionStart <- selectionStart
                         form.propertyValueTextBox.ScrollCaret ()
+                        form.propertyPickButton.Enabled <- false
                 | _ ->
                     form.propertyEditor.Enabled <- false
                     form.propertyNameLabel.Text <- String.Empty
                     form.propertyDescriptionTextBox.Text <- String.Empty
                     form.propertyValueTextBox.Text <- String.Empty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
+                    form.propertyPickButton.Enabled <- false
 
     let private refreshEntityPropertyDesigner (form : GaiaForm) =
         form.entityPropertyDesigner.Enabled <- isNotNull form.entityPropertyGrid.SelectedObject
@@ -752,41 +834,6 @@ module Gaia =
                 let world = World.destroyEntity entityTds.DescribedEntity world
                 deselectEntity form world
                 world
-            | _ -> world
-
-    let private handleFormPickParentNodeOpt (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
-            let world = pushPastWorld world world
-            match form.entityPropertyGrid.SelectedObject with
-            | :? EntityTypeDescriptorSource as entityTds when entityTds.DescribedEntity.FacetsAs<NodeFacet> world ->
-                use entityPicker = new EntityPicker ()
-                let selectedLayer = (World.getUserValue world).SelectedLayer
-                let entityNames =
-                    World.getEntities selectedLayer world |>
-                    Seq.filter (fun entity -> entity.FacetsAs<NodeFacet> world) |>
-                    Seq.map (fun entity -> entity.GetName world) |>
-                    flip Seq.append [NonePick] |>
-                    Seq.toArray
-                entityPicker.entityListBox.Items.AddRange (Array.map box entityNames)
-                entityPicker.entityListBox.DoubleClick.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
-                entityPicker.okButton.Click.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
-                entityPicker.cancelButton.Click.Add (fun _ -> entityPicker.Close ())
-                entityPicker.searchTextBox.TextChanged.Add(fun _ ->
-                    entityPicker.entityListBox.Items.Clear ()
-                    for name in entityNames do
-                        if name.Contains entityPicker.searchTextBox.Text || name = NonePick then
-                            entityPicker.entityListBox.Items.Add name |> ignore)
-                match entityPicker.ShowDialog () with
-                | DialogResult.OK ->
-                    match entityPicker.entityListBox.SelectedItem with
-                    | :? string as parentEntityName ->
-                        match parentEntityName with
-                        | NonePick -> entityTds.DescribedEntity.SetParentNodeOptWithAdjustment None world
-                        | _ ->
-                            let parentEntity = Relation.makeFromString ("?/?/" + parentEntityName)
-                            entityTds.DescribedEntity.SetParentNodeOptWithAdjustment (Some parentEntity) world
-                    | _ -> world
-                | _ -> world
             | _ -> world
 
     let private handleFormNew (form : GaiaForm) (_ : EventArgs) =
@@ -1373,8 +1420,6 @@ module Gaia =
         form.copyContextMenuItem.Click.Add (handleFormCopy form)
         form.pasteToolStripMenuItem.Click.Add (handleFormPaste false form)
         form.pasteContextMenuItem.Click.Add (handleFormPaste true form)
-        form.pickParentNodeToolStripMenuItem.Click.Add (handleFormPickParentNodeOpt form)
-        form.pickParentNodeContextMenuItem.Click.Add (handleFormPickParentNodeOpt form)
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
         form.resetCameraButton.Click.Add (handleFormResetCamera form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
