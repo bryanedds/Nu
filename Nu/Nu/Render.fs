@@ -11,6 +11,15 @@ open TiledSharp
 open Prime
 open Nu
 
+/// An image. Currently just used as a phantom type.
+type Image = ImageAsset
+
+/// A font. Currently just used as a phantom type.
+type Font = FontAsset
+
+/// A tile map. Currently just used as a phantom type.
+type TileMap = TileMapAsset
+
 /// Describes how to render a sprite to the rendering system.
 type [<Struct; StructuralEquality; NoComparison>] SpriteDescriptor =
     { Position : Vector2
@@ -19,7 +28,7 @@ type [<Struct; StructuralEquality; NoComparison>] SpriteDescriptor =
       Offset : Vector2
       ViewType : ViewType
       InsetOpt : Vector4 option
-      Image : AssetTag
+      Image : Image AssetTag
       Color : Vector4 }
 
 /// Describes how to render a tile map to the rendering system.
@@ -33,7 +42,7 @@ type [<Struct; StructuralEquality; NoComparison>] TileLayerDescriptor =
       TileSourceSize : Vector2i
       TileSize : Vector2
       TileSet : TmxTileset
-      TileSetImage : AssetTag }
+      TileSetImage : Image AssetTag }
 
 /// Describes how to render text to the rendering system.
 type [<Struct; StructuralEquality; NoComparison>] TextDescriptor =
@@ -41,7 +50,7 @@ type [<Struct; StructuralEquality; NoComparison>] TextDescriptor =
       Size : Vector2
       ViewType : ViewType
       Text : string
-      Font : AssetTag
+      Font : Font AssetTag
       Color : Vector4 }
 
 /// Describes how to render a layered 'thing' to the rendering system.
@@ -106,7 +115,7 @@ module RendererModule =
             | TextureAsset texture -> SDL.SDL_DestroyTexture texture
             | FontAsset (font, _) -> SDL_ttf.TTF_CloseFont font
 
-        static member private tryLoadRenderAsset2 renderContext (asset : Asset) =
+        static member private tryLoadRenderAsset2 renderContext (asset : obj Asset) =
             match Path.GetExtension asset.FilePath with
             | ".bmp"
             | ".png" ->
@@ -152,7 +161,7 @@ module RendererModule =
                 Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
                 renderer
 
-        static member private tryLoadRenderAsset (assetTag : AssetTag) renderer =
+        static member private tryLoadRenderAsset (assetTag : obj AssetTag) renderer =
             let (assetMapOpt, renderer) =
                 if UMap.containsKey assetTag.PackageName renderer.RenderPackageMap
                 then (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
@@ -204,7 +213,7 @@ module RendererModule =
             let positionView = position * view
             let sizeView = sprite.Size * view.ExtractScaleMatrix ()
             let color = sprite.Color
-            let image = sprite.Image
+            let image = AssetTag.generalize sprite.Image
             let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset image renderer
             if FOption.isSome renderAssetOpt then
                 let renderAsset = FOption.get renderAssetOpt
@@ -270,7 +279,7 @@ module RendererModule =
             let tileSourceSize = descriptor.TileSourceSize
             let tileSize = descriptor.TileSize
             let tileSet = descriptor.TileSet
-            let tileSetImage = descriptor.TileSetImage
+            let tileSetImage = AssetTag.generalize descriptor.TileSetImage
             let tileSetWidth = let tileSetWidthOpt = tileSet.Image.Width in tileSetWidthOpt.Value
             let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset tileSetImage renderer
             if FOption.isSome renderAssetOpt then
@@ -334,7 +343,7 @@ module RendererModule =
             let sizeView = descriptor.Size * view.ExtractScaleMatrix ()
             let text = String.textualize descriptor.Text
             let color = descriptor.Color
-            let font = descriptor.Font
+            let font = AssetTag.generalize descriptor.Font
             let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset font renderer
             if FOption.isSome renderAssetOpt then
                 let renderAsset = FOption.get renderAssetOpt

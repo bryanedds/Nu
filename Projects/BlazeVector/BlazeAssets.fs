@@ -7,18 +7,18 @@ module Assets =
     let GameplayPackageName = "Gameplay"
 
     // the various assets described by the project's 'AssetGraph.nuag' file
-    let NuSplashSound = { PackageName = GuiPackageName; AssetName = "Nu" }
-    let MachinerySong = { PackageName = GuiPackageName; AssetName = "Machinery" }
-    let DeadBlazeSong = { PackageName = GameplayPackageName; AssetName = "DeadBlaze" }
-    let HitSound = { PackageName = GameplayPackageName; AssetName = "Hit" }
-    let ExplosionSound = { PackageName = GameplayPackageName; AssetName = "Explosion" }
-    let ShotSound = { PackageName = GameplayPackageName; AssetName = "Shot" }
-    let JumpSound = { PackageName = GameplayPackageName; AssetName = "Jump" }
-    let DeathSound = { PackageName = GameplayPackageName; AssetName = "Death" }
-    let EnemyBulletImage = { PackageName = GameplayPackageName; AssetName = "EnemyBullet" }
-    let PlayerBulletImage = { PackageName = GameplayPackageName; AssetName = "PlayerBullet" }
-    let EnemyImage = { PackageName = GameplayPackageName; AssetName = "Enemy" }
-    let PlayerImage = { PackageName = GameplayPackageName; AssetName = "Player" }
+    let NuSplashSound = AssetTag.make<Audio> GuiPackageName "Nu"
+    let MachinerySong = AssetTag.make<Audio> GuiPackageName "Machinery"
+    let DeadBlazeSong = AssetTag.make<Audio> GameplayPackageName "DeadBlaze"
+    let HitSound = AssetTag.make<Audio> GameplayPackageName "Hit"
+    let ExplosionSound = AssetTag.make<Audio> GameplayPackageName "Explosion"
+    let ShotSound = AssetTag.make<Audio> GameplayPackageName "Shot"
+    let JumpSound = AssetTag.make<Audio> GameplayPackageName "Jump"
+    let DeathSound = AssetTag.make<Audio> GameplayPackageName "Death"
+    let EnemyBulletImage = AssetTag.make<Image> GameplayPackageName "EnemyBullet"
+    let PlayerBulletImage = AssetTag.make<Image> GameplayPackageName "PlayerBullet"
+    let EnemyImage = AssetTag.make<Image> GameplayPackageName "Enemy"
+    let PlayerImage = AssetTag.make<Image> GameplayPackageName "Player"
 
     // the file paths from which various simulants are loaded
     let TitleLayerFilePath = "Assets/Gui/Title.nulyr"

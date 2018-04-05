@@ -411,7 +411,7 @@ module Gaia =
                 match selectedNode.Parent with
                 | null -> world
                 | selectedNodeParent ->
-                    let assetTag = { PackageName = selectedNodeParent.Text; AssetName = selectedNode.Text }
+                    let assetTag = (AssetTag.make<obj> selectedNodeParent.Text selectedNode.Text)
                     form.propertyValueTextBox.Text <- scstring assetTag
                     form.propertyApplyButton.PerformClick ()
                     world
@@ -451,7 +451,7 @@ module Gaia =
         | _ -> world
 
     let private handlePropertyPickButton (propertyDescriptor : System.ComponentModel.PropertyDescriptor) entityTds form world =
-        if propertyDescriptor.PropertyType = typeof<AssetTag> then handlePropertyPickAsset form world
+        if propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag> then handlePropertyPickAsset form world
         elif propertyDescriptor.PropertyType = typeof<Entity Relation option> then handlePropertyPickParentNode propertyDescriptor entityTds form world
         else world
 
@@ -507,7 +507,7 @@ module Gaia =
                         form.propertyValueTextBox.SelectionStart <- selectionStart
                         form.propertyValueTextBox.ScrollCaret ()
                         form.propertyPickButton.Enabled <-
-                            selectedGridItem.PropertyDescriptor.PropertyType = typeof<AssetTag> ||
+                            selectedGridItem.PropertyDescriptor.PropertyType = typeof<Image AssetTag> ||
                             selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option>
                         form.propertyPickButton.Click.RemoveHandler propertyPickButtonClickHandler
                         propertyPickButtonClickHandler <- EventHandler (fun _ _ -> addWorldChanger ^ handlePropertyPickButton selectedGridItem.PropertyDescriptor selectedEntityTds form)

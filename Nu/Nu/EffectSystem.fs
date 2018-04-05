@@ -150,9 +150,9 @@ module EffectSystemModule =
             | SymbolicCompressionB (SymbolicCompressionB content) ->
                 { DefinitionParams = [||]; DefinitionBody = SymbolicCompressionB (SymbolicCompressionB content) }
 
-        let rec evalResource resource effectSystem : AssetTag =
+        let rec evalResource resource effectSystem : obj AssetTag =
             match resource with
-            | Resource (packageName, assetName) -> { PackageName = packageName; AssetName = assetName }
+            | Resource (packageName, assetName) -> AssetTag.make<obj> packageName assetName
             | Resource.Expand (definitionName, _) ->
                 match Map.tryFind definitionName effectSystem.EffectEnv with
                 | Some definition ->
@@ -160,10 +160,10 @@ module EffectSystemModule =
                     | SymbolicCompressionA resource -> evalResource resource effectSystem
                     | _ ->
                         Log.info ("Expected Resource for definition '" + definitionName + ".")
-                        scvalue<AssetTag> Assets.DefaultImageString
+                        scvalue<obj AssetTag> Assets.DefaultImageString
                 | None ->
                     Log.info ("Could not find definition with name '" + definitionName + "'.")
-                    scvalue<AssetTag> Assets.DefaultImageString
+                    scvalue<obj AssetTag> Assets.DefaultImageString
 
         let rec private iterateArtifacts incrementAspects content slice effectSystem =
             let effectSystem = { effectSystem with ProgressOffset = 0.0f }
@@ -302,7 +302,7 @@ module EffectSystemModule =
                                           Rotation = slice.Rotation
                                           Offset = slice.Offset
                                           InsetOpt = None
-                                          Image = image
+                                          Image = AssetTag.specialize<Image> image
                                           ViewType = effectSystem.ViewType
                                           Color = slice.Color }})
                     addRenderArtifact spriteArtifact effectSystem
@@ -337,7 +337,7 @@ module EffectSystemModule =
                                       Rotation = slice.Rotation
                                       Offset = slice.Offset
                                       InsetOpt = insetOpt
-                                      Image = image
+                                      Image = AssetTag.specialize<Image> image
                                       ViewType = effectSystem.ViewType
                                       Color = slice.Color }})
                     addRenderArtifact animatedSpriteArtifact effectSystem
@@ -357,7 +357,7 @@ module EffectSystemModule =
             // build sprite artifacts
             let effectSystem =
                 if slice.Enabled
-                then addSoundArtifact (SoundArtifact (slice.Volume, sound)) effectSystem
+                then addSoundArtifact (SoundArtifact (slice.Volume, AssetTag.specialize<Audio> sound)) effectSystem
                 else effectSystem
 
             // build implicitly mounted content

@@ -8,16 +8,19 @@ open SDL2
 open Prime
 open Nu
 
+/// Audio. Currently just used as a phantom type.
+type Audio = Audio
+
 /// A message to the audio system to play a song.
 type [<StructuralEquality; NoComparison>] PlaySongMessage =
     { TimeToFadeOutSongMs : int
       Volume : single
-      Song : AssetTag }
+      Song : Audio AssetTag }
 
 /// A message to the audio system to play a sound.
 type [<StructuralEquality; NoComparison>] PlaySoundMessage =
     { Volume : single
-      Sound : AssetTag }
+      Sound : Audio AssetTag }
 
 /// A message to the audio system.
 type [<StructuralEquality; NoComparison>] AudioMessage =
@@ -61,7 +64,7 @@ module AudioPlayerModule =
             for i in [0 .. channelCount - 1] do
                 SDL_mixer.Mix_HaltChannel i |> ignore
     
-        static member private tryLoadAudioAsset2 (asset : Asset) =
+        static member private tryLoadAudioAsset2 (asset : Audio Asset) =
             match Path.GetExtension asset.FilePath with
             | ".wav" ->
                 let wavOpt = SDL_mixer.Mix_LoadWAV asset.FilePath
@@ -84,6 +87,7 @@ module AudioPlayerModule =
             | Right assetGraph ->
                 match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Audio) packageName assetGraph with
                 | Right assets ->
+                    let assets = List.map Asset.specialize<Audio> assets
                     let audioAssetOpts = List.map AudioPlayer.tryLoadAudioAsset2 assets
                     let audioAssets = List.definitize audioAssetOpts
                     let audioAssetMapOpt = UMap.tryFindFast packageName audioPlayer.AudioPackageMap
@@ -101,7 +105,7 @@ module AudioPlayerModule =
                 Log.info ("Audio package load failed due to unloadable asset graph due to: '" + error)
                 audioPlayer
     
-        static member private tryLoadAudioAsset (assetTag : AssetTag) audioPlayer =
+        static member private tryLoadAudioAsset (assetTag : Audio AssetTag) audioPlayer =
             let (assetMapOpt, audioPlayer) =
                 if UMap.containsKey assetTag.PackageName audioPlayer.AudioPackageMap
                 then (UMap.tryFindFast assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)

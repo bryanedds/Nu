@@ -89,8 +89,8 @@ module CharacterAnimationFacetModule =
         member this.GetCharacterAnimationState world : CharacterAnimationState = this.Get Property? CharacterAnimationState world
         member this.SetCharacterAnimationState (value : CharacterAnimationState) world = this.Set Property? CharacterAnimationState value world
         member this.CharacterAnimationState = PropertyTag.make this Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState
-        member this.GetCharacterAnimationSheet world : AssetTag = this.Get Property? CharacterAnimationSheet world
-        member this.SetCharacterAnimationSheet (value : AssetTag) world = this.Set Property? CharacterAnimationSheet value world
+        member this.GetCharacterAnimationSheet world : Image AssetTag = this.Get Property? CharacterAnimationSheet world
+        member this.SetCharacterAnimationSheet (value : Image AssetTag) world = this.Set Property? CharacterAnimationSheet value world
         member this.CharacterAnimationSheet = PropertyTag.make this Property? CharacterAnimationSheet this.GetCharacterAnimationSheet this.SetCharacterAnimationSheet
 
     type CharacterAnimationFacet () =

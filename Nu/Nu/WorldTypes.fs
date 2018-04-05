@@ -37,7 +37,7 @@ type TransitionState =
 type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
     { TransitionType : TransitionType
       TransitionLifetime : int64
-      DissolveImageOpt : AssetTag option }
+      DissolveImageOpt : Image AssetTag option }
 
     /// Make a screen transition.
     static member make transitionType =
@@ -49,13 +49,13 @@ type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
 type [<StructuralEquality; NoComparison>] DissolveData =
     { IncomingTime : int64
       OutgoingTime : int64
-      DissolveImage : AssetTag }
+      DissolveImage : Image AssetTag }
 
 /// Describes the behavior of the screen splash algorithm.
 type [<StructuralEquality; NoComparison>] SplashData =
     { DissolveData : DissolveData
       IdlingTime : int64
-      SplashImage : AssetTag }
+      SplashImage : Image AssetTag }
 
 /// The data needed to describe a Tiled tile map.
 type [<StructuralEquality; NoComparison>] TileMapData =
@@ -410,7 +410,7 @@ module WorldTypes =
           Xtension : Xtension
           DispatcherNp : GameDispatcher
           CreationTimeStampNp : int64
-          ScriptOpt : AssetTag option
+          ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
           ScriptFrameNp : Scripting.DeclarationFrame
           OnRegister : Scripting.Expr
@@ -488,7 +488,7 @@ module WorldTypes =
           DispatcherNp : ScreenDispatcher
           Persistent : bool
           CreationTimeStampNp : int64
-          ScriptOpt : AssetTag option
+          ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
           ScriptFrameNp : Scripting.DeclarationFrame
           OnRegister : Scripting.Expr
@@ -568,7 +568,7 @@ module WorldTypes =
           Persistent : bool
           CreationTimeStampNp : int64
           ScriptFrameNp : Scripting.DeclarationFrame
-          ScriptOpt : AssetTag option
+          ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr

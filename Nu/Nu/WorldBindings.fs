@@ -331,7 +331,7 @@ module WorldBindings =
         try
             let timeToFadeOutSongMs = ScriptingWorld.tryExport typeof<Int32> timeToFadeOutSongMs world |> Option.get :?> Int32
             let volume = ScriptingWorld.tryExport typeof<Single> volume world |> Option.get :?> Single
-            let song = ScriptingWorld.tryExport typeof<AssetTag> song world |> Option.get :?> AssetTag
+            let song = ScriptingWorld.tryExport typeof<AssetTag<Audio>> song world |> Option.get :?> AssetTag<Audio>
             let result = World.playSong timeToFadeOutSongMs volume song world
             struct (Scripting.Unit, result)
         with exn ->
@@ -355,7 +355,7 @@ module WorldBindings =
         let oldWorld = world
         try
             let volume = ScriptingWorld.tryExport typeof<Single> volume world |> Option.get :?> Single
-            let sound = ScriptingWorld.tryExport typeof<AssetTag> sound world |> Option.get :?> AssetTag
+            let sound = ScriptingWorld.tryExport typeof<AssetTag<Audio>> sound world |> Option.get :?> AssetTag<Audio>
             let result = World.playSound volume sound world
             struct (Scripting.Unit, result)
         with exn ->
@@ -1640,7 +1640,7 @@ module WorldBindings =
     let tryGetTextureSize assetTag world =
         let oldWorld = world
         try
-            let assetTag = ScriptingWorld.tryExport typeof<AssetTag> assetTag world |> Option.get :?> AssetTag
+            let assetTag = ScriptingWorld.tryExport typeof<AssetTag<Image>> assetTag world |> Option.get :?> AssetTag<Image>
             let result = World.tryGetTextureSize assetTag world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpOption<Vector2i>> value world |> Option.get
@@ -1652,7 +1652,7 @@ module WorldBindings =
     let getTextureSize assetTag world =
         let oldWorld = world
         try
-            let assetTag = ScriptingWorld.tryExport typeof<AssetTag> assetTag world |> Option.get :?> AssetTag
+            let assetTag = ScriptingWorld.tryExport typeof<AssetTag<Image>> assetTag world |> Option.get :?> AssetTag<Image>
             let result = World.getTextureSize assetTag world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2i> value world |> Option.get
@@ -1664,7 +1664,7 @@ module WorldBindings =
     let tryGetTextureSizeAsVector2 assetTag world =
         let oldWorld = world
         try
-            let assetTag = ScriptingWorld.tryExport typeof<AssetTag> assetTag world |> Option.get :?> AssetTag
+            let assetTag = ScriptingWorld.tryExport typeof<AssetTag<Image>> assetTag world |> Option.get :?> AssetTag<Image>
             let result = World.tryGetTextureSizeAsVector2 assetTag world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpOption<Vector2>> value world |> Option.get
@@ -1676,7 +1676,7 @@ module WorldBindings =
     let getTextureSizeAsVector2 assetTag world =
         let oldWorld = world
         try
-            let assetTag = ScriptingWorld.tryExport typeof<AssetTag> assetTag world |> Option.get :?> AssetTag
+            let assetTag = ScriptingWorld.tryExport typeof<AssetTag<Image>> assetTag world |> Option.get :?> AssetTag<Image>
             let result = World.getTextureSizeAsVector2 assetTag world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2> value world |> Option.get
