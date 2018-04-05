@@ -235,7 +235,7 @@ module AssetGraphModule =
             buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild assets
 
         /// The empty asset graph.
-        let empy =
+        let empty =
             { PackageDescriptors = Map.empty }
 
         /// Make an asset graph.

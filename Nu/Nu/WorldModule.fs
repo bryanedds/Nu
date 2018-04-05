@@ -345,6 +345,14 @@ module WorldModule =
         static member getTileMapMetadata assetTag world =
             Metadata.getTileMapMetadata assetTag (World.getMetadata world)
 
+        /// Get a copy of the metadata map.
+        static member getMetadataMap world =
+            Metadata.getMetadataMap (World.getMetadata world)
+
+        /// Get a map of all discovered assets.
+        static member getAssetMap world =
+            Metadata.getAssetMap (World.getMetadata world)
+
         static member internal getOverlayerBy by world =
             let overlayer = World.getAmbientStateBy AmbientState.getOverlayer world
             by overlayer

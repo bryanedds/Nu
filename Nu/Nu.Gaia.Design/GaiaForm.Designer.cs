@@ -148,9 +148,7 @@
             this.layerTabControl = new System.Windows.Forms.TabControl();
             this.tabPage = new System.Windows.Forms.TabPage();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
-            this.pickParentNodeContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
-            this.pickParentNodeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.propertyPickButton = new System.Windows.Forms.Button();
             this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
             this.propertyValueTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.evalInputTextBox = new Nu.Gaia.Design.SymbolicTextBox();
@@ -323,7 +321,6 @@
             this.createToolStripMenuItem,
             this.deleteToolStripMenuItem,
             this.toolStripMenuItem5,
-            this.pickParentNodeToolStripMenuItem,
             this.changeLayerNameToolStripMenuItem});
             this.editToolStripMenuItem.Name = "editToolStripMenuItem";
             this.editToolStripMenuItem.Size = new System.Drawing.Size(44, 23);
@@ -408,45 +405,43 @@
             this.toolStripMenuItem3,
             this.cutContextMenuItem,
             this.copyContextMenuItem,
-            this.pasteContextMenuItem,
-            this.toolStripSeparator7,
-            this.pickParentNodeContextMenuItem});
+            this.pasteContextMenuItem});
             this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(174, 170);
+            this.contextMenuStrip.Size = new System.Drawing.Size(117, 120);
             // 
             // createContextMenuItem
             // 
             this.createContextMenuItem.Name = "createContextMenuItem";
-            this.createContextMenuItem.Size = new System.Drawing.Size(173, 22);
+            this.createContextMenuItem.Size = new System.Drawing.Size(152, 22);
             this.createContextMenuItem.Text = "C[&r]eate";
             // 
             // deleteContextMenuItem
             // 
             this.deleteContextMenuItem.Name = "deleteContextMenuItem";
-            this.deleteContextMenuItem.Size = new System.Drawing.Size(173, 22);
+            this.deleteContextMenuItem.Size = new System.Drawing.Size(152, 22);
             this.deleteContextMenuItem.Text = "[&D]elete";
             // 
             // toolStripMenuItem3
             // 
             this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-            this.toolStripMenuItem3.Size = new System.Drawing.Size(170, 6);
+            this.toolStripMenuItem3.Size = new System.Drawing.Size(149, 6);
             // 
             // cutContextMenuItem
             // 
             this.cutContextMenuItem.Name = "cutContextMenuItem";
-            this.cutContextMenuItem.Size = new System.Drawing.Size(173, 22);
+            this.cutContextMenuItem.Size = new System.Drawing.Size(152, 22);
             this.cutContextMenuItem.Text = "C[&u]t";
             // 
             // copyContextMenuItem
             // 
             this.copyContextMenuItem.Name = "copyContextMenuItem";
-            this.copyContextMenuItem.Size = new System.Drawing.Size(173, 22);
+            this.copyContextMenuItem.Size = new System.Drawing.Size(152, 22);
             this.copyContextMenuItem.Text = "[&C]opy";
             // 
             // pasteContextMenuItem
             // 
             this.pasteContextMenuItem.Name = "pasteContextMenuItem";
-            this.pasteContextMenuItem.Size = new System.Drawing.Size(173, 22);
+            this.pasteContextMenuItem.Size = new System.Drawing.Size(152, 22);
             this.pasteContextMenuItem.Text = "[&P]aste";
             // 
             // splitContainer1
@@ -544,6 +539,7 @@
             // 
             // splitContainer5.Panel1
             // 
+            this.splitContainer5.Panel1.Controls.Add(this.propertyPickButton);
             this.splitContainer5.Panel1.Controls.Add(this.propertyApplyButton);
             this.splitContainer5.Panel1.Controls.Add(this.propertyNameLabel);
             this.splitContainer5.Panel1.Controls.Add(this.propertyRefreshButton);
@@ -567,7 +563,7 @@
             // propertyNameLabel
             // 
             this.propertyNameLabel.AutoSize = true;
-            this.propertyNameLabel.Location = new System.Drawing.Point(14, 10);
+            this.propertyNameLabel.Location = new System.Drawing.Point(13, 11);
             this.propertyNameLabel.Name = "propertyNameLabel";
             this.propertyNameLabel.Size = new System.Drawing.Size(0, 13);
             this.propertyNameLabel.TabIndex = 3;
@@ -1404,22 +1400,14 @@
             this.splitContainer2.SplitterDistance = 25;
             this.splitContainer2.TabIndex = 5;
             // 
-            // pickParentNodeContextMenuItem
+            // propertyPickButton
             // 
-            this.pickParentNodeContextMenuItem.Name = "pickParentNodeContextMenuItem";
-            this.pickParentNodeContextMenuItem.Size = new System.Drawing.Size(173, 22);
-            this.pickParentNodeContextMenuItem.Text = "Pic[k] Parent Node";
-            // 
-            // toolStripSeparator7
-            // 
-            this.toolStripSeparator7.Name = "toolStripSeparator7";
-            this.toolStripSeparator7.Size = new System.Drawing.Size(170, 6);
-            // 
-            // pickParentNodeToolStripMenuItem
-            // 
-            this.pickParentNodeToolStripMenuItem.Name = "pickParentNodeToolStripMenuItem";
-            this.pickParentNodeToolStripMenuItem.Size = new System.Drawing.Size(202, 24);
-            this.pickParentNodeToolStripMenuItem.Text = "Pic&k Parent Node";
+            this.propertyPickButton.Location = new System.Drawing.Point(127, 6);
+            this.propertyPickButton.Name = "propertyPickButton";
+            this.propertyPickButton.Size = new System.Drawing.Size(36, 23);
+            this.propertyPickButton.TabIndex = 4;
+            this.propertyPickButton.Text = "Pic&k";
+            this.propertyPickButton.UseVisualStyleBackColor = true;
             // 
             // displayPanel
             // 
@@ -1747,9 +1735,7 @@
         public System.Windows.Forms.TextBox entityDesignerPropertyNameTextBox;
         public System.Windows.Forms.Button entityDesignerPropertyRemoveButton;
         public System.Windows.Forms.GroupBox entityPropertyDesigner;
-        private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
-        public System.Windows.Forms.ToolStripMenuItem pickParentNodeContextMenuItem;
-        public System.Windows.Forms.ToolStripMenuItem pickParentNodeToolStripMenuItem;
+        public System.Windows.Forms.Button propertyPickButton;
     }
 }
 

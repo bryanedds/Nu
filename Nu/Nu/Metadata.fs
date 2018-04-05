@@ -142,6 +142,22 @@ module MetadataModule =
         let getTileMapMetadata assetTag metadata =
             Option.get (tryGetTileMapMetadata assetTag metadata)
 
+        /// Get a copy of the metadata map.
+        let getMetadataMap metadata =
+            let map =
+                metadata.MetadataMap |>
+                UMap.toSeq |>
+                Seq.map (fun (packageName, map) -> (packageName, map |> UMap.toSeq |> Map.ofSeq)) |>
+                Map.ofSeq
+            map
+
+        /// Get a map of all the discovered assets.
+        let getAssetMap metadata =
+            let assetMap =
+                getMetadataMap metadata |>
+                Map.map (fun _ metadata -> Map.toKeyList metadata)
+            assetMap
+
         /// Generate metadata from the given asset graph.
         let make assetGraph =
             let packageNames = AssetGraph.getPackageNames assetGraph
