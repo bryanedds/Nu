@@ -385,74 +385,74 @@ module Gaia =
         let depth = snd (Single.TryParse form.createDepthTextBox.Text)
         form.createDepthTextBox.Text <- scstring (depth - 1.0f)
 
-    let private handlePropertyPickButton
-        (propertyDescriptor : System.ComponentModel.PropertyDescriptor)
-        (entityTds : EntityTypeDescriptorSource)
-        (form : GaiaForm)
-        world =
-        if propertyDescriptor.PropertyType = typeof<AssetTag> then
-            use assetPicker = new AssetPicker ()
-            let assetMap = World.getAssetMap world
+    let private handlePropertyPickAsset (form : GaiaForm) world =
+        use assetPicker = new AssetPicker ()
+        let assetMap = World.getAssetMap world
+        for assetTag in assetMap do
+            let node = assetPicker.assetTreeView.Nodes.Add assetTag.Key
+            for assetName in assetTag.Value do
+                node.Nodes.Add assetName |> ignore
+        assetPicker.assetTreeView.DoubleClick.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
+        assetPicker.okButton.Click.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
+        assetPicker.cancelButton.Click.Add (fun _ -> assetPicker.Close ())
+        assetPicker.searchTextBox.TextChanged.Add(fun _ ->
+            assetPicker.assetTreeView.Nodes.Clear ()
             for assetTag in assetMap do
                 let node = assetPicker.assetTreeView.Nodes.Add assetTag.Key
                 for assetName in assetTag.Value do
-                    node.Nodes.Add assetName |> ignore
-            assetPicker.assetTreeView.DoubleClick.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
-            assetPicker.okButton.Click.Add (fun _ -> assetPicker.DialogResult <- DialogResult.OK)
-            assetPicker.cancelButton.Click.Add (fun _ -> assetPicker.Close ())
-            assetPicker.searchTextBox.TextChanged.Add(fun _ ->
-                assetPicker.assetTreeView.Nodes.Clear ()
-                for assetTag in assetMap do
-                    let node = assetPicker.assetTreeView.Nodes.Add assetTag.Key
-                    for assetName in assetTag.Value do
-                        if assetName.Contains assetPicker.searchTextBox.Text then
-                            node.Nodes.Add assetName |> ignore
-                assetPicker.assetTreeView.ExpandAll ())
-            match assetPicker.ShowDialog () with
-            | DialogResult.OK ->
-                match assetPicker.assetTreeView.SelectedNode with
+                    if assetName.Contains assetPicker.searchTextBox.Text then
+                        node.Nodes.Add assetName |> ignore
+            assetPicker.assetTreeView.ExpandAll ())
+        match assetPicker.ShowDialog () with
+        | DialogResult.OK ->
+            match assetPicker.assetTreeView.SelectedNode with
+            | null -> world
+            | selectedNode ->
+                match selectedNode.Parent with
                 | null -> world
-                | selectedNode ->
-                    match selectedNode.Parent with
-                    | null -> world
-                    | selectedNodeParent ->
-                        let assetTag = { PackageName = selectedNodeParent.Text; AssetName = selectedNode.Text }
-                        form.propertyValueTextBox.Text <- scstring assetTag
-                        form.propertyApplyButton.PerformClick ()
-                        world
+                | selectedNodeParent ->
+                    let assetTag = { PackageName = selectedNodeParent.Text; AssetName = selectedNode.Text }
+                    form.propertyValueTextBox.Text <- scstring assetTag
+                    form.propertyApplyButton.PerformClick ()
+                    world
+        | _ -> world
+
+    let private handlePropertyPickParentNode (propertyDescriptor : System.ComponentModel.PropertyDescriptor) (entityTds : EntityTypeDescriptorSource) (form : GaiaForm) world =
+        use entityPicker = new EntityPicker ()
+        let selectedLayer = (World.getUserValue world).SelectedLayer
+        let entityNames =
+            World.getEntities selectedLayer world |>
+            Seq.filter (fun entity -> entity.FacetsAs<NodeFacet> world) |>
+            Seq.map (fun entity -> entity.GetName world) |>
+            flip Seq.append [NonePick] |>
+            Seq.toArray
+        entityPicker.entityListBox.Items.AddRange (Array.map box entityNames)
+        entityPicker.entityListBox.DoubleClick.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
+        entityPicker.okButton.Click.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
+        entityPicker.cancelButton.Click.Add (fun _ -> entityPicker.Close ())
+        entityPicker.searchTextBox.TextChanged.Add(fun _ ->
+            entityPicker.entityListBox.Items.Clear ()
+            for name in entityNames do
+                if name.Contains entityPicker.searchTextBox.Text || name = NonePick then
+                    entityPicker.entityListBox.Items.Add name |> ignore)
+        match entityPicker.ShowDialog () with
+        | DialogResult.OK ->
+            match entityPicker.entityListBox.SelectedItem with
+            | :? string as parentEntityName ->
+                match parentEntityName with
+                | NonePick -> entityTds.DescribedEntity.SetParentNodeOptWithAdjustment None world
+                | _ ->
+                    let parentRelation = Relation.makeFromString ("?/?/" + parentEntityName)
+                    form.propertyValueTextBox.Text <- scstring parentRelation
+                    if propertyDescriptor.Name = "ParentNodeOpt"
+                    then entityTds.DescribedEntity.SetParentNodeOptWithAdjustment (Some parentRelation) world
+                    else (form.propertyApplyButton.PerformClick (); world)
             | _ -> world
-        elif propertyDescriptor.PropertyType = typeof<Entity Relation option> then
-            use entityPicker = new EntityPicker ()
-            let selectedLayer = (World.getUserValue world).SelectedLayer
-            let entityNames =
-                World.getEntities selectedLayer world |>
-                Seq.filter (fun entity -> entity.FacetsAs<NodeFacet> world) |>
-                Seq.map (fun entity -> entity.GetName world) |>
-                flip Seq.append [NonePick] |>
-                Seq.toArray
-            entityPicker.entityListBox.Items.AddRange (Array.map box entityNames)
-            entityPicker.entityListBox.DoubleClick.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
-            entityPicker.okButton.Click.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
-            entityPicker.cancelButton.Click.Add (fun _ -> entityPicker.Close ())
-            entityPicker.searchTextBox.TextChanged.Add(fun _ ->
-                entityPicker.entityListBox.Items.Clear ()
-                for name in entityNames do
-                    if name.Contains entityPicker.searchTextBox.Text || name = NonePick then
-                        entityPicker.entityListBox.Items.Add name |> ignore)
-            match entityPicker.ShowDialog () with
-            | DialogResult.OK ->
-                match entityPicker.entityListBox.SelectedItem with
-                | :? string as parentEntityName ->
-                    match parentEntityName with
-                    | NonePick -> entityTds.DescribedEntity.SetParentNodeOptWithAdjustment None world
-                    | _ ->
-                        let parentRelation = Relation.makeFromString ("?/?/" + parentEntityName)
-                        form.propertyValueTextBox.Text <- scstring parentRelation
-                        if propertyDescriptor.Name = "ParentNodeOpt"
-                        then entityTds.DescribedEntity.SetParentNodeOptWithAdjustment (Some parentRelation) world
-                        else (form.propertyApplyButton.PerformClick (); world)
-                | _ -> world
-            | _ -> world
+        | _ -> world
+
+    let private handlePropertyPickButton (propertyDescriptor : System.ComponentModel.PropertyDescriptor) entityTds form world =
+        if propertyDescriptor.PropertyType = typeof<AssetTag> then handlePropertyPickAsset form world
+        elif propertyDescriptor.PropertyType = typeof<Entity Relation option> then handlePropertyPickParentNode propertyDescriptor entityTds form world
         else world
 
     // TODO: factor away some of the code duplication in this function!
