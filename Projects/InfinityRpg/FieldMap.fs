@@ -15,7 +15,7 @@ type FieldTile =
 type [<NoEquality; NoComparison>] FieldMap =
     { FieldSizeM : Vector2i
       FieldTiles : Map<Vector2i, FieldTile>
-      FieldTileSheet : AssetTag }
+      FieldTileSheet : Image AssetTag }
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module FieldMap =

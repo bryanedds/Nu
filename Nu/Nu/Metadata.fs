@@ -18,7 +18,7 @@ exception TileSetPropertyNotFoundException of string
 /// full asset loaded into memory.
 type [<StructuralEquality; NoComparison>] AssetMetadata =
     | TextureMetadata of Vector2i
-    | TileMapMetadata of string * AssetTag list * TmxMap
+    | TileMapMetadata of string * Image AssetTag list * TmxMap
     | SoundMetadata
     | SongMetadata
     | OtherMetadata of obj
@@ -37,8 +37,7 @@ module MetadataModule =
 
         let private getTileSetProperties (tileSet : TmxTileset) =
             let properties = tileSet.Properties
-            try { PackageName = properties.["PackageName"]
-                  AssetName = properties.["ImageAssetName"] }
+            try AssetTag.make<Image> properties.["PackageName"] properties.["ImageAssetName"]
             with :? KeyNotFoundException ->
                 let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (PackageName or AssetName)."
                 raise (TileSetPropertyNotFoundException errorMessage)
@@ -102,7 +101,7 @@ module MetadataModule =
                 packageNames
 
         /// Try to get the metadata of the given asset.
-        let tryGetMetadata (assetTag : AssetTag) metadata =
+        let tryGetMetadata (assetTag : obj AssetTag) metadata =
             match UMap.tryFind assetTag.PackageName metadata.MetadataMap with
             | Some package ->
                 match UMap.tryFind assetTag.AssetName package with
@@ -111,8 +110,8 @@ module MetadataModule =
             | None -> None
 
         /// Try to get the texture metadata of the given asset.
-        let tryGetTextureSize assetTag metadata =
-            match tryGetMetadata assetTag metadata with
+        let tryGetTextureSize (assetTag : Image AssetTag) metadata =
+            match tryGetMetadata (AssetTag.generalize assetTag) metadata with
             | Some (TextureMetadata size) -> Some size
             | None -> None
             | _ -> None
@@ -132,8 +131,8 @@ module MetadataModule =
             Option.get (tryGetTextureSizeAsVector2 assetTag metadata)
 
         /// Try to get the tile map metadata of the given asset.
-        let tryGetTileMapMetadata assetTag metadata =
-            match tryGetMetadata assetTag metadata with
+        let tryGetTileMapMetadata (assetTag : TileMap AssetTag) metadata =
+            match tryGetMetadata (AssetTag.generalize assetTag) metadata with
             | Some (TileMapMetadata (filePath, images, tmxMap)) -> Some (filePath, images, tmxMap)
             | None -> None
             | _ -> None

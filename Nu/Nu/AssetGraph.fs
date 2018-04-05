@@ -24,16 +24,49 @@ module Refinement =
         | _ -> failwith ("Invalid refinement '" + str + "'.")
 
 /// Describes a means for looking up an asset.
-type AssetTag =
+type [<Struct>] 'a AssetTag =
     { PackageName : string
       AssetName : string }
 
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module AssetTag =
+
+    let make<'a> packageName assetName : AssetTag<'a> =
+        { PackageName = packageName; AssetName = assetName }
+
+    let convert<'a, 'b> (assetTag : 'a AssetTag) : 'b AssetTag =
+        make<'b> assetTag.PackageName assetTag.AssetName
+
+    let generalize (assetTag : 'a AssetTag) : obj AssetTag =
+        convert<'a, obj> assetTag
+
+    let specialize<'a> (assetTag : obj AssetTag) : 'a AssetTag =
+        convert<obj, 'a> assetTag
+
 /// Describes a game asset, such as a texture, sound, or model in detail.
-type [<StructuralEquality; NoComparison>] Asset =
-    { AssetTag : AssetTag
+type [<Struct; StructuralEquality; NoComparison>] 'a Asset =
+    { AssetTag : 'a AssetTag
       FilePath : string
       Refinements : Refinement list
       Associations : string Set }
+
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Asset =
+
+    let make<'a> assetTag filePath refinements associations : Asset<'a> =
+        { AssetTag = assetTag
+          FilePath = filePath
+          Refinements = refinements
+          Associations = associations }
+
+    let convert<'a, 'b> (asset : 'a Asset) : 'b Asset =
+        make<'b> (AssetTag.convert<'a, 'b> asset.AssetTag) asset.FilePath asset.Refinements asset.Associations
+
+    let generalize (asset : 'a Asset) : obj Asset =
+        convert<'a, obj> asset
+
+    let specialize<'a> (asset : obj Asset) : 'a Asset =
+        convert<obj, 'a> asset
 
 /// All assets must belong to an asset Package, which is a unit of asset loading.
 ///
@@ -171,11 +204,8 @@ module AssetGraphModule =
                 List.fold (fun assetsRev assetDescriptor ->
                     match assetDescriptor with
                     | Asset (assetName, filePath, associations, refinements) ->
-                        let asset =
-                            { AssetTag = { PackageName = packageName; AssetName = assetName }
-                              FilePath = filePath
-                              Refinements = refinements
-                              Associations = associations }
+                        let assetTag = AssetTag.make<obj> packageName assetName
+                        let asset = Asset.make assetTag filePath refinements associations
                         asset :: assetsRev
                     | Assets (directory, rawExtension, associations, refinements) ->
                         let extension = getAssetExtension usingRawAssets rawExtension refinements
@@ -183,10 +213,9 @@ module AssetGraphModule =
                             let assets =
                                 Array.map
                                     (fun filePath ->
-                                        { AssetTag = { PackageName = packageName; AssetName = Path.GetFileNameWithoutExtension filePath }
-                                          FilePath = filePath
-                                          Refinements = refinements
-                                          Associations = associations })
+                                        let assetTag = AssetTag.make<obj> packageName (Path.GetFileNameWithoutExtension filePath)
+                                        let asset = Asset.make assetTag filePath refinements associations
+                                        asset)
                                     filePaths |>
                                 List.ofArray
                             assets @ assetsRev

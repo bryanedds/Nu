@@ -19,7 +19,7 @@ module SymbolStoreModule =
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module SymbolStore =
 
-        let private tryLoadSymbol3 implicitDelimiters packageName (asset : Asset) =
+        let private tryLoadSymbol3 implicitDelimiters packageName (asset : Symbol Asset) =
             try let text = File.ReadAllText asset.FilePath
                 let text = if implicitDelimiters then Symbol.OpenSymbolsStr + text + Symbol.CloseSymbolsStr else text
                 try let symbol = Symbol.fromString text
@@ -37,6 +37,7 @@ module SymbolStoreModule =
             | Right assetGraph ->
                 match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Symbol) packageName assetGraph with
                 | Right assets ->
+                    let assets = List.map Asset.specialize<Symbol> assets
                     let symbolOpts = List.map (tryLoadSymbol3 implicitDelimiters packageName) assets
                     let symbols = List.definitize symbolOpts
                     let symbolMapOpt = UMap.tryFindFast packageName symbolStore.SymbolStorePackageMap
@@ -56,7 +57,7 @@ module SymbolStoreModule =
                 Log.info ("Symbol store package load failed due to unloadable asset graph due to: '" + error)
                 symbolStore
     
-        let private tryLoadSymbol implicitDelimiters (assetTag : AssetTag) symbolStore =
+        let private tryLoadSymbol implicitDelimiters (assetTag : Symbol AssetTag) symbolStore =
             let (assetMapOpt, symbolStore) =
                 if UMap.containsKey assetTag.PackageName symbolStore.SymbolStorePackageMap
                 then (UMap.tryFindFast assetTag.PackageName symbolStore.SymbolStorePackageMap, symbolStore)
@@ -98,7 +99,7 @@ module SymbolStoreModule =
             let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.makeEmpty (UMap.getConfig symbolStore.SymbolStorePackageMap) }
             UMap.fold (fun (symbolStore : SymbolStore) packageName package ->
                 UMap.fold (fun (symbolStore : SymbolStore) assetName (implicitDelimiters, _) ->
-                    let assetTag = { PackageName = packageName; AssetName = assetName }
+                    let assetTag = AssetTag.make<Symbol> packageName assetName
                     tryLoadSymbol implicitDelimiters assetTag symbolStore |> snd)
                     symbolStore
                     package)

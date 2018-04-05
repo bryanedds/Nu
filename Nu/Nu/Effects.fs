@@ -143,7 +143,7 @@ module Effects =
         RenderArtifact of RenderDescriptor
 
     type [<Struct; NoComparison>] SoundArtifact =
-        SoundArtifact of single * AssetTag
+        SoundArtifact of single * Audio AssetTag
 
     type [<Struct; NoComparison>] TagArtifact =
         TagArtifact of string * Symbol * Slice

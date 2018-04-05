@@ -20,8 +20,8 @@ module EffectFacetModule =
         member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
         member this.SetSelfDestruct (value : bool) world = this.Set Property? SelfDestruct value world
         member this.SelfDestruct = PropertyTag.make this Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct
-        member this.GetEffectsOptAp world : AssetTag list option = this.Get Property? EffectsOptAp world
-        member this.SetEffectsOptAp (value : AssetTag list option) world = this.Set Property? EffectsOptAp value world
+        member this.GetEffectsOptAp world : Symbol AssetTag list option = this.Get Property? EffectsOptAp world
+        member this.SetEffectsOptAp (value : Symbol AssetTag list option) world = this.Set Property? EffectsOptAp value world
         member this.EffectsOptAp = PropertyTag.make this Property? EffectsOptAp this.GetEffectsOptAp this.SetEffectsOptAp
         member this.GetEffectStartTimeOpt world : int64 option = this.Get Property? EffectStartTimeOpt world
         member this.SetEffectStartTimeOpt (value : int64 option) world = this.Set Property? EffectStartTimeOpt value world
@@ -84,7 +84,7 @@ module EffectFacetModule =
 
         static member PropertyDefinitions =
             [Define? SelfDestruct false
-             Define? EffectsOptAp (None : AssetTag list option)
+             Define? EffectsOptAp (None : Symbol AssetTag list option)
              Define? EffectStartTimeOpt (None : int64 option)
              Define? EffectDefinitions (Map.empty : Effects.Definitions)
              Define? Effect Effect.empty
@@ -166,8 +166,8 @@ module ScriptFacetModule =
 
     type Entity with
     
-        member this.GetScriptOptAp world : AssetTag option = this.Get Property? ScriptOptAp world
-        member this.SetScriptOptAp (value : AssetTag option) world = this.Set Property? ScriptOptAp value world
+        member this.GetScriptOptAp world : Symbol AssetTag option = this.Get Property? ScriptOptAp world
+        member this.SetScriptOptAp (value : Symbol AssetTag option) world = this.Set Property? ScriptOptAp value world
         member this.ScriptOptAp = PropertyTag.make this Property? ScriptOptAp this.GetScriptOptAp this.SetScriptOptAp
         member this.GetGetScriptAp world : Scripting.Expr array = this.Get Property? ScriptAp world
         member this.SetGetScriptAp (value : Scripting.Expr array) world = this.Set Property? ScriptAp value world
@@ -204,7 +204,7 @@ module ScriptFacetModule =
             World.registerEntity entity world
 
         static member PropertyDefinitions =
-            [Define? ScriptOptAp (None : AssetTag option)
+            [Define? ScriptOptAp (None : Symbol AssetTag option)
              Define? ScriptAp ([||] : Scripting.Expr array)
              Define? ScriptFrameNp (Scripting.DeclarationFrame HashIdentity.Structural)
              Define? OnRegisterAp Scripting.Unit
@@ -520,15 +520,15 @@ module StaticSpriteFacetModule =
 
     type Entity with
 
-        member this.GetStaticImage world : AssetTag = this.Get Property? StaticImage world
-        member this.SetStaticImage (value : AssetTag) world = this.Set Property? StaticImage value world
+        member this.GetStaticImage world : Image AssetTag = this.Get Property? StaticImage world
+        member this.SetStaticImage (value : Image AssetTag) world = this.Set Property? StaticImage value world
         member this.StaticImage = PropertyTag.make this Property? StaticImage this.GetStaticImage this.SetStaticImage
 
     type StaticSpriteFacet () =
         inherit Facet ()
 
         static member PropertyDefinitions =
-            [Define? StaticImage { PackageName = Assets.DefaultPackageName; AssetName = "Image3" }]
+            [Define? StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
 
         override facet.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
@@ -572,8 +572,8 @@ module AnimatedSpriteFacetModule =
         member this.GetAnimationStutter world : int64 = this.Get Property? AnimationStutter world
         member this.SetAnimationStutter (value : int64) world = this.Set Property? AnimationStutter value world
         member this.AnimationStutter = PropertyTag.make this Property? AnimationStutter this.GetAnimationStutter this.SetAnimationStutter
-        member this.GetAnimationSheet world : AssetTag = this.Get Property? AnimationSheet world
-        member this.SetAnimationSheet (value : AssetTag) world = this.Set Property? AnimationSheet value world
+        member this.GetAnimationSheet world : Image AssetTag = this.Get Property? AnimationSheet world
+        member this.SetAnimationSheet (value : Image AssetTag) world = this.Set Property? AnimationSheet value world
         member this.AnimationSheet = PropertyTag.make this Property? AnimationSheet this.GetAnimationSheet this.SetAnimationSheet
 
     type AnimatedSpriteFacet () =
@@ -598,7 +598,7 @@ module AnimatedSpriteFacetModule =
              Define? CelSize (Vector2 (16.0f, 16.0f))
              Define? CelRun 4
              Define? AnimationStutter 4L
-             Define? AnimationSheet { PackageName = Assets.DefaultPackageName; AssetName = "Image7" }]
+             Define? AnimationSheet (AssetTag.make<Image> Assets.DefaultPackageName "Image7")]
 
         override facet.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
@@ -703,14 +703,14 @@ module ButtonDispatcherModule =
         member this.GetDown world : bool = this.Get Property? Down world
         member this.SetDown (value : bool) world = this.Set Property? Down value world
         member this.Down = PropertyTag.make this Property? Down this.GetDown this.SetDown
-        member this.GetUpImage world : AssetTag = this.Get Property? UpImage world
-        member this.SetUpImage (value : AssetTag) world = this.Set Property? UpImage value world
+        member this.GetUpImage world : Image AssetTag = this.Get Property? UpImage world
+        member this.SetUpImage (value : Image AssetTag) world = this.Set Property? UpImage value world
         member this.UpImage = PropertyTag.make this Property? UpImage this.GetUpImage this.SetUpImage
-        member this.GetDownImage world : AssetTag = this.Get Property? DownImage world
-        member this.SetDownImage (value : AssetTag) world = this.Set Property? DownImage value world
+        member this.GetDownImage world : Image AssetTag = this.Get Property? DownImage world
+        member this.SetDownImage (value : Image AssetTag) world = this.Set Property? DownImage value world
         member this.DownImage = PropertyTag.make this Property? DownImage this.GetDownImage this.SetDownImage
-        member this.GetClickSoundOpt world : AssetTag option = this.Get Property? ClickSoundOpt world
-        member this.SetClickSoundOpt (value : AssetTag option) world = this.Set Property? ClickSoundOpt value world
+        member this.GetClickSoundOpt world : Audio AssetTag option = this.Get Property? ClickSoundOpt world
+        member this.SetClickSoundOpt (value : Audio AssetTag option) world = this.Set Property? ClickSoundOpt value world
         member this.ClickSoundOpt = PropertyTag.make this Property? ClickSoundOpt this.GetClickSoundOpt this.SetClickSoundOpt
         member this.GetOnClick world : Scripting.Expr = this.Get Property? OnClick world
         member this.SetOnClick (value : Scripting.Expr) world = this.Set Property? OnClick value world
@@ -762,9 +762,9 @@ module ButtonDispatcherModule =
         static member PropertyDefinitions =
             [Define? SwallowMouseLeft false
              Define? Down false
-             Define? UpImage { PackageName = Assets.DefaultPackageName; AssetName = "Image" }
-             Define? DownImage { PackageName = Assets.DefaultPackageName; AssetName = "Image2" }
-             Define? ClickSoundOpt (Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" })
+             Define? UpImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
+             Define? DownImage (AssetTag.make<Image> Assets.DefaultPackageName "Image2")
+             Define? ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackageName "Sound"))
              Define? OnClick Scripting.Unit]
 
         override dispatcher.Register (button, world) =
@@ -802,8 +802,8 @@ module LabelDispatcherModule =
 
     type Entity with
     
-        member this.GetLabelImage world : AssetTag = this.Get Property? LabelImage world
-        member this.SetLabelImage (value : AssetTag) world = this.Set Property? LabelImage value world
+        member this.GetLabelImage world : Image AssetTag = this.Get Property? LabelImage world
+        member this.SetLabelImage (value : Image AssetTag) world = this.Set Property? LabelImage value world
         member this.LabelImage = PropertyTag.make this Property? LabelImage this.GetLabelImage this.SetLabelImage
 
     type LabelDispatcher () =
@@ -811,7 +811,7 @@ module LabelDispatcherModule =
 
         static member PropertyDefinitions =
             [Define? SwallowMouseLeft true
-             Define? LabelImage { PackageName = Assets.DefaultPackageName; AssetName = "Image4" }]
+             Define? LabelImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
         override dispatcher.Actualize (label, world) =
             if label.GetVisibleLayered world then
@@ -846,8 +846,8 @@ module TextDispatcherModule =
         member this.GetText world : string = this.Get Property? Text world
         member this.SetText (value : string) world = this.Set Property? Text value world
         member this.Text = PropertyTag.make this Property? Text this.GetText this.SetText
-        member this.GetTextFont world : AssetTag = this.Get Property? TextFont world
-        member this.SetTextFont (value : AssetTag) world = this.Set Property? TextFont value world
+        member this.GetTextFont world : Font AssetTag = this.Get Property? TextFont world
+        member this.SetTextFont (value : Font AssetTag) world = this.Set Property? TextFont value world
         member this.TextFont = PropertyTag.make this Property? TextFont this.GetTextFont this.SetTextFont
         member this.GetTextOffset world : Vector2 = this.Get Property? TextOffset world
         member this.SetTextOffset (value : Vector2) world = this.Set Property? TextOffset value world
@@ -855,8 +855,8 @@ module TextDispatcherModule =
         member this.GetTextColor world : Vector4 = this.Get Property? TextColor world
         member this.SetTextColor (value : Vector4) world = this.Set Property? TextColor value world
         member this.TextColor = PropertyTag.make this Property? TextColor this.GetTextColor this.SetTextColor
-        member this.GetBackgroundImage world : AssetTag = this.Get Property? BackgroundImage world
-        member this.SetBackgroundImage (value : AssetTag) world = this.Set Property? BackgroundImage value world
+        member this.GetBackgroundImage world : Image AssetTag = this.Get Property? BackgroundImage world
+        member this.SetBackgroundImage (value : Image AssetTag) world = this.Set Property? BackgroundImage value world
         member this.BackgroundImage = PropertyTag.make this Property? BackgroundImage this.GetBackgroundImage this.SetBackgroundImage
 
     type TextDispatcher () =
@@ -865,10 +865,10 @@ module TextDispatcherModule =
         static member PropertyDefinitions =
             [Define? SwallowMouseLeft true
              Define? Text String.Empty
-             Define? TextFont { PackageName = Assets.DefaultPackageName; AssetName = "Font" }
+             Define? TextFont (AssetTag.make<Font> Assets.DefaultPackageName "Font")
              Define? TextOffset Vector2.Zero
              Define? TextColor Vector4.One
-             Define? BackgroundImage { PackageName = Assets.DefaultPackageName; AssetName = "Image4" }]
+             Define? BackgroundImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
         override dispatcher.Actualize (text, world) =
             if text.GetVisibleLayered world then
@@ -917,14 +917,14 @@ module ToggleDispatcherModule =
         member this.GetPressed world : bool = this.Get Property? Pressed world
         member this.SetPressed (value : bool) world = this.Set Property? Pressed value world
         member this.Pressed = PropertyTag.make this Property? Pressed this.GetPressed this.SetPressed
-        member this.GetOpenImage world : AssetTag = this.Get Property? OpenImage world
-        member this.SetOpenImage (value : AssetTag) world = this.Set Property? OpenImage value world
+        member this.GetOpenImage world : Image AssetTag = this.Get Property? OpenImage world
+        member this.SetOpenImage (value : Image AssetTag) world = this.Set Property? OpenImage value world
         member this.OpenImage = PropertyTag.make this Property? OpenImage this.GetOpenImage this.SetOpenImage
-        member this.GetClosedImage world : AssetTag = this.Get Property? ClosedImage world
-        member this.SetClosedImage (value : AssetTag) world = this.Set Property? ClosedImage value world
+        member this.GetClosedImage world : Image AssetTag = this.Get Property? ClosedImage world
+        member this.SetClosedImage (value : Image AssetTag) world = this.Set Property? ClosedImage value world
         member this.ClosedImage = PropertyTag.make this Property? ClosedImage this.GetClosedImage this.SetClosedImage
-        member this.GetToggleSoundOpt world : AssetTag option = this.Get Property? ToggleSoundOpt world
-        member this.SetToggleSoundOpt (value : AssetTag option) world = this.Set Property? ToggleSoundOpt value world
+        member this.GetToggleSoundOpt world : Audio AssetTag option = this.Get Property? ToggleSoundOpt world
+        member this.SetToggleSoundOpt (value : Audio AssetTag option) world = this.Set Property? ToggleSoundOpt value world
         member this.ToggleSoundOpt = PropertyTag.make this Property? ToggleSoundOpt this.GetToggleSoundOpt this.SetToggleSoundOpt
         member this.GetOnToggle world : Scripting.Expr = this.Get Property? OnToggle world
         member this.SetOnToggle (value : Scripting.Expr) world = this.Set Property? OnToggle value world
@@ -977,9 +977,9 @@ module ToggleDispatcherModule =
             [Define? SwallowMouseLeft false
              Define? Open true
              Define? Pressed false
-             Define? OpenImage { PackageName = Assets.DefaultPackageName; AssetName = "Image" }
-             Define? ClosedImage { PackageName = Assets.DefaultPackageName; AssetName = "Image2" }
-             Define? ToggleSoundOpt (Some { PackageName = Assets.DefaultPackageName; AssetName = "Sound" })
+             Define? OpenImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
+             Define? ClosedImage (AssetTag.make<Image> Assets.DefaultPackageName "Image2")
+             Define? ToggleSoundOpt (Some (AssetTag.make<Image> Assets.DefaultPackageName "Sound"))
              Define? OnToggle Scripting.Unit]
 
         override dispatcher.Register (toggle, world) =
@@ -1085,11 +1085,11 @@ module FillBarDispatcherModule =
         member this.GetFillInset world : single = this.Get Property? FillInset world
         member this.SetFillInset (value : single) world = this.Set Property? FillInset value world
         member this.FillInset = PropertyTag.make this Property? FillInset this.GetFillInset this.SetFillInset
-        member this.GetFillImage world : AssetTag = this.Get Property? FillImage world
-        member this.SetFillImage (value : AssetTag) world = this.Set Property? FillImage value world
+        member this.GetFillImage world : Image AssetTag = this.Get Property? FillImage world
+        member this.SetFillImage (value : Image AssetTag) world = this.Set Property? FillImage value world
         member this.FillImage = PropertyTag.make this Property? FillImage this.GetFillImage this.SetFillImage
-        member this.GetBorderImage world : AssetTag = this.Get Property? BorderImage world
-        member this.SetBorderImage (value : AssetTag) world = this.Set Property? BorderImage value world
+        member this.GetBorderImage world : Image AssetTag = this.Get Property? BorderImage world
+        member this.SetBorderImage (value : Image AssetTag) world = this.Set Property? BorderImage value world
         member this.BorderImage = PropertyTag.make this Property? BorderImage this.GetBorderImage this.SetBorderImage
 
     type FillBarDispatcher () =
@@ -1107,8 +1107,8 @@ module FillBarDispatcherModule =
             [Define? SwallowMouseLeft true
              Define? Fill 0.0f
              Define? FillInset 0.0f
-             Define? FillImage { PackageName = Assets.DefaultPackageName; AssetName = "Image9" }
-             Define? BorderImage { PackageName = Assets.DefaultPackageName; AssetName = "Image10" }]
+             Define? FillImage (AssetTag.make<Image> Assets.DefaultPackageName "Image9")
+             Define? BorderImage (AssetTag.make<Image> Assets.DefaultPackageName "Image10")]
 
         override dispatcher.Actualize (fillBar, world) =
             if fillBar.GetVisibleLayered world then
@@ -1158,7 +1158,7 @@ module BlockDispatcherModule =
 
         static member PropertyDefinitions =
             [Define? BodyType Static
-             Define? StaticImage { PackageName = Assets.DefaultPackageName; AssetName = "Image3" }]
+             Define? StaticImage (AssetTag.make<Image> Assets.DefaultPackageName  "Image3")]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -1171,7 +1171,7 @@ module BoxDispatcherModule =
         inherit EntityDispatcher ()
 
         static member PropertyDefinitions =
-            [Define? StaticImage { PackageName = Assets.DefaultPackageName; AssetName = "Image3" }]
+            [Define? StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -1188,7 +1188,7 @@ module TopViewCharacterDispatcherModule =
              Define? LinearDamping 10.0f
              Define? GravityScale 0.0f
              Define? CollisionBody (BodyCircle { Radius = 0.5f; Center = Vector2.Zero })
-             Define? StaticImage { PackageName = Assets.DefaultPackageName; AssetName = "Image7" }]
+             Define? StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image7")]
         
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -1204,7 +1204,7 @@ module SideViewCharacterDispatcherModule =
             [Define? FixedRotation true
              Define? LinearDamping 3.0f
              Define? CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
-             Define? StaticImage { PackageName = Assets.DefaultPackageName; AssetName = "Image6" }]
+             Define? StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image6")]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -1215,14 +1215,14 @@ module TileMapDispatcherModule =
 
     type Entity with
     
-        member this.GetTileMapAsset world : AssetTag = this.Get Property? TileMapAsset world
-        member this.SetTileMapAsset (value : AssetTag) world = this.Set Property? TileMapAsset value world
+        member this.GetTileMapAsset world : TileMap AssetTag = this.Get Property? TileMapAsset world
+        member this.SetTileMapAsset (value : TileMap AssetTag) world = this.Set Property? TileMapAsset value world
         member this.TileMapAsset = PropertyTag.make this Property? TileMapAsset this.GetTileMapAsset this.SetTileMapAsset
         member this.GetParallax world : single = this.Get Property? Parallax world
         member this.SetParallax (value : single) world = this.Set Property? Parallax value world
         member this.Parallax = PropertyTag.make this Property? Parallax this.GetParallax this.SetParallax
 
-        static member tryMakeTileMapData (tileMapAsset : AssetTag) world =
+        static member tryMakeTileMapData (tileMapAsset : TileMap AssetTag) world =
             let metadataMap = World.getMetadata world
             match Metadata.tryGetTileMapMetadata tileMapAsset metadataMap with
             | Some (_, _, map) ->
@@ -1358,7 +1358,7 @@ module TileMapDispatcherModule =
              Define? Restitution 0.0f
              Define? CollisionCategories "1"
              Define? CollisionMask "@"
-             Define? TileMapAsset { PackageName = Assets.DefaultPackageName; AssetName = "TileMap" }
+             Define? TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackageName "TileMap")
              Define? Parallax 0.0f]
 
         override dispatcher.Register (tileMap, world) =
