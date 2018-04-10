@@ -1,5 +1,5 @@
 ﻿// Prime - A PRIMitivEs code library.
-// Copyright (C) Bryan Edds, 2013-2017.
+// Copyright (C) Bryan Edds, 2013-2018.
 
 #I __SOURCE_DIRECTORY__
 #r "../../Prime/Prime.Dependencies/System.ValueTuple.4.3.0/lib/portable-net40+sl4+win8+wp8/System.ValueTuple.dll"
