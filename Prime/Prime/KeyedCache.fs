@@ -1,5 +1,5 @@
 ﻿// Prime - A PRIMitivEs code library.
-// Copyright (C) Bryan Edds, 2013-2017.
+// Copyright (C) Bryan Edds, 2013-2018.
 
 namespace Prime
 open System.Collections.Generic;

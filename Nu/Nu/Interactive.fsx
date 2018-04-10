@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2017.
+// Copyright (C) Bryan Edds, 2013-2018.
 
 #I __SOURCE_DIRECTORY__
 #r "System.Configuration"
