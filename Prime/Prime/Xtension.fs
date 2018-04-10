@@ -8,8 +8,8 @@ open Prime
 [<AutoOpen>]
 module XtensionModule =
 
-    /// Xtensions (and their supporting types) are a dynamic, functional, and convenient way
-    /// to implement dynamic / designer properties.
+    /// Xtensions (and their supporting types) are a dynamic, functional, and convenient way to implement dynamic /
+    /// designer properties.
     type [<NoEquality; NoComparison>] Xtension =
         private
             { Properties : PropertyMap

@@ -116,7 +116,7 @@ module Operators =
         let fileName = frame.GetFileName ()
         failwithf "Unexpected match failure in '%s' on line %i in file %s." meth.Name line fileName
 
-    /// Fail with an unexpected match failure.
+    /// Fail with a 'NotImplementedException'.
     let failwithnie () =
         let stackTrace = StackTrace ()
         let frame = stackTrace.GetFrame 1

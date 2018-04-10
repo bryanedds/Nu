@@ -272,7 +272,7 @@ module Symbol =
     /// [Left 0]
     /// [[0 1] [2 4]]
     /// [AnimationData 4 8]
-    /// [Gem `[Some 1]']
+    /// [Gem `[Some 1]]
     ///
     /// ...and so on.
     let fromString str =
@@ -491,5 +491,5 @@ type ConversionException (message : string, symbolOpt : Symbol option) =
 
 [<AutoOpen>]
 module ConversionExceptionOperators =
-    let failconv message symbol =
-        raise (ConversionException (message, symbol))
+    let failconv message symbolOpt =
+        raise (ConversionException (message, symbolOpt))
