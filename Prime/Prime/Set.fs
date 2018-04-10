@@ -1,7 +1,7 @@
 ﻿// Prime - A PRIMitivEs code library.
 // Copyright (C) Bryan Edds, 2013-2018.
 
-namespace global
+namespace Prime
 open System
 open Prime
 
