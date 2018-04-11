@@ -8,7 +8,6 @@ open System
 module RandModule =
 
     /// An immutable random number generator using the xorshift* algorithm.
-    /// TODO: P1: consider changing this to be exclusive of MaxValue.
     type [<StructuralEquality; NoComparison>] Rand =
         private
             { RandState : uint64 }
@@ -18,7 +17,8 @@ module RandModule =
     
         /// Get the sample value used to generate the current random value.
         let private sample rand =
-            rand.RandState * 2685821657736338717UL
+            let result = rand.RandState * 2685821657736338717UL
+            if result = UInt64.MaxValue then 0UL else result
     
         /// The default seed state for rand.
         /// NOTE: number generated via http://www.random.org/bytes/
