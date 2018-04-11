@@ -179,7 +179,11 @@ module WorldScripting =
                     Array.map (fun asm -> Array.filter FSharpType.IsUnion (asm.GetTypes ())) |>
                     Array.concat |>
                     Array.filter (fun ty -> ty.Name = keyword) |>
-                    Array.filter (fun ty -> ty.GenericTypeArguments.Length = 0) |> // generic algebraic data types not yet supported...
+                    Array.filter (fun ty -> ty.GenericTypeArguments |> Array.notExists (fun arg -> arg.IsGenericParameter)) |> // constrained generics not currently supported...
+                    Array.map (fun ty ->
+                        if ty.IsGenericType
+                        then ty.MakeGenericType (Array.create ty.GenericTypeArguments.Length typeof<obj>)
+                        else ty) |>
                     Array.tryHead // just take the first found type for now...
                 typeOpt
             | Scripting.Record (keyword, _, _) ->
@@ -189,7 +193,11 @@ module WorldScripting =
                     Array.map (fun asm -> Array.filter FSharpType.IsRecord (asm.GetTypes ())) |>
                     Array.concat |>
                     Array.filter (fun ty -> ty.Name = keyword) |>
-                    Array.filter (fun ty -> ty.GenericTypeArguments.Length = 0) |> // generic algebraic data types not yet supported...
+                    Array.filter (fun ty -> ty.GenericTypeArguments |> Array.notExists (fun arg -> arg.IsGenericParameter)) |> // constrained generics not currently supported...
+                    Array.map (fun ty ->
+                        if ty.IsGenericType
+                        then ty.MakeGenericType (Array.create ty.GenericTypeArguments.Length typeof<obj>)
+                        else ty) |>
                     Array.tryHead // just take the first found type for now...
                 typeOpt
             | Scripting.Pluggable value ->

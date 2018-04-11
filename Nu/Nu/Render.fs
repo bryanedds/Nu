@@ -12,13 +12,13 @@ open Prime
 open Nu
 
 /// An image. Currently just used as a phantom type.
-type Image = ImageAsset
+type Image = private { __ : unit }
 
 /// A font. Currently just used as a phantom type.
-type Font = FontAsset
+type Font = private { __ : unit }
 
 /// A tile map. Currently just used as a phantom type.
-type TileMap = TileMapAsset
+type TileMap = private { __ : unit }
 
 /// Describes how to render a sprite to the rendering system.
 type [<Struct; StructuralEquality; NoComparison>] SpriteDescriptor =
