@@ -9,7 +9,7 @@ open Prime
 open Nu
 
 /// Audio. Currently just used as a phantom type.
-type Audio = Audio
+type Audio = private { __ : unit }
 
 /// A message to the audio system to play a song.
 type [<StructuralEquality; NoComparison>] PlaySongMessage =
