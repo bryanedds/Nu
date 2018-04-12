@@ -79,14 +79,11 @@ module OverlayerModule =
                     | (targetProperty, _) -> Some (targetProperty.GetValue target)
                 match propertyValueOpt with
                 | Some propertyValue ->
-                    match propertySymbol with
-                    | Symbols ([String (str, _); _], _) when isNotNull (Type.GetType str) ->
-                        let converter = SymbolicConverter (false, None, propertyType)
-                        if converter.CanConvertFrom typeof<Symbol> then
-                            let overlayValue = converter.ConvertFrom propertySymbol
-                            if overlayValue = propertyValue then Overlaid else Altered
-                        else Bare
-                    | _ -> Bare
+                    let converter = SymbolicConverter (false, None, propertyType)
+                    if converter.CanConvertFrom typeof<Symbol> then
+                        let overlayValue = converter.ConvertFrom propertySymbol
+                        if overlayValue = propertyValue then Overlaid else Altered
+                    else Bare
                 | None -> Bare
             | None -> Bare
             
