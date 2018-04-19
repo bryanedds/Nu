@@ -73,10 +73,10 @@ This is required due to an unresolved compiler bug touched on here - http://stac
 
 ```
 let result =
-        ingest
-            apple
-            banana
-            caribou
+     ingest
+         apple
+         banana
+         caribou
 ```
 
 - rather than this -
