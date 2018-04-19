@@ -27,12 +27,12 @@ Correctness, Consistency, Simplicity
 
 11) Avoid object and struct types, as well as instance members and properties, unless you have a specific need for them (such as for a plug-in, interop, or a DSL, etc), and document that need.
 
-12) Avoid arrays generally, and if they can't be avoided due to, say, interop, avoid exposing them to consuming functions by converting them to an immutable data structure, or at minimum, a seq.
+12) Avoid exposing arrays publicly by either providing a copy or casting them as a `_ seq`.
 
 13) Try to preserve debuggability of code by -
 
 -   introducing local bindings to potentially-interesting intermediate results,
--   avoiding unnecessary laziness and asynchronicity (but since async being strewn throughout code is rarely avoidable, consider using the [*Vsync monad*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/Vsync.fs) instead!)
+-   avoiding unnecessary laziness and asynchrony (but since async being strewn throughout code is rarely avoidable, consider using the [*Vsync monad*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/Vsync.fs) instead!)
 
 14) Suffix option bindings, choice binding, and bindings to potentially null values with `opt`.
 
@@ -42,11 +42,9 @@ Correctness, Consistency, Simplicity
 
 17) Write tests and documentation comments for publicly-consumable types and functions.
 
-18) Use two or more words for each public field name or discriminated union to avoid inference ambiguity. For example, `Id` is not a good public field name, but `ProductId` might be.
+18) Try to use unique names for each public fields or discriminated union cases to avoid inference ambiguity. For example, `Id` is not a good public field name, but `ProductId` might be.
 
-19) If you have to use an abstract member function, be sure to tuple its arguments to avoid the dreaded `'base' values may only be used to make direct calls to the base implementations of overridden members` error if you need to call base for it.
-
-This is required due to an unresolved compiler bug touched on here - http://stackoverflow.com/questions/5847202/base-values-may-only-be-used-to-make-direct-calls-to-the-base-implementations . With any luck, this rule can be removed once the bug is addressed.
+19) If you have to use an abstract member function, be sure to tuple its arguments to avoid the dreaded `'base' values may only be used to make direct calls to the base implementations of overridden members` error if you need to call base for it. This is required due to an unresolved compiler bug touched on here - http://stackoverflow.com/questions/5847202/base-values-may-only-be-used-to-make-direct-calls-to-the-base-implementations. With any luck, this rule can be removed once the bug is addressed.
 
 **B) Consistency**
 
@@ -56,10 +54,10 @@ This is required due to an unresolved compiler bug touched on here - http://stac
 
 3) Use the standard F\# naming conventions by -
 
--   using UpperCamelCasing for Namespaces, Modules, Types, Fields, Constants, Properties, and InstanceMembers.
--   using lowerCamelCasing for variables, functions, staticMembers, parameters, and 'typeParameters.
+-   using `UpperCamelCasing` for `Namespaces`, `Modules`, `Types`, `Fields`, `Constants`, `Properties`, and `InstanceMembers`.
+-   using `lowerCamelCasing` for `variables`, `functions`, `staticMembers`, `parameters`, and `'typeParameters`.
 
-4) Use shadowing on different bindings with the same conceptual identity rather than ' suffixes (this also helps correctness significantly).
+4) Use shadowing on different bindings with the same conceptual identity rather than `'` suffixes (this also helps correctness significantly).
 
 5) Use access specifiers for encapsulation rather than FSI files.
 
@@ -174,7 +172,7 @@ let result =
 
 1) Use F\# as a functional-first language, rather than an object-oriented one. [*Here's our friend Rich Hickey on why object-orientation in inherently complex.*](http://www.infoq.com/presentations/Simple-Made-Easy).
 
-2) For mutation that you can't avoid, try to encapsulate its effects behind a referentially-transparent API wherever feasible. For example, consider wrapping your mutable construct with [*KeyedCache*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/KeyedCache.fs) or [*MutantCache*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/MutantCache.fs)
+2) For mutation that you can't avoid, try to encapsulate it behind a referentially-transparent interface wherever feasible. For example, consider wrapping your mutable constructs with [*KeyedCache*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/KeyedCache.fs) or [*MutantCache*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/MutantCache.fs)
 
 3) Avoid dependencies on untested, incomplete, or unnecessarily complex code, libraries, or frameworks.
 
