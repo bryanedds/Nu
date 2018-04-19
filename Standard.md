@@ -32,23 +32,19 @@ Correctness, Consistency, Simplicity
 13) Try to preserve debuggability of code by -
 
 -   introducing local bindings to potentially-interesting intermediate results,
--   avoiding unnecessary laziness and asynchronicity (but since async being strewn throughout code is rarely avoidable, consider using the [*Vsync computation expression*](https://gist.github.com/bryanedds/45ef1193b79e06000a9a) instead!)
+-   avoiding unnecessary laziness and asynchronicity (but since async being strewn throughout code is rarely avoidable, consider using the [*Vsync monad*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/Vsync.fs) instead!)
 
-14) Suffix option bindings as well as bindings to potentially null values with `opt`.
+14) Suffix option bindings, choice binding, and bindings to potentially null values with `opt`.
 
-15) Suffix choice bindings with `chc`.
+15) Prefix functions that return an option, choice, or potential null with `try`.
 
-16) Prefix functions that return an option or potential null with `try`.
+16) Place constants and literals in a submodule inside a Constants module, in a place that is commonly accessible.
 
-17) Prefix functions that return a choice with `attempt`.
+17) Write tests and documentation comments for publicly-consumable types and functions.
 
-18) Place constants and literals in a submodule inside a Constants module, in a place that is commonly accessible.
+18) Use two or more words for each public field name or discriminated union to avoid inference ambiguity. For example, `Id` is not a good public field name, but `ProductId` might be.
 
-19) Write tests and documentation comments for publicly-consumable types and functions.
-
-20) Use two or more words for each public field name or discriminated union to avoid inference ambiguity. For example, `Id` is not a good public field name, but `ProductId` might be.
-
-21) If you have to use an abstract member function, be sure to tuple its arguments to avoid the dreaded `'base' values may only be used to make direct calls to the base implementations of overridden members` error is you need to call base for it.
+19) If you have to use an abstract member function, be sure to tuple its arguments to avoid the dreaded `'base' values may only be used to make direct calls to the base implementations of overridden members` error is you need to call base for it.
 
 This is required due to an unresolved compiler bug touched on here - http://stackoverflow.com/questions/5847202/base-values-may-only-be-used-to-make-direct-calls-to-the-base-implementations . With any luck, this rule can be removed once the bug is addressed.
 
