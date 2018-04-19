@@ -15,7 +15,7 @@ Correctness, Consistency, Simplicity
 
 5) Prefer immutable types and referentially transparent functions.
 
-6) Make code clearly communicate its intent by its structure and / or via inline comments.
+6) Make code clearly communicate its intent by its structure and / or via inline comments. *TODO: add blurb abount 'Intention Blocks'.*
 
 7) Make illegal states unrepresentable wherever feasible. [*Here's our friend Scott Wlaschin on the subject :)*](http://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/)
 
