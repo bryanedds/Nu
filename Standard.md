@@ -73,10 +73,10 @@ This is required due to an unresolved compiler bug touched on here - http://stac
 
 ```
 let result =
-     ingest
-         apple
-         banana
-         caribou
+    ingest
+        apple
+        banana
+        caribou
 ```
 
 - rather than this -
@@ -91,9 +91,9 @@ let result =
 
 ```
     let ys =
-        [ f x
-          g x
-          h x ]
+        [f x
+         g x
+         h x]
 ```
 
 - rather than this -
