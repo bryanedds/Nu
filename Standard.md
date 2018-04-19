@@ -56,7 +56,7 @@ This is required due to an unresolved compiler bug touched on here - http://stac
 
 3) Use the standard F\# naming conventions by -
 
--   using UpperCamelCasing for Namespaces, Modules, Types, Fields, Constants, Properties, and InstanceMembers (but as said above, avoid authoring Properties and InstanceMembers in the first place).
+-   using UpperCamelCasing for Namespaces, Modules, Types, Fields, Constants, Properties, and InstanceMembers.
 -   using lowerCamelCasing for variables, functions, staticMembers, parameters, and 'typeParameters.
 
 4) Use shadowing on different bindings with the same conceptual identity rather than ' suffixes (this also helps correctness significantly).
