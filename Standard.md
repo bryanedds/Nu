@@ -65,7 +65,7 @@ This is required due to an unresolved compiler bug touched on here - http://stac
 
 6) Place `open` statements at the top of each file, right below the current namespace declaration (if any).
 
-7) Order the parameters of functions from least to most important (that is, in the order of semantic impact).
+7) Order the parameters of functions from least to most important (that is, in the order of increasing semantic impact).
 
 8) Prefer function modules to use `[<RequireQualifiedAccess>]` except for operators, core functions like `flip`, and DSL functions.
 
