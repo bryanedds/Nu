@@ -44,7 +44,7 @@ Correctness, Consistency, Simplicity
 
 18) Use two or more words for each public field name or discriminated union to avoid inference ambiguity. For example, `Id` is not a good public field name, but `ProductId` might be.
 
-19) If you have to use an abstract member function, be sure to tuple its arguments to avoid the dreaded `'base' values may only be used to make direct calls to the base implementations of overridden members` error is you need to call base for it.
+19) If you have to use an abstract member function, be sure to tuple its arguments to avoid the dreaded `'base' values may only be used to make direct calls to the base implementations of overridden members` error if you need to call base for it.
 
 This is required due to an unresolved compiler bug touched on here - http://stackoverflow.com/questions/5847202/base-values-may-only-be-used-to-make-direct-calls-to-the-base-implementations . With any luck, this rule can be removed once the bug is addressed.
 
