@@ -1,7 +1,7 @@
 Correctness, Consistency, Simplicity
 ====================================
 
-**An F\# Code Standard to achieve Correctness, Consistency, and Simplicity ** -
+**An F\# Code Standard to achieve Correctness, Consistency, and Simplicity** -
 
 **A) Correctness**
 
