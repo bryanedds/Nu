@@ -34,7 +34,7 @@ Correctness, Consistency, Simplicity
 -   introducing local bindings to potentially-interesting intermediate results,
 -   avoiding unnecessary laziness and asynchrony (but since async being strewn throughout code is rarely avoidable, consider using the [*Vsync monad*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/Vsync.fs) instead!)
 
-14) Suffix option bindings, choice binding, and bindings to potentially null values with `opt`.
+14) Suffix option bindings, choice bindings, and bindings to potentially null values with `Opt`.
 
 15) Prefix functions that return an option, choice, or potential null with `try`.
 
