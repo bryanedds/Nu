@@ -17,7 +17,7 @@ Correctness, Consistency, Simplicity
 
 6) Prefer to make code communicate its intent by its structure / documentation / inline comments (in that order). *TODO: add blurb about 'Intention Blocks'.*
 
-7) Make illegal states unrepresentable wherever feasible. [*Here's our friend Scott Wlaschin on the subject :)*](http://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/)
+7) Make illegal states unrepresentable when feasible. [*Here's our friend Scott Wlaschin on the subject :)*](http://fsharpforfunandprofit.com/posts/designing-with-types-making-illegal-states-unrepresentable/)
 
 8) Avoid trading away exhaustiveness checking unless you have a specific need, and document that need.
 
