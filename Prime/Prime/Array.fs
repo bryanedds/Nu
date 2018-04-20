@@ -8,7 +8,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module Array =
 
-    /// Add (or 'cons') a value to the front of an array.
+    /// Add a value to the front of an array.
     let cons elem arr =
         let tailLength = Array.length arr
         let arr2 = Array.zeroCreate (inc tailLength)
@@ -16,7 +16,7 @@ module Array =
         Array.Copy (arr, 0, arr2, 1, tailLength)
         arr2
 
-    /// Add (or 'snoc) a value to the end of an array.
+    /// Add a value to the end of an array.
     let add elem arr =
         let tailLength = Array.length arr
         let arr2 = Array.zeroCreate (inc tailLength)
