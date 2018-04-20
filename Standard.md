@@ -27,7 +27,7 @@ Correctness, Consistency, Simplicity
 
 11) Avoid object and struct types, as well as instance members and properties, unless you have a specific need for them (such as for a plug-in, interop, or a DSL, etc), and document that need.
 
-12) Avoid exposing arrays publicly by either providing a copy or casting them as a `_ seq`.
+12) Avoid publicly exposing internal arrays by either providing a copy or casting them as a `_ seq`.
 
 13) Try to preserve debuggability of code by -
 
