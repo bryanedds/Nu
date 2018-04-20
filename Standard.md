@@ -42,7 +42,7 @@ Correctness, Consistency, Simplicity
 
 17) Write tests and documentation comments for publicly-consumable types and functions.
 
-18) Try to use unique names for each public fields or discriminated union cases to avoid inference ambiguity. For example, `Id` is not a good public field name, but `ProductId` might be.
+18) Try to use unique names for public fields and discriminated union cases to avoid inference ambiguity. For example, `Id` is not a good public field name, but `ProductId` might be.
 
 19) If you have to use an abstract member function, be sure to tuple its arguments to avoid the dreaded `'base' values may only be used to make direct calls to the base implementations of overridden members` error if you need to call base for it. This is required due to an unresolved compiler bug touched on here - http://stackoverflow.com/questions/5847202/base-values-may-only-be-used-to-make-direct-calls-to-the-base-implementations. With any luck, this rule can be removed once the bug is addressed.
 
