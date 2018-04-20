@@ -273,7 +273,7 @@ module ScriptingMarshalling =
         | _ -> None
 
     and Exporters : Dictionary<string, (Type -> Expr -> obj option) -> Type -> Expr -> obj option> =
-        [(typeof<Void>.Name, fun _ _ _ -> null :> obj |> Some) // TODO: consider if () would work instead of null.
+        [(typeof<Void>.Name, fun _ _ _ -> () :> obj |> Some)
          (typeof<unit>.Name, fun _ _ _ -> () :> obj |> Some)
          (typeof<bool>.Name, fun _ _ evaled -> match evaled with Bool value -> value :> obj |> Some | _ -> None)
          (typeof<int>.Name, fun _ _ evaled -> match evaled with Int value -> value :> obj |> Some | _ -> None)
