@@ -174,7 +174,7 @@ let result =
 
 2) For mutation that you can't avoid, try to encapsulate it behind a referentially-transparent interface wherever feasible. For example, consider wrapping your mutable constructs with [*KeyedCache*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/KeyedCache.fs) or [*MutantCache*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/MutantCache.fs)
 
-3) Avoid dependencies on untested, incomplete, or unnecessarily complex code, libraries, or frameworks.
+3) Avoid dependencies on untested, incomplete, or unnecessarily complex libraries / frameworks.
 
 4) Avoid checking in dead / commented-out code. If unavoidable, leave a comment above the code explaining why it's commented out and / or when it will be useful again.
 
