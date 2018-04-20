@@ -50,7 +50,7 @@ Correctness, Consistency, Simplicity
 
 1) Use 4 spaces for indentation, not 2, nor 3. [*5 is right out.*](https://www.youtube.com/watch?v=xOrgLj9lOwk&t=1m48s)
 
-2) Use column 120 as the line length limit where practicable. Column 120 is not a hard limit, but is elegantly acheivable in most cases. An exception to this rule is code that constructs error messages.
+2) Use column 120 as the line length limit where practicable. Column 120 is not a hard limit, but is elegantly achievable in most cases. An exception to this rule is code that constructs error messages.
 
 3) Use the standard F\# naming conventions by -
 
