@@ -30,7 +30,7 @@ module SymbolicOperators =
         let converter = SymbolicConverter (false, None, typeof<'a>)
         converter.ConvertFromString str :?> 'a
 
-    /// Get the default value of an instance of type 'a taking into account DefaultValue decorations.
+    /// Get the default value of type 'a taking into account DefaultValue decorations.
     let scdefaultof<'a> () : 'a =
         let defaultPropertyType = typeof<'a>
         let defaultValueAttributeOpt =
