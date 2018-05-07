@@ -505,13 +505,13 @@ module StreamOperators =
     let (---) = (|>)
 
     /// Make a stream of the subscriber's change events.
-    let [<DebuggerHidden; DebuggerStepThrough>] ( !-- ) (property : PropertyTag<'a, 'b, 'w>) =
+    let [<DebuggerHidden; DebuggerStepThrough>] (!--) (property : PropertyTag<'a, 'b, 'w>) =
         let changeEventAddress = ltoa<ParticipantChangeData<'a, 'w>> [typeof<'a>.Name; "Change"; property.Name; "Event"] ->>- property.This.ParticipantAddress
         stream changeEventAddress --- mapEvent (fun _ world -> property.Get world)
 
     /// Propagate the event data of a stream to a property in the observing participant when the
     /// subscriber exists (doing nothing otherwise).
-    let [<DebuggerHidden; DebuggerStepThrough>] ( --> ) stream (property : PropertyTag<'a, 'b, 'w>) =
+    let [<DebuggerHidden; DebuggerStepThrough>] (-->) stream (property : PropertyTag<'a, 'b, 'w>) =
         subscribe (fun a world ->
             if world.ParticipantExists a.Subscriber then
                 match property.SetOpt with
