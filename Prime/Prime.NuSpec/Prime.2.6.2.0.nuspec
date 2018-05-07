@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>Prime</id>
-        <version>2.6.1.0</version>
+        <version>2.6.2.0</version>
         <title>Prime - An F# primitives library.</title>
         <authors>Bryan Edds</authors>
         <owners>Bryan Edds</owners>
@@ -11,7 +11,7 @@
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>An F# code library for hardcore pure functional programming, and much more!</description>
         <summary />
-        <releaseNotes>Various fixes across library.</releaseNotes>
+        <releaseNotes>Implemented type mold, 'Mold'.</releaseNotes>
         <copyright>Copyright (c) 2018 Bryan Edds</copyright>
         <language>en-US</language>
         <tags>F# Functional Programming</tags>
