@@ -3,22 +3,19 @@
 
 namespace Nu
 open System
-open System.Reflection
 open System.Collections.Generic
 open Prime
 open OpenTK
+open Effects
+
+/// The artifacts produced by an effect.
+type [<NoEquality; NoComparison>] EffectArtifacts =
+    { RenderArtifacts : RenderArtifact List
+      SoundArtifacts : SoundArtifact List
+      TagArtifacts : TagArtifact List }
 
 [<AutoOpen>]
 module EffectSystemModule =
-
-    // open related module
-    open Effects
-
-    /// The artifacts produced by an effect.
-    type [<NoEquality; NoComparison>] EffectArtifacts =
-        { RenderArtifacts : RenderArtifact List
-          SoundArtifacts : SoundArtifact List
-          TagArtifacts : TagArtifact List }
 
     /// An abstract data type for executing effects.
     type [<NoEquality; NoComparison>] EffectSystem =
