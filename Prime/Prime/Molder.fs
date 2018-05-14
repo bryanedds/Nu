@@ -4,19 +4,21 @@ open System.Net
 open System.Collections.Generic
 open FSharp.Reflection
 
+type MemberPath =
+    { TypeName : string
+      MemberName : string }
+
+type [<NoEquality; NoComparison>] InstantiationRule =
+    | Constant of obj
+    | Variable of (unit -> obj)
+
+type InstantiationRules =
+    Map<MemberPath option, InstantiationRule>
+
 [<RequireQualifiedAccess>]
 module Molder =
 
-    type Path =
-        string * string
-
-    type [<NoEquality; NoComparison>] InstantiationRule =
-        | Constant of obj
-        | Variable of (unit -> obj)
-
-    type InstantiationRules =
-        Map<Path option, InstantiationRule>
-
+    // A primitive mold type.
     type Primitive =
         | Unit
         | Boolean
@@ -28,25 +30,25 @@ module Molder =
         | Single
         | Double
         | Decimal
-        | Enum of string * string list
+        | Enum of string * string array
         | DateTime
         | IPAddress
         | Guid
 
     /// Describes an F# type in a normalized fashion.
     type Mold =
-        | Primitive of Path option * Primitive
-        | Tuple of Path option * string * Mold list
-        | Record of Path option * string * (string * Mold) list
-        | Union of Path option * string * (string * Mold list) list
-        | Option of Path option * Mold
-        | List of Path option * Mold
-        | Set of Path option * Mold
-        | Map of Path option * Mold * Mold
-        | Array of Path option * Mold
-        | Unidentified of Path option
+        | Primitive of MemberPath option * Primitive
+        | Tuple of MemberPath option * string * Mold array
+        | Record of MemberPath option * string * (string * Mold) array
+        | Union of MemberPath option * string * (string * Mold array) array
+        | Option of MemberPath option * Mold
+        | List of MemberPath option * Mold
+        | Set of MemberPath option * Mold
+        | Map of MemberPath option * Mold * Mold
+        | Array of MemberPath option * Mold
+        | Unidentified of MemberPath option
 
-        static member getPathOpt mold =
+        static member getMemberPathOpt mold =
             match mold with
             | Primitive (pathOpt, _)
             | Tuple (pathOpt, _, _)
@@ -66,7 +68,7 @@ module Molder =
               RequireIdentification : bool
               Random : Random
               InstantiationRules : InstantiationRules
-              Cache : Dictionary<Path option * Type, Mold ref> }
+              Cache : Dictionary<MemberPath option * Type, Mold ref> }
 
     let getRandomizing molder =
         molder.Randomizing
@@ -85,6 +87,17 @@ module Molder =
 
     let setInstantiationRules instantiationRules molder =
         { molder with InstantiationRules = instantiationRules }
+
+    let addInstantiationRule<'t> memberName rule molder =
+        let key = Some { TypeName = typeof<'t>.AssemblyQualifiedName; MemberName = memberName }
+        let value = rule
+        let rules = Map.add key value molder.InstantiationRules
+        { molder with InstantiationRules = rules }
+
+    let removeInstantiationRule<'t> memberName molder =
+        let key = Some { TypeName = typeof<'t>.AssemblyQualifiedName; MemberName = memberName }
+        let rules = Map.remove key molder.InstantiationRules
+        { molder with InstantiationRules = rules }
 
     let private primitiveToInstance primitive molder =
         match primitive with
@@ -119,7 +132,7 @@ module Molder =
             elif ty = typeof<System.Single> then moldRef := Primitive (pathOpt, Single)
             elif ty = typeof<System.Double> then moldRef := Primitive (pathOpt, Double)
             elif ty = typeof<System.Decimal> then moldRef := Primitive (pathOpt, Decimal)
-            elif ty.IsEnum then moldRef := Primitive (pathOpt, Enum (ty.AssemblyQualifiedName, Array.toList (Enum.GetNames ty)))
+            elif ty.IsEnum then moldRef := Primitive (pathOpt, Enum (ty.AssemblyQualifiedName, Enum.GetNames ty))
             elif ty = typeof<System.DateTime> then moldRef := Primitive (pathOpt, DateTime)
             elif ty = typeof<System.Net.IPAddress> then moldRef := Primitive (pathOpt, IPAddress)
             elif ty = typeof<System.Guid> then moldRef := Primitive (pathOpt, Guid)
@@ -127,26 +140,25 @@ module Molder =
                 let name = (ty.GetGenericTypeDefinition ()).AssemblyQualifiedName
                 let elementMolds =
                     FSharpType.GetTupleElements ty |>
-                    Array.map (fun ty' -> typeToMold3 None ty' molder) |>
-                    Array.toList
+                    Array.map (fun ty' -> typeToMold3 None ty' molder)
                 moldRef := Tuple (pathOpt, name, elementMolds)
             elif FSharpType.IsRecord ty then
                 let name = ty.AssemblyQualifiedName
                 let fieldMolds =
                     FSharpType.GetRecordFields ty |>
                     Array.map (fun propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)) |>
-                    Array.map (fun (name', ty') -> (name', typeToMold3 (Some (name, name')) ty' molder)) |>
-                    Array.toList
+                    Array.map (fun (name', ty') -> (name', typeToMold3 (Some { TypeName = name; MemberName = name' }) ty' molder))
                 moldRef := Record (pathOpt, name, fieldMolds)
             elif FSharpType.IsUnion ty then
                 let name = ty.AssemblyQualifiedName
                 let cases = FSharpType.GetUnionCases ty
                 let caseMolds =
-                    cases |>
-                    Array.map (fun case ->
-                        let fieldMolds = case.GetFields () |> Array.map (fun field -> typeToMold3 (Some (name, field.Name)) field.PropertyType molder) |> Array.toList
-                        (case.Name, fieldMolds)) |>
-                    Array.toList
+                    Array.map (fun (case : UnionCaseInfo) ->
+                        let fieldMolds =
+                            case.GetFields () |>
+                            Array.map (fun field -> typeToMold3 (Some { TypeName = name; MemberName = field.Name }) field.PropertyType molder)
+                        (case.Name, fieldMolds))
+                        cases
                 moldRef := Union (pathOpt, name, caseMolds)
             elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ option> then
                 let containedType = ty.GenericTypeArguments.[0]
@@ -200,7 +212,7 @@ module Molder =
     let rec moldToType mold molder =
         match mold with
         | Primitive (_, primitive) -> moldToPrimitive primitive molder
-        | Tuple (_, _, molds) -> let types = molds |> List.map (fun mold' -> moldToType mold' molder) |> List.toArray in FSharpType.MakeTupleType types
+        | Tuple (_, _, molds) -> let types = molds |> Array.map (fun mold' -> moldToType mold' molder) in FSharpType.MakeTupleType types
         | Record (_, name, _) -> Type.GetType name
         | Union (_, name, _) -> Type.GetType name
         | Option (_, mold) -> let containedType = moldToType mold molder in typedefof<_ option>.MakeGenericType containedType
@@ -211,7 +223,7 @@ module Molder =
         | Unidentified _ -> typeof<obj>
 
     let rec moldToInstance mold molder =
-        let pathOpt = Mold.getPathOpt mold
+        let pathOpt = Mold.getMemberPathOpt mold
         match Map.tryFind pathOpt molder.InstantiationRules with
         | Some rule ->
             match rule with
@@ -223,18 +235,18 @@ module Molder =
                 primitiveToInstance primitive molder
             | Tuple (_, name, elementMolds) ->
                 let ty = Type.GetType name
-                let elements = List.map (fun ty' -> moldToInstance ty' molder) elementMolds |> List.toArray
+                let elements = Array.map (fun ty' -> moldToInstance ty' molder) elementMolds
                 FSharpValue.MakeTuple (elements, ty)
             | Record (_, name, fieldMolds) ->
                 let ty = Type.GetType name
-                let fields = List.map (snd >> fun ty' -> moldToInstance ty' molder) fieldMolds |> List.toArray
+                let fields = Array.map (snd >> fun ty' -> moldToInstance ty' molder) fieldMolds
                 FSharpValue.MakeRecord (ty, fields)
             | Union (_, name, caseMolds) ->
                 let ty = Type.GetType name
                 let caseInfos = FSharpType.GetUnionCases ty
                 let caseInfo = caseInfos.[0]
                 let (_, caseFields) = caseMolds.[0]
-                let caseFieldInstances = List.map (fun ty' -> moldToInstance ty' molder) caseFields |> List.toArray
+                let caseFieldInstances = Array.map (fun ty' -> moldToInstance ty' molder) caseFields
                 FSharpValue.MakeUnion (caseInfo, caseFieldInstances)
             | Option (_, _) ->
                 None :> obj
@@ -277,7 +289,7 @@ module Molder =
           RequireIdentification = requireIdentification
           Random = Random randomizingSeed 
           InstantiationRules = instantiationRules
-          Cache = Dictionary<Path option * Type, Mold ref> () }
+          Cache = Dictionary<MemberPath option * Type, Mold ref> () }
 
     let makeEmpty () =
         make false false 0 Map.empty
