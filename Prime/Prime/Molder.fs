@@ -91,7 +91,7 @@ module Molder =
         | IPAddress -> if molder.DefaultAsRandom then new IPAddress (int64 (molder.Random.Next ())) :> obj else Guid.Empty :> obj
         | Guid -> if molder.DefaultAsRandom then Guid.NewGuid () :> obj else Guid.Empty :> obj
 
-    let rec typeToMold pathOpt (ty : Type) molder =
+    let rec private typeToMold3 pathOpt (ty : Type) molder =
         let key = (pathOpt, ty)
         match molder.Cache.TryGetValue key with
         | (false, _) ->
@@ -115,7 +115,7 @@ module Molder =
                 let name = (ty.GetGenericTypeDefinition ()).AssemblyQualifiedName
                 let elementMolds =
                     FSharpType.GetTupleElements ty |>
-                    Array.map (fun ty' -> typeToMold None ty' molder) |>
+                    Array.map (fun ty' -> typeToMold3 None ty' molder) |>
                     Array.toList
                 moldRef := Tuple (pathOpt, name, elementMolds)
             elif FSharpType.IsRecord ty then
@@ -123,7 +123,7 @@ module Molder =
                 let fieldMolds =
                     FSharpType.GetRecordFields ty |>
                     Array.map (fun propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)) |>
-                    Array.map (fun (name', ty') -> (name', typeToMold (Some (name, name')) ty' molder)) |>
+                    Array.map (fun (name', ty') -> (name', typeToMold3 (Some (name, name')) ty' molder)) |>
                     Array.toList
                 moldRef := Record (pathOpt, name, fieldMolds)
             elif FSharpType.IsUnion ty then
@@ -132,31 +132,31 @@ module Molder =
                 let caseMolds =
                     cases |>
                     Array.map (fun case ->
-                        let fieldMolds = case.GetFields () |> Array.map (fun field -> typeToMold (Some (name, field.Name)) field.PropertyType molder) |> Array.toList
+                        let fieldMolds = case.GetFields () |> Array.map (fun field -> typeToMold3 (Some (name, field.Name)) field.PropertyType molder) |> Array.toList
                         (case.Name, fieldMolds)) |>
                     Array.toList
                 moldRef := Union (pathOpt, name, caseMolds)
             elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ option> then
                 let containedType = ty.GenericTypeArguments.[0]
-                let containedMold = typeToMold None containedType molder
+                let containedMold = typeToMold3 None containedType molder
                 moldRef := Option (pathOpt, containedMold)
             elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ list> then
                 let elementType = ty.GenericTypeArguments.[0]
-                let elementMold = typeToMold None elementType molder
+                let elementMold = typeToMold3 None elementType molder
                 moldRef := List (pathOpt, elementMold)
             elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ Set> then
                 let elementType = ty.GenericTypeArguments.[0]
-                let elementMold = typeToMold None elementType molder
+                let elementMold = typeToMold3 None elementType molder
                 moldRef := List (pathOpt, elementMold)
             elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<Map<_, _>> then
                 let keyType = ty.GenericTypeArguments.[0]
-                let keyMold = typeToMold None keyType molder
+                let keyMold = typeToMold3 None keyType molder
                 let valueType = ty.GenericTypeArguments.[1]
-                let valueMold = typeToMold None valueType molder
+                let valueMold = typeToMold3 None valueType molder
                 moldRef := Map (pathOpt, keyMold, valueMold)
             elif ty.IsArray then
                 let elementType = ty.GetElementType ()
-                let elementMold = typeToMold None elementType molder
+                let elementMold = typeToMold3 None elementType molder
                 moldRef := List (pathOpt, elementMold)
             else
                 if molder.ForceIdentification
@@ -164,6 +164,9 @@ module Molder =
                 else moldRef := Unidentified pathOpt
             moldRef.Value
         | (true, moldRef) -> moldRef.Value
+
+    let typeToMold ty molder =
+        typeToMold3 None ty molder
 
     let moldToPrimitive primitive (_ : Molder) =
         match primitive with
@@ -245,10 +248,10 @@ module Molder =
 
     let instanceToMold instance molder =
         let ty = instance.GetType ()
-        typeToMold None ty molder
+        typeToMold ty molder
 
     let typeToInstance (ty : Type) molder =
-        let mold = typeToMold None ty molder
+        let mold = typeToMold ty molder
         let instance = moldToInstance mold molder
         instance
 
