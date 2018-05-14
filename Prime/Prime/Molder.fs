@@ -10,12 +10,12 @@ module Molder =
     type Path =
         string * string
 
-    type [<NoEquality; NoComparison>] Rule =
+    type [<NoEquality; NoComparison>] InstantiationRule =
         | Constant of obj
         | Variable of (unit -> obj)
 
-    type Rules =
-        Map<Path option, Rule>
+    type InstantiationRules =
+        Map<Path option, InstantiationRule>
 
     type Primitive =
         | Unit
@@ -46,50 +46,62 @@ module Molder =
         | Array of Path option * Mold
         | Unidentified of Path option
 
+        static member getPathOpt mold =
+            match mold with
+            | Primitive (pathOpt, _)
+            | Tuple (pathOpt, _, _)
+            | Record (pathOpt, _, _)
+            | Union (pathOpt, _, _)
+            | Option (pathOpt, _)
+            | List (pathOpt, _)
+            | Set (pathOpt, _)
+            | Map (pathOpt, _, _)
+            | Array (pathOpt, _)
+            | Unidentified pathOpt -> pathOpt
+
     /// Automatically converts F# types, molds, and instances as customized by user-defined rules.
     type [<NoEquality; NoComparison>] Molder =
         private
-            { ForceIdentification : bool
-              DefaultAsRandom : bool
+            { Randomizing : bool
+              RequireIdentification : bool
               Random : Random
-              Rules : Rules
+              InstantiationRules : InstantiationRules
               Cache : Dictionary<Path option * Type, Mold ref> }
 
-    let getForceIdentification molder =
-        Map.containsKey molder.ForceIdentification
+    let getRandomizing molder =
+        molder.Randomizing
 
-    let getRandomization molder =
-        Map.containsKey molder.DefaultAsRandom
+    let setRandomizing randomizing molder =
+        { molder with Randomizing = randomizing }
 
-    let getPathOpt mold (_ : Molder) =
-        match mold with
-        | Primitive (pathOpt, _)
-        | Tuple (pathOpt, _, _)
-        | Record (pathOpt, _, _)
-        | Union (pathOpt, _, _)
-        | Option (pathOpt, _)
-        | List (pathOpt, _)
-        | Set (pathOpt, _)
-        | Map (pathOpt, _, _)
-        | Array (pathOpt, _)
-        | Unidentified pathOpt -> pathOpt
+    let getRequireIdentification molder =
+        molder.RequireIdentification
 
-    let primitiveToInstance primitive molder =
+    let setRequireIdentification requireIdentification molder =
+        { molder with RequireIdentification = requireIdentification }
+
+    let getInstantiationRules molder =
+        molder.InstantiationRules
+
+    let setInstantiationRules instantiationRules molder =
+        { molder with InstantiationRules = instantiationRules }
+
+    let private primitiveToInstance primitive molder =
         match primitive with
         | Unit -> () :> obj
-        | Boolean -> if molder.DefaultAsRandom then (if molder.Random.Next () % 2 = 0 then false else true) :> obj else false :> obj
-        | Byte -> if molder.DefaultAsRandom then byte (molder.Random.Next ()) :> obj else byte 0 :> obj
-        | Char -> if molder.DefaultAsRandom then char (molder.Random.Next ()) :> obj else char 0 :> obj
-        | String -> if molder.DefaultAsRandom then string (Guid.NewGuid ()) :> obj else "" :> obj
-        | Int32 -> if molder.DefaultAsRandom then int (molder.Random.Next ()) :> obj else int 0 :> obj
-        | Int64 -> if molder.DefaultAsRandom then int64 (molder.Random.Next ()) + int64 (molder.Random.Next () <<< 32) :> obj else int64 0 :> obj
-        | Single -> if molder.DefaultAsRandom then single (molder.Random.NextDouble ()) :> obj else single 0 :> obj
-        | Double -> if molder.DefaultAsRandom then double (molder.Random.NextDouble ()) :> obj else double 0 :> obj
-        | Decimal -> if molder.DefaultAsRandom then decimal (molder.Random.NextDouble ()) :> obj else decimal 0 :> obj
-        | Enum (name, cases) -> let ty = Type.GetType name in if molder.DefaultAsRandom then Enum.Parse (ty, cases.[molder.Random.Next cases.Length]) else Activator.CreateInstance ty
-        | DateTime -> if molder.DefaultAsRandom then DateTime.UtcNow :> obj else DateTime.MinValue :> obj
-        | IPAddress -> if molder.DefaultAsRandom then new IPAddress (int64 (molder.Random.Next ())) :> obj else Guid.Empty :> obj
-        | Guid -> if molder.DefaultAsRandom then Guid.NewGuid () :> obj else Guid.Empty :> obj
+        | Boolean -> if molder.Randomizing then (if molder.Random.Next () % 2 = 0 then false else true) :> obj else false :> obj
+        | Byte -> if molder.Randomizing then byte (molder.Random.Next ()) :> obj else byte 0 :> obj
+        | Char -> if molder.Randomizing then char (molder.Random.Next ()) :> obj else char 0 :> obj
+        | String -> if molder.Randomizing then string (Guid.NewGuid ()) :> obj else "" :> obj
+        | Int32 -> if molder.Randomizing then int (molder.Random.Next ()) :> obj else int 0 :> obj
+        | Int64 -> if molder.Randomizing then int64 (molder.Random.Next ()) + int64 (molder.Random.Next () <<< 32) :> obj else int64 0 :> obj
+        | Single -> if molder.Randomizing then single (molder.Random.NextDouble ()) :> obj else single 0 :> obj
+        | Double -> if molder.Randomizing then double (molder.Random.NextDouble ()) :> obj else double 0 :> obj
+        | Decimal -> if molder.Randomizing then decimal (molder.Random.NextDouble ()) :> obj else decimal 0 :> obj
+        | Enum (name, cases) -> let ty = Type.GetType name in if molder.Randomizing then Enum.Parse (ty, cases.[molder.Random.Next cases.Length]) else Activator.CreateInstance ty
+        | DateTime -> if molder.Randomizing then DateTime.UtcNow :> obj else DateTime.MinValue :> obj
+        | IPAddress -> if molder.Randomizing then new IPAddress (int64 (molder.Random.Next ())) :> obj else Guid.Empty :> obj
+        | Guid -> if molder.Randomizing then Guid.NewGuid () :> obj else Guid.Empty :> obj
 
     let rec private typeToMold3 pathOpt (ty : Type) molder =
         let key = (pathOpt, ty)
@@ -159,16 +171,13 @@ module Molder =
                 let elementMold = typeToMold3 None elementType molder
                 moldRef := List (pathOpt, elementMold)
             else
-                if molder.ForceIdentification
+                if molder.RequireIdentification
                 then failwith "Could not identity a type for molding."
                 else moldRef := Unidentified pathOpt
             moldRef.Value
         | (true, moldRef) -> moldRef.Value
 
-    let typeToMold ty molder =
-        typeToMold3 None ty molder
-
-    let moldToPrimitive primitive (_ : Molder) =
+    let private moldToPrimitive primitive (_ : Molder) =
         match primitive with
         | Unit -> typeof<FSharp.Core.Unit>
         | Boolean -> typeof<System.Boolean>
@@ -185,6 +194,9 @@ module Molder =
         | IPAddress -> typeof<System.Net.IPAddress>
         | Guid -> typeof<System.Guid>
 
+    let typeToMold ty molder =
+        typeToMold3 None ty molder
+
     let rec moldToType mold molder =
         match mold with
         | Primitive (_, primitive) -> moldToPrimitive primitive molder
@@ -199,8 +211,8 @@ module Molder =
         | Unidentified _ -> typeof<obj>
 
     let rec moldToInstance mold molder =
-        let pathOpt = getPathOpt mold molder
-        match Map.tryFind pathOpt molder.Rules with
+        let pathOpt = Mold.getPathOpt mold
+        match Map.tryFind pathOpt molder.InstantiationRules with
         | Some rule ->
             match rule with
             | Constant value -> value
@@ -260,11 +272,11 @@ module Molder =
         let ty = moldToType mold molder
         ty
 
-    let make forceIdentification defaultAsRandom seed rules =
-        { ForceIdentification = forceIdentification
-          DefaultAsRandom = defaultAsRandom
-          Random = Random seed 
-          Rules = rules
+    let make randomizing requireIdentification randomizingSeed instantiationRules =
+        { Randomizing = randomizing
+          RequireIdentification = requireIdentification
+          Random = Random randomizingSeed 
+          InstantiationRules = instantiationRules
           Cache = Dictionary<Path option * Type, Mold ref> () }
 
     let makeEmpty () =
