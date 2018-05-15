@@ -229,7 +229,7 @@ module Molder =
         instance
 
     let typeToInstance<'t> molder =
-        typeToInstance2 typeof<'t> molder
+        typeToInstance2 typeof<'t> molder :?> 't
 
     let instanceToType instance molder =
         let mold = instanceToMold instance molder
