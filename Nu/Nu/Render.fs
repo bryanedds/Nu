@@ -94,360 +94,354 @@ type IRenderer =
     /// Render a frame of the game.
     abstract Render : Vector2 -> Vector2 -> IRenderer
 
-[<AutoOpen>]
-module RendererModule =
+/// The primary implementation of IRenderer.
+type [<ReferenceEquality>] NuRenderer =
+    private
+        { RenderContext : nativeint
+          RenderPackageMap : RenderAsset PackageMap
+          RenderMessages : RenderMessage UList
+          RenderDescriptors : RenderDescriptor array }
 
-    /// The primary implementation of IRenderer.
-    type [<ReferenceEquality>] Renderer =
-        private
-            { RenderContext : nativeint
-              RenderPackageMap : RenderAsset PackageMap
-              RenderMessages : RenderMessage UList
-              RenderDescriptors : RenderDescriptor array }
+    static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
+        if left.Depth < right.Depth then -1
+        elif left.Depth > right.Depth then 1
+        else 0
 
-        static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
-            if left.Depth < right.Depth then -1
-            elif left.Depth > right.Depth then 1
-            else 0
+    static member private freeRenderAsset renderAsset =
+        match renderAsset with
+        | TextureAsset texture -> SDL.SDL_DestroyTexture texture
+        | FontAsset (font, _) -> SDL_ttf.TTF_CloseFont font
 
-        static member private freeRenderAsset renderAsset =
+    static member private tryLoadRenderAsset2 renderContext (asset : obj Asset) =
+        match Path.GetExtension asset.FilePath with
+        | ".bmp"
+        | ".png" ->
+            let textureOpt = SDL_image.IMG_LoadTexture (renderContext, asset.FilePath)
+            if textureOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, TextureAsset textureOpt)
+            else
+                let errorMsg = SDL.SDL_GetError ()
+                Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + errorMsg + "'.")
+                None
+        | ".ttf" ->
+            let fileFirstName = Path.GetFileNameWithoutExtension asset.FilePath
+            let fileFirstNameLength = String.length fileFirstName
+            if fileFirstNameLength >= 3 then
+                let fontSizeText = fileFirstName.Substring(fileFirstNameLength - 3, 3)
+                match Int32.TryParse fontSizeText with
+                | (true, fontSize) ->
+                    let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
+                    if fontOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, FontAsset (fontOpt, fontSize))
+                    else Log.debug ("Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."); None
+                | (false, _) -> Log.debug ("Could not load font due to file name being too short: '" + asset.FilePath + "'."); None
+            else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
+        | extension -> Log.debug ("Could not load render asset '" + scstring asset + "' due to unknown extension '" + extension + "'."); None
+
+    static member private tryLoadRenderPackage packageName renderer =
+        match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
+        | Right assetGraph ->
+            match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render) packageName assetGraph with
+            | Right assets ->
+                let renderAssetOpts = List.map (NuRenderer.tryLoadRenderAsset2 renderer.RenderContext) assets
+                let renderAssets = List.definitize renderAssetOpts
+                let renderAssetMapOpt = UMap.tryFindFast packageName renderer.RenderPackageMap
+                if FOption.isSome renderAssetMapOpt then
+                    let renderAssetMap = FOption.get renderAssetMapOpt
+                    let renderAssetMap = UMap.addMany renderAssets renderAssetMap
+                    { renderer with RenderPackageMap = UMap.add packageName renderAssetMap renderer.RenderPackageMap }
+                else
+                    let renderAssetMap = UMap.makeFromSeq Constants.Render.AssetMapConfig renderAssets
+                    { renderer with RenderPackageMap = UMap.add packageName renderAssetMap renderer.RenderPackageMap }
+            | Left failedAssetNames ->
+                Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
+                renderer
+        | Left error ->
+            Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
+            renderer
+
+    static member private tryLoadRenderAsset (assetTag : obj AssetTag) renderer =
+        let (assetMapOpt, renderer) =
+            if UMap.containsKey assetTag.PackageName renderer.RenderPackageMap
+            then (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
+            else
+                Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
+                let renderer = NuRenderer.tryLoadRenderPackage assetTag.PackageName renderer
+                (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
+        (FOption.bind (fun assetMap -> UMap.tryFindFast assetTag.AssetName assetMap) assetMapOpt, renderer)
+
+    static member private handleHintRenderPackageUse hintPackageName renderer =
+        NuRenderer.tryLoadRenderPackage hintPackageName renderer
+
+    static member private handleHintRenderPackageDisuse hintPackageName renderer =
+        let assetsOpt = UMap.tryFindFast hintPackageName renderer.RenderPackageMap
+        if FOption.isSome assetsOpt then
+            let assets = FOption.get assetsOpt
+            for (_, asset) in assets do NuRenderer.freeRenderAsset asset
+            { renderer with RenderPackageMap = UMap.remove hintPackageName renderer.RenderPackageMap }
+        else renderer
+
+    static member private handleReloadRenderAssets renderer =
+        let oldPackageMap = renderer.RenderPackageMap
+        let oldPackageNames = oldPackageMap |> UMap.toSeq |> Seq.map fst |> Array.ofSeq
+        let renderer = { renderer with RenderPackageMap = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageMap) }
+        Array.fold
+            (fun renderer packageName -> NuRenderer.tryLoadRenderPackage packageName renderer)
+            renderer
+            oldPackageNames
+
+    static member private handleRenderMessage renderer renderMessage =
+        match renderMessage with
+        | RenderDescriptorsMessage renderDescriptors -> { renderer with RenderDescriptors = Array.append renderDescriptors renderer.RenderDescriptors }
+        | HintRenderPackageUseMessage hintPackageUse -> NuRenderer.handleHintRenderPackageUse hintPackageUse renderer
+        | HintRenderPackageDisuseMessage hintPackageDisuse -> NuRenderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
+        | ReloadRenderAssetsMessage -> NuRenderer.handleReloadRenderAssets renderer
+
+    static member private handleRenderMessages renderMessages renderer =
+        UList.fold NuRenderer.handleRenderMessage renderer renderMessages
+
+    static member private renderSprite
+        (viewAbsolute : Matrix3)
+        (viewRelative : Matrix3)
+        (_ : Vector2)
+        (eyeSize : Vector2)
+        (sprite : SpriteDescriptor)
+        renderer =
+        let view = match sprite.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
+        let position = sprite.Position - Vector2.Multiply (sprite.Offset, sprite.Size)
+        let positionView = position * view
+        let sizeView = sprite.Size * view.ExtractScaleMatrix ()
+        let color = sprite.Color
+        let image = AssetTag.generalize sprite.Image
+        let (renderAssetOpt, renderer) = NuRenderer.tryLoadRenderAsset image renderer
+        if FOption.isSome renderAssetOpt then
+            let renderAsset = FOption.get renderAssetOpt
             match renderAsset with
-            | TextureAsset texture -> SDL.SDL_DestroyTexture texture
-            | FontAsset (font, _) -> SDL_ttf.TTF_CloseFont font
-
-        static member private tryLoadRenderAsset2 renderContext (asset : obj Asset) =
-            match Path.GetExtension asset.FilePath with
-            | ".bmp"
-            | ".png" ->
-                let textureOpt = SDL_image.IMG_LoadTexture (renderContext, asset.FilePath)
-                if textureOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, TextureAsset textureOpt)
-                else
-                    let errorMsg = SDL.SDL_GetError ()
-                    Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + errorMsg + "'.")
-                    None
-            | ".ttf" ->
-                let fileFirstName = Path.GetFileNameWithoutExtension asset.FilePath
-                let fileFirstNameLength = String.length fileFirstName
-                if fileFirstNameLength >= 3 then
-                    let fontSizeText = fileFirstName.Substring(fileFirstNameLength - 3, 3)
-                    match Int32.TryParse fontSizeText with
-                    | (true, fontSize) ->
-                        let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
-                        if fontOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, FontAsset (fontOpt, fontSize))
-                        else Log.debug ("Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."); None
-                    | (false, _) -> Log.debug ("Could not load font due to file name being too short: '" + asset.FilePath + "'."); None
-                else Log.debug ("Could not load font '" + asset.FilePath + "'."); None
-            | extension -> Log.debug ("Could not load render asset '" + scstring asset + "' due to unknown extension '" + extension + "'."); None
-
-        static member private tryLoadRenderPackage packageName renderer =
-            match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
-            | Right assetGraph ->
-                match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render) packageName assetGraph with
-                | Right assets ->
-                    let renderAssetOpts = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
-                    let renderAssets = List.definitize renderAssetOpts
-                    let renderAssetMapOpt = UMap.tryFindFast packageName renderer.RenderPackageMap
-                    if FOption.isSome renderAssetMapOpt then
-                        let renderAssetMap = FOption.get renderAssetMapOpt
-                        let renderAssetMap = UMap.addMany renderAssets renderAssetMap
-                        { renderer with RenderPackageMap = UMap.add packageName renderAssetMap renderer.RenderPackageMap }
-                    else
-                        let renderAssetMap = UMap.makeFromSeq Constants.Render.AssetMapConfig renderAssets
-                        { renderer with RenderPackageMap = UMap.add packageName renderAssetMap renderer.RenderPackageMap }
-                | Left failedAssetNames ->
-                    Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
-                    renderer
-            | Left error ->
-                Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
+            | TextureAsset texture ->
+                let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
+                let mutable sourceRect = SDL.SDL_Rect ()
+                match sprite.InsetOpt with
+                | Some inset ->
+                    sourceRect.x <- int inset.X
+                    sourceRect.y <- int inset.Y
+                    sourceRect.w <- int (inset.Z - inset.X)
+                    sourceRect.h <- int (inset.W - inset.Y)
+                | None ->
+                    sourceRect.x <- 0
+                    sourceRect.y <- 0
+                    sourceRect.w <- textureSizeX
+                    sourceRect.h <- textureSizeY
+                let mutable destRect = SDL.SDL_Rect ()
+                destRect.x <- int (positionView.X + eyeSize.X * 0.5f)
+                destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f - sizeView.Y) // negation for right-handedness
+                destRect.w <- int sizeView.X
+                destRect.h <- int sizeView.Y
+                let rotation = double -sprite.Rotation * Constants.Math.RadiansToDegrees // negation for right-handedness
+                let mutable rotationCenter = SDL.SDL_Point ()
+                rotationCenter.x <- int (sizeView.X * 0.5f)
+                rotationCenter.y <- int (sizeView.Y * 0.5f)
+                SDL.SDL_SetTextureColorMod (texture, byte (255.0f * color.X), byte (255.0f * color.Y), byte (255.0f * color.Z)) |> ignore
+                SDL.SDL_SetTextureAlphaMod (texture, byte (255.0f * color.W)) |> ignore
+                let renderResult =
+                    SDL.SDL_RenderCopyEx (
+                        renderer.RenderContext,
+                        texture,
+                        ref sourceRect,
+                        ref destRect,
+                        rotation,
+                        ref rotationCenter,
+                        SDL.SDL_RendererFlip.SDL_FLIP_NONE)
+                if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
                 renderer
+            | _ -> Log.trace "Cannot render sprite with a non-texture asset."; renderer
+        else Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."); renderer
 
-        static member private tryLoadRenderAsset (assetTag : obj AssetTag) renderer =
-            let (assetMapOpt, renderer) =
-                if UMap.containsKey assetTag.PackageName renderer.RenderPackageMap
-                then (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
-                else
-                    Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                    let renderer = Renderer.tryLoadRenderPackage assetTag.PackageName renderer
-                    (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
-            (FOption.bind (fun assetMap -> UMap.tryFindFast assetTag.AssetName assetMap) assetMapOpt, renderer)
+    static member private renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
+        Array.fold
+            (fun renderer sprite -> NuRenderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer)
+            renderer
+            sprites
 
-        static member private handleHintRenderPackageUse hintPackageName renderer =
-            Renderer.tryLoadRenderPackage hintPackageName renderer
-
-        static member private handleHintRenderPackageDisuse hintPackageName renderer =
-            let assetsOpt = UMap.tryFindFast hintPackageName renderer.RenderPackageMap
-            if FOption.isSome assetsOpt then
-                let assets = FOption.get assetsOpt
-                for (_, asset) in assets do Renderer.freeRenderAsset asset
-                { renderer with RenderPackageMap = UMap.remove hintPackageName renderer.RenderPackageMap }
-            else renderer
-
-        static member private handleReloadRenderAssets renderer =
-            let oldPackageMap = renderer.RenderPackageMap
-            let oldPackageNames = oldPackageMap |> UMap.toSeq |> Seq.map fst |> Array.ofSeq
-            let renderer = { renderer with RenderPackageMap = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageMap) }
-            Array.fold
-                (fun renderer packageName -> Renderer.tryLoadRenderPackage packageName renderer)
+    static member private renderTileLayerDescriptor
+        (viewAbsolute : Matrix3)
+        (viewRelative : Matrix3)
+        (_ : Vector2)
+        (eyeSize : Vector2)
+        (descriptor : TileLayerDescriptor)
+        renderer =
+        let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
+        let positionView = descriptor.Position * view
+        let sizeView = descriptor.Size * view.ExtractScaleMatrix ()
+        let tileRotation = descriptor.Rotation
+        let mapSize = descriptor.MapSize
+        let tiles = descriptor.Tiles
+        let tileSourceSize = descriptor.TileSourceSize
+        let tileSize = descriptor.TileSize
+        let tileSet = descriptor.TileSet
+        let tileSetImage = AssetTag.generalize descriptor.TileSetImage
+        let tileSetWidth = let tileSetWidthOpt = tileSet.Image.Width in tileSetWidthOpt.Value
+        let (renderAssetOpt, renderer) = NuRenderer.tryLoadRenderAsset tileSetImage renderer
+        if FOption.isSome renderAssetOpt then
+            let renderAsset = FOption.get renderAssetOpt
+            match renderAsset with
+            | TextureAsset texture ->
+                // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
+                let tileSourceRectRef = ref (SDL.SDL_Rect ())
+                let tileDestRectRef = ref (SDL.SDL_Rect ())
+                let tileRotationCenterRef = ref (SDL.SDL_Point ())
+                Seq.iteri
+                    (fun n (tile : TmxLayerTile) ->
+                        let mapRun = mapSize.X
+                        let (i, j) = (n % mapRun, n / mapRun)
+                        let tilePosition =
+                            Vector2
+                                (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f,
+                                    -(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
+                        let tileBounds = Math.makeBounds tilePosition tileSize
+                        let viewBounds = Math.makeBounds Vector2.Zero eyeSize
+                        if Math.isBoundsIntersectingBounds tileBounds viewBounds then
+                            let gid = tile.Gid - tileSet.FirstGid
+                            let gidPosition = gid * tileSourceSize.X
+                            let tileSourcePosition =
+                                Vector2
+                                    (single (gidPosition % tileSetWidth),
+                                        single (gidPosition / tileSetWidth * tileSourceSize.Y))
+                            let mutable sourceRect = SDL.SDL_Rect ()
+                            sourceRect.x <- int tileSourcePosition.X
+                            sourceRect.y <- int tileSourcePosition.Y
+                            sourceRect.w <- tileSourceSize.X
+                            sourceRect.h <- tileSourceSize.Y
+                            let mutable destRect = SDL.SDL_Rect ()
+                            destRect.x <- int tilePosition.X
+                            destRect.y <- int tilePosition.Y
+                            destRect.w <- int tileSize.X
+                            destRect.h <- int tileSize.Y
+                            let rotation = double -tileRotation * Constants.Math.RadiansToDegrees // negation for right-handedness
+                            let mutable rotationCenter = SDL.SDL_Point ()
+                            rotationCenter.x <- int (tileSize.X * 0.5f)
+                            rotationCenter.y <- int (tileSize.Y * 0.5f)
+                            tileSourceRectRef := sourceRect
+                            tileDestRectRef := destRect
+                            tileRotationCenterRef := rotationCenter
+                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
+                            if renderResult <> 0 then Log.info ("Render error - could not render texture for tile '" + scstring descriptor + "' due to '" + SDL.SDL_GetError () + "."))
+                    tiles
                 renderer
-                oldPackageNames
+            | _ -> Log.debug "Cannot render tile with a non-texture asset."; renderer
+        else Log.info ("TileLayerDescriptor failed due to unloadable assets for '" + scstring tileSetImage + "'."); renderer
 
-        static member private handleRenderMessage renderer renderMessage =
-            match renderMessage with
-            | RenderDescriptorsMessage renderDescriptors -> { renderer with RenderDescriptors = Array.append renderDescriptors renderer.RenderDescriptors }
-            | HintRenderPackageUseMessage hintPackageUse -> Renderer.handleHintRenderPackageUse hintPackageUse renderer
-            | HintRenderPackageDisuseMessage hintPackageDisuse -> Renderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
-            | ReloadRenderAssetsMessage -> Renderer.handleReloadRenderAssets renderer
-
-        static member private handleRenderMessages renderMessages renderer =
-            UList.fold Renderer.handleRenderMessage renderer renderMessages
-
-        static member private renderSprite
-            (viewAbsolute : Matrix3)
-            (viewRelative : Matrix3)
-            (_ : Vector2)
-            (eyeSize : Vector2)
-            (sprite : SpriteDescriptor)
-            renderer =
-            let view = match sprite.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
-            let position = sprite.Position - Vector2.Multiply (sprite.Offset, sprite.Size)
-            let positionView = position * view
-            let sizeView = sprite.Size * view.ExtractScaleMatrix ()
-            let color = sprite.Color
-            let image = AssetTag.generalize sprite.Image
-            let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset image renderer
-            if FOption.isSome renderAssetOpt then
-                let renderAsset = FOption.get renderAssetOpt
-                match renderAsset with
-                | TextureAsset texture ->
-                    let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
+    static member private renderTextDescriptor
+        (viewAbsolute : Matrix3)
+        (viewRelative : Matrix3)
+        (_ : Vector2)
+        (eyeSize : Vector2)
+        (descriptor : TextDescriptor)
+        renderer =
+        let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
+        let positionView = descriptor.Position * view
+        let sizeView = descriptor.Size * view.ExtractScaleMatrix ()
+        let text = String.textualize descriptor.Text
+        let color = descriptor.Color
+        let font = AssetTag.generalize descriptor.Font
+        let (renderAssetOpt, renderer) = NuRenderer.tryLoadRenderAsset font renderer
+        if FOption.isSome renderAssetOpt then
+            let renderAsset = FOption.get renderAssetOpt
+            match renderAsset with
+            | FontAsset (font, _) ->
+                let mutable renderColor = SDL.SDL_Color ()
+                renderColor.r <- byte (color.X * 255.0f)
+                renderColor.g <- byte (color.Y * 255.0f)
+                renderColor.b <- byte (color.Z * 255.0f)
+                renderColor.a <- byte (color.W * 255.0f)
+                // NOTE: the resource implications (perf and vram fragmentation?) of creating and destroying a
+                // texture one or more times a frame must be understood! Although, maybe it all happens in software
+                // and vram frag would not be a concern in the first place... perf could still be, however.
+                let textSurface = SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, uint32 sizeView.X)
+                if textSurface <> IntPtr.Zero then
+                    let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
+                    let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture textTexture
                     let mutable sourceRect = SDL.SDL_Rect ()
-                    match sprite.InsetOpt with
-                    | Some inset ->
-                        sourceRect.x <- int inset.X
-                        sourceRect.y <- int inset.Y
-                        sourceRect.w <- int (inset.Z - inset.X)
-                        sourceRect.h <- int (inset.W - inset.Y)
-                    | None ->
-                        sourceRect.x <- 0
-                        sourceRect.y <- 0
-                        sourceRect.w <- textureSizeX
-                        sourceRect.h <- textureSizeY
+                    sourceRect.x <- 0
+                    sourceRect.y <- 0
+                    sourceRect.w <- textureSizeX
+                    sourceRect.h <- textureSizeY
                     let mutable destRect = SDL.SDL_Rect ()
                     destRect.x <- int (positionView.X + eyeSize.X * 0.5f)
-                    destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f - sizeView.Y) // negation for right-handedness
-                    destRect.w <- int sizeView.X
-                    destRect.h <- int sizeView.Y
-                    let rotation = double -sprite.Rotation * Constants.Math.RadiansToDegrees // negation for right-handedness
-                    let mutable rotationCenter = SDL.SDL_Point ()
-                    rotationCenter.x <- int (sizeView.X * 0.5f)
-                    rotationCenter.y <- int (sizeView.Y * 0.5f)
-                    SDL.SDL_SetTextureColorMod (texture, byte (255.0f * color.X), byte (255.0f * color.Y), byte (255.0f * color.Z)) |> ignore
-                    SDL.SDL_SetTextureAlphaMod (texture, byte (255.0f * color.W)) |> ignore
-                    let renderResult =
-                        SDL.SDL_RenderCopyEx (
-                            renderer.RenderContext,
-                            texture,
-                            ref sourceRect,
-                            ref destRect,
-                            rotation,
-                            ref rotationCenter,
-                            SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                    if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
-                    renderer
-                | _ -> Log.trace "Cannot render sprite with a non-texture asset."; renderer
-            else Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."); renderer
-
-        static member private renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
-            Array.fold
-                (fun renderer sprite -> Renderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer)
+                    destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f - single textureSizeY) // negation for right-handedness
+                    destRect.w <- textureSizeX
+                    destRect.h <- textureSizeY
+                    if textTexture <> IntPtr.Zero then SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect) |> ignore
+                    SDL.SDL_DestroyTexture textTexture
+                    SDL.SDL_FreeSurface textSurface
                 renderer
-                sprites
+            | _ -> Log.debug "Cannot render text with a non-font asset."; renderer
+        else Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'."); renderer
 
-        static member private renderTileLayerDescriptor
-            (viewAbsolute : Matrix3)
-            (viewRelative : Matrix3)
-            (_ : Vector2)
-            (eyeSize : Vector2)
-            (descriptor : TileLayerDescriptor)
-            renderer =
-            let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
-            let positionView = descriptor.Position * view
-            let sizeView = descriptor.Size * view.ExtractScaleMatrix ()
-            let tileRotation = descriptor.Rotation
-            let mapSize = descriptor.MapSize
-            let tiles = descriptor.Tiles
-            let tileSourceSize = descriptor.TileSourceSize
-            let tileSize = descriptor.TileSize
-            let tileSet = descriptor.TileSet
-            let tileSetImage = AssetTag.generalize descriptor.TileSetImage
-            let tileSetWidth = let tileSetWidthOpt = tileSet.Image.Width in tileSetWidthOpt.Value
-            let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset tileSetImage renderer
-            if FOption.isSome renderAssetOpt then
-                let renderAsset = FOption.get renderAssetOpt
-                match renderAsset with
-                | TextureAsset texture ->
-                    // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
-                    let tileSourceRectRef = ref (SDL.SDL_Rect ())
-                    let tileDestRectRef = ref (SDL.SDL_Rect ())
-                    let tileRotationCenterRef = ref (SDL.SDL_Point ())
-                    Seq.iteri
-                        (fun n (tile : TmxLayerTile) ->
-                            let mapRun = mapSize.X
-                            let (i, j) = (n % mapRun, n / mapRun)
-                            let tilePosition =
-                                Vector2
-                                    (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f,
-                                     -(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
-                            let tileBounds = Math.makeBounds tilePosition tileSize
-                            let viewBounds = Math.makeBounds Vector2.Zero eyeSize
-                            if Math.isBoundsIntersectingBounds tileBounds viewBounds then
-                                let gid = tile.Gid - tileSet.FirstGid
-                                let gidPosition = gid * tileSourceSize.X
-                                let tileSourcePosition =
-                                    Vector2
-                                        (single (gidPosition % tileSetWidth),
-                                         single (gidPosition / tileSetWidth * tileSourceSize.Y))
-                                let mutable sourceRect = SDL.SDL_Rect ()
-                                sourceRect.x <- int tileSourcePosition.X
-                                sourceRect.y <- int tileSourcePosition.Y
-                                sourceRect.w <- tileSourceSize.X
-                                sourceRect.h <- tileSourceSize.Y
-                                let mutable destRect = SDL.SDL_Rect ()
-                                destRect.x <- int tilePosition.X
-                                destRect.y <- int tilePosition.Y
-                                destRect.w <- int tileSize.X
-                                destRect.h <- int tileSize.Y
-                                let rotation = double -tileRotation * Constants.Math.RadiansToDegrees // negation for right-handedness
-                                let mutable rotationCenter = SDL.SDL_Point ()
-                                rotationCenter.x <- int (tileSize.X * 0.5f)
-                                rotationCenter.y <- int (tileSize.Y * 0.5f)
-                                tileSourceRectRef := sourceRect
-                                tileDestRectRef := destRect
-                                tileRotationCenterRef := rotationCenter
-                                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
-                                if renderResult <> 0 then Log.info ("Render error - could not render texture for tile '" + scstring descriptor + "' due to '" + SDL.SDL_GetError () + "."))
-                        tiles
-                    renderer
-                | _ -> Log.debug "Cannot render tile with a non-texture asset."; renderer
-            else Log.info ("TileLayerDescriptor failed due to unloadable assets for '" + scstring tileSetImage + "'."); renderer
+    static member private renderLayerableDescriptor
+        (viewAbsolute : Matrix3)
+        (viewRelative : Matrix3)
+        (eyeCenter : Vector2)
+        (eyeSize : Vector2)
+        renderer
+        layerableDescriptor =
+        match layerableDescriptor with
+        | SpriteDescriptor sprite -> NuRenderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
+        | SpritesDescriptor sprites -> NuRenderer.renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer
+        | TileLayerDescriptor descriptor -> NuRenderer.renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
+        | TextDescriptor descriptor -> NuRenderer.renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
 
-        static member private renderTextDescriptor
-            (viewAbsolute : Matrix3)
-            (viewRelative : Matrix3)
-            (_ : Vector2)
-            (eyeSize : Vector2)
-            (descriptor : TextDescriptor)
-            renderer =
-            let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
-            let positionView = descriptor.Position * view
-            let sizeView = descriptor.Size * view.ExtractScaleMatrix ()
-            let text = String.textualize descriptor.Text
-            let color = descriptor.Color
-            let font = AssetTag.generalize descriptor.Font
-            let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset font renderer
-            if FOption.isSome renderAssetOpt then
-                let renderAsset = FOption.get renderAssetOpt
-                match renderAsset with
-                | FontAsset (font, _) ->
-                    let mutable renderColor = SDL.SDL_Color ()
-                    renderColor.r <- byte (color.X * 255.0f)
-                    renderColor.g <- byte (color.Y * 255.0f)
-                    renderColor.b <- byte (color.Z * 255.0f)
-                    renderColor.a <- byte (color.W * 255.0f)
-                    // NOTE: the resource implications (perf and vram fragmentation?) of creating and destroying a
-                    // texture one or more times a frame must be understood! Although, maybe it all happens in software
-                    // and vram frag would not be a concern in the first place... perf could still be, however.
-                    let textSurface = SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, uint32 sizeView.X)
-                    if textSurface <> IntPtr.Zero then
-                        let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
-                        let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture textTexture
-                        let mutable sourceRect = SDL.SDL_Rect ()
-                        sourceRect.x <- 0
-                        sourceRect.y <- 0
-                        sourceRect.w <- textureSizeX
-                        sourceRect.h <- textureSizeY
-                        let mutable destRect = SDL.SDL_Rect ()
-                        destRect.x <- int (positionView.X + eyeSize.X * 0.5f)
-                        destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f - single textureSizeY) // negation for right-handedness
-                        destRect.w <- textureSizeX
-                        destRect.h <- textureSizeY
-                        if textTexture <> IntPtr.Zero then SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect) |> ignore
-                        SDL.SDL_DestroyTexture textTexture
-                        SDL.SDL_FreeSurface textSurface
-                    renderer
-                | _ -> Log.debug "Cannot render text with a non-font asset."; renderer
-            else Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'."); renderer
-
-        static member private renderLayerableDescriptor
-            (viewAbsolute : Matrix3)
-            (viewRelative : Matrix3)
-            (eyeCenter : Vector2)
-            (eyeSize : Vector2)
-            renderer
-            layerableDescriptor =
-            match layerableDescriptor with
-            | SpriteDescriptor sprite -> Renderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
-            | SpritesDescriptor sprites -> Renderer.renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer
-            | TileLayerDescriptor descriptor -> Renderer.renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
-            | TextDescriptor descriptor -> Renderer.renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
-
-        static member private renderDescriptors eyeCenter eyeSize renderDescriptors renderer =
-            let renderContext = renderer.RenderContext
-            let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
-            match targetResult with
-            | 0 ->
-                // OPTIMIZATION: uses arrays for speed
-                SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                let renderDescriptorsSorted =
-                    renderDescriptors |>
-                    Array.rev |>
-                    Array.sortStableWith Renderer.sortDescriptors
-                let layeredDescriptors = Array.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
-                let viewAbsolute = Matrix3.InvertView (Math.getViewAbsoluteI eyeCenter eyeSize)
-                let viewRelative = Matrix3.InvertView (Math.getViewRelativeI eyeCenter eyeSize)
-                Array.fold (Renderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize) renderer layeredDescriptors
-            | _ ->
-                Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
-                renderer
-
-        /// Make a Renderer.
-        static member make renderContext =
-            let renderer =
-                { RenderContext = renderContext
-                  RenderPackageMap = UMap.makeEmpty Constants.Render.AssetMapConfig
-                  RenderMessages = UList.makeEmpty Constants.Render.MessageListConfig
-                  RenderDescriptors = [||] }
+    static member private renderDescriptors eyeCenter eyeSize renderDescriptors renderer =
+        let renderContext = renderer.RenderContext
+        let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
+        match targetResult with
+        | 0 ->
+            // OPTIMIZATION: uses arrays for speed
+            SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
+            let renderDescriptorsSorted =
+                renderDescriptors |>
+                Array.rev |>
+                Array.sortStableWith NuRenderer.sortDescriptors
+            let layeredDescriptors = Array.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
+            let viewAbsolute = Matrix3.InvertView (Math.getViewAbsoluteI eyeCenter eyeSize)
+            let viewRelative = Matrix3.InvertView (Math.getViewRelativeI eyeCenter eyeSize)
+            Array.fold (NuRenderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize) renderer layeredDescriptors
+        | _ ->
+            Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
             renderer
 
-        interface IRenderer with
+    /// Make a Renderer.
+    static member make renderContext =
+        let renderer =
+            { RenderContext = renderContext
+              RenderPackageMap = UMap.makeEmpty Constants.Render.AssetMapConfig
+              RenderMessages = UList.makeEmpty Constants.Render.MessageListConfig
+              RenderDescriptors = [||] }
+        renderer
 
-            member renderer.ClearMessages () =
-                let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderer.RenderMessages) }
-                renderer :> IRenderer
+    interface IRenderer with
 
-            member renderer.EnqueueMessage renderMessage =
-                let renderMessages = UList.add renderMessage renderer.RenderMessages
-                let renderer = { renderer with RenderMessages = renderMessages }
-                renderer :> IRenderer
+        member renderer.ClearMessages () =
+            let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderer.RenderMessages) }
+            renderer :> IRenderer
 
-            member renderer.Render eyeCenter eyeSize =
-                let renderMessages = renderer.RenderMessages
-                let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderMessages) }
-                let renderer = Renderer.handleRenderMessages renderMessages renderer
-                let renderDescriptors = renderer.RenderDescriptors
-                let renderer = { renderer with RenderDescriptors = [||] }
-                let renderer = Renderer.renderDescriptors eyeCenter eyeSize renderDescriptors renderer
-                renderer :> IRenderer
+        member renderer.EnqueueMessage renderMessage =
+            let renderMessages = UList.add renderMessage renderer.RenderMessages
+            let renderer = { renderer with RenderMessages = renderMessages }
+            renderer :> IRenderer
 
-            member renderer.CleanUp () =
-                let renderAssetMaps = renderer.RenderPackageMap |> UMap.toSeq |> Seq.map snd
-                let renderAssets = Seq.collect (UMap.toSeq >> Seq.map snd) renderAssetMaps
-                for renderAsset in renderAssets do Renderer.freeRenderAsset renderAsset
-                let renderer = { renderer with RenderPackageMap = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageMap) }
-                renderer :> IRenderer
+        member renderer.Render eyeCenter eyeSize =
+            let renderMessages = renderer.RenderMessages
+            let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderMessages) }
+            let renderer = NuRenderer.handleRenderMessages renderMessages renderer
+            let renderDescriptors = renderer.RenderDescriptors
+            let renderer = { renderer with RenderDescriptors = [||] }
+            let renderer = NuRenderer.renderDescriptors eyeCenter eyeSize renderDescriptors renderer
+            renderer :> IRenderer
 
-/// The primary implementation of IRenderer.
-type Renderer = RendererModule.Renderer
+        member renderer.CleanUp () =
+            let renderAssetMaps = renderer.RenderPackageMap |> UMap.toSeq |> Seq.map snd
+            let renderAssets = Seq.collect (UMap.toSeq >> Seq.map snd) renderAssetMaps
+            for renderAsset in renderAssets do NuRenderer.freeRenderAsset renderAsset
+            let renderer = { renderer with RenderPackageMap = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageMap) }
+            renderer :> IRenderer
 
 /// The mock implementation of IRenderer.
 type [<ReferenceEquality>] MockRenderer =
@@ -462,3 +456,18 @@ type [<ReferenceEquality>] MockRenderer =
 
     static member make () =
         { MockRenderer = () }
+
+[<RequireQualifiedAccess>]
+module Renderer =
+
+    let clearMessages (renderer : IRenderer) =
+        renderer.ClearMessages ()
+
+    let enqueueMessage message (renderer : IRenderer) =
+        renderer.EnqueueMessage message
+
+    let render eyeCenter eyeSize (renderer : IRenderer) =
+        renderer.Render eyeCenter eyeSize
+
+    let cleanUp (renderer : IRenderer) =
+        renderer.CleanUp ()
