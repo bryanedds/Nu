@@ -271,13 +271,13 @@ module WorldModule3 =
                     let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder physicsEngine :> World Subsystem
                     let renderer =
                         match SdlDeps.getRenderContextOpt sdlDeps with
-                        | Some renderContext -> Renderer.make renderContext :> IRenderer
+                        | Some renderContext -> NuRenderer.make renderContext :> IRenderer
                         | None -> MockRenderer.make () :> IRenderer
                     let renderer = renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.DefaultPackageName)
                     let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> World Subsystem
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
-                        then AudioPlayer.make () :> IAudioPlayer
+                        then NuAudioPlayer.make () :> IAudioPlayer
                         else MockAudioPlayer.make () :> IAudioPlayer
                     let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> World Subsystem
                     let defaultSubsystemMap =

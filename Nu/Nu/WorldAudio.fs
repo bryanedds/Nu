@@ -18,9 +18,9 @@ module WorldAudioModule =
         interface World Subsystem with
             member this.SubsystemType = AudioType
             member this.SubsystemOrder = this.SubsystemOrder
-            member this.ClearMessages () = { this with AudioPlayer = this.AudioPlayer.ClearMessages () } :> World Subsystem
-            member this.EnqueueMessage message = { this with AudioPlayer = this.AudioPlayer.EnqueueMessage (message :?> AudioMessage) } :> World Subsystem
-            member this.ProcessMessages world = (() :> obj, { this with AudioPlayer = this.AudioPlayer.Play () } :> World Subsystem, world)
+            member this.ClearMessages () = { this with AudioPlayer = AudioPlayer.clearMessages this.AudioPlayer } :> World Subsystem
+            member this.EnqueueMessage message = { this with AudioPlayer = AudioPlayer.enqueueMessage (message :?> AudioMessage) this.AudioPlayer } :> World Subsystem
+            member this.ProcessMessages world = (() :> obj, { this with AudioPlayer = AudioPlayer.play this.AudioPlayer } :> World Subsystem, world)
             member this.ApplyResult (_, world) = world
             member this.CleanUp world = (this :> World Subsystem, world)
 
