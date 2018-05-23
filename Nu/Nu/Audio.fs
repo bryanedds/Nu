@@ -269,11 +269,14 @@ type [<ReferenceEquality>] NuAudioPlayer =
 [<RequireQualifiedAccess>]
 module AudioPlayer =
 
+    /// Clear all of the audio messages that have been enqueued.
     let clearMessages (audioPlayer : IAudioPlayer) =
         audioPlayer.ClearMessages ()
 
+    /// Enqueue a message from an external source.
     let enqueueMessage message (audioPlayer : IAudioPlayer) =
         audioPlayer.EnqueueMessage message
 
+    /// 'Play' the audio system. Must be called once per frame.
     let play (audioPlayer : IAudioPlayer) =
         audioPlayer.Play ()
