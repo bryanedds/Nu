@@ -89,10 +89,10 @@ type IRenderer =
     abstract ClearMessages : unit -> IRenderer
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : RenderMessage -> IRenderer
-    /// Handle render clean up by freeing all loaded render assets.
-    abstract CleanUp : unit -> IRenderer
     /// Render a frame of the game.
     abstract Render : Vector2 -> Vector2 -> IRenderer
+    /// Handle render clean up by freeing all loaded render assets.
+    abstract CleanUp : unit -> IRenderer
 
 /// The primary implementation of IRenderer.
 type [<ReferenceEquality>] NuRenderer =
@@ -460,14 +460,18 @@ type [<ReferenceEquality>] MockRenderer =
 [<RequireQualifiedAccess>]
 module Renderer =
 
+    /// Clear all of the render messages that have been enqueued.
     let clearMessages (renderer : IRenderer) =
         renderer.ClearMessages ()
 
+    /// Enqueue a message from an external source.
     let enqueueMessage message (renderer : IRenderer) =
         renderer.EnqueueMessage message
 
+    /// Render a frame of the game.
     let render eyeCenter eyeSize (renderer : IRenderer) =
         renderer.Render eyeCenter eyeSize
 
+    /// Handle render clean up by freeing all loaded render assets.
     let cleanUp (renderer : IRenderer) =
         renderer.CleanUp ()
