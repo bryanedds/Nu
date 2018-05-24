@@ -95,7 +95,7 @@ type IRenderer =
     abstract CleanUp : unit -> IRenderer
 
 /// The primary implementation of IRenderer.
-type [<ReferenceEquality>] NuRenderer =
+type [<ReferenceEquality>] Renderer =
     private
         { RenderContext : nativeint
           RenderPackageMap : RenderAsset PackageMap
@@ -141,7 +141,7 @@ type [<ReferenceEquality>] NuRenderer =
         | Right assetGraph ->
             match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render) packageName assetGraph with
             | Right assets ->
-                let renderAssetOpts = List.map (NuRenderer.tryLoadRenderAsset2 renderer.RenderContext) assets
+                let renderAssetOpts = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
                 let renderAssets = List.definitize renderAssetOpts
                 let renderAssetMapOpt = UMap.tryFindFast packageName renderer.RenderPackageMap
                 if FOption.isSome renderAssetMapOpt then
@@ -164,18 +164,18 @@ type [<ReferenceEquality>] NuRenderer =
             then (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
             else
                 Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                let renderer = NuRenderer.tryLoadRenderPackage assetTag.PackageName renderer
+                let renderer = Renderer.tryLoadRenderPackage assetTag.PackageName renderer
                 (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
         (FOption.bind (fun assetMap -> UMap.tryFindFast assetTag.AssetName assetMap) assetMapOpt, renderer)
 
     static member private handleHintRenderPackageUse hintPackageName renderer =
-        NuRenderer.tryLoadRenderPackage hintPackageName renderer
+        Renderer.tryLoadRenderPackage hintPackageName renderer
 
     static member private handleHintRenderPackageDisuse hintPackageName renderer =
         let assetsOpt = UMap.tryFindFast hintPackageName renderer.RenderPackageMap
         if FOption.isSome assetsOpt then
             let assets = FOption.get assetsOpt
-            for (_, asset) in assets do NuRenderer.freeRenderAsset asset
+            for (_, asset) in assets do Renderer.freeRenderAsset asset
             { renderer with RenderPackageMap = UMap.remove hintPackageName renderer.RenderPackageMap }
         else renderer
 
@@ -184,19 +184,19 @@ type [<ReferenceEquality>] NuRenderer =
         let oldPackageNames = oldPackageMap |> UMap.toSeq |> Seq.map fst |> Array.ofSeq
         let renderer = { renderer with RenderPackageMap = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageMap) }
         Array.fold
-            (fun renderer packageName -> NuRenderer.tryLoadRenderPackage packageName renderer)
+            (fun renderer packageName -> Renderer.tryLoadRenderPackage packageName renderer)
             renderer
             oldPackageNames
 
     static member private handleRenderMessage renderer renderMessage =
         match renderMessage with
         | RenderDescriptorsMessage renderDescriptors -> { renderer with RenderDescriptors = Array.append renderDescriptors renderer.RenderDescriptors }
-        | HintRenderPackageUseMessage hintPackageUse -> NuRenderer.handleHintRenderPackageUse hintPackageUse renderer
-        | HintRenderPackageDisuseMessage hintPackageDisuse -> NuRenderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
-        | ReloadRenderAssetsMessage -> NuRenderer.handleReloadRenderAssets renderer
+        | HintRenderPackageUseMessage hintPackageUse -> Renderer.handleHintRenderPackageUse hintPackageUse renderer
+        | HintRenderPackageDisuseMessage hintPackageDisuse -> Renderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
+        | ReloadRenderAssetsMessage -> Renderer.handleReloadRenderAssets renderer
 
     static member private handleRenderMessages renderMessages renderer =
-        UList.fold NuRenderer.handleRenderMessage renderer renderMessages
+        UList.fold Renderer.handleRenderMessage renderer renderMessages
 
     static member private renderSprite
         (viewAbsolute : Matrix3)
@@ -211,7 +211,7 @@ type [<ReferenceEquality>] NuRenderer =
         let sizeView = sprite.Size * view.ExtractScaleMatrix ()
         let color = sprite.Color
         let image = AssetTag.generalize sprite.Image
-        let (renderAssetOpt, renderer) = NuRenderer.tryLoadRenderAsset image renderer
+        let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset image renderer
         if FOption.isSome renderAssetOpt then
             let renderAsset = FOption.get renderAssetOpt
             match renderAsset with
@@ -256,7 +256,7 @@ type [<ReferenceEquality>] NuRenderer =
 
     static member private renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
         Array.fold
-            (fun renderer sprite -> NuRenderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer)
+            (fun renderer sprite -> Renderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer)
             renderer
             sprites
 
@@ -278,7 +278,7 @@ type [<ReferenceEquality>] NuRenderer =
         let tileSet = descriptor.TileSet
         let tileSetImage = AssetTag.generalize descriptor.TileSetImage
         let tileSetWidth = let tileSetWidthOpt = tileSet.Image.Width in tileSetWidthOpt.Value
-        let (renderAssetOpt, renderer) = NuRenderer.tryLoadRenderAsset tileSetImage renderer
+        let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset tileSetImage renderer
         if FOption.isSome renderAssetOpt then
             let renderAsset = FOption.get renderAssetOpt
             match renderAsset with
@@ -341,7 +341,7 @@ type [<ReferenceEquality>] NuRenderer =
         let text = String.textualize descriptor.Text
         let color = descriptor.Color
         let font = AssetTag.generalize descriptor.Font
-        let (renderAssetOpt, renderer) = NuRenderer.tryLoadRenderAsset font renderer
+        let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset font renderer
         if FOption.isSome renderAssetOpt then
             let renderAsset = FOption.get renderAssetOpt
             match renderAsset with
@@ -383,10 +383,10 @@ type [<ReferenceEquality>] NuRenderer =
         renderer
         layerableDescriptor =
         match layerableDescriptor with
-        | SpriteDescriptor sprite -> NuRenderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
-        | SpritesDescriptor sprites -> NuRenderer.renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer
-        | TileLayerDescriptor descriptor -> NuRenderer.renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
-        | TextDescriptor descriptor -> NuRenderer.renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
+        | SpriteDescriptor sprite -> Renderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
+        | SpritesDescriptor sprites -> Renderer.renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer
+        | TileLayerDescriptor descriptor -> Renderer.renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
+        | TextDescriptor descriptor -> Renderer.renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
 
     static member private renderDescriptors eyeCenter eyeSize renderDescriptors renderer =
         let renderContext = renderer.RenderContext
@@ -398,11 +398,11 @@ type [<ReferenceEquality>] NuRenderer =
             let renderDescriptorsSorted =
                 renderDescriptors |>
                 Array.rev |>
-                Array.sortStableWith NuRenderer.sortDescriptors
+                Array.sortStableWith Renderer.sortDescriptors
             let layeredDescriptors = Array.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
             let viewAbsolute = Matrix3.InvertView (Math.getViewAbsoluteI eyeCenter eyeSize)
             let viewRelative = Matrix3.InvertView (Math.getViewRelativeI eyeCenter eyeSize)
-            Array.fold (NuRenderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize) renderer layeredDescriptors
+            Array.fold (Renderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize) renderer layeredDescriptors
         | _ ->
             Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
             renderer
@@ -430,16 +430,16 @@ type [<ReferenceEquality>] NuRenderer =
         member renderer.Render eyeCenter eyeSize =
             let renderMessages = renderer.RenderMessages
             let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderMessages) }
-            let renderer = NuRenderer.handleRenderMessages renderMessages renderer
+            let renderer = Renderer.handleRenderMessages renderMessages renderer
             let renderDescriptors = renderer.RenderDescriptors
             let renderer = { renderer with RenderDescriptors = [||] }
-            let renderer = NuRenderer.renderDescriptors eyeCenter eyeSize renderDescriptors renderer
+            let renderer = Renderer.renderDescriptors eyeCenter eyeSize renderDescriptors renderer
             renderer :> IRenderer
 
         member renderer.CleanUp () =
             let renderAssetMaps = renderer.RenderPackageMap |> UMap.toSeq |> Seq.map snd
             let renderAssets = Seq.collect (UMap.toSeq >> Seq.map snd) renderAssetMaps
-            for renderAsset in renderAssets do NuRenderer.freeRenderAsset renderAsset
+            for renderAsset in renderAssets do Renderer.freeRenderAsset renderAsset
             let renderer = { renderer with RenderPackageMap = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageMap) }
             renderer :> IRenderer
 

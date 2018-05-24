@@ -299,7 +299,7 @@ module RigidBodyFacetModule =
         inherit Facet ()
 
         static let getBodyShape (entity : Entity) world =
-            Physics.localizeCollisionBody (entity.GetSize world) (entity.GetCollisionBody world)
+            PhysicsEngine.localizeCollisionBody (entity.GetSize world) (entity.GetCollisionBody world)
 
         static member PropertyDefinitions =
             [Variable? MinorId (fun () -> makeGuid ())
@@ -338,8 +338,8 @@ module RigidBodyFacetModule =
                   LinearVelocity = entity.GetLinearVelocity world
                   LinearDamping = entity.GetLinearDamping world
                   GravityScale = entity.GetGravityScale world
-                  CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
-                  CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
+                  CollisionCategories = PhysicsEngine.categorizeCollisionMask (entity.GetCollisionCategories world)
+                  CollisionMask = PhysicsEngine.categorizeCollisionMask (entity.GetCollisionMask world)
                   IsBullet = entity.GetIsBullet world
                   IsSensor = entity.GetIsSensor world }
             World.createBody entity (entity.GetId world) bodyProperties world
@@ -1259,7 +1259,7 @@ module TileMapDispatcherModule =
         inherit EntityDispatcher ()
 
         let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr world =
-            let tileShape = Physics.localizeCollisionBody (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
+            let tileShape = PhysicsEngine.localizeCollisionBody (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
             { BodyId = makeGuidFromInts tli ti
               Position =
                 Vector2
@@ -1279,8 +1279,8 @@ module TileMapDispatcherModule =
               LinearVelocity = Vector2.Zero
               LinearDamping = 0.0f
               GravityScale = 0.0f
-              CollisionCategories = Physics.categorizeCollisionMask (tm.GetCollisionCategories world)
-              CollisionMask = Physics.categorizeCollisionMask (tm.GetCollisionMask world)
+              CollisionCategories = PhysicsEngine.categorizeCollisionMask (tm.GetCollisionCategories world)
+              CollisionMask = PhysicsEngine.categorizeCollisionMask (tm.GetCollisionMask world)
               IsBullet = false
               IsSensor = false }
 

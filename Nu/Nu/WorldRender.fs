@@ -15,18 +15,18 @@ module WorldRenderModule =
             { SubsystemOrder : single
               Renderer : IRenderer }
     
-        interface World Subsystem with
+        interface World ISubsystem with
             member this.SubsystemType = RenderType
-            member this.SubsystemOrder = this.SubsystemOrder
-            member this.ClearMessages () = { this with Renderer = Renderer.clearMessages this.Renderer } :> World Subsystem
-            member this.EnqueueMessage message = { this with Renderer = Renderer.enqueueMessage (message :?> RenderMessage) this.Renderer } :> World Subsystem
+            member this.SubsystemOrder = Subsystem.subsystemOrder this
+            member this.ClearMessages () = { this with Renderer = Renderer.clearMessages this.Renderer } :> World ISubsystem
+            member this.EnqueueMessage message = { this with Renderer = Renderer.enqueueMessage (message :?> RenderMessage) this.Renderer } :> World ISubsystem
             member this.ProcessMessages world =
                 let this = { this with Renderer = Renderer.render (World.getEyeCenter world) (World.getEyeSize world) this.Renderer }
-                (() :> obj, this :> World Subsystem, world)
+                (() :> obj, this :> World ISubsystem, world)
             member this.ApplyResult (_, world) = world
             member this.CleanUp world =
                 let this = { this with Renderer = Renderer.cleanUp this.Renderer }
-                (this :> World Subsystem, world)
+                (this :> World ISubsystem, world)
 
         static member make subsystemOrder renderer =
             { SubsystemOrder = subsystemOrder
@@ -36,7 +36,7 @@ module WorldRenderModule =
 
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage (message : RenderMessage) world =
-            World.updateSubsystem (fun rs _ -> rs.EnqueueMessage message) Constants.Engine.RendererSubsystemName world
+            World.updateSubsystem (fun rs _ -> Subsystem.enqueueMessage message rs) Constants.Engine.RendererSubsystemName world
 
         /// Hint that a rendering asset package with the given name should be loaded. Should be
         /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)
