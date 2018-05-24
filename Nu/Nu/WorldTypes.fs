@@ -1048,7 +1048,7 @@ module WorldTypes =
     type NuPlugin () =
 
         /// Make user-defined subsystems such that Nu can utilitze them at run-time.
-        abstract MakeSubsystems : unit -> (string * World ISubsystem) list
+        abstract MakeSubsystems : unit -> (string * World Subsystem) list
         default this.MakeSubsystems () = []
     
         /// Make user-defined game dispatcher such that Nu can utilize them at run-time.

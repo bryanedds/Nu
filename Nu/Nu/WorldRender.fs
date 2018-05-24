@@ -13,20 +13,20 @@ module WorldRenderModule =
     type [<ReferenceEquality>] RendererSubsystem =
         private
             { SubsystemOrder : single
-              Renderer : IRenderer }
+              Renderer : Renderer }
     
-        interface World ISubsystem with
+        interface World Subsystem with
             member this.SubsystemType = RenderType
             member this.SubsystemOrder = Subsystem.subsystemOrder this
-            member this.ClearMessages () = { this with Renderer = Renderer.clearMessages this.Renderer } :> World ISubsystem
-            member this.EnqueueMessage message = { this with Renderer = Renderer.enqueueMessage (message :?> RenderMessage) this.Renderer } :> World ISubsystem
+            member this.ClearMessages () = { this with Renderer = Renderer.clearMessages this.Renderer } :> World Subsystem
+            member this.EnqueueMessage message = { this with Renderer = Renderer.enqueueMessage (message :?> RenderMessage) this.Renderer } :> World Subsystem
             member this.ProcessMessages world =
                 let this = { this with Renderer = Renderer.render (World.getEyeCenter world) (World.getEyeSize world) this.Renderer }
-                (() :> obj, this :> World ISubsystem, world)
+                (() :> obj, this :> World Subsystem, world)
             member this.ApplyResult (_, world) = world
             member this.CleanUp world =
                 let this = { this with Renderer = Renderer.cleanUp this.Renderer }
-                (this :> World ISubsystem, world)
+                (this :> World Subsystem, world)
 
         static member make subsystemOrder renderer =
             { SubsystemOrder = subsystemOrder
