@@ -57,22 +57,22 @@ module WorldPhysicsModule =
         member this.GetBodyToGroundContactTangentOpt physicsId = this.PhysicsEngine.GetBodyToGroundContactTangentOpt physicsId
         member this.IsBodyOnGround physicsId = this.PhysicsEngine.IsBodyOnGround physicsId
     
-        interface World Subsystem with
+        interface World ISubsystem with
             member this.SubsystemType = UpdateType
-            member this.SubsystemOrder = this.SubsystemOrder
-            member this.ClearMessages () = { this with PhysicsEngine = this.PhysicsEngine.ClearMessages () } :> World Subsystem
-            member this.EnqueueMessage message = { this with PhysicsEngine = this.PhysicsEngine.EnqueueMessage (message :?> PhysicsMessage) } :> World Subsystem
+            member this.SubsystemOrder = Subsystem.subsystemOrder this
+            member this.ClearMessages () = { this with PhysicsEngine = this.PhysicsEngine.ClearMessages () } :> World ISubsystem
+            member this.EnqueueMessage message = { this with PhysicsEngine = this.PhysicsEngine.EnqueueMessage (message :?> PhysicsMessage) } :> World ISubsystem
                 
             member this.ProcessMessages world =
                 let tickRate = World.getTickRate world
                 let (integrationMessages, physicsEngine) = this.PhysicsEngine.Integrate tickRate
-                (integrationMessages :> obj, { this with PhysicsEngine = physicsEngine } :> World Subsystem, world)
+                (integrationMessages :> obj, { this with PhysicsEngine = physicsEngine } :> World ISubsystem, world)
     
             member this.ApplyResult (integrationMessages, world) =
                 let integrationMessages = integrationMessages :?> IntegrationMessage List
                 Seq.fold PhysicsEngineSubsystem.handleIntegrationMessage world integrationMessages
     
-            member this.CleanUp world = (this :> World Subsystem, world)
+            member this.CleanUp world = (this :> World ISubsystem, world)
     
         static member make subsystemOrder physicsEngine =
             { SubsystemOrder = subsystemOrder
@@ -82,7 +82,7 @@ module WorldPhysicsModule =
 
         /// Enqueue a physics message in the world.
         static member enqueuePhysicsMessage (message : PhysicsMessage) world =
-            World.updateSubsystem (fun is _ -> is.EnqueueMessage message) Constants.Engine.PhysicsEngineSubsystemName world
+            World.updateSubsystem (fun is _ -> Subsystem.enqueueMessage message is) Constants.Engine.PhysicsEngineSubsystemName world
 
         /// Check that the world contains a body with the given physics id.
         [<FunctionBinding>]

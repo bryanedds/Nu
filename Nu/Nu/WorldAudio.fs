@@ -15,14 +15,14 @@ module WorldAudioModule =
             { SubsystemOrder : single
               AudioPlayer : IAudioPlayer }
     
-        interface World Subsystem with
+        interface World ISubsystem with
             member this.SubsystemType = AudioType
-            member this.SubsystemOrder = this.SubsystemOrder
-            member this.ClearMessages () = { this with AudioPlayer = AudioPlayer.clearMessages this.AudioPlayer } :> World Subsystem
-            member this.EnqueueMessage message = { this with AudioPlayer = AudioPlayer.enqueueMessage (message :?> AudioMessage) this.AudioPlayer } :> World Subsystem
-            member this.ProcessMessages world = (() :> obj, { this with AudioPlayer = AudioPlayer.play this.AudioPlayer } :> World Subsystem, world)
+            member this.SubsystemOrder = Subsystem.subsystemOrder this
+            member this.ClearMessages () = { this with AudioPlayer = AudioPlayer.clearMessages this.AudioPlayer } :> World ISubsystem
+            member this.EnqueueMessage message = { this with AudioPlayer = AudioPlayer.enqueueMessage (message :?> AudioMessage) this.AudioPlayer } :> World ISubsystem
+            member this.ProcessMessages world = (() :> obj, { this with AudioPlayer = AudioPlayer.play this.AudioPlayer } :> World ISubsystem, world)
             member this.ApplyResult (_, world) = world
-            member this.CleanUp world = (this :> World Subsystem, world)
+            member this.CleanUp world = (this :> World ISubsystem, world)
 
         static member make subsystemOrder audioPlayer =
             { SubsystemOrder = subsystemOrder
@@ -32,7 +32,7 @@ module WorldAudioModule =
 
         /// Enqueue an audio message in the world.
         static member enqueueAudioMessage (message : AudioMessage) world =
-            World.updateSubsystem (fun aps _ -> aps.EnqueueMessage message) Constants.Engine.AudioPlayerSubsystemName world
+            World.updateSubsystem (fun aps _ -> Subsystem.enqueueMessage message aps) Constants.Engine.AudioPlayerSubsystemName world
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding>]

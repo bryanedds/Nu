@@ -389,20 +389,20 @@ module WorldModule2 =
         static member private processSubsystems subsystemType world =
             World.getSubsystemMap world |>
             UMap.toSeq |>
-            Seq.filter (fun (_, subsystem) -> subsystem.SubsystemType = subsystemType) |>
-            Seq.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
+            Seq.filter (fun (_, subsystem) -> Subsystem.subsystemType subsystem = subsystemType) |>
+            Seq.sortBy (fun (_, subsystem) -> Subsystem.subsystemOrder subsystem) |>
             Seq.fold (fun world (subsystemName, subsystem) ->
-                let (subsystemResult, subsystem, world) = subsystem.ProcessMessages world
-                let world = subsystem.ApplyResult (subsystemResult, world)
+                let (subsystemResult, subsystem, world) = Subsystem.processMessages subsystem world
+                let world = Subsystem.applyResult subsystemResult subsystem world
                 World.addSubsystem subsystemName subsystem world)
                 world
 
         static member private cleanUpSubsystems world =
             World.getSubsystemMap world |>
             UMap.toSeq |>
-            Seq.sortBy (fun (_, subsystem) -> subsystem.SubsystemOrder) |>
+            Seq.sortBy (fun (_, subsystem) -> Subsystem.subsystemOrder subsystem) |>
             Seq.fold (fun world (subsystemName, subsystem) ->
-                let (subsystem, world) = subsystem.CleanUp world
+                let (subsystem, world) = Subsystem.cleanUp subsystem world
                 World.addSubsystem subsystemName subsystem world)
                 world
 

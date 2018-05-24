@@ -192,22 +192,22 @@ module WorldModule =
         static member internal getSubsystemMap world =
             Subsystems.getSubsystemMap world.Subsystems
 
-        static member getSubsystem<'s when 's :> World Subsystem> name world : 's =
+        static member getSubsystem<'s when 's :> World ISubsystem> name world : 's =
             Subsystems.getSubsystem name world.Subsystems
 
-        static member getSubsystemBy<'s, 't when 's :> World Subsystem> (by : 's -> 't) name world : 't =
+        static member getSubsystemBy<'s, 't when 's :> World ISubsystem> (by : 's -> 't) name world : 't =
             Subsystems.getSubsystemBy by name world.Subsystems
 
-        static member addSubsystem<'s when 's :> World Subsystem> name (subsystem : 's) world =
+        static member addSubsystem<'s when 's :> World ISubsystem> name (subsystem : 's) world =
             { world with Subsystems = Subsystems.addSubsystem name subsystem world.Subsystems }
 
-        static member removeSubsystem<'s when 's :> World Subsystem> name world =
+        static member removeSubsystem<'s when 's :> World ISubsystem> name world =
             { world with Subsystems = Subsystems.removeSubsystem name world.Subsystems }
 
-        static member internal updateSubsystem<'s when 's :> World Subsystem> (updater : 's -> World -> 's) name world =
+        static member internal updateSubsystem<'s when 's :> World ISubsystem> (updater : 's -> World -> 's) name world =
             World.choose { world with Subsystems = Subsystems.updateSubsystem updater name world.Subsystems world }
 
-        static member internal updateSubsystems (updater : World Subsystem -> World -> World Subsystem) world =
+        static member internal updateSubsystems (updater : World ISubsystem -> World -> World ISubsystem) world =
             World.choose { world with Subsystems = Subsystems.updateSubsystems updater world.Subsystems world }
 
         static member internal clearSubsystemsMessages world =
