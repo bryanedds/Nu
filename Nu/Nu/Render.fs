@@ -84,18 +84,32 @@ type [<ReferenceEquality>] RenderAsset =
     | FontAsset of nativeint * int
 
 /// The renderer. Represents the rendering system in Nu generally.
-type IRenderer =
+type Renderer =
     /// Clear all of the render messages that have been enqueued.
-    abstract ClearMessages : unit -> IRenderer
+    abstract ClearMessages : unit -> Renderer
     /// Enqueue a message from an external source.
-    abstract EnqueueMessage : RenderMessage -> IRenderer
+    abstract EnqueueMessage : RenderMessage -> Renderer
     /// Render a frame of the game.
-    abstract Render : Vector2 -> Vector2 -> IRenderer
+    abstract Render : Vector2 -> Vector2 -> Renderer
     /// Handle render clean up by freeing all loaded render assets.
-    abstract CleanUp : unit -> IRenderer
+    abstract CleanUp : unit -> Renderer
 
-/// The primary implementation of IRenderer.
-type [<ReferenceEquality>] Renderer =
+/// The mock implementation of Renderer.
+type [<ReferenceEquality>] MockRenderer =
+    private
+        { MockRenderer : unit }
+
+    interface Renderer with
+        member renderer.ClearMessages () = renderer :> Renderer
+        member renderer.EnqueueMessage _ = renderer :> Renderer
+        member renderer.Render _ _ = renderer :> Renderer
+        member renderer.CleanUp () = renderer :> Renderer
+
+    static member make () =
+        { MockRenderer = () }
+
+/// The SDL implementation of Renderer.
+type [<ReferenceEquality>] SdlRenderer =
     private
         { RenderContext : nativeint
           RenderPackageMap : RenderAsset PackageMap
@@ -141,7 +155,7 @@ type [<ReferenceEquality>] Renderer =
         | Right assetGraph ->
             match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render) packageName assetGraph with
             | Right assets ->
-                let renderAssetOpts = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
+                let renderAssetOpts = List.map (SdlRenderer.tryLoadRenderAsset2 renderer.RenderContext) assets
                 let renderAssets = List.definitize renderAssetOpts
                 let renderAssetMapOpt = UMap.tryFindFast packageName renderer.RenderPackageMap
                 if FOption.isSome renderAssetMapOpt then
@@ -164,18 +178,18 @@ type [<ReferenceEquality>] Renderer =
             then (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
             else
                 Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                let renderer = Renderer.tryLoadRenderPackage assetTag.PackageName renderer
+                let renderer = SdlRenderer.tryLoadRenderPackage assetTag.PackageName renderer
                 (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
         (FOption.bind (fun assetMap -> UMap.tryFindFast assetTag.AssetName assetMap) assetMapOpt, renderer)
 
     static member private handleHintRenderPackageUse hintPackageName renderer =
-        Renderer.tryLoadRenderPackage hintPackageName renderer
+        SdlRenderer.tryLoadRenderPackage hintPackageName renderer
 
     static member private handleHintRenderPackageDisuse hintPackageName renderer =
         let assetsOpt = UMap.tryFindFast hintPackageName renderer.RenderPackageMap
         if FOption.isSome assetsOpt then
             let assets = FOption.get assetsOpt
-            for (_, asset) in assets do Renderer.freeRenderAsset asset
+            for (_, asset) in assets do SdlRenderer.freeRenderAsset asset
             { renderer with RenderPackageMap = UMap.remove hintPackageName renderer.RenderPackageMap }
         else renderer
 
@@ -184,19 +198,19 @@ type [<ReferenceEquality>] Renderer =
         let oldPackageNames = oldPackageMap |> UMap.toSeq |> Seq.map fst |> Array.ofSeq
         let renderer = { renderer with RenderPackageMap = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageMap) }
         Array.fold
-            (fun renderer packageName -> Renderer.tryLoadRenderPackage packageName renderer)
+            (fun renderer packageName -> SdlRenderer.tryLoadRenderPackage packageName renderer)
             renderer
             oldPackageNames
 
     static member private handleRenderMessage renderer renderMessage =
         match renderMessage with
         | RenderDescriptorsMessage renderDescriptors -> { renderer with RenderDescriptors = Array.append renderDescriptors renderer.RenderDescriptors }
-        | HintRenderPackageUseMessage hintPackageUse -> Renderer.handleHintRenderPackageUse hintPackageUse renderer
-        | HintRenderPackageDisuseMessage hintPackageDisuse -> Renderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
-        | ReloadRenderAssetsMessage -> Renderer.handleReloadRenderAssets renderer
+        | HintRenderPackageUseMessage hintPackageUse -> SdlRenderer.handleHintRenderPackageUse hintPackageUse renderer
+        | HintRenderPackageDisuseMessage hintPackageDisuse -> SdlRenderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
+        | ReloadRenderAssetsMessage -> SdlRenderer.handleReloadRenderAssets renderer
 
     static member private handleRenderMessages renderMessages renderer =
-        UList.fold Renderer.handleRenderMessage renderer renderMessages
+        UList.fold SdlRenderer.handleRenderMessage renderer renderMessages
 
     static member private renderSprite
         (viewAbsolute : Matrix3)
@@ -211,7 +225,7 @@ type [<ReferenceEquality>] Renderer =
         let sizeView = sprite.Size * view.ExtractScaleMatrix ()
         let color = sprite.Color
         let image = AssetTag.generalize sprite.Image
-        let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset image renderer
+        let (renderAssetOpt, renderer) = SdlRenderer.tryLoadRenderAsset image renderer
         if FOption.isSome renderAssetOpt then
             let renderAsset = FOption.get renderAssetOpt
             match renderAsset with
@@ -256,7 +270,7 @@ type [<ReferenceEquality>] Renderer =
 
     static member private renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
         Array.fold
-            (fun renderer sprite -> Renderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer)
+            (fun renderer sprite -> SdlRenderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer)
             renderer
             sprites
 
@@ -278,7 +292,7 @@ type [<ReferenceEquality>] Renderer =
         let tileSet = descriptor.TileSet
         let tileSetImage = AssetTag.generalize descriptor.TileSetImage
         let tileSetWidth = let tileSetWidthOpt = tileSet.Image.Width in tileSetWidthOpt.Value
-        let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset tileSetImage renderer
+        let (renderAssetOpt, renderer) = SdlRenderer.tryLoadRenderAsset tileSetImage renderer
         if FOption.isSome renderAssetOpt then
             let renderAsset = FOption.get renderAssetOpt
             match renderAsset with
@@ -341,7 +355,7 @@ type [<ReferenceEquality>] Renderer =
         let text = String.textualize descriptor.Text
         let color = descriptor.Color
         let font = AssetTag.generalize descriptor.Font
-        let (renderAssetOpt, renderer) = Renderer.tryLoadRenderAsset font renderer
+        let (renderAssetOpt, renderer) = SdlRenderer.tryLoadRenderAsset font renderer
         if FOption.isSome renderAssetOpt then
             let renderAsset = FOption.get renderAssetOpt
             match renderAsset with
@@ -383,10 +397,10 @@ type [<ReferenceEquality>] Renderer =
         renderer
         layerableDescriptor =
         match layerableDescriptor with
-        | SpriteDescriptor sprite -> Renderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
-        | SpritesDescriptor sprites -> Renderer.renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer
-        | TileLayerDescriptor descriptor -> Renderer.renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
-        | TextDescriptor descriptor -> Renderer.renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
+        | SpriteDescriptor sprite -> SdlRenderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
+        | SpritesDescriptor sprites -> SdlRenderer.renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer
+        | TileLayerDescriptor descriptor -> SdlRenderer.renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
+        | TextDescriptor descriptor -> SdlRenderer.renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
 
     static member private renderDescriptors eyeCenter eyeSize renderDescriptors renderer =
         let renderContext = renderer.RenderContext
@@ -398,11 +412,11 @@ type [<ReferenceEquality>] Renderer =
             let renderDescriptorsSorted =
                 renderDescriptors |>
                 Array.rev |>
-                Array.sortStableWith Renderer.sortDescriptors
+                Array.sortStableWith SdlRenderer.sortDescriptors
             let layeredDescriptors = Array.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
             let viewAbsolute = Matrix3.InvertView (Math.getViewAbsoluteI eyeCenter eyeSize)
             let viewRelative = Matrix3.InvertView (Math.getViewRelativeI eyeCenter eyeSize)
-            Array.fold (Renderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize) renderer layeredDescriptors
+            Array.fold (SdlRenderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize) renderer layeredDescriptors
         | _ ->
             Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
             renderer
@@ -416,62 +430,48 @@ type [<ReferenceEquality>] Renderer =
               RenderDescriptors = [||] }
         renderer
 
-    interface IRenderer with
+    interface Renderer with
 
         member renderer.ClearMessages () =
             let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderer.RenderMessages) }
-            renderer :> IRenderer
+            renderer :> Renderer
 
         member renderer.EnqueueMessage renderMessage =
             let renderMessages = UList.add renderMessage renderer.RenderMessages
             let renderer = { renderer with RenderMessages = renderMessages }
-            renderer :> IRenderer
+            renderer :> Renderer
 
         member renderer.Render eyeCenter eyeSize =
             let renderMessages = renderer.RenderMessages
             let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderMessages) }
-            let renderer = Renderer.handleRenderMessages renderMessages renderer
+            let renderer = SdlRenderer.handleRenderMessages renderMessages renderer
             let renderDescriptors = renderer.RenderDescriptors
             let renderer = { renderer with RenderDescriptors = [||] }
-            let renderer = Renderer.renderDescriptors eyeCenter eyeSize renderDescriptors renderer
-            renderer :> IRenderer
+            let renderer = SdlRenderer.renderDescriptors eyeCenter eyeSize renderDescriptors renderer
+            renderer :> Renderer
 
         member renderer.CleanUp () =
             let renderAssetMaps = renderer.RenderPackageMap |> UMap.toSeq |> Seq.map snd
             let renderAssets = Seq.collect (UMap.toSeq >> Seq.map snd) renderAssetMaps
-            for renderAsset in renderAssets do Renderer.freeRenderAsset renderAsset
+            for renderAsset in renderAssets do SdlRenderer.freeRenderAsset renderAsset
             let renderer = { renderer with RenderPackageMap = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageMap) }
-            renderer :> IRenderer
-
-/// The mock implementation of IRenderer.
-type [<ReferenceEquality>] MockRenderer =
-    private
-        { MockRenderer : unit }
-
-    interface IRenderer with
-        member renderer.ClearMessages () = renderer :> IRenderer
-        member renderer.EnqueueMessage _ = renderer :> IRenderer
-        member renderer.Render _ _ = renderer :> IRenderer
-        member renderer.CleanUp () = renderer :> IRenderer
-
-    static member make () =
-        { MockRenderer = () }
+            renderer :> Renderer
 
 [<RequireQualifiedAccess>]
 module Renderer =
 
     /// Clear all of the render messages that have been enqueued.
-    let clearMessages (renderer : IRenderer) =
+    let clearMessages (renderer : Renderer) =
         renderer.ClearMessages ()
 
     /// Enqueue a message from an external source.
-    let enqueueMessage message (renderer : IRenderer) =
+    let enqueueMessage message (renderer : Renderer) =
         renderer.EnqueueMessage message
 
     /// Render a frame of the game.
-    let render eyeCenter eyeSize (renderer : IRenderer) =
+    let render eyeCenter eyeSize (renderer : Renderer) =
         renderer.Render eyeCenter eyeSize
 
     /// Handle render clean up by freeing all loaded render assets.
-    let cleanUp (renderer : IRenderer) =
+    let cleanUp (renderer : Renderer) =
         renderer.CleanUp ()
