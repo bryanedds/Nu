@@ -12,12 +12,9 @@ open Nu
 type Refinement =
     | PsdToPng
     | OldSchool
-
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Refinement =
-
+    
     /// Convert a string to a refinement value.
-    let fromString str =
+    static member fromString str =
         match str with
         | "PsdToPng" -> PsdToPng
         | "OldSchool" -> OldSchool
@@ -28,20 +25,17 @@ type [<Struct>] 'a AssetTag =
     { PackageName : string
       AssetName : string }
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module AssetTag =
-
-    let make<'a> packageName assetName : AssetTag<'a> =
+    static member make<'a> packageName assetName : AssetTag<'a> =
         { PackageName = packageName; AssetName = assetName }
 
-    let convert<'a, 'b> (assetTag : 'a AssetTag) : 'b AssetTag =
-        make<'b> assetTag.PackageName assetTag.AssetName
+    static member convert<'a, 'b> (assetTag : 'a AssetTag) : 'b AssetTag =
+        AssetTag.make<'b> assetTag.PackageName assetTag.AssetName
 
-    let generalize (assetTag : 'a AssetTag) : obj AssetTag =
-        convert<'a, obj> assetTag
+    static member generalize (assetTag : 'a AssetTag) : obj AssetTag =
+        AssetTag.convert<'a, obj> assetTag
 
-    let specialize<'a> (assetTag : obj AssetTag) : 'a AssetTag =
-        convert<obj, 'a> assetTag
+    static member specialize<'a> (assetTag : obj AssetTag) : 'a AssetTag =
+        AssetTag.convert<obj, 'a> assetTag
 
 /// Describes a game asset, such as a texture, sound, or model in detail.
 type [<Struct; StructuralEquality; NoComparison>] 'a Asset =
@@ -50,23 +44,20 @@ type [<Struct; StructuralEquality; NoComparison>] 'a Asset =
       Refinements : Refinement list
       Associations : string Set }
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Asset =
-
-    let make<'a> assetTag filePath refinements associations : Asset<'a> =
+    static member make<'a> assetTag filePath refinements associations : Asset<'a> =
         { AssetTag = assetTag
           FilePath = filePath
           Refinements = refinements
           Associations = associations }
 
-    let convert<'a, 'b> (asset : 'a Asset) : 'b Asset =
-        make<'b> (AssetTag.convert<'a, 'b> asset.AssetTag) asset.FilePath asset.Refinements asset.Associations
+    static member convert<'a, 'b> (asset : 'a Asset) : 'b Asset =
+        Asset.make<'b> (AssetTag.convert<'a, 'b> asset.AssetTag) asset.FilePath asset.Refinements asset.Associations
 
-    let generalize (asset : 'a Asset) : obj Asset =
-        convert<'a, obj> asset
+    static member generalize (asset : 'a Asset) : obj Asset =
+        Asset.convert<'a, obj> asset
 
-    let specialize<'a> (asset : obj Asset) : 'a Asset =
-        convert<obj, 'a> asset
+    static member specialize<'a> (asset : obj Asset) : 'a Asset =
+        Asset.convert<obj, 'a> asset
 
 /// All assets must belong to an asset Package, which is a unit of asset loading.
 ///
@@ -86,7 +77,8 @@ type [<StructuralEquality; NoComparison>] Package =
       AssetNames : string list }
 
 /// A map of asset packages.
-type 'a PackageMap = UMap<string, UMap<string, 'a>>
+type 'a PackageMap =
+    UMap<string, UMap<string, 'a>>
 
 /// Describes assets and how to process and use them.
 type AssetDescriptor =

@@ -3,7 +3,6 @@
 
 namespace Prime
 open System
-open System.Text
 open System.Reflection
 open FParsec
 open Prime

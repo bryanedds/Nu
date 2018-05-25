@@ -6,21 +6,18 @@ type [<CLIMutable; ReferenceEquality>] EventInfo =
       FunctionName : string
       MoreInfo : string }
 
-// TODO: P1: consider replacing this with UList since we really want to add to the back anyway.
-type EventTrace = EventInfo list
-
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module EventInfo =
-
-    let record moduleName functionName =
+    static member record moduleName functionName =
         { ModuleName = moduleName
           FunctionName = functionName
           MoreInfo = String.Empty }
 
-    let record3 moduleName functionName moreInfo =
+    static member record3 moduleName functionName moreInfo =
         { ModuleName = moduleName
           FunctionName = functionName
           MoreInfo = moreInfo }
+
+// TODO: P1: consider replacing this with UList since we really want to add to the back anyway.
+type EventTrace = EventInfo list
 
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module EventTrace =

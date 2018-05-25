@@ -59,20 +59,17 @@ type [<NoEquality; NoComparison>] PropertyTag<'s, 'a, 'w when 's :> Participant>
         let changeEvent = changeEventAddress ->>- this.This.ParticipantAddress
         changeEvent
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module PropertyTag =
-
-    let map mapper (property : PropertyTag<_, _, _>) =
+    static member map mapper (property : PropertyTag<_, _, _>) =
         property.Map mapper
 
-    let map2 mapper unmapper (property : PropertyTag<_, _, _>) =
+    static member map2 mapper unmapper (property : PropertyTag<_, _, _>) =
         property.Map2 mapper unmapper
 
-    let mapOut mapper (property : PropertyTag<_, _, _>) =
+    static member mapOut mapper (property : PropertyTag<_, _, _>) =
         property.MapOut mapper
 
-    let makeReadOnly this name get =
+    static member makeReadOnly this name get =
         { This = this; Name = name; Get = get; SetOpt = None }
 
-    let make this name get set =
+    static member make this name get set =
         { This = this; Name = name; Get = get; SetOpt = Some set }
