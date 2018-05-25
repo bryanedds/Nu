@@ -230,7 +230,7 @@ module Reflection =
         | Some overlayNameOptProperty ->
             match Map.tryFind overlayNameOptProperty.Name propertyDescriptors with
             | Some overlayNameOptSymbol ->
-                let overlayNameOpt = valueize<string option> overlayNameOptSymbol
+                let overlayNameOpt = symbolToValue<string option> overlayNameOptSymbol
                 overlayNameOptProperty.SetValue (target, overlayNameOpt)
                 target
             | None -> target
@@ -250,7 +250,7 @@ module Reflection =
                 targetProperties
         match Map.tryFind facetNamesProperty.Name propertyDescriptors with
         | Some facetNamesSymbol ->
-            let facetNames = valueize<string Set> facetNamesSymbol
+            let facetNames = symbolToValue<string Set> facetNamesSymbol
             facetNamesProperty.SetValue (target, facetNames)
             target
         | None -> target

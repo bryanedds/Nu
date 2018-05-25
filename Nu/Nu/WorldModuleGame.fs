@@ -230,7 +230,7 @@ module WorldModuleGame =
             let scriptOpt =
                 match symbolOpt with
                 | Some symbol ->
-                    try let script = valueize<'a> symbol in Some script
+                    try let script = symbolToValue<'a> symbol in Some script
                     with exn -> Log.debug ("Failed to convert symbol '" + scstring symbol + "' to value due to: " + scstring exn); None
                 | None -> None
             (scriptOpt, world)
