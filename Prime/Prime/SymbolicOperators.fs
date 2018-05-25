@@ -9,13 +9,13 @@ open Prime
 module SymbolicOperators =
 
     /// Convert a value to a symbol.
-    let symbolize<'a> (value : 'a) =
+    let valueToSymbol<'a> (value : 'a) =
         let ty = if isNull (value :> obj) then typeof<'a> else getType value
         let converter = SymbolicConverter (true, None, ty)
         converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
 
     /// Convert a symbol to a value.
-    let valueize<'a> (symbol : Symbol) : 'a =
+    let symbolToValue<'a> (symbol : Symbol) : 'a =
         let converter = SymbolicConverter (false, None, typeof<'a>)
         converter.ConvertFrom symbol :?> 'a
 
