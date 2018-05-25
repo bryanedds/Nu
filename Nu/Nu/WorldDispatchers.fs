@@ -117,10 +117,11 @@ module EffectFacetModule =
                 let effectEnv = entity.GetEffectDefinitions world
                 let effectSystem = EffectSystem.make effectViewType effectHistory effectTime effectEnv
 
-                // evaluate effect with effect system
+                // eval effect and process resulting artifacts
                 let world =
-                    let effectSystem = EffectSystem.eval effect effectSlice effectSystem
-                    let (artifacts, _) = EffectSystem.release effectSystem
+                    
+                    // evaluate effect with effect system
+                    let (artifacts, _) = EffectSystem.eval effect effectSlice effectSystem
 
                     // pass a single render message for efficiency
                     let renderDescriptors = artifacts.RenderArtifacts |> Seq.toArray |> Array.map (function Effects.RenderArtifact descriptor -> descriptor) |> RenderDescriptorsMessage 

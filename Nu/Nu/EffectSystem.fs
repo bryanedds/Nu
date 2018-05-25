@@ -450,30 +450,7 @@ module EffectSystemModule =
                 effectSystem
                 contents
 
-        let eval effect slice effectSystem =
-            let alive =
-                match effect.LifetimeOpt with
-                | Some lifetime -> lifetime <= 0L || effectSystem.EffectTime <= lifetime
-                | None -> true
-            if alive then
-                let effectSystem = { effectSystem with EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions }
-                try evalContent effect.Content slice effectSystem
-                with exn ->
-                    let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Effect>).PrettyPrinter
-                    let effectStr = PrettyPrinter.prettyPrint (scstring effect) prettyPrinter
-                    Log.debug ("Error in effect:\n" + effectStr + "\r\ndue to: " + scstring exn)
-                    effectSystem
-            else effectSystem
-
-        let combineEffects effects =
-            let effectCombined =
-                { EffectName = String.concat "+" (List.map (fun effect -> effect.EffectName) effects)
-                  LifetimeOpt = None
-                  Definitions = List.fold (fun definitions effect -> Map.concat definitions effect.Definitions) Map.empty effects
-                  Content = Composite (Shift 0.0f, effects |> List.map (fun effect -> effect.Content) |> Array.ofList) }
-            effectCombined
-
-        let release effectSystem =
+        let private release effectSystem =
             let artifacts = effectSystem.Artifacts
             let effectSystem =
                 { effectSystem with
@@ -482,6 +459,30 @@ module EffectSystemModule =
                           SoundArtifacts = List<SoundArtifact> ()
                           TagArtifacts = List<TagArtifact> () }}
             (artifacts, effectSystem)
+
+        let eval effect slice effectSystem =
+            let alive =
+                match effect.LifetimeOpt with
+                | Some lifetime -> lifetime <= 0L || effectSystem.EffectTime <= lifetime
+                | None -> true
+            if alive then
+                let effectSystem = { effectSystem with EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions }
+                try let effectSystem = evalContent effect.Content slice effectSystem
+                    release effectSystem
+                with exn ->
+                    let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Effect>).PrettyPrinter
+                    let effectStr = PrettyPrinter.prettyPrint (scstring effect) prettyPrinter
+                    Log.debug ("Error in effect:\n" + effectStr + "\r\ndue to: " + scstring exn)
+                    release effectSystem
+            else release effectSystem
+
+        let combineEffects effects =
+            let effectCombined =
+                { EffectName = String.concat "+" (List.map (fun effect -> effect.EffectName) effects)
+                  LifetimeOpt = None
+                  Definitions = List.fold (fun definitions effect -> Map.concat definitions effect.Definitions) Map.empty effects
+                  Content = Composite (Shift 0.0f, effects |> List.map (fun effect -> effect.Content) |> Array.ofList) }
+            effectCombined
 
         let make viewType history effectTime globalEnv = 
             let artifacts =
