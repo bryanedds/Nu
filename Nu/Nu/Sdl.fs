@@ -14,21 +14,18 @@ type SdlWindowConfig =
       WindowY : int
       WindowFlags : SDL.SDL_WindowFlags }
 
+    /// A default SdlWindowConfig.
+    static member defaultConfig =
+        { WindowTitle = "Nu Game"
+          WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
+          WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
+          WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
+
 /// Describes the view that SDL will use to render.
 type SdlViewConfig =
     | NewWindow of SdlWindowConfig
     | ExistingWindow of nativeint
     //| FullScreen TODO: implement
-
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module SdlWindowConfig =
-
-    /// A default SdlWindowConfig.
-    let defaultConfig =
-        { WindowTitle = "Nu Game"
-          WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
-          WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
-          WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
 
 /// Describes the general configuration of SDL.
 type SdlConfig =
@@ -38,11 +35,8 @@ type SdlConfig =
       RendererFlags : SDL.SDL_RendererFlags
       AudioChunkSize : int }
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module SdlConfig =
-
     /// A default SdlConfig.
-    let defaultConfig =
+    static member defaultConfig =
         { ViewConfig = NewWindow SdlWindowConfig.defaultConfig
           ViewW = Constants.Render.ResolutionX
           ViewH = Constants.Render.ResolutionY
