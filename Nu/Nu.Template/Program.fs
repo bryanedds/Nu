@@ -25,7 +25,7 @@ type $safeprojectname$Plugin () =
 
     // make our game-specific game dispatcher...
     override this.MakeGameDispatchers () =
-        [NuGame1Dispatcher () :> GameDispatcher]
+        [$safeprojectname$Dispatcher () :> GameDispatcher]
 
     // specify the above game dispatcher to use
     override this.GetStandAloneGameDispatcherName () =
