@@ -59,7 +59,7 @@ module WorldPhysicsModule =
     
         interface World Subsystem with
             member this.SubsystemType = UpdateType
-            member this.SubsystemOrder = Subsystem.subsystemOrder this
+            member this.SubsystemOrder = this.SubsystemOrder
             member this.ClearMessages () = { this with PhysicsEngine = this.PhysicsEngine.ClearMessages () } :> World Subsystem
             member this.EnqueueMessage message = { this with PhysicsEngine = this.PhysicsEngine.EnqueueMessage (message :?> PhysicsMessage) } :> World Subsystem
                 
