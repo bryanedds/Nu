@@ -17,7 +17,7 @@ module WorldRenderModule =
     
         interface World Subsystem with
             member this.SubsystemType = RenderType
-            member this.SubsystemOrder = Subsystem.subsystemOrder this
+            member this.SubsystemOrder = this.SubsystemOrder
             member this.ClearMessages () = { this with Renderer = Renderer.clearMessages this.Renderer } :> World Subsystem
             member this.EnqueueMessage message = { this with Renderer = Renderer.enqueueMessage (message :?> RenderMessage) this.Renderer } :> World Subsystem
             member this.ProcessMessages world =
