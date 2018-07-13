@@ -194,7 +194,7 @@ module WorldModule3 =
                 Subsystems.make subsystemMap
 
             // make the world's scripting environment
-            let scriptingEnv = Scripting.EnvModule.Env.make ()
+            let scriptingEnv = Scripting.Env.Env.make ()
 
             // make the world's ambient state
             let ambientState =
@@ -295,7 +295,7 @@ module WorldModule3 =
                 | Right overlayer ->
 
                     // make the world's scripting environment
-                    let scriptingEnv = Scripting.EnvModule.Env.make ()
+                    let scriptingEnv = Scripting.Env.Env.make ()
             
                     // make the world's ambient state
                     let ambientState =
