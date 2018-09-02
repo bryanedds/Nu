@@ -29,17 +29,8 @@ type [<Struct; StructuralEquality; NoComparison>] CollisionData =
       Speed : single
       Collidee : Entity }
 
-/// Describes how a game changed.
-type GameChangeData = ParticipantChangeData<Game, World>
-
-/// Describes how a screen changed.
-type ScreenChangeData = ParticipantChangeData<Screen, World>
-
-/// Describes how a layer changed.
-type LayerChangeData = ParticipantChangeData<Layer, World>
-
-/// Describes how an entity changed.
-type EntityChangeData = ParticipantChangeData<Entity, World>
+/// The data for a change in a simulant.
+type ChangeData = World ParticipantChangeData
 
 module Events =
 
@@ -84,13 +75,16 @@ module Events =
     let OutgoingStart = stoa<unit> "Outgoing/Start/Event"
     let OutgoingFinish = stoa<unit> "Outgoing/Finish/Event"
     let AssetsReload = stoa<unit> "Assets/Reload/Event"
-    let GameChange propertyName = stoa<GameChangeData> ("Game/Change/" + propertyName + "/Event")
+    let GameChange propertyName = stoa<ChangeData> ("Game/Change/" + propertyName + "/Event")
     let ScreenRegister = stoa<unit> "Screen/Register/Event"
     let ScreenUnregistering = stoa<unit> "Screen/Unregistering/Event"
-    let ScreenChange propertyName = stoa<ScreenChangeData> ("Screen/Change/" + propertyName + "/Event")
+    let ScreenChange propertyName = stoa<ChangeData> ("Screen/Change/" + propertyName + "/Event")
     let LayerRegister = stoa<unit> "Layer/Register/Event"
     let LayerUnregistering = stoa<unit> "Layer/Unregistering/Event"
-    let LayerChange propertyName = stoa<LayerChangeData> ("Layer/Change/" + propertyName + "/Event")
+    let LayerChange propertyName = stoa<ChangeData> ("Layer/Change/" + propertyName + "/Event")
     let EntityRegister = stoa<unit> "Entity/Register/Event"
     let EntityUnregistering = stoa<unit> "Entity/Unregistering/Event"
-    let EntityChange propertyName = stoa<EntityChangeData> ("Entity/Change/" + propertyName + "/Event")
+    let EntityChange propertyName = stoa<ChangeData> ("Entity/Change/" + propertyName + "/Event")
+    let SimulantRegister = Wildcard -<- stoa<unit> "Register/Event"
+    let SimulantUnregistering = Wildcard -<- stoa<unit> "Unregistering/Event"
+    let SimulantChange propertyName = Wildcard -<- stoa<ChangeData> ("Change/" + propertyName + "/Event")

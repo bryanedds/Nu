@@ -88,9 +88,11 @@ module WorldModuleLayer =
             World.layerStateRemover layer world
 
         static member private publishLayerChange (propertyName : string) (layer : Layer) oldWorld world =
-            let changeEventAddress = ltoa ["Layer"; "Change"; propertyName; "Event"] ->>- layer.LayerAddress
-            let eventTrace = EventTrace.record "World" "publishLayerChange" EventTrace.empty
-            World.publishPlus World.sortSubscriptionsByHierarchy { Participant = layer; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace layer false world
+            let world =
+                let changeEventAddress = ltoa ["Layer"; "Change"; propertyName; "Event"] ->>- layer.LayerAddress
+                let eventTrace = EventTrace.record "World" "publishLayerChange" EventTrace.empty
+                World.publishPlus World.sortSubscriptionsByHierarchy { PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace layer false world
+            world
 
         static member private getLayerStateOpt layer world =
             World.layerStateFinder layer world
@@ -216,8 +218,8 @@ module WorldModuleLayer =
             | None -> world
 
         static member internal registerLayer layer world =
-            let world = World.monitor World.layerOnRegisterChanged (ltoa<ParticipantChangeData<Layer, World>> ["Layer"; "Change"; (Property? OnRegister); "Event"] ->- layer) layer world
-            let world = World.monitor World.layerScriptOptChanged (ltoa<ParticipantChangeData<Layer, World>> ["Layer"; "Change"; (Property? ScriptOpt); "Event"] ->- layer) layer world
+            let world = World.monitor World.layerOnRegisterChanged (ltoa<World ParticipantChangeData> ["Layer"; "Change"; (Property? OnRegister); "Event"] ->- layer) layer world
+            let world = World.monitor World.layerScriptOptChanged (ltoa<World ParticipantChangeData> ["Layer"; "Change"; (Property? ScriptOpt); "Event"] ->- layer) layer world
             let world =
                 World.withEventContext (fun world ->
                     let dispatcher = World.getLayerDispatcherNp layer world
@@ -234,7 +236,7 @@ module WorldModuleLayer =
                 World.withEventContext (fun world ->
                     let world = eval (World.getLayerOnRegister layer world) (World.getLayerScriptFrameNp layer world) layer world |> snd
                     let dispatcher = World.getLayerDispatcherNp layer world
-                    let eventTrace = EventTrace.record "World" "unregisterLayer" EventTrace.empty
+                    let eventTrace = EventTrace.record "World" "unregisteringLayer" EventTrace.empty
                     let world = World.publish () (ltoa<unit> ["Layer"; "Unregistering"; "Event"] ->- layer) eventTrace layer world
                     dispatcher.Unregister (layer, world))
                     layer
