@@ -179,7 +179,7 @@ module WorldScripting =
                 | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)
             | Left error -> error
 
-        static member private evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
+        static member internal evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
             EventWorld.subscribe (fun evt world ->
                 match World.tryGetSimulantScriptFrame subscriber world with
                 | Some scriptFrame ->
@@ -202,7 +202,7 @@ module WorldScripting =
                 (subscriber :> Participant)
                 world
 
-        static member private evalMonitor fnName evaledArg evaledArg2 originOpt world =
+        static member internal evalMonitor fnName evaledArg evaledArg2 originOpt world =
             match evaledArg with
             | Binding _
             | Fun _ ->
