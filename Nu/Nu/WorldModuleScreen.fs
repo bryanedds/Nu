@@ -77,9 +77,11 @@ module WorldModuleScreen =
             World.screenStateRemover screen world
 
         static member private publishScreenChange (propertyName : string) (screen : Screen) oldWorld world =
-            let changeEventAddress = ltoa ["Screen"; "Change"; propertyName; "Event"] ->>- screen.ScreenAddress
-            let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
-            World.publishPlus World.sortSubscriptionsByHierarchy { Participant = screen; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen false world
+            let world =
+                let changeEventAddress = ltoa ["Screen"; "Change"; propertyName; "Event"] ->>- screen.ScreenAddress
+                let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
+                World.publishPlus World.sortSubscriptionsByHierarchy { PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen false world
+            world
 
         static member private getScreenStateOpt screen world =
              World.screenStateFinder screen world
@@ -207,8 +209,8 @@ module WorldModuleScreen =
             | None -> world
 
         static member internal registerScreen screen world =
-            let world = World.monitor World.screenOnRegisterChanged (ltoa<ParticipantChangeData<Screen, World>> ["Screen"; "Change"; (Property? OnRegister); "Event"] ->- screen) screen world
-            let world = World.monitor World.screenScriptOptChanged (ltoa<ParticipantChangeData<Screen, World>> ["Screen"; "Change"; (Property? ScriptOpt); "Event"] ->- screen) screen world
+            let world = World.monitor World.screenOnRegisterChanged (ltoa<World ParticipantChangeData> ["Screen"; "Change"; (Property? OnRegister); "Event"] ->- screen) screen world
+            let world = World.monitor World.screenScriptOptChanged (ltoa<World ParticipantChangeData> ["Screen"; "Change"; (Property? ScriptOpt); "Event"] ->- screen) screen world
             let world =
                 World.withEventContext (fun world ->
                     let dispatcher = World.getScreenDispatcherNp screen world
@@ -225,7 +227,7 @@ module WorldModuleScreen =
                 World.withEventContext (fun world ->
                     let world = eval (World.getScreenOnRegister screen world) (World.getScreenScriptFrameNp screen world) screen world |> snd
                     let dispatcher = World.getScreenDispatcherNp screen world
-                    let eventTrace = EventTrace.record "World" "unregisterScreen" EventTrace.empty
+                    let eventTrace = EventTrace.record "World" "unregisteringScreen" EventTrace.empty
                     let world = World.publish () (ltoa<unit> ["Screen"; "Unregistering"; "Event"] ->- screen) eventTrace screen world
                     dispatcher.Unregister (screen, world))
                     screen

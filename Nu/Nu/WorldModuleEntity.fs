@@ -124,16 +124,18 @@ module WorldModuleEntity =
         static member private removeEntityState (entity : Entity) world =
             World.entityStateRemover entity world
 
-        static member private shouldPublishChange (propertyName : string) entityState  =
+        static member private shouldPublishEntityChange (propertyName : string) entityState  =
             if propertyName.EndsWith "Np" then false
             else entityState.PublishChanges || propertyName.EndsWith "Ap"
 
         static member private publishEntityChange propertyName (entity : Entity) (oldWorld : World) world =
-            let changeEventAddress = ltoa ["Entity"; "Change"; propertyName; "Event"] ->>- entity.EntityAddress
-            let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
-            let allowWildcard = propertyName = "ParentNodeOpt"
-            let changeData = { Participant = entity; PropertyName = propertyName; OldWorld = oldWorld }
-            World.publishPlus World.sortSubscriptionsByHierarchy changeData changeEventAddress eventTrace entity allowWildcard world
+            let world =
+                let changeEventAddress = ltoa ["Entity"; "Change"; propertyName; "Event"] ->>- entity.EntityAddress
+                let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
+                let allowWildcard = propertyName = "ParentNodeOpt"
+                let changeData = { PropertyName = propertyName; OldWorld = oldWorld }
+                World.publishPlus World.sortSubscriptionsByHierarchy changeData changeEventAddress eventTrace entity allowWildcard world
+            world
 
         static member private getEntityStateOpt entity world =
             let entityStateOpt = World.entityStateFinder entity world
@@ -170,7 +172,7 @@ module WorldModuleEntity =
             let oldWorld = world
             let entityState = World.getEntityState entity world
             let (entityState, world) = World.updateEntityStateInternal updater mutability entityState entity world
-            if World.shouldPublishChange propertyName entityState
+            if World.shouldPublishEntityChange propertyName entityState
             then World.publishEntityChange propertyName entity oldWorld world
             else world
 
@@ -182,7 +184,7 @@ module WorldModuleEntity =
             let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
             let (entityState, world) = World.updateEntityStateInternal updater mutability oldEntityState entity world
             let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
-            if World.shouldPublishChange propertyName entityState
+            if World.shouldPublishEntityChange propertyName entityState
             then World.publishEntityChange propertyName entity oldWorld world
             else world
 
@@ -573,7 +575,8 @@ module WorldModuleEntity =
                     let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
                     let world = World.updateEntityPublishFlags entity world
                     let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
-                    World.publish () (ltoa<unit> ["Entity"; "Register"; "Event"] ->- entity) eventTrace entity world)
+                    let world = World.publish () (ltoa<unit> ["Entity"; "Register"; "Event"] ->- entity) eventTrace entity world
+                    world)
                     entity
                     world
             World.choose world
@@ -581,7 +584,7 @@ module WorldModuleEntity =
         static member internal unregisterEntity entity world =
             let world =
                 World.withEventContext (fun world ->
-                    let eventTrace = EventTrace.record "World" "removeEntity" EventTrace.empty
+                    let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
                     let world = World.publish () (ltoa<unit> ["Entity"; "Unregistering"; "Event"] ->- entity) eventTrace entity world
                     let dispatcher = World.getEntityDispatcherNp entity world : EntityDispatcher
                     let facets = World.getEntityFacetsNp entity world

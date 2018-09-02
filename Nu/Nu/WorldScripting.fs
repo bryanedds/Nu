@@ -12,6 +12,38 @@ open Nu
 #nowarn "22"
 #nowarn "40"
 
+/// The Stream value that can be plugged into the scripting language.
+type [<Struct; CustomEquality; CustomComparison>] StreamPluggable =
+    { Stream : Stream<ChangeData, Game, World> }
+
+    static member equals _ _ = false
+
+    static member compare _ _ = -1
+
+    override this.GetHashCode () = 0
+
+    override this.Equals that =
+        match that with
+        | :? StreamPluggable as that -> StreamPluggable.equals this that
+        | _ -> failwithumf ()
+
+    interface StreamPluggable IComparable with
+        member this.CompareTo that =
+            StreamPluggable.compare this that
+
+    interface Scripting.Pluggable with
+
+        member this.CompareTo that =
+            match that with
+            | :? StreamPluggable as that -> (this :> StreamPluggable IComparable).CompareTo that
+            | _ -> failwithumf ()
+
+        member this.TypeName =
+            "Stream"
+
+        member this.ToSymbol () =
+            Symbols ([], None)
+
 [<AutoOpen>]
 module WorldScripting =
 
@@ -50,10 +82,11 @@ module WorldScripting =
 
         static member internal evalGet propertyName relationExprOpt originOpt world =
             let context = World.getScriptContext world
-            let simulantAndEnvEir =
+            let simulantAndEnvOpt =
                 match relationExprOpt with
                 | Some relationExpr ->
                     match World.evalInternal relationExpr world with
+                    | struct (Violation _, _) as error -> Left error
                     | struct (String str, world)
                     | struct (Keyword str, world) ->
                         let relation = Relation.makeFromString str
@@ -61,10 +94,9 @@ module WorldScripting =
                         match World.tryDeriveSimulant address with
                         | Some simulant -> Right struct (simulant, world)
                         | None -> Left struct (Violation (["InvalidPropertyRelation"; "Get"], "Relation must have 0 to 3 names.", originOpt), world)
-                    | struct (Violation _, _) as error -> Left error
                     | struct (_, world) -> Left struct (Violation (["InvalidPropertyRelation"; "Get"], "Relation must be either a String or Keyword.", originOpt), world)
                 | None -> Right struct (context, world)
-            match simulantAndEnvEir with
+            match simulantAndEnvOpt with
             | Right struct (simulant, world) ->
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some property ->
@@ -80,9 +112,9 @@ module WorldScripting =
                 | None -> struct (Violation (["InvalidProperty"; "Get"], "Simulant or property value could not be found.", originOpt), world)
             | Left error -> error
 
-        static member internal evalSet propertyName relationExprOpt propertyValueExpr originOpt world =
+        static member internal evalGetAsStream propertyName relationExprOpt originOpt world =
             let context = World.getScriptContext world
-            let simulantAndEnvEir =
+            let simulantAndEnvOpt =
                 match relationExprOpt with
                 | Some relationExpr ->
                     match World.evalInternal relationExpr world with
@@ -92,11 +124,32 @@ module WorldScripting =
                         let address = Relation.resolve context.SimulantAddress relation
                         match World.tryDeriveSimulant address with
                         | Some simulant -> Right struct (simulant, world)
-                        | None -> Left struct (Violation (["InvalidPropertyRelation"; "Set"], "Relation must have 0 to 3 parts.", originOpt), world)
+                        | None -> Left struct (Violation (["InvalidPropertyRelation"; "GetAsStream"], "Relation must have 0 to 3 names.", originOpt), world)
+                    | struct (_, world) -> Left struct (Violation (["InvalidPropertyRelation"; "GetAsStream"], "Relation must be either a String or Keyword.", originOpt), world)
+                | None -> Right struct (context, world)
+            match simulantAndEnvOpt with
+            | Right struct (simulant, world) ->
+                let stream = Stream.stream (simulant.SimulantAddress -<<- Events.SimulantChange propertyName)
+                struct (Pluggable { Stream = stream }, world)
+            | Left error -> error
+
+        static member internal evalSet propertyName relationExprOpt propertyValueExpr originOpt world =
+            let context = World.getScriptContext world
+            let simulantAndEnvOpt =
+                match relationExprOpt with
+                | Some relationExpr ->
+                    match World.evalInternal relationExpr world with
                     | struct (Violation _, _) as error -> Left error
+                    | struct (String str, world)
+                    | struct (Keyword str, world) ->
+                        let relation = Relation.makeFromString str
+                        let address = Relation.resolve context.SimulantAddress relation
+                        match World.tryDeriveSimulant address with
+                        | Some simulant -> Right struct (simulant, world)
+                        | None -> Left struct (Violation (["InvalidPropertyRelation"; "Set"], "Relation must have 0 to 3 parts.", originOpt), world)
                     | struct (_, world) -> Left struct (Violation (["InvalidPropertyRelation"; "Set"], "Relation must be either a String or Keyword.", originOpt), world)
                 | None -> Right struct (context, world)
-            match simulantAndEnvEir with
+            match simulantAndEnvOpt with
             | Right struct (simulant, world) ->
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some property ->

@@ -452,7 +452,7 @@ module NodeFacetModule =
 
         static let handleLocalPropertyChange evt world =
             let entity = evt.Subscriber : Entity
-            let data = evt.Data : EntityChangeData
+            let data = evt.Data : ChangeData
             match entity.GetParentNodeOpt world with
             | Some relation ->
                 let node = entity.Resolve relation
@@ -464,7 +464,7 @@ module NodeFacetModule =
         static let handleNodePropertyChange evt world =
             let entity = evt.Subscriber : Entity
             let node = evt.Publisher :?> Entity
-            let data = evt.Data : EntityChangeData
+            let data = evt.Data : ChangeData
             (Cascade, updatePropertyFromNode data.PropertyName node entity world)
 
         static let subscribeToNodePropertyChanges (entity : Entity) world =

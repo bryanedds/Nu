@@ -21,9 +21,11 @@ module WorldModuleGame =
 
         static member private publishGameChange (propertyName : string) oldWorld world =
             let game = Game Address.empty
-            let changeEventAddress = ltoa ["Game"; "Change"; propertyName; "Event"] ->>- game.GameAddress
-            let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
-            World.publishPlus World.sortSubscriptionsByHierarchy { Participant = game; PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace game false world
+            let world =
+                let changeEventAddress = ltoa ["Game"; "Change"; propertyName; "Event"] ->>- game.GameAddress
+                let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
+                World.publishPlus World.sortSubscriptionsByHierarchy { PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace game false world
+            world
 
         static member internal getGameState world =
             world.GameState
