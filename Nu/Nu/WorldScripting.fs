@@ -13,7 +13,7 @@ open Nu
 
 /// The Stream value that can be plugged into the scripting language.
 type [<Struct; CustomEquality; CustomComparison>] StreamPluggable =
-    { Stream : Stream<ChangeData, Game, World> }
+    { Stream : Stream<obj, Game, World> }
 
     static member equals _ _ = false
 
@@ -41,7 +41,7 @@ type [<Struct; CustomEquality; CustomComparison>] StreamPluggable =
             "Stream"
 
         member this.FSharpType =
-            typeof<Stream<ChangeData, Game, World>>
+            typeof<Stream<obj, Game, World>>
 
         member this.ToSymbol () =
             Symbols ([], None)
@@ -121,7 +121,7 @@ module WorldScripting =
             let context = World.getScriptContext world
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
-                let stream = Stream.stream (simulant.SimulantAddress -<<- Events.SimulantChange propertyName)
+                let stream = Stream.stream (atooa simulant.SimulantAddress ->>- Events.SimulantChange propertyName)
                 struct (Pluggable { Stream = stream }, world)
             | Left error -> error
 
@@ -162,11 +162,16 @@ module WorldScripting =
                     match stream with
                     | :? StreamPluggable as stream ->
                         let world =
-                            Stream.monitor (fun (event : Event<ChangeData, _>) world ->
-                                match World.tryGetSimulantProperty event.Data.PropertyName (event.Publisher :?> Simulant) world with
-                                | Some prop -> World.trySetSimulantProperty propertyName prop simulant world |> snd
-                                | None -> world)
-                                simulant
+                            Stream.monitor (fun evt world ->
+                                match (evt.Data : obj) with
+                                | :? ChangeData as changeData ->
+                                    match World.tryGetSimulantProperty changeData.PropertyName (evt.Publisher :?> Simulant) world with
+                                    | Some prop -> World.trySetSimulantProperty propertyName prop simulant world |> snd
+                                    | None -> world
+                                | _ ->
+                                    let prop = { PropertyType = evt.DataType; PropertyValue = evt.Data }
+                                    World.trySetSimulantProperty propertyName prop simulant world |> snd)
+                                (simulant :> Participant)
                                 stream.Stream
                                 world
                         struct (Unit, world)
