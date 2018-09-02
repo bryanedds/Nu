@@ -1144,7 +1144,7 @@ module Gaia =
                         let selectedLayer = (World.getUserValue world).SelectedLayer
                         let localFrame = selectedLayer.GetScriptFrameNp world
                         let (evaled, world) = World.evalWithLogging expr localFrame selectedLayer world
-                        match World.tryGetType evaled with
+                        match Scripting.Expr.toFSharpTypeOpt evaled with
                         | Some dt ->
                             let dvOpt =
                                 if defaulting

@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open FSharp.Reflection
 open OpenTK
 open Prime
 open Prime.Scripting
@@ -40,6 +39,9 @@ type [<Struct; CustomEquality; CustomComparison>] StreamPluggable =
 
         member this.TypeName =
             "Stream"
+
+        member this.FSharpType =
+            typeof<Stream<ChangeData, Game, World>>
 
         member this.ToSymbol () =
             Symbols ([], None)
@@ -80,23 +82,26 @@ module WorldScripting =
             | Violation _ as error -> struct (error, world)
             | _ -> struct (Violation (["InvalidArgumentType"; "SimulantExists"], "Function '" + fnName + "' requires 1 Relation argument.", originOpt), world)
 
-        static member internal evalGet propertyName relationExprOpt originOpt world =
+        static member internal tryResolveRelation fnName expr originOpt (context : Simulant) world =
+            match World.evalInternal expr world with
+            | struct (Violation _, _) as error -> Left error
+            | struct (String str, world)
+            | struct (Keyword str, world) ->
+                let relation = Relation.makeFromString str
+                let address = Relation.resolve context.SimulantAddress relation
+                match World.tryDeriveSimulant address with
+                | Some simulant -> Right struct (simulant, world)
+                | None -> Left struct (Violation (["InvalidPropertyRelation"; String.capitalize fnName], "Relation must have 0 to 3 names.", originOpt), world)
+            | struct (_, world) -> Left struct (Violation (["InvalidPropertyRelation"; String.capitalize fnName], "Relation must be either a String or Keyword.", originOpt), world)
+
+        static member internal tryResolveRelationOpt fnName relationOpt originOpt context world =
+            match relationOpt with
+            | Some relationExpr -> World.tryResolveRelation fnName relationExpr originOpt context world
+            | None -> Right struct (context, world)
+
+        static member internal evalGet fnName propertyName relationOpt originOpt world =
             let context = World.getScriptContext world
-            let simulantAndEnvOpt =
-                match relationExprOpt with
-                | Some relationExpr ->
-                    match World.evalInternal relationExpr world with
-                    | struct (Violation _, _) as error -> Left error
-                    | struct (String str, world)
-                    | struct (Keyword str, world) ->
-                        let relation = Relation.makeFromString str
-                        let address = Relation.resolve context.SimulantAddress relation
-                        match World.tryDeriveSimulant address with
-                        | Some simulant -> Right struct (simulant, world)
-                        | None -> Left struct (Violation (["InvalidPropertyRelation"; "Get"], "Relation must have 0 to 3 names.", originOpt), world)
-                    | struct (_, world) -> Left struct (Violation (["InvalidPropertyRelation"; "Get"], "Relation must be either a String or Keyword.", originOpt), world)
-                | None -> Right struct (context, world)
-            match simulantAndEnvOpt with
+            match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some property ->
@@ -104,52 +109,25 @@ module WorldScripting =
                     | :? DesignerProperty as dp ->
                         match ScriptingWorld.tryImport dp.DesignerType dp.DesignerValue world with
                         | Some propertyValue -> struct (propertyValue, world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; "Get"], "Property value could not be imported into scripting environment.", originOpt), world)
+                        | None -> struct (Violation (["InvalidPropertyValue"; fnName], "Property value could not be imported into scripting environment.", originOpt), world)
                     | _ ->
                         match ScriptingWorld.tryImport property.PropertyType property.PropertyValue world with
                         | Some propertyValue -> struct (propertyValue, world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; "Get"], "Property value could not be imported into scripting environment.", originOpt), world)
-                | None -> struct (Violation (["InvalidProperty"; "Get"], "Simulant or property value could not be found.", originOpt), world)
+                        | None -> struct (Violation (["InvalidPropertyValue"; fnName], "Property value could not be imported into scripting environment.", originOpt), world)
+                | None -> struct (Violation (["InvalidProperty"; fnName], "Simulant or property value could not be found.", originOpt), world)
             | Left error -> error
 
-        static member internal evalGetAsStream propertyName relationExprOpt originOpt world =
+        static member internal evalGetAsStream fnName propertyName relationOpt originOpt world =
             let context = World.getScriptContext world
-            let simulantAndEnvOpt =
-                match relationExprOpt with
-                | Some relationExpr ->
-                    match World.evalInternal relationExpr world with
-                    | struct (String str, world)
-                    | struct (Keyword str, world) ->
-                        let relation = Relation.makeFromString str
-                        let address = Relation.resolve context.SimulantAddress relation
-                        match World.tryDeriveSimulant address with
-                        | Some simulant -> Right struct (simulant, world)
-                        | None -> Left struct (Violation (["InvalidPropertyRelation"; "GetAsStream"], "Relation must have 0 to 3 names.", originOpt), world)
-                    | struct (_, world) -> Left struct (Violation (["InvalidPropertyRelation"; "GetAsStream"], "Relation must be either a String or Keyword.", originOpt), world)
-                | None -> Right struct (context, world)
-            match simulantAndEnvOpt with
+            match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
                 let stream = Stream.stream (simulant.SimulantAddress -<<- Events.SimulantChange propertyName)
                 struct (Pluggable { Stream = stream }, world)
             | Left error -> error
 
-        static member internal evalSet propertyName relationExprOpt propertyValueExpr originOpt world =
+        static member internal evalSet fnName propertyName relationOpt propertyValueExpr originOpt world =
             let context = World.getScriptContext world
-            let simulantAndEnvOpt =
-                match relationExprOpt with
-                | Some relationExpr ->
-                    match World.evalInternal relationExpr world with
-                    | struct (Violation _, _) as error -> Left error
-                    | struct (String str, world)
-                    | struct (Keyword str, world) ->
-                        let relation = Relation.makeFromString str
-                        let address = Relation.resolve context.SimulantAddress relation
-                        match World.tryDeriveSimulant address with
-                        | Some simulant -> Right struct (simulant, world)
-                        | None -> Left struct (Violation (["InvalidPropertyRelation"; "Set"], "Relation must have 0 to 3 parts.", originOpt), world)
-                    | struct (_, world) -> Left struct (Violation (["InvalidPropertyRelation"; "Set"], "Relation must be either a String or Keyword.", originOpt), world)
-                | None -> Right struct (context, world)
-            match simulantAndEnvOpt with
+            match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some property ->
@@ -162,17 +140,38 @@ module WorldScripting =
                             let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
                             match World.trySetSimulantProperty propertyName property simulant world with
                             | (true, world) -> struct (Unit, world)
-                            | (false, world) -> struct (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; "Set"], "Property value could not be exported into Simulant property.", originOpt), world)
+                            | (false, world) -> struct (Violation (["InvalidProperty"; fnName], "Property value could not be set.", originOpt), world)
+                        | None -> struct (Violation (["InvalidPropertyValue"; fnName], "Property value could not be exported into Simulant property.", originOpt), world)
                     | _ ->
                         match ScriptingWorld.tryExport property.PropertyType propertyValue world with
                         | Some propertyValue ->
                             let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
                             match World.trySetSimulantProperty propertyName property simulant world with
                             | (true, world) -> struct (Unit, world)
-                            | (false, world) -> struct (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; "Set"], "Property value could not be exported into Simulant property.", originOpt), world)
-                | None -> struct (Violation (["InvalidProperty"; "Set"], "Property value could not be set.", originOpt), world)
+                            | (false, world) -> struct (Violation (["InvalidProperty"; fnName], "Property value could not be set.", originOpt), world)
+                        | None -> struct (Violation (["InvalidPropertyValue"; fnName], "Property value could not be exported into Simulant property.", originOpt), world)
+                | None -> struct (Violation (["InvalidProperty"; fnName], "Property value could not be set.", originOpt), world)
+            | Left error -> error
+
+        static member internal evalSetAsStream fnName propertyName relationOpt stream originOpt world =
+            let context = World.getScriptContext world
+            match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
+            | Right struct (simulant, world) ->
+                match stream with
+                | Pluggable stream ->
+                    match stream with
+                    | :? StreamPluggable as stream ->
+                        let world =
+                            Stream.monitor (fun (event : Event<ChangeData, _>) world ->
+                                match World.tryGetSimulantProperty event.Data.PropertyName (event.Publisher :?> Simulant) world with
+                                | Some prop -> World.trySetSimulantProperty propertyName prop simulant world |> snd
+                                | None -> world)
+                                simulant
+                                stream.Stream
+                                world
+                        struct (Unit, world)
+                    | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)
+                | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)
             | Left error -> error
 
         static member private evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
@@ -211,110 +210,6 @@ module WorldScripting =
                 | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Relation for its 2nd argument.", originOpt), world)
             | Violation _ as error -> struct (error, world)
             | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Function for its 1st argument.", originOpt), world)
-
-        /// Attempt to get a static type that matches the given expression.
-        /// TODO: P1: move the major portion of this to Prime.Scripting.
-        static member tryGetType expr =
-            match expr with
-            | Scripting.Violation _ -> None
-            | Scripting.Unit -> Some typeof<unit>
-            | Scripting.Bool _ -> Some typeof<bool>
-            | Scripting.Int _ -> Some typeof<int>
-            | Scripting.Int64 _ -> Some typeof<int64>
-            | Scripting.Single _ -> Some typeof<single>
-            | Scripting.Double _ -> Some typeof<double>
-            | Scripting.String _ -> Some typeof<string>
-            | Scripting.Keyword keyword
-            | Scripting.Union (keyword, _) ->
-                let typeOpt =
-                    // TODO: try caching the union types to speed this up
-                    AppDomain.CurrentDomain.GetAssemblies () |>
-                    Array.map (fun asm -> Array.filter FSharpType.IsUnion (asm.GetTypes ())) |>
-                    Array.concat |>
-                    Array.filter (fun ty -> ty.Name = keyword) |>
-                    Array.filter (fun ty -> ty.GenericTypeArguments |> Array.notExists (fun arg -> arg.IsGenericParameter)) |> // constrained generics not currently supported...
-                    Array.map (fun ty ->
-                        if ty.IsGenericType
-                        then ty.MakeGenericType (Array.create ty.GenericTypeArguments.Length typeof<obj>)
-                        else ty) |>
-                    Array.tryHead // just take the first found type for now...
-                typeOpt
-            | Scripting.Record (keyword, _, _) ->
-                let typeOpt =
-                    // TODO: try caching the record types to speed this up
-                    AppDomain.CurrentDomain.GetAssemblies () |>
-                    Array.map (fun asm -> Array.filter FSharpType.IsRecord (asm.GetTypes ())) |>
-                    Array.concat |>
-                    Array.filter (fun ty -> ty.Name = keyword) |>
-                    Array.filter (fun ty -> ty.GenericTypeArguments |> Array.notExists (fun arg -> arg.IsGenericParameter)) |> // constrained generics not currently supported...
-                    Array.map (fun ty ->
-                        if ty.IsGenericType
-                        then ty.MakeGenericType (Array.create ty.GenericTypeArguments.Length typeof<obj>)
-                        else ty) |>
-                    Array.tryHead // just take the first found type for now...
-                typeOpt
-            | Scripting.Pluggable value ->
-                // TODO: P1: use a virtual dispatching?
-                match value with
-                | :? Vector2Pluggable -> Some typeof<Vector2>
-                | :? Vector4Pluggable -> Some typeof<Vector4>
-                | :? Vector2iPluggable -> Some typeof<Vector2i>
-                | _ -> None
-            | Scripting.Tuple value ->
-                let typeOpts = Array.map World.tryGetType value
-                match Array.definitizePlus typeOpts with
-                | (true, types) -> Some (FSharpType.MakeTupleType types)
-                | (false, _) -> None
-            | Scripting.Option opt ->
-                match opt with
-                | Some value ->
-                    match World.tryGetType value with
-                    | Some ty -> Some (typedefof<_ option>.MakeGenericType [|ty|])
-                    | None -> None
-                | None -> None
-            | Scripting.List values ->
-                let typeOpts = List.map World.tryGetType values
-                match List.definitizePlus typeOpts with
-                | (true, types) ->
-                    match types with
-                    | head :: tail ->
-                        if List.notExists (fun item -> item <> head) tail
-                        then Some (typedefof<_ list>.MakeGenericType [|head|])
-                        else None
-                    | [] -> None
-                | (false, _) -> None
-            | Scripting.Ring values ->
-                let typeOpts = List.map World.tryGetType (List.ofSeq values)
-                match List.definitizePlus typeOpts with
-                | (true, types) ->
-                    match types with
-                    | head :: tail ->
-                        if List.notExists (fun item -> item <> head) tail
-                        then Some (typedefof<_ Set>.MakeGenericType [|head|])
-                        else None
-                    | [] -> None
-                | (false, _) -> None
-            | Scripting.Table values ->
-                let keyOpts = List.map World.tryGetType (Map.toKeyList values)
-                match List.definitizePlus keyOpts with
-                | (true, keyTypes) ->
-                    match keyTypes with
-                    | keyHead :: keyTail ->
-                        if List.notExists (fun item -> item <> keyHead) keyTail then
-                            let valOpts = List.map World.tryGetType (Map.toValueList values)
-                            match List.definitizePlus valOpts with
-                            | (true, valTypes) ->
-                                match valTypes with
-                                | valHead :: valTail ->
-                                    if List.notExists (fun item -> item <> valHead) valTail
-                                    then Some (typedefof<Map<_, _>>.MakeGenericType [|keyHead; valHead|])
-                                    else None
-                                | [] -> None
-                            | (false, _) -> None
-                        else None
-                    | [] -> None
-                | (false, _) -> None
-            | _ -> None
 
         /// Attempt to evaluate the scripting prelude.
         static member tryEvalPrelude world =
@@ -460,11 +355,24 @@ module WorldScripting =
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v|], world) -> struct (v, world)
             | struct ([|String propertyName; relation|], world)
-            | struct ([|Keyword propertyName; relation|], world) -> World.evalGet propertyName (Some relation) originOpt world
+            | struct ([|Keyword propertyName; relation|], world) -> World.evalGet fnName propertyName (Some relation) originOpt world
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
             | struct ([|Violation _ as v|], world) -> struct (v, world)
             | struct ([|String propertyName|], world)
-            | struct ([|Keyword propertyName|], world) -> World.evalGet propertyName None originOpt world
+            | struct ([|Keyword propertyName|], world) -> World.evalGet fnName propertyName None originOpt world
+            | struct ([|_|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 or 2 arguments required.", originOpt), world)
+
+        static member internal evalGetAsStreamExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|String propertyName; relation|], world)
+            | struct ([|Keyword propertyName; relation|], world) -> World.evalGetAsStream fnName propertyName (Some relation) originOpt world
+            | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
+            | struct ([|Violation _ as v|], world) -> struct (v, world)
+            | struct ([|String propertyName|], world)
+            | struct ([|Keyword propertyName|], world) -> World.evalGetAsStream fnName propertyName None originOpt world
             | struct ([|_|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 or 2 arguments required.", originOpt), world)
 
@@ -474,12 +382,27 @@ module WorldScripting =
             | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
             | struct ([|String propertyName; relation; value|], world)
-            | struct ([|Keyword propertyName; relation; value|], world) -> World.evalSet propertyName (Some relation) value originOpt world
+            | struct ([|Keyword propertyName; relation; value|], world) -> World.evalSet fnName propertyName (Some relation) value originOpt world
             | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v|], world) -> struct (v, world)
             | struct ([|String propertyName; value|], world)
-            | struct ([|Keyword propertyName; value|], world) -> World.evalSet propertyName None value originOpt world
+            | struct ([|Keyword propertyName; value|], world) -> World.evalSet fnName propertyName None value originOpt world
+            | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, a value for the second, and an optional Relation for the third.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
+
+        static member internal evalSetAsStreamExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|String propertyName; relation; value|], world)
+            | struct ([|Keyword propertyName; relation; value|], world) -> World.evalSetAsStream fnName propertyName (Some relation) value originOpt world
+            | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
+            | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|String propertyName; value|], world)
+            | struct ([|Keyword propertyName; value|], world) -> World.evalSetAsStream fnName propertyName None value originOpt world
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, a value for the second, and an optional Relation for the third.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
 
@@ -510,7 +433,10 @@ module WorldScripting =
                  ("index_Vector2i", World.evalIndexV2iExtrinsic)
                  ("update_Vector2i", World.evalUpdateV2iExtrinsic)
                  ("get", World.evalGetExtrinsic)
+                 ("getAsStream", World.evalGetAsStreamExtrinsic)
                  ("set", World.evalSetExtrinsic)
+                 ("setAsStream", World.evalSetAsStreamExtrinsic)
+                 //("map_Stream", ...)
                  ("monitor", World.evalMonitorExtrinsic)] |>
                 dictPlus
             Extrinsics <- extrinsics
