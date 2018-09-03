@@ -3,10 +3,7 @@ open System
 open System.IO
 open OpenTK
 open Prime
-open Prime.Chain
-open Prime.Stream
 open Nu
-open Nu.Stream
 open InfinityRpg
 
 [<AutoOpen>]
@@ -355,43 +352,43 @@ module GameplayDispatcherModule =
 
         static let runCharacterNavigation newNavigationDescriptor (character : Entity) world =
             let chain = chain {
-                do! update (character.SetActivityState (Navigation newNavigationDescriptor))
-                do! during (fun world ->
+                do! Chain.update (character.SetActivityState (Navigation newNavigationDescriptor))
+                do! Chain.during (fun world ->
                     match character.GetActivityState world with
                     | Navigation navigationDescriptor -> newNavigationDescriptor.WalkDescriptor.WalkOriginM = navigationDescriptor.WalkDescriptor.WalkOriginM
                     | Action _ -> false
                     | NoActivity -> false) ^ chain {
-                    do! update ^ fun world ->
+                    do! Chain.update ^ fun world ->
                         let navigationDescriptor =
                             match character.GetActivityState world with
                             | Navigation navigationDescriptor -> navigationDescriptor
                             | _ -> failwithumf ()
                         updateCharacterByNavigation navigationDescriptor character world
-                    do! pass }}
+                    do! Chain.pass }}
             let stream =
-                until
-                    (stream (Events.Deselect ->- Simulants.Gameplay))
-                    (stream (Events.Update ->- character))
-            runAssumingCascade chain stream world |> snd
+                Stream.until
+                    (Stream.make (Events.Deselect ->- Simulants.Gameplay))
+                    (Stream.make (Events.Update ->- character))
+            Chain.runAssumingCascade chain stream world |> snd
 
         static let runCharacterAction newActionDescriptor (character : Entity) world =
             // NOTE: currently just implements attack
             let chain = chain {
-                do! update ^ character.SetActivityState (Action newActionDescriptor)
-                do! during (ActivityState.isActing << character.GetActivityState) ^ chain {
-                    do! update ^ fun world ->
+                do! Chain.update ^ character.SetActivityState (Action newActionDescriptor)
+                do! Chain.during (ActivityState.isActing << character.GetActivityState) ^ chain {
+                    do! Chain.update ^ fun world ->
                         let actionDescriptor =
                             match character.GetActivityState world with
                             | Action actionDescriptor -> actionDescriptor
                             | _ -> failwithumf ()
                         let world = updateCharacterByAction actionDescriptor character world
                         runCharacterReaction actionDescriptor character world
-                    do! pass }}
+                    do! Chain.pass }}
             let stream =
-                until
-                    (stream (Events.Deselect ->- Simulants.Gameplay))
-                    (stream (Events.Update ->- character))
-            runAssumingCascade chain stream world |> snd
+                Stream.until
+                    (Stream.make (Events.Deselect ->- Simulants.Gameplay))
+                    (Stream.make (Events.Update ->- character))
+            Chain.runAssumingCascade chain stream world |> snd
 
         static let runCharacterNoActivity (character : Entity) world =
             character.SetActivityState NoActivity world
@@ -474,26 +471,26 @@ module GameplayDispatcherModule =
         static let tryRunPlayerTurn playerInput world =
             if not (anyTurnsInProgress world) then
                 let chain = chain {
-                    do! update ^ Simulants.HudSaveGame.SetEnabled false
-                    do! loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress world) ^ fun i -> chain {
-                        let! evt = next
+                    do! Chain.update ^ Simulants.HudSaveGame.SetEnabled false
+                    do! Chain.loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress world) ^ fun i -> chain {
+                        let! evt = Chain.next
                         do! match evt.Data with
                             | Right _ -> chain {
                                 let! playerTurn =
                                     if i = 0
-                                    then getBy (determinePlayerTurnFromInput playerInput)
-                                    else getBy determinePlayerTurn
-                                do! update (runPlayerTurn playerTurn) }
+                                    then Chain.getBy (determinePlayerTurnFromInput playerInput)
+                                    else Chain.getBy determinePlayerTurn
+                                do! Chain.update (runPlayerTurn playerTurn) }
                             | Left _ -> chain {
-                                do! update (cancelNavigation Simulants.Player) }}
-                    do! update (Simulants.HudSaveGame.SetEnabled true) }
+                                do! Chain.update (cancelNavigation Simulants.Player) }}
+                    do! Chain.update (Simulants.HudSaveGame.SetEnabled true) }
                 let stream =
-                    until
-                        (stream (Events.Deselect ->- Simulants.Gameplay))
-                        (sum
-                            (stream (Events.Click ->- Simulants.HudHalt))
-                            (stream (Events.Update ->- Simulants.Player)))
-                runAssumingCascade chain stream world |> snd
+                    Stream.until
+                        (Stream.make (Events.Deselect ->- Simulants.Gameplay))
+                        (Stream.sum
+                            (Stream.make (Events.Click ->- Simulants.HudHalt))
+                            (Stream.make (Events.Update ->- Simulants.Player)))
+                Chain.runAssumingCascade chain stream world |> snd
             else world
 
         static let handlePlayerActivityChange _ world =
@@ -573,12 +570,12 @@ module GameplayDispatcherModule =
              Define? ShallLoadGame false]
 
         override dispatcher.Register (gameplay, world) =
-            let world = stream Simulants.Player.ActivityState.Change |> subscribe handlePlayerActivityChange gameplay <| world
-            let world = stream (Events.Touch ->- Simulants.HudFeeler) |> isSimulantSelected Simulants.HudFeeler |> monitor handleTouchFeeler gameplay <| world
-            let world = stream (Events.Down ->- Simulants.HudDetailUp) |> isSimulantSelected Simulants.HudDetailUp |> monitor (handleDownDetail Upward) gameplay <| world
-            let world = stream (Events.Down ->- Simulants.HudDetailRight) |> isSimulantSelected Simulants.HudDetailRight |> monitor (handleDownDetail Rightward) gameplay <| world
-            let world = stream (Events.Down ->- Simulants.HudDetailDown) |> isSimulantSelected Simulants.HudDetailDown |> monitor (handleDownDetail Downward) gameplay <| world
-            let world = stream (Events.Down ->- Simulants.HudDetailLeft) |> isSimulantSelected Simulants.HudDetailLeft |> monitor (handleDownDetail Leftward) gameplay <| world
+            let world = Stream.make Simulants.Player.ActivityState.Change |> Stream.subscribe handlePlayerActivityChange gameplay <| world
+            let world = Stream.make (Events.Touch ->- Simulants.HudFeeler) |> Stream.isSimulantSelected Simulants.HudFeeler |> Stream.monitor handleTouchFeeler gameplay <| world
+            let world = Stream.make (Events.Down ->- Simulants.HudDetailUp) |> Stream.isSimulantSelected Simulants.HudDetailUp |> Stream.monitor (handleDownDetail Upward) gameplay <| world
+            let world = Stream.make (Events.Down ->- Simulants.HudDetailRight) |> Stream.isSimulantSelected Simulants.HudDetailRight |> Stream.monitor (handleDownDetail Rightward) gameplay <| world
+            let world = Stream.make (Events.Down ->- Simulants.HudDetailDown) |> Stream.isSimulantSelected Simulants.HudDetailDown |> Stream.monitor (handleDownDetail Downward) gameplay <| world
+            let world = Stream.make (Events.Down ->- Simulants.HudDetailLeft) |> Stream.isSimulantSelected Simulants.HudDetailLeft |> Stream.monitor (handleDownDetail Leftward) gameplay <| world
             let world = World.monitor handleSelectTitle (Events.Select ->- Simulants.Title) gameplay world
             let world = World.monitor handleSelectGameplay (Events.Select ->- gameplay) gameplay world
             let world = World.monitor handleClickSaveGame (Events.Click ->- Simulants.HudSaveGame) gameplay world

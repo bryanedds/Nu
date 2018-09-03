@@ -121,7 +121,7 @@ module WorldScripting =
             let context = World.getScriptContext world
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
-                let stream = Stream.stream (atooa simulant.SimulantAddress ->>- Events.SimulantChange propertyName)
+                let stream = Stream.make (atooa simulant.SimulantAddress ->>- Events.SimulantChange propertyName)
                 let stream =
                     Stream.mapEvent (fun evt world ->
                         match (evt.Data : obj) with
