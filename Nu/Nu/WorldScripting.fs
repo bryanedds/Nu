@@ -448,13 +448,20 @@ module WorldScripting =
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, a value for the second, and an optional Relation for the third.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
 
+        static member internal evalMapStreamExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|evaled; evaled2|], world) -> World.evalMapStream fnName evaled evaled2 originOpt world
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+
         static member internal evalMonitorExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v|], world) -> struct (v, world)
             | struct ([|evaled; evaled2|], world) -> World.evalMonitor fnName evaled evaled2 originOpt world
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
-            
+
         static member internal tryGetExtrinsic fnName =
             match Extrinsics.TryGetValue fnName with
             | (true, extrinsic) -> FOption.some extrinsic
@@ -478,7 +485,7 @@ module WorldScripting =
                  ("getAsStream", World.evalGetAsStreamExtrinsic)
                  ("set", World.evalSetExtrinsic)
                  ("setAsStream", World.evalSetAsStreamExtrinsic)
-                 //("map_Stream", ...)
+                 ("map_Stream", World.evalMapStreamExtrinsic)
                  ("monitor", World.evalMonitorExtrinsic)] |>
                 dictPlus
             Extrinsics <- extrinsics
