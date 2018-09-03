@@ -13,7 +13,7 @@ open Nu
 
 /// The Stream value that can be plugged into the scripting language.
 type [<Struct; CustomEquality; CustomComparison>] StreamPluggable =
-    { Stream : Stream<obj, Game, World> }
+    { Stream : Stream<Expr option, Game, World> }
 
     static member equals _ _ = false
 
@@ -41,7 +41,7 @@ type [<Struct; CustomEquality; CustomComparison>] StreamPluggable =
             "Stream"
 
         member this.FSharpType =
-            typeof<Stream<obj, Game, World>>
+            getType this.Stream
 
         member this.ToSymbol () =
             Symbols ([], None)
@@ -122,6 +122,16 @@ module WorldScripting =
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
                 let stream = Stream.stream (atooa simulant.SimulantAddress ->>- Events.SimulantChange propertyName)
+                let stream =
+                    Stream.mapEvent (fun evt world ->
+                        match (evt.Data : obj) with
+                        | :? ChangeData as changeData ->
+                            let simulant = evt.Publisher :?> Simulant
+                            match World.tryGetSimulantProperty changeData.PropertyName simulant world with
+                            | Some prop -> ScriptingWorld.tryImport prop.PropertyType prop.PropertyValue world
+                            | None -> None
+                        | _ -> None)
+                        stream
                 struct (Pluggable { Stream = stream }, world)
             | Left error -> error
 
@@ -163,14 +173,15 @@ module WorldScripting =
                     | :? StreamPluggable as stream ->
                         let world =
                             Stream.monitor (fun evt world ->
-                                match (evt.Data : obj) with
-                                | :? ChangeData as changeData ->
-                                    match World.tryGetSimulantProperty changeData.PropertyName (evt.Publisher :?> Simulant) world with
-                                    | Some prop -> World.trySetSimulantProperty propertyName prop simulant world |> snd
+                                match (evt.Data : Expr option) with
+                                | Some expr ->
+                                    match World.tryGetSimulantProperty propertyName simulant world with
+                                    | Some prop ->
+                                        let exported = ScriptingWorld.tryExport prop.PropertyType expr world
+                                        let prop = { prop with PropertyValue = exported }
+                                        World.trySetSimulantProperty propertyName prop simulant world |> snd
                                     | None -> world
-                                | _ ->
-                                    let prop = { PropertyType = evt.DataType; PropertyValue = evt.Data }
-                                    World.trySetSimulantProperty propertyName prop simulant world |> snd)
+                                | None -> world)
                                 (simulant :> Participant)
                                 stream.Stream
                                 world
@@ -178,6 +189,30 @@ module WorldScripting =
                     | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)
                 | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)
             | Left error -> error
+
+        static member internal evalMapStream fnName fn stream originOpt world =
+            match stream with
+            | Pluggable stream ->
+                match stream with
+                | :? StreamPluggable as stream ->
+                    let stream =
+                        Stream.mapEffect
+                            (fun (evt : Event<Expr option, _>) world ->
+                                match evt.Data with
+                                | Some expr ->
+                                    let context = World.getScriptContext world
+                                    match World.tryGetSimulantScriptFrame context world with
+                                    | Some scriptFrame ->
+                                        let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
+                                        let application = Apply ([|fn; expr|], breakpoint, originOpt)
+                                        let (evaled, world) = World.evalWithLogging application scriptFrame context world
+                                        (Some evaled, world)
+                                    | None -> (None, world)
+                                | None -> (None, world))
+                            stream.Stream
+                    struct (Pluggable { Stream = stream }, world)
+                | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
+            | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
 
         static member internal evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
             EventWorld.subscribe (fun evt world ->
@@ -209,7 +244,9 @@ module WorldScripting =
                 match evaledArg2 with
                 | String str
                 | Keyword str ->
-                    let world = World.evalMonitor5 evaledArg (Address.makeFromString str) (World.getScriptContext world) world
+                    let eventAddress = Address.makeFromString str
+                    let context = World.getScriptContext world
+                    let world = World.evalMonitor5 evaledArg eventAddress context world
                     struct (Unit, world)
                 | Violation _ as error -> struct (error, world)
                 | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Relation for its 2nd argument.", originOpt), world)
