@@ -71,6 +71,7 @@ module WorldScripting =
 
         static member internal evalSimulantExists fnName evaledArg originOpt world =
             match evaledArg with
+            | Violation _ as error -> struct (error, world)
             | String str
             | Keyword str ->
                 let context = World.getScriptContext world
@@ -79,7 +80,6 @@ module WorldScripting =
                 match World.tryDeriveSimulant address with
                 | Some simulant -> struct (Bool (World.getSimulantExists simulant world), world)
                 | None -> struct (Bool false, world)
-            | Violation _ as error -> struct (error, world)
             | _ -> struct (Violation (["InvalidArgumentType"; "SimulantExists"], "Function '" + fnName + "' requires 1 Relation argument.", originOpt), world)
 
         static member internal tryResolveRelation fnName expr originOpt (context : Simulant) world =
@@ -123,8 +123,8 @@ module WorldScripting =
             | Right struct (simulant, world) ->
                 let stream = Stream.make (atooa simulant.SimulantAddress ->>- Events.SimulantChange propertyName)
                 let stream =
-                    Stream.mapEvent (fun evt world ->
-                        match (evt.Data : obj) with
+                    Stream.mapEvent (fun (evt : Event<obj, _>) world ->
+                        match evt.Data with
                         | :? ChangeData as changeData ->
                             let simulant = evt.Publisher :?> Simulant
                             match World.tryGetSimulantProperty changeData.PropertyName simulant world with
@@ -172,8 +172,8 @@ module WorldScripting =
                     match stream with
                     | :? StreamPluggable as stream ->
                         let world =
-                            Stream.monitor (fun evt world ->
-                                match (evt.Data : Expr option) with
+                            Stream.monitor (fun (evt : Event<Expr option, _>) world ->
+                                match evt.Data with
                                 | Some expr ->
                                     match World.tryGetSimulantProperty propertyName simulant world with
                                     | Some prop ->
@@ -189,6 +189,20 @@ module WorldScripting =
                     | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)
                 | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)
             | Left error -> error
+
+        static member internal evalMakeStream fnName evaledArg originOpt world =
+            match evaledArg with
+            | Violation _ as error -> struct (error, world)
+            | String str
+            | Keyword str ->
+                let eventAddress = Address.makeFromString str
+                let stream = Stream.make eventAddress
+                let stream =
+                    Stream.mapEffect (fun (evt : Event<obj, _>) world ->
+                        (ScriptingWorld.tryImport evt.DataType evt.Data world, world))
+                        stream
+                struct (Pluggable { Stream = stream }, world)
+            | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Function for its 1st argument.", originOpt), world)
 
         static member internal evalMapStream fnName fn stream originOpt world =
             match stream with
@@ -264,18 +278,18 @@ module WorldScripting =
 
         static member internal evalMonitor fnName evaledArg evaledArg2 originOpt world =
             match evaledArg with
+            | Violation _ as error -> struct (error, world)
             | Binding _
             | Fun _ ->
                 match evaledArg2 with
+                | Violation _ as error -> struct (error, world)
                 | String str
                 | Keyword str ->
                     let eventAddress = Address.makeFromString str
                     let context = World.getScriptContext world
                     let world = World.evalMonitor5 evaledArg eventAddress context world
                     struct (Unit, world)
-                | Violation _ as error -> struct (error, world)
                 | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Relation for its 2nd argument.", originOpt), world)
-            | Violation _ as error -> struct (error, world)
             | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Function for its 1st argument.", originOpt), world)
 
         /// Attempt to evaluate the scripting prelude.
@@ -300,7 +314,7 @@ module WorldScripting =
             | struct ([|_; Violation _ as v|], world) -> struct (v, world)
             | struct ([|Single x; Single y|], world) -> struct (Pluggable { Vector2 = Vector2 (x, y) }, world)
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single for the both arguments.", originOpt), world)
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalIndexV2Extrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
@@ -315,7 +329,7 @@ module WorldScripting =
                     | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2.", originOpt), world)
                 | _ -> failwithumf ()
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 index.", originOpt), world)
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalUpdateV2Extrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
@@ -331,7 +345,7 @@ module WorldScripting =
                     | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2.", originOpt), world)
                 | _ -> failwithumf ()
             | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2 target, a keyword index of X or Y, and a Single value.", originOpt), world)
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalV4Extrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
@@ -341,7 +355,7 @@ module WorldScripting =
             | struct ([|_; _; _; Violation _ as v|], world) -> struct (v, world)
             | struct ([|Single x; Single y; Single z; Single w|], world) -> struct (Pluggable { Vector4 = Vector4 (x, y, z, w) }, world)
             | struct ([|_; _; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single for the all arguments.", originOpt), world)
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 4 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 4 arguments required.", originOpt), world)
 
         static member internal evalIndexV4Extrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
@@ -358,7 +372,7 @@ module WorldScripting =
                     | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V4.", originOpt), world)
                 | _ -> failwithumf ()
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V4 index.", originOpt), world)
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalUpdateV4Extrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
@@ -376,7 +390,7 @@ module WorldScripting =
                     | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V4.", originOpt), world)
                 | _ -> failwithumf ()
             | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V4 target, a keyword index of X or Y, and an Int value.", originOpt), world)
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalV2iExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
@@ -384,7 +398,7 @@ module WorldScripting =
             | struct ([|_; Violation _ as v|], world) -> struct (v, world)
             | struct ([|Int x; Int y|], world) -> struct (Pluggable { Vector2i = Vector2i (x, y) }, world)
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an Int for the both arguments.", originOpt), world)
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalIndexV2iExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
@@ -399,7 +413,7 @@ module WorldScripting =
                     | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2i.", originOpt), world)
                 | _ -> failwithumf ()
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2i index.", originOpt), world)
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalUpdateV2iExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
@@ -415,7 +429,7 @@ module WorldScripting =
                     | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2i.", originOpt), world)
                 | _ -> failwithumf ()
             | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2i target, a keyword index of X or Y, and an Int value.", originOpt), world)
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalGetExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
@@ -428,7 +442,7 @@ module WorldScripting =
             | struct ([|String propertyName|], world)
             | struct ([|Keyword propertyName|], world) -> World.evalGet fnName propertyName None originOpt world
             | struct ([|_|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 or 2 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 1 or 2 arguments required.", originOpt), world)
 
         static member internal evalGetAsStreamExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
@@ -441,7 +455,7 @@ module WorldScripting =
             | struct ([|String propertyName|], world)
             | struct ([|Keyword propertyName|], world) -> World.evalGetAsStream fnName propertyName None originOpt world
             | struct ([|_|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 1 or 2 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 1 or 2 arguments required.", originOpt), world)
 
         static member internal evalSetExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
@@ -456,7 +470,7 @@ module WorldScripting =
             | struct ([|String propertyName; value|], world)
             | struct ([|Keyword propertyName; value|], world) -> World.evalSet fnName propertyName None value originOpt world
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, a value for the second, and an optional Relation for the third.", originOpt), world)
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
 
         static member internal evalSetAsStreamExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
@@ -471,14 +485,20 @@ module WorldScripting =
             | struct ([|String propertyName; value|], world)
             | struct ([|Keyword propertyName; value|], world) -> World.evalSetAsStream fnName propertyName None value originOpt world
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, a value for the second, and an optional Relation for the third.", originOpt), world)
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
+
+        static member internal evalMakeStreamExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v|], world) -> struct (v, world)
+            | struct ([|evaled|], world) -> World.evalMakeStream fnName evaled originOpt world
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 1 argument required.", originOpt), world)
 
         static member internal evalMapStreamExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v|], world) -> struct (v, world)
             | struct ([|evaled; evaled2|], world) -> World.evalMapStream fnName evaled evaled2 originOpt world
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalFoldStreamExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
@@ -486,14 +506,14 @@ module WorldScripting =
             | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
             | struct ([|evaled; evaled2; evaled3|], world) -> World.evalFoldStream fnName evaled evaled2 evaled3 originOpt world
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 3 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 3 arguments required.", originOpt), world)
 
         static member internal evalMonitorExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v|], world) -> struct (v, world)
             | struct ([|evaled; evaled2|], world) -> World.evalMonitor fnName evaled evaled2 originOpt world
-            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal tryGetExtrinsic fnName =
             match Extrinsics.TryGetValue fnName with
@@ -518,6 +538,7 @@ module WorldScripting =
                  ("getAsStream", World.evalGetAsStreamExtrinsic)
                  ("set", World.evalSetExtrinsic)
                  ("setAsStream", World.evalSetAsStreamExtrinsic)
+                 ("make_Stream", World.evalMakeStreamExtrinsic)
                  ("map_Stream", World.evalMapStreamExtrinsic)
                  ("fold_Stream", World.evalFoldStreamExtrinsic)
                  ("monitor", World.evalMonitorExtrinsic)] |>
