@@ -5,7 +5,6 @@ namespace Nu.Tests
 open System
 open Xunit
 open Prime
-open Prime.Stream
 open Nu
 open Nu.Simulants
 module WorldTests =
@@ -39,7 +38,7 @@ module WorldTests =
         let world = World.makeDefault ()
         let world = World.createEntity (Some Jim.EntityName) DefaultOverlay DefaultLayer world |> snd
         let world = World.createEntity (Some Bob.EntityName) DefaultOverlay DefaultLayer world |> snd
-        let world = !-- Bob.Visible --- map not --> Jim.Visible ^ world
+        let world = !-- Bob.Visible --- Stream.map not --> Jim.Visible ^ world
         let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
         Assert.True (Jim.GetVisible world)

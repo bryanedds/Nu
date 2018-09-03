@@ -2,7 +2,6 @@
 open System
 open OpenTK
 open Prime
-open Prime.Stream
 open Nu
 open InfinityRpg
 
@@ -202,4 +201,4 @@ module CharacterCameraFacetModule =
             World.setEyeCenter eyeCenter world
 
         override facet.Register (entity, world) =
-            monitor handlePostUpdate entity (stream (Events.PostUpdate ->- entity)) world
+            Stream.monitor handlePostUpdate entity (Stream.make (Events.PostUpdate ->- entity)) world
