@@ -59,7 +59,7 @@ type [<Struct; CustomEquality; CustomComparison>] Vector2Pluggable =
             "Vector2"
 
         member this.FSharpType =
-            typeof<Vector2>
+            getType this.Vector2
 
         member this.ToSymbol () =
             let v2 = Symbol.Atom ("v2", None)
@@ -156,7 +156,7 @@ type [<Struct; CustomEquality; CustomComparison>] Vector4Pluggable =
             "Vector4"
 
         member this.FSharpType =
-            typeof<Vector4>
+            getType this.Vector4
 
         member this.ToSymbol () =
             let v4 = Symbol.Atom ("v4", None)
@@ -227,7 +227,7 @@ type [<Struct; CustomEquality; CustomComparison>] Vector2iPluggable =
             "Vector2i"
 
         member this.FSharpType =
-            typeof<Vector2i>
+            getType this.Vector2i
 
         member this.ToSymbol () =
             let v2i = Symbol.Atom ("v2i", None)
