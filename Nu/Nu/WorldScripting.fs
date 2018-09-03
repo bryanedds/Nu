@@ -214,6 +214,31 @@ module WorldScripting =
                 | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
             | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
 
+        static member internal evalFoldStream fnName fn state stream originOpt world =
+            match stream with
+            | Pluggable stream ->
+                match stream with
+                | :? StreamPluggable as stream ->
+                    let stream =
+                        Stream.foldEffect
+                            (fun stateOpt (evt : Event<Expr option, _>) world ->
+                                match evt.Data with
+                                | Some expr ->
+                                    let context = World.getScriptContext world
+                                    match World.tryGetSimulantScriptFrame context world with
+                                    | Some scriptFrame ->
+                                        let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
+                                        let application = Apply ([|fn; expr; Option.get stateOpt|], breakpoint, originOpt)
+                                        let (evaled, world) = World.evalWithLogging application scriptFrame context world
+                                        (Some evaled, world)
+                                    | None -> (stateOpt, world)
+                                | None -> (stateOpt, world))
+                            (Some state)
+                            stream.Stream
+                    struct (Pluggable { Stream = stream }, world)
+                | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
+            | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
+
         static member internal evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
             EventWorld.subscribe (fun evt world ->
                 match World.tryGetSimulantScriptFrame subscriber world with
@@ -455,6 +480,14 @@ module WorldScripting =
             | struct ([|evaled; evaled2|], world) -> World.evalMapStream fnName evaled evaled2 originOpt world
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 2 arguments required.", originOpt), world)
 
+        static member internal evalFoldStreamExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|evaled; evaled2; evaled3|], world) -> World.evalFoldStream fnName evaled evaled2 evaled3 originOpt world
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for application of '" + fnName + "'; 3 arguments required.", originOpt), world)
+
         static member internal evalMonitorExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
@@ -486,6 +519,7 @@ module WorldScripting =
                  ("set", World.evalSetExtrinsic)
                  ("setAsStream", World.evalSetAsStreamExtrinsic)
                  ("map_Stream", World.evalMapStreamExtrinsic)
+                 ("fold_Stream", World.evalFoldStreamExtrinsic)
                  ("monitor", World.evalMonitorExtrinsic)] |>
                 dictPlus
             Extrinsics <- extrinsics
