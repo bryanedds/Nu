@@ -541,6 +541,9 @@ module WorldScripting =
                  ("make_Stream", World.evalMakeStreamExtrinsic)
                  ("map_Stream", World.evalMapStreamExtrinsic)
                  ("fold_Stream", World.evalFoldStreamExtrinsic)
+                 //("map2_Stream", World.evalMapStreamExtrinsic)
+                 //("product_Stream", World.evalProductStreamExtrinsic)
+                 //("sum_Stream", World.evalSumStreamExtrinsic)
                  //("resolve", ...) <- resolves a relation to an address for the current script context
                  ("monitor", World.evalMonitorExtrinsic)] |>
                 dictPlus
