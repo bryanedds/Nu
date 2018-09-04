@@ -534,6 +534,7 @@ module WorldScripting =
                  ("v2i", World.evalV2iExtrinsic)
                  ("index_Vector2i", World.evalIndexV2iExtrinsic)
                  ("update_Vector2i", World.evalUpdateV2iExtrinsic)
+                 //("resolve", ...) <- resolves a relation to an address for the current script context
                  ("get", World.evalGetExtrinsic)
                  ("getAsStream", World.evalGetAsStreamExtrinsic)
                  ("set", World.evalSetExtrinsic)
@@ -544,7 +545,6 @@ module WorldScripting =
                  //("map2_Stream", World.evalMapStreamExtrinsic)
                  //("product_Stream", World.evalProductStreamExtrinsic)
                  //("sum_Stream", World.evalSumStreamExtrinsic)
-                 //("resolve", ...) <- resolves a relation to an address for the current script context
                  ("monitor", World.evalMonitorExtrinsic)] |>
                 dictPlus
             Extrinsics <- extrinsics

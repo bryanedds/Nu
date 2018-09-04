@@ -1513,7 +1513,7 @@ module Gaia =
         | Left error -> Left error
 
     /// Attempt to make SdlDeps needed to use in the Gaia form.
-    let attemptMakeSdlDeps (form : GaiaForm) =
+    let tryMakeSdlDeps (form : GaiaForm) =
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
         let sdlConfig =
             { ViewConfig = sdlViewConfig
@@ -1533,7 +1533,7 @@ module Gaia =
     let run () =
         let (targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
         use form = createForm ()
-        match attemptMakeSdlDeps form with
+        match tryMakeSdlDeps form with
         | Right sdlDeps ->
             match tryMakeWorld plugin sdlDeps with
             | Right world ->
