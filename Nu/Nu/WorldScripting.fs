@@ -253,6 +253,64 @@ module WorldScripting =
                 | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
             | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
 
+        static member internal evalMap2Stream fnName fn stream stream2 originOpt world =
+            match (stream, stream2) with
+            | (Pluggable stream, Pluggable stream2) ->
+                match (stream, stream2) with
+                | ((:? StreamPluggable as stream), (:? StreamPluggable as stream2)) ->
+                    let stream =
+                        Stream.map2Effect
+                            (fun (evt : Event<Expr option, _>) (evt2 : Event<Expr option, _>) world ->
+                                match (evt.Data, evt2.Data) with
+                                | (Some expr, Some expr2) ->
+                                    let context = World.getScriptContext world
+                                    match World.tryGetSimulantScriptFrame context world with
+                                    | Some scriptFrame ->
+                                        let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
+                                        let application = Apply ([|fn; expr; expr2|], breakpoint, originOpt)
+                                        let (evaled, world) = World.evalWithLogging application scriptFrame context world
+                                        (Some evaled, world)
+                                    | None -> (None, world)
+                                | (_, _) -> (None, world))
+                            stream.Stream
+                            stream2.Stream
+                    struct (Pluggable { Stream = stream }, world)
+                | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd and 3rd arguments.", originOpt), world)
+            | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd and 3rd arguments.", originOpt), world)
+
+        static member internal evalProductStream fnName stream stream2 originOpt world =
+            match (stream, stream2) with
+            | (Pluggable stream, Pluggable stream2) ->
+                match (stream, stream2) with
+                | ((:? StreamPluggable as stream), (:? StreamPluggable as stream2)) ->
+                    let stream =
+                        Stream.map2Effect
+                            (fun (evt : Event<Expr option, _>) (evt2 : Event<Expr option, _>) world ->
+                                match (evt.Data, evt2.Data) with
+                                | (Some expr, Some expr2) -> (Some (Tuple [|expr; expr2|]), world)
+                                | (_, _) -> (None, world))
+                            stream.Stream
+                            stream2.Stream
+                    struct (Pluggable { Stream = stream }, world)
+                | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
+            | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
+
+        static member internal evalSumStream fnName stream stream2 originOpt world =
+            match (stream, stream2) with
+            | (Pluggable stream, Pluggable stream2) ->
+                match (stream, stream2) with
+                | ((:? StreamPluggable as stream), (:? StreamPluggable as stream2)) ->
+                    let stream = Stream.sum stream.Stream stream2.Stream
+                    let stream =
+                        Stream.map (fun eir ->
+                            match eir with
+                            | Right opt -> match opt with Some expr -> Some (Either (Right expr)) | None -> None
+                            | Left opt -> match opt with Some expr -> Some (Either (Left expr)) | None -> None)
+                            stream
+                    struct (Pluggable { Stream = stream }, world)
+                | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
+            | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
+
         static member internal evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
             EventWorld.subscribe (fun evt world ->
                 match World.tryGetSimulantScriptFrame subscriber world with
@@ -508,6 +566,28 @@ module WorldScripting =
             | struct ([|evaled; evaled2; evaled3|], world) -> World.evalFoldStream fnName evaled evaled2 evaled3 originOpt world
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 3 arguments required.", originOpt), world)
 
+        static member internal evalMap2StreamExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|evaled; evaled2; evaled3|], world) -> World.evalMap2Stream fnName evaled evaled2 evaled3 originOpt world
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 3 arguments required.", originOpt), world)
+
+        static member internal evalProductStreamExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|evaled; evaled2|], world) -> World.evalProductStream fnName evaled evaled2 originOpt world
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
+        static member internal evalSumStreamExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|evaled; evaled2|], world) -> World.evalSumStream fnName evaled evaled2 originOpt world
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
         static member internal evalMonitorExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
@@ -541,9 +621,9 @@ module WorldScripting =
                  ("make_Stream", World.evalMakeStreamExtrinsic)
                  ("map_Stream", World.evalMapStreamExtrinsic)
                  ("fold_Stream", World.evalFoldStreamExtrinsic)
-                 //("map2_Stream", World.evalMapStreamExtrinsic)
-                 //("product_Stream", World.evalProductStreamExtrinsic)
-                 //("sum_Stream", World.evalSumStreamExtrinsic)
+                 ("map2_Stream", World.evalMapStreamExtrinsic)
+                 ("product_Stream", World.evalProductStreamExtrinsic)
+                 ("sum_Stream", World.evalSumStreamExtrinsic)
                  ("monitor", World.evalMonitorExtrinsic)] |>
                 dictPlus
             Extrinsics <- extrinsics
