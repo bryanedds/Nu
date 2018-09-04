@@ -534,7 +534,6 @@ module WorldScripting =
                  ("v2i", World.evalV2iExtrinsic)
                  ("index_Vector2i", World.evalIndexV2iExtrinsic)
                  ("update_Vector2i", World.evalUpdateV2iExtrinsic)
-                 //("resolve", ...) <- resolves a relation to an address for the current script context
                  ("get", World.evalGetExtrinsic)
                  ("getAsStream", World.evalGetAsStreamExtrinsic)
                  ("set", World.evalSetExtrinsic)
