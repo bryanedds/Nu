@@ -171,20 +171,22 @@ module WorldScripting =
                 | Pluggable stream ->
                     match stream with
                     | :? StreamPluggable as stream ->
-                        let world =
-                            Stream.monitor (fun (evt : Event<Expr option, _>) world ->
+                        let (unsubscribe, world) =
+                            Stream.monitorPlus (fun (evt : Event<Expr option, _>) world ->
                                 match evt.Data with
                                 | Some expr ->
                                     match World.tryGetSimulantProperty propertyName simulant world with
                                     | Some prop ->
                                         let exported = ScriptingWorld.tryExport prop.PropertyType expr world
                                         let prop = { prop with PropertyValue = exported }
-                                        World.trySetSimulantProperty propertyName prop simulant world |> snd
-                                    | None -> world
-                                | None -> world)
+                                        let (_, world) = World.trySetSimulantProperty propertyName prop simulant world
+                                        (Cascade, world)
+                                    | None -> (Cascade, world)
+                                | None -> (Cascade, world))
                                 (simulant :> Participant)
                                 stream.Stream
                                 world
+                        let world = WorldModule.addSimulantScriptUnsubscription unsubscribe simulant world
                         struct (Unit, world)
                     | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)
                 | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)

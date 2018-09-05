@@ -97,7 +97,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.2.9.3\lib\net46\Prime.exe</HintPath>
+      <HintPath>..\..\packages\Prime.2.9.5\lib\net46\Prime.exe</HintPath>
     </Reference>
     <Reference Include="SDL2#">
       <HintPath>..\Nu.Dependencies\SDL2#\Release\SDL2#.dll</HintPath>

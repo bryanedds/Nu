@@ -140,6 +140,8 @@ module WorldModuleLayer =
             evalManyWithLogging value scriptFrame layer world |> snd
         static member internal getLayerScriptFrameNp layer world = (World.getLayerState layer world).ScriptFrameNp
         static member internal setLayerScriptFrameNp value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptFrameNp = value }) Property? ScriptFrameNp layer world
+        static member internal getLayerScriptUnsubscriptionsNp layer world = (World.getLayerState layer world).ScriptUnsubscriptionsNp
+        static member internal setLayerScriptUnsubscriptionsNp value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptUnsubscriptionsNp = value }) Property? ScriptUnsubscriptionsNp layer world
         static member internal getLayerOnRegister layer world = (World.getLayerState layer world).OnRegister
         static member internal setLayerOnRegister value layer world = World.updateLayerState (fun layerState -> { layerState with OnRegister = value }) Property? OnRegister layer world
         static member internal getLayerOnUnregister layer world = (World.getLayerState layer world).OnUnregister

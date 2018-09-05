@@ -570,7 +570,7 @@ module GameplayDispatcherModule =
              Define? ShallLoadGame false]
 
         override dispatcher.Register (gameplay, world) =
-            let world = Stream.make Simulants.Player.ActivityState.Change |> Stream.subscribe handlePlayerActivityChange gameplay <| world
+            let world = Stream.make Simulants.Player.ActivityState.ChangeEvent |> Stream.subscribe handlePlayerActivityChange gameplay <| world
             let world = Stream.make (Events.Touch ->- Simulants.HudFeeler) |> Stream.isSimulantSelected Simulants.HudFeeler |> Stream.monitor handleTouchFeeler gameplay <| world
             let world = Stream.make (Events.Down ->- Simulants.HudDetailUp) |> Stream.isSimulantSelected Simulants.HudDetailUp |> Stream.monitor (handleDownDetail Upward) gameplay <| world
             let world = Stream.make (Events.Down ->- Simulants.HudDetailRight) |> Stream.isSimulantSelected Simulants.HudDetailRight |> Stream.monitor (handleDownDetail Rightward) gameplay <| world

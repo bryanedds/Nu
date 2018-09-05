@@ -100,9 +100,12 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
 
 [<AutoOpen>]
 module WorldTypes =
+        
+    /// Represents an unsubscription operation for an event.
+    type Unsubscription = World -> World
 
     /// The data for a change in the world's ambient state.
-    type [<Struct; StructuralEquality; NoComparison>] AmbientChangeData = 
+    and [<Struct; StructuralEquality; NoComparison>] AmbientChangeData = 
         { OldWorldWithOldState : World }
 
     /// Describes the information needed to sort simulants.
@@ -413,6 +416,7 @@ module WorldTypes =
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
           ScriptFrameNp : Scripting.DeclarationFrame
+          ScriptUnsubscriptionsNp : Unsubscription list
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
@@ -435,6 +439,7 @@ module WorldTypes =
               ScriptOpt = None
               Script = [||]
               ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
+              ScriptUnsubscriptionsNp = []
               OnRegister = Scripting.Unit
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
@@ -491,6 +496,7 @@ module WorldTypes =
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
           ScriptFrameNp : Scripting.DeclarationFrame
+          ScriptUnsubscriptionsNp : Unsubscription list
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
@@ -514,6 +520,7 @@ module WorldTypes =
               ScriptOpt = None
               Script = [||]
               ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
+              ScriptUnsubscriptionsNp = []
               OnRegister = Scripting.Unit
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
@@ -567,9 +574,10 @@ module WorldTypes =
           DispatcherNp : LayerDispatcher
           Persistent : bool
           CreationTimeStampNp : int64
-          ScriptFrameNp : Scripting.DeclarationFrame
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
+          ScriptFrameNp : Scripting.DeclarationFrame
+          ScriptUnsubscriptionsNp : Unsubscription list
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
@@ -589,6 +597,7 @@ module WorldTypes =
               ScriptOpt = None
               Script = [||]
               ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
+              ScriptUnsubscriptionsNp = []
               OnRegister = Scripting.Unit
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
@@ -1091,6 +1100,9 @@ module WorldTypes =
         /// dispatcher name.
         abstract MakeOverlayRoutes : unit -> (string * string option) list
         default this.MakeOverlayRoutes () = []
+
+/// Represents an unsubscription operation for an event.
+type Unsubscription = WorldTypes.Unsubscription
 
 /// The data for a change in the world's ambient state.
 type AmbientChangeData = WorldTypes.AmbientChangeData

@@ -11,7 +11,7 @@
 //#r "../../packages/xunit.assert.2.3.1/xunit.assert.2.3.1.nupkg"
 #r "../../packages/FsCheck.2.10.10/lib/net452/FsCheck.dll"
 #r "../../packages/FsCheck.Xunit.2.10.10/lib/net452/FsCheck.Xunit.dll"
-#r "../../packages/Prime.2.9.3/lib/net46/Prime.exe"
+#r "../../packages/Prime.2.9.5c/lib/net46/Prime.exe"
 #r "../../Nu/Nu.Dependencies/FSharpx.Core/FSharpx.Core.dll"
 #r "../../Nu/Nu.Dependencies/FSharpx.Collections/FSharpx.Collections.dll"
 #r "../../Nu/Nu.Dependencies/Farseer/FarseerPhysics.dll"
