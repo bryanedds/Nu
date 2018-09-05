@@ -125,6 +125,8 @@ module WorldModuleScreen =
             evalManyWithLogging value scriptFrame screen world |> snd
         static member internal getScreenScriptFrameNp screen world = (World.getScreenState screen world).ScriptFrameNp
         static member internal setScreenScriptFrameNp value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptFrameNp = value }) Property? ScriptFrameNp screen world
+        static member internal getScreenScriptUnsubscriptionsNp screen world = (World.getScreenState screen world).ScriptUnsubscriptionsNp
+        static member internal setScreenScriptUnsubscriptionsNp value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptUnsubscriptionsNp = value }) Property? ScriptUnsubscriptionsNp screen world
         static member internal getScreenOnRegister screen world = (World.getScreenState screen world).OnRegister
         static member internal setScreenOnRegister value screen world = World.updateScreenState (fun screenState -> { screenState with OnRegister = value }) Property? OnRegister screen world
         static member internal getScreenOnUnregister screen world = (World.getScreenState screen world).OnUnregister

@@ -11,6 +11,12 @@ module WorldSimulantModule =
 
     type World with
 
+        static member internal addSimulantScriptUnsubscription =
+            WorldModule.addSimulantScriptUnsubscription
+
+        static member internal unsubscribeSimulantScripts =
+            WorldModule.unsubscribeSimulantScripts
+
         static member tryGetSimulantProperty name (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.tryGetGameProperty name world

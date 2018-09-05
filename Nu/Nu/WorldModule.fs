@@ -28,6 +28,14 @@ module WorldModule =
     let mutable internal evalManyWithLogging : Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr array * World =
         Unchecked.defaultof<Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr array * World>
 
+    /// F# reach-around for adding script unsubscriptions to simulants.
+    let mutable internal addSimulantScriptUnsubscription : Unsubscription -> Simulant -> World -> World =
+        Unchecked.defaultof<Unsubscription -> Simulant -> World -> World>
+
+    /// F# reach-around for unsubscribing script subscriptions of simulants.
+    let mutable internal unsubscribeSimulantScripts : Simulant -> World -> World =
+        Unchecked.defaultof<Simulant -> World -> World>
+
     type World with // Construction
 
         /// Choose a world to be used for debugging. Call this whenever the most recently constructed

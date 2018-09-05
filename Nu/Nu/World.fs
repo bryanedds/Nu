@@ -87,6 +87,31 @@ module Nu =
                 let world = World.setScriptContext oldScriptContext world
                 (evaleds, world)
 
+            // init addSimulantScriptUnsubscription F# reach-around
+            WorldModule.addSimulantScriptUnsubscription <- fun unsubscription (simulant : Simulant) world ->
+                match simulant with
+                | :? Game as game -> game.ScriptUnsubscriptionsNp.Update (List.cons unsubscription) world
+                | :? Screen as screen -> screen.ScriptUnsubscriptionsNp.Update (List.cons unsubscription) world
+                | :? Layer as layer -> layer.ScriptUnsubscriptionsNp.Update (List.cons unsubscription) world
+                | :? Entity as entity -> entity.ScriptUnsubscriptionsNp.Update (List.cons unsubscription) world
+                | _ -> world
+
+            // init unsubscribeSimulantScripts F# reach-around
+            WorldModule.unsubscribeSimulantScripts <- fun (simulant : Simulant) world ->
+                let propertyOpt =
+                    match simulant with
+                    | :? Game as game -> Some game.ScriptUnsubscriptionsNp
+                    | :? Screen as screen -> Some screen.ScriptUnsubscriptionsNp
+                    | :? Layer as layer -> Some layer.ScriptUnsubscriptionsNp
+                    | :? Entity as entity -> Some entity.ScriptUnsubscriptionsNp
+                    | _ -> None
+                match propertyOpt with
+                | Some property ->
+                    let unsubscriptions = property.Get world
+                    let world = List.foldBack apply unsubscriptions world
+                    property.Set [] world
+                | None -> world
+
             // init scripting
             World.initScripting ()
             WorldBindings.initBindings ()

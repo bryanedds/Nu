@@ -176,6 +176,9 @@ module ScriptFacetModule =
         member this.GetScriptFrameNp world : Scripting.DeclarationFrame = this.Get Property? ScriptFrameNp world
         member internal this.SetScriptFrameNp (value : Scripting.DeclarationFrame) world = this.Set Property? ScriptFrameNp value world
         member this.ScriptFrameNp = PropertyTag.makeReadOnly this Property? ScriptFrameNp this.GetScriptFrameNp
+        member internal this.GetScriptUnsubscriptionsNp world : Unsubscription list = this.Get Property? ScriptUnsubscriptionsNp world
+        member internal this.SetScriptUnsubscriptionsNp (value : Unsubscription list) world = this.Set Property? ScriptUnsubscriptionsNp value world
+        member internal this.ScriptUnsubscriptionsNp = PropertyTag.makeReadOnly this Property? ScriptUnsubscriptionsNp this.GetScriptUnsubscriptionsNp
         member this.GetOnRegisterAp world : Scripting.Expr = this.Get Property? OnRegisterAp world
         member this.SetOnRegisterAp (value : Scripting.Expr) world = this.Set Property? OnRegisterAp value world
         member this.OnRegisterAp = PropertyTag.make this Property? OnRegisterAp this.GetOnRegisterAp this.SetOnRegisterAp
@@ -208,6 +211,7 @@ module ScriptFacetModule =
             [Define? ScriptOptAp (None : Symbol AssetTag option)
              Define? ScriptAp ([||] : Scripting.Expr array)
              Define? ScriptFrameNp (Scripting.DeclarationFrame HashIdentity.Structural)
+             Define? ScriptUnsubscriptionsNp ([] : Unsubscription list)
              Define? OnRegisterAp Scripting.Unit
              Define? OnUnregister Scripting.Unit
              Define? OnUpdate Scripting.Unit
@@ -480,10 +484,10 @@ module NodeFacetModule =
                     Log.trace "Cannot mount a rigid body entity onto another entity. Instead, consider using physics constraints."
                     World.choose oldWorld
                 else
-                    let (unsubscribe, world) = World.monitorPlus handleNodePropertyChange node.Position.Change entity world
-                    let (unsubscribe2, world) = World.monitorPlus handleNodePropertyChange node.Depth.Change entity world
-                    let (unsubscribe3, world) = World.monitorPlus handleNodePropertyChange node.Visible.Change entity world
-                    let (unsubscribe4, world) = World.monitorPlus handleNodePropertyChange node.Enabled.Change entity world
+                    let (unsubscribe, world) = World.monitorPlus handleNodePropertyChange node.Position.ChangeEvent entity world
+                    let (unsubscribe2, world) = World.monitorPlus handleNodePropertyChange node.Depth.ChangeEvent entity world
+                    let (unsubscribe3, world) = World.monitorPlus handleNodePropertyChange node.Visible.ChangeEvent entity world
+                    let (unsubscribe4, world) = World.monitorPlus handleNodePropertyChange node.Enabled.ChangeEvent entity world
                     entity.SetNodeUnsubscribeNp (unsubscribe4 >> unsubscribe3 >> unsubscribe2 >> unsubscribe) world
             | None -> world
 
@@ -500,11 +504,11 @@ module NodeFacetModule =
 
         override facet.Register (entity, world) =
             let world = entity.SetNodeUnsubscribeNp id world // ensure unsubscribe function reference doesn't get copied in Gaia...
-            let world = World.monitor handleNodeChange entity.ParentNodeOpt.Change entity world
-            let world = World.monitorPlus handleLocalPropertyChange entity.PositionLocal.Change entity world |> snd
-            let world = World.monitorPlus handleLocalPropertyChange entity.DepthLocal.Change entity world |> snd
-            let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.Change entity world |> snd
-            let world = World.monitorPlus handleLocalPropertyChange entity.EnabledLocal.Change entity world |> snd
+            let world = World.monitor handleNodeChange entity.ParentNodeOpt.ChangeEvent entity world
+            let world = World.monitorPlus handleLocalPropertyChange entity.PositionLocal.ChangeEvent entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.DepthLocal.ChangeEvent entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.ChangeEvent entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.EnabledLocal.ChangeEvent entity world |> snd
             let world = subscribeToNodePropertyChanges entity world
             world
 

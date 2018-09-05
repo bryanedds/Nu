@@ -62,6 +62,8 @@ module WorldModuleGame =
             evalManyWithLogging value scriptFrame (Game Address.empty) world |> snd
         static member internal getGameScriptFrameNp world = (World.getGameState world).ScriptFrameNp
         static member internal setGameScriptFrameNp value world = World.updateGameState (fun gameState -> { gameState with ScriptFrameNp = value }) Property? ScriptFrameNp world
+        static member internal getGameScriptUnsubscriptionsNp world = (World.getGameState world).ScriptUnsubscriptionsNp
+        static member internal setGameScriptUnsubscriptionsNp value world = World.updateGameState (fun gameState -> { gameState with ScriptUnsubscriptionsNp = value }) Property? ScriptUnsubscriptionsNp world
         static member internal getGameOnRegister world = (World.getGameState world).OnRegister
         static member internal setGameOnRegister value world = World.updateGameState (fun gameState -> { gameState with OnRegister = value }) Property? OnRegister world
         static member internal getGameOnUnregister world = (World.getGameState world).OnUnregister
