@@ -99,6 +99,20 @@ module WorldScripting =
             | Some relationExpr -> World.tryResolveRelation fnName relationExpr originOpt context world
             | None -> Right struct (context, world)
 
+        static member internal tryImportEvent evt world =
+            match ScriptingWorld.tryImport evt.DataType evt.Data world with
+            | Some dataImported ->
+                let evtRecord =
+                    Record
+                        ("Event",
+                         [|"Data", 0; "Subscriber", 1; "Publisher", 2; "Address", 3|] |> Map.ofArray,
+                         [|dataImported
+                           String (scstring evt.Subscriber)
+                           String (scstring evt.Publisher)
+                           String (scstring evt.Address)|])
+                Some evtRecord
+            | None -> None
+
         static member internal evalGet fnName propertyName relationOpt originOpt world =
             let context = World.getScriptContext world
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
@@ -201,7 +215,9 @@ module WorldScripting =
                 let stream = Stream.make eventAddress
                 let stream =
                     Stream.mapEffect (fun (evt : Event<obj, _>) world ->
-                        (ScriptingWorld.tryImport evt.DataType evt.Data world, world))
+                        match World.tryImportEvent evt world with
+                        | Some evtImported -> (Some evtImported, world)
+                        | None -> (None, world))
                         stream
                 struct (Pluggable { Stream = stream }, world)
             | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Function for its 1st argument.", originOpt), world)
@@ -317,20 +333,12 @@ module WorldScripting =
             EventWorld.subscribe (fun evt world ->
                 match World.tryGetSimulantScriptFrame subscriber world with
                 | Some scriptFrame ->
-                    match ScriptingWorld.tryImport evt.DataType evt.Data world with
-                    | Some dataImported ->
-                        let evtRecord =
-                            Record
-                                ("Event",
-                                 [|"Data", 0; "Subscriber", 1; "Publisher", 2; "Address", 3|] |> Map.ofArray,
-                                 [|dataImported
-                                   String (scstring evt.Subscriber)
-                                   String (scstring evt.Publisher)
-                                   String (scstring evt.Address)|])
+                    match World.tryImportEvent evt world with
+                    | Some evtImported ->
                         let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
-                        let application = Apply ([|subscription; evtRecord|], breakpoint, None)
+                        let application = Apply ([|subscription; evtImported|], breakpoint, None)
                         World.evalWithLogging application scriptFrame subscriber world |> snd
-                    | None -> Log.info "Property value could not be imported into scripting environment."; world
+                    | None -> Log.info "Event data could not be imported into scripting environment."; world
                 | None -> world)
                 eventAddress
                 (subscriber :> Participant)
