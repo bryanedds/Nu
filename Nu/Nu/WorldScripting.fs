@@ -211,7 +211,9 @@ module WorldScripting =
             | Violation _ as error -> struct (error, world)
             | String str
             | Keyword str ->
-                let eventAddress = Address.makeFromString str
+                let scriptContext = World.getScriptContext world
+                let eventRelation = Relation.makeFromString str
+                let eventAddress = Relation.resolve scriptContext.SimulantAddress eventRelation
                 let stream = Stream.make eventAddress
                 let stream =
                     Stream.mapEffect (fun (evt : Event<obj, _>) world ->
