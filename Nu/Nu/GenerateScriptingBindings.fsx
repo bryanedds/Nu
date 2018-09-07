@@ -14,6 +14,8 @@ type ParameterConversionDetails =
     | NormalSeqParameter of Type
     | RelationParameter of Type
     | RelationSeqParameter of Type
+    | AddressParameter of Type
+    | AddressSeqParameter of Type
 
 type ParameterConversion =
     | ValueParameter of ParameterConversionDetails
@@ -40,10 +42,11 @@ let getParameterConversion (ty : Type) =
     match ty.Name with
     | "World" -> WorldParameter
     | "Entity" | "Layer" | "Screen" | "Game" | "Simulant" -> ValueParameter (RelationParameter ty)
+    | "Address`1" -> ValueParameter (AddressParameter ty)
     | "IEnumerable`1" | "FSharpList`1" ->
         let itemType = (ty.GetGenericArguments ()).[0]
-        if not (typeof<Simulant>.IsAssignableFrom itemType)
-        then ValueParameter (NormalSeqParameter ty)
+        if not (typeof<Simulant>.IsAssignableFrom itemType) then ValueParameter (NormalSeqParameter ty)
+        elif itemType.Name = "Address`1" then ValueParameter (AddressSeqParameter ty)
         else ValueParameter (RelationSeqParameter ty)
     | _ -> ValueParameter (NormalParameter ty)
 
@@ -153,6 +156,39 @@ let generateRelationListParameterConversion (par : string) (ty : Type) =
     "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
     "                | struct (_, _) -> failwith \"Expecting a list of relations.\"\n"
 
+let generateAddressParameterConversion (par : string) (ty : Type) =
+    "            let struct (" + par + ", world) =\n" +
+    "                let context = World.getScriptContext world\n" +
+    "                match World.evalInternal " + par + " world with\n" +
+    "                | struct (Scripting.String str, world)\n" +
+    "                | struct (Scripting.Keyword str, world) ->\n" +
+    "                    let relation = Relation.makeFromString str\n" +
+    "                    let address = Relation.resolve context.SimulantAddress relation\n" +
+    "                    struct (address, world)\n" +
+    "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+    "                | struct (_, _) -> failwith \"Address must be either a String or Keyword.\"\n"
+
+let generateAddressListParameterConversion (par : string) (ty : Type) =
+    "            let struct (" + par + ", world) =\n" +
+    "                match World.evalInternal " + par + " world with\n" +
+    "                | struct (Scripting.List list, world) ->\n" +
+    "                    Seq.fold (fun struct (values, world) value ->\n" +
+    "                       let struct (value, world) =\n" +
+    "                           let context = World.getScriptContext world\n" +
+    "                           match World.evalInternal " + par + " world with\n" +
+    "                           | struct (Scripting.String str, world)\n" +
+    "                           | struct (Scripting.Keyword str, world) ->\n" +
+    "                               let relation = Relation.makeFromString str\n" +
+    "                               let address = Relation.resolve context.SimulantAddress relation\n" +
+    "                               struct (address, world)\n" +
+    "                           | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+    "                           | struct (_, _) -> failwith \"Address must be either a String or Keyword.\"\n" +
+    "                        struct (value :: values, world))\n" +
+    "                        struct ([], world)\n" +
+    "                        list\n" +
+    "                | struct (Scripting.Violation (_, error, _), _) -> failwith error\n" +
+    "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n"
+
 let rec generateParameterConversionOpt (par : string) conversion =
     match conversion with
     | ValueParameter rc ->
@@ -161,6 +197,8 @@ let rec generateParameterConversionOpt (par : string) conversion =
         | NormalSeqParameter ty -> Some (generateNormalListParameterConversion par (ty.GetGenericArguments ()).[0])
         | RelationParameter ty -> Some (generateRelationParameterConversion par ty)
         | RelationSeqParameter ty -> Some (generateRelationListParameterConversion par (ty.GetGenericArguments ()).[0])
+        | AddressParameter ty -> Some (generateAddressParameterConversion par ty)
+        | AddressSeqParameter ty -> Some (generateAddressListParameterConversion par (ty.GetGenericArguments ()).[0])
     | WorldParameter -> None
 
 let generateBindingFunction binding =
@@ -256,9 +294,8 @@ let generateInitBindings bindings =
 
     let bindingDispatchers =
         bindings |>
-        Array.map (fun binding -> "             (\"" + binding.FunctionName + "\", eval" + String.capitalize binding.FunctionBindingName + "Binding)\n") |>
+        Array.map (fun binding -> "             (\"" + binding.FunctionBindingName + "\", eval" + String.capitalize binding.FunctionBindingName + "Binding)\n") |>
         fun dispatchers -> String.Join ("", dispatchers)
-
     "    let initBindings () =\n" +
     "        let bindings =\n" +
     "            [\n" +
@@ -337,7 +374,7 @@ let bindings =
     types |>
     Array.map (fun (ty : Type) -> ty.GetMethods ()) |>
     Array.concat |>
-    Array.filter (fun mi -> isNotNull (mi. GetCustomAttribute<FunctionBindingAttribute> ())) |>
+    Array.filter (fun mi -> isNotNull (mi.GetCustomAttribute<FunctionBindingAttribute> ())) |>
     Array.map tryGenerateBinding |>
     Array.definitize // TODO: error output
 

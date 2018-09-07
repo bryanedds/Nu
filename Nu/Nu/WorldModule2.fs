@@ -45,6 +45,17 @@ module WorldModule2 =
                     priority :> IComparable)
                 subscriptions
                 world
+    
+        /// Resolve a relation to an address in the current script context.
+        static member resolve relation world =
+            let scriptingContext = World.getScriptContext world
+            let address = Relation.resolve scriptingContext.SimulantAddress relation
+            address
+
+        /// Resolve a Participant relation to an address in the current script context.
+        [<FunctionBinding "resolve">]
+        static member resolveGeneric (relation : obj Relation) world =
+            World.resolve relation world
 
         /// Try to check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.

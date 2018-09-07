@@ -41,7 +41,7 @@ module WorldAudioModule =
             World.enqueueAudioMessage playSongMessage world
 
         /// Send a message to the audio system to play a song.
-        [<FunctionBinding ("playSong4")>]
+        [<FunctionBinding "playSong4">]
         static member playSong5 timeToFadeOutSongMs volume songPackageName songAssetName world =
             let song = AssetTag.make<Audio> songPackageName songAssetName
             World.playSong timeToFadeOutSongMs volume song world
@@ -53,7 +53,7 @@ module WorldAudioModule =
             World.enqueueAudioMessage playSoundMessage world
 
         /// Send a message to the audio system to play a sound.
-        [<FunctionBinding ("playSound3")>]
+        [<FunctionBinding "playSound3">]
         static member playSound4 volume soundPackageName soundAssetName world =
             let sound = AssetTag.make<Audio> soundPackageName soundAssetName
             World.playSound volume sound world

@@ -665,7 +665,7 @@ module WorldModuleEntity =
             else world
 
         /// Create an entity and add it to the world.
-        [<FunctionBinding ("createEntity")>]
+        [<FunctionBinding "createEntity">]
         static member createEntity5 dispatcherName nameOpt overlayNameDescriptor (layer : Layer) world =
 
             // grab overlay dependencies
@@ -884,7 +884,7 @@ module WorldModuleEntity =
                 (Left "Could not set the entity's overlay name because setting an overlay to or from None is currently unimplemented.", world)
             
         /// Try to set the entity's facet names from script.
-        [<FunctionBinding ("trySetEntityOverlayNameOpt")>]
+        [<FunctionBinding "trySetEntityOverlayNameOpt">]
         static member trySetEntityOverlayNameOptFromScript overlayNameOpt entity world =
             match World.trySetEntityOverlayNameOpt overlayNameOpt entity world with
             | (Right _, world) -> world
@@ -910,7 +910,7 @@ module WorldModuleEntity =
             | Left error -> (Left error, world)
             
         /// Try to set the entity's facet names from script.
-        [<FunctionBinding ("trySetEntityFacetNames")>]
+        [<FunctionBinding "trySetEntityFacetNames">]
         static member trySetEntityFacetNamesFromScript facetNames entity world =
             match World.trySetEntityFacetNames facetNames entity world with
             | (Right _, world) -> world
