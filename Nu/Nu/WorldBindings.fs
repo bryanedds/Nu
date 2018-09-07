@@ -18,8 +18,8 @@ open global.Nu
 module WorldBindings =
 
     let [<Literal>] BindingKeywords =
-        "tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning selectScreen " +
-        "tryTransitionScreen transitionScreen createDissolveScreenFromLayerFile6 createDissolveScreenFromLayerFile " +
+        "resolve tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning " +
+        "selectScreen tryTransitionScreen transitionScreen createDissolveScreenFromLayerFile6 createDissolveScreenFromLayerFile " +
         "createSplashScreen6 createSplashScreen getEntitiesInView2 getEntitiesInBounds3 " +
         "getEntitiesAtPoint3 getEntitiesInView getEntitiesInBounds getEntitiesAtPoint " +
         "playSong playSong4 playSound playSound3 " +
@@ -46,6 +46,18 @@ module WorldBindings =
         "getTickRateF setTickRate resetTickTime getTickTime " +
         "isTicking getUpdateCount getLiveness exit " +
         "tryGetTextureSize getTextureSize tryGetTextureSizeAsVector2 getTextureSizeAsVector2"
+
+    let resolve relation world =
+        let oldWorld = world
+        try
+            let relation = ScriptingWorld.tryExport typeof<Relation<Object>> relation world |> Option.get :?> Relation<Object>
+            let result = World.resolveGeneric relation world
+            let value = result
+            let value = ScriptingWorld.tryImport typeof<Address<Object>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'resolve' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
 
     let tryGetIsSelectedScreenIdling world =
         let oldWorld = world
@@ -1685,6 +1697,14 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSizeAsVector2' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let evalResolveBinding fnName exprs originOpt world =
+        match World.evalManyInternal exprs world with
+        | struct ([|relation|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
+            resolve relation world
+        | _ ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+            struct (violation, world)
+
     let evalTryGetIsSelectedScreenIdlingBinding fnName exprs originOpt world =
         match World.evalManyInternal exprs world with
         | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
@@ -2597,6 +2617,7 @@ module WorldBindings =
     let initBindings () =
         let bindings =
             [
+             ("resolve", evalResolveBinding)
              ("tryGetIsSelectedScreenIdling", evalTryGetIsSelectedScreenIdlingBinding)
              ("tryGetIsSelectedScreenTransitioning", evalTryGetIsSelectedScreenTransitioningBinding)
              ("isSelectedScreenIdling", evalIsSelectedScreenIdlingBinding)
@@ -2615,9 +2636,9 @@ module WorldBindings =
              ("getEntitiesInBounds", evalGetEntitiesInBoundsBinding)
              ("getEntitiesAtPoint", evalGetEntitiesAtPointBinding)
              ("playSong", evalPlaySongBinding)
-             ("playSong5", evalPlaySong4Binding)
+             ("playSong4", evalPlaySong4Binding)
              ("playSound", evalPlaySoundBinding)
-             ("playSound4", evalPlaySound3Binding)
+             ("playSound3", evalPlaySound3Binding)
              ("fadeOutSong", evalFadeOutSongBinding)
              ("stopSong", evalStopSongBinding)
              ("hintAudioPackageUse", evalHintAudioPackageUseBinding)
@@ -2659,8 +2680,8 @@ module WorldBindings =
              ("readGameFromFile", evalReadGameFromFileBinding)
              ("getScreens", evalGetScreensBinding)
              ("destroyScreen", evalDestroyScreenBinding)
-             ("createScreen3", evalCreateScreenBinding)
-             ("createDissolveScreen5", evalCreateDissolveScreenBinding)
+             ("createScreen", evalCreateScreenBinding)
+             ("createDissolveScreen", evalCreateDissolveScreenBinding)
              ("writeScreenToFile", evalWriteScreenToFileBinding)
              ("readScreenFromFile", evalReadScreenFromFileBinding)
              ("getLayers", evalGetLayersBinding)
@@ -2672,11 +2693,11 @@ module WorldBindings =
              ("destroyEntity", evalDestroyEntityBinding)
              ("destroyEntities", evalDestroyEntitiesBinding)
              ("tryPickEntity", evalTryPickEntityBinding)
-             ("createEntity5", evalCreateEntityBinding)
+             ("createEntity", evalCreateEntityBinding)
              ("reassignEntity", evalReassignEntityBinding)
-             ("trySetEntityOverlayNameOptFromScript", evalTrySetEntityOverlayNameOptBinding)
-             ("trySetEntityFacetNamesFromScript", evalTrySetEntityFacetNamesBinding)
-             ("createLayer4", evalCreateLayerBinding)
+             ("trySetEntityOverlayNameOpt", evalTrySetEntityOverlayNameOptBinding)
+             ("trySetEntityFacetNames", evalTrySetEntityFacetNamesBinding)
+             ("createLayer", evalCreateLayerBinding)
              ("getEyeCenter", evalGetEyeCenterBinding)
              ("setEyeCenter", evalSetEyeCenterBinding)
              ("getEyeSize", evalGetEyeSizeBinding)

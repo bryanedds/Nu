@@ -171,7 +171,7 @@ module WorldScreenModule =
             World.addTasklet tasklet world
 
         /// Create a screen and add it to the world.
-        [<FunctionBinding ("createScreen")>]
+        [<FunctionBinding "createScreen">]
         static member createScreen3 dispatcherName nameOpt world =
             let dispatchers = World.getScreenDispatchers world
             let dispatcher =
@@ -189,7 +189,7 @@ module WorldScreenModule =
             World.createScreen3 typeof<'d>.Name nameOpt world
         
         /// Create a screen with a dissolving transition, and add it to the world.
-        [<FunctionBinding ("createDissolveScreen")>]
+        [<FunctionBinding "createDissolveScreen">]
         static member createDissolveScreen5 dispatcherName nameOpt dissolveData world =
             let dissolveImageOpt = Some dissolveData.DissolveImage
             let (screen, world) = World.createScreen3 dispatcherName nameOpt world

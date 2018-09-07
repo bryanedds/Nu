@@ -260,7 +260,7 @@ module WorldModuleLayer =
             else world
 
         /// Create a layer and add it to the world.
-        [<FunctionBinding ("createLayer")>]
+        [<FunctionBinding "createLayer">]
         static member createLayer4 dispatcherName nameOpt (screen : Screen) world =
             let dispatchers = World.getLayerDispatchers world
             let dispatcher =
