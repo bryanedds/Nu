@@ -30,7 +30,7 @@
 #| Check that a value is a Tuple.       |# [define isTuple [a] [= [getTypeName a] "Tuple"]]
 #| Check that a value is a Union.       |# [define isUnion [a] [= [getTypeName a] "Union"]]
 #| Check that a value is an Option.     |# [define isOption [a] [= [getTypeName a] "Option"]]
-#| Check that a value is an Either.     |# [define isOption [a] [= [getTypeName a] "Either"]]
+#| Check that a value is an Either.     |# [define isEither [a] [= [getTypeName a] "Either"]]
 #| Check that a value is a List.        |# [define isList [a] [= [getTypeName a] "List"]]
 #| Check that a value is a Ring.        |# [define isRing [a] [= [getTypeName a] "Ring"]]
 #| Check that a value is a Table.       |# [define isTable [a] [= [getTypeName a] "Table"]]
