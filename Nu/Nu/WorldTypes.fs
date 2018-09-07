@@ -254,7 +254,7 @@ module WorldTypes =
              Define? Enabled true
              Define? Omnipresent false
              Define? AlwaysUpdate false
-             Define? PublishChanges true
+             Define? PublishChanges false
              Define? PublishUpdatesNp false
              Define? PublishPostUpdatesNp false]
     
