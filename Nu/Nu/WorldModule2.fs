@@ -48,8 +48,8 @@ module WorldModule2 =
     
         /// Resolve a relation to an address in the current script context.
         static member resolve relation world =
-            let scriptingContext = World.getScriptContext world
-            let address = Relation.resolve scriptingContext.SimulantAddress relation
+            let scriptContext = World.getScriptContext world
+            let address = Relation.resolve scriptContext.SimulantAddress relation
             address
 
         /// Resolve a Participant relation to an address in the current script context.
