@@ -3,15 +3,15 @@
 
 #I __SOURCE_DIRECTORY__
 #r "System.Configuration"
-#r "../../packages/System.ValueTuple.4.4.0/lib/portable-net40+sl4+win8+wp8/System.ValueTuple.dll"
+#r "../../packages/System.ValueTuple.4.5.0/lib/portable-net40+sl4+win8+wp8/System.ValueTuple.dll"
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsec.dll"
 //#r "../../packages/xunit.core.2.3.1/xunit.core.2.3.1.nupkg"
 //#r "../../packages/xunit.abstractions.2.0.1/xunit.abstractions.2.0.1.nupkg"
 //#r "../../packages/xunit.assert.2.3.1/xunit.assert.2.3.1.nupkg"
-#r "../../packages/FsCheck.2.10.10/lib/net452/FsCheck.dll"
-#r "../../packages/FsCheck.Xunit.2.10.10/lib/net452/FsCheck.Xunit.dll"
-#r "../../packages/Prime.2.9.6/lib/net46/Prime.exe"
+#r "../../packages/FsCheck.2.11.0/lib/net452/FsCheck.dll"
+#r "../../packages/FsCheck.Xunit.2.11.0/lib/net452/FsCheck.Xunit.dll"
+#r "../../packages/Prime.3.0.1/lib/net46/Prime.exe"
 #r "../../Nu/Nu.Dependencies/FSharpx.Core/FSharpx.Core.dll"
 #r "../../Nu/Nu.Dependencies/FSharpx.Collections/FSharpx.Collections.dll"
 #r "../../Nu/Nu.Dependencies/Farseer/FarseerPhysics.dll"
