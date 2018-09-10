@@ -473,7 +473,7 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
         physicsEngine.RebuildingHack <- false
 
     static member private createTransformMessages physicsEngine =
-        // NOTE: We should really be querying these bodies from the physics engine internally-maintained awake-body
+        // NOTE: We should really be querying these bodies from the physics engine's internally-maintained awake-body
         // list. Note also that I tried building Farseer with #define USE_AWAKE_BODY_SET so we can query from that
         // AwakeBodyList, but there are compilation errors that, when I tried to fix, broke the whole system :)
         //

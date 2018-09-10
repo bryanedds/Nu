@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Reflection
-open OpenTK
 open Prime
 open Nu
 
