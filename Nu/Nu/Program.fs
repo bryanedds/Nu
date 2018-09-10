@@ -15,7 +15,7 @@ module Program =
 
     What follows is a matrix of engine systems and the authoring language they provide to the user -
 
-    system          | language      |            editor
+    system          | language                  | editor
     -----------------------------------------------------------
     simulants defs  | s-expr DSL                | Gaia
     event filtering | s-expr DSL                | Gaia

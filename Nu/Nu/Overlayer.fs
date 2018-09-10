@@ -16,8 +16,10 @@ type [<Struct>] internal OverlayState =
 
 /// An overlay.
 [<Syntax
-    ("EntityDispatcher GuiDispatcher",
-     "NodeFacet EffectFacet ScriptFacet RigidBodyFacet StaticSpriteFacet AnimatedSpriteFacet",
+    ("EntityDispatcher ImperativeDispatcher EffectDispatcher NodeDispatcher GuiDispatcher " +
+     "ButtonDispatcher LabelDispatcher TextDispatcher ToggleDispatcher FeelerDispatcher FillBarDispatcher " +
+     "BlockDispatcher BoxDispatcher TopViewCharacterDispatcher SideViewCharacterDispatcher TileMapDispatcher",
+     "EffectFacet ScriptFacet RigidBodyFacet NodeFacet StaticSpriteFacet AnimatedSpriteFacet",
      "", "", "",
      Constants.PrettyPrinter.StructuredThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax)>]

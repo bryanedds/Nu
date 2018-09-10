@@ -102,7 +102,8 @@ module AssetGraphModule =
     [<Syntax
         ("Asset Assets",
          "nueffect nuscript bmp png ttf tmx wav ogg " +
-         "PsdToPng OldSchool Render Audio Symbol",
+         "PsdToPng OldSchool " +
+         "Audio Symbol",
          "", "", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
          Constants.PrettyPrinter.DefaultThresholdMax)>]
