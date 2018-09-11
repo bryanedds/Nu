@@ -46,23 +46,23 @@
 
 ; Determine that a value is its identity.
 [define isIdentity [a]
-    [= a [toIdentity a]]]
+    [= a [identity a]]]
 
 ; Check that a value is positive.
 [define isPositive [a]
-    [>= a [toEmpty a]]]
+    [>= a [empty a]]]
 
 ; Check that a value is negative.
 [define isNegative [a]
-    [<= a [toEmpty a]]]
+    [<= a [empty a]]]
 
 ; Check that a value is positive infinity.
 [define isPositiveInfinity [a]
-    [> a [toMax a]]]
+    [> a [maximum a]]]
 
 ; Check that a value is negative infinity.
 [define isNegativeInfinity [a]
-    [< a [toMin a]]]
+    [< a [minimum a]]]
 
 ; Check that a value is IEEE not-a-number.
 [define isNaN [a]
@@ -85,9 +85,9 @@
 
 ; The sign of a value. Returns Positive, Negative, or Zero.
 [define sign [a]
-    [if [> a [toEmpty a]]
+    [if [> a [empty a]]
         Positive
-        [if [< a [toEmpty a]] Negative Zero]]]
+        [if [< a [empty a]] Negative Zero]]]
 
 ; Compute the absolute value.
 [define abs [a]
@@ -105,7 +105,7 @@
 
 ; Reverse the elements in a container.
 [define rev [ctr]
-    [fold [flip cons] [toEmpty ctr] ctr]]
+    [fold [flip cons] [empty ctr] ctr]]
 
 ; Fold over a container backward while state satisfies the given predicate.
 [define foldBackWhile [folder state ctr]
@@ -138,14 +138,14 @@
 [define definitize [ctr]
     [foldBack
         [fun [elems elemOpt] [if [isSome elemOpt] [cons [! elemOpt] elems] elems]]
-        [toEmpty ctr]
+        [empty ctr]
         ctr]]
 
 ; Filter for elements that satifsy the given predicate.
 [define filter [pred ctr]
     [foldBack
         [fun [elems elem] [if [pred elem] [cons elem elems] elems]]
-        [toEmpty ctr]
+        [empty ctr]
         ctr]]
 
 ; Build a container of elements taken from the given container while a predicate succeeds.
@@ -153,14 +153,14 @@
     [rev
         [foldWhile
             [fun [elems elem] [if [pred elem] [some [cons elem elems]] none]]
-            [toEmpty ctr]
+            [empty ctr]
             ctr]]]
 
 [define take3 [current n ctr]
     [let [opt [tryUncons ctr]]
          [if [&& [isSome opt] [< current n]]
              [cons [fst! opt] [take3 [inc current] n [snd! opt]]]
-             [toEmpty ctr]]]]
+             [empty ctr]]]]
 
 ; Build a container of n elements taken from the given container, skipping n elements.
 ; NOTE: this can blow the stack when n is very large.
@@ -178,7 +178,7 @@
                      [if [pred elem]
                          [some [pair false elems]]
                          [some [pair true [cons elem elems]]]]]]]
-        [pair false [toEmpty ctr]]
+        [pair false [empty ctr]]
         ctr]]]]
 
 [define skip3 [current n ctr]
@@ -223,7 +223,7 @@
      [let [opt [tryUncons ctr]]
           [opt2 [tryUncons ctr2]] 
           [if [|| [isNone opt] [isNone opt2]]
-              [toEmpty ctr]
+              [empty ctr]
               [cons [zipper [fst! opt] [fst! opt2]]
                     [zipBy zipper [snd! opt] [snd! opt2]]]]]]
 
