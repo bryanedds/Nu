@@ -475,7 +475,7 @@ module Gaia =
                         | :? DesignerProperty as dp -> Some dp.DesignerType
                         | _ -> None
                     let ty = selectedGridItem.PropertyDescriptor.PropertyType
-                    let typeConverter = SymbolicConverter (true, designTypeOpt, ty)
+                    let typeConverter = SymbolicConverter (false, designTypeOpt, ty)
                     form.propertyEditor.Enabled <- not selectedGridItem.PropertyDescriptor.IsReadOnly
                     form.propertyNameLabel.Text <- selectedGridItem.Label
                     form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
@@ -532,7 +532,7 @@ module Gaia =
                 match selectedGridItem.GridItemType with
                 | GridItemType.Property ->
                     let ty = selectedGridItem.PropertyDescriptor.PropertyType
-                    let typeConverter = SymbolicConverter (true, None, ty)
+                    let typeConverter = SymbolicConverter (false, None, ty)
                     form.propertyEditor.Enabled <- true
                     form.propertyNameLabel.Text <- selectedGridItem.Label
                     form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
@@ -581,7 +581,7 @@ module Gaia =
                         match propertyDescriptor.GetValue entityTds with
                         | :? DesignerProperty as dp -> Some dp.DesignerType
                         | _ -> None
-                    let typeConverter = SymbolicConverter (true, designTypeOpt, propertyDescriptor.PropertyType)
+                    let typeConverter = SymbolicConverter (false, designTypeOpt, propertyDescriptor.PropertyType)
                     try form.propertyValueTextBox.EndUndoAction ()
                         let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
                         let strUnescaped = String.unescape strEscaped
@@ -607,7 +607,7 @@ module Gaia =
                 match selectedGridItem.GridItemType with
                 | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
                     let propertyDescriptor = selectedGridItem.PropertyDescriptor :?> LayerPropertyDescriptor
-                    let typeConverter = SymbolicConverter (true, None, selectedGridItem.PropertyDescriptor.PropertyType)
+                    let typeConverter = SymbolicConverter (false, None, selectedGridItem.PropertyDescriptor.PropertyType)
                     try form.propertyValueTextBox.EndUndoAction ()
                         let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
                         let strUnescaped = String.unescape strEscaped

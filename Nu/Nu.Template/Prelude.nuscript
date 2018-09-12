@@ -12,7 +12,7 @@
 #| The Tuple type indicator.            |# [define -T- [tuple]]
 #| The Union type indicator.            |# [define -U- [nil]]
 #| The Option type indicator.           |# [define -o- none]
-#| The Either type indicator.           |# [define -e- none]
+#| The Either type indicator.           |# [define -e- [left []]]
 #| The List type indicator.             |# [define -l- [list]]
 #| The Ring type indicator.             |# [define -r- [ring]]
 #| The Table type indicator.            |# [define -t- [table]]
@@ -240,10 +240,10 @@
 #| Nu Script Extensions. |#
 
 ; Vector2 extensions.
-[define toEmpty_Vector2 [_] [v2 0f 0f]]
-[define toIdentity_Vector2 [_] [v2 1f 1f]]
-[define toMin_Vector2 [_] [v2 [toMin -s-] [toMin -s-]]]
-[define toMax_Vector2 [_] [v2 [toMax -s-] [toMax -s-]]]
+[define empty_Vector2 [_] [v2 0f 0f]]
+[define identity_Vector2 [_] [v2 1f 1f]]
+[define minimum_Vector2 [_] [let [m [minimum -s-]] [v2 m m]]]
+[define maximum_Vector2 [_] [let [m [maximum -s-]] [v2 m m]]]
 [define inc_Vector2 [v] [v2 [inc v.X] [inc v.Y]]]
 [define dec_Vector2 [v] [v2 [dec v.X] [dec v.Y]]]
 [define negate_Vector2 [v] [v2 [negate v.X] [negate v.Y]]]
@@ -280,10 +280,10 @@
 [define -v2- [v2 0f 0f]]
 
 ; Vector4 extensions.
-[define toEmpty_Vector4 [_] [v4 0f 0f 0f 0f]]
-[define toIdentity_Vector4 [_] [v4 1f 1f 1f 1f]]
-[define toMin_Vector4 [_] [v4 [toMin -s-] [toMin -s-] [toMin -s-] [toMin -s-]]]
-[define toMax_Vector4 [_] [v4 [toMax -s-] [toMax -s-] [toMax -s-] [toMax -s-]]]
+[define empty_Vector4 [_] [v4 0f 0f 0f 0f]]
+[define identity_Vector4 [_] [v4 1f 1f 1f 1f]]
+[define minimum_Vector4 [_] [let [m [minimum -s-]] [v4 m m m m]]]
+[define maximum_Vector4 [_] [let [m [maximum -s-]] [v4 m m m m]]]
 [define inc_Vector4 [v] [v4 [inc v.X] [inc v.Y] [inc v.Z] [inc v.W]]]
 [define dec_Vector4 [v] [v4 [dec v.X] [dec v.Y] [dec v.Z] [dec v.W]]]
 [define negate_Vector4 [v] [v4 [negate v.X] [negate v.Y] [negate v.Z] [negate v.W]]]
@@ -320,10 +320,10 @@
 [define -v4- [v4 0f 0f 0f 0f]]
 
 ; Vector2i extensions.
-[define toEmpty_Vector2i [_] [v2i 0 0]]
-[define toIdentity_Vector2i [_] [v2i 1 1]]
-[define toMin_Vector2i [_] [v2i [toMin -s-] [toMin -s-]]]
-[define toMax_Vector2i [_] [v2i [toMax -s-] [toMax -s-]]]
+[define empty_Vector2i [_] [v2i 0 0]]
+[define identity_Vector2i [_] [v2i 1 1]]
+[define minimum_Vector2i [_] [let [m [minimum -i-]] [v2i m m]]]
+[define maximum_Vector2i [_] [let [m [maximum -i-]] [v2i m m]]]
 [define inc_Vector2i [v] [v2i [inc v.X] [inc v.Y]]]
 [define dec_Vector2i [v] [v2i [dec v.X] [dec v.Y]]]
 [define negate_Vector2i [v] [v2i [negate v.X] [negate v.Y]]]
@@ -357,7 +357,7 @@
 [define /_Vector2i [u v] [v2i [/ u.X v.X] [/ u.Y v.Y]]]
 [define %_Vector2i [u v] [v2i [% u.X v.X] [% u.Y v.Y]]]
 [define dot_Vector2i [u v] [+ [* u.X v.X] [* u.Y v.Y]]]
-[define -v2i- [v2 0f 0f]]
+[define -v2i- [v2i 0 0]]
 
 ; The game.
 [define game nil]
