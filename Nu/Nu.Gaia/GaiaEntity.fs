@@ -5,7 +5,6 @@ namespace Nu.Gaia
 open OpenTK
 open System
 open System.ComponentModel
-open System.Collections.Generic
 open System.Windows.Forms
 open Prime
 open Nu
@@ -70,8 +69,7 @@ and EntityPropertyDescriptor (property, attributes) =
 
     override this.IsReadOnly =
         not propertyCanWrite ||
-        not (Reflection.isPropertyPersistentByName propertyName) ||
-        propertyType = typeof<DesignerProperty>
+        not (Reflection.isPropertyPersistentByName propertyName)
 
     override this.GetValue source =
         match source with
@@ -108,7 +106,7 @@ and EntityPropertyDescriptor (property, attributes) =
                     world
                 else
                     MessageBox.Show
-                        ("Invalid name '" + name + "'; must have no whitespace and none of the following characters: '" + Symbol.IllegalNameChars + "'.",
+                        ("Invalid name '" + name + "'; must have no whitespace and none of the following characters: '" + (String.escape Symbol.IllegalNameChars) + "'.",
                          "Invalid Name",
                          MessageBoxButtons.OK) |>
                         ignore
