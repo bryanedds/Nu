@@ -51,4 +51,4 @@ module WorldTests =
         let world = !-- Jim.Visible --> Bob.Visible ^ world
         let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
-        Assert.False (Jim.GetVisible world)
+        Assert.True (Jim.GetVisible world)
