@@ -165,10 +165,10 @@ module WorldEntityModule =
                 world
 
         /// Check that an entity uses a facet of the given type.
-        member this.FacetsAs (facetType, world) = List.exists (fun facet -> getType facet = facetType) (this.GetFacetsNp world)
+        member this.FacetedAs (facetType, world) = List.exists (fun facet -> getType facet = facetType) (this.GetFacetsNp world)
 
         /// Check that an entity uses a facet of the given type.
-        member this.FacetsAs<'a> world = this.FacetsAs (typeof<'a>, world)
+        member this.FacetedAs<'a> world = this.FacetedAs (typeof<'a>, world)
 
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
         member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcherNp world)

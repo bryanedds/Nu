@@ -420,7 +420,7 @@ module NodeFacetModule =
 
         member private this.GetChildNodes2 nodes world =
             let nodeOpt =
-                if this.FacetsAs<NodeFacet> world
+                if this.FacetedAs<NodeFacet> world
                 then Option.map this.Resolve (this.GetParentNodeOpt world)
                 else None
             match nodeOpt with
@@ -480,7 +480,7 @@ module NodeFacetModule =
                 if node = entity then
                     Log.trace "Cannot mount entity to itself."
                     World.choose oldWorld
-                elif entity.FacetsAs<RigidBodyFacet> world then
+                elif entity.FacetedAs<RigidBodyFacet> world then
                     Log.trace "Cannot mount a rigid body entity onto another entity. Instead, consider using physics constraints."
                     World.choose oldWorld
                 else
