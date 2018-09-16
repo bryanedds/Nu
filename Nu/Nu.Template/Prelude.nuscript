@@ -239,6 +239,10 @@
 
 #| Nu Script Extensions. |#
 
+; Update function.
+[define update [property updater]
+    [set property [updater [get property]]]]
+
 ; Vector2 extensions.
 [define empty_Vector2 [_] [v2 0f 0f]]
 [define identity_Vector2 [_] [v2 1f 1f]]

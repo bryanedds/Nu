@@ -278,7 +278,7 @@ module Gaia =
                     World.updateUserValue (fun editorState ->
                         let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
                         let entityPosition =
-                            if entity.FacetsAs<NodeFacet> world && entity.ParentNodeExists world
+                            if entity.FacetedAs<NodeFacet> world && entity.ParentNodeExists world
                             then entity.GetPositionLocal world
                             else entity.GetPosition world
                         { editorState with DragEntityState = DragEntityPosition (entityPosition + mousePositionWorld, mousePositionWorld, entity) })
@@ -422,7 +422,7 @@ module Gaia =
         let selectedLayer = (World.getUserValue world).SelectedLayer
         let entityNames =
             World.getEntities selectedLayer world |>
-            Seq.filter (fun entity -> entity.FacetsAs<NodeFacet> world) |>
+            Seq.filter (fun entity -> entity.FacetedAs<NodeFacet> world) |>
             Seq.map (fun entity -> entity.GetName world) |>
             flip Seq.append [NonePick] |>
             Seq.toArray
@@ -1102,10 +1102,15 @@ module Gaia =
                 else form.evalInputTextBox.Text
             let exprsStr = Symbol.OpenSymbolsStr + "\n" + exprsStr + "\n" + Symbol.CloseSymbolsStr
             try let exprs = scvalue<Scripting.Expr array> exprsStr
-                let selectedLayer = (World.getUserValue world).SelectedLayer
-                let localFrame = selectedLayer.GetScriptFrameNp world
+                let layer = (World.getUserValue world).SelectedLayer
+                let (selectedSimulant, localFrame) =
+                    match form.entityPropertyGrid.SelectedObject with
+                    | :? EntityTypeDescriptorSource as entityTds when entityTds.DescribedEntity.FacetedAs<ScriptFacet> world ->
+                        let entity = entityTds.DescribedEntity
+                        (entity :> Simulant, entity.GetScriptFrameNp world)
+                    | _ -> (layer :> Simulant, layer.GetScriptFrameNp world)
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Scripting.Expr>).PrettyPrinter
-                let (evaleds, world) = World.evalManyWithLogging exprs localFrame selectedLayer world
+                let (evaleds, world) = World.evalManyWithLogging exprs localFrame selectedSimulant world
                 let evaledStrs = Array.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
                 let evaledsStr = String.concat "\n" evaledStrs
                 form.evalOutputTextBox.ReadOnly <- false
@@ -1210,7 +1215,7 @@ module Gaia =
                 let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                 let entityPositionSnapped = Math.snap2F positionSnap entityPosition
                 let world =
-                    if entity.FacetsAs<NodeFacet> world && entity.ParentNodeExists world
+                    if entity.FacetedAs<NodeFacet> world && entity.ParentNodeExists world
                     then entity.SetPositionLocal entityPositionSnapped world
                     else entity.SetPosition entityPositionSnapped world
                 let world = entity.PropagatePhysics world
@@ -1483,6 +1488,7 @@ module Gaia =
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[v4 0f 0f 0f 0f] : Vector4") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[v2i 0 0] : Vector2i") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[some 0] : int option") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[right 0] : Either<int, obj>") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[list 0] : int list") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[ring 0] : int Set") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[table [0 \"\"]] : Map<int, string>") |> ignore
