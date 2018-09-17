@@ -123,12 +123,12 @@ module WorldScripting =
                     | :? DesignerProperty as dp ->
                         match ScriptingWorld.tryImport dp.DesignerType dp.DesignerValue world with
                         | Some propertyValue -> struct (propertyValue, world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; fnName], "Property value could not be imported into scripting environment.", originOpt), world)
+                        | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be imported into scripting environment.", originOpt), world)
                     | _ ->
                         match ScriptingWorld.tryImport property.PropertyType property.PropertyValue world with
                         | Some propertyValue -> struct (propertyValue, world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; fnName], "Property value could not be imported into scripting environment.", originOpt), world)
-                | None -> struct (Violation (["InvalidProperty"; fnName], "Simulant or property value could not be found.", originOpt), world)
+                        | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be imported into scripting environment.", originOpt), world)
+                | None -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Simulant or property value could not be found.", originOpt), world)
             | Left error -> error
 
         static member internal evalGetAsStream fnName propertyName relationOpt originOpt world =
@@ -164,17 +164,17 @@ module WorldScripting =
                             let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
                             match World.trySetSimulantProperty propertyName property simulant world with
                             | (true, world) -> struct (Unit, world)
-                            | (false, world) -> struct (Violation (["InvalidProperty"; fnName], "Property value could not be set.", originOpt), world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; fnName], "Property value could not be exported into Simulant property.", originOpt), world)
+                            | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
+                        | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
                     | _ ->
                         match ScriptingWorld.tryExport property.PropertyType propertyValue world with
                         | Some propertyValue ->
                             let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
                             match World.trySetSimulantProperty propertyName property simulant world with
                             | (true, world) -> struct (Unit, world)
-                            | (false, world) -> struct (Violation (["InvalidProperty"; fnName], "Property value could not be set.", originOpt), world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; fnName], "Property value could not be exported into Simulant property.", originOpt), world)
-                | None -> struct (Violation (["InvalidProperty"; fnName], "Property value could not be set.", originOpt), world)
+                            | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
+                        | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
+                | None -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
             | Left error -> error
 
         static member internal evalSetAsStream fnName propertyName relationOpt stream originOpt world =
@@ -202,8 +202,8 @@ module WorldScripting =
                                 world
                         let world = WorldModule.addSimulantScriptUnsubscription unsubscribe simulant world
                         struct (Unit, world)
-                    | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)
-                | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)
+                    | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)
+                | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)
             | Left error -> error
 
         static member internal evalMakeStream fnName evaledArg originOpt world =
@@ -245,8 +245,8 @@ module WorldScripting =
                                 | None -> (None, world))
                             stream.Stream
                     struct (Pluggable { Stream = stream }, world)
-                | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
-            | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
+                | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
+            | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
 
         static member internal evalFoldStream fnName fn state stream originOpt world =
             match stream with
@@ -270,8 +270,8 @@ module WorldScripting =
                             (Some state)
                             stream.Stream
                     struct (Pluggable { Stream = stream }, world)
-                | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
-            | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
+                | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
+            | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
 
         static member internal evalMap2Stream fnName fn stream stream2 originOpt world =
             match (stream, stream2) with
@@ -295,8 +295,8 @@ module WorldScripting =
                             stream.Stream
                             stream2.Stream
                     struct (Pluggable { Stream = stream }, world)
-                | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd and 3rd arguments.", originOpt), world)
-            | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 2nd and 3rd arguments.", originOpt), world)
+                | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 2nd and 3rd arguments.", originOpt), world)
+            | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 2nd and 3rd arguments.", originOpt), world)
 
         static member internal evalProductStream fnName stream stream2 originOpt world =
             match (stream, stream2) with
@@ -312,8 +312,8 @@ module WorldScripting =
                             stream.Stream
                             stream2.Stream
                     struct (Pluggable { Stream = stream }, world)
-                | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
-            | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
+                | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
+            | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
 
         static member internal evalSumStream fnName stream stream2 originOpt world =
             match (stream, stream2) with
@@ -328,8 +328,8 @@ module WorldScripting =
                             | Left opt -> match opt with Some expr -> Some (Either (Left expr)) | None -> None)
                             stream
                     struct (Pluggable { Stream = stream }, world)
-                | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
-            | _ -> struct (Violation (["InvalidArgumentType"; fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
+                | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
+            | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
 
         static member internal evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
             EventWorld.subscribe (fun evt world ->
