@@ -48,7 +48,7 @@ module WorldConsole =
             let context = Simulants.Game
             let frame = context.GetScriptFrame world
             let expr = scvalue<Scripting.Expr> input
-            try let (result, world) = World.evalWithLogging expr frame context world
+            try let (result, world) = World.eval expr frame context world
                 Console.Write "< "
                 Console.WriteLine (scstring result)
                 run gameTitle world
