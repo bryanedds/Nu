@@ -14,10 +14,10 @@ module WorldGameModule =
 
         member this.GetId world = World.getGameId world
         member this.Id = PropertyTag.makeReadOnly this Property? Id this.GetId
-        member this.GetDispatcherNp world = World.getGameDispatcherNp world
-        member this.DispatcherNp = PropertyTag.makeReadOnly this Property? DispatcherNp this.GetDispatcherNp
-        member this.GetCreationTimeStampNp world = World.getGameCreationTimeStampNp world
-        member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
+        member this.GetDispatcher world = World.getGameDispatcher world
+        member this.Dispatcher = PropertyTag.makeReadOnly this Property? Dispatcher this.GetDispatcher
+        member this.GetCreationTimeStamp world = World.getGameCreationTimeStamp world
+        member this.CreationTimeStamp = PropertyTag.makeReadOnly this Property? CreationTimeStamp this.GetCreationTimeStamp
         member this.GetImperative world = World.getGameImperative world
         member this.Imperative = PropertyTag.makeReadOnly this Property? Imperative this.GetImperative
         member this.GetScriptOpt world = World.getGameScriptOpt world
@@ -26,11 +26,11 @@ module WorldGameModule =
         member this.GetScript world = World.getGameScript world
         member this.SetScript value world = World.setGameScript value world
         member this.Script = PropertyTag.make this Property? Script this.GetScript this.SetScript
-        member this.GetScriptFrameNp world = World.getGameScriptFrameNp world
-        member this.ScriptFrameNp = PropertyTag.makeReadOnly this Property? Script this.GetScriptFrameNp
-        member internal this.GetScriptUnsubscriptionsNp world = World.getGameScriptUnsubscriptionsNp world
-        member internal this.SetScriptUnsubscriptionsNp value world = World.setGameScriptUnsubscriptionsNp value world
-        member internal this.ScriptUnsubscriptionsNp = PropertyTag.make this Property? ScriptUnsubscriptionsNp this.GetScriptUnsubscriptionsNp this.SetScriptUnsubscriptionsNp
+        member this.GetScriptFrame world = World.getGameScriptFrame world
+        member this.ScriptFrame = PropertyTag.makeReadOnly this Property? Script this.GetScriptFrame
+        member internal this.GetScriptUnsubscriptions world = World.getGameScriptUnsubscriptions world
+        member internal this.SetScriptUnsubscriptions value world = World.setGameScriptUnsubscriptions value world
+        member internal this.ScriptUnsubscriptions = PropertyTag.make this Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions
         member this.GetOnRegister world = World.getGameOnRegister world
         member this.SetOnRegister value world = World.setGameOnRegister value world
         member this.OnRegister = PropertyTag.make this Property? OnRegister this.GetOnRegister this.SetOnRegister
@@ -114,7 +114,7 @@ module WorldGameModule =
         member this.MouseToEntity viewType entityPosition mousePosition world = World.mouseToEntity viewType entityPosition mousePosition world
 
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcherNp world)
+        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
         member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
@@ -143,9 +143,9 @@ module WorldGameModule =
             let world = World.monitor World.gameScriptOptChanged (Events.GameChange Property? ScriptOpt) game world
             let world =
                 World.withEventContext (fun world ->
-                    let dispatcher = game.GetDispatcherNp world
+                    let dispatcher = game.GetDispatcher world
                     let world = dispatcher.Register (game, world)
-                    World.eval (game.GetOnUnregister world) (game.GetScriptFrameNp world) game world |> snd)
+                    World.eval (game.GetOnUnregister world) (game.GetScriptFrame world) game world |> snd)
                     game
                     world
             World.choose world
@@ -154,8 +154,8 @@ module WorldGameModule =
             let game = Simulants.Game
             let world =
                 World.withEventContext (fun world ->
-                    let dispatcher = game.GetDispatcherNp world
-                    let world = World.eval (game.GetOnRegister world) (game.GetScriptFrameNp world)game world |> snd
+                    let dispatcher = game.GetDispatcher world
+                    let world = World.eval (game.GetOnRegister world) (game.GetScriptFrame world)game world |> snd
                     dispatcher.Unregister (game, world))
                     game
                     world
@@ -166,11 +166,11 @@ module WorldGameModule =
             World.withEventContext (fun world ->
 
                 // update via dispatcher
-                let dispatcher = game.GetDispatcherNp world
+                let dispatcher = game.GetDispatcher world
                 let world = dispatcher.Update (game, world)
 
                 // run script update
-                let world = World.evalWithLogging (game.GetOnUpdate world) (game.GetScriptFrameNp world) game world |> snd
+                let world = World.evalWithLogging (game.GetOnUpdate world) (game.GetScriptFrame world) game world |> snd
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateGame" EventTrace.empty
@@ -184,11 +184,11 @@ module WorldGameModule =
             World.withEventContext (fun world ->
                 
                 // post-update via dispatcher
-                let dispatcher = game.GetDispatcherNp world
+                let dispatcher = game.GetDispatcher world
                 let world = dispatcher.PostUpdate (game, world)
 
                 // run script post-update
-                let world = World.evalWithLogging (game.GetOnPostUpdate world) (game.GetScriptFrameNp world) game world |> snd
+                let world = World.evalWithLogging (game.GetOnPostUpdate world) (game.GetScriptFrame world) game world |> snd
 
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateGame" EventTrace.empty
@@ -200,21 +200,21 @@ module WorldGameModule =
         static member internal actualizeGame world =
             let game = Simulants.Game
             World.withEventContext (fun world ->
-                let dispatcher = game.GetDispatcherNp world
+                let dispatcher = game.GetDispatcher world
                 let world = dispatcher.Actualize (game, world)
                 World.choose world)
                 game
                 world
 
         // Get all the entities in the world.
-        [<FunctionBinding>]
+        [<FunctionBinding "getEntities0">]
         static member getEntities1 world =
             World.getLayers1 world |>
             Seq.map (fun layer -> World.getEntities layer world) |>
             Seq.concat
 
         // Get all the layers in the world.
-        [<FunctionBinding>]
+        [<FunctionBinding "getLayers0">]
         static member getLayers1 world =
             World.getScreens world |>
             Seq.map (fun screen -> World.getLayers screen world) |>

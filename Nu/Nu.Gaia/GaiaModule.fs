@@ -73,7 +73,7 @@ module Gaia =
             treeState
 
     let private addEntityTreeViewNode (form : GaiaForm) (entity : Entity) world =
-        let entityGroupName = getTypeName (entity.GetDispatcherNp world)
+        let entityGroupName = getTypeName (entity.GetDispatcher world)
         let treeGroup = form.entityTreeView.Nodes.[entityGroupName]
         let treeGroupNodeName = scstring entity.EntityAddress
         if treeGroup.Nodes.ContainsKey treeGroupNodeName
@@ -1107,8 +1107,8 @@ module Gaia =
                     match form.entityPropertyGrid.SelectedObject with
                     | :? EntityTypeDescriptorSource as entityTds when entityTds.DescribedEntity.FacetedAs<ScriptFacet> world ->
                         let entity = entityTds.DescribedEntity
-                        (entity :> Simulant, entity.GetScriptFrameNp world)
-                    | _ -> (layer :> Simulant, layer.GetScriptFrameNp world)
+                        (entity :> Simulant, entity.GetScriptFrame world)
+                    | _ -> (layer :> Simulant, layer.GetScriptFrame world)
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Scripting.Expr>).PrettyPrinter
                 let (evaleds, world) = World.evalManyWithLogging exprs localFrame selectedSimulant world
                 let evaledStrs = Array.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
@@ -1147,7 +1147,7 @@ module Gaia =
                 | exprStr :: _ ->
                     try let expr = scvalue<Scripting.Expr> exprStr
                         let selectedLayer = (World.getUserValue world).SelectedLayer
-                        let localFrame = selectedLayer.GetScriptFrameNp world
+                        let localFrame = selectedLayer.GetScriptFrame world
                         let (evaled, world) = World.evalWithLogging expr localFrame selectedLayer world
                         match Scripting.Expr.toFSharpTypeOpt evaled with
                         | Some dt ->
@@ -1157,9 +1157,12 @@ module Gaia =
                                 else ScriptingWorld.tryExport dt evaled world
                             match dvOpt with
                             | Some dv ->
+                                let propertyName = form.entityDesignerPropertyNameTextBox.Text
+                                let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                                let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                                 let dp = { DesignerType = dt; DesignerValue = dv }
                                 let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = dp }
-                                let world = entity.AttachProperty form.entityDesignerPropertyNameTextBox.Text property world
+                                let world = entity.AttachProperty propertyName alwaysPublish nonPersistent property world
                                 entityTds.WorldRef := world // must be set for property grid
                                 form.entityPropertyGrid.Refresh ()
                                 world

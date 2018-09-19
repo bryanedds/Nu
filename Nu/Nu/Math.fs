@@ -78,7 +78,9 @@ type Vector2Converter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let v2 = source :?> Vector2
-            Symbols ([Number (string v2.X, None); Number (string v2.Y, None)], None) :> obj
+            Symbols
+                ([Number (String.singleToCodeString v2.X, None)
+                  Number (String.singleToCodeString v2.Y, None)], None) :> obj
         elif destType = typeof<Vector2> then source
         else failconv "Invalid Vector2Converter conversion to source." None
 
@@ -90,7 +92,7 @@ type Vector2Converter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Symbols ([Number (x, _); Number (y, _)], _) -> Vector2 (Single.Parse x, Single.Parse y) :> obj
+            | Symbols ([Number (x, _); Number (y, _)], _) -> Vector2 (scvalue x, scvalue y) :> obj
             | _ -> failconv "Invalid Vector2Converter conversion from source." (Some symbol)
         | :? Vector2 -> source
         | _ -> failconv "Invalid Vector2Converter conversion from source." None
@@ -106,7 +108,10 @@ type Vector3Converter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let v3 = source :?> Vector3
-            Symbols ([Number (string v3.X, None); Number (string v3.Y, None); Number (string v3.Z, None)], None) :> obj
+            Symbols
+                ([Number (String.singleToCodeString v3.X, None)
+                  Number (String.singleToCodeString v3.Y, None)
+                  Number (String.singleToCodeString v3.Z, None)], None) :> obj
         elif destType = typeof<Vector3> then source
         else failconv "Invalid Vector3Converter conversion to source." None
 
@@ -118,8 +123,10 @@ type Vector3Converter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Symbols ([Number (x, _); Number (y, _); Number (z, _)], _) -> Vector3 (Single.Parse x, Single.Parse y, Single.Parse z) :> obj
-            | _ -> failconv "Invalid Vector3Converter conversion from source." (Some symbol)
+            | Symbols ([Number (x, _); Number (y, _); Number (z, _)], _) ->
+                Vector3 (scvalue x, scvalue y, scvalue z) :> obj
+            | _ ->
+                failconv "Invalid Vector3Converter conversion from source." (Some symbol)
         | :? Vector3 -> source
         | _ -> failconv "Invalid Vector3Converter conversion from source." None
 
@@ -160,10 +167,10 @@ type [<Struct; CustomEquality; CustomComparison>] Vector4Pluggable =
 
         member this.ToSymbol () =
             let v4 = Symbol.Atom ("v4", None)
-            let x = Symbol.Number (string this.Vector4.X, None)
-            let y = Symbol.Number (string this.Vector4.Y, None)
-            let z = Symbol.Number (string this.Vector4.Z, None)
-            let w = Symbol.Number (string this.Vector4.W, None)
+            let x = Symbol.Number (String.singleToCodeString this.Vector4.X, None)
+            let y = Symbol.Number (String.singleToCodeString this.Vector4.Y, None)
+            let z = Symbol.Number (String.singleToCodeString this.Vector4.Z, None)
+            let w = Symbol.Number (String.singleToCodeString this.Vector4.W, None)
             Symbol.Symbols ([v4; x; y; z; w], None)
 
 /// Converts Vector4 types.
@@ -177,7 +184,11 @@ type Vector4Converter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let v4 = source :?> Vector4
-            Symbols ([Number (string v4.X, None); Number (string v4.Y, None); Number (string v4.Z, None); Number (string v4.W, None)], None) :> obj
+            Symbols
+                ([Number (String.singleToCodeString v4.X, None)
+                  Number (String.singleToCodeString v4.Y, None)
+                  Number (String.singleToCodeString v4.Z, None)
+                  Number (String.singleToCodeString v4.W, None)], None) :> obj
         elif destType = typeof<Vector4> then source
         else failconv "Invalid Vector4Converter conversion to source." None
 
@@ -189,8 +200,10 @@ type Vector4Converter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) -> Vector4 (Single.Parse x, Single.Parse y, Single.Parse z, Single.Parse w) :> obj
-            | _ -> failconv "Invalid Vector4Converter conversion from source." (Some symbol)
+            | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) ->
+                Vector4 (scvalue x, scvalue y, scvalue z, scvalue w) :> obj
+            | _ ->
+                failconv "Invalid Vector4Converter conversion from source." (Some symbol)
         | :? Vector4 -> source
         | _ -> failconv "Invalid Vector4Converter conversion from source." None
 
@@ -231,8 +244,8 @@ type [<Struct; CustomEquality; CustomComparison>] Vector2iPluggable =
 
         member this.ToSymbol () =
             let v2i = Symbol.Atom ("v2i", None)
-            let x = Symbol.Number (string this.Vector2i.X, None)
-            let y = Symbol.Number (string this.Vector2i.Y, None)
+            let x = Symbol.Number (scstring this.Vector2i.X, None)
+            let y = Symbol.Number (scstring this.Vector2i.Y, None)
             Symbol.Symbols ([v2i; x; y], None)
 
 /// Converts Vector2i types.
@@ -246,7 +259,7 @@ type Vector2iConverter () =
     override this.ConvertTo (_, _, source, destType) =
         if destType = typeof<Symbol> then
             let v2i = source :?> Vector2i
-            Symbols ([Number (string v2i.X, None); Number (string v2i.Y, None)], None) :> obj
+            Symbols ([Number (scstring v2i.X, None); Number (scstring v2i.Y, None)], None) :> obj
         elif destType = typeof<Vector2i> then source
         else failconv "Invalid Vector2iConverter conversion to source." None
 
@@ -258,7 +271,7 @@ type Vector2iConverter () =
         match source with
         | :? Symbol as symbol ->
             match symbol with
-            | Symbols ([Number (x, _); Number (y, _)], _) -> Vector2i (Int32.Parse x, Int32.Parse y) :> obj
+            | Symbols ([Number (x, _); Number (y, _)], _) -> Vector2i (scvalue x, scvalue y) :> obj
             | _ -> failconv "Invalid Vector2iConverter conversion from source." (Some symbol)
         | :? Vector2i -> source
         | _ -> failconv "Invalid Vector2iConverter conversion from source." None
