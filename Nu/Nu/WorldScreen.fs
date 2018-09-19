@@ -16,13 +16,13 @@ module WorldScreenModule =
         member this.Id = PropertyTag.makeReadOnly this Property? Id this.GetId
         member this.GetName world = World.getScreenName this world
         member this.Name = PropertyTag.makeReadOnly this Property? Name this.GetName
-        member this.GetDispatcherNp world = World.getScreenDispatcherNp this world
-        member this.DispatcherNp = PropertyTag.makeReadOnly this Property? DispatcherNp this.GetDispatcherNp
+        member this.GetDispatcher world = World.getScreenDispatcher this world
+        member this.Dispatcher = PropertyTag.makeReadOnly this Property? Dispatcher this.GetDispatcher
         member this.GetPersistent world = World.getScreenPersistent this world
         member this.SetPersistent value world = World.setScreenPersistent value this world
         member this.Persistent = PropertyTag.makeReadOnly this Property? Persistent this.GetPersistent
-        member this.GetCreationTimeStampNp world = World.getScreenCreationTimeStampNp this world
-        member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
+        member this.GetCreationTimeStamp world = World.getScreenCreationTimeStamp this world
+        member this.CreationTimeStamp = PropertyTag.makeReadOnly this Property? CreationTimeStamp this.GetCreationTimeStamp
         member this.GetImperative world = World.getScreenImperative this world
         member this.Imperative = PropertyTag.makeReadOnly this Property? Imperative this.GetImperative
         member this.GetScriptOpt world = World.getScreenScriptOpt this world
@@ -31,11 +31,11 @@ module WorldScreenModule =
         member this.GetScript world = World.getScreenScript this world
         member this.SetScript value world = World.setScreenScript value this world
         member this.Script = PropertyTag.make this Property? Script this.GetScript this.SetScript
-        member this.GetScriptFrameNp world = World.getScreenScriptFrameNp this world
-        member this.ScriptFrameNp = PropertyTag.makeReadOnly this Property? Script this.GetScriptFrameNp
-        member internal this.GetScriptUnsubscriptionsNp world = World.getScreenScriptUnsubscriptionsNp this world
-        member internal this.SetScriptUnsubscriptionsNp value world = World.setScreenScriptUnsubscriptionsNp value this world
-        member internal this.ScriptUnsubscriptionsNp = PropertyTag.make this Property? ScriptUnsubscriptionsNp this.GetScriptUnsubscriptionsNp this.SetScriptUnsubscriptionsNp
+        member this.GetScriptFrame world = World.getScreenScriptFrame this world
+        member this.ScriptFrame = PropertyTag.makeReadOnly this Property? Script this.GetScriptFrame
+        member internal this.GetScriptUnsubscriptions world = World.getScreenScriptUnsubscriptions this world
+        member internal this.SetScriptUnsubscriptions value world = World.setScreenScriptUnsubscriptions value this world
+        member internal this.ScriptUnsubscriptions = PropertyTag.make this Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions
         member this.GetOnRegister world = World.getScreenOnRegister this world
         member this.SetOnRegister value world = World.setScreenOnRegister value this world
         member this.OnRegister = PropertyTag.make this Property? OnRegister this.GetOnRegister this.SetOnRegister
@@ -98,7 +98,7 @@ module WorldScreenModule =
         member this.Exists world = World.screenExists this world
 
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcherNp world)
+        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
         member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
@@ -112,11 +112,11 @@ module WorldScreenModule =
             World.withEventContext (fun world ->
                 
                 // update via dispatcher
-                let dispatcher = World.getScreenDispatcherNp screen world
+                let dispatcher = World.getScreenDispatcher screen world
                 let world = dispatcher.Update (screen, world)
 
                 // run script update
-                let world = World.evalWithLogging (screen.GetOnUpdate world) (screen.GetScriptFrameNp world) screen world |> snd
+                let world = World.evalWithLogging (screen.GetOnUpdate world) (screen.GetScriptFrame world) screen world |> snd
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
@@ -128,11 +128,11 @@ module WorldScreenModule =
             World.withEventContext (fun world ->
                 
                 // post-update via dispatcher
-                let dispatcher = World.getScreenDispatcherNp screen world
+                let dispatcher = World.getScreenDispatcher screen world
                 let world = dispatcher.PostUpdate (screen, world)
 
                 // run script post-update
-                let world = World.evalWithLogging (screen.GetOnPostUpdate world) (screen.GetScriptFrameNp world) screen world |> snd
+                let world = World.evalWithLogging (screen.GetOnPostUpdate world) (screen.GetScriptFrame world) screen world |> snd
                 
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty
@@ -142,7 +142,7 @@ module WorldScreenModule =
 
         static member internal actualizeScreen (screen : Screen) world =
             World.withEventContext (fun world ->
-                let dispatcher = screen.GetDispatcherNp world
+                let dispatcher = screen.GetDispatcher world
                 dispatcher.Actualize (screen, world))
                 screen
                 world
@@ -211,7 +211,7 @@ module WorldScreenModule =
         /// Write multiple screens to a game descriptor.
         static member writeScreens screens gameDescriptor world =
             screens |>
-            Seq.sortBy (fun (screen : Screen) -> screen.GetCreationTimeStampNp world) |>
+            Seq.sortBy (fun (screen : Screen) -> screen.GetCreationTimeStamp world) |>
             Seq.filter (fun (screen : Screen) -> screen.GetPersistent world) |>
             Seq.fold (fun screenDescriptors screen -> World.writeScreen screen ScreenDescriptor.empty world :: screenDescriptors) gameDescriptor.Screens |>
             fun screenDescriptors -> { gameDescriptor with Screens = screenDescriptors }

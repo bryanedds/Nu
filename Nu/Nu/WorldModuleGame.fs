@@ -49,8 +49,8 @@ module WorldModuleGame =
             World.publishGameChange propertyName oldWorld world
 
         static member internal getGameId world = (World.getGameState world).Id
-        static member internal getGameDispatcherNp world = (World.getGameState world).DispatcherNp
-        static member internal getGameCreationTimeStampNp world = (World.getGameState world).CreationTimeStampNp
+        static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
+        static member internal getGameCreationTimeStamp world = (World.getGameState world).CreationTimeStamp
         static member internal getGameImperative world = Xtension.getImperative (World.getGameState world).Xtension
         static member internal getGameScriptOpt world = (World.getGameState world).ScriptOpt
         static member internal setGameScriptOpt value world = World.updateGameState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt world
@@ -58,12 +58,12 @@ module WorldModuleGame =
         static member internal setGameScript value world =
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world
-            let world = World.setGameScriptFrameNp scriptFrame world
+            let world = World.setGameScriptFrame scriptFrame world
             evalManyWithLogging value scriptFrame (Game Address.empty) world |> snd
-        static member internal getGameScriptFrameNp world = (World.getGameState world).ScriptFrameNp
-        static member internal setGameScriptFrameNp value world = World.updateGameState (fun gameState -> { gameState with ScriptFrameNp = value }) Property? ScriptFrameNp world
-        static member internal getGameScriptUnsubscriptionsNp world = (World.getGameState world).ScriptUnsubscriptionsNp
-        static member internal setGameScriptUnsubscriptionsNp value world = World.updateGameState (fun gameState -> { gameState with ScriptUnsubscriptionsNp = value }) Property? ScriptUnsubscriptionsNp world
+        static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
+        static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> { gameState with ScriptFrame = value }) Property? ScriptFrame world
+        static member internal getGameScriptUnsubscriptions world = (World.getGameState world).ScriptUnsubscriptions
+        static member internal setGameScriptUnsubscriptions value world = World.updateGameState (fun gameState -> { gameState with ScriptUnsubscriptions = value }) Property? ScriptUnsubscriptions world
         static member internal getGameOnRegister world = (World.getGameState world).OnRegister
         static member internal setGameOnRegister value world = World.updateGameState (fun gameState -> { gameState with OnRegister = value }) Property? OnRegister world
         static member internal getGameOnUnregister world = (World.getGameState world).OnUnregister
@@ -251,7 +251,7 @@ module WorldModuleGame =
 
         static member internal tryGetGameCalculatedProperty propertyName world =
             let game = Game Address.empty
-            let dispatcher = World.getGameDispatcherNp world
+            let dispatcher = World.getGameDispatcher world
             dispatcher.TryGetCalculatedProperty (propertyName, game, world)
 
         static member internal tryGetGameProperty propertyName world =
@@ -296,7 +296,7 @@ module WorldModuleGame =
 
         static member internal writeGame3 writeScreens gameDescriptor world =
             let gameState = World.getGameState world
-            let gameDispatcherName = getTypeName gameState.DispatcherNp
+            let gameDispatcherName = getTypeName gameState.Dispatcher
             let gameDescriptor = { gameDescriptor with GameDispatcher = gameDispatcherName }
             let viewGameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
             let gameDescriptor = { gameDescriptor with GameProperties = viewGameProperties }
@@ -338,12 +338,12 @@ module WorldModuleGame =
     /// Initialize property getters.
     let private initGetters () =
         Getters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
-        Getters.Add ("DispatcherNp", fun world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcherNp world })
-        Getters.Add ("CreationTimeStampNp", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStampNp world })
+        Getters.Add ("Dispatcher", fun world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher world })
+        Getters.Add ("CreationTimeStamp", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStamp world })
         Getters.Add ("Imperative", fun world -> { PropertyType = typeof<bool>; PropertyValue = World.getGameImperative world })
         Getters.Add ("ScriptOpt", fun world -> { PropertyType = typeof<Symbol AssetTag option>; PropertyValue = World.getGameScriptOpt world })
         Getters.Add ("Script", fun world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getGameScript world })
-        Getters.Add ("ScriptFrameNp", fun world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScript world })
+        Getters.Add ("ScriptFrame", fun world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScript world })
         Getters.Add ("OnRegister", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnRegister world })
         Getters.Add ("OnUnregister", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUnregister world })
         Getters.Add ("OnUpdate", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUpdate world })
@@ -357,12 +357,12 @@ module WorldModuleGame =
     /// Initialize property setters.
     let private initSetters () =
         Setters.Add ("Id", fun _ world -> (false, world))
-        Setters.Add ("DispatcherNp", fun _ world -> (false, world))
-        Setters.Add ("CreationTimeStampNp", fun _ world -> (false, world))
+        Setters.Add ("Dispatcher", fun _ world -> (false, world))
+        Setters.Add ("CreationTimeStamp", fun _ world -> (false, world))
         Setters.Add ("Imperative", fun _ world -> (false, world))
         Setters.Add ("ScriptOpt", fun property world -> (true, World.setGameScriptOpt (property.PropertyValue :?> Symbol AssetTag option) world))
         Setters.Add ("Script", fun property world -> (true, World.setGameScript (property.PropertyValue :?> Scripting.Expr array) world))
-        Setters.Add ("ScriptFrameNp", fun _ world -> (false, world))
+        Setters.Add ("ScriptFrame", fun _ world -> (false, world))
         Setters.Add ("OnRegister", fun property world -> (true, World.setGameOnRegister (property.PropertyValue :?> Scripting.Expr) world))
         Setters.Add ("OnUnregister", fun property world -> (true, World.setGameOnUnregister (property.PropertyValue :?> Scripting.Expr) world))
         Setters.Add ("OnUpdate", fun property world -> (true, World.setGameOnUpdate (property.PropertyValue :?> Scripting.Expr) world))

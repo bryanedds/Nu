@@ -125,10 +125,10 @@ module WorldModuleLayer =
 
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
         static member internal getLayerName layer world = (World.getLayerState layer world).Name
-        static member internal getLayerDispatcherNp layer world = (World.getLayerState layer world).DispatcherNp
+        static member internal getLayerDispatcher layer world = (World.getLayerState layer world).Dispatcher
         static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
         static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> { layerState with Persistent = value }) Property? Persistent layer world
-        static member internal getLayerCreationTimeStampNp layer world = (World.getLayerState layer world).CreationTimeStampNp
+        static member internal getLayerCreationTimeStamp layer world = (World.getLayerState layer world).CreationTimeStamp
         static member internal getLayerImperative layer world = Xtension.getImperative (World.getLayerState layer world).Xtension
         static member internal getLayerScriptOpt layer world = (World.getLayerState layer world).ScriptOpt
         static member internal setLayerScriptOpt value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptOpt = value }) Property? ScriptOpt layer world
@@ -136,12 +136,12 @@ module WorldModuleLayer =
         static member internal setLayerScript value layer world =
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = World.updateLayerState (fun layerState -> { layerState with Script = value }) Property? Script layer world
-            let world = World.setLayerScriptFrameNp scriptFrame layer world
+            let world = World.setLayerScriptFrame scriptFrame layer world
             evalManyWithLogging value scriptFrame layer world |> snd
-        static member internal getLayerScriptFrameNp layer world = (World.getLayerState layer world).ScriptFrameNp
-        static member internal setLayerScriptFrameNp value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptFrameNp = value }) Property? ScriptFrameNp layer world
-        static member internal getLayerScriptUnsubscriptionsNp layer world = (World.getLayerState layer world).ScriptUnsubscriptionsNp
-        static member internal setLayerScriptUnsubscriptionsNp value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptUnsubscriptionsNp = value }) Property? ScriptUnsubscriptionsNp layer world
+        static member internal getLayerScriptFrame layer world = (World.getLayerState layer world).ScriptFrame
+        static member internal setLayerScriptFrame value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptFrame = value }) Property? ScriptFrame layer world
+        static member internal getLayerScriptUnsubscriptions layer world = (World.getLayerState layer world).ScriptUnsubscriptions
+        static member internal setLayerScriptUnsubscriptions value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptUnsubscriptions = value }) Property? ScriptUnsubscriptions layer world
         static member internal getLayerOnRegister layer world = (World.getLayerState layer world).OnRegister
         static member internal setLayerOnRegister value layer world = World.updateLayerState (fun layerState -> { layerState with OnRegister = value }) Property? OnRegister layer world
         static member internal getLayerOnUnregister layer world = (World.getLayerState layer world).OnUnregister
@@ -156,7 +156,7 @@ module WorldModuleLayer =
         static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> { layerState with Visible = value }) Property? Visible layer world
 
         static member internal tryGetLayerCalculatedProperty propertyName layer world =
-            let dispatcher = World.getLayerDispatcherNp layer world
+            let dispatcher = World.getLayerDispatcher layer world
             dispatcher.TryGetCalculatedProperty (propertyName, layer, world)
 
         static member internal tryGetLayerProperty propertyName layer world =
@@ -224,11 +224,11 @@ module WorldModuleLayer =
             let world = World.monitor World.layerScriptOptChanged (ltoa<World ParticipantChangeData> ["Layer"; "Change"; (Property? ScriptOpt); "Event"] ->- layer) layer world
             let world =
                 World.withEventContext (fun world ->
-                    let dispatcher = World.getLayerDispatcherNp layer world
+                    let dispatcher = World.getLayerDispatcher layer world
                     let world = dispatcher.Register (layer, world)
                     let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
                     let world = World.publish () (ltoa<unit> ["Layer"; "Register"; "Event"] ->- layer) eventTrace layer world
-                    eval (World.getLayerOnUnregister layer world) (World.getLayerScriptFrameNp layer world) layer world |> snd)
+                    eval (World.getLayerOnUnregister layer world) (World.getLayerScriptFrame layer world) layer world |> snd)
                     layer
                     world
             World.choose world
@@ -236,8 +236,8 @@ module WorldModuleLayer =
         static member internal unregisterLayer layer world =
             let world =
                 World.withEventContext (fun world ->
-                    let world = eval (World.getLayerOnRegister layer world) (World.getLayerScriptFrameNp layer world) layer world |> snd
-                    let dispatcher = World.getLayerDispatcherNp layer world
+                    let world = eval (World.getLayerOnRegister layer world) (World.getLayerScriptFrame layer world) layer world |> snd
+                    let dispatcher = World.getLayerDispatcher layer world
                     let eventTrace = EventTrace.record "World" "unregisteringLayer" EventTrace.empty
                     let world = World.publish () (ltoa<unit> ["Layer"; "Unregistering"; "Event"] ->- layer) eventTrace layer world
                     dispatcher.Unregister (layer, world))
@@ -279,7 +279,7 @@ module WorldModuleLayer =
 
         static member internal writeLayer4 writeEntities layer layerDescriptor world =
             let layerState = World.getLayerState layer world
-            let layerDispatcherName = getTypeName layerState.DispatcherNp
+            let layerDispatcherName = getTypeName layerState.Dispatcher
             let layerDescriptor = { layerDescriptor with LayerDispatcher = layerDispatcherName }
             let getLayerProperties = Reflection.writePropertiesFromTarget tautology3 layerDescriptor.LayerProperties layerState
             let layerDescriptor = { layerDescriptor with LayerProperties = getLayerProperties }
@@ -300,7 +300,7 @@ module WorldModuleLayer =
 
             // make the layer state and populate its properties
             let layerState = LayerState.make None dispatcher
-            let layerState = Reflection.attachProperties LayerState.copy layerState.DispatcherNp layerState
+            let layerState = Reflection.attachProperties LayerState.copy layerState.Dispatcher layerState
             let layerState = Reflection.readPropertiesToTarget LayerState.copy layerDescriptor.LayerProperties layerState
 
             // apply the name if one is provided
@@ -327,13 +327,13 @@ module WorldModuleLayer =
     let private initGetters () =
         Getters.Add ("Id", fun layer world -> { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world })
         Getters.Add ("Name", fun layer world -> { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world })
-        Getters.Add ("DispatcherNp", fun layer world -> { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcherNp layer world })
+        Getters.Add ("Dispatcher", fun layer world -> { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcher layer world })
         Getters.Add ("Persistent", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world })
-        Getters.Add ("CreationTimeStampNp", fun layer world -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStampNp layer world })
+        Getters.Add ("CreationTimeStamp", fun layer world -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStamp layer world })
         Getters.Add ("Imperative", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerImperative layer world })
         Getters.Add ("ScriptOpt", fun layer world -> { PropertyType = typeof<Symbol AssetTag option>; PropertyValue = World.getLayerScriptOpt layer world })
         Getters.Add ("Script", fun layer world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getLayerScript layer world })
-        Getters.Add ("ScriptFrameNp", fun layer world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScript layer world })
+        Getters.Add ("ScriptFrame", fun layer world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScript layer world })
         Getters.Add ("OnRegister", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnRegister layer world })
         Getters.Add ("OnUnregister", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUnregister layer world })
         Getters.Add ("OnUpdate", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUpdate layer world })
@@ -345,13 +345,13 @@ module WorldModuleLayer =
     let private initSetters () =
         Setters.Add ("Id", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
-        Setters.Add ("DispatcherNp", fun _ _ world -> (false, world))
+        Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("Persistent", fun property layer world -> (true, World.setLayerPersistent (property.PropertyValue :?> bool) layer world))
-        Setters.Add ("CreationTimeStampNp", fun _ _ world -> (false, world))
+        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Imperative", fun _ _ world -> (false, world))
         Setters.Add ("ScriptOpt", fun property layer world -> (true, World.setLayerScriptOpt (property.PropertyValue :?> Symbol AssetTag option) layer world))
         Setters.Add ("Script", fun property layer world -> (true, World.setLayerScript (property.PropertyValue :?> Scripting.Expr array) layer world))
-        Setters.Add ("ScriptFrameNp", fun _ _ world -> (false, world))
+        Setters.Add ("ScriptFrame", fun _ _ world -> (false, world))
         Setters.Add ("OnRegister", fun property layer world -> (true, World.setLayerOnRegister (property.PropertyValue :?> Scripting.Expr) layer world))
         Setters.Add ("OnUnregister", fun property layer world -> (true, World.setLayerOnUnregister (property.PropertyValue :?> Scripting.Expr) layer world))
         Setters.Add ("OnUpdate", fun property layer world -> (true, World.setLayerOnUpdate (property.PropertyValue :?> Scripting.Expr) layer world))

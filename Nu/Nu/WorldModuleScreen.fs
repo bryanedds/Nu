@@ -110,10 +110,10 @@ module WorldModuleScreen =
 
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
-        static member internal getScreenDispatcherNp screen world = (World.getScreenState screen world).DispatcherNp
+        static member internal getScreenDispatcher screen world = (World.getScreenState screen world).Dispatcher
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent screen world
-        static member internal getScreenCreationTimeStampNp screen world = (World.getScreenState screen world).CreationTimeStampNp
+        static member internal getScreenCreationTimeStamp screen world = (World.getScreenState screen world).CreationTimeStamp
         static member internal getScreenImperative screen world = Xtension.getImperative (World.getScreenState screen world).Xtension
         static member internal getScreenScriptOpt screen world = (World.getScreenState screen world).ScriptOpt
         static member internal setScreenScriptOpt value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptOpt = value }) Property? ScriptOpt screen world
@@ -121,12 +121,12 @@ module WorldModuleScreen =
         static member internal setScreenScript value screen world =
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = World.updateScreenState (fun screenState -> { screenState with Script = value }) Property? Script screen world
-            let world = World.setScreenScriptFrameNp scriptFrame screen world
+            let world = World.setScreenScriptFrame scriptFrame screen world
             evalManyWithLogging value scriptFrame screen world |> snd
-        static member internal getScreenScriptFrameNp screen world = (World.getScreenState screen world).ScriptFrameNp
-        static member internal setScreenScriptFrameNp value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptFrameNp = value }) Property? ScriptFrameNp screen world
-        static member internal getScreenScriptUnsubscriptionsNp screen world = (World.getScreenState screen world).ScriptUnsubscriptionsNp
-        static member internal setScreenScriptUnsubscriptionsNp value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptUnsubscriptionsNp = value }) Property? ScriptUnsubscriptionsNp screen world
+        static member internal getScreenScriptFrame screen world = (World.getScreenState screen world).ScriptFrame
+        static member internal setScreenScriptFrame value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptFrame = value }) Property? ScriptFrame screen world
+        static member internal getScreenScriptUnsubscriptions screen world = (World.getScreenState screen world).ScriptUnsubscriptions
+        static member internal setScreenScriptUnsubscriptions value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptUnsubscriptions = value }) Property? ScriptUnsubscriptions screen world
         static member internal getScreenOnRegister screen world = (World.getScreenState screen world).OnRegister
         static member internal setScreenOnRegister value screen world = World.updateScreenState (fun screenState -> { screenState with OnRegister = value }) Property? OnRegister screen world
         static member internal getScreenOnUnregister screen world = (World.getScreenState screen world).OnUnregister
@@ -147,7 +147,7 @@ module WorldModuleScreen =
         static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing screen world
 
         static member internal tryGetScreenCalculatedProperty propertyName screen world =
-            let dispatcher = World.getScreenDispatcherNp screen world
+            let dispatcher = World.getScreenDispatcher screen world
             dispatcher.TryGetCalculatedProperty (propertyName, screen, world)
 
         static member internal tryGetScreenProperty propertyName screen world =
@@ -215,11 +215,11 @@ module WorldModuleScreen =
             let world = World.monitor World.screenScriptOptChanged (ltoa<World ParticipantChangeData> ["Screen"; "Change"; (Property? ScriptOpt); "Event"] ->- screen) screen world
             let world =
                 World.withEventContext (fun world ->
-                    let dispatcher = World.getScreenDispatcherNp screen world
+                    let dispatcher = World.getScreenDispatcher screen world
                     let world = dispatcher.Register (screen, world)
                     let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
                     let world = World.publish () (ltoa<unit> ["Screen"; "Register"; "Event"] ->- screen) eventTrace screen world
-                    eval (World.getScreenOnUnregister screen world) (World.getScreenScriptFrameNp screen world) screen world |> snd)
+                    eval (World.getScreenOnUnregister screen world) (World.getScreenScriptFrame screen world) screen world |> snd)
                     screen
                     world
             World.choose world
@@ -227,8 +227,8 @@ module WorldModuleScreen =
         static member internal unregisterScreen screen world =
             let world =
                 World.withEventContext (fun world ->
-                    let world = eval (World.getScreenOnRegister screen world) (World.getScreenScriptFrameNp screen world) screen world |> snd
-                    let dispatcher = World.getScreenDispatcherNp screen world
+                    let world = eval (World.getScreenOnRegister screen world) (World.getScreenScriptFrame screen world) screen world |> snd
+                    let dispatcher = World.getScreenDispatcher screen world
                     let eventTrace = EventTrace.record "World" "unregisteringScreen" EventTrace.empty
                     let world = World.publish () (ltoa<unit> ["Screen"; "Unregistering"; "Event"] ->- screen) eventTrace screen world
                     dispatcher.Unregister (screen, world))
@@ -252,7 +252,7 @@ module WorldModuleScreen =
 
         static member internal writeScreen4 writeLayers screen screenDescriptor world =
             let screenState = World.getScreenState screen world
-            let screenDispatcherName = getTypeName screenState.DispatcherNp
+            let screenDispatcherName = getTypeName screenState.Dispatcher
             let screenDescriptor = { screenDescriptor with ScreenDispatcher = screenDispatcherName }
             let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
             let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
@@ -273,7 +273,7 @@ module WorldModuleScreen =
 
             // make the screen state and populate its properties
             let screenState = ScreenState.make None dispatcher
-            let screenState = Reflection.attachProperties ScreenState.copy screenState.DispatcherNp screenState
+            let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState
             let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
 
             // apply the name if one is provided
@@ -304,13 +304,13 @@ module WorldModuleScreen =
     let private initGetters () =
         Getters.Add ("Id", fun screen world -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world })
         Getters.Add ("Name", fun screen world -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world })
-        Getters.Add ("DispatcherNp", fun screen world -> { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcherNp screen world })
+        Getters.Add ("Dispatcher", fun screen world -> { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcher screen world })
         Getters.Add ("Persistent", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world })
-        Getters.Add ("CreationTimeStampNp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStampNp screen world })
+        Getters.Add ("CreationTimeStamp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStamp screen world })
         Getters.Add ("Imperative", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenImperative screen world })
         Getters.Add ("ScriptOpt", fun screen world -> { PropertyType = typeof<Symbol AssetTag option>; PropertyValue = World.getScreenScriptOpt screen world })
         Getters.Add ("Script", fun screen world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getScreenScript screen world })
-        Getters.Add ("ScriptFrameNp", fun screen world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrameNp screen world })
+        Getters.Add ("ScriptFrame", fun screen world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrame screen world })
         Getters.Add ("OnRegister", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnRegister screen world })
         Getters.Add ("OnUnregister", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUnregister screen world })
         Getters.Add ("OnUpdate", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUpdate screen world })
@@ -324,13 +324,13 @@ module WorldModuleScreen =
     let private initSetters () =
         Setters.Add ("Id", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
-        Setters.Add ("DispatcherNp", fun _ _ world -> (false, world))
+        Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("Persistent", fun property screen world -> (true, World.setScreenPersistent (property.PropertyValue :?> bool) screen world))
-        Setters.Add ("CreationTimeStampNp", fun _ _ world -> (false, world))
+        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Imperative", fun _ _ world -> (false, world))
         Setters.Add ("ScriptOpt", fun property screen world -> (true, World.setScreenScriptOpt (property.PropertyValue :?> Symbol AssetTag option) screen world))
         Setters.Add ("Script", fun property screen world -> (true, World.setScreenScript (property.PropertyValue :?> Scripting.Expr array) screen world))
-        Setters.Add ("ScriptFrameNp", fun _ _ world -> (false, world))
+        Setters.Add ("ScriptFrame", fun _ _ world -> (false, world))
         Setters.Add ("OnRegister", fun property screen world -> (true, World.setScreenOnRegister (property.PropertyValue :?> Scripting.Expr) screen world))
         Setters.Add ("OnUnregister", fun property screen world -> (true, World.setScreenOnUnregister (property.PropertyValue :?> Scripting.Expr) screen world))
         Setters.Add ("OnUpdate", fun property screen world -> (true, World.setScreenOnUpdate (property.PropertyValue :?> Scripting.Expr) screen world))
