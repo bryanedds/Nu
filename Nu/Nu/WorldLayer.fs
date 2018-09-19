@@ -19,13 +19,13 @@ module WorldLayerModule =
         member this.Id = PropertyTag.makeReadOnly this Property? Id this.GetId
         member this.GetName world = World.getLayerName this world
         member this.Name = PropertyTag.makeReadOnly this Property? Name this.GetName
-        member this.GetDispatcherNp world = World.getLayerDispatcherNp this world
-        member this.DispatcherNp = PropertyTag.makeReadOnly this Property? DispatcherNp this.GetDispatcherNp
+        member this.GetDispatcher world = World.getLayerDispatcher this world
+        member this.Dispatcher = PropertyTag.makeReadOnly this Property? Dispatcher this.GetDispatcher
         member this.GetPersistent world = World.getLayerPersistent this world
         member this.SetPersistent value world = World.setLayerPersistent value this world
         member this.Persistent = PropertyTag.make this Property? Persistent this.GetPersistent this.SetPersistent
-        member this.GetCreationTimeStampNp world = World.getLayerCreationTimeStampNp this world
-        member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
+        member this.GetCreationTimeStamp world = World.getLayerCreationTimeStamp this world
+        member this.CreationTimeStamp = PropertyTag.makeReadOnly this Property? CreationTimeStamp this.GetCreationTimeStamp
         member this.GetImperative world = World.getLayerImperative this world
         member this.Imperative = PropertyTag.makeReadOnly this Property? Imperative this.GetImperative
         member this.GetScriptOpt world = World.getLayerScriptOpt this world
@@ -34,11 +34,11 @@ module WorldLayerModule =
         member this.GetScript world = World.getLayerScript this world
         member this.SetScript value world = World.setLayerScript value this world
         member this.Script = PropertyTag.make this Property? Script this.GetScript this.SetScript
-        member this.GetScriptFrameNp world = World.getLayerScriptFrameNp this world
-        member this.ScriptFrameNp = PropertyTag.makeReadOnly this Property? Script this.GetScriptFrameNp
-        member internal this.GetScriptUnsubscriptionsNp world = World.getLayerScriptUnsubscriptionsNp this world
-        member internal this.SetScriptUnsubscriptionsNp value world = World.setLayerScriptUnsubscriptionsNp value this world
-        member internal this.ScriptUnsubscriptionsNp = PropertyTag.make this Property? ScriptUnsubscriptionsNp this.GetScriptUnsubscriptionsNp this.SetScriptUnsubscriptionsNp
+        member this.GetScriptFrame world = World.getLayerScriptFrame this world
+        member this.ScriptFrame = PropertyTag.makeReadOnly this Property? Script this.GetScriptFrame
+        member internal this.GetScriptUnsubscriptions world = World.getLayerScriptUnsubscriptions this world
+        member internal this.SetScriptUnsubscriptions value world = World.setLayerScriptUnsubscriptions value this world
+        member internal this.ScriptUnsubscriptions = PropertyTag.make this Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions
         member this.GetOnRegister world = World.getLayerOnRegister this world
         member this.SetOnRegister value world = World.setLayerOnRegister value this world
         member this.OnRegister = PropertyTag.make this Property? OnRegister this.GetOnRegister this.SetOnRegister
@@ -89,7 +89,7 @@ module WorldLayerModule =
         member this.Exists world = World.layerExists this world
 
         /// Check that a layer dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcherNp world)
+        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that a layer dispatches in the same manner as the dispatcher with the given type.
         member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
@@ -103,11 +103,11 @@ module WorldLayerModule =
             World.withEventContext (fun world ->
                 
                 // update via dispatcher
-                let dispatcher = layer.GetDispatcherNp world
+                let dispatcher = layer.GetDispatcher world
                 let world = dispatcher.Update (layer, world)
 
                 // run script update
-                let world = World.evalWithLogging (layer.GetOnUpdate world) (layer.GetScriptFrameNp world) layer world |> snd
+                let world = World.evalWithLogging (layer.GetOnUpdate world) (layer.GetScriptFrame world) layer world |> snd
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
@@ -119,11 +119,11 @@ module WorldLayerModule =
             World.withEventContext (fun world ->
 
                 // post-update via dispatcher
-                let dispatcher = layer.GetDispatcherNp world
+                let dispatcher = layer.GetDispatcher world
                 let world = dispatcher.PostUpdate (layer, world)
 
                 // run script post-update
-                let world = World.evalWithLogging (layer.GetOnPostUpdate world) (layer.GetScriptFrameNp world) layer world |> snd
+                let world = World.evalWithLogging (layer.GetOnPostUpdate world) (layer.GetScriptFrame world) layer world |> snd
 
                 // run script post-update
                 let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty
@@ -133,7 +133,7 @@ module WorldLayerModule =
 
         static member internal actualizeLayer (layer : Layer) world =
             World.withEventContext (fun world ->
-                let dispatcher = layer.GetDispatcherNp world
+                let dispatcher = layer.GetDispatcher world
                 dispatcher.Actualize (layer, world))
                 layer
                 world
@@ -194,7 +194,7 @@ module WorldLayerModule =
         /// Write multiple layers to a screen descriptor.
         static member writeLayers layers screenDescriptor world =
             layers |>
-            Seq.sortBy (fun (layer : Layer) -> layer.GetCreationTimeStampNp world) |>
+            Seq.sortBy (fun (layer : Layer) -> layer.GetCreationTimeStamp world) |>
             Seq.filter (fun (layer : Layer) -> layer.GetPersistent world) |>
             Seq.fold (fun layerDescriptors layer -> World.writeLayer layer LayerDescriptor.empty world :: layerDescriptors) screenDescriptor.Layers |>
             fun layerDescriptors -> { screenDescriptor with Layers = layerDescriptors }

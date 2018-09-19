@@ -90,20 +90,20 @@ module Nu =
             // init addSimulantScriptUnsubscription F# reach-around
             WorldModule.addSimulantScriptUnsubscription <- fun unsubscription (simulant : Simulant) world ->
                 match simulant with
-                | :? Game as game -> game.ScriptUnsubscriptionsNp.Update (List.cons unsubscription) world
-                | :? Screen as screen -> screen.ScriptUnsubscriptionsNp.Update (List.cons unsubscription) world
-                | :? Layer as layer -> layer.ScriptUnsubscriptionsNp.Update (List.cons unsubscription) world
-                | :? Entity as entity -> entity.ScriptUnsubscriptionsNp.Update (List.cons unsubscription) world
+                | :? Game as game -> game.ScriptUnsubscriptions.Update (List.cons unsubscription) world
+                | :? Screen as screen -> screen.ScriptUnsubscriptions.Update (List.cons unsubscription) world
+                | :? Layer as layer -> layer.ScriptUnsubscriptions.Update (List.cons unsubscription) world
+                | :? Entity as entity -> entity.ScriptUnsubscriptions.Update (List.cons unsubscription) world
                 | _ -> world
 
             // init unsubscribeSimulantScripts F# reach-around
             WorldModule.unsubscribeSimulantScripts <- fun (simulant : Simulant) world ->
                 let propertyOpt =
                     match simulant with
-                    | :? Game as game -> Some game.ScriptUnsubscriptionsNp
-                    | :? Screen as screen -> Some screen.ScriptUnsubscriptionsNp
-                    | :? Layer as layer -> Some layer.ScriptUnsubscriptionsNp
-                    | :? Entity as entity -> Some entity.ScriptUnsubscriptionsNp
+                    | :? Game as game -> Some game.ScriptUnsubscriptions
+                    | :? Screen as screen -> Some screen.ScriptUnsubscriptions
+                    | :? Layer as layer -> Some layer.ScriptUnsubscriptions
+                    | :? Entity as entity -> Some entity.ScriptUnsubscriptions
                     | _ -> None
                 match propertyOpt with
                 | Some property ->
