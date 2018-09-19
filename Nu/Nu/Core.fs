@@ -69,6 +69,14 @@ module Core =
         | null -> EventFilter.Empty
         | eventFilter -> scvalue<EventFilter.Filter> eventFilter
 
+    /// Determine if the program is running in debugging mode.
+    let debugging =
+        #if DEBUG
+        true
+        #else
+        false
+        #endif
+
 [<AutoOpen>]
 module CoreOperators =
 
