@@ -234,11 +234,11 @@ let generateBindingFunction binding =
                 "            struct (value, world)\n"
             | SimulantReturn ->
                 "            let (value, world) = result\n" +
-                "            let value = Scripting.String (scstring value)\n" +
+                "            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str\n" +
                 "            struct (value, world)\n"
             | SimulantHashSetReturn ->
                 "            let (value, world) = result\n" +
-                "            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))\n" +
+                "            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))\n" +
                 "            struct (value, world)\n"
         | PureReturn rc ->
             match rc with
@@ -252,11 +252,11 @@ let generateBindingFunction binding =
                 "            struct (value, world)\n"
             | SimulantReturn ->
                 "            let value = result\n" +
-                "            let value = Scripting.String (scstring value)\n" +
+                "            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str\n" +
                 "            struct (value, world)\n"
             | SimulantHashSetReturn ->
                 "            let value = result\n" +
-                "            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))\n" +
+                "            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))\n" +
                 "            struct (value, world)\n"
     
     let invocation =

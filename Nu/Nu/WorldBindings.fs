@@ -185,7 +185,7 @@ module WorldBindings =
                 | None -> failwith "Invalid argument type for 'layerFilePath'; expecting a value convertable to String."
             let result = World.createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData layerFilePath world
             let (value, world) = result
-            let value = Scripting.String (scstring value)
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createDissolveScreenFromLayerFile6' due to: " + scstring exn, None)
@@ -208,7 +208,7 @@ module WorldBindings =
                 | None -> failwith "Invalid argument type for 'layerFilePath'; expecting a value convertable to String."
             let result = World.createDissolveScreenFromLayerFile nameOpt dissolveData layerFilePath world
             let (value, world) = result
-            let value = Scripting.String (scstring value)
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createDissolveScreenFromLayerFile' due to: " + scstring exn, None)
@@ -241,7 +241,7 @@ module WorldBindings =
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.createSplashScreen6 dispatcherName nameOpt splashData destination world
             let (value, world) = result
-            let value = Scripting.String (scstring value)
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createSplashScreen6' due to: " + scstring exn, None)
@@ -270,7 +270,7 @@ module WorldBindings =
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.createSplashScreen nameOpt splashData destination world
             let (value, world) = result
-            let value = Scripting.String (scstring value)
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createSplashScreen' due to: " + scstring exn, None)
@@ -291,7 +291,7 @@ module WorldBindings =
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.getEntitiesInView2 screen world
             let (value, world) = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesInView2' due to: " + scstring exn, None)
@@ -316,7 +316,7 @@ module WorldBindings =
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.getEntitiesInBounds3 bounds screen world
             let (value, world) = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesInBounds3' due to: " + scstring exn, None)
@@ -341,7 +341,7 @@ module WorldBindings =
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.getEntitiesAtPoint3 point screen world
             let (value, world) = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesAtPoint3' due to: " + scstring exn, None)
@@ -352,7 +352,7 @@ module WorldBindings =
         try
             let result = World.getEntitiesInView world
             let (value, world) = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesInView' due to: " + scstring exn, None)
@@ -367,7 +367,7 @@ module WorldBindings =
                 | None -> failwith "Invalid argument type for 'bounds'; expecting a value convertable to Vector4."
             let result = World.getEntitiesInBounds bounds world
             let (value, world) = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesInBounds' due to: " + scstring exn, None)
@@ -382,7 +382,7 @@ module WorldBindings =
                 | None -> failwith "Invalid argument type for 'point'; expecting a value convertable to Vector2."
             let result = World.getEntitiesAtPoint point world
             let (value, world) = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesAtPoint' due to: " + scstring exn, None)
@@ -995,7 +995,7 @@ module WorldBindings =
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.getSimulantChildren simulant world
             let value = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSimulantChildren' due to: " + scstring exn, None)
@@ -1027,7 +1027,7 @@ module WorldBindings =
         try
             let result = World.getEntities1 world
             let value = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntities0' due to: " + scstring exn, None)
@@ -1038,7 +1038,7 @@ module WorldBindings =
         try
             let result = World.getLayers1 world
             let value = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getLayers0' due to: " + scstring exn, None)
@@ -1098,7 +1098,7 @@ module WorldBindings =
         try
             let result = World.getScreens world
             let value = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getScreens' due to: " + scstring exn, None)
@@ -1136,7 +1136,7 @@ module WorldBindings =
                 | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
             let result = World.createScreen3 dispatcherName nameOpt world
             let (value, world) = result
-            let value = Scripting.String (scstring value)
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createScreen' due to: " + scstring exn, None)
@@ -1159,7 +1159,7 @@ module WorldBindings =
                 | None -> failwith "Invalid argument type for 'dissolveData'; expecting a value convertable to DissolveData."
             let result = World.createDissolveScreen5 dispatcherName nameOpt dissolveData world
             let (value, world) = result
-            let value = Scripting.String (scstring value)
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createDissolveScreen' due to: " + scstring exn, None)
@@ -1203,7 +1203,7 @@ module WorldBindings =
                 | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
             let result = World.readScreenFromFile filePath nameOpt world
             let (value, world) = result
-            let value = Scripting.String (scstring value)
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readScreenFromFile' due to: " + scstring exn, None)
@@ -1224,7 +1224,7 @@ module WorldBindings =
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.getLayers screen world
             let value = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getLayers' due to: " + scstring exn, None)
@@ -1323,7 +1323,7 @@ module WorldBindings =
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.readLayerFromFile filePath nameOpt screen world
             let (value, world) = result
-            let value = Scripting.String (scstring value)
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readLayerFromFile' due to: " + scstring exn, None)
@@ -1344,7 +1344,7 @@ module WorldBindings =
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.getEntities layer world
             let value = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntities' due to: " + scstring exn, None)
@@ -1454,7 +1454,7 @@ module WorldBindings =
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.createEntity5 dispatcherName nameOpt overlayNameDescriptor layer world
             let (value, world) = result
-            let value = Scripting.String (scstring value)
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createEntity' due to: " + scstring exn, None)
@@ -1562,7 +1562,7 @@ module WorldBindings =
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.createLayer4 dispatcherName nameOpt screen world
             let (value, world) = result
-            let value = Scripting.String (scstring value)
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createLayer' due to: " + scstring exn, None)
@@ -1645,7 +1645,7 @@ module WorldBindings =
         try
             let result = World.getOmniscreen world
             let value = result
-            let value = Scripting.String (scstring value)
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getOmniscreen' due to: " + scstring exn, None)
@@ -1699,7 +1699,7 @@ module WorldBindings =
         try
             let result = World.getSelectedScreen world
             let value = result
-            let value = Scripting.String (scstring value)
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSelectedScreen' due to: " + scstring exn, None)
