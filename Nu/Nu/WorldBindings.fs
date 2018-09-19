@@ -30,7 +30,7 @@ module WorldBindings =
         "setBodyRotation setBodyAngularVelocity setBodyLinearVelocity applyBodyAngularImpulse " +
         "applyBodyLinearImpulse applyBodyForce isMouseButtonDown getMousePosition " +
         "getMousePositionF isKeyboardKeyDown getSimulantSelected tryGetSimulantParent " +
-        "getSimulantChildren getSimulantExists getEntities1 getLayers1 " +
+        "getSimulantChildren getSimulantExists getEntities0 getLayers0 " +
         "isSimulantSelected writeGameToFile readGameFromFile getScreens " +
         "destroyScreen createScreen createDissolveScreen writeScreenToFile " +
         "readScreenFromFile getLayers destroyLayer destroyLayers " +
@@ -49,7 +49,10 @@ module WorldBindings =
     let resolve relation world =
         let oldWorld = world
         try
-            let relation = ScriptingWorld.tryExport typeof<Relation<Object>> relation world |> Option.get :?> Relation<Object>
+            let relation =
+                match ScriptingWorld.tryExport typeof<Relation<Object>> relation world with
+                | Some value -> value :?> Relation<Object>
+                | None -> failwith "Invalid argument type for 'relation'; expecting a value convertable to Relation`1."
             let result = World.resolveGeneric relation world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Address<Object>> value world |> Option.get
@@ -164,10 +167,22 @@ module WorldBindings =
     let createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData layerFilePath world =
         let oldWorld = world
         try
-            let dispatcherName = ScriptingWorld.tryExport typeof<String> dispatcherName world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
-            let dissolveData = ScriptingWorld.tryExport typeof<DissolveData> dissolveData world |> Option.get :?> DissolveData
-            let layerFilePath = ScriptingWorld.tryExport typeof<String> layerFilePath world |> Option.get :?> String
+            let dispatcherName =
+                match ScriptingWorld.tryExport typeof<String> dispatcherName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'dispatcherName'; expecting a value convertable to String."
+            let nameOpt =
+                match ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
+            let dissolveData =
+                match ScriptingWorld.tryExport typeof<DissolveData> dissolveData world with
+                | Some value -> value :?> DissolveData
+                | None -> failwith "Invalid argument type for 'dissolveData'; expecting a value convertable to DissolveData."
+            let layerFilePath =
+                match ScriptingWorld.tryExport typeof<String> layerFilePath world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'layerFilePath'; expecting a value convertable to String."
             let result = World.createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData layerFilePath world
             let (value, world) = result
             let value = Scripting.String (scstring value)
@@ -179,9 +194,18 @@ module WorldBindings =
     let createDissolveScreenFromLayerFile nameOpt dissolveData layerFilePath world =
         let oldWorld = world
         try
-            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
-            let dissolveData = ScriptingWorld.tryExport typeof<DissolveData> dissolveData world |> Option.get :?> DissolveData
-            let layerFilePath = ScriptingWorld.tryExport typeof<String> layerFilePath world |> Option.get :?> String
+            let nameOpt =
+                match ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
+            let dissolveData =
+                match ScriptingWorld.tryExport typeof<DissolveData> dissolveData world with
+                | Some value -> value :?> DissolveData
+                | None -> failwith "Invalid argument type for 'dissolveData'; expecting a value convertable to DissolveData."
+            let layerFilePath =
+                match ScriptingWorld.tryExport typeof<String> layerFilePath world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'layerFilePath'; expecting a value convertable to String."
             let result = World.createDissolveScreenFromLayerFile nameOpt dissolveData layerFilePath world
             let (value, world) = result
             let value = Scripting.String (scstring value)
@@ -193,9 +217,18 @@ module WorldBindings =
     let createSplashScreen6 dispatcherName nameOpt splashData destination world =
         let oldWorld = world
         try
-            let dispatcherName = ScriptingWorld.tryExport typeof<String> dispatcherName world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
-            let splashData = ScriptingWorld.tryExport typeof<SplashData> splashData world |> Option.get :?> SplashData
+            let dispatcherName =
+                match ScriptingWorld.tryExport typeof<String> dispatcherName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'dispatcherName'; expecting a value convertable to String."
+            let nameOpt =
+                match ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
+            let splashData =
+                match ScriptingWorld.tryExport typeof<SplashData> splashData world with
+                | Some value -> value :?> SplashData
+                | None -> failwith "Invalid argument type for 'splashData'; expecting a value convertable to SplashData."
             let struct (destination, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal destination world with
@@ -217,8 +250,14 @@ module WorldBindings =
     let createSplashScreen nameOpt splashData destination world =
         let oldWorld = world
         try
-            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
-            let splashData = ScriptingWorld.tryExport typeof<SplashData> splashData world |> Option.get :?> SplashData
+            let nameOpt =
+                match ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
+            let splashData =
+                match ScriptingWorld.tryExport typeof<SplashData> splashData world with
+                | Some value -> value :?> SplashData
+                | None -> failwith "Invalid argument type for 'splashData'; expecting a value convertable to SplashData."
             let struct (destination, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal destination world with
@@ -261,7 +300,10 @@ module WorldBindings =
     let getEntitiesInBounds3 bounds screen world =
         let oldWorld = world
         try
-            let bounds = ScriptingWorld.tryExport typeof<Vector4> bounds world |> Option.get :?> Vector4
+            let bounds =
+                match ScriptingWorld.tryExport typeof<Vector4> bounds world with
+                | Some value -> value :?> Vector4
+                | None -> failwith "Invalid argument type for 'bounds'; expecting a value convertable to Vector4."
             let struct (screen, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal screen world with
@@ -283,7 +325,10 @@ module WorldBindings =
     let getEntitiesAtPoint3 point screen world =
         let oldWorld = world
         try
-            let point = ScriptingWorld.tryExport typeof<Vector2> point world |> Option.get :?> Vector2
+            let point =
+                match ScriptingWorld.tryExport typeof<Vector2> point world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'point'; expecting a value convertable to Vector2."
             let struct (screen, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal screen world with
@@ -316,7 +361,10 @@ module WorldBindings =
     let getEntitiesInBounds bounds world =
         let oldWorld = world
         try
-            let bounds = ScriptingWorld.tryExport typeof<Vector4> bounds world |> Option.get :?> Vector4
+            let bounds =
+                match ScriptingWorld.tryExport typeof<Vector4> bounds world with
+                | Some value -> value :?> Vector4
+                | None -> failwith "Invalid argument type for 'bounds'; expecting a value convertable to Vector4."
             let result = World.getEntitiesInBounds bounds world
             let (value, world) = result
             let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
@@ -328,7 +376,10 @@ module WorldBindings =
     let getEntitiesAtPoint point world =
         let oldWorld = world
         try
-            let point = ScriptingWorld.tryExport typeof<Vector2> point world |> Option.get :?> Vector2
+            let point =
+                match ScriptingWorld.tryExport typeof<Vector2> point world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'point'; expecting a value convertable to Vector2."
             let result = World.getEntitiesAtPoint point world
             let (value, world) = result
             let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
@@ -340,9 +391,18 @@ module WorldBindings =
     let playSong timeToFadeOutSongMs volume song world =
         let oldWorld = world
         try
-            let timeToFadeOutSongMs = ScriptingWorld.tryExport typeof<Int32> timeToFadeOutSongMs world |> Option.get :?> Int32
-            let volume = ScriptingWorld.tryExport typeof<Single> volume world |> Option.get :?> Single
-            let song = ScriptingWorld.tryExport typeof<AssetTag<Audio>> song world |> Option.get :?> AssetTag<Audio>
+            let timeToFadeOutSongMs =
+                match ScriptingWorld.tryExport typeof<Int32> timeToFadeOutSongMs world with
+                | Some value -> value :?> Int32
+                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Int32."
+            let volume =
+                match ScriptingWorld.tryExport typeof<Single> volume world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
+            let song =
+                match ScriptingWorld.tryExport typeof<AssetTag<Audio>> song world with
+                | Some value -> value :?> AssetTag<Audio>
+                | None -> failwith "Invalid argument type for 'song'; expecting a value convertable to AssetTag`1."
             let result = World.playSong timeToFadeOutSongMs volume song world
             struct (Scripting.Unit, result)
         with exn ->
@@ -352,10 +412,22 @@ module WorldBindings =
     let playSong4 timeToFadeOutSongMs volume songPackageName songAssetName world =
         let oldWorld = world
         try
-            let timeToFadeOutSongMs = ScriptingWorld.tryExport typeof<Int32> timeToFadeOutSongMs world |> Option.get :?> Int32
-            let volume = ScriptingWorld.tryExport typeof<Single> volume world |> Option.get :?> Single
-            let songPackageName = ScriptingWorld.tryExport typeof<String> songPackageName world |> Option.get :?> String
-            let songAssetName = ScriptingWorld.tryExport typeof<String> songAssetName world |> Option.get :?> String
+            let timeToFadeOutSongMs =
+                match ScriptingWorld.tryExport typeof<Int32> timeToFadeOutSongMs world with
+                | Some value -> value :?> Int32
+                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Int32."
+            let volume =
+                match ScriptingWorld.tryExport typeof<Single> volume world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
+            let songPackageName =
+                match ScriptingWorld.tryExport typeof<String> songPackageName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'songPackageName'; expecting a value convertable to String."
+            let songAssetName =
+                match ScriptingWorld.tryExport typeof<String> songAssetName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'songAssetName'; expecting a value convertable to String."
             let result = World.playSong5 timeToFadeOutSongMs volume songPackageName songAssetName world
             struct (Scripting.Unit, result)
         with exn ->
@@ -365,8 +437,14 @@ module WorldBindings =
     let playSound volume sound world =
         let oldWorld = world
         try
-            let volume = ScriptingWorld.tryExport typeof<Single> volume world |> Option.get :?> Single
-            let sound = ScriptingWorld.tryExport typeof<AssetTag<Audio>> sound world |> Option.get :?> AssetTag<Audio>
+            let volume =
+                match ScriptingWorld.tryExport typeof<Single> volume world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
+            let sound =
+                match ScriptingWorld.tryExport typeof<AssetTag<Audio>> sound world with
+                | Some value -> value :?> AssetTag<Audio>
+                | None -> failwith "Invalid argument type for 'sound'; expecting a value convertable to AssetTag`1."
             let result = World.playSound volume sound world
             struct (Scripting.Unit, result)
         with exn ->
@@ -376,9 +454,18 @@ module WorldBindings =
     let playSound3 volume soundPackageName soundAssetName world =
         let oldWorld = world
         try
-            let volume = ScriptingWorld.tryExport typeof<Single> volume world |> Option.get :?> Single
-            let soundPackageName = ScriptingWorld.tryExport typeof<String> soundPackageName world |> Option.get :?> String
-            let soundAssetName = ScriptingWorld.tryExport typeof<String> soundAssetName world |> Option.get :?> String
+            let volume =
+                match ScriptingWorld.tryExport typeof<Single> volume world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
+            let soundPackageName =
+                match ScriptingWorld.tryExport typeof<String> soundPackageName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'soundPackageName'; expecting a value convertable to String."
+            let soundAssetName =
+                match ScriptingWorld.tryExport typeof<String> soundAssetName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'soundAssetName'; expecting a value convertable to String."
             let result = World.playSound4 volume soundPackageName soundAssetName world
             struct (Scripting.Unit, result)
         with exn ->
@@ -388,7 +475,10 @@ module WorldBindings =
     let fadeOutSong timeToFadeOutSongMs world =
         let oldWorld = world
         try
-            let timeToFadeOutSongMs = ScriptingWorld.tryExport typeof<Int32> timeToFadeOutSongMs world |> Option.get :?> Int32
+            let timeToFadeOutSongMs =
+                match ScriptingWorld.tryExport typeof<Int32> timeToFadeOutSongMs world with
+                | Some value -> value :?> Int32
+                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Int32."
             let result = World.fadeOutSong timeToFadeOutSongMs world
             struct (Scripting.Unit, result)
         with exn ->
@@ -407,7 +497,10 @@ module WorldBindings =
     let hintAudioPackageUse packageName world =
         let oldWorld = world
         try
-            let packageName = ScriptingWorld.tryExport typeof<String> packageName world |> Option.get :?> String
+            let packageName =
+                match ScriptingWorld.tryExport typeof<String> packageName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'packageName'; expecting a value convertable to String."
             let result = World.hintAudioPackageUse packageName world
             struct (Scripting.Unit, result)
         with exn ->
@@ -417,7 +510,10 @@ module WorldBindings =
     let hintAudioPackageDisuse packageName world =
         let oldWorld = world
         try
-            let packageName = ScriptingWorld.tryExport typeof<String> packageName world |> Option.get :?> String
+            let packageName =
+                match ScriptingWorld.tryExport typeof<String> packageName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'packageName'; expecting a value convertable to String."
             let result = World.hintAudioPackageDisuse packageName world
             struct (Scripting.Unit, result)
         with exn ->
@@ -436,7 +532,10 @@ module WorldBindings =
     let hintRenderPackageUse packageName world =
         let oldWorld = world
         try
-            let packageName = ScriptingWorld.tryExport typeof<String> packageName world |> Option.get :?> String
+            let packageName =
+                match ScriptingWorld.tryExport typeof<String> packageName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'packageName'; expecting a value convertable to String."
             let result = World.hintRenderPackageUse packageName world
             struct (Scripting.Unit, result)
         with exn ->
@@ -446,7 +545,10 @@ module WorldBindings =
     let hintRenderPackageDisuse packageName world =
         let oldWorld = world
         try
-            let packageName = ScriptingWorld.tryExport typeof<String> packageName world |> Option.get :?> String
+            let packageName =
+                match ScriptingWorld.tryExport typeof<String> packageName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'packageName'; expecting a value convertable to String."
             let result = World.hintRenderPackageDisuse packageName world
             struct (Scripting.Unit, result)
         with exn ->
@@ -465,7 +567,10 @@ module WorldBindings =
     let bodyExists physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.bodyExists physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Boolean> value world |> Option.get
@@ -477,7 +582,10 @@ module WorldBindings =
     let getBodyContactNormals physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.getBodyContactNormals physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpList<Vector2>> value world |> Option.get
@@ -489,7 +597,10 @@ module WorldBindings =
     let getBodyLinearVelocity physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.getBodyLinearVelocity physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2> value world |> Option.get
@@ -501,7 +612,10 @@ module WorldBindings =
     let getBodyToGroundContactNormals physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.getBodyToGroundContactNormals physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpList<Vector2>> value world |> Option.get
@@ -513,7 +627,10 @@ module WorldBindings =
     let getBodyToGroundContactNormalOpt physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.getBodyToGroundContactNormalOpt physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpOption<Vector2>> value world |> Option.get
@@ -525,7 +642,10 @@ module WorldBindings =
     let getBodyToGroundContactTangentOpt physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.getBodyToGroundContactTangentOpt physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpOption<Vector2>> value world |> Option.get
@@ -537,7 +657,10 @@ module WorldBindings =
     let isBodyOnGround physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.isBodyOnGround physicsId world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Boolean> value world |> Option.get
@@ -559,8 +682,14 @@ module WorldBindings =
                     struct (Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let entityId = ScriptingWorld.tryExport typeof<Guid> entityId world |> Option.get :?> Guid
-            let bodyProperties = ScriptingWorld.tryExport typeof<BodyProperties> bodyProperties world |> Option.get :?> BodyProperties
+            let entityId =
+                match ScriptingWorld.tryExport typeof<Guid> entityId world with
+                | Some value -> value :?> Guid
+                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to Guid."
+            let bodyProperties =
+                match ScriptingWorld.tryExport typeof<BodyProperties> bodyProperties world with
+                | Some value -> value :?> BodyProperties
+                | None -> failwith "Invalid argument type for 'bodyProperties'; expecting a value convertable to BodyProperties."
             let result = World.createBody entity entityId bodyProperties world
             struct (Scripting.Unit, result)
         with exn ->
@@ -580,12 +709,18 @@ module WorldBindings =
                     struct (Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let entityId = ScriptingWorld.tryExport typeof<Guid> entityId world |> Option.get :?> Guid
+            let entityId =
+                match ScriptingWorld.tryExport typeof<Guid> entityId world with
+                | Some value -> value :?> Guid
+                | None -> failwith "Invalid argument type for 'entityId'; expecting a value convertable to Guid."
             let struct (bodiesProperties, world) =
                 match World.evalInternal bodiesProperties world with
                 | struct (Scripting.List list, world) ->
                     Seq.fold (fun struct (values, world) value ->
-                        let value = ScriptingWorld.tryExport typeof<BodyProperties> value world |> Option.get :?> BodyProperties
+                        let value =
+                            match ScriptingWorld.tryExport typeof<BodyProperties> value world with
+                            | Some value -> value :?> BodyProperties
+                            | None -> failwith "Invalid argument type for 'bodiesProperties'; expecting a value convertable to BodyProperties."
                         struct (value :: values, world))
                         struct ([], world)
                         list
@@ -600,7 +735,10 @@ module WorldBindings =
     let destroyBody physicsId world =
         let oldWorld = world
         try
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.destroyBody physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -614,7 +752,10 @@ module WorldBindings =
                 match World.evalInternal physicsIds world with
                 | struct (Scripting.List list, world) ->
                     Seq.fold (fun struct (values, world) value ->
-                        let value = ScriptingWorld.tryExport typeof<PhysicsId> value world |> Option.get :?> PhysicsId
+                        let value =
+                            match ScriptingWorld.tryExport typeof<PhysicsId> value world with
+                            | Some value -> value :?> PhysicsId
+                            | None -> failwith "Invalid argument type for 'physicsIds'; expecting a value convertable to PhysicsId."
                         struct (value :: values, world))
                         struct ([], world)
                         list
@@ -629,8 +770,14 @@ module WorldBindings =
     let setBodyPosition position physicsId world =
         let oldWorld = world
         try
-            let position = ScriptingWorld.tryExport typeof<Vector2> position world |> Option.get :?> Vector2
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let position =
+                match ScriptingWorld.tryExport typeof<Vector2> position world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'position'; expecting a value convertable to Vector2."
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.setBodyPosition position physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -640,8 +787,14 @@ module WorldBindings =
     let setBodyRotation rotation physicsId world =
         let oldWorld = world
         try
-            let rotation = ScriptingWorld.tryExport typeof<Single> rotation world |> Option.get :?> Single
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let rotation =
+                match ScriptingWorld.tryExport typeof<Single> rotation world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'rotation'; expecting a value convertable to Single."
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.setBodyRotation rotation physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -651,8 +804,14 @@ module WorldBindings =
     let setBodyAngularVelocity angularVelocity physicsId world =
         let oldWorld = world
         try
-            let angularVelocity = ScriptingWorld.tryExport typeof<Single> angularVelocity world |> Option.get :?> Single
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let angularVelocity =
+                match ScriptingWorld.tryExport typeof<Single> angularVelocity world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'angularVelocity'; expecting a value convertable to Single."
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.setBodyAngularVelocity angularVelocity physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -662,8 +821,14 @@ module WorldBindings =
     let setBodyLinearVelocity linearVelocity physicsId world =
         let oldWorld = world
         try
-            let linearVelocity = ScriptingWorld.tryExport typeof<Vector2> linearVelocity world |> Option.get :?> Vector2
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let linearVelocity =
+                match ScriptingWorld.tryExport typeof<Vector2> linearVelocity world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'linearVelocity'; expecting a value convertable to Vector2."
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.setBodyLinearVelocity linearVelocity physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -673,8 +838,14 @@ module WorldBindings =
     let applyBodyAngularImpulse angularImpulse physicsId world =
         let oldWorld = world
         try
-            let angularImpulse = ScriptingWorld.tryExport typeof<Single> angularImpulse world |> Option.get :?> Single
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let angularImpulse =
+                match ScriptingWorld.tryExport typeof<Single> angularImpulse world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'angularImpulse'; expecting a value convertable to Single."
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.applyBodyAngularImpulse angularImpulse physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -684,8 +855,14 @@ module WorldBindings =
     let applyBodyLinearImpulse linearImpulse physicsId world =
         let oldWorld = world
         try
-            let linearImpulse = ScriptingWorld.tryExport typeof<Vector2> linearImpulse world |> Option.get :?> Vector2
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let linearImpulse =
+                match ScriptingWorld.tryExport typeof<Vector2> linearImpulse world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'linearImpulse'; expecting a value convertable to Vector2."
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.applyBodyLinearImpulse linearImpulse physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -695,8 +872,14 @@ module WorldBindings =
     let applyBodyForce force physicsId world =
         let oldWorld = world
         try
-            let force = ScriptingWorld.tryExport typeof<Vector2> force world |> Option.get :?> Vector2
-            let physicsId = ScriptingWorld.tryExport typeof<PhysicsId> physicsId world |> Option.get :?> PhysicsId
+            let force =
+                match ScriptingWorld.tryExport typeof<Vector2> force world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'force'; expecting a value convertable to Vector2."
+            let physicsId =
+                match ScriptingWorld.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
             let result = World.applyBodyForce force physicsId world
             struct (Scripting.Unit, result)
         with exn ->
@@ -706,7 +889,10 @@ module WorldBindings =
     let isMouseButtonDown mouseButton world =
         let oldWorld = world
         try
-            let mouseButton = ScriptingWorld.tryExport typeof<MouseButton> mouseButton world |> Option.get :?> MouseButton
+            let mouseButton =
+                match ScriptingWorld.tryExport typeof<MouseButton> mouseButton world with
+                | Some value -> value :?> MouseButton
+                | None -> failwith "Invalid argument type for 'mouseButton'; expecting a value convertable to MouseButton."
             let result = World.isMouseButtonDown mouseButton world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Boolean> value world |> Option.get
@@ -740,7 +926,10 @@ module WorldBindings =
     let isKeyboardKeyDown scanCode world =
         let oldWorld = world
         try
-            let scanCode = ScriptingWorld.tryExport typeof<Int32> scanCode world |> Option.get :?> Int32
+            let scanCode =
+                match ScriptingWorld.tryExport typeof<Int32> scanCode world with
+                | Some value -> value :?> Int32
+                | None -> failwith "Invalid argument type for 'scanCode'; expecting a value convertable to Int32."
             let result = World.isKeyboardKeyDown scanCode world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Boolean> value world |> Option.get
@@ -833,7 +1022,7 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSimulantExists' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getEntities1 world =
+    let getEntities0 world =
         let oldWorld = world
         try
             let result = World.getEntities1 world
@@ -841,10 +1030,10 @@ module WorldBindings =
             let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntities1' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntities0' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getLayers1 world =
+    let getLayers0 world =
         let oldWorld = world
         try
             let result = World.getLayers1 world
@@ -852,7 +1041,7 @@ module WorldBindings =
             let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getLayers1' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getLayers0' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let isSimulantSelected simulant world =
@@ -879,7 +1068,10 @@ module WorldBindings =
     let writeGameToFile filePath world =
         let oldWorld = world
         try
-            let filePath = ScriptingWorld.tryExport typeof<String> filePath world |> Option.get :?> String
+            let filePath =
+                match ScriptingWorld.tryExport typeof<String> filePath world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
             let result = World.writeGameToFile filePath world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Void> value world |> Option.get
@@ -891,7 +1083,10 @@ module WorldBindings =
     let readGameFromFile filePath world =
         let oldWorld = world
         try
-            let filePath = ScriptingWorld.tryExport typeof<String> filePath world |> Option.get :?> String
+            let filePath =
+                match ScriptingWorld.tryExport typeof<String> filePath world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
             let result = World.readGameFromFile filePath world
             struct (Scripting.Unit, result)
         with exn ->
@@ -931,8 +1126,14 @@ module WorldBindings =
     let createScreen dispatcherName nameOpt world =
         let oldWorld = world
         try
-            let dispatcherName = ScriptingWorld.tryExport typeof<String> dispatcherName world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
+            let dispatcherName =
+                match ScriptingWorld.tryExport typeof<String> dispatcherName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'dispatcherName'; expecting a value convertable to String."
+            let nameOpt =
+                match ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
             let result = World.createScreen3 dispatcherName nameOpt world
             let (value, world) = result
             let value = Scripting.String (scstring value)
@@ -944,9 +1145,18 @@ module WorldBindings =
     let createDissolveScreen dispatcherName nameOpt dissolveData world =
         let oldWorld = world
         try
-            let dispatcherName = ScriptingWorld.tryExport typeof<String> dispatcherName world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
-            let dissolveData = ScriptingWorld.tryExport typeof<DissolveData> dissolveData world |> Option.get :?> DissolveData
+            let dispatcherName =
+                match ScriptingWorld.tryExport typeof<String> dispatcherName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'dispatcherName'; expecting a value convertable to String."
+            let nameOpt =
+                match ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
+            let dissolveData =
+                match ScriptingWorld.tryExport typeof<DissolveData> dissolveData world with
+                | Some value -> value :?> DissolveData
+                | None -> failwith "Invalid argument type for 'dissolveData'; expecting a value convertable to DissolveData."
             let result = World.createDissolveScreen5 dispatcherName nameOpt dissolveData world
             let (value, world) = result
             let value = Scripting.String (scstring value)
@@ -958,7 +1168,10 @@ module WorldBindings =
     let writeScreenToFile filePath screen world =
         let oldWorld = world
         try
-            let filePath = ScriptingWorld.tryExport typeof<String> filePath world |> Option.get :?> String
+            let filePath =
+                match ScriptingWorld.tryExport typeof<String> filePath world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
             let struct (screen, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal screen world with
@@ -980,8 +1193,14 @@ module WorldBindings =
     let readScreenFromFile filePath nameOpt world =
         let oldWorld = world
         try
-            let filePath = ScriptingWorld.tryExport typeof<String> filePath world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
+            let filePath =
+                match ScriptingWorld.tryExport typeof<String> filePath world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
+            let nameOpt =
+                match ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
             let result = World.readScreenFromFile filePath nameOpt world
             let (value, world) = result
             let value = Scripting.String (scstring value)
@@ -1059,7 +1278,10 @@ module WorldBindings =
     let writeLayerToFile filePath layer world =
         let oldWorld = world
         try
-            let filePath = ScriptingWorld.tryExport typeof<String> filePath world |> Option.get :?> String
+            let filePath =
+                match ScriptingWorld.tryExport typeof<String> filePath world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
             let struct (layer, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal layer world with
@@ -1081,8 +1303,14 @@ module WorldBindings =
     let readLayerFromFile filePath nameOpt screen world =
         let oldWorld = world
         try
-            let filePath = ScriptingWorld.tryExport typeof<String> filePath world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
+            let filePath =
+                match ScriptingWorld.tryExport typeof<String> filePath world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
+            let nameOpt =
+                match ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
             let struct (screen, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal screen world with
@@ -1170,7 +1398,10 @@ module WorldBindings =
     let tryPickEntity position entities world =
         let oldWorld = world
         try
-            let position = ScriptingWorld.tryExport typeof<Vector2> position world |> Option.get :?> Vector2
+            let position =
+                match ScriptingWorld.tryExport typeof<Vector2> position world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'position'; expecting a value convertable to Vector2."
             let struct (entities, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal entities world with
@@ -1199,9 +1430,18 @@ module WorldBindings =
     let createEntity dispatcherName nameOpt overlayNameDescriptor layer world =
         let oldWorld = world
         try
-            let dispatcherName = ScriptingWorld.tryExport typeof<String> dispatcherName world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
-            let overlayNameDescriptor = ScriptingWorld.tryExport typeof<OverlayNameDescriptor> overlayNameDescriptor world |> Option.get :?> OverlayNameDescriptor
+            let dispatcherName =
+                match ScriptingWorld.tryExport typeof<String> dispatcherName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'dispatcherName'; expecting a value convertable to String."
+            let nameOpt =
+                match ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
+            let overlayNameDescriptor =
+                match ScriptingWorld.tryExport typeof<OverlayNameDescriptor> overlayNameDescriptor world with
+                | Some value -> value :?> OverlayNameDescriptor
+                | None -> failwith "Invalid argument type for 'overlayNameDescriptor'; expecting a value convertable to OverlayNameDescriptor."
             let struct (layer, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal layer world with
@@ -1233,7 +1473,10 @@ module WorldBindings =
                     struct (Entity address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
+            let nameOpt =
+                match ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
             let struct (layer, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal layer world with
@@ -1253,7 +1496,10 @@ module WorldBindings =
     let trySetEntityOverlayNameOpt overlayNameOpt entity world =
         let oldWorld = world
         try
-            let overlayNameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> overlayNameOpt world |> Option.get :?> FSharpOption<String>
+            let overlayNameOpt =
+                match ScriptingWorld.tryExport typeof<FSharpOption<String>> overlayNameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'overlayNameOpt'; expecting a value convertable to FSharpOption`1."
             let struct (entity, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal entity world with
@@ -1273,7 +1519,10 @@ module WorldBindings =
     let trySetEntityFacetNames facetNames entity world =
         let oldWorld = world
         try
-            let facetNames = ScriptingWorld.tryExport typeof<FSharpSet<String>> facetNames world |> Option.get :?> FSharpSet<String>
+            let facetNames =
+                match ScriptingWorld.tryExport typeof<FSharpSet<String>> facetNames world with
+                | Some value -> value :?> FSharpSet<String>
+                | None -> failwith "Invalid argument type for 'facetNames'; expecting a value convertable to FSharpSet`1."
             let struct (entity, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal entity world with
@@ -1293,8 +1542,14 @@ module WorldBindings =
     let createLayer dispatcherName nameOpt screen world =
         let oldWorld = world
         try
-            let dispatcherName = ScriptingWorld.tryExport typeof<String> dispatcherName world |> Option.get :?> String
-            let nameOpt = ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world |> Option.get :?> FSharpOption<String>
+            let dispatcherName =
+                match ScriptingWorld.tryExport typeof<String> dispatcherName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'dispatcherName'; expecting a value convertable to String."
+            let nameOpt =
+                match ScriptingWorld.tryExport typeof<FSharpOption<String>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
             let struct (screen, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal screen world with
@@ -1327,7 +1582,10 @@ module WorldBindings =
     let setEyeCenter value world =
         let oldWorld = world
         try
-            let value = ScriptingWorld.tryExport typeof<Vector2> value world |> Option.get :?> Vector2
+            let value =
+                match ScriptingWorld.tryExport typeof<Vector2> value world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'value'; expecting a value convertable to Vector2."
             let result = World.setEyeCenter value world
             struct (Scripting.Unit, result)
         with exn ->
@@ -1348,7 +1606,10 @@ module WorldBindings =
     let setEyeSize value world =
         let oldWorld = world
         try
-            let value = ScriptingWorld.tryExport typeof<Vector2> value world |> Option.get :?> Vector2
+            let value =
+                match ScriptingWorld.tryExport typeof<Vector2> value world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'value'; expecting a value convertable to Vector2."
             let result = World.setEyeSize value world
             struct (Scripting.Unit, result)
         with exn ->
@@ -1369,7 +1630,10 @@ module WorldBindings =
     let setOmniscreenOpt value world =
         let oldWorld = world
         try
-            let value = ScriptingWorld.tryExport typeof<FSharpOption<Screen>> value world |> Option.get :?> FSharpOption<Screen>
+            let value =
+                match ScriptingWorld.tryExport typeof<FSharpOption<Screen>> value world with
+                | Some value -> value :?> FSharpOption<Screen>
+                | None -> failwith "Invalid argument type for 'value'; expecting a value convertable to FSharpOption`1."
             let result = World.setOmniscreenOpt value world
             struct (Scripting.Unit, result)
         with exn ->
@@ -1420,7 +1684,10 @@ module WorldBindings =
     let setSelectedScreenOpt value world =
         let oldWorld = world
         try
-            let value = ScriptingWorld.tryExport typeof<FSharpOption<Screen>> value world |> Option.get :?> FSharpOption<Screen>
+            let value =
+                match ScriptingWorld.tryExport typeof<FSharpOption<Screen>> value world with
+                | Some value -> value :?> FSharpOption<Screen>
+                | None -> failwith "Invalid argument type for 'value'; expecting a value convertable to FSharpOption`1."
             let result = World.setSelectedScreenOpt value world
             struct (Scripting.Unit, result)
         with exn ->
@@ -1493,7 +1760,10 @@ module WorldBindings =
     let getViewBounds viewType world =
         let oldWorld = world
         try
-            let viewType = ScriptingWorld.tryExport typeof<ViewType> viewType world |> Option.get :?> ViewType
+            let viewType =
+                match ScriptingWorld.tryExport typeof<ViewType> viewType world with
+                | Some value -> value :?> ViewType
+                | None -> failwith "Invalid argument type for 'viewType'; expecting a value convertable to ViewType."
             let result = World.getViewBounds viewType world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector4> value world |> Option.get
@@ -1505,8 +1775,14 @@ module WorldBindings =
     let isBoundsInView viewType bounds world =
         let oldWorld = world
         try
-            let viewType = ScriptingWorld.tryExport typeof<ViewType> viewType world |> Option.get :?> ViewType
-            let bounds = ScriptingWorld.tryExport typeof<Vector4> bounds world |> Option.get :?> Vector4
+            let viewType =
+                match ScriptingWorld.tryExport typeof<ViewType> viewType world with
+                | Some value -> value :?> ViewType
+                | None -> failwith "Invalid argument type for 'viewType'; expecting a value convertable to ViewType."
+            let bounds =
+                match ScriptingWorld.tryExport typeof<Vector4> bounds world with
+                | Some value -> value :?> Vector4
+                | None -> failwith "Invalid argument type for 'bounds'; expecting a value convertable to Vector4."
             let result = World.isBoundsInView viewType bounds world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Boolean> value world |> Option.get
@@ -1518,7 +1794,10 @@ module WorldBindings =
     let mouseToScreen mousePosition world =
         let oldWorld = world
         try
-            let mousePosition = ScriptingWorld.tryExport typeof<Vector2> mousePosition world |> Option.get :?> Vector2
+            let mousePosition =
+                match ScriptingWorld.tryExport typeof<Vector2> mousePosition world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'mousePosition'; expecting a value convertable to Vector2."
             let result = World.mouseToScreen mousePosition world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2> value world |> Option.get
@@ -1530,8 +1809,14 @@ module WorldBindings =
     let mouseToWorld viewType mousePosition world =
         let oldWorld = world
         try
-            let viewType = ScriptingWorld.tryExport typeof<ViewType> viewType world |> Option.get :?> ViewType
-            let mousePosition = ScriptingWorld.tryExport typeof<Vector2> mousePosition world |> Option.get :?> Vector2
+            let viewType =
+                match ScriptingWorld.tryExport typeof<ViewType> viewType world with
+                | Some value -> value :?> ViewType
+                | None -> failwith "Invalid argument type for 'viewType'; expecting a value convertable to ViewType."
+            let mousePosition =
+                match ScriptingWorld.tryExport typeof<Vector2> mousePosition world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'mousePosition'; expecting a value convertable to Vector2."
             let result = World.mouseToWorld viewType mousePosition world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2> value world |> Option.get
@@ -1543,9 +1828,18 @@ module WorldBindings =
     let mouseToEntity viewType entityPosition mousePosition world =
         let oldWorld = world
         try
-            let viewType = ScriptingWorld.tryExport typeof<ViewType> viewType world |> Option.get :?> ViewType
-            let entityPosition = ScriptingWorld.tryExport typeof<Vector2> entityPosition world |> Option.get :?> Vector2
-            let mousePosition = ScriptingWorld.tryExport typeof<Vector2> mousePosition world |> Option.get :?> Vector2
+            let viewType =
+                match ScriptingWorld.tryExport typeof<ViewType> viewType world with
+                | Some value -> value :?> ViewType
+                | None -> failwith "Invalid argument type for 'viewType'; expecting a value convertable to ViewType."
+            let entityPosition =
+                match ScriptingWorld.tryExport typeof<Vector2> entityPosition world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'entityPosition'; expecting a value convertable to Vector2."
+            let mousePosition =
+                match ScriptingWorld.tryExport typeof<Vector2> mousePosition world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'mousePosition'; expecting a value convertable to Vector2."
             let result = World.mouseToEntity viewType entityPosition mousePosition world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2> value world |> Option.get
@@ -1579,7 +1873,10 @@ module WorldBindings =
     let setTickRate tickRate world =
         let oldWorld = world
         try
-            let tickRate = ScriptingWorld.tryExport typeof<Int64> tickRate world |> Option.get :?> Int64
+            let tickRate =
+                match ScriptingWorld.tryExport typeof<Int64> tickRate world with
+                | Some value -> value :?> Int64
+                | None -> failwith "Invalid argument type for 'tickRate'; expecting a value convertable to Int64."
             let result = World.setTickRate tickRate world
             struct (Scripting.Unit, result)
         with exn ->
@@ -1651,7 +1948,10 @@ module WorldBindings =
     let tryGetTextureSize assetTag world =
         let oldWorld = world
         try
-            let assetTag = ScriptingWorld.tryExport typeof<AssetTag<Image>> assetTag world |> Option.get :?> AssetTag<Image>
+            let assetTag =
+                match ScriptingWorld.tryExport typeof<AssetTag<Image>> assetTag world with
+                | Some value -> value :?> AssetTag<Image>
+                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
             let result = World.tryGetTextureSize assetTag world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpOption<Vector2i>> value world |> Option.get
@@ -1663,7 +1963,10 @@ module WorldBindings =
     let getTextureSize assetTag world =
         let oldWorld = world
         try
-            let assetTag = ScriptingWorld.tryExport typeof<AssetTag<Image>> assetTag world |> Option.get :?> AssetTag<Image>
+            let assetTag =
+                match ScriptingWorld.tryExport typeof<AssetTag<Image>> assetTag world with
+                | Some value -> value :?> AssetTag<Image>
+                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
             let result = World.getTextureSize assetTag world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2i> value world |> Option.get
@@ -1675,7 +1978,10 @@ module WorldBindings =
     let tryGetTextureSizeAsVector2 assetTag world =
         let oldWorld = world
         try
-            let assetTag = ScriptingWorld.tryExport typeof<AssetTag<Image>> assetTag world |> Option.get :?> AssetTag<Image>
+            let assetTag =
+                match ScriptingWorld.tryExport typeof<AssetTag<Image>> assetTag world with
+                | Some value -> value :?> AssetTag<Image>
+                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
             let result = World.tryGetTextureSizeAsVector2 assetTag world
             let value = result
             let value = ScriptingWorld.tryImport typeof<FSharpOption<Vector2>> value world |> Option.get
@@ -1687,7 +1993,10 @@ module WorldBindings =
     let getTextureSizeAsVector2 assetTag world =
         let oldWorld = world
         try
-            let assetTag = ScriptingWorld.tryExport typeof<AssetTag<Image>> assetTag world |> Option.get :?> AssetTag<Image>
+            let assetTag =
+                match ScriptingWorld.tryExport typeof<AssetTag<Image>> assetTag world with
+                | Some value -> value :?> AssetTag<Image>
+                | None -> failwith "Invalid argument type for 'assetTag'; expecting a value convertable to AssetTag`1."
             let result = World.getTextureSizeAsVector2 assetTag world
             let value = result
             let value = ScriptingWorld.tryImport typeof<Vector2> value world |> Option.get
@@ -2144,18 +2453,18 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
             struct (violation, world)
 
-    let evalGetEntities1Binding fnName exprs originOpt world =
+    let evalGetEntities0Binding fnName exprs originOpt world =
         match World.evalManyInternal exprs world with
         | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getEntities1  world
+            getEntities0  world
         | _ ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
             struct (violation, world)
 
-    let evalGetLayers1Binding fnName exprs originOpt world =
+    let evalGetLayers0Binding fnName exprs originOpt world =
         match World.evalManyInternal exprs world with
         | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getLayers1  world
+            getLayers0  world
         | _ ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
             struct (violation, world)
@@ -2672,8 +2981,8 @@ module WorldBindings =
              ("tryGetSimulantParent", evalTryGetSimulantParentBinding)
              ("getSimulantChildren", evalGetSimulantChildrenBinding)
              ("getSimulantExists", evalGetSimulantExistsBinding)
-             ("getEntities1", evalGetEntities1Binding)
-             ("getLayers1", evalGetLayers1Binding)
+             ("getEntities0", evalGetEntities0Binding)
+             ("getLayers0", evalGetLayers0Binding)
              ("isSimulantSelected", evalIsSimulantSelectedBinding)
              ("writeGameToFile", evalWriteGameToFileBinding)
              ("readGameFromFile", evalReadGameFromFileBinding)

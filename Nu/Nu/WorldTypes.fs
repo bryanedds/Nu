@@ -255,8 +255,8 @@ module WorldTypes =
              Define? Omnipresent false
              Define? AlwaysUpdate false
              Define? PublishChanges false
-             Define? PublishUpdatesNp false
-             Define? PublishPostUpdatesNp false]
+             Define? PublishUpdates false
+             Define? PublishPostUpdates false]
     
         /// Register an entity when adding it to a layer.
         abstract Register : Entity * World -> World
@@ -411,12 +411,12 @@ module WorldTypes =
     and [<CLIMutable; NoEquality; NoComparison>] GameState =
         { Id : Guid
           Xtension : Xtension
-          DispatcherNp : GameDispatcher
-          CreationTimeStampNp : int64
+          Dispatcher : GameDispatcher
+          CreationTimeStamp : int64
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
-          ScriptFrameNp : Scripting.DeclarationFrame
-          ScriptUnsubscriptionsNp : Unsubscription list
+          ScriptFrame : Scripting.DeclarationFrame
+          ScriptUnsubscriptions : Unsubscription list
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
@@ -434,12 +434,12 @@ module WorldTypes =
             let eyeSize = Vector2 (single Constants.Render.DefaultResolutionX, single Constants.Render.DefaultResolutionY)
             { Id = makeGuid ()
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()
-              DispatcherNp = dispatcher
-              CreationTimeStampNp = Core.getTimeStamp ()
+              Dispatcher = dispatcher
+              CreationTimeStamp = Core.getTimeStamp ()
               ScriptOpt = None
               Script = [||]
-              ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
-              ScriptUnsubscriptionsNp = []
+              ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+              ScriptUnsubscriptions = []
               OnRegister = Scripting.Unit
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
@@ -490,13 +490,13 @@ module WorldTypes =
         { Id : Guid
           Name : string
           Xtension : Xtension
-          DispatcherNp : ScreenDispatcher
+          Dispatcher : ScreenDispatcher
           Persistent : bool
-          CreationTimeStampNp : int64
+          CreationTimeStamp : int64
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
-          ScriptFrameNp : Scripting.DeclarationFrame
-          ScriptUnsubscriptionsNp : Unsubscription list
+          ScriptFrame : Scripting.DeclarationFrame
+          ScriptUnsubscriptions : Unsubscription list
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
@@ -514,13 +514,13 @@ module WorldTypes =
             { Id = id
               Name = name
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()
-              DispatcherNp = dispatcher
+              Dispatcher = dispatcher
               Persistent = true
-              CreationTimeStampNp = Core.getTimeStamp ()
+              CreationTimeStamp = Core.getTimeStamp ()
               ScriptOpt = None
               Script = [||]
-              ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
-              ScriptUnsubscriptionsNp = []
+              ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+              ScriptUnsubscriptions = []
               OnRegister = Scripting.Unit
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
@@ -571,13 +571,13 @@ module WorldTypes =
         { Id : Guid
           Name : string
           Xtension : Xtension
-          DispatcherNp : LayerDispatcher
+          Dispatcher : LayerDispatcher
           Persistent : bool
-          CreationTimeStampNp : int64
+          CreationTimeStamp : int64
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
-          ScriptFrameNp : Scripting.DeclarationFrame
-          ScriptUnsubscriptionsNp : Unsubscription list
+          ScriptFrame : Scripting.DeclarationFrame
+          ScriptUnsubscriptions : Unsubscription list
           OnRegister : Scripting.Expr
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
@@ -591,13 +591,13 @@ module WorldTypes =
             { LayerState.Id = id
               Name = name
               Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()
-              DispatcherNp = dispatcher
+              Dispatcher = dispatcher
               Persistent = true
-              CreationTimeStampNp = Core.getTimeStamp ()
+              CreationTimeStamp = Core.getTimeStamp ()
               ScriptOpt = None
               Script = [||]
-              ScriptFrameNp = Scripting.DeclarationFrame HashIdentity.Structural
-              ScriptUnsubscriptionsNp = []
+              ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+              ScriptUnsubscriptions = []
               OnRegister = Scripting.Unit
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
@@ -640,10 +640,10 @@ module WorldTypes =
         { Id : Guid
           Name : string
           mutable Xtension : Xtension
-          DispatcherNp : EntityDispatcher
+          Dispatcher : EntityDispatcher
           mutable Persistent : bool
-          CreationTimeStampNp : int64 // just needed for ordering writes to reduce diff volumes
-          CachableNp : bool
+          CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
+          Cachable : bool
           mutable OverlayNameOpt : string option
           mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -656,10 +656,10 @@ module WorldTypes =
           mutable Omnipresent : bool
           mutable AlwaysUpdate : bool
           mutable PublishChanges : bool
-          mutable PublishUpdatesNp : bool
-          mutable PublishPostUpdatesNp : bool
+          mutable PublishUpdates : bool
+          mutable PublishPostUpdates : bool
           mutable FacetNames : string Set
-          mutable FacetsNp : Facet list }
+          mutable Facets : Facet list }
 
         /// Make an entity state value.
         static member make nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
@@ -668,10 +668,10 @@ module WorldTypes =
             { Id = id
               Name = name
               Xtension = if imperative then Xtension.makeImperative () else Xtension.makeSafe ()
-              DispatcherNp = dispatcher
+              Dispatcher = dispatcher
               Persistent = true
-              CreationTimeStampNp = Core.getTimeStamp ()
-              CachableNp = String.endsWithGuid name
+              CreationTimeStamp = Core.getTimeStamp ()
+              Cachable = String.endsWithGuid name
               OverlayNameOpt = overlayNameOpt
               Position = Vector2.Zero
               Size = Constants.Engine.DefaultEntitySize
@@ -684,10 +684,10 @@ module WorldTypes =
               Omnipresent = false
               AlwaysUpdate = false
               PublishChanges = false
-              PublishUpdatesNp = false
-              PublishPostUpdatesNp = false
+              PublishUpdates = false
+              PublishPostUpdates = false
               FacetNames = Set.empty
-              FacetsNp = [] }
+              Facets = [] }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName entityState =
@@ -769,7 +769,7 @@ module WorldTypes =
     and Game (gameAddress) =
 
         // check that address is of correct length for a game
-        do if Address.length gameAddress <> 0 then failwithumf ()
+        do if Address.length gameAddress <> 0 then failwith "Game address must be length of 0."
 
         /// The address of the game.
         member this.GameAddress = gameAddress
@@ -809,7 +809,7 @@ module WorldTypes =
     and Screen (screenAddress) =
 
         // check that address is of correct length for a screen
-        do if Address.length screenAddress <> 1 then failwithumf ()
+        do if Address.length screenAddress <> 1 then failwith "Screen address must be length of 1."
 
         /// The address of the screen.
         member this.ScreenAddress = screenAddress
@@ -857,7 +857,7 @@ module WorldTypes =
     and Layer (layerAddress) =
 
         // check that address is of correct length for a layer
-        do if Address.length layerAddress <> 2 then failwithumf ()
+        do if Address.length layerAddress <> 2 then failwith "Layer address must be length of 2."
 
         /// The address of the layer.
         member this.LayerAddress = layerAddress
@@ -908,7 +908,7 @@ module WorldTypes =
     and Entity (entityAddress) =
 
         // check that address is of correct length for an entity
-        do if Address.length entityAddress <> 3 then failwithumf ()
+        do if Address.length entityAddress <> 3 then failwith "Entity address must be length of 3."
         let updateAddress = ltoa<unit> ["Update"; "Event"] ->>- entityAddress
         let postUpdateAddress = ltoa<unit> ["PostUpdate"; "Event"] ->>- entityAddress
         let mutable entityStateOpt = Unchecked.defaultof<EntityState>

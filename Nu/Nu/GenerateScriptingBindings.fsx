@@ -109,14 +109,20 @@ let generateParameterList (functionParameters : (string * ParameterConversion) a
     String.Join (" ", parNames)
 
 let generateNormalParameterConversion (par : string) (ty : Type) =
-    "            let " + par + " = ScriptingWorld.tryExport typeof<" + ty.GetGenericName () + "> " + par + " world |> Option.get :?> " + ty.GetGenericName () + "\n"
+    "            let " + par + " =\n" +
+    "                match ScriptingWorld.tryExport typeof<" + ty.GetGenericName () + "> " + par + " world with\n" +
+    "                | Some value -> value :?> " + ty.GetGenericName () + "\n" +
+    "                | None -> failwith \"Invalid argument type for '" + par + "'; expecting a value convertable to " + ty.Name + ".\"\n"
 
 let generateNormalListParameterConversion (par : string) (ty : Type) =
     "            let struct (" + par + ", world) =\n" +
     "                match World.evalInternal " + par + " world with\n" +
     "                | struct (Scripting.List list, world) ->\n" +
     "                    Seq.fold (fun struct (values, world) value ->\n" +
-    "                        let value = ScriptingWorld.tryExport typeof<" + ty.GetGenericName () + "> value world |> Option.get :?> " + ty.GetGenericName () + "\n" +
+    "                        let value =\n" +
+    "                            match ScriptingWorld.tryExport typeof<" + ty.GetGenericName () + "> value world with\n" +
+    "                            | Some value -> value :?> " + ty.GetGenericName () + "\n" +
+    "                            | None -> failwith \"Invalid argument type for '" + par + "'; expecting a value convertable to " + ty.Name + ".\"\n" +
     "                        struct (value :: values, world))\n" +
     "                        struct ([], world)\n" +
     "                        list\n" +

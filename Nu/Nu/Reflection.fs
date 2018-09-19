@@ -27,11 +27,29 @@ module Reflection =
         let name = deriveName nameOpt id
         (id, name)
 
+    /// Check if a property with the given name should always publish a change event.
+    let isPropertyAlwaysPublishByName propertyName =
+        match propertyName with
+        | "ScriptOpt" // always publish certain script properties 
+        | "Script"
+        | "OnRegister" -> true
+        | _ -> propertyName.EndsWith "Ap"
+
     /// Is a property with the given name persistent?
     let isPropertyPersistentByName (propertyName : string) =
-        not (propertyName.EndsWith ("Id", StringComparison.Ordinal)) && // don't write an Id
-        not (propertyName.EndsWith ("Ids", StringComparison.Ordinal)) && // don't write multiple Ids
-        not (propertyName.EndsWith ("Np", StringComparison.Ordinal)) // don't write non-persistent properties
+        match propertyName with
+        | "Dispatcher"
+        | "CreationTimeStamp"
+        | "Cachable"
+        | "PublishUpdates"
+        | "PublishPostUpdates"
+        | "Facets"
+        | "ScriptFrame"
+        | "ScriptUnsubscriptions" -> false
+        | _ ->
+            not (propertyName.EndsWith ("Np", StringComparison.Ordinal)) && // don't write explicitly non-persistent properties
+            not (propertyName.EndsWith ("Id", StringComparison.Ordinal)) && // don't write an Id
+            not (propertyName.EndsWith ("Ids", StringComparison.Ordinal)) // don't write multiple Ids
 
     /// Is the property of the given target persistent?
     let isPropertyPersistent (property : PropertyInfo) (target : 'a) =
@@ -107,11 +125,11 @@ module Reflection =
     let getReflectivePropertyContainers (target : 'a) =
         let targetType = target.GetType ()
         let dispatcherOpt =
-            match targetType.GetProperty "DispatcherNp" with
+            match targetType.GetProperty "Dispatcher" with
             | null -> None
             | dispatcherNpProperty -> Some (dispatcherNpProperty.GetValue target)
         let facetsOpt =
-            match targetType.GetProperty "FacetsNp" with
+            match targetType.GetProperty "Facets" with
             | null -> None
             | facetsNpProperty ->
                 let facets = facetsNpProperty.GetValue target :?> IEnumerable |> enumerable<obj> |> List.ofSeq
@@ -148,7 +166,7 @@ module Reflection =
         let genericTypes = ty.GetGenericArguments ()
         let genericTypeNameStrs = Array.map (fun (ty : Type) -> ty.Name) genericTypes
         let genericTypeNamesStr = "<" + String.concat ", " genericTypeNameStrs + ">"
-        typeName.Replace ("`" + string (Array.length genericTypeNameStrs), genericTypeNamesStr)
+        typeName.Replace ("`" + scstring (Array.length genericTypeNameStrs), genericTypeNamesStr)
         
     /// Try to read the target's member property from property descriptors.
     let private tryReadMemberProperty propertyDescriptors (property : PropertyInfo) target =
@@ -386,7 +404,7 @@ module Reflection =
                 match Map.tryFind reqdDispatcherName dispatcherMap with
                 | Some reqdDispatcher ->
                     let reqdDispatcherType = reqdDispatcher.GetType ()
-                    match targetType.GetProperty "DispatcherNp" with
+                    match targetType.GetProperty "Dispatcher" with
                     | null -> failwith ("Target '" + scstring target + "' does not implement dispatching in a compatible way.")
                     | dispatcherNpProperty ->
                         let dispatcher = dispatcherNpProperty.GetValue target
@@ -413,7 +431,7 @@ module Reflection =
                     | None -> failwith ("Could not find facet '" + facetName + "' in facet map."))
                 facetNames
         let targetType = target.GetType ()
-        match targetType.GetPropertyWritable "FacetsNp" with
+        match targetType.GetPropertyWritable "Facets" with
         | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")
         | facetsNpProperty ->
             List.iter

@@ -18,14 +18,14 @@ module WorldEntityModule =
         member this.Id = PropertyTag.makeReadOnly this Property? Id this.GetId
         member this.GetName world = World.getEntityName this world
         member this.Name = PropertyTag.makeReadOnly this Property? Name this.GetName
-        member this.GetDispatcherNp world = World.getEntityDispatcherNp this world
-        member this.DispatcherNp = PropertyTag.makeReadOnly this Property? DispatcherNp this.GetDispatcherNp
+        member this.GetDispatcher world = World.getEntityDispatcher this world
+        member this.Dispatcher = PropertyTag.makeReadOnly this Property? Dispatcher this.GetDispatcher
         member this.GetPersistent world = World.getEntityPersistent this world
         member this.SetPersistent value world = World.setEntityPersistent value this world
         member this.Persistent = PropertyTag.make this Property? Persistent this.GetPersistent this.SetPersistent
-        member this.GetCreationTimeStampNp world = World.getEntityCreationTimeStampNp this world
-        member this.CreationTimeStampNp = PropertyTag.makeReadOnly this Property? CreationTimeStampNp this.GetCreationTimeStampNp
-        member this.GetCacheableNp world = World.getEntityCachableNp this world
+        member this.GetCreationTimeStamp world = World.getEntityCreationTimeStamp this world
+        member this.CreationTimeStamp = PropertyTag.makeReadOnly this Property? CreationTimeStamp this.GetCreationTimeStamp
+        member this.GetCacheableNp world = World.getEntityCachable this world
         member this.CacheableNp = PropertyTag.makeReadOnly this Property? CacheableNp this.GetCacheableNp
         member this.GetImperative world = World.getEntityImperative this world
         member this.Imperative = PropertyTag.makeReadOnly this Property? Imperative this.GetImperative
@@ -70,8 +70,8 @@ module WorldEntityModule =
         member this.PublishChanges = PropertyTag.make this Property? PublishChanges this.GetPublishChanges this.SetPublishChanges
         member this.GetFacetNames world = World.getEntityFacetNames this world
         member this.FacetNames = PropertyTag.makeReadOnly this Property? FacetNames this.GetFacetNames
-        member this.GetFacetsNp world = World.getEntityFacetsNp this world
-        member this.FacetsNp = PropertyTag.makeReadOnly this Property? FacetsNp this.GetFacetsNp
+        member this.GetFacets world = World.getEntityFacets this world
+        member this.Facets = PropertyTag.makeReadOnly this Property? Facets this.GetFacets
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetEntityProperty propertyName this world
@@ -83,19 +83,30 @@ module WorldEntityModule =
         member this.Get<'a> propertyName world : 'a = (World.getEntityProperty propertyName this world).PropertyValue :?> 'a
 
         /// Try to set a property value with explicit type.
-        member this.TrySetProperty propertyName property world = World.trySetEntityProperty propertyName property this world
+        member this.TrySetProperty propertyName alwaysPublish nonPersistent property world =
+            World.trySetEntityProperty propertyName alwaysPublish nonPersistent property this world
 
         /// Set a property value with explicit type.
-        member this.SetProperty propertyName property world = World.setEntityProperty propertyName property this world
+        member this.SetProperty propertyName alwaysPublish nonPersistent property world =
+            World.setEntityProperty propertyName alwaysPublish nonPersistent property this world
 
         /// Attach a property.
-        member this.AttachProperty propertyName property world = World.attachEntityProperty propertyName property this world
+        member this.AttachProperty propertyName alwaysPublish nonPersistent property world =
+            World.attachEntityProperty propertyName alwaysPublish nonPersistent property this world
 
         /// Detach a property.
-        member this.DetachProperty propertyName world = World.detachEntityProperty propertyName this world
+        member this.DetachProperty propertyName world =
+            World.detachEntityProperty propertyName this world
 
         /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world = World.setEntityProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world
+        member this.Set<'a> propertyName (value : 'a) world =
+            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+            let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+            this.SetFast propertyName alwaysPublish nonPersistent value world
+
+        /// Set a property value.
+        member this.SetFast<'a> propertyName alwaysPublish nonPersistent (value : 'a) world =
+            World.setEntityProperty propertyName alwaysPublish nonPersistent { PropertyType = typeof<'a>; PropertyValue = value } this world
 
         /// Get an entity's transform.
         member this.GetTransform world = World.getEntityTransform this world
@@ -157,21 +168,21 @@ module WorldEntityModule =
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =
             World.withEventContext (fun world ->
-                let dispatcher = this.GetDispatcherNp world
-                let facets = this.GetFacetsNp world
+                let dispatcher = this.GetDispatcher world
+                let facets = this.GetFacets world
                 let world = dispatcher.PropagatePhysics (this, world)
                 List.fold (fun world (facet : Facet) -> facet.PropagatePhysics (this, world)) world facets)
                 this
                 world
 
         /// Check that an entity uses a facet of the given type.
-        member this.FacetedAs (facetType, world) = List.exists (fun facet -> getType facet = facetType) (this.GetFacetsNp world)
+        member this.FacetedAs (facetType, world) = List.exists (fun facet -> getType facet = facetType) (this.GetFacets world)
 
         /// Check that an entity uses a facet of the given type.
         member this.FacetedAs<'a> world = this.FacetedAs (typeof<'a>, world)
 
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcherNp world)
+        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
         member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
@@ -186,11 +197,11 @@ module WorldEntityModule =
 
         static member internal updateEntity (entity : Entity) world =
             World.withEventContext (fun world ->
-                let dispatcher = entity.GetDispatcherNp world
-                let facets = entity.GetFacetsNp world
+                let dispatcher = entity.GetDispatcher world
+                let facets = entity.GetFacets world
                 let world = dispatcher.Update (entity, world)
                 let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
-                if World.getEntityPublishUpdatesNp entity world then
+                if World.getEntityPublishUpdates entity world then
                     let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
                     World.publishPlus World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game false world
                 else world)
@@ -199,11 +210,11 @@ module WorldEntityModule =
 
         static member internal postUpdateEntity (entity : Entity) world =
             World.withEventContext (fun world ->
-                let dispatcher = entity.GetDispatcherNp world
-                let facets = entity.GetFacetsNp world
+                let dispatcher = entity.GetDispatcher world
+                let facets = entity.GetFacets world
                 let world = dispatcher.PostUpdate (entity, world)
                 let world = List.foldBack (fun (facet : Facet) world -> facet.PostUpdate (entity, world)) facets world
-                if World.getEntityPublishPostUpdatesNp entity world then
+                if World.getEntityPublishPostUpdates entity world then
                     let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
                     World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateAddress eventTrace Simulants.Game false world
                 else world)
@@ -212,8 +223,8 @@ module WorldEntityModule =
 
         static member internal actualizeEntity (entity : Entity) world =
             World.withEventContext (fun world ->
-                let dispatcher = entity.GetDispatcherNp world
-                let facets = entity.GetFacetsNp world
+                let dispatcher = entity.GetDispatcher world
+                let facets = entity.GetFacets world
                 let world = dispatcher.Actualize (entity, world)
                 List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) facets world)
                 entity
@@ -284,7 +295,7 @@ module WorldEntityModule =
         /// Write multiple entities to a layer descriptor.
         static member writeEntities entities layerDescriptor world =
             entities |>
-            Seq.sortBy (fun (entity : Entity) -> entity.GetCreationTimeStampNp world) |>
+            Seq.sortBy (fun (entity : Entity) -> entity.GetCreationTimeStamp world) |>
             Seq.filter (fun (entity : Entity) -> entity.GetPersistent world) |>
             Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) layerDescriptor.Entities |>
             fun entityDescriptors -> { layerDescriptor with Entities = entityDescriptors }
@@ -319,13 +330,13 @@ module WorldEntityModule =
             | None -> None
 
         /// Attempt to set the entity's property value.
-        static member trySetValue property propertyValue (entity : Entity) world =
+        static member trySetValue alwaysPublish nonPersistent property propertyValue (entity : Entity) world =
             let (propertyName, propertyType) =
                 match property with
                 | EntityPropertyDescriptor propertyDescriptor -> (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType)
                 | EntityPropertyInfo propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)
             let property = { PropertyType = propertyType; PropertyValue = propertyValue }
-            World.trySetEntityProperty propertyName property entity world
+            World.trySetEntityProperty propertyName alwaysPublish nonPersistent property entity world
 
         /// Get the property descriptors of as constructed from the given function in the given context.
         static member getPropertyDescriptors makePropertyDescriptor contextOpt =

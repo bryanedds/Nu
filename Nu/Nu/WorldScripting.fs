@@ -156,13 +156,15 @@ module WorldScripting =
                 match World.tryGetSimulantProperty propertyName simulant world with
                 | Some property ->
                     let struct (propertyValue, world) = World.evalInternal propertyValueExpr world
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                     match property.PropertyValue with
                     | :? DesignerProperty as dp ->
                         match ScriptingWorld.tryExport property.PropertyType propertyValue world with
                         | Some propertyValue ->
                             let propertyValue = { dp with DesignerValue = propertyValue }
                             let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                            match World.trySetSimulantProperty propertyName property simulant world with
+                            match World.trySetSimulantProperty propertyName alwaysPublish nonPersistent property simulant world with
                             | (true, world) -> struct (Unit, world)
                             | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
                         | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
@@ -170,7 +172,7 @@ module WorldScripting =
                         match ScriptingWorld.tryExport property.PropertyType propertyValue world with
                         | Some propertyValue ->
                             let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                            match World.trySetSimulantProperty propertyName property simulant world with
+                            match World.trySetSimulantProperty propertyName alwaysPublish nonPersistent property simulant world with
                             | (true, world) -> struct (Unit, world)
                             | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
                         | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
@@ -191,9 +193,11 @@ module WorldScripting =
                                 | Some expr ->
                                     match World.tryGetSimulantProperty propertyName simulant world with
                                     | Some prop ->
+                                        let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                                        let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                                         let exported = ScriptingWorld.tryExport prop.PropertyType expr world
                                         let prop = { prop with PropertyValue = exported }
-                                        let (_, world) = World.trySetSimulantProperty propertyName prop simulant world
+                                        let (_, world) = World.trySetSimulantProperty propertyName alwaysPublish nonPersistent prop simulant world
                                         (Cascade, world)
                                     | None -> (Cascade, world)
                                 | None -> (Cascade, world))

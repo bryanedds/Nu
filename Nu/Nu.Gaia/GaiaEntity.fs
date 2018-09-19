@@ -133,7 +133,10 @@ and EntityPropertyDescriptor (property, attributes) =
                         match World.trySetEntityOverlayNameOpt (value :?> string option) entity world with
                         | (Right (), world) -> world
                         | (Left error, world) -> Log.trace error; world
-                    | _ -> snd (EntityPropertyValue.trySetValue property value entity world)
+                    | _ ->
+                        let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                        let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                        EntityPropertyValue.trySetValue alwaysPublish nonPersistent property value entity world |> snd
                 let world = entityTds.DescribedEntity.PropagatePhysics world
                 entityTds.WorldRef := world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()

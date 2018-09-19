@@ -33,29 +33,29 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.getEntityProperty name entity world
             | _ -> failwithumf ()
 
-        static member trySetSimulantProperty name property (simulant : Simulant) world =
+        static member trySetSimulantProperty name alwaysPublish nonPersistent property (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.trySetGameProperty name property world
             | :? Screen as screen -> World.trySetScreenProperty name property screen world
             | :? Layer as layer -> World.trySetLayerProperty name property layer world
-            | :? Entity as entity -> World.trySetEntityProperty name property entity world
+            | :? Entity as entity -> World.trySetEntityProperty name alwaysPublish nonPersistent property entity world
             | _ -> (false, world)
 
-        static member setSimulantProperty name property (simulant : Simulant) world =
+        static member setSimulantProperty name alwaysPublish nonPersistent property (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.setGameProperty name property world
             | :? Screen as screen -> World.setScreenProperty name property screen world
             | :? Layer as layer -> World.setLayerProperty name property layer world
-            | :? Entity as entity -> World.setEntityProperty name property entity world
+            | :? Entity as entity -> World.setEntityProperty name alwaysPublish nonPersistent property entity world
             | _ -> failwithumf ()
 
         static member internal tryGetSimulantScriptFrame (simulant : Simulant) world =
             match simulant with
-            | :? Game -> Some (World.getGameScriptFrameNp world)
-            | :? Screen as screen -> Some (World.getScreenScriptFrameNp screen world)
-            | :? Layer as layer -> Some (World.getLayerScriptFrameNp layer world)
+            | :? Game -> Some (World.getGameScriptFrame world)
+            | :? Screen as screen -> Some (World.getScreenScriptFrame screen world)
+            | :? Layer as layer -> Some (World.getLayerScriptFrame layer world)
             | :? Entity as entity ->
-                match World.tryGetEntityProperty Property? ScriptFrameNp entity world with
+                match World.tryGetEntityProperty Property? ScriptFrame entity world with
                 | Some scriptFrameProperty -> Some (scriptFrameProperty.PropertyValue :?> Scripting.DeclarationFrame)
                 | None -> None
             | _ -> failwithumf ()
