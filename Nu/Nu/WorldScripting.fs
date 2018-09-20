@@ -640,6 +640,8 @@ module WorldScripting =
                  ("map2_Stream", World.evalMapStreamExtrinsic)
                  ("product_Stream", World.evalProductStreamExtrinsic)
                  ("sum_Stream", World.evalSumStreamExtrinsic)
-                 ("monitor", World.evalMonitorExtrinsic)] |>
+                 ("monitor", World.evalMonitorExtrinsic)
+                 (*"info_String", World.evalInfoSimulant*)
+                 (*"info_Keyword", World.evalInfoSimulant*)] |>
                 dictPlus
             Extrinsics <- extrinsics
