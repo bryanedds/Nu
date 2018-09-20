@@ -2006,916 +2006,1258 @@ module WorldBindings =
             struct (violation, World.choose oldWorld)
 
     let evalResolveBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|relation|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            resolve relation world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|relation|] -> resolve relation world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalTryGetIsSelectedScreenIdlingBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            tryGetIsSelectedScreenIdling  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> tryGetIsSelectedScreenIdling  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalTryGetIsSelectedScreenTransitioningBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            tryGetIsSelectedScreenTransitioning  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> tryGetIsSelectedScreenTransitioning  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalIsSelectedScreenIdlingBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            isSelectedScreenIdling  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> isSelectedScreenIdling  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalIsSelectedScreenTransitioningBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            isSelectedScreenTransitioning  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> isSelectedScreenTransitioning  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalSelectScreenBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            selectScreen screen world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|screen|] -> selectScreen screen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalTryTransitionScreenBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|destination|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            tryTransitionScreen destination world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|destination|] -> tryTransitionScreen destination world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalTransitionScreenBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|destination|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            transitionScreen destination world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|destination|] -> transitionScreen destination world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalCreateDissolveScreenFromLayerFile6Binding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|dispatcherName; nameOpt; dissolveData; layerFilePath|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData layerFilePath world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|dispatcherName; nameOpt; dissolveData; layerFilePath|] -> createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData layerFilePath world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalCreateDissolveScreenFromLayerFileBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|nameOpt; dissolveData; layerFilePath|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            createDissolveScreenFromLayerFile nameOpt dissolveData layerFilePath world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|nameOpt; dissolveData; layerFilePath|] -> createDissolveScreenFromLayerFile nameOpt dissolveData layerFilePath world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalCreateSplashScreen6Binding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|dispatcherName; nameOpt; splashData; destination|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            createSplashScreen6 dispatcherName nameOpt splashData destination world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|dispatcherName; nameOpt; splashData; destination|] -> createSplashScreen6 dispatcherName nameOpt splashData destination world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalCreateSplashScreenBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|nameOpt; splashData; destination|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            createSplashScreen nameOpt splashData destination world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|nameOpt; splashData; destination|] -> createSplashScreen nameOpt splashData destination world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetEntitiesInView2Binding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getEntitiesInView2 screen world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|screen|] -> getEntitiesInView2 screen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetEntitiesInBounds3Binding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|bounds; screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getEntitiesInBounds3 bounds screen world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|bounds; screen|] -> getEntitiesInBounds3 bounds screen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetEntitiesAtPoint3Binding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|point; screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getEntitiesAtPoint3 point screen world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|point; screen|] -> getEntitiesAtPoint3 point screen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetEntitiesInViewBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getEntitiesInView  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getEntitiesInView  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetEntitiesInBoundsBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|bounds|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getEntitiesInBounds bounds world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|bounds|] -> getEntitiesInBounds bounds world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetEntitiesAtPointBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|point|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getEntitiesAtPoint point world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|point|] -> getEntitiesAtPoint point world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalPlaySongBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|timeToFadeOutSongMs; volume; song|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            playSong timeToFadeOutSongMs volume song world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|timeToFadeOutSongMs; volume; song|] -> playSong timeToFadeOutSongMs volume song world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalPlaySong4Binding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|timeToFadeOutSongMs; volume; songPackageName; songAssetName|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            playSong4 timeToFadeOutSongMs volume songPackageName songAssetName world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|timeToFadeOutSongMs; volume; songPackageName; songAssetName|] -> playSong4 timeToFadeOutSongMs volume songPackageName songAssetName world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalPlaySoundBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|volume; sound|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            playSound volume sound world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|volume; sound|] -> playSound volume sound world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalPlaySound3Binding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|volume; soundPackageName; soundAssetName|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            playSound3 volume soundPackageName soundAssetName world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|volume; soundPackageName; soundAssetName|] -> playSound3 volume soundPackageName soundAssetName world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalFadeOutSongBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|timeToFadeOutSongMs|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            fadeOutSong timeToFadeOutSongMs world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|timeToFadeOutSongMs|] -> fadeOutSong timeToFadeOutSongMs world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalStopSongBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            stopSong  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> stopSong  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalHintAudioPackageUseBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|packageName|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            hintAudioPackageUse packageName world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|packageName|] -> hintAudioPackageUse packageName world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalHintAudioPackageDisuseBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|packageName|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            hintAudioPackageDisuse packageName world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|packageName|] -> hintAudioPackageDisuse packageName world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalReloadAudioAssetsBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            reloadAudioAssets  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> reloadAudioAssets  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalHintRenderPackageUseBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|packageName|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            hintRenderPackageUse packageName world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|packageName|] -> hintRenderPackageUse packageName world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalHintRenderPackageDisuseBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|packageName|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            hintRenderPackageDisuse packageName world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|packageName|] -> hintRenderPackageDisuse packageName world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalReloadRenderAssetsBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            reloadRenderAssets  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> reloadRenderAssets  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalBodyExistsBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            bodyExists physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|physicsId|] -> bodyExists physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetBodyContactNormalsBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getBodyContactNormals physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|physicsId|] -> getBodyContactNormals physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetBodyLinearVelocityBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getBodyLinearVelocity physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|physicsId|] -> getBodyLinearVelocity physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetBodyToGroundContactNormalsBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getBodyToGroundContactNormals physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|physicsId|] -> getBodyToGroundContactNormals physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetBodyToGroundContactNormalOptBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getBodyToGroundContactNormalOpt physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|physicsId|] -> getBodyToGroundContactNormalOpt physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetBodyToGroundContactTangentOptBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getBodyToGroundContactTangentOpt physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|physicsId|] -> getBodyToGroundContactTangentOpt physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalIsBodyOnGroundBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            isBodyOnGround physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|physicsId|] -> isBodyOnGround physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalCreateBodyBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|entity; entityId; bodyProperties|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            createBody entity entityId bodyProperties world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|entity; entityId; bodyProperties|] -> createBody entity entityId bodyProperties world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalCreateBodiesBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|entity; entityId; bodiesProperties|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            createBodies entity entityId bodiesProperties world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|entity; entityId; bodiesProperties|] -> createBodies entity entityId bodiesProperties world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalDestroyBodyBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            destroyBody physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|physicsId|] -> destroyBody physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalDestroyBodiesBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|physicsIds|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            destroyBodies physicsIds world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|physicsIds|] -> destroyBodies physicsIds world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalSetBodyPositionBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|position; physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            setBodyPosition position physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|position; physicsId|] -> setBodyPosition position physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalSetBodyRotationBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|rotation; physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            setBodyRotation rotation physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|rotation; physicsId|] -> setBodyRotation rotation physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalSetBodyAngularVelocityBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|angularVelocity; physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            setBodyAngularVelocity angularVelocity physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|angularVelocity; physicsId|] -> setBodyAngularVelocity angularVelocity physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalSetBodyLinearVelocityBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|linearVelocity; physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            setBodyLinearVelocity linearVelocity physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|linearVelocity; physicsId|] -> setBodyLinearVelocity linearVelocity physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalApplyBodyAngularImpulseBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|angularImpulse; physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            applyBodyAngularImpulse angularImpulse physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|angularImpulse; physicsId|] -> applyBodyAngularImpulse angularImpulse physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalApplyBodyLinearImpulseBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|linearImpulse; physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            applyBodyLinearImpulse linearImpulse physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|linearImpulse; physicsId|] -> applyBodyLinearImpulse linearImpulse physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalApplyBodyForceBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|force; physicsId|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            applyBodyForce force physicsId world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|force; physicsId|] -> applyBodyForce force physicsId world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalIsMouseButtonDownBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|mouseButton|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            isMouseButtonDown mouseButton world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|mouseButton|] -> isMouseButtonDown mouseButton world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetMousePositionBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getMousePosition  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getMousePosition  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetMousePositionFBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getMousePositionF  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getMousePositionF  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalIsKeyboardKeyDownBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|scanCode|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            isKeyboardKeyDown scanCode world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|scanCode|] -> isKeyboardKeyDown scanCode world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetSimulantSelectedBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|simulant|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getSimulantSelected simulant world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|simulant|] -> getSimulantSelected simulant world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalTryGetSimulantParentBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|simulant|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            tryGetSimulantParent simulant world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|simulant|] -> tryGetSimulantParent simulant world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetSimulantChildrenBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|simulant|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getSimulantChildren simulant world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|simulant|] -> getSimulantChildren simulant world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetSimulantExistsBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|simulant|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getSimulantExists simulant world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|simulant|] -> getSimulantExists simulant world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetEntities0Binding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getEntities0  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getEntities0  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetLayers0Binding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getLayers0  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getLayers0  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalIsSimulantSelectedBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|simulant|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            isSimulantSelected simulant world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|simulant|] -> isSimulantSelected simulant world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalWriteGameToFileBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|filePath|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            writeGameToFile filePath world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|filePath|] -> writeGameToFile filePath world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalReadGameFromFileBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|filePath|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            readGameFromFile filePath world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|filePath|] -> readGameFromFile filePath world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetScreensBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getScreens  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getScreens  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalDestroyScreenBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            destroyScreen screen world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|screen|] -> destroyScreen screen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalCreateScreenBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|dispatcherName; nameOpt|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            createScreen dispatcherName nameOpt world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|dispatcherName; nameOpt|] -> createScreen dispatcherName nameOpt world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalCreateDissolveScreenBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|dispatcherName; nameOpt; dissolveData|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            createDissolveScreen dispatcherName nameOpt dissolveData world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|dispatcherName; nameOpt; dissolveData|] -> createDissolveScreen dispatcherName nameOpt dissolveData world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalWriteScreenToFileBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|filePath; screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            writeScreenToFile filePath screen world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|filePath; screen|] -> writeScreenToFile filePath screen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalReadScreenFromFileBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|filePath; nameOpt|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            readScreenFromFile filePath nameOpt world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|filePath; nameOpt|] -> readScreenFromFile filePath nameOpt world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetLayersBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getLayers screen world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|screen|] -> getLayers screen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalDestroyLayerBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|layer|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            destroyLayer layer world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|layer|] -> destroyLayer layer world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalDestroyLayersBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|layers|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            destroyLayers layers world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|layers|] -> destroyLayers layers world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalWriteLayerToFileBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|filePath; layer|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            writeLayerToFile filePath layer world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|filePath; layer|] -> writeLayerToFile filePath layer world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalReadLayerFromFileBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|filePath; nameOpt; screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            readLayerFromFile filePath nameOpt screen world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|filePath; nameOpt; screen|] -> readLayerFromFile filePath nameOpt screen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetEntitiesBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|layer|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getEntities layer world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|layer|] -> getEntities layer world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalDestroyEntityBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|entity|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            destroyEntity entity world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|entity|] -> destroyEntity entity world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalDestroyEntitiesBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|entities|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            destroyEntities entities world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|entities|] -> destroyEntities entities world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalTryPickEntityBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|position; entities|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            tryPickEntity position entities world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|position; entities|] -> tryPickEntity position entities world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalCreateEntityBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|dispatcherName; nameOpt; overlayNameDescriptor; layer|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            createEntity dispatcherName nameOpt overlayNameDescriptor layer world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|dispatcherName; nameOpt; overlayNameDescriptor; layer|] -> createEntity dispatcherName nameOpt overlayNameDescriptor layer world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalReassignEntityBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|entity; nameOpt; layer|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            reassignEntity entity nameOpt layer world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|entity; nameOpt; layer|] -> reassignEntity entity nameOpt layer world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalTrySetEntityOverlayNameOptBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|overlayNameOpt; entity|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            trySetEntityOverlayNameOpt overlayNameOpt entity world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|overlayNameOpt; entity|] -> trySetEntityOverlayNameOpt overlayNameOpt entity world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalTrySetEntityFacetNamesBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|facetNames; entity|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            trySetEntityFacetNames facetNames entity world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|facetNames; entity|] -> trySetEntityFacetNames facetNames entity world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalCreateLayerBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|dispatcherName; nameOpt; screen|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            createLayer dispatcherName nameOpt screen world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|dispatcherName; nameOpt; screen|] -> createLayer dispatcherName nameOpt screen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetEyeCenterBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getEyeCenter  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getEyeCenter  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalSetEyeCenterBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|value|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            setEyeCenter value world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|value|] -> setEyeCenter value world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetEyeSizeBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getEyeSize  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getEyeSize  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalSetEyeSizeBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|value|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            setEyeSize value world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|value|] -> setEyeSize value world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetOmniscreenOptBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getOmniscreenOpt  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getOmniscreenOpt  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalSetOmniscreenOptBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|value|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            setOmniscreenOpt value world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|value|] -> setOmniscreenOpt value world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetOmniscreenBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getOmniscreen  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getOmniscreen  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalSetOmniscreenBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|value|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            setOmniscreen value world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|value|] -> setOmniscreen value world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetSelectedScreenOptBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getSelectedScreenOpt  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getSelectedScreenOpt  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalSetSelectedScreenOptBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|value|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            setSelectedScreenOpt value world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|value|] -> setSelectedScreenOpt value world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetSelectedScreenBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getSelectedScreen  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getSelectedScreen  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalSetSelectedScreenBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|value|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            setSelectedScreen value world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|value|] -> setSelectedScreen value world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetScreenTransitionDestinationOptBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getScreenTransitionDestinationOpt  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getScreenTransitionDestinationOpt  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetViewBoundsRelativeBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getViewBoundsRelative  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getViewBoundsRelative  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetViewBoundsAbsoluteBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getViewBoundsAbsolute  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getViewBoundsAbsolute  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetViewBoundsBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|viewType|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getViewBounds viewType world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|viewType|] -> getViewBounds viewType world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalIsBoundsInViewBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|viewType; bounds|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            isBoundsInView viewType bounds world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|viewType; bounds|] -> isBoundsInView viewType bounds world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalMouseToScreenBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|mousePosition|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            mouseToScreen mousePosition world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|mousePosition|] -> mouseToScreen mousePosition world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalMouseToWorldBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|viewType; mousePosition|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            mouseToWorld viewType mousePosition world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|viewType; mousePosition|] -> mouseToWorld viewType mousePosition world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalMouseToEntityBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|viewType; entityPosition; mousePosition|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            mouseToEntity viewType entityPosition mousePosition world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|viewType; entityPosition; mousePosition|] -> mouseToEntity viewType entityPosition mousePosition world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetTickRateBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getTickRate  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getTickRate  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetTickRateFBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getTickRateF  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getTickRateF  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalSetTickRateBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|tickRate|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            setTickRate tickRate world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|tickRate|] -> setTickRate tickRate world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalResetTickTimeBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            resetTickTime  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> resetTickTime  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetTickTimeBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getTickTime  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getTickTime  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalIsTickingBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            isTicking  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> isTicking  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetUpdateCountBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getUpdateCount  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getUpdateCount  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetLivenessBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getLiveness  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getLiveness  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalExitBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([||] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            exit  world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> exit  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalTryGetTextureSizeBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|assetTag|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            tryGetTextureSize assetTag world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|assetTag|] -> tryGetTextureSize assetTag world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetTextureSizeBinding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|assetTag|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getTextureSize assetTag world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|assetTag|] -> getTextureSize assetTag world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalTryGetTextureSizeAsVector2Binding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|assetTag|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            tryGetTextureSizeAsVector2 assetTag world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|assetTag|] -> tryGetTextureSizeAsVector2 assetTag world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let evalGetTextureSizeAsVector2Binding fnName exprs originOpt world =
-        match World.evalManyInternal exprs world with
-        | struct ([|assetTag|] as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->
-            getTextureSizeAsVector2 assetTag world
-        | _ ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-            struct (violation, world)
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|assetTag|] -> getTextureSizeAsVector2 assetTag world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
 
     let tryGetBinding fnName =
         match WorldScripting.Bindings.TryGetValue fnName with
