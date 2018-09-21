@@ -234,11 +234,11 @@ let generateBindingFunction binding =
                 "            struct (value, world)\n"
             | SimulantReturn ->
                 "            let (value, world) = result\n" +
-                "            let value = Scripting.String (scstring value)\n" +
+                "            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str\n" +
                 "            struct (value, world)\n"
             | SimulantHashSetReturn ->
                 "            let (value, world) = result\n" +
-                "            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))\n" +
+                "            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))\n" +
                 "            struct (value, world)\n"
         | PureReturn rc ->
             match rc with
@@ -252,11 +252,11 @@ let generateBindingFunction binding =
                 "            struct (value, world)\n"
             | SimulantReturn ->
                 "            let value = result\n" +
-                "            let value = Scripting.String (scstring value)\n" +
+                "            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str\n" +
                 "            struct (value, world)\n"
             | SimulantHashSetReturn ->
                 "            let value = result\n" +
-                "            let value = Scripting.Ring (Set.ofSeq (Seq.map (scstring >> Scripting.String) value))\n" +
+                "            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))\n" +
                 "            struct (value, world)\n"
     
     let invocation =
@@ -283,12 +283,15 @@ let generateBindingFunction' binding =
     let argArray = "[|" + String.Join ("; ", args) + "|]"
     
     "    let eval" + String.capitalize binding.FunctionBindingName + "Binding fnName exprs originOpt world =\n" +
-    "        match World.evalManyInternal exprs world with\n" +
-    "        | struct (" + argArray + " as args, world) when Array.notExists (function Scripting.Violation _ -> true | _ -> false) args ->\n" +
-    "            " + binding.FunctionBindingName + " " + String.Join (" ", args) + " world\n" +
-    "        | _ ->\n" +
-    "            let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '\" + " + "fnName" + " + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
-    "            struct (violation, world)\n"
+    "        let struct (evaleds, world) = World.evalManyInternal exprs world\n" +
+    "        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with\n" +
+    "        | None ->\n" +
+    "            match evaleds with\n" +
+    "            | " + argArray + " -> " + binding.FunctionBindingName + " " + String.Join (" ", args) + " world\n" +
+    "            | _ ->\n" +
+    "                let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '\" + fnName + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
+    "                struct (violation, world)\n" +
+    "        | Some violation -> struct (violation, world)\n"
 
 let generateTryGetBinding () =
     "    let tryGetBinding fnName =\n" +
