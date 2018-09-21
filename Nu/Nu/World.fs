@@ -5,6 +5,8 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Reflection
+open System.Runtime.InteropServices
+open System.Text
 open SDL2
 open Prime
 open Nu
@@ -342,10 +344,18 @@ module WorldModule3 =
                     match World.tryEvalPrelude world with
                     | Right struct (_, world) ->
                         
-                        // finally, register the game
+                        // register the game
                         let world = World.registerGame world
-                        Right world
 
+                        // attempt to hookup the console
+                        let world =
+                            if Core.debugging
+                            then WorldConsole.tryHookUp world |> snd
+                            else world
+
+                        // fin
+                        Right world
+                    
                     // forward error messages
                     | Left struct (error, _) -> Left error
                 | Left error -> Left error
