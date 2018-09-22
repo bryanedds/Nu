@@ -861,22 +861,24 @@ module Gaia =
         layerCreationForm.cancelButton.Click.Add (fun _ -> layerCreationForm.Close ())
         layerCreationForm.ShowDialog form |> ignore
 
-    let private handleFormSave (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormSave saveAs (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             let layer = (World.getUserValue world).SelectedLayer
             form.saveFileDialog.Title <- "Save '" + layer.LayerName + "' As"
             match Map.tryFind layer.LayerAddress (World.getUserValue world).FilePaths with
             | Some filePath -> form.saveFileDialog.FileName <- filePath
             | None -> form.saveFileDialog.FileName <- String.Empty
-            match form.saveFileDialog.ShowDialog form with
-            | DialogResult.OK ->
-                let filePath = form.saveFileDialog.FileName
-                trySaveSelectedLayer filePath world
-                World.updateUserValue (fun value ->
-                    let filePaths = Map.add layer.LayerAddress filePath value.FilePaths
-                    { value with FilePaths = filePaths })
-                    world
-            | _ -> world
+            let filePath = form.saveFileDialog.FileName
+            if saveAs || String.IsNullOrWhiteSpace filePath then
+                match form.saveFileDialog.ShowDialog form with
+                | DialogResult.OK ->
+                    trySaveSelectedLayer filePath world
+                    World.updateUserValue (fun value ->
+                        let filePaths = Map.add layer.LayerAddress filePath value.FilePaths
+                        { value with FilePaths = filePaths })
+                        world
+                | _ -> world
+            else trySaveSelectedLayer form.saveFileDialog.FileName world; world
 
     let private handleFormOpen (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
@@ -1431,7 +1433,8 @@ module Gaia =
         form.deleteToolStripMenuItem.Click.Add (handleFormDeleteEntity form)
         form.deleteContextMenuItem.Click.Add (handleFormDeleteEntity form)
         form.newToolStripMenuItem.Click.Add (handleFormNew form)
-        form.saveToolStripMenuItem.Click.Add (handleFormSave form)
+        form.saveToolStripMenuItem.Click.Add (handleFormSave false form)
+        form.saveAsToolStripMenuItem.Click.Add (handleFormSave true form)
         form.openToolStripMenuItem.Click.Add (handleFormOpen form)
         form.closeToolStripMenuItem.Click.Add (handleFormClose form)
         form.undoButton.Click.Add (handleFormUndo form)
