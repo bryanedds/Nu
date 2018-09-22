@@ -30,4 +30,5 @@ type EditorState =
       DragCameraState : DragCameraState
       PastWorlds : World list
       FutureWorlds : World list
-      SelectedLayer : Layer }
+      SelectedLayer : Layer
+      FilePaths : Map<Layer Address, string> }
