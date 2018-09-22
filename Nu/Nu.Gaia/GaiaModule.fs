@@ -335,7 +335,7 @@ module Gaia =
             MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
 
     let private tryLoadSelectedLayer (form : GaiaForm) filePath world =
-        
+
         // old world in case we need to rewind
         let oldWorld = world
 
@@ -360,19 +360,19 @@ module Gaia =
                 // refresh tree views
                 refreshEntityTreeView form world
                 refreshHierarchyTreeView form world
-                world
+                (Some layer, world)
             
             // handle load failure
             else
                 let world = World.choose oldWorld
                 MessageBox.Show ("Could not load layer file with same name as an existing layer", "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-                world
+                (None, world)
 
         // handle load failure
         with exn ->
             let world = World.choose oldWorld
             MessageBox.Show ("Could not load layer file due to: " + scstring exn, "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
-            world
+            (None, world)
 
     let private handleFormExit (form : GaiaForm) (_ : EventArgs) =
         form.Close ()
@@ -850,6 +850,7 @@ module Gaia =
                     let world = World.createLayer4 layerDispatcherName (Some layerName) Simulants.EditorScreen world |> snd
                     refreshLayerTabs form world
                     refreshHierarchyTreeView form world
+                    deselectEntity form world
                     form.layerTabControl.SelectTab (form.layerTabControl.TabPages.IndexOfKey layerName)
                     world
                 with exn ->
@@ -862,24 +863,35 @@ module Gaia =
 
     let private handleFormSave (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
-            let layerName = (World.getUserValue world).SelectedLayer.LayerName
-            form.saveFileDialog.Title <- "Save '" + layerName + "' As"
-            form.saveFileDialog.FileName <- String.Empty
-            let saveFileResult = form.saveFileDialog.ShowDialog form
-            match saveFileResult with
-            | DialogResult.OK -> trySaveSelectedLayer form.saveFileDialog.FileName world; world
+            let layer = (World.getUserValue world).SelectedLayer
+            form.saveFileDialog.Title <- "Save '" + layer.LayerName + "' As"
+            match Map.tryFind layer.LayerAddress (World.getUserValue world).FilePaths with
+            | Some filePath -> form.saveFileDialog.FileName <- filePath
+            | None -> form.saveFileDialog.FileName <- String.Empty
+            match form.saveFileDialog.ShowDialog form with
+            | DialogResult.OK ->
+                let filePath = form.saveFileDialog.FileName
+                trySaveSelectedLayer filePath world
+                World.updateUserValue (fun value ->
+                    let filePaths = Map.add layer.LayerAddress filePath value.FilePaths
+                    { value with FilePaths = filePaths })
+                    world
             | _ -> world
 
     let private handleFormOpen (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             form.openFileDialog.FileName <- String.Empty
-            let openFileResult = form.openFileDialog.ShowDialog form
-            match openFileResult with
+            match form.openFileDialog.ShowDialog form with
             | DialogResult.OK ->
                 let world = pushPastWorld world world
-                let world = tryLoadSelectedLayer form form.openFileDialog.FileName world
-                deselectEntity form world
-                world
+                let filePath = form.openFileDialog.FileName
+                match tryLoadSelectedLayer form filePath world with
+                | (Some layer, world) ->
+                    World.updateUserValue (fun value ->
+                        let filePaths = Map.add layer.LayerAddress filePath value.FilePaths
+                        { value with FilePaths = filePaths })
+                        world
+                | (None, world) -> world
             | _ -> world
 
     let private handleFormClose (form : GaiaForm) (_ : EventArgs) =
@@ -897,7 +909,9 @@ module Gaia =
                 World.updateUserValue (fun editorState ->
                     let layerTabControl = form.layerTabControl
                     let layerTab = layerTabControl.SelectedTab
-                    { editorState with SelectedLayer = stol Simulants.EditorScreen layerTab.Text })
+                    { editorState with
+                        SelectedLayer = stol Simulants.EditorScreen layerTab.Text
+                        FilePaths = Map.remove layer.LayerAddress editorState.FilePaths })
                     world
 
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
@@ -1293,7 +1307,8 @@ module Gaia =
                           DragCameraState = DragCameraNone
                           PastWorlds = []
                           FutureWorlds = []
-                          SelectedLayer = Simulants.DefaultEditorLayer })
+                          SelectedLayer = Simulants.DefaultEditorLayer
+                          FilePaths = Map.empty })
                     let world = World.subscribePlus (makeGuid ()) (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world |> snd
                     let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world |> snd
                     let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world |> snd
