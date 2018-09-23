@@ -50,10 +50,10 @@ type [<Struct; CustomEquality; CustomComparison>] StreamPluggable =
 module WorldScripting =
 
     let mutable Extrinsics =
-        Unchecked.defaultof<Dictionary<string, string -> Expr array -> SymbolOrigin option -> World -> struct (Expr * World)>>
+        Unchecked.defaultof<Dictionary<string, World ScriptingTrinsic>>
 
     let mutable Bindings =
-        Unchecked.defaultof<Dictionary<string, string -> Expr array -> SymbolOrigin option -> World -> struct (Expr * World)>>
+        Unchecked.defaultof<Dictionary<string, World ScriptingTrinsic>>
 
     type World with
 
@@ -621,27 +621,27 @@ module WorldScripting =
 
         static member internal initScripting () =
             let extrinsics =
-                [("v2", World.evalV2Extrinsic)
-                 ("index_Vector2", World.evalIndexV2Extrinsic)
-                 ("alter_Vector2", World.evalUpdateV2Extrinsic)
-                 ("v4", World.evalV4Extrinsic)
-                 ("index_Vector4", World.evalIndexV4Extrinsic)
-                 ("alter_Vector4", World.evalUpdateV4Extrinsic)
-                 ("v2i", World.evalV2iExtrinsic)
-                 ("index_Vector2i", World.evalIndexV2iExtrinsic)
-                 ("alter_Vector2i", World.evalUpdateV2iExtrinsic)
-                 ("get", World.evalGetExtrinsic)
-                 ("getAsStream", World.evalGetAsStreamExtrinsic)
-                 ("set", World.evalSetExtrinsic)
-                 ("setAsStream", World.evalSetAsStreamExtrinsic)
-                 ("make_Stream", World.evalMakeStreamExtrinsic)
-                 ("map_Stream", World.evalMapStreamExtrinsic)
-                 ("fold_Stream", World.evalFoldStreamExtrinsic)
-                 ("map2_Stream", World.evalMapStreamExtrinsic)
-                 ("product_Stream", World.evalProductStreamExtrinsic)
-                 ("sum_Stream", World.evalSumStreamExtrinsic)
-                 ("monitor", World.evalMonitorExtrinsic)
-                 (*"info_String", World.evalInfoSimulant*)
-                 (*"info_Keyword", World.evalInfoSimulant*)] |>
+                [("v2", { Fn = World.evalV2Extrinsic; Pars = []; DocOpt = None })
+                 ("index_Vector2", { Fn = World.evalIndexV2Extrinsic; Pars = []; DocOpt = None })
+                 ("alter_Vector2", { Fn = World.evalUpdateV2Extrinsic; Pars = []; DocOpt = None })
+                 ("v4", { Fn = World.evalV4Extrinsic; Pars = []; DocOpt = None })
+                 ("index_Vector4", { Fn = World.evalIndexV4Extrinsic; Pars = []; DocOpt = None })
+                 ("alter_Vector4", { Fn = World.evalUpdateV4Extrinsic; Pars = []; DocOpt = None })
+                 ("v2i", { Fn = World.evalV2iExtrinsic; Pars = []; DocOpt = None })
+                 ("index_Vector2i", { Fn = World.evalIndexV2iExtrinsic; Pars = []; DocOpt = None })
+                 ("alter_Vector2i", { Fn = World.evalUpdateV2iExtrinsic; Pars = []; DocOpt = None })
+                 ("get", { Fn = World.evalGetExtrinsic; Pars = []; DocOpt = None })
+                 ("getAsStream", { Fn = World.evalGetAsStreamExtrinsic; Pars = []; DocOpt = None })
+                 ("set", { Fn = World.evalSetExtrinsic; Pars = []; DocOpt = None })
+                 ("setAsStream", { Fn = World.evalSetAsStreamExtrinsic; Pars = []; DocOpt = None })
+                 ("make_Stream", { Fn = World.evalMakeStreamExtrinsic; Pars = []; DocOpt = None })
+                 ("map_Stream", { Fn = World.evalMapStreamExtrinsic; Pars = []; DocOpt = None })
+                 ("fold_Stream", { Fn = World.evalFoldStreamExtrinsic; Pars = []; DocOpt = None })
+                 ("map2_Stream", { Fn = World.evalMapStreamExtrinsic; Pars = []; DocOpt = None })
+                 ("product_Stream", { Fn = World.evalProductStreamExtrinsic; Pars = []; DocOpt = None })
+                 ("sum_Stream", { Fn = World.evalSumStreamExtrinsic; Pars = []; DocOpt = None })
+                 ("monitor", { Fn = World.evalMonitorExtrinsic; Pars = []; DocOpt = None })
+                 (*"info_String", { Fn = World.evalInfoSimulant; Pars = []; DocOpt = None }*)
+                 (*"info_Keyword", { Fn = World.evalInfoSimulant; Pars = []c; DocOpt = None }*)] |>
                 dictPlus
             Extrinsics <- extrinsics

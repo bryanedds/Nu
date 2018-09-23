@@ -303,7 +303,11 @@ let generateInitBindings bindings =
 
     let bindingDispatchers =
         bindings |>
-        Array.map (fun binding -> "             (\"" + binding.FunctionBindingName + "\", eval" + String.capitalize binding.FunctionBindingName + "Binding)\n") |>
+        Array.map (fun binding ->
+            let pars = String.Join ("; ", Array.map (fst >> String.surround "\"") binding.FunctionParameters)
+            let name = binding.FunctionBindingName
+            let nameCap = String.capitalize name
+            "             (\"" + name + "\", { Fn = eval" + nameCap + "Binding; Pars = [" + pars + "]; DocOpt = None })\n") |>
         fun dispatchers -> String.Join ("", dispatchers)
     "    let initBindings () =\n" +
     "        let bindings =\n" +
