@@ -973,7 +973,7 @@ module WorldTypes =
           LayerDispatchers : Map<string, LayerDispatcher>
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
-          TryGetExtrinsic : string -> (string -> Scripting.Expr array -> SymbolOrigin option -> World -> struct (Scripting.Expr * World)) FOption
+          TryGetExtrinsic : string -> World ScriptingTrinsic FOption
           UpdateEntityInEntityTree : bool -> ViewType -> Vector4 -> Entity -> World -> World -> World
           RebuildEntityTree : Screen -> World -> Entity SpatialTree }
     
