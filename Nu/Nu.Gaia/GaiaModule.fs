@@ -315,9 +315,9 @@ module Gaia =
 
     let private subscribeToEntityEvents form world =
         let selectedLayer = (World.getUserValue world).SelectedLayer
-        let world = World.subscribePlus Constants.SubscriptionKeys.ChangeParentNodeOpt (handleNuChangeParentNodeOpt form) (Events.EntityChange Property? NodeOpt ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
-        let world = World.subscribePlus Constants.SubscriptionKeys.RegisterEntity (handleNuEntityRegister form) (Events.EntityRegister ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
-        let world = World.subscribePlus Constants.SubscriptionKeys.UnregisteringEntity (handleNuEntityUnregistering form) (Events.EntityUnregistering ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
+        let world = World.subscribePlus Constants.SubscriptionKeys.ChangeParentNodeOpt (handleNuChangeParentNodeOpt form) (Events.SimulantChange Property? ParentNodeOpt ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
+        let world = World.subscribePlus Constants.SubscriptionKeys.RegisterEntity (handleNuEntityRegister form) (Events.SimulantRegister ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
+        let world = World.subscribePlus Constants.SubscriptionKeys.UnregisteringEntity (handleNuEntityUnregistering form) (Events.SimulantUnregistering ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
         world
 
     let private unsubscribeFromEntityEvents world =
@@ -1536,6 +1536,7 @@ module Gaia =
         let worldEir = World.tryMake false 0L () plugin sdlDeps
         match worldEir with
         | Right world ->
+            let world = World.setEventFilter (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])]) world
             let world = World.createScreen3 (plugin.GetEditorScreenDispatcherName ()) (Some Simulants.EditorScreen.ScreenName) world |> snd
             let world = World.createLayer (Some Simulants.DefaultEditorLayer.LayerName) Simulants.EditorScreen world |> snd
             let world = World.setSelectedScreen Simulants.EditorScreen world

@@ -239,10 +239,6 @@
 
 #| Nu Script Extensions. |#
 
-; Update function.
-[define update [property updater]
-    [set property [updater [get property]]]]
-
 ; Vector2 extensions.
 [define empty_Vector2 [_] [v2 0f 0f]]
 [define identity_Vector2 [_] [v2 1f 1f]]
@@ -362,6 +358,31 @@
 [define %_Vector2i [u v] [v2i [% u.X v.X] [% u.Y v.Y]]]
 [define dot_Vector2i [u v] [+ [* u.X v.X] [* u.Y v.Y]]]
 [define -v2i- [v2i 0 0]]
+
+; Update function.
+[define update [property updater]
+    [set property [updater [get property]]]]
+
+; Convert an event stream to a data stream.
+[define toData [stream]
+    [map [fun [evt] evt.Data] stream]]
+
+; Make stream with event data directly.
+[define stream [event]
+    [toData [streamEvent event]]]
+
+; Equate two simulant's properties.
+[define equate [simulant property simulant2 property2]
+    [setAsStream simulant property [getAsStream simulant2 property2]]]
+
+; The simulant currently in context
+[define self ?/?/?]
+
+; The parent simulant currently in context
+[define parent ?/?]
+
+; The grandparent simulant currently in context
+[define grandparent ?/?]
 
 ; The game.
 [define game nil]

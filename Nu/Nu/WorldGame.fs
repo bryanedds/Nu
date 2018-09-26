@@ -139,8 +139,8 @@ module WorldGameModule =
 
         static member internal registerGame world =
             let game = Simulants.Game
-            let world = World.monitor World.gameOnRegisterChanged (Events.GameChange Property? OnRegister) game world
-            let world = World.monitor World.gameScriptOptChanged (Events.GameChange Property? ScriptOpt) game world
+            let world = World.monitor World.gameOnRegisterChanged (Events.SimulantChange Property? OnRegister) game world
+            let world = World.monitor World.gameScriptOptChanged (Events.SimulantChange Property? ScriptOpt) game world
             let world =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcher world

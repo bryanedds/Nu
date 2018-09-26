@@ -45,7 +45,11 @@ module Reflection =
         | "PublishPostUpdates"
         | "Facets"
         | "ScriptFrame"
-        | "ScriptUnsubscriptions" -> false
+        | "ScriptUnsubscriptions"
+        | "NodeUnsubscribe"
+        | "EffectPhysicsShapes"
+        | "EffectTags"
+        | "EffectHistory" -> false
         | _ ->
             not (propertyName.EndsWith ("Np", StringComparison.Ordinal)) && // don't write explicitly non-persistent properties
             not (propertyName.EndsWith ("Id", StringComparison.Ordinal)) && // don't write an Id

@@ -129,7 +129,7 @@ module WorldModuleEntity =
 
         static member private publishEntityChange propertyName (entity : Entity) (oldWorld : World) world =
             let world =
-                let changeEventAddress = ltoa ["Entity"; "Change"; propertyName; "Event"] ->>- entity.EntityAddress
+                let changeEventAddress = ltoa ["Change"; propertyName; "Event"] ->>- entity.EntityAddress
                 let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
                 let allowWildcard = propertyName = "ParentNodeOpt"
                 let changeData = { PropertyName = propertyName; OldWorld = oldWorld }
@@ -579,7 +579,7 @@ module WorldModuleEntity =
                     let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
                     let world = World.updateEntityPublishFlags entity world
                     let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
-                    let world = World.publish () (ltoa<unit> ["Entity"; "Register"; "Event"] ->- entity) eventTrace entity world
+                    let world = World.publish () (ltoa<unit> ["Register"; "Event"] ->- entity) eventTrace entity world
                     world)
                     entity
                     world
@@ -589,7 +589,7 @@ module WorldModuleEntity =
             let world =
                 World.withEventContext (fun world ->
                     let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
-                    let world = World.publish () (ltoa<unit> ["Entity"; "Unregistering"; "Event"] ->- entity) eventTrace entity world
+                    let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] ->- entity) eventTrace entity world
                     let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
                     let facets = World.getEntityFacets entity world
                     let world = dispatcher.Unregister (entity, world)
