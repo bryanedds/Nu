@@ -293,20 +293,20 @@ module WorldModule2 =
                 match eventFirstName with
                 | "Update" ->
                     if List.contains (Address.head Events.Wildcard) eventNames then
-                        Log.debug ^
-                            "Subscribing to entity update events with a wildcard is not supported. " +
-                            "This will cause a bug where some entity update events are not published."
+                        Log.debug
+                            ("Subscribing to entity update events with a wildcard is not supported. " +
+                             "This will cause a bug where some entity update events are not published.")
                     World.updateEntityPublishUpdateFlag entity world
                 | "PostUpdate" ->
                     if List.contains (Address.head Events.Wildcard) eventNames then
-                        Log.debug ^
-                            "Subscribing to entity post-update events with a wildcard is not supported. " +
-                            "This will cause a bug where some entity post-update events are not published."
+                        Log.debug
+                            ("Subscribing to entity post-update events with a wildcard is not supported. " +
+                             "This will cause a bug where some entity post-update events are not published.")
                     World.updateEntityPublishPostUpdateFlag entity world
                 | _ -> world
-            | eventFirstName :: _ :: _ :: _ ->
+            | eventFirstName :: eventSecondName :: _ :: _ ->
                 match eventFirstName with
-                | "Change" ->
+                | "Change" when eventSecondName <> "ParentNodeOpt" ->
                     if List.contains (Address.head Events.Wildcard) eventNames then
                         Log.debug "Subscribing to change events with a wildcard is not supported."
                     world

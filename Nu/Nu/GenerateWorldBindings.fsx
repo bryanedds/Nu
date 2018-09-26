@@ -330,7 +330,7 @@ let generateBindingSyntax bindings =
         Array.map (fun bindingList -> "        \"" + String.Join (" ", bindingList)) |>
         (fun bindingLists -> String.Join (" \" +\n", bindingLists) + "\"\n")
 
-    "    let [<Literal>] BindingKeywords =\n" + bindingLists
+    "    let [<Literal>] BindingKeywords =\n        \"v2 v4 v2i get getAsStream set setAsStream update streamEvent stream equate self parent grandparent game toData monitor \" +\n" + bindingLists
 
 let generateBindingsCode bindings =
 

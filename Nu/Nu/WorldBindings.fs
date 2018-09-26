@@ -17,6 +17,7 @@ open global.Nu
 module WorldBindings =
 
     let [<Literal>] BindingKeywords =
+        "v2 v4 v2i get getAsStream set setAsStream update streamEvent stream equate self parent grandparent game toData monitor " +
         "resolve tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning " +
         "selectScreen tryTransitionScreen transitionScreen createDissolveScreenFromLayerFile6 createDissolveScreenFromLayerFile " +
         "createSplashScreen6 createSplashScreen getEntitiesInView2 getEntitiesInBounds3 " +

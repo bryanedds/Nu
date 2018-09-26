@@ -35,18 +35,18 @@ module EffectFacetModule =
         member this.GetEffectOffset world : Vector2 = this.Get Property? EffectOffset world
         member this.SetEffectOffset (value : Vector2) world = this.SetFast Property? EffectOffset false false value world
         member this.EffectOffset = PropertyTag.make this Property? EffectOffset this.GetEffectOffset this.SetEffectOffset
-        member this.GetEffectPhysicsShapesNp world : unit = this.Get Property? EffectPhysicsShapesNp world // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
-        member private this.SetEffectPhysicsShapesNp (value : unit) world = this.SetFast Property? EffectPhysicsShapesNp false true value world
-        member this.EffectPhysicsShapesNp = PropertyTag.makeReadOnly this Property? EffectPhysicsShapesNp this.GetEffectPhysicsShapesNp
-        member this.GetEffectTagsNp world : EffectTags = this.Get Property? EffectTagsNp world
-        member private this.SetEffectTagsNp (value : EffectTags) world = this.SetFast Property? EffectTagsNp false true value world
-        member this.EffectTagsNp = PropertyTag.makeReadOnly this Property? EffectTagsNp this.GetEffectTagsNp
+        member this.GetEffectPhysicsShapes world : unit = this.Get Property? EffectPhysicsShapes world // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
+        member private this.SetEffectPhysicsShapes (value : unit) world = this.SetFast Property? EffectPhysicsShapes false true value world
+        member this.EffectPhysicsShapes = PropertyTag.makeReadOnly this Property? EffectPhysicsShapes this.GetEffectPhysicsShapes
+        member this.GetEffectTags world : EffectTags = this.Get Property? EffectTags world
+        member private this.SetEffectTags (value : EffectTags) world = this.SetFast Property? EffectTags false true value world
+        member this.EffectTags = PropertyTag.makeReadOnly this Property? EffectTags this.GetEffectTags
         member this.GetEffectHistoryMax world : int = this.Get Property? EffectHistoryMax world
         member this.SetEffectHistoryMax (value : int) world = this.SetFast Property? EffectHistoryMax false false value world
         member this.EffectHistoryMax = PropertyTag.make this Property? EffectHistoryMax this.GetEffectHistoryMax this.SetEffectHistoryMax
-        member this.GetEffectHistoryNp world : Effects.Slice Deque = this.Get Property? EffectHistoryNp world
-        member private this.SetEffectHistoryNp (value : Effects.Slice Deque) world = this.SetFast Property? EffectHistoryNp false true value world
-        member this.EffectHistoryNp = PropertyTag.makeReadOnly this Property? EffectHistoryNp this.GetEffectHistoryNp
+        member this.GetEffectHistory world : Effects.Slice Deque = this.Get Property? EffectHistory world
+        member private this.SetEffectHistory (value : Effects.Slice Deque) world = this.SetFast Property? EffectHistory false true value world
+        member this.EffectHistory = PropertyTag.makeReadOnly this Property? EffectHistory this.GetEffectHistory
         
         /// The start time of the effect, or zero if none.
         member this.GetEffectStartTime world =
@@ -89,10 +89,10 @@ module EffectFacetModule =
              Define? EffectDefinitions (Map.empty : Effects.Definitions)
              Define? Effect Effect.empty
              Define? EffectOffset (Vector2 0.5f)
-             Define? EffectPhysicsShapesNp ()
-             Define? EffectTagsNp (Map.empty : EffectTags)
+             Define? EffectPhysicsShapes ()
+             Define? EffectTags (Map.empty : EffectTags)
              Define? EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
-             Variable? EffectHistoryNp (fun () -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
+             Variable? EffectHistory (fun () -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
 
         override facet.Actualize (entity, world) =
             
@@ -100,7 +100,7 @@ module EffectFacetModule =
             if entity.GetVisibleLayered world && entity.GetInView world then
 
                 // set up effect system to evaluate effect
-                let world = entity.SetEffectTagsNp Map.empty world
+                let world = entity.SetEffectTags Map.empty world
                 let effect = entity.GetEffect world
                 let effectTime = entity.GetEffectTime world
                 let effectViewType = entity.GetViewType world
@@ -113,7 +113,7 @@ module EffectFacetModule =
                       Effects.Color = Vector4.One
                       Effects.Enabled = true
                       Effects.Volume = 1.0f }
-                let effectHistory = entity.GetEffectHistoryNp world
+                let effectHistory = entity.GetEffectHistory world
                 let effectEnv = entity.GetEffectDefinitions world
                 let effectSystem = EffectSystem.make effectViewType effectHistory effectTime effectEnv
 
@@ -132,7 +132,7 @@ module EffectFacetModule =
                     
                     // set effects tags all in one pass for efficiency
                     // TODO: also raise event for all new effect tags so they can be handled in scripts?
-                    let effectTags = entity.GetEffectTagsNp world
+                    let effectTags = entity.GetEffectTags world
                     let (effectTags, world) =
                         Seq.fold (fun (effectTags, world) (Effects.TagArtifact (name, metadata, slice)) ->
                             match Map.tryFind name effectTags with
@@ -140,7 +140,7 @@ module EffectFacetModule =
                             | None -> (Map.add name (metadata, [slice]) effectTags, world))
                             (effectTags, world)
                             artifacts.TagArtifacts
-                    entity.SetEffectTagsNp effectTags world
+                    entity.SetEffectTags effectTags world
 
                 // update effect history in-place
                 effectHistory.AddToFront effectSlice
@@ -178,7 +178,7 @@ module ScriptFacetModule =
         member this.ScriptFrame = PropertyTag.makeReadOnly this Property? ScriptFrame this.GetScriptFrame
         member internal this.GetScriptUnsubscriptions world : Unsubscription list = this.Get Property? ScriptUnsubscriptions world
         member internal this.SetScriptUnsubscriptions (value : Unsubscription list) world = this.SetFast Property? ScriptUnsubscriptions false true value world
-        member internal this.ScriptUnsubscriptions = PropertyTag.makeReadOnly this Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions
+        member internal this.ScriptUnsubscriptions = PropertyTag.make this Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions
         member this.GetOnRegister world : Scripting.Expr = this.Get Property? OnRegister world
         member this.SetOnRegister (value : Scripting.Expr) world = this.SetFast Property? OnRegister true false value world
         member this.OnRegister = PropertyTag.make this Property? OnRegister this.GetOnRegister this.SetOnRegister
@@ -208,7 +208,8 @@ module ScriptFacetModule =
             World.registerEntity entity world
 
         static member PropertyDefinitions =
-            [Define? ScriptOpt (None : Symbol AssetTag option)
+            [Define? PublishChanges true
+             Define? ScriptOpt (None : Symbol AssetTag option)
              Define? Script ([||] : Scripting.Expr array)
              Define? ScriptFrame (Scripting.DeclarationFrame HashIdentity.Structural)
              Define? ScriptUnsubscriptions ([] : Unsubscription list)
@@ -381,9 +382,9 @@ module NodeFacetModule =
         member this.GetEnabledLocal world : bool = this.Get Property? EnabledLocal world
         member this.SetEnabledLocal (value : bool) world = this.SetFast Property? EnabledLocal false false value world
         member this.EnabledLocal = PropertyTag.make this Property? EnabledLocal this.GetEnabledLocal this.SetEnabledLocal
-        member private this.GetNodeUnsubscribeNp world : World -> World = this.Get Property? NodeUnsubscribeNp world
-        member private this.SetNodeUnsubscribeNp (value : World -> World) world = this.SetFast Property? NodeUnsubscribeNp false true value world
-        member private this.NodeUnsubscribeNp = PropertyTag.make this Property? NodeUnsubscribeNp this.GetNodeUnsubscribeNp this.SetNodeUnsubscribeNp
+        member private this.GetNodeUnsubscribe world : World -> World = this.Get Property? NodeUnsubscribe world
+        member private this.SetNodeUnsubscribe (value : World -> World) world = this.SetFast Property? NodeUnsubscribe false true value world
+        member private this.NodeUnsubscribe = PropertyTag.make this Property? NodeUnsubscribe this.GetNodeUnsubscribe this.SetNodeUnsubscribe
         
         member this.SetParentNodeOptWithAdjustment (value : Entity Relation option) world =
             let world =
@@ -473,7 +474,7 @@ module NodeFacetModule =
 
         static let subscribeToNodePropertyChanges (entity : Entity) world =
             let oldWorld = world
-            let world = (entity.GetNodeUnsubscribeNp world) world
+            let world = (entity.GetNodeUnsubscribe world) world
             match entity.GetParentNodeOpt world with
             | Some nodeRelation ->
                 let node = entity.Resolve nodeRelation
@@ -488,7 +489,7 @@ module NodeFacetModule =
                     let (unsubscribe2, world) = World.monitorPlus handleNodePropertyChange node.Depth.ChangeEvent entity world
                     let (unsubscribe3, world) = World.monitorPlus handleNodePropertyChange node.Visible.ChangeEvent entity world
                     let (unsubscribe4, world) = World.monitorPlus handleNodePropertyChange node.Enabled.ChangeEvent entity world
-                    entity.SetNodeUnsubscribeNp (unsubscribe4 >> unsubscribe3 >> unsubscribe2 >> unsubscribe) world
+                    entity.SetNodeUnsubscribe (unsubscribe4 >> unsubscribe3 >> unsubscribe2 >> unsubscribe) world
             | None -> world
 
         static let handleNodeChange evt world =
@@ -500,10 +501,10 @@ module NodeFacetModule =
              Define? DepthLocal 0.0f
              Define? VisibleLocal true
              Define? EnabledLocal true
-             Define? NodeUnsubscribeNp (id : World -> World)]
+             Define? NodeUnsubscribe (id : World -> World)]
 
         override facet.Register (entity, world) =
-            let world = entity.SetNodeUnsubscribeNp id world // ensure unsubscribe function reference doesn't get copied in Gaia...
+            let world = entity.SetNodeUnsubscribe id world // ensure unsubscribe function reference doesn't get copied in Gaia...
             let world = World.monitor handleNodeChange entity.ParentNodeOpt.ChangeEvent entity world
             let world = World.monitorPlus handleLocalPropertyChange entity.PositionLocal.ChangeEvent entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.DepthLocal.ChangeEvent entity world |> snd
@@ -513,7 +514,7 @@ module NodeFacetModule =
             world
 
         override facet.Unregister (entity, world) =
-            (entity.GetNodeUnsubscribeNp world) world // NOTE: not sure if this is necessary.
+            (entity.GetNodeUnsubscribe world) world // NOTE: not sure if this is necessary.
 
         override facet.TryGetCalculatedProperty (propertyName, entity, world) =
             match propertyName with
@@ -692,6 +693,7 @@ module GuiDispatcherModule =
         static member PropertyDefinitions =
             [Define? ViewType Absolute
              Define? AlwaysUpdate true
+             Define? PublishChanges true
              Define? DisabledColor (Vector4 0.75f)
              Define? SwallowMouseLeft true]
 

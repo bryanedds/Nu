@@ -131,20 +131,16 @@ module WorldScripting =
                 | None -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Simulant or property value could not be found.", originOpt), world)
             | Left error -> error
 
-        static member internal evalGetAsStream fnName propertyName relationOpt originOpt world =
+        static member internal evalGetAsStream fnName relationOpt propertyName originOpt world =
             let context = World.getScriptContext world
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
-                let stream = Stream.make (atooa simulant.SimulantAddress ->>- Events.SimulantChange propertyName)
+                let stream = Stream.make (Events.SimulantChange propertyName ->>- simulant.SimulantAddress)
                 let stream =
-                    Stream.mapEvent (fun (evt : Event<obj, _>) world ->
-                        match evt.Data with
-                        | :? ChangeData as changeData ->
-                            let simulant = evt.Publisher :?> Simulant
-                            match World.tryGetSimulantProperty changeData.PropertyName simulant world with
-                            | Some prop -> ScriptingWorld.tryImport prop.PropertyType prop.PropertyValue world
-                            | None -> None
-                        | _ -> None)
+                    Stream.mapEvent (fun (evt : Event<ChangeData, _>) world ->
+                        match World.tryGetSimulantProperty evt.Data.PropertyName simulant world with
+                        | Some prop -> ScriptingWorld.tryImport prop.PropertyType prop.PropertyValue world
+                        | None -> None)
                         stream
                 struct (Pluggable { Stream = stream }, world)
             | Left error -> error
@@ -179,7 +175,7 @@ module WorldScripting =
                 | None -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
             | Left error -> error
 
-        static member internal evalSetAsStream fnName propertyName relationOpt stream originOpt world =
+        static member internal evalSetAsStream fnName relationOpt propertyName stream originOpt world =
             let context = World.getScriptContext world
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
@@ -188,21 +184,26 @@ module WorldScripting =
                     match stream with
                     | :? StreamPluggable as stream ->
                         let (unsubscribe, world) =
-                            Stream.monitorPlus (fun (evt : Event<Expr option, _>) world ->
+                            Stream.monitorPlus (fun (evt : Event<obj, _>) world ->
                                 match evt.Data with
-                                | Some expr ->
-                                    match World.tryGetSimulantProperty propertyName simulant world with
-                                    | Some prop ->
-                                        let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                                        let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
-                                        let exported = ScriptingWorld.tryExport prop.PropertyType expr world
-                                        let prop = { prop with PropertyValue = exported }
-                                        let (_, world) = World.trySetSimulantProperty propertyName alwaysPublish nonPersistent prop simulant world
-                                        (Cascade, world)
+                                | :? (Expr option) as exprOpt ->
+                                    match exprOpt with
+                                    | Some expr ->
+                                        match World.tryGetSimulantProperty propertyName simulant world with
+                                        | Some prop ->
+                                            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                                            let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                                            match ScriptingWorld.tryExport prop.PropertyType expr world with
+                                            | Some exported ->
+                                                let prop = { prop with PropertyValue = exported }
+                                                let (_, world) = World.trySetSimulantProperty propertyName alwaysPublish nonPersistent prop simulant world
+                                                (Cascade, world)
+                                            | None -> (Cascade, world)
+                                        | None -> (Cascade, world)
                                     | None -> (Cascade, world)
-                                | None -> (Cascade, world))
+                                | _ -> (Cascade, world))
                                 (simulant :> Participant)
-                                stream.Stream
+                                (Stream.mapEffect (fun evt world -> (box evt.Data, world)) stream.Stream)
                                 world
                         let world = WorldModule.addSimulantScriptUnsubscription unsubscribe simulant world
                         struct (Unit, world)
@@ -210,7 +211,7 @@ module WorldScripting =
                 | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its last argument.", originOpt), world)
             | Left error -> error
 
-        static member internal evalMakeStream fnName evaledArg originOpt world =
+        static member internal evalStreamEvent fnName evaledArg originOpt world =
             match evaledArg with
             | Violation _ as error -> struct (error, world)
             | String str
@@ -522,12 +523,12 @@ module WorldScripting =
             match World.evalManyInternal exprs world with
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v|], world) -> struct (v, world)
-            | struct ([|String propertyName; relation|], world)
-            | struct ([|Keyword propertyName; relation|], world) -> World.evalGetAsStream fnName propertyName (Some relation) originOpt world
+            | struct ([|relation; String propertyName|], world)
+            | struct ([|relation; Keyword propertyName|], world) -> World.evalGetAsStream fnName (Some relation) propertyName originOpt world
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
             | struct ([|Violation _ as v|], world) -> struct (v, world)
             | struct ([|String propertyName|], world)
-            | struct ([|Keyword propertyName|], world) -> World.evalGetAsStream fnName propertyName None originOpt world
+            | struct ([|Keyword propertyName|], world) -> World.evalGetAsStream fnName None propertyName originOpt world
             | struct ([|_|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 1 or 2 arguments required.", originOpt), world)
 
@@ -551,20 +552,20 @@ module WorldScripting =
             | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
-            | struct ([|String propertyName; relation; value|], world)
-            | struct ([|Keyword propertyName; relation; value|], world) -> World.evalSetAsStream fnName propertyName (Some relation) value originOpt world
+            | struct ([|relation; String propertyName; value|], world)
+            | struct ([|relation; Keyword propertyName; value|], world) -> World.evalSetAsStream fnName (Some relation) propertyName value originOpt world
             | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v|], world) -> struct (v, world)
             | struct ([|String propertyName; value|], world)
-            | struct ([|Keyword propertyName; value|], world) -> World.evalSetAsStream fnName propertyName None value originOpt world
+            | struct ([|Keyword propertyName; value|], world) -> World.evalSetAsStream fnName None propertyName value originOpt world
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, a value for the second, and an optional Relation for the third.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
 
-        static member internal evalMakeStreamExtrinsic fnName exprs originOpt world =
+        static member internal evalStreamEventExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
             | struct ([|Violation _ as v|], world) -> struct (v, world)
-            | struct ([|evaled|], world) -> World.evalMakeStream fnName evaled originOpt world
+            | struct ([|evaled|], world) -> World.evalStreamEvent fnName evaled originOpt world
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 1 argument required.", originOpt), world)
 
         static member internal evalMapStreamExtrinsic fnName exprs originOpt world =
@@ -630,11 +631,11 @@ module WorldScripting =
                  ("v2i", { Fn = World.evalV2iExtrinsic; Pars = ["x"; "y"]; DocOpt = Some "Construct a Vector2i." })
                  ("index_Vector2i", { Fn = World.evalIndexV2iExtrinsic; Pars = []; DocOpt = None })
                  ("alter_Vector2i", { Fn = World.evalUpdateV2iExtrinsic; Pars = []; DocOpt = None })
-                 ("get", { Fn = World.evalGetExtrinsic; Pars = ["property"; "simulant?"]; DocOpt = Some "Get a simulant's property." })
-                 ("getAsStream", { Fn = World.evalGetAsStreamExtrinsic; Pars = ["property"; "simulant?"]; DocOpt = Some "Get a simulant's property as a Stream." })
-                 ("set", { Fn = World.evalSetExtrinsic; Pars = ["property"; "value"; "simulant?"]; DocOpt = Some "Set a simulant's property." })
-                 ("setAsStream", { Fn = World.evalSetAsStreamExtrinsic; Pars = ["property"; "stream"; "simulant?"]; DocOpt = Some "Equate a simulant's property to a Stream." })
-                 ("make_Stream", { Fn = World.evalMakeStreamExtrinsic; Pars = []; DocOpt = None })
+                 ("get", { Fn = World.evalGetExtrinsic; Pars = ["simulant?"; "property"]; DocOpt = Some "Get a simulant's property." })
+                 ("getAsStream", { Fn = World.evalGetAsStreamExtrinsic; Pars = ["simulant?"; "property"]; DocOpt = Some "Get a simulant's property as a Stream." })
+                 ("set", { Fn = World.evalSetExtrinsic; Pars = ["simulant?"; "property"; "value"]; DocOpt = Some "Set a simulant's property." })
+                 ("setAsStream", { Fn = World.evalSetAsStreamExtrinsic; Pars = ["simulant?"; "property"; "stream"]; DocOpt = Some "Equate a simulant's property to a Stream." })
+                 ("streamEvent", { Fn = World.evalStreamEventExtrinsic; Pars = ["event"]; DocOpt = Some "Construct a Stream for a given event." })
                  ("map_Stream", { Fn = World.evalMapStreamExtrinsic; Pars = []; DocOpt = None })
                  ("fold_Stream", { Fn = World.evalFoldStreamExtrinsic; Pars = []; DocOpt = None })
                  ("map2_Stream", { Fn = World.evalMapStreamExtrinsic; Pars = []; DocOpt = None })

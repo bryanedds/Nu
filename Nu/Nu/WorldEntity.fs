@@ -191,7 +191,7 @@ module WorldEntityModule =
         member this.Resolve relation = Entity (Relation.resolve this.EntityAddress relation)
 
         /// Get an entity's change event address.
-        member this.GetChangeEvent propertyName = Events.EntityChange propertyName ->>- this.EntityAddress
+        member this.GetChangeEvent propertyName = Events.SimulantChange propertyName ->>- this.EntityAddress
 
     type World with
 

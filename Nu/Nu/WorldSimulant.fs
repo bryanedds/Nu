@@ -63,9 +63,9 @@ module WorldSimulantModule =
         static member tryDeriveSimulant address =
             match Address.getNames address with
             | [] -> Some (Game Address.empty :> Simulant)
-            | [_] -> Some (Screen (Address.changeType<Simulant, Screen> address) :> Simulant)
-            | [_; _] -> Some (Layer (Address.changeType<Simulant, Layer> address) :> Simulant)
-            | [_; _; _] -> Some (Entity (Address.changeType<Simulant, Entity> address) :> Simulant)
+            | [_] -> Some (Screen (Address.changeType<obj, Screen> address) :> Simulant)
+            | [_; _] -> Some (Layer (Address.changeType<obj, Layer> address) :> Simulant)
+            | [_; _; _] -> Some (Entity (Address.changeType<obj, Entity> address) :> Simulant)
             | _ -> None
         
         static member deriveSimulant address =

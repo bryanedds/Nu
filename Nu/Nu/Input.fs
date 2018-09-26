@@ -43,7 +43,9 @@ module MouseState =
     /// Check that the given mouse button is down.
     let isButtonDown mouseButton =
         let sdlMouseButton = toSdlButton mouseButton
-        SDL.SDL_BUTTON sdlMouseButton = 1u
+        let sdlMouseButtonMask = SDL.SDL_BUTTON sdlMouseButton
+        let (sdlMouseButtonState, _, _) = SDL.SDL_GetMouseState ()
+        sdlMouseButtonState &&& sdlMouseButtonMask <> 0u
 
     /// Get the position of the mouse.
     let getPosition () =
