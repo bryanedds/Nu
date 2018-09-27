@@ -85,8 +85,8 @@ module WorldModule2 =
         static member isSelectedScreenTransitioning world =
             not (World.isSelectedScreenIdling world)
 
-        static member private setScreenTransitionState state (screen : Screen) world =
-            let world = screen.SetTransitionStateNp state world
+        static member private setScreenTransitionStatePlus state (screen : Screen) world =
+            let world = screen.SetTransitionState state world
             match state with
             | IdlingState ->
                 let world = World.unsubscribe ScreenTransitionMouseLeftKey world
@@ -115,7 +115,7 @@ module WorldModule2 =
                     let eventTrace = EventTrace.record4 "World" "selectScreen" "Deselect" EventTrace.empty
                     World.publish () (Events.Deselect ->- selectedScreen) eventTrace selectedScreen world
                 | None -> world
-            let world = World.setScreenTransitionState IncomingState screen world
+            let world = World.setScreenTransitionStatePlus IncomingState screen world
             let world = World.setSelectedScreen screen world
             let eventTrace = EventTrace.record4 "World" "selectScreen" "Select" EventTrace.empty
             World.publish () (Events.Select ->- screen) eventTrace screen world
@@ -136,7 +136,7 @@ module WorldModule2 =
                             (Cascade, world)
                         | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
                     let world = World.setScreenTransitionDestinationOpt (Some destination) world
-                    let world = World.setScreenTransitionState OutgoingState selectedScreen world
+                    let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
                     let world = World.subscribePlus<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish ->- selectedScreen) selectedScreen world |> snd
                     (true, world)
                 else (false, world)
@@ -179,21 +179,21 @@ module WorldModule2 =
             World.handleAsScreenTransitionPlus<'a, 's> Cascade destination evt world |> snd
 
         static member private updateScreenTransition1 (screen : Screen) transition world =
-            let transitionTicks = screen.GetTransitionTicksNp world
+            let transitionTicks = screen.GetTransitionTicks world
             if transitionTicks = transition.TransitionLifetime then
-                (true, screen.SetTransitionTicksNp 0L world)
+                (true, screen.SetTransitionTicks 0L world)
             elif transitionTicks > transition.TransitionLifetime then
                 Log.debug ("TransitionLifetime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of TickRate.")
-                (true, screen.SetTransitionTicksNp 0L world)
-            else (false, screen.SetTransitionTicksNp (transitionTicks + World.getTickRate world) world)
+                (true, screen.SetTransitionTicks 0L world)
+            else (false, screen.SetTransitionTicks (transitionTicks + World.getTickRate world) world)
 
         static member private updateScreenTransition (selectedScreen : Screen) world =
-            match selectedScreen.GetTransitionStateNp world with
+            match selectedScreen.GetTransitionState world with
             | IncomingState ->
                 match World.getLiveness world with
                 | Running ->
                     let world =
-                        if selectedScreen.GetTransitionTicksNp world = 0L then
+                        if selectedScreen.GetTransitionTicks world = 0L then
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
                             World.publish () (Events.IncomingStart ->- selectedScreen) eventTrace selectedScreen world
                         else world
@@ -202,14 +202,14 @@ module WorldModule2 =
                         let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetIncoming world) world
                         if finished then
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingFinish" EventTrace.empty
-                            let world = World.setScreenTransitionState IdlingState selectedScreen world
+                            let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
                             World.publish () (Events.IncomingFinish ->- selectedScreen) eventTrace selectedScreen world
                         else world
                     | Exiting -> world
                 | Exiting -> world
             | OutgoingState ->
                 let world =
-                    if selectedScreen.GetTransitionTicksNp world = 0L then
+                    if selectedScreen.GetTransitionTicks world = 0L then
                         let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                         World.publish () (Events.OutgoingStart ->- selectedScreen) eventTrace selectedScreen world
                     else world
@@ -217,7 +217,7 @@ module WorldModule2 =
                 | Running ->
                     let (finished, world) = World.updateScreenTransition1 selectedScreen (selectedScreen.GetOutgoing world) world
                     if finished then
-                        let world = World.setScreenTransitionState IdlingState selectedScreen world
+                        let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
                         match World.getLiveness world with
                         | Running ->
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingFinish" EventTrace.empty
@@ -237,7 +237,7 @@ module WorldModule2 =
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
                     if World.screenExists selectedScreen world then
-                        let world = World.setScreenTransitionState OutgoingState selectedScreen world
+                        let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
                         (Cascade, world)
                     else
                         Log.trace "Program Error: Could not handle splash screen update due to no selected screen."
@@ -489,9 +489,9 @@ module WorldModule2 =
             (World.getLiveness world, world)
 
         static member private getEntities3 getElementsFromTree (screen : Screen) world =
-            let entityTree = screen.GetEntityTreeNp world
+            let entityTree = screen.GetEntityTree world
             let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree screen world) entityTree
-            let world = screen.SetEntityTreeNpNoEvent entityTree world
+            let world = screen.SetEntityTreeNoEvent entityTree world
             let entities : Entity HashSet = getElementsFromTree spatialTree
             (entities, world)
 
@@ -612,7 +612,7 @@ module WorldModule2 =
         static member private actualizeScreenTransition5 (_ : Vector2) (eyeSize : Vector2) (screen : Screen) transition world =
             match transition.DissolveImageOpt with
             | Some dissolveImage ->
-                let progress = single (screen.GetTransitionTicksNp world) / single transition.TransitionLifetime
+                let progress = single (screen.GetTransitionTicks world) / single transition.TransitionLifetime
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                 let color = Vector4 (Vector3.One, alpha)
                 let position = -eyeSize * 0.5f // negation for right-handedness
@@ -636,7 +636,7 @@ module WorldModule2 =
             | None -> world
 
         static member private actualizeScreenTransition (screen : Screen) world =
-            match screen.GetTransitionStateNp world with
+            match screen.GetTransitionState world with
             | IncomingState -> World.actualizeScreenTransition5 (World.getEyeCenter world) (World.getEyeSize world) screen (screen.GetIncoming world) world
             | OutgoingState -> World.actualizeScreenTransition5 (World.getEyeCenter world) (World.getEyeSize world) screen (screen.GetOutgoing world) world
             | IdlingState -> world

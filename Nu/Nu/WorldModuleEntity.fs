@@ -621,8 +621,8 @@ module WorldModuleEntity =
                                 let entityMaxBounds = World.getEntityStateBoundsMax entityState
                                 SpatialTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                                 entityTree)
-                            (World.getScreenEntityTreeNp screen world)
-                    World.setScreenEntityTreeNpNoEvent entityTree screen world
+                            (World.getScreenEntityTree screen world)
+                    World.setScreenEntityTreeNoEvent entityTree screen world
 
                 // register entity if needed
                 if isNew
@@ -656,8 +656,8 @@ module WorldModuleEntity =
                                 let entityMaxBounds = World.getEntityStateBoundsMax entityState
                                 SpatialTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
                                 entityTree)
-                            (World.getScreenEntityTreeNp screen world)
-                    World.setScreenEntityTreeNpNoEvent entityTree screen world
+                            (World.getScreenEntityTree screen world)
+                    World.setScreenEntityTreeNoEvent entityTree screen world
 
                 // remove cached entity event addresses
                 EventWorld.cleanEventAddressCache entity.EntityAddress
@@ -951,8 +951,8 @@ module WorldModuleEntity =
                             let entityBoundsMax = World.getEntityStateBoundsMax entityState
                             SpatialTree.updateElement oldBoundsMax entityBoundsMax entity entityTree
                             entityTree)
-                        (World.getScreenEntityTreeNp screen world)
-                World.setScreenEntityTreeNpNoEvent entityTree screen world
+                        (World.getScreenEntityTree screen world)
+                World.setScreenEntityTreeNoEvent entityTree screen world
 
             // just world
             else world

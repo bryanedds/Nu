@@ -501,9 +501,9 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          EntityTreeNp : Entity SpatialTree MutantCache
-          TransitionStateNp : TransitionState
-          TransitionTicksNp : int64
+          EntityTree : Entity SpatialTree MutantCache
+          TransitionState : TransitionState
+          TransitionTicks : int64
           Incoming : Transition
           Outgoing : Transition }
           
@@ -525,9 +525,9 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              EntityTreeNp = MutantCache.make Operators.id spatialTree
-              TransitionStateNp = IdlingState
-              TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutgoingState values
+              EntityTree = MutantCache.make Operators.id spatialTree
+              TransitionState = IdlingState
+              TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing }
 

@@ -74,6 +74,22 @@ module Program =
     (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you
     need to move the app from 60fps to 30fps. *)
 
+    (* WISDOM: No need for multiple instances of the same Facet...
+    
+    Unity allows users to have multiple instances of the same Component (the OO equivalent of Nu's
+    Facets). Nu does not want or need this because -
+    
+    a) Nu's programming models allows interfacing with Facet properties directly rather than having
+    to dig out the desired Facet then interfacing with it.
+    
+    b) If a user wants an Entity to be composed of multiple reusable pieces, that's what child Entities
+    are for.
+    
+    Now, one may take an exception to point b for performance issues, but in those cases, one would
+    instead contrive a Facet that contains multiples of the desired element in the same way that
+    the EffectFacet can host multiple Effects. It can be inconvenient, but the inconvenience seems
+    otherwise marginal. *)
+
     (* IDEA: Simplified networking...
 
     For networking, perhaps instead of having a useful Game value that synchronizes across players,
