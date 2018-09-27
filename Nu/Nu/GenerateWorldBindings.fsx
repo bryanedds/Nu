@@ -38,6 +38,10 @@ type FunctionBinding =
       FunctionParameters : (string * ParameterConversion) array
       FunctionReturn : ReturnConversion }
 
+let getExtrinsicKeywords () =
+    "v2 v4 v2i get getAsStream set setAsStream update streamEvent stream equate " +
+    "self parent grandparent game toData monitor"
+
 let getParameterConversion (ty : Type) =
     match ty.Name with
     | "World" -> WorldParameter
@@ -323,6 +327,9 @@ let generateInitBindings bindings =
 
 let generateBindingSyntax bindings =
 
+    let extrinsicKeywords =
+        getExtrinsicKeywords ()
+
     let bindingLists =
         bindings |>
         Array.map (fun binding -> binding.FunctionBindingName) |>
@@ -330,7 +337,7 @@ let generateBindingSyntax bindings =
         Array.map (fun bindingList -> "        \"" + String.Join (" ", bindingList)) |>
         (fun bindingLists -> String.Join (" \" +\n", bindingLists) + "\"\n")
 
-    "    let [<Literal>] BindingKeywords =\n        \"v2 v4 v2i get getAsStream set setAsStream update streamEvent stream equate self parent grandparent game toData monitor \" +\n" + bindingLists
+    "    let [<Literal>] BindingKeywords =\n        \"" + extrinsicKeywords + " \" +\n" + bindingLists
 
 let generateBindingsCode bindings =
 
