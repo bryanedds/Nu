@@ -868,10 +868,10 @@ module Gaia =
             match Map.tryFind layer.LayerAddress (World.getUserValue world).FilePaths with
             | Some filePath -> form.saveFileDialog.FileName <- filePath
             | None -> form.saveFileDialog.FileName <- String.Empty
-            let filePath = form.saveFileDialog.FileName
-            if saveAs || String.IsNullOrWhiteSpace filePath then
+            if saveAs || String.IsNullOrWhiteSpace form.saveFileDialog.FileName then
                 match form.saveFileDialog.ShowDialog form with
                 | DialogResult.OK ->
+                    let filePath = form.saveFileDialog.FileName
                     trySaveSelectedLayer filePath world
                     World.updateUserValue (fun value ->
                         let filePaths = Map.add layer.LayerAddress filePath value.FilePaths
