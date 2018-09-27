@@ -100,7 +100,7 @@ module WorldScripting =
             | None -> Right struct (context, world)
 
         static member internal tryImportEvent evt world =
-            match ScriptingWorld.tryImport evt.DataType evt.Data world with
+            match ScriptingWorld.tryImport (getType evt.Data) evt.Data world with
             | Some dataImported ->
                 let evtRecord =
                     Record
@@ -158,7 +158,7 @@ module WorldScripting =
                     let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                     match property.PropertyValue with
                     | :? DesignerProperty as dp ->
-                        match ScriptingWorld.tryExport property.PropertyType propertyValue world with
+                        match ScriptingWorld.tryExport dp.DesignerType propertyValue world with
                         | Some propertyValue ->
                             let propertyValue = { dp with DesignerValue = propertyValue }
                             let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
@@ -197,7 +197,7 @@ module WorldScripting =
                                             let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                                             match property.PropertyValue with
                                             | :? DesignerProperty as dp ->
-                                                match ScriptingWorld.tryExport property.PropertyType expr world with
+                                                match ScriptingWorld.tryExport dp.DesignerType expr world with
                                                 | Some propertyValue ->
                                                     let propertyValue = { dp with DesignerValue = propertyValue }
                                                     let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
@@ -233,6 +233,7 @@ module WorldScripting =
                 let eventAddress = Relation.resolve scriptContext.SimulantAddress eventRelation
                 let stream =
                     Stream.make eventAddress |>
+                    Stream.map box |>
                     Stream.mapEffect (fun (evt : Event<obj, _>) world ->
                         match World.tryImportEvent evt world with
                         | Some evtImported -> (Some evtImported |> box, world)
@@ -283,7 +284,7 @@ module WorldScripting =
                                         match World.tryGetSimulantScriptFrame context world with
                                         | Some scriptFrame ->
                                             let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
-                                            let application = Apply ([|fn; expr; Option.get stateOpt|], breakpoint, originOpt)
+                                            let application = Apply ([|fn; Option.get stateOpt; expr|], breakpoint, originOpt)
                                             let (evaled, world) = World.evalWithLogging application scriptFrame context world
                                             (Some evaled |> box, world)
                                         | None -> (stateOpt |> box, world)
