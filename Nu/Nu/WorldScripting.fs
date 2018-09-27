@@ -13,7 +13,7 @@ open Nu
 
 /// The Stream value that can be plugged into the scripting language.
 type [<Struct; CustomEquality; CustomComparison>] StreamPluggable =
-    { Stream : Stream<Expr option, Game, World> }
+    { Stream : Stream<obj, Game, World> }
 
     static member equals _ _ = false
 
@@ -135,13 +135,12 @@ module WorldScripting =
             let context = World.getScriptContext world
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
-                let stream = Stream.make (Events.SimulantChange propertyName ->>- simulant.SimulantAddress)
                 let stream =
+                    Stream.make (Events.SimulantChange propertyName ->>- simulant.SimulantAddress) |>
                     Stream.mapEvent (fun (evt : Event<ChangeData, _>) world ->
                         match World.tryGetSimulantProperty evt.Data.PropertyName simulant world with
-                        | Some prop -> ScriptingWorld.tryImport prop.PropertyType prop.PropertyValue world
-                        | None -> None)
-                        stream
+                        | Some prop -> ScriptingWorld.tryImport prop.PropertyType prop.PropertyValue world |> box
+                        | None -> None |> box)
                 struct (Pluggable { Stream = stream }, world)
             | Left error -> error
 
@@ -203,7 +202,7 @@ module WorldScripting =
                                     | None -> (Cascade, world)
                                 | _ -> (Cascade, world))
                                 (simulant :> Participant)
-                                (Stream.mapEffect (fun evt world -> (box evt.Data, world)) stream.Stream)
+                                stream.Stream
                                 world
                         let world = WorldModule.addSimulantScriptUnsubscription unsubscribe simulant world
                         struct (Unit, world)
@@ -219,13 +218,12 @@ module WorldScripting =
                 let scriptContext = World.getScriptContext world
                 let eventRelation = Relation.makeFromString str
                 let eventAddress = Relation.resolve scriptContext.SimulantAddress eventRelation
-                let stream = Stream.make eventAddress
                 let stream =
+                    Stream.make eventAddress |>
                     Stream.mapEffect (fun (evt : Event<obj, _>) world ->
                         match World.tryImportEvent evt world with
-                        | Some evtImported -> (Some evtImported, world)
-                        | None -> (None, world))
-                        stream
+                        | Some evtImported -> (Some evtImported |> box, world)
+                        | None -> (None |> box, world))
                 struct (Pluggable { Stream = stream }, world)
             | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Function for its 1st argument.", originOpt), world)
 
@@ -236,18 +234,21 @@ module WorldScripting =
                 | :? StreamPluggable as stream ->
                     let stream =
                         Stream.mapEffect
-                            (fun (evt : Event<Expr option, _>) world ->
+                            (fun (evt : Event<obj, _>) world ->
                                 match evt.Data with
-                                | Some expr ->
-                                    let context = World.getScriptContext world
-                                    match World.tryGetSimulantScriptFrame context world with
-                                    | Some scriptFrame ->
-                                        let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
-                                        let application = Apply ([|fn; expr|], breakpoint, originOpt)
-                                        let (evaled, world) = World.evalWithLogging application scriptFrame context world
-                                        (Some evaled, world)
-                                    | None -> (None, world)
-                                | None -> (None, world))
+                                | :? (Expr option) as exprOpt ->
+                                    match exprOpt with
+                                    | Some expr ->
+                                        let context = World.getScriptContext world
+                                        match World.tryGetSimulantScriptFrame context world with
+                                        | Some scriptFrame ->
+                                            let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
+                                            let application = Apply ([|fn; expr|], breakpoint, originOpt)
+                                            let (evaled, world) = World.evalWithLogging application scriptFrame context world
+                                            (Some evaled |> box, world)
+                                        | None -> (None |> box, world)
+                                    | None -> (None |> box, world)
+                                | _ -> (None |> box, world))
                             stream.Stream
                     struct (Pluggable { Stream = stream }, world)
                 | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
@@ -260,19 +261,22 @@ module WorldScripting =
                 | :? StreamPluggable as stream ->
                     let stream =
                         Stream.foldEffect
-                            (fun stateOpt (evt : Event<Expr option, _>) world ->
-                                match evt.Data with
-                                | Some expr ->
-                                    let context = World.getScriptContext world
-                                    match World.tryGetSimulantScriptFrame context world with
-                                    | Some scriptFrame ->
-                                        let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
-                                        let application = Apply ([|fn; expr; Option.get stateOpt|], breakpoint, originOpt)
-                                        let (evaled, world) = World.evalWithLogging application scriptFrame context world
-                                        (Some evaled, world)
-                                    | None -> (stateOpt, world)
-                                | None -> (stateOpt, world))
-                            (Some state)
+                            (fun (stateOptObj : obj) (evt : Event<obj, _>) world ->
+                                match (stateOptObj, evt.Data) with
+                                | ((:? (Expr option) as stateOpt), (:? (Expr option) as exprOpt)) ->
+                                    match exprOpt with
+                                    | Some expr ->
+                                        let context = World.getScriptContext world
+                                        match World.tryGetSimulantScriptFrame context world with
+                                        | Some scriptFrame ->
+                                            let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
+                                            let application = Apply ([|fn; expr; Option.get stateOpt|], breakpoint, originOpt)
+                                            let (evaled, world) = World.evalWithLogging application scriptFrame context world
+                                            (Some evaled |> box, world)
+                                        | None -> (stateOpt |> box, world)
+                                    | None -> (stateOpt |> box, world)
+                                | _ -> (stateOptObj, world))
+                            (Some state |> box)
                             stream.Stream
                     struct (Pluggable { Stream = stream }, world)
                 | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 2nd argument.", originOpt), world)
@@ -285,18 +289,21 @@ module WorldScripting =
                 | ((:? StreamPluggable as stream), (:? StreamPluggable as stream2)) ->
                     let stream =
                         Stream.map2Effect
-                            (fun (evt : Event<Expr option, _>) (evt2 : Event<Expr option, _>) world ->
+                            (fun (evt : Event<obj, _>) (evt2 : Event<obj, _>) world ->
                                 match (evt.Data, evt2.Data) with
-                                | (Some expr, Some expr2) ->
-                                    let context = World.getScriptContext world
-                                    match World.tryGetSimulantScriptFrame context world with
-                                    | Some scriptFrame ->
-                                        let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
-                                        let application = Apply ([|fn; expr; expr2|], breakpoint, originOpt)
-                                        let (evaled, world) = World.evalWithLogging application scriptFrame context world
-                                        (Some evaled, world)
-                                    | None -> (None, world)
-                                | (_, _) -> (None, world))
+                                | ((:? (Expr option) as exprOpt), (:? (Expr option) as expr2Opt)) ->
+                                    match (exprOpt, expr2Opt) with
+                                    | (Some expr, Some expr2) ->
+                                        let context = World.getScriptContext world
+                                        match World.tryGetSimulantScriptFrame context world with
+                                        | Some scriptFrame ->
+                                            let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
+                                            let application = Apply ([|fn; expr; expr2|], breakpoint, originOpt)
+                                            let (evaled, world) = World.evalWithLogging application scriptFrame context world
+                                            (Some evaled |> box, world)
+                                        | None -> (None |> box, world)
+                                    | (_, _) -> (None |> box, world)
+                                | (_, _) -> (None |> box, world))
                             stream.Stream
                             stream2.Stream
                     struct (Pluggable { Stream = stream }, world)
@@ -310,10 +317,13 @@ module WorldScripting =
                 | ((:? StreamPluggable as stream), (:? StreamPluggable as stream2)) ->
                     let stream =
                         Stream.map2Effect
-                            (fun (evt : Event<Expr option, _>) (evt2 : Event<Expr option, _>) world ->
+                            (fun (evt : Event<obj, _>) (evt2 : Event<obj, _>) world ->
                                 match (evt.Data, evt2.Data) with
-                                | (Some expr, Some expr2) -> (Some (Tuple [|expr; expr2|]), world)
-                                | (_, _) -> (None, world))
+                                | ((:? (Expr option) as exprOpt), (:? (Expr option) as expr2Opt)) ->
+                                    match (exprOpt, expr2Opt) with
+                                    | (Some expr, Some expr2) -> (Some (Tuple [|expr; expr2|]) |> box, world)
+                                    | (_, _) -> (None |> box, world)
+                                | (_, _) -> (None |> box, world))
                             stream.Stream
                             stream2.Stream
                     struct (Pluggable { Stream = stream }, world)
@@ -325,13 +335,16 @@ module WorldScripting =
             | (Pluggable stream, Pluggable stream2) ->
                 match (stream, stream2) with
                 | ((:? StreamPluggable as stream), (:? StreamPluggable as stream2)) ->
-                    let stream = Stream.sum stream.Stream stream2.Stream
                     let stream =
-                        Stream.map (fun eir ->
-                            match eir with
-                            | Right opt -> match opt with Some expr -> Some (Either (Right expr)) | None -> None
-                            | Left opt -> match opt with Some expr -> Some (Either (Left expr)) | None -> None)
-                            stream
+                        Stream.sum stream.Stream stream2.Stream |>
+                        Stream.map box |>
+                        Stream.map (fun (eirObj : obj) ->
+                            match eirObj with
+                            | :? Either<Expr option, Expr option> as eir ->
+                                match eir with
+                                | Right opt -> match opt with Some expr -> Some (Either (Right expr)) |> box | None -> None |> box
+                                | Left opt -> match opt with Some expr -> Some (Either (Left expr)) |> box | None -> None |> box
+                            | _ -> None |> box)
                     struct (Pluggable { Stream = stream }, world)
                 | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
             | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
