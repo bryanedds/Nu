@@ -536,7 +536,7 @@ module GameplayDispatcherModule =
 
             // get and initialize gameplay screen from read
             let world = World.readScreenFromFile Assets.SaveFilePath (Some Simulants.Gameplay.ScreenName) world |> snd
-            let world = Simulants.Gameplay.SetTransitionStateNp IncomingState world
+            let world = Simulants.Gameplay.SetTransitionState IncomingState world
 
             // make rand from gameplay
             let rand = Rand.makeFromSeedState (Simulants.Gameplay.GetContentRandState world)
