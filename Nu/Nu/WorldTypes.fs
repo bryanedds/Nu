@@ -1009,21 +1009,25 @@ module WorldTypes =
             member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
             member this.ParticipantExists participant =
                 match participant with
-                | :? Entity as entity -> UMap.containsKey entity.EntityAddress this.EntityStates
-                | :? Layer as layer -> UMap.containsKey layer.LayerAddress this.LayerStates
-                | :? Screen as screen -> UMap.containsKey screen.ScreenAddress this.ScreenStates
+                | :? GlobalParticipantGeneralized
                 | :? Game -> true
+                | :? Screen as screen -> UMap.containsKey screen.ScreenAddress this.ScreenStates
+                | :? Layer as layer -> UMap.containsKey layer.LayerAddress this.LayerStates
+                | :? Entity as entity -> UMap.containsKey entity.EntityAddress this.EntityStates
                 | _  -> false
             member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world =
                 match participant with
-                | :? Entity -> EventWorld.publishEvent<'a, 'p, Entity, Game, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Layer -> EventWorld.publishEvent<'a, 'p, Layer, Game, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Screen -> EventWorld.publishEvent<'a, 'p, Screen, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? GlobalParticipantGeneralized -> EventWorld.publishEvent<'a, 'p, Participant, Game, World> participant publisher eventData eventAddress eventTrace subscription world
                 | :? Game -> EventWorld.publishEvent<'a, 'p, Game, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Screen -> EventWorld.publishEvent<'a, 'p, Screen, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Layer -> EventWorld.publishEvent<'a, 'p, Layer, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Entity -> EventWorld.publishEvent<'a, 'p, Entity, Game, World> participant publisher eventData eventAddress eventTrace subscription world
                 | _ -> failwithumf ()
 
         interface World ScriptingWorld with
+
             member this.GetEnv () = this.ScriptingEnv
+
             member this.TryGetExtrinsic fnName = this.Dispatchers.TryGetExtrinsic fnName
 
             member this.TryImport ty value =
