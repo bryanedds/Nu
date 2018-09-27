@@ -194,7 +194,9 @@ module WorldModule3 =
                 let eventTracer = Log.remark "Event"
                 let eventTracing = Core.getEventTracing ()
                 let eventFilter = Core.getEventFilter ()
-                EventSystem.make eventTracer eventTracing eventFilter Simulants.Game
+                let globalParticipant = Simulants.Game
+                let globalParticipantGeneralized = { GpgAddress = atoa globalParticipant.GameAddress }
+                EventSystem.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
 
             // make the game dispatcher
             let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
@@ -264,7 +266,9 @@ module WorldModule3 =
                     let eventTracer = Log.remark "Event"
                     let eventTracing = Core.getEventTracing ()
                     let eventFilter = Core.getEventFilter ()
-                    EventSystem.make eventTracer eventTracing eventFilter Simulants.Game
+                    let globalParticipant = Simulants.Game
+                    let globalParticipantGeneralized = { GpgAddress = atoa globalParticipant.GameAddress }
+                    EventSystem.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
 
                 // make plug-in dispatchers
                 let pluginFacets = plugin.MakeFacets () |> List.map World.pairWithName

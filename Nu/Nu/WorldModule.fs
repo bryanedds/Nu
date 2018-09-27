@@ -127,6 +127,7 @@ module WorldModule =
             World.sortSubscriptionsBy
                 (fun (participant : Participant) _ ->
                     match participant with
+                    | :? GlobalParticipantGeneralized
                     | :? Game -> Constants.Engine.GameSortPriority :> IComparable
                     | :? Screen -> Constants.Engine.ScreenSortPriority :> IComparable
                     | :? Layer -> Constants.Engine.LayerSortPriority :> IComparable
