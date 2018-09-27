@@ -113,7 +113,7 @@ module WorldScripting =
                 Some evtRecord
             | None -> None
 
-        static member internal evalGet fnName propertyName relationOpt originOpt world =
+        static member internal evalGet fnName relationOpt propertyName originOpt world =
             let context = World.getScriptContext world
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
@@ -147,7 +147,7 @@ module WorldScripting =
                 struct (Pluggable { Stream = stream }, world)
             | Left error -> error
 
-        static member internal evalSet fnName propertyName relationOpt propertyValueExpr originOpt world =
+        static member internal evalSet fnName relationOpt propertyName propertyValueExpr originOpt world =
             let context = World.getScriptContext world
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
@@ -537,12 +537,12 @@ module WorldScripting =
             match World.evalManyInternal exprs world with
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v|], world) -> struct (v, world)
-            | struct ([|String propertyName; relation|], world)
-            | struct ([|Keyword propertyName; relation|], world) -> World.evalGet fnName propertyName (Some relation) originOpt world
+            | struct ([|relation; String propertyName|], world)
+            | struct ([|relation; Keyword propertyName|], world) -> World.evalGet fnName (Some relation) propertyName originOpt world
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
             | struct ([|Violation _ as v|], world) -> struct (v, world)
             | struct ([|String propertyName|], world)
-            | struct ([|Keyword propertyName|], world) -> World.evalGet fnName propertyName None originOpt world
+            | struct ([|Keyword propertyName|], world) -> World.evalGet fnName None propertyName originOpt world
             | struct ([|_|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 1 or 2 arguments required.", originOpt), world)
 
@@ -564,13 +564,13 @@ module WorldScripting =
             | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
-            | struct ([|String propertyName; relation; value|], world)
-            | struct ([|Keyword propertyName; relation; value|], world) -> World.evalSet fnName propertyName (Some relation) value originOpt world
+            | struct ([|relation; String propertyName; value|], world)
+            | struct ([|relation; Keyword propertyName; value|], world) -> World.evalSet fnName (Some relation) propertyName value originOpt world
             | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, and an optional Relation for the second.", originOpt), world)
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v|], world) -> struct (v, world)
             | struct ([|String propertyName; value|], world)
-            | struct ([|Keyword propertyName; value|], world) -> World.evalSet fnName propertyName None value originOpt world
+            | struct ([|Keyword propertyName; value|], world) -> World.evalSet fnName None propertyName value originOpt world
             | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a String or Keyword for the first argument, a value for the second, and an optional Relation for the third.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 or 3 arguments required.", originOpt), world)
 
