@@ -135,12 +135,12 @@ module WorldModuleScreen =
         static member internal setScreenOnUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnUpdate = value }) Property? OnUpdate screen world
         static member internal getScreenOnPostUpdate screen world = (World.getScreenState screen world).OnPostUpdate
         static member internal setScreenOnPostUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnPostUpdate = value }) Property? OnPostUpdate screen world
-        static member internal getScreenEntityTreeNp screen world = (World.getScreenState screen world).EntityTreeNp
-        static member internal setScreenEntityTreeNpNoEvent value screen world = World.updateScreenStateWithoutEvent (fun screenState -> { screenState with EntityTreeNp = value }) screen world
-        static member internal getScreenTransitionStateNp screen world = (World.getScreenState screen world).TransitionStateNp
-        static member internal setScreenTransitionStateNp value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionStateNp = value }) Property? TransitionStateNp screen world
-        static member internal getScreenTransitionTicksNp screen world = (World.getScreenState screen world).TransitionTicksNp
-        static member internal setScreenTransitionTicksNp value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionTicksNp = value }) Property? TransitionTicksNp screen world
+        static member internal getScreenEntityTree screen world = (World.getScreenState screen world).EntityTree
+        static member internal setScreenEntityTreeNoEvent value screen world = World.updateScreenStateWithoutEvent (fun screenState -> { screenState with EntityTree = value }) screen world
+        static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
+        static member internal setScreenTransitionState value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionState = value }) Property? TransitionState screen world
+        static member internal getScreenTransitionTicks screen world = (World.getScreenState screen world).TransitionTicks
+        static member internal setScreenTransitionTicks value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionTicks = value }) Property? TransitionTicks screen world
         static member internal getScreenIncoming screen world = (World.getScreenState screen world).Incoming
         static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> { screenState with Incoming = value }) Property? Incoming screen world
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
@@ -286,7 +286,7 @@ module WorldModuleScreen =
             let screen = Screen (ntoa screenState.Name)
             let screenState =
                 if World.screenExists screen world
-                then { screenState with EntityTreeNp = World.getScreenEntityTreeNp screen world }
+                then { screenState with EntityTree = World.getScreenEntityTree screen world }
                 else screenState
             let world = World.addScreen true screenState screen world
             
@@ -315,8 +315,8 @@ module WorldModuleScreen =
         Getters.Add ("OnUnregister", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUnregister screen world })
         Getters.Add ("OnUpdate", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUpdate screen world })
         Getters.Add ("OnPostUpdate", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnPostUpdate screen world })
-        Getters.Add ("TransitionStateNp", fun screen world -> { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionStateNp screen world })
-        Getters.Add ("TransitionTicksNp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenTransitionTicksNp screen world })
+        Getters.Add ("TransitionState", fun screen world -> { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionState screen world })
+        Getters.Add ("TransitionTicks", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenTransitionTicks screen world })
         Getters.Add ("Incoming", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world })
         Getters.Add ("Outgoing", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenOutgoing screen world })
 
@@ -335,8 +335,8 @@ module WorldModuleScreen =
         Setters.Add ("OnUnregister", fun property screen world -> (true, World.setScreenOnUnregister (property.PropertyValue :?> Scripting.Expr) screen world))
         Setters.Add ("OnUpdate", fun property screen world -> (true, World.setScreenOnUpdate (property.PropertyValue :?> Scripting.Expr) screen world))
         Setters.Add ("OnPostUpdate", fun property screen world -> (true, World.setScreenOnPostUpdate (property.PropertyValue :?> Scripting.Expr) screen world))
-        Setters.Add ("TransitionStateNp", fun property screen world -> (true, World.setScreenTransitionStateNp (property.PropertyValue :?> TransitionState) screen world))
-        Setters.Add ("TransitionTicksNp", fun property screen world -> (true, World.setScreenTransitionTicksNp (property.PropertyValue :?> int64) screen world))
+        Setters.Add ("TransitionState", fun property screen world -> (true, World.setScreenTransitionState (property.PropertyValue :?> TransitionState) screen world))
+        Setters.Add ("TransitionTicks", fun property screen world -> (true, World.setScreenTransitionTicks (property.PropertyValue :?> int64) screen world))
         Setters.Add ("Incoming", fun property screen world -> (true, World.setScreenIncoming (property.PropertyValue :?> Transition) screen world))
         Setters.Add ("Outgoing", fun property screen world -> (true, World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world))
 

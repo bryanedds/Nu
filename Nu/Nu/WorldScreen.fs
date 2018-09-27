@@ -48,15 +48,15 @@ module WorldScreenModule =
         member this.GetOnPostUpdate world = World.getScreenOnPostUpdate this world
         member this.SetOnPostUpdate value world = World.setScreenOnPostUpdate value this world
         member this.OnPostUpdate = PropertyTag.make this Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate
-        member internal this.GetEntityTreeNp world = World.getScreenEntityTreeNp this world
-        member internal this.SetEntityTreeNpNoEvent value world = World.setScreenEntityTreeNpNoEvent value this world
-        member internal this.EntityTreeNp = PropertyTag.makeReadOnly this Property? EntityTreeNp this.GetEntityTreeNp
-        member this.GetTransitionStateNp world = World.getScreenTransitionStateNp this world
-        member this.SetTransitionStateNp value world = World.setScreenTransitionStateNp value this world
-        member this.TransitionStateNp = PropertyTag.make this Property? TransitionStateNp this.GetTransitionStateNp this.SetTransitionStateNp
-        member this.GetTransitionTicksNp world = World.getScreenTransitionTicksNp this world
-        member this.SetTransitionTicksNp value world = World.setScreenTransitionTicksNp value this world
-        member this.TransitionTicksNp = PropertyTag.make this Property? TransitionTicksNp this.GetTransitionTicksNp this.SetTransitionTicksNp
+        member internal this.GetEntityTree world = World.getScreenEntityTree this world
+        member internal this.SetEntityTreeNoEvent value world = World.setScreenEntityTreeNoEvent value this world
+        member internal this.EntityTree = PropertyTag.makeReadOnly this Property? EntityTree this.GetEntityTree
+        member this.GetTransitionState world = World.getScreenTransitionState this world
+        member this.SetTransitionState value world = World.setScreenTransitionState value this world
+        member this.TransitionState = PropertyTag.make this Property? TransitionState this.GetTransitionState this.SetTransitionState
+        member this.GetTransitionTicks world = World.getScreenTransitionTicks this world
+        member this.SetTransitionTicks value world = World.setScreenTransitionTicks value this world
+        member this.TransitionTicks = PropertyTag.make this Property? TransitionTicks this.GetTransitionTicks this.SetTransitionTicks
         member this.GetIncoming world = World.getScreenIncoming this world
         member this.SetIncoming value world = World.setScreenIncoming value this world
         member this.Incoming = PropertyTag.make this Property? Incoming this.GetIncoming this.SetIncoming
@@ -83,7 +83,7 @@ module WorldScreenModule =
         member this.Set<'a> propertyName (value : 'a) world = World.setScreenProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
-        member this.IsIdling world = this.GetTransitionStateNp world = IdlingState
+        member this.IsIdling world = this.GetTransitionState world = IdlingState
 
         /// Check that a screen is selected.
         member this.GetSelected world =

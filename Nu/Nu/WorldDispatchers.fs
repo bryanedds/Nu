@@ -20,9 +20,9 @@ module EffectFacetModule =
         member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
         member this.SetSelfDestruct (value : bool) world = this.SetFast Property? SelfDestruct false false value world
         member this.SelfDestruct = PropertyTag.make this Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct
-        member this.GetEffectsOptAp world : Symbol AssetTag list option = this.Get Property? EffectsOptAp world
-        member this.SetEffectsOptAp (value : Symbol AssetTag list option) world = this.SetFast Property? EffectsOptAp true false value world
-        member this.EffectsOptAp = PropertyTag.make this Property? EffectsOptAp this.GetEffectsOptAp this.SetEffectsOptAp
+        member this.GetEffectsOpt world : Symbol AssetTag list option = this.Get Property? EffectsOpt world
+        member this.SetEffectsOpt (value : Symbol AssetTag list option) world = this.SetFast Property? EffectsOpt true false value world
+        member this.EffectsOpt = PropertyTag.make this Property? EffectsOpt this.GetEffectsOpt this.SetEffectsOpt
         member this.GetEffectStartTimeOpt world : int64 option = this.Get Property? EffectStartTimeOpt world
         member this.SetEffectStartTimeOpt (value : int64 option) world = this.SetFast Property? EffectStartTimeOpt false false value world
         member this.EffectStartTimeOpt = PropertyTag.make this Property? EffectStartTimeOpt this.GetEffectStartTimeOpt this.SetEffectStartTimeOpt
@@ -74,17 +74,17 @@ module EffectFacetModule =
 
         static let handleEffectsOptChanged evt world =
             let entity = evt.Subscriber : Entity
-            let effectsOpt = entity.GetEffectsOptAp world
+            let effectsOpt = entity.GetEffectsOpt world
             setEffect effectsOpt entity world
 
         static let handleAssetsReload evt world =
             let entity = evt.Subscriber : Entity
-            let effectsOpt = entity.GetEffectsOptAp world
+            let effectsOpt = entity.GetEffectsOpt world
             setEffect effectsOpt entity world
 
         static member PropertyDefinitions =
             [Define? SelfDestruct false
-             Define? EffectsOptAp (None : Symbol AssetTag list option)
+             Define? EffectsOpt (None : Symbol AssetTag list option)
              Define? EffectStartTimeOpt (None : int64 option)
              Define? EffectDefinitions (Map.empty : Effects.Definitions)
              Define? Effect Effect.empty
@@ -159,7 +159,7 @@ module EffectFacetModule =
         override facet.Register (entity, world) =
             let effectStartTime = Option.getOrDefault (World.getTickTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
-            let world = World.monitor handleEffectsOptChanged (entity.GetChangeEvent Property? EffectsOptAp) entity world
+            let world = World.monitor handleEffectsOptChanged (entity.GetChangeEvent Property? EffectsOpt) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
 [<AutoOpen>]

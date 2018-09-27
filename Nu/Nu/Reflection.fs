@@ -32,7 +32,8 @@ module Reflection =
         match propertyName with
         | "ScriptOpt" // always publish certain script properties 
         | "Script"
-        | "OnRegister" -> true
+        | "OnRegister"
+        | "EffectsOpt" -> true
         | _ -> propertyName.EndsWith "Ap"
 
     /// Is a property with the given name persistent?
@@ -41,6 +42,9 @@ module Reflection =
         | "Dispatcher"
         | "CreationTimeStamp"
         | "Cachable"
+        | "TransitionState"
+        | "TransitionTicks"
+        | "EntityTree"
         | "PublishUpdates"
         | "PublishPostUpdates"
         | "Facets"
@@ -131,12 +135,12 @@ module Reflection =
         let dispatcherOpt =
             match targetType.GetProperty "Dispatcher" with
             | null -> None
-            | dispatcherNpProperty -> Some (dispatcherNpProperty.GetValue target)
+            | dispatcherProperty -> Some (dispatcherProperty.GetValue target)
         let facetsOpt =
             match targetType.GetProperty "Facets" with
             | null -> None
-            | facetsNpProperty ->
-                let facets = facetsNpProperty.GetValue target :?> IEnumerable |> enumerable<obj> |> List.ofSeq
+            | facetsProperty ->
+                let facets = facetsProperty.GetValue target :?> IEnumerable |> enumerable<obj> |> List.ofSeq
                 Some facets
         match (dispatcherOpt, facetsOpt) with
         | (Some dispatcher, Some facets) -> dispatcher :: facets
@@ -410,8 +414,8 @@ module Reflection =
                     let reqdDispatcherType = reqdDispatcher.GetType ()
                     match targetType.GetProperty "Dispatcher" with
                     | null -> failwith ("Target '" + scstring target + "' does not implement dispatching in a compatible way.")
-                    | dispatcherNpProperty ->
-                        let dispatcher = dispatcherNpProperty.GetValue target
+                    | dispatcherProperty ->
+                        let dispatcher = dispatcherProperty.GetValue target
                         dispatchesAs reqdDispatcherType dispatcher
                 | None -> failwith ("Could not find required dispatcher '" + reqdDispatcherName + "' in dispatcher map.")
             | _ -> failwith ("Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string.")
@@ -437,14 +441,14 @@ module Reflection =
         let targetType = target.GetType ()
         match targetType.GetPropertyWritable "Facets" with
         | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")
-        | facetsNpProperty ->
+        | facetsProperty ->
             List.iter
                 (fun facet ->
                     if not (isFacetCompatibleWithDispatcher dispatcherMap facet target)
                     then failwith ("Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'.")
                     else ())
                 facets
-            facetsNpProperty.SetValue (target, facets)
+            facetsProperty.SetValue (target, facets)
             List.fold (fun target facet -> attachProperties copyTarget facet target) target facets
 
     /// Attach source's intrinsic facets to a target.
