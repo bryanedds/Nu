@@ -139,7 +139,10 @@ module WorldScripting =
                     Stream.make (Events.SimulantChange propertyName ->>- simulant.SimulantAddress) |>
                     Stream.mapEvent (fun (evt : Event<ChangeData, _>) world ->
                         match World.tryGetSimulantProperty evt.Data.PropertyName simulant world with
-                        | Some prop -> ScriptingWorld.tryImport prop.PropertyType prop.PropertyValue world |> box
+                        | Some property ->
+                            match property.PropertyValue with
+                            | :? DesignerProperty as dp -> ScriptingWorld.tryImport dp.DesignerType dp.DesignerValue world |> box
+                            | _ -> ScriptingWorld.tryImport property.PropertyType property.PropertyValue world |> box
                         | None -> None |> box)
                 struct (Pluggable { Stream = stream }, world)
             | Left error -> error
@@ -189,15 +192,25 @@ module WorldScripting =
                                     match exprOpt with
                                     | Some expr ->
                                         match World.tryGetSimulantProperty propertyName simulant world with
-                                        | Some prop ->
+                                        | Some property ->
                                             let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
                                             let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
-                                            match ScriptingWorld.tryExport prop.PropertyType expr world with
-                                            | Some exported ->
-                                                let prop = { prop with PropertyValue = exported }
-                                                let (_, world) = World.trySetSimulantProperty propertyName alwaysPublish nonPersistent prop simulant world
-                                                (Cascade, world)
-                                            | None -> (Cascade, world)
+                                            match property.PropertyValue with
+                                            | :? DesignerProperty as dp ->
+                                                match ScriptingWorld.tryExport property.PropertyType expr world with
+                                                | Some propertyValue ->
+                                                    let propertyValue = { dp with DesignerValue = propertyValue }
+                                                    let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
+                                                    let (_, world) = World.trySetSimulantProperty propertyName alwaysPublish nonPersistent property simulant world
+                                                    (Cascade, world)
+                                                | None -> (Cascade, world)
+                                            | _ ->
+                                                match ScriptingWorld.tryExport property.PropertyType expr world with
+                                                | Some propertyValue ->
+                                                    let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
+                                                    let (_, world) = World.trySetSimulantProperty propertyName alwaysPublish nonPersistent property simulant world
+                                                    (Cascade, world)
+                                                | None -> (Cascade, world)
                                         | None -> (Cascade, world)
                                     | None -> (Cascade, world)
                                 | _ -> (Cascade, world))
