@@ -37,8 +37,8 @@ module WorldModule2 =
                 (fun (participant : Participant) _ ->
                     let priority =
                         match participant with
-                        | :? GlobalParticipantGeneralized ->  { SortDepth = Constants.Engine.GameSortPriority; SortTarget = Simulants.Game }
-                        | :? Game as game -> { SortDepth = Constants.Engine.GameSortPriority; SortTarget = game }
+                        | :? GlobalParticipantGeneralized
+                        | :? Game -> { SortDepth = Constants.Engine.GameSortPriority; SortTarget = Simulants.Game }
                         | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortTarget = screen }
                         | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority + layer.GetDepth world; SortTarget = layer }
                         | :? Entity as entity -> { SortDepth = entity.GetDepthLayered world; SortTarget = entity }

@@ -889,10 +889,13 @@ module Gaia =
                 let filePath = form.openFileDialog.FileName
                 match tryLoadSelectedLayer form filePath world with
                 | (Some layer, world) ->
-                    World.updateUserValue (fun value ->
-                        let filePaths = Map.add layer.LayerAddress filePath value.FilePaths
-                        { value with FilePaths = filePaths })
-                        world
+                    let world =
+                        World.updateUserValue (fun value ->
+                            let filePaths = Map.add layer.LayerAddress filePath value.FilePaths
+                            { value with FilePaths = filePaths })
+                            world
+                    deselectEntity form world // currently selected entity may be gone if loading into an existing layer
+                    world
                 | (None, world) -> world
             | _ -> world
 

@@ -31,7 +31,7 @@ module Stream =
         Stream.filterEvent (fun _ -> World.isSimulantSelected simulant) stream
 
     /// Take events from a stream only when the currently selected screen is idling (that
-    /// is, there is no screen transition in progress).+
+    /// is, there is no screen transition in progress).
     let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenIdling stream =
         Stream.filterEvent (fun _ -> World.isSelectedScreenIdling) stream
     
