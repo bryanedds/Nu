@@ -412,7 +412,7 @@ module Gaia =
                 | null -> world
                 | selectedNodeParent ->
                     let assetTag = (AssetTag.make<obj> selectedNodeParent.Text selectedNode.Text)
-                    form.propertyValueTextBox.Text <- scstring assetTag
+                    form.propertyValueTextBoxText <- scstring assetTag
                     form.propertyApplyButton.PerformClick ()
                     world
         | _ -> world
@@ -443,7 +443,7 @@ module Gaia =
                 | NonePick -> entityTds.DescribedEntity.SetParentNodeOptWithAdjustment None world
                 | _ ->
                     let parentRelation = Relation.makeFromString ("?/?/" + parentEntityName)
-                    form.propertyValueTextBox.Text <- scstring parentRelation
+                    form.propertyValueTextBoxText <- scstring parentRelation
                     if propertyDescriptor.Name = "ParentNodeOpt"
                     then entityTds.DescribedEntity.SetParentNodeOptWithAdjustment (Some parentRelation) world
                     else (form.propertyApplyButton.PerformClick (); world)
@@ -464,7 +464,7 @@ module Gaia =
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty
                 form.propertyDescriptionTextBox.Text <- String.Empty
-                form.propertyValueTextBox.Text <- String.Empty
+                form.propertyValueTextBoxText <- String.Empty
                 form.propertyValueTextBox.EmptyUndoBuffer ()
             | (selectedEntityTds, selectedGridItem) ->
                 let selectedEntityTds = selectedEntityTds :?> EntityTypeDescriptorSource // unbox manually
@@ -500,7 +500,7 @@ module Gaia =
                         let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                         let strEscaped = String.escape strUnescaped
                         let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
-                        form.propertyValueTextBox.Text <- strPretty + "\n"
+                        form.propertyValueTextBoxText <- strPretty + "\n"
                         form.propertyValueTextBox.EmptyUndoBuffer ()
                         form.propertyValueTextBox.Keywords0 <- keywords0
                         form.propertyValueTextBox.Keywords1 <- keywords1
@@ -516,7 +516,7 @@ module Gaia =
                     form.propertyEditor.Enabled <- false
                     form.propertyNameLabel.Text <- String.Empty
                     form.propertyDescriptionTextBox.Text <- String.Empty
-                    form.propertyValueTextBox.Text <- String.Empty
+                    form.propertyValueTextBoxText <- String.Empty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
                     form.propertyPickButton.Enabled <- false
                     form.propertyPickButton.Click.RemoveHandler propertyPickButtonClickHandler
@@ -526,7 +526,7 @@ module Gaia =
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty
                 form.propertyDescriptionTextBox.Text <- String.Empty
-                form.propertyValueTextBox.Text <- String.Empty
+                form.propertyValueTextBoxText <- String.Empty
                 form.propertyValueTextBox.EmptyUndoBuffer ()
             | (_, selectedGridItem) ->
                 match selectedGridItem.GridItemType with
@@ -548,7 +548,7 @@ module Gaia =
                         let strUnescaped = typeConverter.ConvertToString selectedGridItem.Value
                         let strEscaped = String.escape strUnescaped
                         let strPretty = PrettyPrinter.prettyPrint strEscaped prettyPrinter
-                        form.propertyValueTextBox.Text <- strPretty + "\n"
+                        form.propertyValueTextBoxText <- strPretty + "\n"
                         form.propertyValueTextBox.EmptyUndoBuffer ()
                         form.propertyValueTextBox.Keywords0 <- keywords0
                         form.propertyValueTextBox.Keywords1 <- keywords1
@@ -559,7 +559,7 @@ module Gaia =
                     form.propertyEditor.Enabled <- false
                     form.propertyNameLabel.Text <- String.Empty
                     form.propertyDescriptionTextBox.Text <- String.Empty
-                    form.propertyValueTextBox.Text <- String.Empty
+                    form.propertyValueTextBoxText <- String.Empty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
                     form.propertyPickButton.Enabled <- false
 
@@ -1295,6 +1295,10 @@ module Gaia =
         let world = updateCameraDrag form world
         updateUndoButton form world
         updateRedoButton form world
+        if not form.propertyValueTextBox.Focused &&
+           not form.propertyApplyButton.Focused &&
+           not form.IsClosing then
+           refreshPropertyEditor form
         if form.IsDisposed
         then World.exit world
         else world
