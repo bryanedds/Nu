@@ -294,6 +294,12 @@ module WorldModuleGame =
                 | (true, world) -> world
                 | (false, _) -> failwith ("Cannot change game property " + propertyName + ".")
 
+        static member internal attachGameProperty propertyName property world =
+            World.updateGameState (GameState.attachProperty propertyName property) propertyName world
+
+        static member internal detachGameProperty propertyName world =
+            World.updateGameState (GameState.detachProperty propertyName) propertyName world
+
         static member internal writeGame3 writeScreens gameDescriptor world =
             let gameState = World.getGameState world
             let gameDispatcherName = getTypeName gameState.Dispatcher

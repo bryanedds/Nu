@@ -50,28 +50,73 @@ module Nu =
             WorldModuleEntity.init ()
 
             // init getProperty F# reach-around
-            WorldTypes.getProperty <- fun key simulation ->
+            WorldTypes.getProperty <- fun key world ->
                 let (propertyName, simulantNames) = keyToPropertyNameAndSimulantNames key
                 match World.tryDeriveSimulant (ltoa simulantNames) with
                 | Some simulant ->
-                    match World.tryGetSimulantProperty propertyName simulant (simulation :?> World) with
+                    match World.tryGetSimulantProperty propertyName simulant (world :?> World) with
                     | Some property -> Some property.PropertyValue
                     | None -> None
                 | None -> None
 
             // init setProperty F# reach-around
-            WorldTypes.setProperty <- fun key value ty simulation ->
+            WorldTypes.setProperty <- fun key valueOpt ty world ->
+                let world = world :?> World
                 let (propertyName, simulantNames) = keyToPropertyNameAndSimulantNames key
                 match World.tryDeriveSimulant (ltoa simulantNames) with
                 | Some simulant ->
-                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
-                    let property = { PropertyValue = value; PropertyType = ty }
-                    let (_, world) = World.trySetSimulantProperty propertyName alwaysPublish nonPersistent property simulant (simulation :?> World)
-                    box world
-                | None -> simulation
+                    match simulant with
+                    | :? Game ->
+                        match WorldModuleGame.Setters.TryGetValue propertyName with
+                        | (true, setter) when valueOpt.IsSome ->
+                            let property = { PropertyValue = valueOpt.Value; PropertyType = ty }
+                            setter property world |> snd |> box
+                        | (_, _) ->
+                            match valueOpt with
+                            | Some value ->
+                                let property = { PropertyValue = value; PropertyType = ty }
+                                World.attachGameProperty propertyName property world |> box
+                            | None -> World.detachGameProperty propertyName world |> box
+                    | :? Screen as screen ->
+                        match WorldModuleScreen.Setters.TryGetValue propertyName with
+                        | (true, setter) when valueOpt.IsSome ->
+                            let property = { PropertyValue = valueOpt.Value; PropertyType = ty }
+                            setter property screen world |> snd |> box
+                        | (_, _) ->
+                            match valueOpt with
+                            | Some value ->
+                                let property = { PropertyValue = value; PropertyType = ty }
+                                World.attachScreenProperty propertyName property screen world |> box
+                            | None -> World.detachScreenProperty propertyName screen world |> box
+                    | :? Layer as layer ->
+                        match WorldModuleLayer.Setters.TryGetValue propertyName with
+                        | (true, setter) when valueOpt.IsSome ->
+                            let property = { PropertyValue = valueOpt.Value; PropertyType = ty }
+                            setter property layer world |> snd |> box
+                        | (_, _) ->
+                            match valueOpt with
+                            | Some value ->
+                                let property = { PropertyValue = value; PropertyType = ty }
+                                World.attachLayerProperty propertyName property layer world |> box
+                            | None -> World.detachLayerProperty propertyName layer world |> box
+                    | :? Entity as entity ->
+                        match WorldModuleEntity.Setters.TryGetValue propertyName with
+                        | (true, setter) when valueOpt.IsSome ->
+                            let property = { PropertyValue = valueOpt.Value; PropertyType = ty }
+                            setter property entity world |> snd |> box
+                        | (_, _) ->
+                            match valueOpt with
+                            | Some value ->
+                                let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                                let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                                let property = { PropertyValue = value; PropertyType = ty }
+                                World.attachEntityProperty propertyName alwaysPublish nonPersistent property entity world |> box
+                            | None -> World.detachEntityProperty propertyName entity world |> box
+                    | _ -> failwithumf ()
+                | None -> box world
 
-            WorldTypes.handlePropertyChange <- fun key handler simulation ->
+            // init handlePropertyChange F# reach-around
+            WorldTypes.handlePropertyChange <- fun key handler world ->
                 let (propertyName, simulantNames) = keyToPropertyNameAndSimulantNames key
                 let (unsubscribe, world) =
                     EventWorld.subscribePlus
@@ -82,7 +127,7 @@ module Nu =
                             (Cascade, world))
                         (Address.makeFromList ("Change" :: propertyName :: "Event" :: simulantNames))
                         (Simulants.Game :> Participant)
-                        (simulation :?> World)
+                        (world :?> World)
                 (box unsubscribe, box world)
 
             // init eval F# reach-around

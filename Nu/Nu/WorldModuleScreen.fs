@@ -196,6 +196,16 @@ module WorldModuleScreen =
                     | (false, _) -> failwith ("Cannot change screen property " + propertyName + ".")
             else world
 
+        static member internal attachScreenProperty propertyName property screen world =
+            if World.screenExists screen world
+            then World.updateScreenState (ScreenState.attachProperty propertyName property) propertyName screen world
+            else failwith ("Cannot attach screen property '" + propertyName + "'; screen '" + screen.ScreenName + "' is not found.")
+
+        static member internal detachScreenProperty propertyName screen world =
+            if World.screenExists screen world
+            then World.updateScreenState (ScreenState.detachProperty propertyName) propertyName screen world
+            else failwith ("Cannot detach screen property '" + propertyName + "'; screen '" + screen.ScreenName + "' is not found.")
+
         static member private screenOnRegisterChanged evt world =
             let screen = evt.Subscriber : Screen
             let world = World.unregisterScreen screen world
