@@ -631,6 +631,11 @@ module WorldTypes =
         static member attachProperty name property layerState =
             { layerState with LayerState.Xtension = Xtension.attachProperty name property layerState.Xtension }
 
+        /// Detach an xtension property.
+        static member detachProperty name layerState =
+            let xtension = Xtension.detachProperty name layerState.Xtension
+            { layerState with LayerState.Xtension = xtension }
+
         /// Copy a layer such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
             { this with LayerState.Id = this.Id }
@@ -720,7 +725,7 @@ module WorldTypes =
             let xtension = Xtension.detachProperty name entityState.Xtension
             if Xtension.getImperative entityState.Xtension then entityState.Xtension <- xtension; entityState
             else { entityState with EntityState.Xtension = xtension }
-    
+
         /// Get an entity state's transform.
         static member getTransform this =
             { Transform.Position = this.Position
@@ -1011,8 +1016,8 @@ module WorldTypes =
             member this.GetProperty<'a> key = match getProperty key (box this) with Some a -> Some (a :?> 'a) | None -> None
             member this.SetProperty<'a> key (value : 'a option) = (match value with Some a -> setProperty key (Some (box a)) typeof<'a> (box this) | None -> setProperty key None typeof<'a> (box this)) :?> string Simulation
             member this.HandlePropertyChange key handler =
-                let (unsubscribe, simulation) = handlePropertyChange key handler (box this)
-                (unsubscribe :?> string Simulation -> string Simulation, simulation :?> string Simulation)
+                let (unsubscribe, world) = handlePropertyChange key handler (box this)
+                (unsubscribe :?> string Simulation -> string Simulation, world :?> string Simulation)
 
         interface EventWorld<Game, World> with
             member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
