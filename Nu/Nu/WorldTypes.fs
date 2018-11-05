@@ -100,6 +100,10 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
 
 [<AutoOpen>]
 module WorldTypes =
+
+    let mutable internal getProperty = Unchecked.defaultof<string -> obj -> obj option>
+    let mutable internal setProperty = Unchecked.defaultof<string -> obj option -> Type -> obj -> obj>
+    let mutable internal handlePropertyChange = Unchecked.defaultof<string -> PropertyChangeHandler<string> -> obj -> obj * obj>
         
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
@@ -1003,6 +1007,13 @@ module WorldTypes =
               LayerStates : UMap<Layer Address, LayerState>
               EntityStates : UMap<Entity Address, EntityState> }
 
+        interface string Simulation with
+            member this.GetProperty<'a> key = match getProperty key (box this) with Some a -> Some (a :?> 'a) | None -> None
+            member this.SetProperty<'a> key (value : 'a option) = (match value with Some a -> setProperty key (Some (box a)) typeof<'a> (box this) | None -> setProperty key None typeof<'a> (box this)) :?> string Simulation
+            member this.HandlePropertyChange key handler =
+                let (unsubscribe, simulation) = handlePropertyChange key handler (box this)
+                (unsubscribe :?> string Simulation -> string Simulation, simulation :?> string Simulation)
+
         interface EventWorld<Game, World> with
             member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
             member this.GetEventSystem () = this.EventSystem
@@ -1025,35 +1036,19 @@ module WorldTypes =
                 | _ -> failwithumf ()
 
         interface World ScriptingWorld with
-
             member this.GetEnv () = this.ScriptingEnv
-
             member this.TryGetExtrinsic fnName = this.Dispatchers.TryGetExtrinsic fnName
-
             member this.TryImport ty value =
                 match (ty.Name, value) with
-                | ("Vector2", (:? Vector2 as v2)) ->
-                    let v2p = { Vector2 = v2 }
-                    v2p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
-                | ("Vector4", (:? Vector4 as v4)) ->
-                    let v4p = { Vector4 = v4 }
-                    v4p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
-                | ("Vector2i", (:? Vector2i as v2i)) ->
-                    let v2ip = { Vector2i = v2i }
-                    v2ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
+                | ("Vector2", (:? Vector2 as v2)) -> let v2p = { Vector2 = v2 } in v2p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
+                | ("Vector4", (:? Vector4 as v4)) -> let v4p = { Vector4 = v4 } in v4p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
+                | ("Vector2i", (:? Vector2i as v2i)) -> let v2ip = { Vector2i = v2i } in v2ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | (_, _) -> None
-
             member this.TryExport ty value =
                 match (ty.Name, value) with
-                | ("Vector2", Scripting.Pluggable pluggable) ->
-                    let v2 = pluggable :?> Vector2Pluggable
-                    v2.Vector2 :> obj |> Some
-                | ("Vector4", Scripting.Pluggable pluggable) ->
-                    let v4 = pluggable :?> Vector4Pluggable
-                    v4.Vector4 :> obj |> Some
-                | ("Vector2i", Scripting.Pluggable pluggable) ->
-                    let v2i = pluggable :?> Vector2iPluggable
-                    v2i.Vector2i :> obj |> Some
+                | ("Vector2", Scripting.Pluggable pluggable) -> let v2 = pluggable :?> Vector2Pluggable in v2.Vector2 :> obj |> Some
+                | ("Vector4", Scripting.Pluggable pluggable) -> let v4 = pluggable :?> Vector4Pluggable in v4.Vector4 :> obj |> Some
+                | ("Vector2i", Scripting.Pluggable pluggable) -> let v2i = pluggable :?> Vector2iPluggable in v2i.Vector2i :> obj |> Some
                 | (_, _) -> None
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-

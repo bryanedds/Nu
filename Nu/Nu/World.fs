@@ -17,6 +17,11 @@ module Nu =
     let mutable private Initialized = false
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
+    let private keyToPropertyNameAndSimulantNames (key : string) =
+        match key.Split ('/') |> Array.toList with
+        | propertyName :: simulantNames -> (propertyName, simulantNames)
+        | [] -> failwithumf () // String.Split always returns a non-empty array
+
     /// Initialize the Nu game engine.
     let init runSynchronously =
 
@@ -44,7 +49,43 @@ module Nu =
             WorldModuleLayer.init ()
             WorldModuleEntity.init ()
 
-            // init eval F# reach-arounds
+            // init getProperty F# reach-around
+            WorldTypes.getProperty <- fun key simulation ->
+                let (propertyName, simulantNames) = keyToPropertyNameAndSimulantNames key
+                match World.tryDeriveSimulant (ltoa simulantNames) with
+                | Some simulant ->
+                    match World.tryGetSimulantProperty propertyName simulant (simulation :?> World) with
+                    | Some property -> Some property.PropertyValue
+                    | None -> None
+                | None -> None
+
+            // init setProperty F# reach-around
+            WorldTypes.setProperty <- fun key value ty simulation ->
+                let (propertyName, simulantNames) = keyToPropertyNameAndSimulantNames key
+                match World.tryDeriveSimulant (ltoa simulantNames) with
+                | Some simulant ->
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                    let property = { PropertyValue = value; PropertyType = ty }
+                    let (_, world) = World.trySetSimulantProperty propertyName alwaysPublish nonPersistent property simulant (simulation :?> World)
+                    box world
+                | None -> simulation
+
+            WorldTypes.handlePropertyChange <- fun key handler simulation ->
+                let (propertyName, simulantNames) = keyToPropertyNameAndSimulantNames key
+                let (unsubscribe, world) =
+                    EventWorld.subscribePlus
+                        (makeGuid ())
+                        (fun (event : Event<obj, _>) world ->
+                            let data = event.Data :?> ChangeData
+                            let world = handler data.OldWorld world :?> World
+                            (Cascade, world))
+                        (Address.makeFromList ("Change" :: propertyName :: "Event" :: simulantNames))
+                        (Simulants.Game :> Participant)
+                        (simulation :?> World)
+                (box unsubscribe, box world)
+
+            // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...
             WorldModule.eval <- fun expr localFrame scriptContext world ->
                 let oldLocalFrame = World.getLocalFrame world
@@ -67,7 +108,7 @@ module Nu =
                 let world = World.setScriptContext oldScriptContext world
                 (evaleds, world)
 
-            // init evalWithLogging F# reach-arounds
+            // init evalWithLogging F# reach-around
             WorldModule.evalWithLogging <- fun expr localFrame scriptContext world ->
                 let oldLocalFrame = World.getLocalFrame world
                 let oldScriptContext = World.getScriptContext world
