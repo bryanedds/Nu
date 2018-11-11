@@ -141,7 +141,7 @@ module Nu =
             WorldTypes.handlePropertyChange <- fun key handler world ->
                 let (propertyName, simulantNames) = keyToPropertyNameAndSimulantNames key
                 let (unsubscribe, world) =
-                    EventWorld.subscribePlus
+                    World.subscribePlus
                         (makeGuid ())
                         (fun (event : Event<obj, _>) world ->
                             let data = event.Data :?> ChangeData

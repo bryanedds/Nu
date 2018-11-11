@@ -364,7 +364,7 @@ module WorldScripting =
             | _ -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Function '" + fnName + "' requires a Stream for its 1st and 2nd arguments.", originOpt), world)
 
         static member internal evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
-            EventWorld.subscribe (fun evt world ->
+            World.subscribe (fun evt world ->
                 match World.tryGetSimulantScriptFrame subscriber world with
                 | Some scriptFrame ->
                     match World.tryImportEvent evt world with
