@@ -154,22 +154,22 @@ module WorldModule =
             EventWorld.unsubscribe<Game, World> subscriptionKey world
 
         /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
-        static member subscribePlus<'a, 's when 's :> Simulant>
+        static member subscribePlus<'a, 's when 's :> Participant>
             subscriptionKey (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
             EventWorld.subscribePlus<'a, 's, Game, World> subscriptionKey subscription eventAddress subscriber world
 
         /// Subscribe to an event.
-        static member subscribe<'a, 's when 's :> Simulant>
+        static member subscribe<'a, 's when 's :> Participant>
             (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
             EventWorld.subscribe<'a, 's, Game, World> subscription eventAddress subscriber world
 
         /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
-        static member monitorPlus<'a, 's when 's :> Simulant>
+        static member monitorPlus<'a, 's when 's :> Participant>
             (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
             EventWorld.monitorPlus<'a, 's, Game, World> subscription eventAddress subscriber world
 
         /// Keep active a subscription for the lifetime of a simulant.
-        static member monitor<'a, 's when 's :> Simulant>
+        static member monitor<'a, 's when 's :> Participant>
             (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
             EventWorld.monitor<'a, 's, Game, World> subscription eventAddress subscriber world
 
