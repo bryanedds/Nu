@@ -101,8 +101,8 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
 [<AutoOpen>]
 module WorldTypes =
 
-    let mutable internal getProperty = Unchecked.defaultof<string -> obj -> obj option>
-    let mutable internal setProperty = Unchecked.defaultof<string -> obj option -> Type -> obj -> obj>
+    let mutable internal getPropertyOpt = Unchecked.defaultof<string -> obj -> obj option>
+    let mutable internal setPropertyOpt = Unchecked.defaultof<string -> obj option -> Type -> obj -> obj>
     let mutable internal handlePropertyChange = Unchecked.defaultof<string -> PropertyChangeHandler<string> -> obj -> obj * obj>
         
     /// Represents an unsubscription operation for an event.
@@ -1013,8 +1013,8 @@ module WorldTypes =
               EntityStates : UMap<Entity Address, EntityState> }
 
         interface string Simulation with
-            member this.GetProperty<'a> key = match getProperty key (box this) with Some a -> Some (a :?> 'a) | None -> None
-            member this.SetProperty<'a> key (value : 'a option) = (match value with Some a -> setProperty key (Some (box a)) typeof<'a> (box this) | None -> setProperty key None typeof<'a> (box this)) :?> string Simulation
+            member this.GetPropertyOpt<'a> key = match getPropertyOpt key (box this) with Some a -> Some (a :?> 'a) | None -> None
+            member this.SetPropertyOpt<'a> key (value : 'a option) = (match value with Some a -> setPropertyOpt key (Some (box a)) typeof<'a> (box this) | None -> setPropertyOpt key None typeof<'a> (box this)) :?> string Simulation
             member this.HandlePropertyChange key handler =
                 let (unsubscribe, world) = handlePropertyChange key handler (box this)
                 (unsubscribe :?> string Simulation -> string Simulation, world :?> string Simulation)
