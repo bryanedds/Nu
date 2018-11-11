@@ -713,7 +713,7 @@ module WorldModuleEntity =
             // attach the entity state's dispatcher properties
             let entityState = Reflection.attachProperties EntityState.copy dispatcher entityState
 
-            // apply the entity state's overlay
+            // apply the entity state's overlay if exists
             let entityState =
                 match entityState.OverlayNameOpt with
                 | Some overlayName ->
@@ -730,8 +730,8 @@ module WorldModuleEntity =
             (entity, world)
 
         /// Create an entity and add it to the world.
-        static member createEntity<'d when 'd :> EntityDispatcher> nameOpt overlayNameOpt layer world =
-            World.createEntity5 typeof<'d>.Name nameOpt overlayNameOpt layer world
+        static member createEntity<'d when 'd :> EntityDispatcher> nameOpt overlayNameDescriptor layer world =
+            World.createEntity5 typeof<'d>.Name nameOpt overlayNameDescriptor layer world
 
         /// Read an entity from an entity descriptor.
         static member readEntity entityDescriptor nameOpt (layer : Layer) world =

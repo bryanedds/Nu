@@ -49,8 +49,8 @@ module Nu =
             WorldModuleLayer.init ()
             WorldModuleEntity.init ()
 
-            // init getProperty F# reach-around
-            WorldTypes.getProperty <- fun key world ->
+            // init getPropertyOpt F# reach-around
+            WorldTypes.getPropertyOpt <- fun key world ->
                 let (propertyName, simulantNames) = keyToPropertyNameAndSimulantNames key
                 match World.tryDeriveSimulant (ltoa simulantNames) with
                 | Some simulant ->
@@ -59,59 +59,81 @@ module Nu =
                     | None -> None
                 | None -> None
 
-            // init setProperty F# reach-around
-            WorldTypes.setProperty <- fun key valueOpt ty world ->
+            // init setPropertyOpt F# reach-around
+            WorldTypes.setPropertyOpt <- fun key valueOpt ty world ->
                 let world = world :?> World
                 let (propertyName, simulantNames) = keyToPropertyNameAndSimulantNames key
                 match World.tryDeriveSimulant (ltoa simulantNames) with
                 | Some simulant ->
                     match simulant with
                     | :? Game ->
-                        match WorldModuleGame.Setters.TryGetValue propertyName with
-                        | (true, setter) when valueOpt.IsSome ->
-                            let property = { PropertyValue = valueOpt.Value; PropertyType = ty }
+                        match (valueOpt, WorldModuleGame.Setters.TryGetValue propertyName) with
+                        | (Some value, (true, setter)) ->
+                            let property = { PropertyValue = value; PropertyType = ty }
                             setter property world |> snd |> box
-                        | (_, _) ->
-                            match valueOpt with
-                            | Some value ->
-                                let property = { PropertyValue = value; PropertyType = ty }
-                                World.attachGameProperty propertyName property world |> box
-                            | None -> World.detachGameProperty propertyName world |> box
+                        | (Some value, (false, _)) ->
+                            let property = { PropertyValue = value; PropertyType = ty }
+                            World.attachGameProperty propertyName property world |> box
+                        | (None, (true, _)) ->
+                            World.exit world |> box
+                        | (None, (false, _)) ->
+                            World.detachGameProperty propertyName world |> box
                     | :? Screen as screen ->
-                        match WorldModuleScreen.Setters.TryGetValue propertyName with
-                        | (true, setter) when valueOpt.IsSome ->
-                            let property = { PropertyValue = valueOpt.Value; PropertyType = ty }
+                        match (valueOpt, WorldModuleScreen.Setters.TryGetValue propertyName) with
+                        | (Some value, (true, setter)) ->
+                            let world = if not (World.screenExists screen world) then World.createScreen None world |> snd else world
+                            let property = { PropertyValue = value; PropertyType = ty }
                             setter property screen world |> snd |> box
-                        | (_, _) ->
-                            match valueOpt with
-                            | Some value ->
-                                let property = { PropertyValue = value; PropertyType = ty }
-                                World.attachScreenProperty propertyName property screen world |> box
-                            | None -> World.detachScreenProperty propertyName screen world |> box
+                        | (Some value, (false, _)) ->
+                            let world = if not (World.screenExists screen world) then World.createScreen None world |> snd else world
+                            let property = { PropertyValue = value; PropertyType = ty }
+                            World.attachScreenProperty propertyName property screen world |> box
+                        | (None, (true, _)) ->
+                            World.destroyScreen screen world |> box
+                        | (None, (false, _)) ->
+                            World.detachScreenProperty propertyName screen world |> box
                     | :? Layer as layer ->
-                        match WorldModuleLayer.Setters.TryGetValue propertyName with
-                        | (true, setter) when valueOpt.IsSome ->
-                            let property = { PropertyValue = valueOpt.Value; PropertyType = ty }
+                        match (valueOpt, WorldModuleLayer.Setters.TryGetValue propertyName) with
+                        | (Some value, (true, setter)) ->
+                            let screen = ltos layer
+                            let world = if not (World.screenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.layerExists layer world) then World.createLayer None screen world |> snd else world
+                            let property = { PropertyValue = value; PropertyType = ty }
                             setter property layer world |> snd |> box
-                        | (_, _) ->
-                            match valueOpt with
-                            | Some value ->
-                                let property = { PropertyValue = value; PropertyType = ty }
-                                World.attachLayerProperty propertyName property layer world |> box
-                            | None -> World.detachLayerProperty propertyName layer world |> box
+                        | (Some value, (false, _)) ->
+                            let screen = ltos layer
+                            let world = if not (World.screenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.layerExists layer world) then World.createLayer None screen world |> snd else world
+                            let property = { PropertyValue = value; PropertyType = ty }
+                            World.attachLayerProperty propertyName property layer world |> box
+                        | (None, (true, _)) ->
+                            World.destroyLayer layer world |> box
+                        | (None, (false, _)) ->
+                            World.detachLayerProperty propertyName layer world |> box
                     | :? Entity as entity ->
-                        match WorldModuleEntity.Setters.TryGetValue propertyName with
-                        | (true, setter) when valueOpt.IsSome ->
-                            let property = { PropertyValue = valueOpt.Value; PropertyType = ty }
+                        match (valueOpt, WorldModuleEntity.Setters.TryGetValue propertyName) with
+                        | (Some value, (true, setter)) ->
+                            let layer = etol entity
+                            let screen = ltos layer
+                            let world = if not (World.screenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.layerExists layer world) then World.createLayer None screen world |> snd else world
+                            let world = if not (World.entityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
+                            let property = { PropertyValue = value; PropertyType = ty }
                             setter property entity world |> snd |> box
-                        | (_, _) ->
-                            match valueOpt with
-                            | Some value ->
-                                let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                                let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
-                                let property = { PropertyValue = value; PropertyType = ty }
-                                World.attachEntityProperty propertyName alwaysPublish nonPersistent property entity world |> box
-                            | None -> World.detachEntityProperty propertyName entity world |> box
+                        | (Some value, (false, _)) ->
+                            let layer = etol entity
+                            let screen = ltos layer
+                            let world = if not (World.screenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.layerExists layer world) then World.createLayer None screen world |> snd else world
+                            let world = if not (World.entityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
+                            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                            let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                            let property = { PropertyValue = value; PropertyType = ty }
+                            World.attachEntityProperty propertyName alwaysPublish nonPersistent property entity world |> box
+                        | (None, (true, _)) ->
+                            World.destroyEntity entity world |> box
+                        | (None, (false, _)) ->
+                            World.detachEntityProperty propertyName entity world |> box
                     | _ -> failwithumf ()
                 | None -> box world
 
