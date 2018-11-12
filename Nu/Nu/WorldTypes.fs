@@ -412,6 +412,8 @@ module WorldTypes =
 
     /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
+    /// NOTE: The properties here have duplicated representations in WorldModuleGame that exist
+    /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] GameState =
         { Id : Guid
           Xtension : Xtension
@@ -490,6 +492,8 @@ module WorldTypes =
     
     /// Hosts the ongoing state of a screen. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
+    /// NOTE: The properties here have duplicated representations in WorldModuleScreen that exist
+    /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
         { Id : Guid
           Name : string
@@ -571,6 +575,8 @@ module WorldTypes =
     
     /// Hosts the ongoing state of a layer. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
+    /// NOTE: The properties here have duplicated representations in WorldModuleLayer that exist
+    /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] LayerState =
         { Id : Guid
           Name : string
@@ -645,6 +651,8 @@ module WorldTypes =
 
     /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
+    /// NOTE: The properties here have duplicated representations in WorldModuleEntity that exist
+    /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] EntityState =
         { Id : Guid
           Name : string
