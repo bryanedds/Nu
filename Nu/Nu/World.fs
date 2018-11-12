@@ -5,8 +5,6 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Reflection
-open System.Runtime.InteropServices
-open System.Text
 open SDL2
 open Prime
 open Nu
