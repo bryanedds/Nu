@@ -49,6 +49,14 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.setEntityProperty name alwaysPublish nonPersistent property entity world
             | _ -> failwithumf ()
 
+        static member getSimulantDispatcher (simulant : Simulant) (world : World) =
+            match simulant with
+            | :? Game -> Simulants.Game.GetDispatcher world :> Dispatcher
+            | :? Screen as screen -> screen.GetDispatcher world :> Dispatcher
+            | :? Layer as layer -> layer.GetDispatcher world :> Dispatcher
+            | :? Entity as entity -> entity.GetDispatcher world :> Dispatcher
+            | _ -> failwithumf ()
+
         static member internal tryGetSimulantScriptFrame (simulant : Simulant) world =
             match simulant with
             | :? Game -> Some (World.getGameScriptFrame world)
