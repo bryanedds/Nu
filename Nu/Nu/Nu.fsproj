@@ -86,7 +86,6 @@
     <Compile Include="Sdl.fs" />
     <Compile Include="Subsystems.fs" />
     <Compile Include="AmbientState.fs" />
-    <Compile Include="Simulation.fs" />
     <Compile Include="WorldTypes.fs" />
     <Compile Include="WorldModule.fs" />
     <Compile Include="WorldModuleGame.fs" />
@@ -216,7 +215,7 @@
       <HintPath>..\Nu.Dependencies\Nito.Collections.Deque\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.3.2.3\lib\net46\Prime.exe</HintPath>
+      <HintPath>..\..\packages\Prime.3.3.0\lib\net46\Prime.exe</HintPath>
     </Reference>
     <Reference Include="SDL2#">
       <HintPath>..\Nu.Dependencies\SDL2#\Release\SDL2#.dll</HintPath>

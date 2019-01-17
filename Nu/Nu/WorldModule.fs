@@ -46,13 +46,13 @@ module WorldModule =
             world
 
         /// Make the world.
-        static member internal make eventSystem dispatchers subsystems scriptingEnv ambientState activeGameDispatcher =
+        static member internal make eventDelegate dispatchers subsystems scriptingEnv ambientState activeGameDispatcher =
             let gameState = GameState.make activeGameDispatcher
             let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let layerStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let entityStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let world =
-                { EventSystem = eventSystem
+                { EventDelegate = eventDelegate
                   Dispatchers = dispatchers
                   Subsystems = subsystems
                   ScriptingEnv = scriptingEnv
