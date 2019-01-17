@@ -15,11 +15,6 @@ module Nu =
     let mutable private Initialized = false
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
-    let private keyToPropertyNameAndSimulantNames (key : string) =
-        match key.Split ('/') |> Array.toList with
-        | propertyName :: simulantNames -> (propertyName, simulantNames)
-        | [] -> failwithumf () // String.Split always returns a non-empty array
-
     /// Initialize the Nu game engine.
     let init runSynchronously =
 
@@ -48,21 +43,19 @@ module Nu =
             WorldModuleEntity.init ()
 
             // init getPropertyOpt F# reach-around
-            WorldTypes.getPropertyOpt <- fun key world ->
-                let (propertyName, simulantNames) = keyToPropertyNameAndSimulantNames key
-                match World.tryDeriveSimulant (ltoa simulantNames) with
-                | Some simulant ->
+            WorldTypes.getPropertyOpt <- fun propertyName participant world ->
+                match participant with
+                | :? Simulant as simulant ->
                     match World.tryGetSimulantProperty propertyName simulant (world :?> World) with
                     | Some property -> Some property.PropertyValue
                     | None -> None
-                | None -> None
+                | _ -> None
 
             // init setPropertyOpt F# reach-around
-            WorldTypes.setPropertyOpt <- fun key valueOpt ty world ->
+            WorldTypes.setPropertyOpt <- fun propertyName participant valueOpt ty world ->
                 let world = world :?> World
-                let (propertyName, simulantNames) = keyToPropertyNameAndSimulantNames key
-                match World.tryDeriveSimulant (ltoa simulantNames) with
-                | Some simulant ->
+                match participant with
+                | :? Simulant as simulant ->
                     match simulant with
                     | :? Game ->
                         match (valueOpt, WorldModuleGame.Setters.TryGetValue propertyName) with
@@ -133,19 +126,19 @@ module Nu =
                         | (None, (false, _)) ->
                             World.detachEntityProperty propertyName entity world |> box
                     | _ -> failwithumf ()
-                | None -> box world
+                | _ -> box world
 
             // init handlePropertyChange F# reach-around
-            WorldTypes.handlePropertyChange <- fun key handler world ->
-                let (propertyName, simulantNames) = keyToPropertyNameAndSimulantNames key
+            WorldTypes.handlePropertyChange <- fun propertyName participant handler world ->
+                let handler = handler :?> PropertyChangeHandler<World>
                 let (unsubscribe, world) =
                     World.subscribePlus
                         (makeGuid ())
                         (fun (event : Event<obj, _>) world ->
                             let data = event.Data :?> ChangeData
-                            let world = handler data.OldWorld world :?> World
+                            let world = handler data.OldWorld world
                             (Cascade, world))
-                        (Address.makeFromList ("Change" :: propertyName :: "Event" :: simulantNames))
+                        (Address.makeFromList ("Change" :: propertyName :: "Event" :: (Address.getNames participant.ParticipantAddress)))
                         (Simulants.Game :> Participant)
                         (world :?> World)
                 (box unsubscribe, box world)
@@ -295,14 +288,14 @@ module WorldModule3 =
             // TODO: P1: parameterize hard-coded boolean
             Nu.init false
 
-            // make the world's event system
-            let eventSystem =
+            // make the world's event delegate
+            let eventDelegate =
                 let eventTracer = Log.remark "Event"
                 let eventTracing = Core.getEventTracing ()
                 let eventFilter = Core.getEventFilter ()
                 let globalParticipant = Simulants.Game
                 let globalParticipantGeneralized = { GpgAddress = atoa globalParticipant.GameAddress }
-                EventSystem.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
+                EventDelegate.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
 
             // make the game dispatcher
             let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
@@ -338,7 +331,7 @@ module WorldModule3 =
                 AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty SymbolStore.empty userState
 
             // make the world
-            let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState (snd defaultGameDispatcher)
+            let world = World.make eventDelegate dispatchers subsystems scriptingEnv ambientState (snd defaultGameDispatcher)
             
             // subscribe to subscribe and unsubscribe events
             let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
@@ -374,7 +367,7 @@ module WorldModule3 =
                     let eventFilter = Core.getEventFilter ()
                     let globalParticipant = Simulants.Game
                     let globalParticipantGeneralized = { GpgAddress = atoa globalParticipant.GameAddress }
-                    EventSystem.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
+                    EventDelegate.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
 
                 // make plug-in dispatchers
                 let pluginFacets = plugin.MakeFacets () |> List.map World.pairWithName

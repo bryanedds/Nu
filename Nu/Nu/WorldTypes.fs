@@ -101,9 +101,9 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
 [<AutoOpen>]
 module WorldTypes =
 
-    let mutable internal getPropertyOpt = Unchecked.defaultof<string -> obj -> obj option>
-    let mutable internal setPropertyOpt = Unchecked.defaultof<string -> obj option -> Type -> obj -> obj>
-    let mutable internal handlePropertyChange = Unchecked.defaultof<string -> PropertyChangeHandler<string> -> obj -> obj * obj>
+    let mutable internal getPropertyOpt = Unchecked.defaultof<string -> Participant -> obj -> obj option>
+    let mutable internal setPropertyOpt = Unchecked.defaultof<string -> Participant -> obj option -> Type -> obj -> obj>
+    let mutable internal handlePropertyChange = Unchecked.defaultof<string -> Participant -> obj -> obj -> obj * obj>
         
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
@@ -1005,7 +1005,7 @@ module WorldTypes =
     /// for that.
     and [<ReferenceEquality>] World =
         internal
-            { EventSystem : World EventSystem
+            { EventDelegate : World EventDelegate
               Dispatchers : Dispatchers
               Subsystems : World Subsystems
               ScriptingEnv : Scripting.Env
@@ -1020,17 +1020,17 @@ module WorldTypes =
               LayerStates : UMap<Layer Address, LayerState>
               EntityStates : UMap<Entity Address, EntityState> }
 
-        interface string Simulation with
-            member this.GetPropertyOpt<'a> key = match getPropertyOpt key (box this) with Some a -> Some (a :?> 'a) | None -> None
-            member this.SetPropertyOpt<'a> key (value : 'a option) = (match value with Some a -> setPropertyOpt key (Some (box a)) typeof<'a> (box this) | None -> setPropertyOpt key None typeof<'a> (box this)) :?> string Simulation
-            member this.HandlePropertyChange key handler =
-                let (unsubscribe, world) = handlePropertyChange key handler (box this)
-                (unsubscribe :?> string Simulation -> string Simulation, world :?> string Simulation)
-
         interface EventWorld<Game, World> with
-            member this.GetLiveness () = AmbientState.getLiveness this.AmbientState
-            member this.GetEventSystem () = this.EventSystem
-            member this.UpdateEventSystem updater = { this with EventSystem = updater this.EventSystem }
+            
+            member this.GetLiveness () =
+                AmbientState.getLiveness this.AmbientState
+            
+            member this.GetGlobalParticipantSpecialized () =
+                EventDelegate.getGlobalParticipantSpecialized this.EventDelegate
+            
+            member this.GetGlobalParticipantGeneralized () =
+                EventDelegate.getGlobalParticipantGeneralized this.EventDelegate
+            
             member this.ParticipantExists participant =
                 match participant with
                 | :? GlobalParticipantGeneralized
@@ -1039,7 +1039,30 @@ module WorldTypes =
                 | :? Layer as layer -> UMap.containsKey layer.LayerAddress this.LayerStates
                 | :? Entity as entity -> UMap.containsKey entity.EntityAddress this.EntityStates
                 | _  -> false
-            member this.PublishEvent (participant : Participant) publisher eventData eventAddress eventTrace subscription world =
+            
+            member this.GetPropertyOpt<'a> propertyName participant =
+                match getPropertyOpt propertyName participant (box this) with
+                | Some a -> Some (a :?> 'a)
+                | None -> None
+            
+            member this.SetPropertyOpt<'a> propertyName participant (value : 'a option) =
+                let world =
+                    match value with
+                    | Some a -> setPropertyOpt propertyName participant (Some (box a)) typeof<'a> (box this)
+                    | None -> setPropertyOpt propertyName participant None typeof<'a> (box this)
+                world :?> World
+            
+            member this.HandlePropertyChange propertyName participant handler =
+                let (unsubscribe, world) = handlePropertyChange propertyName participant (box handler) (box this)
+                (unsubscribe :?> World -> World, world :?> World)
+            
+            member this.GetEventDelegateHook () =
+                this.EventDelegate
+            
+            member this.UpdateEventDelegateHook updater =
+                { this with EventDelegate = updater this.EventDelegate }
+            
+            member this.PublishEventHook (participant : Participant) publisher eventData eventAddress eventTrace subscription world =
                 match participant with
                 | :? GlobalParticipantGeneralized -> EventWorld.publishEvent<'a, 'p, Participant, Game, World> participant publisher eventData eventAddress eventTrace subscription world
                 | :? Game -> EventWorld.publishEvent<'a, 'p, Game, Game, World> participant publisher eventData eventAddress eventTrace subscription world
@@ -1049,14 +1072,20 @@ module WorldTypes =
                 | _ -> failwithumf ()
 
         interface World ScriptingWorld with
-            member this.GetEnv () = this.ScriptingEnv
-            member this.TryGetExtrinsic fnName = this.Dispatchers.TryGetExtrinsic fnName
+
+            member this.GetEnv () =
+                this.ScriptingEnv
+        
+            member this.TryGetExtrinsic fnName =
+                this.Dispatchers.TryGetExtrinsic fnName
+            
             member this.TryImport ty value =
                 match (ty.Name, value) with
                 | ("Vector2", (:? Vector2 as v2)) -> let v2p = { Vector2 = v2 } in v2p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Vector4", (:? Vector4 as v4)) -> let v4p = { Vector4 = v4 } in v4p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Vector2i", (:? Vector2i as v2i)) -> let v2ip = { Vector2i = v2i } in v2ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | (_, _) -> None
+            
             member this.TryExport ty value =
                 match (ty.Name, value) with
                 | ("Vector2", Scripting.Pluggable pluggable) -> let v2 = pluggable :?> Vector2Pluggable in v2.Vector2 :> obj |> Some
