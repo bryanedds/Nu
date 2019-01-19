@@ -43,8 +43,8 @@ module Nu =
             WorldModuleEntity.init ()
 
             // init getPropertyOpt F# reach-around
-            WorldTypes.getPropertyOpt <- fun propertyName participant world ->
-                match participant with
+            WorldTypes.getPropertyOpt <- fun propertyName propertied world ->
+                match propertied with
                 | :? Simulant as simulant ->
                     match World.tryGetSimulantProperty propertyName simulant (world :?> World) with
                     | Some property -> Some property.PropertyValue
@@ -52,9 +52,9 @@ module Nu =
                 | _ -> None
 
             // init setPropertyOpt F# reach-around
-            WorldTypes.setPropertyOpt <- fun propertyName participant valueOpt ty world ->
+            WorldTypes.setPropertyOpt <- fun propertyName propertied valueOpt ty world ->
                 let world = world :?> World
-                match participant with
+                match propertied with
                 | :? Simulant as simulant ->
                     match simulant with
                     | :? Game ->
@@ -129,7 +129,8 @@ module Nu =
                 | _ -> box world
 
             // init handlePropertyChange F# reach-around
-            WorldTypes.handlePropertyChange <- fun propertyName participant handler world ->
+            WorldTypes.handlePropertyChange <- fun propertyName propertied handler world ->
+                let participant = propertied :?> Participant
                 let handler = handler :?> PropertyChangeHandler<World>
                 let (unsubscribe, world) =
                     World.subscribePlus
