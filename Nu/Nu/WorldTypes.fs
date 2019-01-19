@@ -101,9 +101,9 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
 [<AutoOpen>]
 module WorldTypes =
 
-    let mutable internal getPropertyOpt = Unchecked.defaultof<string -> Participant -> obj -> obj option>
-    let mutable internal setPropertyOpt = Unchecked.defaultof<string -> Participant -> obj option -> Type -> obj -> obj>
-    let mutable internal handlePropertyChange = Unchecked.defaultof<string -> Participant -> obj -> obj -> obj * obj>
+    let mutable internal getPropertyOpt = Unchecked.defaultof<string -> Propertied -> obj -> obj option>
+    let mutable internal setPropertyOpt = Unchecked.defaultof<string -> Propertied -> obj option -> Type -> obj -> obj>
+    let mutable internal handlePropertyChange = Unchecked.defaultof<string -> Propertied -> obj -> obj -> obj * obj>
         
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
