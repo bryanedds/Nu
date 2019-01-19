@@ -194,11 +194,11 @@
 [define skip [n ctr]
     [skip3 0 n ctr]]
 
-; Count the number of a container's elements that satisfies the given predicate.
+; Count the number of a container's elements that satisfy the given predicate.
 [define countBy [pred ctr]
     [fold [fun [count elem] [if [pred elem] [inc count] count]] 0 ctr]]
 
-; Count the number of a container's elements that equal the value.
+; Count the number of a container's elements that equal the given value.
 [define count [a ctr]
     [fold [fun [count elem] [if [= elem a] [inc count] count]] 0 ctr]]
 

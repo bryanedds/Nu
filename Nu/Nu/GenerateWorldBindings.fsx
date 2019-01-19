@@ -114,7 +114,7 @@ let generateParameterList (functionParameters : (string * ParameterConversion) a
 
 let generateNormalParameterConversion (par : string) (ty : Type) =
     "            let " + par + " =\n" +
-    "                match ScriptingWorld.tryExport typeof<" + ty.GetGenericName () + "> " + par + " world with\n" +
+    "                match ScriptingSystem.tryExport typeof<" + ty.GetGenericName () + "> " + par + " world with\n" +
     "                | Some value -> value :?> " + ty.GetGenericName () + "\n" +
     "                | None -> failwith \"Invalid argument type for '" + par + "'; expecting a value convertable to " + ty.Name + ".\"\n"
 
@@ -124,7 +124,7 @@ let generateNormalListParameterConversion (par : string) (ty : Type) =
     "                | struct (Scripting.List list, world) ->\n" +
     "                    Seq.fold (fun struct (values, world) value ->\n" +
     "                        let value =\n" +
-    "                            match ScriptingWorld.tryExport typeof<" + ty.GetGenericName () + "> value world with\n" +
+    "                            match ScriptingSystem.tryExport typeof<" + ty.GetGenericName () + "> value world with\n" +
     "                            | Some value -> value :?> " + ty.GetGenericName () + "\n" +
     "                            | None -> failwith \"Invalid argument type for '" + par + "'; expecting a value convertable to " + ty.Name + ".\"\n" +
     "                        struct (value :: values, world))\n" +
@@ -230,11 +230,11 @@ let generateBindingFunction binding =
             match rc with
             | NormalReturn ty ->
                 "            let (value, world) = result\n" +
-                "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
+                "            let value = ScriptingSystem.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
                 "            struct (value, world)\n"
             | NormalListReturn ty ->
                 "            let (value, world) = result\n" +
-                "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
+                "            let value = ScriptingSystem.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
                 "            struct (value, world)\n"
             | SimulantReturn ->
                 "            let (value, world) = result\n" +
@@ -248,11 +248,11 @@ let generateBindingFunction binding =
             match rc with
             | NormalReturn ty ->
                 "            let value = result\n" +
-                "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
+                "            let value = ScriptingSystem.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
                 "            struct (value, world)\n"
             | NormalListReturn ty ->
                 "            let value = result\n" +
-                "            let value = ScriptingWorld.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
+                "            let value = ScriptingSystem.tryImport typeof<" + ty.GetGenericName () + "> value world |> Option.get\n" +
                 "            struct (value, world)\n"
             | SimulantReturn ->
                 "            let value = result\n" +

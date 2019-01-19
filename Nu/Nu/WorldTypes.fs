@@ -1005,7 +1005,7 @@ module WorldTypes =
     /// for that.
     and [<ReferenceEquality>] World =
         internal
-            { EventDelegate : World EventDelegate
+            { EventSystemDelegate : World EventSystemDelegate
               Dispatchers : Dispatchers
               Subsystems : World Subsystems
               ScriptingEnv : Scripting.Env
@@ -1020,16 +1020,16 @@ module WorldTypes =
               LayerStates : UMap<Layer Address, LayerState>
               EntityStates : UMap<Entity Address, EntityState> }
 
-        interface EventWorld<Game, World> with
+        interface EventSystem<World> with
             
             member this.GetLiveness () =
                 AmbientState.getLiveness this.AmbientState
             
             member this.GetGlobalParticipantSpecialized () =
-                EventDelegate.getGlobalParticipantSpecialized this.EventDelegate
+                EventSystemDelegate.getGlobalParticipantSpecialized this.EventSystemDelegate
             
             member this.GetGlobalParticipantGeneralized () =
-                EventDelegate.getGlobalParticipantGeneralized this.EventDelegate
+                EventSystemDelegate.getGlobalParticipantGeneralized this.EventSystemDelegate
             
             member this.ParticipantExists participant =
                 match participant with
@@ -1056,22 +1056,22 @@ module WorldTypes =
                 let (unsubscribe, world) = handlePropertyChange propertyName participant (box handler) (box this)
                 (unsubscribe :?> World -> World, world :?> World)
             
-            member this.GetEventDelegateHook () =
-                this.EventDelegate
+            member this.GetEventSystemDelegateHook () =
+                this.EventSystemDelegate
             
-            member this.UpdateEventDelegateHook updater =
-                { this with EventDelegate = updater this.EventDelegate }
+            member this.UpdateEventSystemDelegateHook updater =
+                { this with EventSystemDelegate = updater this.EventSystemDelegate }
             
             member this.PublishEventHook (participant : Participant) publisher eventData eventAddress eventTrace subscription world =
                 match participant with
-                | :? GlobalParticipantGeneralized -> EventWorld.publishEvent<'a, 'p, Participant, Game, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Game -> EventWorld.publishEvent<'a, 'p, Game, Game, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Screen -> EventWorld.publishEvent<'a, 'p, Screen, Game, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Layer -> EventWorld.publishEvent<'a, 'p, Layer, Game, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Entity -> EventWorld.publishEvent<'a, 'p, Entity, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? GlobalParticipantGeneralized -> EventSystem.publishEvent<'a, 'p, Participant, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> participant publisher eventData eventAddress eventTrace subscription world
+                | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
                 | _ -> failwithumf ()
 
-        interface World ScriptingWorld with
+        interface World ScriptingSystem with
 
             member this.GetEnv () =
                 this.ScriptingEnv

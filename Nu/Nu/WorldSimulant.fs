@@ -111,4 +111,4 @@ module WorldSimulantModule =
 
         [<FunctionBinding>]
         static member getSimulantExists (simulant : Simulant) (world : World) =
-            (world :> EventWorld<Game, World>).ParticipantExists simulant
+            (world :> EventSystem<World>).ParticipantExists simulant

@@ -1176,7 +1176,7 @@ module Gaia =
                             let dvOpt =
                                 if defaulting
                                 then dt.TryGetDefaultValue ()
-                                else ScriptingWorld.tryExport dt evaled world
+                                else ScriptingSystem.tryExport dt evaled world
                             match dvOpt with
                             | Some dv ->
                                 let propertyName = form.entityDesignerPropertyNameTextBox.Text

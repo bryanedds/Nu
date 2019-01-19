@@ -229,7 +229,7 @@ module Nu =
             Vsync.init runSynchronously
 
             // init event world caching
-            EventWorld.setEventAddressCaching true
+            EventSystem.setEventAddressCaching true
 
             // mark init flag
             Initialized <- true
@@ -295,7 +295,7 @@ module WorldModule3 =
                 let eventFilter = Core.getEventFilter ()
                 let globalParticipant = Simulants.Game
                 let globalParticipantGeneralized = { GpgAddress = atoa globalParticipant.GameAddress }
-                EventDelegate.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
+                EventSystemDelegate.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
 
             // make the game dispatcher
             let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
@@ -367,7 +367,7 @@ module WorldModule3 =
                     let eventFilter = Core.getEventFilter ()
                     let globalParticipant = Simulants.Game
                     let globalParticipantGeneralized = { GpgAddress = atoa globalParticipant.GameAddress }
-                    EventDelegate.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
+                    EventSystemDelegate.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
 
                 // make plug-in dispatchers
                 let pluginFacets = plugin.MakeFacets () |> List.map World.pairWithName
