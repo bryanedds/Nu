@@ -52,7 +52,7 @@ module WorldModule =
             let layerStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let entityStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let world =
-                { EventDelegate = eventDelegate
+                { EventSystemDelegate = eventDelegate
                   Dispatchers = dispatchers
                   Subsystems = subsystems
                   ScriptingEnv = scriptingEnv
@@ -72,39 +72,39 @@ module WorldModule =
 
         /// Get event subscriptions.
         static member getSubscriptions world =
-            EventWorld.getSubscriptions<Game, World> world
+            EventSystem.getSubscriptions<World> world
 
         /// Get event unsubscriptions.
         static member getUnsubscriptions world =
-            EventWorld.getUnsubscriptions<Game, World> world
+            EventSystem.getUnsubscriptions<World> world
 
         /// Get whether events are being traced.
         static member getEventTracing (world : World) =
-            EventWorld.getEventTracing world
+            EventSystem.getEventTracing world
 
         /// Set whether events are being traced.
         static member setEventTracing tracing (world : World) =
-            EventWorld.setEventTracing tracing world
+            EventSystem.setEventTracing tracing world
 
         /// Get the state of the event filter.
         static member getEventFilter (world : World) =
-            EventWorld.getEventFilter world
+            EventSystem.getEventFilter world
 
         /// Set the state of the event filter.
         static member setEventFilter filter (world : World) =
-            EventWorld.setEventFilter filter world
+            EventSystem.setEventFilter filter world
 
         /// Get the context of the event system.
         static member getEventContext (world : World) =
-            EventWorld.getEventContext world
+            EventSystem.getEventContext world
 
         /// Set the context of the event system.
 #if DEBUG
         static member internal withEventContext operation context (world : World) =
             let oldContext = World.getEventContext world
-            EventWorld.setEventContext context world
+            EventSystem.setEventContext context world
             let world = operation world
-            EventWorld.setEventContext oldContext world
+            EventSystem.setEventContext oldContext world
             world
 #else
         static member inline internal withEventContext operation _ (world : World) =
@@ -114,11 +114,11 @@ module WorldModule =
 
         /// Qualify the context of the event system.
         static member internal qualifyEventContext address (world : World) =
-            EventWorld.qualifyEventContext address world
+            EventSystem.qualifyEventContext address world
 
         /// Sort subscriptions using categorization via the 'by' procedure.
         static member sortSubscriptionsBy by subscriptions (world : World) =
-            EventWorld.sortSubscriptionsBy by subscriptions world
+            EventSystem.sortSubscriptionsBy by subscriptions world
 
         /// Sort subscriptions by their place in the world's simulant hierarchy.
         static member sortSubscriptionsByHierarchy subscriptions (world : World) =
@@ -138,40 +138,40 @@ module WorldModule =
 
         /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
         static member sortSubscriptionsNone subscriptions (world : World) =
-            EventWorld.sortSubscriptionsNone subscriptions world
+            EventSystem.sortSubscriptionsNone subscriptions world
 
         /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
         static member publishPlus<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard world =
-            EventWorld.publishPlus<'a, 'p, Game, World> publishSorter eventData eventAddress eventTrace publisher allowWildcard world
+            EventSystem.publishPlus<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher allowWildcard world
 
         /// Publish an event.
         static member publish<'a, 'p when 'p :> Simulant>
             (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-            EventWorld.publishPlus<'a, 'p, Game, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher true world
+            EventSystem.publishPlus<'a, 'p, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher true world
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionKey world =
-            EventWorld.unsubscribe<Game, World> subscriptionKey world
+            EventSystem.unsubscribe<World> subscriptionKey world
 
         /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
         static member subscribePlus<'a, 's when 's :> Participant>
             subscriptionKey (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventWorld.subscribePlus<'a, 's, Game, World> subscriptionKey subscription eventAddress subscriber world
+            EventSystem.subscribePlus<'a, 's, World> subscriptionKey subscription eventAddress subscriber world
 
         /// Subscribe to an event.
         static member subscribe<'a, 's when 's :> Participant>
             (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventWorld.subscribe<'a, 's, Game, World> subscription eventAddress subscriber world
+            EventSystem.subscribe<'a, 's, World> subscription eventAddress subscriber world
 
         /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
         static member monitorPlus<'a, 's when 's :> Participant>
             (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventWorld.monitorPlus<'a, 's, Game, World> subscription eventAddress subscriber world
+            EventSystem.monitorPlus<'a, 's, World> subscription eventAddress subscriber world
 
         /// Keep active a subscription for the lifetime of a simulant.
         static member monitor<'a, 's when 's :> Participant>
             (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventWorld.monitor<'a, 's, Game, World> subscription eventAddress subscriber world
+            EventSystem.monitor<'a, 's, World> subscription eventAddress subscriber world
 
     type World with // Dispatchers
 
@@ -463,13 +463,13 @@ module WorldModule =
     type World with // Scripting
 
         static member internal getGlobalFrame (world : World) =
-            ScriptingWorld.getGlobalFrame world
+            ScriptingSystem.getGlobalFrame world
 
         static member internal getLocalFrame (world : World) =
-            ScriptingWorld.getLocalFrame world
+            ScriptingSystem.getLocalFrame world
 
         static member internal setLocalFrame localFrame (world : World) =
-            ScriptingWorld.setLocalFrame localFrame world
+            ScriptingSystem.setLocalFrame localFrame world
 
         /// Get the context of the script system.
         static member internal getScriptContext (world : World) =
@@ -497,7 +497,7 @@ module WorldModule =
 
         /// Attempt to evaluate a script.
         static member tryEvalScript scriptFilePath world =
-            ScriptingWorld.tryEvalScript World.choose scriptFilePath world
+            ScriptingSystem.tryEvalScript World.choose scriptFilePath world
 
     type World with // Debugging
 

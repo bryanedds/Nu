@@ -660,7 +660,7 @@ module WorldModuleEntity =
                     World.setScreenEntityTreeNoEvent entityTree screen world
 
                 // remove cached entity event addresses
-                EventWorld.cleanEventAddressCache entity.EntityAddress
+                EventSystem.cleanEventAddressCache entity.EntityAddress
 
                 // remove the entity from the world
                 World.removeEntityState entity world

@@ -13,7 +13,7 @@ open Nu
 
 /// The Stream value that can be plugged into the scripting language.
 type [<Struct; CustomEquality; CustomComparison>] StreamPluggable =
-    { Stream : Stream<obj, Game, World> }
+    { Stream : Stream<obj, World> }
 
     static member equals _ _ = false
 
@@ -58,16 +58,16 @@ module WorldScripting =
     type World with
 
         static member internal evalInternal expr world : struct (Expr * World) =
-            ScriptingWorld.eval expr world
+            ScriptingSystem.eval expr world
 
         static member internal evalManyInternal exprs world : struct (Expr array * World) =
-            ScriptingWorld.evalMany exprs world
+            ScriptingSystem.evalMany exprs world
 
         static member internal evalWithLoggingInternal expr world : struct (Expr * World) =
-            ScriptingWorld.evalWithLogging expr world
+            ScriptingSystem.evalWithLogging expr world
 
         static member internal evalManyWithLoggingInternal exprs world : struct (Expr array * World) =
-            ScriptingWorld.evalManyWithLogging exprs world
+            ScriptingSystem.evalManyWithLogging exprs world
 
         static member internal evalSimulantExists fnName evaledArg originOpt world =
             match evaledArg with
@@ -100,7 +100,7 @@ module WorldScripting =
             | None -> Right struct (context, world)
 
         static member internal tryImportEvent evt world =
-            match ScriptingWorld.tryImport (getType evt.Data) evt.Data world with
+            match ScriptingSystem.tryImport (getType evt.Data) evt.Data world with
             | Some dataImported ->
                 let evtRecord =
                     Record
@@ -121,11 +121,11 @@ module WorldScripting =
                 | Some property ->
                     match property.PropertyValue with
                     | :? DesignerProperty as dp ->
-                        match ScriptingWorld.tryImport dp.DesignerType dp.DesignerValue world with
+                        match ScriptingSystem.tryImport dp.DesignerType dp.DesignerValue world with
                         | Some propertyValue -> struct (propertyValue, world)
                         | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be imported into scripting environment.", originOpt), world)
                     | _ ->
-                        match ScriptingWorld.tryImport property.PropertyType property.PropertyValue world with
+                        match ScriptingSystem.tryImport property.PropertyType property.PropertyValue world with
                         | Some propertyValue -> struct (propertyValue, world)
                         | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be imported into scripting environment.", originOpt), world)
                 | None -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Simulant or property value could not be found.", originOpt), world)
@@ -141,8 +141,8 @@ module WorldScripting =
                         match World.tryGetSimulantProperty evt.Data.PropertyName simulant world with
                         | Some property ->
                             match property.PropertyValue with
-                            | :? DesignerProperty as dp -> ScriptingWorld.tryImport dp.DesignerType dp.DesignerValue world |> box
-                            | _ -> ScriptingWorld.tryImport property.PropertyType property.PropertyValue world |> box
+                            | :? DesignerProperty as dp -> ScriptingSystem.tryImport dp.DesignerType dp.DesignerValue world |> box
+                            | _ -> ScriptingSystem.tryImport property.PropertyType property.PropertyValue world |> box
                         | None -> None |> box)
                 struct (Pluggable { Stream = stream }, world)
             | Left error -> error
@@ -158,7 +158,7 @@ module WorldScripting =
                     let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                     match property.PropertyValue with
                     | :? DesignerProperty as dp ->
-                        match ScriptingWorld.tryExport dp.DesignerType propertyValue world with
+                        match ScriptingSystem.tryExport dp.DesignerType propertyValue world with
                         | Some propertyValue ->
                             let propertyValue = { dp with DesignerValue = propertyValue }
                             let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
@@ -167,7 +167,7 @@ module WorldScripting =
                             | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
                         | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
                     | _ ->
-                        match ScriptingWorld.tryExport property.PropertyType propertyValue world with
+                        match ScriptingSystem.tryExport property.PropertyType propertyValue world with
                         | Some propertyValue ->
                             let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
                             match World.trySetSimulantProperty propertyName alwaysPublish nonPersistent property simulant world with
@@ -197,7 +197,7 @@ module WorldScripting =
                                             let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                                             match property.PropertyValue with
                                             | :? DesignerProperty as dp ->
-                                                match ScriptingWorld.tryExport dp.DesignerType expr world with
+                                                match ScriptingSystem.tryExport dp.DesignerType expr world with
                                                 | Some propertyValue ->
                                                     let propertyValue = { dp with DesignerValue = propertyValue }
                                                     let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
@@ -205,7 +205,7 @@ module WorldScripting =
                                                     (Cascade, world)
                                                 | None -> (Cascade, world)
                                             | _ ->
-                                                match ScriptingWorld.tryExport property.PropertyType expr world with
+                                                match ScriptingSystem.tryExport property.PropertyType expr world with
                                                 | Some propertyValue ->
                                                     let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
                                                     let (_, world) = World.trySetSimulantProperty propertyName alwaysPublish nonPersistent property simulant world
