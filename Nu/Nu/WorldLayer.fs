@@ -107,7 +107,7 @@ module WorldLayerModule =
                 let world = dispatcher.Update (layer, world)
 
                 // run script update
-                let world = World.evalWithLogging (layer.GetOnUpdate world) (layer.GetScriptFrame world) layer world |> snd
+                let world = World.evalWithLogging (layer.GetOnUpdate world) (layer.GetScriptFrame world) layer world |> snd'
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
@@ -123,7 +123,7 @@ module WorldLayerModule =
                 let world = dispatcher.PostUpdate (layer, world)
 
                 // run script post-update
-                let world = World.evalWithLogging (layer.GetOnPostUpdate world) (layer.GetScriptFrame world) layer world |> snd
+                let world = World.evalWithLogging (layer.GetOnPostUpdate world) (layer.GetScriptFrame world) layer world |> snd'
 
                 // run script post-update
                 let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty

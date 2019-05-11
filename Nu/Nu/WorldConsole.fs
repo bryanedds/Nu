@@ -48,8 +48,8 @@ module WorldConsole =
             let context = Simulants.Game
             let frame = context.GetScriptFrame world
             let expr = scvalue<Scripting.Expr> input
-            try let (result, world) = World.eval expr frame context world
-                Console.Write "< "
+            try let struct (result, world) = World.eval expr frame context world
+                Console.Write ": "
                 Console.WriteLine (scstring result)
                 run gameTitle world
             with exn ->

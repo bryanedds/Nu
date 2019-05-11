@@ -116,7 +116,7 @@ module WorldScreenModule =
                 let world = dispatcher.Update (screen, world)
 
                 // run script update
-                let world = World.evalWithLogging (screen.GetOnUpdate world) (screen.GetScriptFrame world) screen world |> snd
+                let world = World.evalWithLogging (screen.GetOnUpdate world) (screen.GetScriptFrame world) screen world |> snd'
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
@@ -132,7 +132,7 @@ module WorldScreenModule =
                 let world = dispatcher.PostUpdate (screen, world)
 
                 // run script post-update
-                let world = World.evalWithLogging (screen.GetOnPostUpdate world) (screen.GetScriptFrame world) screen world |> snd
+                let world = World.evalWithLogging (screen.GetOnPostUpdate world) (screen.GetScriptFrame world) screen world |> snd'
                 
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty

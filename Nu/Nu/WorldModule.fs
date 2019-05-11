@@ -12,20 +12,20 @@ open Nu
 module WorldModule =
 
     /// F# reach-around for evaluating a script expression.
-    let mutable internal eval : Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr * World =
-        Unchecked.defaultof<Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr * World>
+    let mutable internal eval : Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr * World) =
+        Unchecked.defaultof<Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr * World)>
 
     /// F# reach-around for evaluating script expressions.
-    let mutable internal evalMany : Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr array * World =
-        Unchecked.defaultof<Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr array * World>
+    let mutable internal evalMany : Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr array * World) =
+        Unchecked.defaultof<Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr array * World)>
 
     /// F# reach-around for evaluating a script expression.
-    let mutable internal evalWithLogging : Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr * World =
-        Unchecked.defaultof<Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr * World>
+    let mutable internal evalWithLogging : Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr * World) =
+        Unchecked.defaultof<Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr * World)>
 
     /// F# reach-around for evaluating script expressions.
-    let mutable internal evalManyWithLogging : Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr array * World =
-        Unchecked.defaultof<Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> Scripting.Expr array * World>
+    let mutable internal evalManyWithLogging : Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr array * World) =
+        Unchecked.defaultof<Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr array * World)>
 
     /// F# reach-around for adding script unsubscriptions to simulants.
     let mutable internal addSimulantScriptUnsubscription : Unsubscription -> Simulant -> World -> World =

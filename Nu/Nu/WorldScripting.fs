@@ -258,7 +258,7 @@ module WorldScripting =
                                         | Some scriptFrame ->
                                             let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
                                             let application = Apply ([|fn; expr|], breakpoint, originOpt)
-                                            let (evaled, world) = World.evalWithLogging application scriptFrame context world
+                                            let struct (evaled, world) = World.evalWithLogging application scriptFrame context world
                                             (Some evaled |> box, world)
                                         | None -> (None |> box, world)
                                     | None -> (None |> box, world)
@@ -285,7 +285,7 @@ module WorldScripting =
                                         | Some scriptFrame ->
                                             let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
                                             let application = Apply ([|fn; Option.get stateOpt; expr|], breakpoint, originOpt)
-                                            let (evaled, world) = World.evalWithLogging application scriptFrame context world
+                                            let struct (evaled, world) = World.evalWithLogging application scriptFrame context world
                                             (Some evaled |> box, world)
                                         | None -> (stateOpt |> box, world)
                                     | None -> (stateOpt |> box, world)
@@ -313,7 +313,7 @@ module WorldScripting =
                                         | Some scriptFrame ->
                                             let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
                                             let application = Apply ([|fn; expr; expr2|], breakpoint, originOpt)
-                                            let (evaled, world) = World.evalWithLogging application scriptFrame context world
+                                            let struct (evaled, world) = World.evalWithLogging application scriptFrame context world
                                             (Some evaled |> box, world)
                                         | None -> (None |> box, world)
                                     | (_, _) -> (None |> box, world)
@@ -371,7 +371,7 @@ module WorldScripting =
                     | Some evtImported ->
                         let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
                         let application = Apply ([|subscription; evtImported|], breakpoint, None)
-                        World.evalWithLogging application scriptFrame subscriber world |> snd
+                        World.evalWithLogging application scriptFrame subscriber world |> snd'
                     | None -> Log.info "Event data could not be imported into scripting environment."; world
                 | None -> world)
                 eventAddress
