@@ -59,7 +59,7 @@ module WorldModuleGame =
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world
             let world = World.setGameScriptFrame scriptFrame world
-            evalManyWithLogging value scriptFrame (Game Address.empty) world |> snd
+            evalManyWithLogging value scriptFrame (Game Address.empty) world |> snd'
         static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
         static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> { gameState with ScriptFrame = value }) Property? ScriptFrame world
         static member internal getGameScriptUnsubscriptions world = (World.getGameState world).ScriptUnsubscriptions

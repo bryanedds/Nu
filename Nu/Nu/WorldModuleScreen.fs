@@ -122,7 +122,7 @@ module WorldModuleScreen =
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = World.updateScreenState (fun screenState -> { screenState with Script = value }) Property? Script screen world
             let world = World.setScreenScriptFrame scriptFrame screen world
-            evalManyWithLogging value scriptFrame screen world |> snd
+            evalManyWithLogging value scriptFrame screen world |> snd'
         static member internal getScreenScriptFrame screen world = (World.getScreenState screen world).ScriptFrame
         static member internal setScreenScriptFrame value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptFrame = value }) Property? ScriptFrame screen world
         static member internal getScreenScriptUnsubscriptions screen world = (World.getScreenState screen world).ScriptUnsubscriptions
@@ -229,7 +229,7 @@ module WorldModuleScreen =
                     let world = dispatcher.Register (screen, world)
                     let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
                     let world = World.publish () (ltoa<unit> ["Register"; "Event"] ->- screen) eventTrace screen world
-                    eval (World.getScreenOnUnregister screen world) (World.getScreenScriptFrame screen world) screen world |> snd)
+                    eval (World.getScreenOnUnregister screen world) (World.getScreenScriptFrame screen world) screen world |> snd')
                     screen
                     world
             World.choose world
@@ -237,7 +237,7 @@ module WorldModuleScreen =
         static member internal unregisterScreen screen world =
             let world =
                 World.withEventContext (fun world ->
-                    let world = eval (World.getScreenOnRegister screen world) (World.getScreenScriptFrame screen world) screen world |> snd
+                    let world = eval (World.getScreenOnRegister screen world) (World.getScreenScriptFrame screen world) screen world |> snd'
                     let dispatcher = World.getScreenDispatcher screen world
                     let eventTrace = EventTrace.record "World" "unregisteringScreen" EventTrace.empty
                     let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] ->- screen) eventTrace screen world

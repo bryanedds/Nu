@@ -137,7 +137,7 @@ module WorldModuleLayer =
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = World.updateLayerState (fun layerState -> { layerState with Script = value }) Property? Script layer world
             let world = World.setLayerScriptFrame scriptFrame layer world
-            evalManyWithLogging value scriptFrame layer world |> snd
+            evalManyWithLogging value scriptFrame layer world |> snd'
         static member internal getLayerScriptFrame layer world = (World.getLayerState layer world).ScriptFrame
         static member internal setLayerScriptFrame value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptFrame = value }) Property? ScriptFrame layer world
         static member internal getLayerScriptUnsubscriptions layer world = (World.getLayerState layer world).ScriptUnsubscriptions
@@ -238,7 +238,7 @@ module WorldModuleLayer =
                     let world = dispatcher.Register (layer, world)
                     let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
                     let world = World.publish () (ltoa<unit> ["Register"; "Event"] ->- layer) eventTrace layer world
-                    eval (World.getLayerOnUnregister layer world) (World.getLayerScriptFrame layer world) layer world |> snd)
+                    eval (World.getLayerOnUnregister layer world) (World.getLayerScriptFrame layer world) layer world |> snd')
                     layer
                     world
             World.choose world
@@ -246,7 +246,7 @@ module WorldModuleLayer =
         static member internal unregisterLayer layer world =
             let world =
                 World.withEventContext (fun world ->
-                    let world = eval (World.getLayerOnRegister layer world) (World.getLayerScriptFrame layer world) layer world |> snd
+                    let world = eval (World.getLayerOnRegister layer world) (World.getLayerScriptFrame layer world) layer world |> snd'
                     let dispatcher = World.getLayerDispatcher layer world
                     let eventTrace = EventTrace.record "World" "unregisteringLayer" EventTrace.empty
                     let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] ->- layer) eventTrace layer world

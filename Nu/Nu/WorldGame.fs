@@ -145,7 +145,7 @@ module WorldGameModule =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcher world
                     let world = dispatcher.Register (game, world)
-                    World.eval (game.GetOnUnregister world) (game.GetScriptFrame world) game world |> snd)
+                    World.eval (game.GetOnUnregister world) (game.GetScriptFrame world) game world |> snd')
                     game
                     world
             World.choose world
@@ -155,7 +155,7 @@ module WorldGameModule =
             let world =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcher world
-                    let world = World.eval (game.GetOnRegister world) (game.GetScriptFrame world)game world |> snd
+                    let world = World.eval (game.GetOnRegister world) (game.GetScriptFrame world)game world |> snd'
                     dispatcher.Unregister (game, world))
                     game
                     world
@@ -170,7 +170,7 @@ module WorldGameModule =
                 let world = dispatcher.Update (game, world)
 
                 // run script update
-                let world = World.evalWithLogging (game.GetOnUpdate world) (game.GetScriptFrame world) game world |> snd
+                let world = World.evalWithLogging (game.GetOnUpdate world) (game.GetScriptFrame world) game world |> snd'
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateGame" EventTrace.empty
@@ -188,7 +188,7 @@ module WorldGameModule =
                 let world = dispatcher.PostUpdate (game, world)
 
                 // run script post-update
-                let world = World.evalWithLogging (game.GetOnPostUpdate world) (game.GetScriptFrame world) game world |> snd
+                let world = World.evalWithLogging (game.GetOnPostUpdate world) (game.GetScriptFrame world) game world |> snd'
 
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateGame" EventTrace.empty

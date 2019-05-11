@@ -200,7 +200,7 @@ module ScriptFacetModule =
             let script = entity.GetGetScript world
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = entity.SetScriptFrame scriptFrame world
-            evalManyWithLogging script scriptFrame entity world |> snd
+            evalManyWithLogging script scriptFrame entity world |> snd'
             
         static let handleOnRegisterChanged evt world =
             let entity = evt.Subscriber : Entity
@@ -222,7 +222,7 @@ module ScriptFacetModule =
             let world =
                 match entity.GetOnRegister world with
                 | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
-                | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd
+                | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
             let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? Script) entity world
             let world = World.monitor handleOnRegisterChanged (entity.GetChangeEvent Property? OnRegister) entity world
             world
@@ -230,17 +230,17 @@ module ScriptFacetModule =
         override facet.Unregister (entity, world) =
             match entity.GetOnUnregister world with
             | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
-            | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd
+            | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
 
         override facet.Update (entity, world) =
             match entity.GetOnUpdate world with
             | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
-            | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd
+            | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
 
         override facet.PostUpdate (entity, world) =
             match entity.GetOnPostUpdate world with
             | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
-            | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd
+            | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
 
 [<AutoOpen>]
 module RigidBodyFacetModule =
@@ -756,7 +756,7 @@ module ButtonDispatcherModule =
                         let world = World.publish () (Events.Up ->- button) eventTrace button world
                         let eventTrace = EventTrace.record4 "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
                         let world = World.publish () (Events.Click ->- button) eventTrace button world
-                        let (_, world) = World.evalWithLogging (button.GetOnClick world) (button.GetScriptFrame world) button world
+                        let world = World.evalWithLogging (button.GetOnClick world) (button.GetScriptFrame world) button world |> snd'
                         let world =
                             match button.GetClickSoundOpt world with
                             | Some clickSound -> World.playSound 1.0f clickSound world
@@ -970,7 +970,7 @@ module ToggleDispatcherModule =
                         let world = World.publish () (eventAddress ->- toggle) eventTrace toggle world
                         let eventTrace = EventTrace.record4 "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
                         let world = World.publish () (Events.Toggle ->- toggle) eventTrace toggle world
-                        let (_, world) = World.evalWithLogging (toggle.GetOnToggle world) (toggle.GetScriptFrame world) toggle world
+                        let world = World.evalWithLogging (toggle.GetOnToggle world) (toggle.GetScriptFrame world) toggle world |> snd'
                         let world =
                             match toggle.GetToggleSoundOpt world with
                             | Some toggleSound -> World.playSound 1.0f toggleSound world
@@ -1048,7 +1048,7 @@ module FeelerDispatcherModule =
                         let world = feeler.SetTouched true world
                         let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty
                         let world = World.publish data.Position (Events.Touch ->- feeler) eventTrace feeler world
-                        let (_, world) = World.evalWithLogging (feeler.GetOnTouch world) (feeler.GetScriptFrame world) feeler world
+                        let world = World.evalWithLogging (feeler.GetOnTouch world) (feeler.GetScriptFrame world) feeler world |> snd'
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -1062,7 +1062,7 @@ module FeelerDispatcherModule =
                     let world = feeler.SetTouched false world
                     let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty
                     let world = World.publish data.Position (Events.Untouch ->- feeler) eventTrace feeler world
-                    let (_, world) = World.evalWithLogging (feeler.GetOnUntouch world) (feeler.GetScriptFrame world) feeler world
+                    let world = World.evalWithLogging (feeler.GetOnUntouch world) (feeler.GetScriptFrame world) feeler world |> snd'
                     (Resolve, world)
                 else (Resolve, world)
             else (Cascade, world)

@@ -1132,7 +1132,7 @@ module Gaia =
                         (entity :> Simulant, entity.GetScriptFrame world)
                     | _ -> (layer :> Simulant, layer.GetScriptFrame world)
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Scripting.Expr>).PrettyPrinter
-                let (evaleds, world) = World.evalManyWithLogging exprs localFrame selectedSimulant world
+                let struct (evaleds, world) = World.evalManyWithLogging exprs localFrame selectedSimulant world
                 let evaledStrs = Array.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
                 let evaledsStr = String.concat "\n" evaledStrs
                 form.evalOutputTextBox.ReadOnly <- false
@@ -1170,7 +1170,7 @@ module Gaia =
                     try let expr = scvalue<Scripting.Expr> exprStr
                         let selectedLayer = (World.getUserValue world).SelectedLayer
                         let localFrame = selectedLayer.GetScriptFrame world
-                        let (evaled, world) = World.evalWithLogging expr localFrame selectedLayer world
+                        let struct (evaled, world) = World.evalWithLogging expr localFrame selectedLayer world
                         match Scripting.Expr.toFSharpTypeOpt evaled with
                         | Some dt ->
                             let dvOpt =

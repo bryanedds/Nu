@@ -451,11 +451,10 @@ module WorldModule3 =
                         // register the game
                         let world = World.registerGame world
 
-                        // attempt to hookup the console
-                        let world =
-                            if Core.debugging
-                            then WorldConsole.tryHookUp world |> snd
-                            else world
+#if DEBUG
+                        // attempt to hookup the console if debugging
+                        let world = WorldConsole.tryHookUp world |> snd
+#endif
 
                         // fin
                         Right world
