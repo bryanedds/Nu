@@ -315,7 +315,7 @@ let generateInitBindings bindings =
             let pars = String.Join ("; ", pars)
             let name = binding.FunctionBindingName
             let nameCap = String.capitalize name
-            "             (\"" + name + "\", { Fn = eval" + nameCap + "Binding; Pars = [" + pars + "]; DocOpt = None })\n") |>
+            "             (\"" + name + "\", { Fn = eval" + nameCap + "Binding; Pars = [|" + pars + "|]; DocOpt = None })\n") |>
         fun dispatchers -> String.Join ("", dispatchers)
     "    let initBindings () =\n" +
     "        let bindings =\n" +
