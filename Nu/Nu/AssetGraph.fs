@@ -11,17 +11,13 @@ open Nu
 /// A refinement that can be applied to an asset during the build process.
 type Refinement =
     | PsdToPng
-    | Retro2x
-    | Retro4x
-    | Retro6x
+    | Retro
     
     /// Convert a string to a refinement value.
     static member fromString str =
         match str with
         | "PsdToPng" -> PsdToPng
-        | "Retro2x" -> Retro2x
-        | "Retro4x" -> Retro4x
-        | "Retro6x" -> Retro6x
+        | "Retro4x" -> Retro
         | _ -> failwith ("Invalid refinement '" + str + "'.")
 
 /// Describes a means for looking up an asset.
@@ -121,7 +117,7 @@ module AssetGraphModule =
         let private getAssetExtension2 rawAssetExtension refinement =
             match refinement with
             | PsdToPng -> "png"
-            | Retro2x | Retro4x | Retro6x -> rawAssetExtension
+            | Retro -> rawAssetExtension
     
         let private getAssetExtension usingRawAssets rawAssetExtension refinements =
             if usingRawAssets then List.fold getAssetExtension2 rawAssetExtension refinements
@@ -152,17 +148,9 @@ module AssetGraphModule =
             | PsdToPng ->
                 use image = new MagickImage (intermediateFilePath)
                 writeMagickImageAsPng refinementFilePath image
-            | Retro2x ->
-                use image = new MagickImage (intermediateFilePath)
-                image.Scale (Percentage 200)
-                writeMagickImageAsPng refinementFilePath image
-            | Retro4x ->
+            | Retro ->
                 use image = new MagickImage (intermediateFilePath)
                 image.Scale (Percentage 400)
-                writeMagickImageAsPng refinementFilePath image
-            | Retro6x ->
-                use image = new MagickImage (intermediateFilePath)
-                image.Scale (Percentage 600)
                 writeMagickImageAsPng refinementFilePath image
     
             // return the latest refinement localities
