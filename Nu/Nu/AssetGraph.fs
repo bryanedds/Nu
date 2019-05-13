@@ -11,13 +11,17 @@ open Nu
 /// A refinement that can be applied to an asset during the build process.
 type Refinement =
     | PsdToPng
-    | OldSchool
+    | Retro2x
+    | Retro4x
+    | Retro6x
     
     /// Convert a string to a refinement value.
     static member fromString str =
         match str with
         | "PsdToPng" -> PsdToPng
-        | "OldSchool" -> OldSchool
+        | "Retro2x" -> Retro2x
+        | "Retro4x" -> Retro4x
+        | "Retro6x" -> Retro6x
         | _ -> failwith ("Invalid refinement '" + str + "'.")
 
 /// Describes a means for looking up an asset.
@@ -102,7 +106,7 @@ module AssetGraphModule =
     [<Syntax
         ("Asset Assets",
          "nueffect nuscript bmp png ttf tmx wav ogg " +
-         "PsdToPng OldSchool " +
+         "PsdToPng Retro4x Retro6x " +
          "Render Audio Symbol",
          "", "", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
@@ -117,7 +121,7 @@ module AssetGraphModule =
         let private getAssetExtension2 rawAssetExtension refinement =
             match refinement with
             | PsdToPng -> "png"
-            | OldSchool -> rawAssetExtension
+            | Retro2x | Retro4x | Retro6x -> rawAssetExtension
     
         let private getAssetExtension usingRawAssets rawAssetExtension refinements =
             if usingRawAssets then List.fold getAssetExtension2 rawAssetExtension refinements
@@ -128,7 +132,7 @@ module AssetGraphModule =
             | ".png" ->
                 use stream = File.OpenWrite filePath
                 image.Write (stream, MagickFormat.Png32)
-            | _ -> Log.info ("Invalid image file format for refinement '" + scstring OldSchool + "'; must be of *.png format.")
+            | _ -> Log.info ("Invalid image file format for scaling refinement; must be of *.png format.")
     
         /// Apply a single refinement to an asset.
         let private refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement =
@@ -148,9 +152,17 @@ module AssetGraphModule =
             | PsdToPng ->
                 use image = new MagickImage (intermediateFilePath)
                 writeMagickImageAsPng refinementFilePath image
-            | OldSchool ->
+            | Retro2x ->
+                use image = new MagickImage (intermediateFilePath)
+                image.Scale (Percentage 200)
+                writeMagickImageAsPng refinementFilePath image
+            | Retro4x ->
                 use image = new MagickImage (intermediateFilePath)
                 image.Scale (Percentage 400)
+                writeMagickImageAsPng refinementFilePath image
+            | Retro6x ->
+                use image = new MagickImage (intermediateFilePath)
+                image.Scale (Percentage 600)
                 writeMagickImageAsPng refinementFilePath image
     
             // return the latest refinement localities
