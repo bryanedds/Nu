@@ -18,34 +18,35 @@ module WorldBindings =
 
     let [<Literal>] BindingKeywords =
         "v2 v4 v2i get getAsStream set setAsStream update streamEvent stream equate self parent grandparent game toData monitor " +
-        "resolve tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning " +
-        "selectScreen tryTransitionScreen transitionScreen createDissolveScreenFromLayerFile6 createDissolveScreenFromLayerFile " +
-        "createSplashScreen6 createSplashScreen getEntitiesInView2 getEntitiesInBounds3 " +
-        "getEntitiesAtPoint3 getEntitiesInView getEntitiesInBounds getEntitiesAtPoint " +
-        "playSong playSong4 playSound playSound3 " +
-        "fadeOutSong stopSong hintAudioPackageUse hintAudioPackageDisuse " +
-        "reloadAudioAssets hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets " +
-        "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " +
-        "getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround createBody " +
-        "createBodies destroyBody destroyBodies setBodyPosition " +
-        "setBodyRotation setBodyAngularVelocity setBodyLinearVelocity applyBodyAngularImpulse " +
-        "applyBodyLinearImpulse applyBodyForce isMouseButtonDown getMousePosition " +
-        "getMousePositionF isKeyboardKeyDown getSimulantSelected tryGetSimulantParent " +
-        "getSimulantChildren getSimulantExists getEntities0 getLayers0 " +
-        "isSimulantSelected writeGameToFile readGameFromFile getScreens " +
-        "destroyScreen createScreen createDissolveScreen writeScreenToFile " +
-        "readScreenFromFile getLayers destroyLayer destroyLayers " +
-        "writeLayerToFile readLayerFromFile getEntities destroyEntity " +
-        "destroyEntities tryPickEntity createEntity reassignEntity " +
-        "trySetEntityOverlayNameOpt trySetEntityFacetNames createLayer getEyeCenter " +
-        "setEyeCenter getEyeSize setEyeSize getOmniscreenOpt " +
-        "setOmniscreenOpt getOmniscreen setOmniscreen getSelectedScreenOpt " +
-        "setSelectedScreenOpt getSelectedScreen setSelectedScreen getScreenTransitionDestinationOpt " +
-        "getViewBoundsRelative getViewBoundsAbsolute getViewBounds isBoundsInView " +
-        "mouseToScreen mouseToWorld mouseToEntity getTickRate " +
-        "getTickRateF setTickRate resetTickTime getTickTime " +
-        "isTicking getUpdateCount getLiveness exit " +
-        "tryGetTextureSize getTextureSize tryGetTextureSizeAsVector2 getTextureSizeAsVector2"
+        "resolve reloadAssets tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
+        "isSelectedScreenIdling isSelectedScreenTransitioning selectScreen tryTransitionScreen " +
+        "transitionScreen createDissolveScreenFromLayerFile6 createDissolveScreenFromLayerFile createSplashScreen6 " +
+        "createSplashScreen getEntitiesInView2 getEntitiesInBounds3 getEntitiesAtPoint3 " +
+        "getEntitiesInView getEntitiesInBounds getEntitiesAtPoint playSong " +
+        "playSong4 playSound playSound3 fadeOutSong " +
+        "stopSong hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets " +
+        "hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets bodyExists " +
+        "getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt " +
+        "getBodyToGroundContactTangentOpt isBodyOnGround createBody createBodies " +
+        "destroyBody destroyBodies setBodyPosition setBodyRotation " +
+        "setBodyAngularVelocity setBodyLinearVelocity applyBodyAngularImpulse applyBodyLinearImpulse " +
+        "applyBodyForce isMouseButtonDown getMousePosition getMousePositionF " +
+        "isKeyboardKeyDown getSimulantSelected tryGetSimulantParent getSimulantChildren " +
+        "getSimulantExists getEntities0 getLayers0 isSimulantSelected " +
+        "writeGameToFile readGameFromFile getScreens destroyScreen " +
+        "createScreen createDissolveScreen writeScreenToFile readScreenFromFile " +
+        "getLayers destroyLayer destroyLayers writeLayerToFile " +
+        "readLayerFromFile getEntities destroyEntity destroyEntities " +
+        "tryPickEntity createEntity reassignEntity trySetEntityOverlayNameOpt " +
+        "trySetEntityFacetNames createLayer getEyeCenter setEyeCenter " +
+        "getEyeSize setEyeSize getOmniscreenOpt setOmniscreenOpt " +
+        "getOmniscreen setOmniscreen getSelectedScreenOpt setSelectedScreenOpt " +
+        "getSelectedScreen setSelectedScreen getScreenTransitionDestinationOpt getViewBoundsRelative " +
+        "getViewBoundsAbsolute getViewBounds isBoundsInView mouseToScreen " +
+        "mouseToWorld mouseToEntity getTickRate getTickRateF " +
+        "setTickRate resetTickTime getTickTime isTicking " +
+        "getUpdateCount getLiveness exit tryGetTextureSize " +
+        "getTextureSize tryGetTextureSizeAsVector2 getTextureSizeAsVector2 reloadSymbols"
 
     let resolve relation world =
         let oldWorld = world
@@ -60,6 +61,15 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'resolve' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let reloadAssets world =
+        let oldWorld = world
+        try
+            let result = World.reloadAssets world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadAssets' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let tryGetIsSelectedScreenIdling world =
@@ -2006,12 +2016,32 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSizeAsVector2' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let reloadSymbols world =
+        let oldWorld = world
+        try
+            let result = World.reloadSymbols world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadSymbols' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
     let evalResolveBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
             | [|relation|] -> resolve relation world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalReloadAssetsBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> reloadAssets  world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3260,6 +3290,17 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalReloadSymbolsBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> reloadSymbols  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let tryGetBinding fnName =
         match WorldScripting.Bindings.TryGetValue fnName with
         | (true, binding) -> FOption.some binding
@@ -3269,6 +3310,7 @@ module WorldBindings =
         let bindings =
             [
              ("resolve", { Fn = evalResolveBinding; Pars = [|"relation"|]; DocOpt = None })
+             ("reloadAssets", { Fn = evalReloadAssetsBinding; Pars = [||]; DocOpt = None })
              ("tryGetIsSelectedScreenIdling", { Fn = evalTryGetIsSelectedScreenIdlingBinding; Pars = [||]; DocOpt = None })
              ("tryGetIsSelectedScreenTransitioning", { Fn = evalTryGetIsSelectedScreenTransitioningBinding; Pars = [||]; DocOpt = None })
              ("isSelectedScreenIdling", { Fn = evalIsSelectedScreenIdlingBinding; Pars = [||]; DocOpt = None })
@@ -3382,6 +3424,7 @@ module WorldBindings =
              ("getTextureSize", { Fn = evalGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("tryGetTextureSizeAsVector2", { Fn = evalTryGetTextureSizeAsVector2Binding; Pars = [|"assetTag"|]; DocOpt = None })
              ("getTextureSizeAsVector2", { Fn = evalGetTextureSizeAsVector2Binding; Pars = [|"assetTag"|]; DocOpt = None })
+             ("reloadSymbols", { Fn = evalReloadSymbolsBinding; Pars = [||]; DocOpt = None })
             ] |>
             dictPlus
         WorldScripting.Bindings <- bindings
