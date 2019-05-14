@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Runtime.InteropServices
 open System.Text
+open SDL2
 open Prime
 open Nu
 
@@ -62,7 +63,7 @@ module WorldConsole =
         | PlatformID.Win32Windows ->
             let world =
                 World.subscribe (fun keyEvent world ->
-                    if keyEvent.Data.ScanCode = 53 // tick key
+                    if keyEvent.Data.ScanCode = int SDL.SDL_Scancode.SDL_SCANCODE_GRAVE
                     then run (getActiveWindowTitle ()) world
                     else world)
                     Events.KeyboardKeyDown
