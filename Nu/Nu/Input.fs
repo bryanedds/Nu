@@ -66,3 +66,19 @@ module KeyboardState =
         let keyboardStatePtr = NativeInterop.NativePtr.ofNativeInt keyboardStatePtr
         let state = NativeInterop.NativePtr.get<byte> keyboardStatePtr scanCode
         state = byte 1
+
+    /// Check that either ctrl key is down.
+    let isCtrlDown () =
+        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LCTRL) ||
+        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RCTRL)
+
+    /// Check that either alt key is down.
+    let isAltDown () =
+        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LALT) ||
+        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RALT)
+
+    /// Check that either shift key is down.
+    let isShiftDown () =
+        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LSHIFT) ||
+        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RSHIFT)
+        
