@@ -109,7 +109,8 @@ module AssetGraphModule =
          Constants.PrettyPrinter.DefaultThresholdMax)>]
     type AssetGraph =
         private
-            { PackageDescriptors : Map<string, PackageDescriptor> }
+            { FilePathOpt : string option
+              PackageDescriptors : Map<string, PackageDescriptor> }
     
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module AssetGraph =
@@ -252,30 +253,53 @@ module AssetGraphModule =
     
         /// Build all the available assets found in the given asset graph.
         let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph =
-    
+
+            // compute the asset graph's tracker file path
+            let outputFilePathOpt =
+                Option.map
+                    (fun filePath -> Path.Combine (outputDirectory, Path.ChangeExtension(Path.GetFileName filePath, ".tracker")))
+                    assetGraph.FilePathOpt
+
+            // check if the output assetGraph file is newer than the current
+            let fullBuild =
+                fullBuild ||
+                match (assetGraph.FilePathOpt, outputFilePathOpt) with
+                | (Some filePath, Some outputFilePath) -> File.GetLastWriteTimeUtc filePath > File.GetLastWriteTimeUtc outputFilePath
+                | (None, None) -> false
+                | (_, _) -> failwithumf ()
+
             // load assets
             let currentDirectory = Directory.GetCurrentDirectory ()
             let assets =
-                try let () = Directory.SetCurrentDirectory inputDirectory in loadAssets false None assetGraph
-                finally Directory.SetCurrentDirectory currentDirectory
+                try Directory.SetCurrentDirectory inputDirectory
+                    loadAssets false None assetGraph
+                finally
+                    Directory.SetCurrentDirectory currentDirectory
     
             // build assets
             buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild assets
 
+            // output the asset graph tracker file
+            match outputFilePathOpt with
+            | Some outputFilePath -> File.WriteAllText (outputFilePath, "")
+            | None -> ()
+
         /// The empty asset graph.
         let empty =
-            { PackageDescriptors = Map.empty }
+            { FilePathOpt = None
+              PackageDescriptors = Map.empty }
 
         /// Make an asset graph.
-        let make packageDescriptors =
-            { PackageDescriptors = packageDescriptors }
+        let make filePathOpt packageDescriptors =
+            { FilePathOpt = filePathOpt
+              PackageDescriptors = packageDescriptors }
 
         /// Attempt to make an asset graph.
         let tryMakeFromFile filePath =
             try File.ReadAllText filePath |>
                 String.unescape |>
                 scvalue<Map<string, PackageDescriptor>> |>
-                make |>
+                make (Some filePath) |>
                 Right
             with exn -> Left ("Could not make asset graph from file '" + filePath + "' due to: " + scstring exn)
 
