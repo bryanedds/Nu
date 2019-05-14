@@ -506,7 +506,7 @@ module Gaia =
                         form.propertyValueTextBox.Keywords1 <- keywords1
                         form.propertyValueTextBox.SelectionStart <- selectionStart
                         form.propertyValueTextBox.ScrollCaret ()
-                        form.propertyPickButton.Enabled <-
+                        form.propertyPickButton.Visible <-
                             selectedGridItem.PropertyDescriptor.PropertyType = typeof<Image AssetTag> ||
                             selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option>
                         form.propertyPickButton.Click.RemoveHandler propertyPickButtonClickHandler
@@ -518,7 +518,7 @@ module Gaia =
                     form.propertyDescriptionTextBox.Text <- String.Empty
                     form.propertyValueTextBoxText <- String.Empty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
-                    form.propertyPickButton.Enabled <- false
+                    form.propertyPickButton.Visible <- false
                     form.propertyPickButton.Click.RemoveHandler propertyPickButtonClickHandler
         else // assume layer
             match (form.layerPropertyGrid.SelectedObject, form.layerPropertyGrid.SelectedGridItem) with
@@ -554,14 +554,14 @@ module Gaia =
                         form.propertyValueTextBox.Keywords1 <- keywords1
                         form.propertyValueTextBox.SelectionStart <- selectionStart
                         form.propertyValueTextBox.ScrollCaret ()
-                        form.propertyPickButton.Enabled <- false
+                        form.propertyPickButton.Visible <- false
                 | _ ->
                     form.propertyEditor.Enabled <- false
                     form.propertyNameLabel.Text <- String.Empty
                     form.propertyDescriptionTextBox.Text <- String.Empty
                     form.propertyValueTextBoxText <- String.Empty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
-                    form.propertyPickButton.Enabled <- false
+                    form.propertyPickButton.Visible <- false
 
     let private refreshEntityPropertyDesigner (form : GaiaForm) =
         form.entityPropertyDesigner.Enabled <- isNotNull form.entityPropertyGrid.SelectedObject
