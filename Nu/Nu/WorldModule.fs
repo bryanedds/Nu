@@ -425,6 +425,7 @@ module WorldModule =
             (symbol, world)
 
         /// Reload all the symbols in the symbol store.
+        [<FunctionBinding>]
         static member reloadSymbols world =
             World.updateSymbolStore SymbolStore.reloadSymbols world
 

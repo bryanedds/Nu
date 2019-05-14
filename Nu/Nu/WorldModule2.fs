@@ -57,6 +57,13 @@ module WorldModule2 =
         [<FunctionBinding "resolve">]
         static member resolveGeneric (relation : obj Relation) world =
             World.resolve relation world
+            
+        /// Send a message to the renderer to reload its rendering assets.
+        [<FunctionBinding>]
+        static member reloadAssets world =
+            let world = World.reloadRenderAssets world
+            let world = World.reloadAudioAssets world
+            World.reloadSymbols world
 
         /// Try to check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
