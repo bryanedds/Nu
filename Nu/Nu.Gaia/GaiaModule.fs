@@ -7,10 +7,10 @@ open OpenTK
 open System
 open System.IO
 open System.Collections
-open System.Collections.Generic
 open System.ComponentModel
 open System.Linq
 open System.Reflection
+open System.Runtime.InteropServices
 open System.Windows.Forms
 open Prime
 open Nu
@@ -26,7 +26,6 @@ module Gaia =
     // globals needed to sync Nu with WinForms
     let private WorldRef = ref Unchecked.defaultof<World>
     let private WorldChangers = WorldChangers ()
-
 
     let addWorldChanger worldChanger =
         WorldChangers.Add worldChanger |> ignore
@@ -1359,6 +1358,32 @@ module Gaia =
         refreshLayerTabs form !WorldRef
         selectLayer form Simulants.DefaultLayer !WorldRef
         form.tickingButton.CheckState <- CheckState.Unchecked
+        form.SetHook (fun nCode wParam lParam ->
+            let WM_KEYDOWN = 0x0100
+            let WM_SYSKEYDOWN = 0x0104
+            if  nCode >= 0 &&
+                (wParam = IntPtr WM_KEYDOWN ||
+                 wParam = IntPtr WM_SYSKEYDOWN) then
+                let vkCode = Marshal.ReadInt32 lParam
+                match form.GetFocusedControl () with
+                | :? TextBox -> ()
+                | :? SymbolicTextBox -> ()
+                | _ ->
+                    if Keys.Control = Control.ModifierKeys && Keys.N = enum<Keys> vkCode then handleFormNew form (EventArgs ())
+                    if Keys.Control = Control.ModifierKeys && Keys.O = enum<Keys> vkCode then handleFormOpen form (EventArgs ())
+                    if Keys.Control = Control.ModifierKeys && Keys.S = enum<Keys> vkCode then handleFormSave false form (EventArgs ())
+                    if Keys.Control = Control.ModifierKeys && Keys.A = enum<Keys> vkCode then handleFormSave true form (EventArgs ())
+                    if Keys.Control = Control.ModifierKeys && Keys.Z = enum<Keys> vkCode then handleFormUndo form (EventArgs ())
+                    if Keys.Control = Control.ModifierKeys && Keys.Y = enum<Keys> vkCode then handleFormRedo form (EventArgs ())
+                    if Keys.Control = Control.ModifierKeys && Keys.E = enum<Keys> vkCode then handleFormCreateEntity false form (EventArgs ())
+                    if Keys.Control = Control.ModifierKeys && Keys.D = enum<Keys> vkCode then handleFormDeleteEntity form (EventArgs ())
+                    if Keys.Control = Control.ModifierKeys && Keys.U = enum<Keys> vkCode then handleFormCut form (EventArgs ())
+                    if Keys.Control = Control.ModifierKeys && Keys.C = enum<Keys> vkCode then handleFormCopy form (EventArgs ())
+                    if Keys.Control = Control.ModifierKeys && Keys.V = enum<Keys> vkCode then handleFormPaste false form (EventArgs ())
+                    if Keys.Control = Control.ModifierKeys && Keys.F5 = enum<Keys> vkCode then form.tickingButton.PerformClick ()
+                    if Keys.Control = Control.ModifierKeys && Keys.Q = enum<Keys> vkCode then handleFormQuickSize form (EventArgs ())
+                    if Keys.Delete = enum<Keys> vkCode then handleFormDeleteEntity form (EventArgs ())
+            GaiaForm.CallNextHookEx (form.HookID, nCode, wParam, lParam)) |> ignore
         tryRun3 runWhile sdlDeps (form : GaiaForm)
 
     /// Select a target directory for the desired plugin and its assets from the give file path.
@@ -1438,6 +1463,8 @@ module Gaia =
         form.createContextMenuItem.Click.Add (handleFormCreateEntity true form)
         form.deleteEntityButton.Click.Add (handleFormDeleteEntity form)
         form.deleteToolStripMenuItem.Click.Add (handleFormDeleteEntity form)
+        form.quickSizeToolStripMenuItem.Click.Add (handleFormQuickSize form)
+        form.startStopTickingToolStripMenuItem.Click.Add (fun _ -> form.tickingButton.PerformClick ())
         form.deleteContextMenuItem.Click.Add (handleFormDeleteEntity form)
         form.newToolStripMenuItem.Click.Add (handleFormNew form)
         form.saveToolStripMenuItem.Click.Add (handleFormSave false form)
