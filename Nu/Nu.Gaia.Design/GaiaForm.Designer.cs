@@ -31,28 +31,6 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GaiaForm));
             this.menuStrip = new System.Windows.Forms.MenuStrip();
-            this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.newToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.saveAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator10 = new System.Windows.Forms.ToolStripSeparator();
-            this.clearLayerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.closeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
-            this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.undoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.redoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
-            this.cutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.pasteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripSeparator();
-            this.createToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
-            this.changeLayerNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.createContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deleteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -62,46 +40,38 @@
             this.pasteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer4 = new System.Windows.Forms.SplitContainer();
-            this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
             this.rolloutTabControl = new System.Windows.Forms.TabControl();
             this.propertyTabPage = new System.Windows.Forms.TabPage();
             this.propertyEditor = new System.Windows.Forms.SplitContainer();
             this.splitContainer5 = new System.Windows.Forms.SplitContainer();
-            this.propertyPickButton = new System.Windows.Forms.Button();
-            this.propertyApplyButton = new System.Windows.Forms.Button();
+            this.pickPropertyButton = new System.Windows.Forms.Button();
+            this.applyPropertyButton = new System.Windows.Forms.Button();
             this.propertyNameLabel = new System.Windows.Forms.Label();
-            this.propertyRefreshButton = new System.Windows.Forms.Button();
+            this.discardPropertyButton = new System.Windows.Forms.Button();
             this.propertyDescriptionTextBox = new System.Windows.Forms.TextBox();
-            this.propertyValueTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.evaluatorTabPage = new System.Windows.Forms.TabPage();
             this.terminal = new System.Windows.Forms.SplitContainer();
-            this.evalInputTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.splitContainer10 = new System.Windows.Forms.SplitContainer();
             this.evalLineButton = new System.Windows.Forms.Button();
             this.clearOutputButton = new System.Windows.Forms.Button();
             this.evalButton = new System.Windows.Forms.Button();
-            this.evalOutputTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.preludeTabPage = new System.Windows.Forms.TabPage();
             this.splitContainer6 = new System.Windows.Forms.SplitContainer();
-            this.loadPreludeButton = new System.Windows.Forms.Button();
-            this.savePreludeButton = new System.Windows.Forms.Button();
-            this.preludeTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.discardPreludeButton = new System.Windows.Forms.Button();
+            this.applyPreludeButton = new System.Windows.Forms.Button();
             this.assetGraphTabPage = new System.Windows.Forms.TabPage();
             this.assetGraph = new System.Windows.Forms.SplitContainer();
-            this.loadAssetGraphButton = new System.Windows.Forms.Button();
-            this.saveAssetGraphButton = new System.Windows.Forms.Button();
-            this.assetGraphTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.discardAssetGraphButton = new System.Windows.Forms.Button();
+            this.applyAssetGraphButton = new System.Windows.Forms.Button();
             this.overlayerTabPage = new System.Windows.Forms.TabPage();
             this.overlayer = new System.Windows.Forms.SplitContainer();
-            this.loadOverlayerButton = new System.Windows.Forms.Button();
-            this.saveOverlayerButton = new System.Windows.Forms.Button();
-            this.overlayerTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.discardOverlayerButton = new System.Windows.Forms.Button();
+            this.applyOverlayerButton = new System.Windows.Forms.Button();
             this.eventTracingTabPage = new System.Windows.Forms.TabPage();
             this.eventTracing = new System.Windows.Forms.SplitContainer();
-            this.refreshEventFilterButton = new System.Windows.Forms.Button();
+            this.discardEventFilterButton = new System.Windows.Forms.Button();
             this.traceEventsCheckBox = new System.Windows.Forms.CheckBox();
             this.applyEventFilterButton = new System.Windows.Forms.Button();
-            this.eventFilterTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.propertyTabControl = new System.Windows.Forms.TabControl();
             this.entityTabPage = new System.Windows.Forms.TabPage();
@@ -125,7 +95,9 @@
             this.hierarchyTreeView = new System.Windows.Forms.TreeView();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
-            this.toolStrip = new System.Windows.Forms.ToolStrip();
+            this.layerTabControl = new System.Windows.Forms.TabControl();
+            this.tabPage = new System.Windows.Forms.TabPage();
+            this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.undoButton = new System.Windows.Forms.ToolStripButton();
             this.redoButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
@@ -155,13 +127,41 @@
             this.tickingButton = new System.Windows.Forms.ToolStripButton();
             this.resetTickTime = new System.Windows.Forms.ToolStripButton();
             this.editWhileInteractiveCheckBox = new System.Windows.Forms.ToolStripButton();
-            this.layerTabControl = new System.Windows.Forms.TabControl();
-            this.tabPage = new System.Windows.Forms.TabPage();
-            this.splitContainer2 = new System.Windows.Forms.SplitContainer();
-            this.toolStripMenuItem6 = new System.Windows.Forms.ToolStripSeparator();
-            this.startStopTickingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStrip = new System.Windows.Forms.ToolStrip();
+            this.fileDropDownButton = new System.Windows.Forms.ToolStripDropDownButton();
+            this.newLayerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.openLayerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.saveLayerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.saveLayerAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
+            this.clearLayerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.closeLayerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem8 = new System.Windows.Forms.ToolStripSeparator();
+            this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.editDropDownButton = new System.Windows.Forms.ToolStripDropDownButton();
+            this.undoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.redoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem9 = new System.Windows.Forms.ToolStripSeparator();
+            this.cutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.pasteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem10 = new System.Windows.Forms.ToolStripSeparator();
+            this.createToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.quickSizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuStrip.SuspendLayout();
+            this.toolStripMenuItem11 = new System.Windows.Forms.ToolStripSeparator();
+            this.startStopTickingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem12 = new System.Windows.Forms.ToolStripSeparator();
+            this.changeLayerNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator11 = new System.Windows.Forms.ToolStripSeparator();
+            this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
+            this.propertyValueTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.evalInputTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.evalOutputTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.preludeTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.assetGraphTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.overlayerTextBox = new Nu.Gaia.Design.SymbolicTextBox();
+            this.eventFilterTextBox = new Nu.Gaia.Design.SymbolicTextBox();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -226,191 +226,24 @@
             this.tabControl1.SuspendLayout();
             this.tabPage4.SuspendLayout();
             this.tabPage3.SuspendLayout();
-            this.toolStrip.SuspendLayout();
             this.layerTabControl.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
             this.splitContainer2.SuspendLayout();
+            this.toolStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // menuStrip
             // 
+            this.menuStrip.Enabled = false;
             this.menuStrip.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.fileToolStripMenuItem,
-            this.editToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
             this.menuStrip.Padding = new System.Windows.Forms.Padding(4, 2, 0, 2);
-            this.menuStrip.Size = new System.Drawing.Size(1276, 27);
+            this.menuStrip.Size = new System.Drawing.Size(1276, 24);
             this.menuStrip.TabIndex = 0;
             this.menuStrip.Text = "menuStrip1";
-            // 
-            // fileToolStripMenuItem
-            // 
-            this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.newToolStripMenuItem,
-            this.openToolStripMenuItem,
-            this.saveToolStripMenuItem,
-            this.saveAsToolStripMenuItem,
-            this.toolStripSeparator10,
-            this.clearLayerToolStripMenuItem,
-            this.closeToolStripMenuItem,
-            this.toolStripMenuItem1,
-            this.exitToolStripMenuItem});
-            this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(41, 23);
-            this.fileToolStripMenuItem.Text = "&File";
-            // 
-            // newToolStripMenuItem
-            // 
-            this.newToolStripMenuItem.Name = "newToolStripMenuItem";
-            this.newToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
-            this.newToolStripMenuItem.Size = new System.Drawing.Size(212, 24);
-            this.newToolStripMenuItem.Text = "&New Layer";
-            // 
-            // openToolStripMenuItem
-            // 
-            this.openToolStripMenuItem.Name = "openToolStripMenuItem";
-            this.openToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(212, 24);
-            this.openToolStripMenuItem.Text = "&Open Layer";
-            // 
-            // saveToolStripMenuItem
-            // 
-            this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            this.saveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(212, 24);
-            this.saveToolStripMenuItem.Text = "&Save Layer";
-            // 
-            // saveAsToolStripMenuItem
-            // 
-            this.saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
-            this.saveAsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.A)));
-            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(212, 24);
-            this.saveAsToolStripMenuItem.Text = "Save Layer &As";
-            // 
-            // toolStripSeparator10
-            // 
-            this.toolStripSeparator10.Name = "toolStripSeparator10";
-            this.toolStripSeparator10.Size = new System.Drawing.Size(209, 6);
-            // 
-            // clearLayerToolStripMenuItem
-            // 
-            this.clearLayerToolStripMenuItem.Enabled = false;
-            this.clearLayerToolStripMenuItem.Name = "clearLayerToolStripMenuItem";
-            this.clearLayerToolStripMenuItem.Size = new System.Drawing.Size(212, 24);
-            this.clearLayerToolStripMenuItem.Text = "C&lear Layer";
-            // 
-            // closeToolStripMenuItem
-            // 
-            this.closeToolStripMenuItem.Name = "closeToolStripMenuItem";
-            this.closeToolStripMenuItem.Size = new System.Drawing.Size(212, 24);
-            this.closeToolStripMenuItem.Text = "&Close Layer";
-            // 
-            // toolStripMenuItem1
-            // 
-            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(209, 6);
-            // 
-            // exitToolStripMenuItem
-            // 
-            this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(212, 24);
-            this.exitToolStripMenuItem.Text = "E&xit";
-            // 
-            // editToolStripMenuItem
-            // 
-            this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.undoToolStripMenuItem,
-            this.redoToolStripMenuItem,
-            this.toolStripMenuItem2,
-            this.cutToolStripMenuItem,
-            this.copyToolStripMenuItem,
-            this.pasteToolStripMenuItem,
-            this.toolStripMenuItem4,
-            this.createToolStripMenuItem,
-            this.deleteToolStripMenuItem,
-            this.quickSizeToolStripMenuItem,
-            this.toolStripMenuItem5,
-            this.startStopTickingToolStripMenuItem,
-            this.toolStripMenuItem6,
-            this.changeLayerNameToolStripMenuItem});
-            this.editToolStripMenuItem.Name = "editToolStripMenuItem";
-            this.editToolStripMenuItem.Size = new System.Drawing.Size(44, 23);
-            this.editToolStripMenuItem.Text = "&Edit";
-            // 
-            // undoToolStripMenuItem
-            // 
-            this.undoToolStripMenuItem.Name = "undoToolStripMenuItem";
-            this.undoToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Z)));
-            this.undoToolStripMenuItem.Size = new System.Drawing.Size(218, 24);
-            this.undoToolStripMenuItem.Text = "&Undo";
-            // 
-            // redoToolStripMenuItem
-            // 
-            this.redoToolStripMenuItem.Name = "redoToolStripMenuItem";
-            this.redoToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Y)));
-            this.redoToolStripMenuItem.Size = new System.Drawing.Size(218, 24);
-            this.redoToolStripMenuItem.Text = "&Redo";
-            // 
-            // toolStripMenuItem2
-            // 
-            this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(215, 6);
-            // 
-            // cutToolStripMenuItem
-            // 
-            this.cutToolStripMenuItem.Name = "cutToolStripMenuItem";
-            this.cutToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.X)));
-            this.cutToolStripMenuItem.Size = new System.Drawing.Size(218, 24);
-            this.cutToolStripMenuItem.Text = "C&ut";
-            // 
-            // copyToolStripMenuItem
-            // 
-            this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
-            this.copyToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
-            this.copyToolStripMenuItem.Size = new System.Drawing.Size(218, 24);
-            this.copyToolStripMenuItem.Text = "&Copy";
-            // 
-            // pasteToolStripMenuItem
-            // 
-            this.pasteToolStripMenuItem.Name = "pasteToolStripMenuItem";
-            this.pasteToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.V)));
-            this.pasteToolStripMenuItem.Size = new System.Drawing.Size(218, 24);
-            this.pasteToolStripMenuItem.Text = "&Paste";
-            // 
-            // toolStripMenuItem4
-            // 
-            this.toolStripMenuItem4.Name = "toolStripMenuItem4";
-            this.toolStripMenuItem4.Size = new System.Drawing.Size(215, 6);
-            // 
-            // createToolStripMenuItem
-            // 
-            this.createToolStripMenuItem.Name = "createToolStripMenuItem";
-            this.createToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.E)));
-            this.createToolStripMenuItem.Size = new System.Drawing.Size(218, 24);
-            this.createToolStripMenuItem.Text = "Cr&eate";
-            // 
-            // deleteToolStripMenuItem
-            // 
-            this.deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
-            this.deleteToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D)));
-            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(218, 24);
-            this.deleteToolStripMenuItem.Text = "&Delete";
-            // 
-            // toolStripMenuItem5
-            // 
-            this.toolStripMenuItem5.Name = "toolStripMenuItem5";
-            this.toolStripMenuItem5.Size = new System.Drawing.Size(215, 6);
-            // 
-            // changeLayerNameToolStripMenuItem
-            // 
-            this.changeLayerNameToolStripMenuItem.Enabled = false;
-            this.changeLayerNameToolStripMenuItem.Name = "changeLayerNameToolStripMenuItem";
-            this.changeLayerNameToolStripMenuItem.Size = new System.Drawing.Size(218, 24);
-            this.changeLayerNameToolStripMenuItem.Text = "Change Layer Name";
             // 
             // contextMenuStrip
             // 
@@ -474,8 +307,8 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
-            this.splitContainer1.Size = new System.Drawing.Size(1276, 637);
-            this.splitContainer1.SplitterDistance = 947;
+            this.splitContainer1.Size = new System.Drawing.Size(1276, 640);
+            this.splitContainer1.SplitterDistance = 952;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -493,20 +326,9 @@
             // splitContainer4.Panel2
             // 
             this.splitContainer4.Panel2.Controls.Add(this.rolloutTabControl);
-            this.splitContainer4.Size = new System.Drawing.Size(947, 637);
-            this.splitContainer4.SplitterDistance = 433;
+            this.splitContainer4.Size = new System.Drawing.Size(952, 640);
+            this.splitContainer4.SplitterDistance = 435;
             this.splitContainer4.TabIndex = 1;
-            // 
-            // displayPanel
-            // 
-            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
-            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.displayPanel.Location = new System.Drawing.Point(0, 0);
-            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
-            this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(947, 433);
-            this.displayPanel.TabIndex = 0;
-            this.displayPanel.TabStop = true;
             // 
             // rolloutTabControl
             // 
@@ -520,7 +342,7 @@
             this.rolloutTabControl.Location = new System.Drawing.Point(0, 0);
             this.rolloutTabControl.Name = "rolloutTabControl";
             this.rolloutTabControl.SelectedIndex = 0;
-            this.rolloutTabControl.Size = new System.Drawing.Size(947, 200);
+            this.rolloutTabControl.Size = new System.Drawing.Size(952, 201);
             this.rolloutTabControl.TabIndex = 0;
             // 
             // propertyTabPage
@@ -529,7 +351,7 @@
             this.propertyTabPage.Location = new System.Drawing.Point(4, 22);
             this.propertyTabPage.Name = "propertyTabPage";
             this.propertyTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.propertyTabPage.Size = new System.Drawing.Size(939, 174);
+            this.propertyTabPage.Size = new System.Drawing.Size(944, 175);
             this.propertyTabPage.TabIndex = 0;
             this.propertyTabPage.Text = "Property Editor";
             this.propertyTabPage.UseVisualStyleBackColor = true;
@@ -550,7 +372,7 @@
             // propertyEditor.Panel2
             // 
             this.propertyEditor.Panel2.Controls.Add(this.propertyValueTextBox);
-            this.propertyEditor.Size = new System.Drawing.Size(933, 168);
+            this.propertyEditor.Size = new System.Drawing.Size(938, 169);
             this.propertyEditor.SplitterDistance = 176;
             this.propertyEditor.TabIndex = 0;
             // 
@@ -565,36 +387,36 @@
             // 
             // splitContainer5.Panel1
             // 
-            this.splitContainer5.Panel1.Controls.Add(this.propertyPickButton);
-            this.splitContainer5.Panel1.Controls.Add(this.propertyApplyButton);
+            this.splitContainer5.Panel1.Controls.Add(this.pickPropertyButton);
+            this.splitContainer5.Panel1.Controls.Add(this.applyPropertyButton);
             this.splitContainer5.Panel1.Controls.Add(this.propertyNameLabel);
-            this.splitContainer5.Panel1.Controls.Add(this.propertyRefreshButton);
+            this.splitContainer5.Panel1.Controls.Add(this.discardPropertyButton);
             // 
             // splitContainer5.Panel2
             // 
             this.splitContainer5.Panel2.Controls.Add(this.propertyDescriptionTextBox);
-            this.splitContainer5.Size = new System.Drawing.Size(176, 168);
+            this.splitContainer5.Size = new System.Drawing.Size(176, 169);
             this.splitContainer5.SplitterDistance = 98;
             this.splitContainer5.TabIndex = 1;
             // 
-            // propertyPickButton
+            // pickPropertyButton
             // 
-            this.propertyPickButton.Location = new System.Drawing.Point(127, 6);
-            this.propertyPickButton.Name = "propertyPickButton";
-            this.propertyPickButton.Size = new System.Drawing.Size(36, 23);
-            this.propertyPickButton.TabIndex = 4;
-            this.propertyPickButton.Text = "Pic&k";
-            this.propertyPickButton.UseVisualStyleBackColor = true;
-            this.propertyPickButton.Visible = false;
+            this.pickPropertyButton.Location = new System.Drawing.Point(121, 6);
+            this.pickPropertyButton.Name = "pickPropertyButton";
+            this.pickPropertyButton.Size = new System.Drawing.Size(42, 23);
+            this.pickPropertyButton.TabIndex = 4;
+            this.pickPropertyButton.Text = "[P]ick";
+            this.pickPropertyButton.UseVisualStyleBackColor = true;
+            this.pickPropertyButton.Visible = false;
             // 
-            // propertyApplyButton
+            // applyPropertyButton
             // 
-            this.propertyApplyButton.Location = new System.Drawing.Point(16, 35);
-            this.propertyApplyButton.Name = "propertyApplyButton";
-            this.propertyApplyButton.Size = new System.Drawing.Size(147, 23);
-            this.propertyApplyButton.TabIndex = 1;
-            this.propertyApplyButton.Text = "&Apply";
-            this.propertyApplyButton.UseVisualStyleBackColor = true;
+            this.applyPropertyButton.Location = new System.Drawing.Point(16, 35);
+            this.applyPropertyButton.Name = "applyPropertyButton";
+            this.applyPropertyButton.Size = new System.Drawing.Size(147, 23);
+            this.applyPropertyButton.TabIndex = 1;
+            this.applyPropertyButton.Text = "[A]pply Change";
+            this.applyPropertyButton.UseVisualStyleBackColor = true;
             // 
             // propertyNameLabel
             // 
@@ -604,14 +426,14 @@
             this.propertyNameLabel.Size = new System.Drawing.Size(0, 13);
             this.propertyNameLabel.TabIndex = 3;
             // 
-            // propertyRefreshButton
+            // discardPropertyButton
             // 
-            this.propertyRefreshButton.Location = new System.Drawing.Point(16, 64);
-            this.propertyRefreshButton.Name = "propertyRefreshButton";
-            this.propertyRefreshButton.Size = new System.Drawing.Size(147, 23);
-            this.propertyRefreshButton.TabIndex = 0;
-            this.propertyRefreshButton.Text = "&Refresh";
-            this.propertyRefreshButton.UseVisualStyleBackColor = true;
+            this.discardPropertyButton.Location = new System.Drawing.Point(16, 64);
+            this.discardPropertyButton.Name = "discardPropertyButton";
+            this.discardPropertyButton.Size = new System.Drawing.Size(147, 23);
+            this.discardPropertyButton.TabIndex = 0;
+            this.discardPropertyButton.Text = "[D]iscard Change";
+            this.discardPropertyButton.UseVisualStyleBackColor = true;
             // 
             // propertyDescriptionTextBox
             // 
@@ -620,28 +442,15 @@
             this.propertyDescriptionTextBox.Multiline = true;
             this.propertyDescriptionTextBox.Name = "propertyDescriptionTextBox";
             this.propertyDescriptionTextBox.ReadOnly = true;
-            this.propertyDescriptionTextBox.Size = new System.Drawing.Size(176, 66);
+            this.propertyDescriptionTextBox.Size = new System.Drawing.Size(176, 67);
             this.propertyDescriptionTextBox.TabIndex = 0;
-            // 
-            // propertyValueTextBox
-            // 
-            this.propertyValueTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.propertyValueTextBox.ExtraDescent = 1;
-            this.propertyValueTextBox.Keywords0 = "";
-            this.propertyValueTextBox.Keywords1 = "";
-            this.propertyValueTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.propertyValueTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
-            this.propertyValueTextBox.Name = "propertyValueTextBox";
-            this.propertyValueTextBox.Size = new System.Drawing.Size(753, 168);
-            this.propertyValueTextBox.TabIndex = 0;
             // 
             // evaluatorTabPage
             // 
             this.evaluatorTabPage.Controls.Add(this.terminal);
             this.evaluatorTabPage.Location = new System.Drawing.Point(4, 22);
             this.evaluatorTabPage.Name = "evaluatorTabPage";
-            this.evaluatorTabPage.Size = new System.Drawing.Size(939, 174);
+            this.evaluatorTabPage.Size = new System.Drawing.Size(944, 175);
             this.evaluatorTabPage.TabIndex = 4;
             this.evaluatorTabPage.Text = "Evaluator";
             this.evaluatorTabPage.UseVisualStyleBackColor = true;
@@ -659,23 +468,9 @@
             // terminal.Panel2
             // 
             this.terminal.Panel2.Controls.Add(this.splitContainer10);
-            this.terminal.Size = new System.Drawing.Size(939, 174);
-            this.terminal.SplitterDistance = 557;
+            this.terminal.Size = new System.Drawing.Size(944, 175);
+            this.terminal.SplitterDistance = 559;
             this.terminal.TabIndex = 0;
-            // 
-            // evalInputTextBox
-            // 
-            this.evalInputTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.evalInputTextBox.ExtraDescent = 1;
-            this.evalInputTextBox.Keywords0 = "";
-            this.evalInputTextBox.Keywords1 = "";
-            this.evalInputTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.evalInputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.evalInputTextBox.Location = new System.Drawing.Point(0, 0);
-            this.evalInputTextBox.Name = "evalInputTextBox";
-            this.evalInputTextBox.Size = new System.Drawing.Size(557, 174);
-            this.evalInputTextBox.TabIndex = 0;
-            this.evalInputTextBox.Text = "; Evaluate script expressions here!\n[+ 2 2]";
             // 
             // splitContainer10
             // 
@@ -694,7 +489,7 @@
             // splitContainer10.Panel2
             // 
             this.splitContainer10.Panel2.Controls.Add(this.evalOutputTextBox);
-            this.splitContainer10.Size = new System.Drawing.Size(378, 174);
+            this.splitContainer10.Size = new System.Drawing.Size(381, 175);
             this.splitContainer10.SplitterDistance = 44;
             this.splitContainer10.TabIndex = 1;
             // 
@@ -703,42 +498,28 @@
             this.evalLineButton.Enabled = false;
             this.evalLineButton.Location = new System.Drawing.Point(3, 60);
             this.evalLineButton.Name = "evalLineButton";
-            this.evalLineButton.Size = new System.Drawing.Size(39, 55);
+            this.evalLineButton.Size = new System.Drawing.Size(42, 55);
             this.evalLineButton.TabIndex = 2;
-            this.evalLineButton.Text = "Eval &Line";
+            this.evalLineButton.Text = "Eval [L]ine";
             this.evalLineButton.UseVisualStyleBackColor = true;
             // 
             // clearOutputButton
             // 
             this.clearOutputButton.Location = new System.Drawing.Point(3, 117);
             this.clearOutputButton.Name = "clearOutputButton";
-            this.clearOutputButton.Size = new System.Drawing.Size(39, 54);
+            this.clearOutputButton.Size = new System.Drawing.Size(42, 54);
             this.clearOutputButton.TabIndex = 1;
-            this.clearOutputButton.Text = "Clea&r";
+            this.clearOutputButton.Text = "Clear";
             this.clearOutputButton.UseVisualStyleBackColor = true;
             // 
             // evalButton
             // 
             this.evalButton.Location = new System.Drawing.Point(3, 3);
             this.evalButton.Name = "evalButton";
-            this.evalButton.Size = new System.Drawing.Size(39, 55);
+            this.evalButton.Size = new System.Drawing.Size(42, 55);
             this.evalButton.TabIndex = 0;
-            this.evalButton.Text = "E&val";
+            this.evalButton.Text = "[E]val";
             this.evalButton.UseVisualStyleBackColor = true;
-            // 
-            // evalOutputTextBox
-            // 
-            this.evalOutputTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.evalOutputTextBox.ExtraDescent = 1;
-            this.evalOutputTextBox.Keywords0 = "";
-            this.evalOutputTextBox.Keywords1 = "";
-            this.evalOutputTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.evalOutputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.evalOutputTextBox.Location = new System.Drawing.Point(0, 0);
-            this.evalOutputTextBox.Name = "evalOutputTextBox";
-            this.evalOutputTextBox.ReadOnly = true;
-            this.evalOutputTextBox.Size = new System.Drawing.Size(330, 174);
-            this.evalOutputTextBox.TabIndex = 0;
             // 
             // preludeTabPage
             // 
@@ -746,7 +527,7 @@
             this.preludeTabPage.Location = new System.Drawing.Point(4, 22);
             this.preludeTabPage.Name = "preludeTabPage";
             this.preludeTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.preludeTabPage.Size = new System.Drawing.Size(939, 174);
+            this.preludeTabPage.Size = new System.Drawing.Size(944, 175);
             this.preludeTabPage.TabIndex = 5;
             this.preludeTabPage.Text = "Prelude";
             this.preludeTabPage.UseVisualStyleBackColor = true;
@@ -761,46 +542,33 @@
             // 
             // splitContainer6.Panel1
             // 
-            this.splitContainer6.Panel1.Controls.Add(this.loadPreludeButton);
-            this.splitContainer6.Panel1.Controls.Add(this.savePreludeButton);
+            this.splitContainer6.Panel1.Controls.Add(this.discardPreludeButton);
+            this.splitContainer6.Panel1.Controls.Add(this.applyPreludeButton);
             // 
             // splitContainer6.Panel2
             // 
             this.splitContainer6.Panel2.Controls.Add(this.preludeTextBox);
-            this.splitContainer6.Size = new System.Drawing.Size(933, 168);
+            this.splitContainer6.Size = new System.Drawing.Size(938, 169);
             this.splitContainer6.SplitterDistance = 176;
             this.splitContainer6.TabIndex = 3;
             // 
-            // loadPreludeButton
+            // discardPreludeButton
             // 
-            this.loadPreludeButton.Location = new System.Drawing.Point(16, 41);
-            this.loadPreludeButton.Name = "loadPreludeButton";
-            this.loadPreludeButton.Size = new System.Drawing.Size(147, 23);
-            this.loadPreludeButton.TabIndex = 4;
-            this.loadPreludeButton.Text = "Load and &Refresh";
-            this.loadPreludeButton.UseVisualStyleBackColor = true;
+            this.discardPreludeButton.Location = new System.Drawing.Point(16, 41);
+            this.discardPreludeButton.Name = "discardPreludeButton";
+            this.discardPreludeButton.Size = new System.Drawing.Size(147, 23);
+            this.discardPreludeButton.TabIndex = 4;
+            this.discardPreludeButton.Text = "[D]iscard Changes";
+            this.discardPreludeButton.UseVisualStyleBackColor = true;
             // 
-            // savePreludeButton
+            // applyPreludeButton
             // 
-            this.savePreludeButton.Location = new System.Drawing.Point(16, 12);
-            this.savePreludeButton.Name = "savePreludeButton";
-            this.savePreludeButton.Size = new System.Drawing.Size(147, 23);
-            this.savePreludeButton.TabIndex = 2;
-            this.savePreludeButton.Text = "Save and &Apply";
-            this.savePreludeButton.UseVisualStyleBackColor = true;
-            // 
-            // preludeTextBox
-            // 
-            this.preludeTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.preludeTextBox.ExtraDescent = 1;
-            this.preludeTextBox.Keywords0 = "";
-            this.preludeTextBox.Keywords1 = "";
-            this.preludeTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.preludeTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.preludeTextBox.Location = new System.Drawing.Point(0, 0);
-            this.preludeTextBox.Name = "preludeTextBox";
-            this.preludeTextBox.Size = new System.Drawing.Size(753, 168);
-            this.preludeTextBox.TabIndex = 0;
+            this.applyPreludeButton.Location = new System.Drawing.Point(16, 12);
+            this.applyPreludeButton.Name = "applyPreludeButton";
+            this.applyPreludeButton.Size = new System.Drawing.Size(147, 23);
+            this.applyPreludeButton.TabIndex = 2;
+            this.applyPreludeButton.Text = "[A]pply Changes";
+            this.applyPreludeButton.UseVisualStyleBackColor = true;
             // 
             // assetGraphTabPage
             // 
@@ -808,7 +576,7 @@
             this.assetGraphTabPage.Location = new System.Drawing.Point(4, 22);
             this.assetGraphTabPage.Name = "assetGraphTabPage";
             this.assetGraphTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.assetGraphTabPage.Size = new System.Drawing.Size(939, 174);
+            this.assetGraphTabPage.Size = new System.Drawing.Size(944, 175);
             this.assetGraphTabPage.TabIndex = 3;
             this.assetGraphTabPage.Text = "Asset Graph";
             this.assetGraphTabPage.UseVisualStyleBackColor = true;
@@ -823,46 +591,33 @@
             // 
             // assetGraph.Panel1
             // 
-            this.assetGraph.Panel1.Controls.Add(this.loadAssetGraphButton);
-            this.assetGraph.Panel1.Controls.Add(this.saveAssetGraphButton);
+            this.assetGraph.Panel1.Controls.Add(this.discardAssetGraphButton);
+            this.assetGraph.Panel1.Controls.Add(this.applyAssetGraphButton);
             // 
             // assetGraph.Panel2
             // 
             this.assetGraph.Panel2.Controls.Add(this.assetGraphTextBox);
-            this.assetGraph.Size = new System.Drawing.Size(933, 168);
+            this.assetGraph.Size = new System.Drawing.Size(938, 169);
             this.assetGraph.SplitterDistance = 176;
             this.assetGraph.TabIndex = 2;
             // 
-            // loadAssetGraphButton
+            // discardAssetGraphButton
             // 
-            this.loadAssetGraphButton.Location = new System.Drawing.Point(16, 41);
-            this.loadAssetGraphButton.Name = "loadAssetGraphButton";
-            this.loadAssetGraphButton.Size = new System.Drawing.Size(147, 23);
-            this.loadAssetGraphButton.TabIndex = 4;
-            this.loadAssetGraphButton.Text = "Load and &Refresh";
-            this.loadAssetGraphButton.UseVisualStyleBackColor = true;
+            this.discardAssetGraphButton.Location = new System.Drawing.Point(16, 41);
+            this.discardAssetGraphButton.Name = "discardAssetGraphButton";
+            this.discardAssetGraphButton.Size = new System.Drawing.Size(147, 23);
+            this.discardAssetGraphButton.TabIndex = 4;
+            this.discardAssetGraphButton.Text = "[D]iscard Changes";
+            this.discardAssetGraphButton.UseVisualStyleBackColor = true;
             // 
-            // saveAssetGraphButton
+            // applyAssetGraphButton
             // 
-            this.saveAssetGraphButton.Location = new System.Drawing.Point(16, 12);
-            this.saveAssetGraphButton.Name = "saveAssetGraphButton";
-            this.saveAssetGraphButton.Size = new System.Drawing.Size(147, 23);
-            this.saveAssetGraphButton.TabIndex = 2;
-            this.saveAssetGraphButton.Text = "Save and &Apply";
-            this.saveAssetGraphButton.UseVisualStyleBackColor = true;
-            // 
-            // assetGraphTextBox
-            // 
-            this.assetGraphTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.assetGraphTextBox.ExtraDescent = 1;
-            this.assetGraphTextBox.Keywords0 = "";
-            this.assetGraphTextBox.Keywords1 = "";
-            this.assetGraphTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.assetGraphTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.assetGraphTextBox.Location = new System.Drawing.Point(0, 0);
-            this.assetGraphTextBox.Name = "assetGraphTextBox";
-            this.assetGraphTextBox.Size = new System.Drawing.Size(753, 168);
-            this.assetGraphTextBox.TabIndex = 0;
+            this.applyAssetGraphButton.Location = new System.Drawing.Point(16, 12);
+            this.applyAssetGraphButton.Name = "applyAssetGraphButton";
+            this.applyAssetGraphButton.Size = new System.Drawing.Size(147, 23);
+            this.applyAssetGraphButton.TabIndex = 2;
+            this.applyAssetGraphButton.Text = "[A]pply Changes";
+            this.applyAssetGraphButton.UseVisualStyleBackColor = true;
             // 
             // overlayerTabPage
             // 
@@ -870,7 +625,7 @@
             this.overlayerTabPage.Location = new System.Drawing.Point(4, 22);
             this.overlayerTabPage.Name = "overlayerTabPage";
             this.overlayerTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.overlayerTabPage.Size = new System.Drawing.Size(939, 174);
+            this.overlayerTabPage.Size = new System.Drawing.Size(944, 175);
             this.overlayerTabPage.TabIndex = 2;
             this.overlayerTabPage.Text = "Overlayer";
             this.overlayerTabPage.UseVisualStyleBackColor = true;
@@ -885,46 +640,33 @@
             // 
             // overlayer.Panel1
             // 
-            this.overlayer.Panel1.Controls.Add(this.loadOverlayerButton);
-            this.overlayer.Panel1.Controls.Add(this.saveOverlayerButton);
+            this.overlayer.Panel1.Controls.Add(this.discardOverlayerButton);
+            this.overlayer.Panel1.Controls.Add(this.applyOverlayerButton);
             // 
             // overlayer.Panel2
             // 
             this.overlayer.Panel2.Controls.Add(this.overlayerTextBox);
-            this.overlayer.Size = new System.Drawing.Size(933, 168);
+            this.overlayer.Size = new System.Drawing.Size(938, 169);
             this.overlayer.SplitterDistance = 176;
             this.overlayer.TabIndex = 1;
             // 
-            // loadOverlayerButton
+            // discardOverlayerButton
             // 
-            this.loadOverlayerButton.Location = new System.Drawing.Point(16, 41);
-            this.loadOverlayerButton.Name = "loadOverlayerButton";
-            this.loadOverlayerButton.Size = new System.Drawing.Size(147, 23);
-            this.loadOverlayerButton.TabIndex = 4;
-            this.loadOverlayerButton.Text = "Load and &Refresh";
-            this.loadOverlayerButton.UseVisualStyleBackColor = true;
+            this.discardOverlayerButton.Location = new System.Drawing.Point(16, 41);
+            this.discardOverlayerButton.Name = "discardOverlayerButton";
+            this.discardOverlayerButton.Size = new System.Drawing.Size(147, 23);
+            this.discardOverlayerButton.TabIndex = 4;
+            this.discardOverlayerButton.Text = "[D]iscard Changes";
+            this.discardOverlayerButton.UseVisualStyleBackColor = true;
             // 
-            // saveOverlayerButton
+            // applyOverlayerButton
             // 
-            this.saveOverlayerButton.Location = new System.Drawing.Point(16, 12);
-            this.saveOverlayerButton.Name = "saveOverlayerButton";
-            this.saveOverlayerButton.Size = new System.Drawing.Size(147, 23);
-            this.saveOverlayerButton.TabIndex = 2;
-            this.saveOverlayerButton.Text = "Save and &Apply";
-            this.saveOverlayerButton.UseVisualStyleBackColor = true;
-            // 
-            // overlayerTextBox
-            // 
-            this.overlayerTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.overlayerTextBox.ExtraDescent = 1;
-            this.overlayerTextBox.Keywords0 = "";
-            this.overlayerTextBox.Keywords1 = "";
-            this.overlayerTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.overlayerTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.overlayerTextBox.Location = new System.Drawing.Point(0, 0);
-            this.overlayerTextBox.Name = "overlayerTextBox";
-            this.overlayerTextBox.Size = new System.Drawing.Size(753, 168);
-            this.overlayerTextBox.TabIndex = 0;
+            this.applyOverlayerButton.Location = new System.Drawing.Point(16, 12);
+            this.applyOverlayerButton.Name = "applyOverlayerButton";
+            this.applyOverlayerButton.Size = new System.Drawing.Size(147, 23);
+            this.applyOverlayerButton.TabIndex = 2;
+            this.applyOverlayerButton.Text = "[A]pply Changes";
+            this.applyOverlayerButton.UseVisualStyleBackColor = true;
             // 
             // eventTracingTabPage
             // 
@@ -932,7 +674,7 @@
             this.eventTracingTabPage.Location = new System.Drawing.Point(4, 22);
             this.eventTracingTabPage.Name = "eventTracingTabPage";
             this.eventTracingTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.eventTracingTabPage.Size = new System.Drawing.Size(939, 174);
+            this.eventTracingTabPage.Size = new System.Drawing.Size(944, 175);
             this.eventTracingTabPage.TabIndex = 1;
             this.eventTracingTabPage.Text = "Event Tracing";
             this.eventTracingTabPage.UseVisualStyleBackColor = true;
@@ -947,34 +689,34 @@
             // 
             // eventTracing.Panel1
             // 
-            this.eventTracing.Panel1.Controls.Add(this.refreshEventFilterButton);
+            this.eventTracing.Panel1.Controls.Add(this.discardEventFilterButton);
             this.eventTracing.Panel1.Controls.Add(this.traceEventsCheckBox);
             this.eventTracing.Panel1.Controls.Add(this.applyEventFilterButton);
             // 
             // eventTracing.Panel2
             // 
             this.eventTracing.Panel2.Controls.Add(this.eventFilterTextBox);
-            this.eventTracing.Size = new System.Drawing.Size(933, 168);
+            this.eventTracing.Size = new System.Drawing.Size(938, 169);
             this.eventTracing.SplitterDistance = 176;
             this.eventTracing.TabIndex = 0;
             // 
-            // refreshEventFilterButton
+            // discardEventFilterButton
             // 
-            this.refreshEventFilterButton.Location = new System.Drawing.Point(16, 64);
-            this.refreshEventFilterButton.Name = "refreshEventFilterButton";
-            this.refreshEventFilterButton.Size = new System.Drawing.Size(147, 23);
-            this.refreshEventFilterButton.TabIndex = 4;
-            this.refreshEventFilterButton.Text = "&Refresh Filter";
-            this.refreshEventFilterButton.UseVisualStyleBackColor = true;
+            this.discardEventFilterButton.Location = new System.Drawing.Point(16, 64);
+            this.discardEventFilterButton.Name = "discardEventFilterButton";
+            this.discardEventFilterButton.Size = new System.Drawing.Size(147, 23);
+            this.discardEventFilterButton.TabIndex = 4;
+            this.discardEventFilterButton.Text = "[D]iscard Changes";
+            this.discardEventFilterButton.UseVisualStyleBackColor = true;
             // 
             // traceEventsCheckBox
             // 
             this.traceEventsCheckBox.AutoSize = true;
             this.traceEventsCheckBox.Location = new System.Drawing.Point(16, 12);
             this.traceEventsCheckBox.Name = "traceEventsCheckBox";
-            this.traceEventsCheckBox.Size = new System.Drawing.Size(90, 17);
+            this.traceEventsCheckBox.Size = new System.Drawing.Size(96, 17);
             this.traceEventsCheckBox.TabIndex = 3;
-            this.traceEventsCheckBox.Text = "Trace Events";
+            this.traceEventsCheckBox.Text = "[T]race Events";
             this.traceEventsCheckBox.UseVisualStyleBackColor = true;
             // 
             // applyEventFilterButton
@@ -983,21 +725,8 @@
             this.applyEventFilterButton.Name = "applyEventFilterButton";
             this.applyEventFilterButton.Size = new System.Drawing.Size(147, 23);
             this.applyEventFilterButton.TabIndex = 2;
-            this.applyEventFilterButton.Text = "&Apply Filter";
+            this.applyEventFilterButton.Text = "[A]pply Changes";
             this.applyEventFilterButton.UseVisualStyleBackColor = true;
-            // 
-            // eventFilterTextBox
-            // 
-            this.eventFilterTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.eventFilterTextBox.ExtraDescent = 1;
-            this.eventFilterTextBox.Keywords0 = "";
-            this.eventFilterTextBox.Keywords1 = "";
-            this.eventFilterTextBox.KeywordsImplicit = "True False Some None Right Left";
-            this.eventFilterTextBox.Lexer = ScintillaNET.Lexer.Lisp;
-            this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
-            this.eventFilterTextBox.Name = "eventFilterTextBox";
-            this.eventFilterTextBox.Size = new System.Drawing.Size(753, 168);
-            this.eventFilterTextBox.TabIndex = 0;
             // 
             // splitContainer3
             // 
@@ -1013,8 +742,8 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.tabControl1);
-            this.splitContainer3.Size = new System.Drawing.Size(326, 637);
-            this.splitContainer3.SplitterDistance = 418;
+            this.splitContainer3.Size = new System.Drawing.Size(321, 640);
+            this.splitContainer3.SplitterDistance = 419;
             this.splitContainer3.TabIndex = 2;
             // 
             // propertyTabControl
@@ -1025,7 +754,7 @@
             this.propertyTabControl.Location = new System.Drawing.Point(0, 0);
             this.propertyTabControl.Name = "propertyTabControl";
             this.propertyTabControl.SelectedIndex = 0;
-            this.propertyTabControl.Size = new System.Drawing.Size(326, 418);
+            this.propertyTabControl.Size = new System.Drawing.Size(321, 419);
             this.propertyTabControl.TabIndex = 1;
             // 
             // entityTabPage
@@ -1034,7 +763,7 @@
             this.entityTabPage.Location = new System.Drawing.Point(4, 22);
             this.entityTabPage.Name = "entityTabPage";
             this.entityTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.entityTabPage.Size = new System.Drawing.Size(318, 392);
+            this.entityTabPage.Size = new System.Drawing.Size(313, 393);
             this.entityTabPage.TabIndex = 0;
             this.entityTabPage.Text = "Entity Properties";
             this.entityTabPage.UseVisualStyleBackColor = true;
@@ -1053,7 +782,7 @@
             // splitContainer7.Panel2
             // 
             this.splitContainer7.Panel2.Controls.Add(this.panel1);
-            this.splitContainer7.Size = new System.Drawing.Size(312, 386);
+            this.splitContainer7.Size = new System.Drawing.Size(307, 387);
             this.splitContainer7.SplitterDistance = 59;
             this.splitContainer7.TabIndex = 1;
             // 
@@ -1069,7 +798,7 @@
             this.entityPropertyDesigner.Dock = System.Windows.Forms.DockStyle.Fill;
             this.entityPropertyDesigner.Location = new System.Drawing.Point(0, 0);
             this.entityPropertyDesigner.Name = "entityPropertyDesigner";
-            this.entityPropertyDesigner.Size = new System.Drawing.Size(312, 59);
+            this.entityPropertyDesigner.Size = new System.Drawing.Size(307, 59);
             this.entityPropertyDesigner.TabIndex = 0;
             this.entityPropertyDesigner.TabStop = false;
             this.entityPropertyDesigner.Text = "Property Designer";
@@ -1144,7 +873,7 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(312, 323);
+            this.panel1.Size = new System.Drawing.Size(307, 324);
             this.panel1.TabIndex = 2;
             // 
             // entityPropertyGrid
@@ -1155,7 +884,7 @@
             this.entityPropertyGrid.Location = new System.Drawing.Point(0, 0);
             this.entityPropertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.entityPropertyGrid.Name = "entityPropertyGrid";
-            this.entityPropertyGrid.Size = new System.Drawing.Size(312, 323);
+            this.entityPropertyGrid.Size = new System.Drawing.Size(307, 324);
             this.entityPropertyGrid.TabIndex = 0;
             this.entityPropertyGrid.ToolbarVisible = false;
             // 
@@ -1165,7 +894,7 @@
             this.layerTabPage.Location = new System.Drawing.Point(4, 22);
             this.layerTabPage.Name = "layerTabPage";
             this.layerTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.layerTabPage.Size = new System.Drawing.Size(318, 392);
+            this.layerTabPage.Size = new System.Drawing.Size(313, 393);
             this.layerTabPage.TabIndex = 1;
             this.layerTabPage.Text = "Layer Properties";
             this.layerTabPage.UseVisualStyleBackColor = true;
@@ -1176,7 +905,7 @@
             this.layerPropertyGrid.LineColor = System.Drawing.SystemColors.ControlDark;
             this.layerPropertyGrid.Location = new System.Drawing.Point(3, 3);
             this.layerPropertyGrid.Name = "layerPropertyGrid";
-            this.layerPropertyGrid.Size = new System.Drawing.Size(312, 386);
+            this.layerPropertyGrid.Size = new System.Drawing.Size(307, 387);
             this.layerPropertyGrid.TabIndex = 0;
             this.layerPropertyGrid.ToolbarVisible = false;
             // 
@@ -1188,7 +917,7 @@
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(326, 215);
+            this.tabControl1.Size = new System.Drawing.Size(321, 217);
             this.tabControl1.TabIndex = 2;
             // 
             // tabPage4
@@ -1197,7 +926,7 @@
             this.tabPage4.Location = new System.Drawing.Point(4, 22);
             this.tabPage4.Name = "tabPage4";
             this.tabPage4.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage4.Size = new System.Drawing.Size(318, 189);
+            this.tabPage4.Size = new System.Drawing.Size(313, 191);
             this.tabPage4.TabIndex = 0;
             this.tabPage4.Text = "Entities";
             this.tabPage4.UseVisualStyleBackColor = true;
@@ -1208,7 +937,7 @@
             this.entityTreeView.HideSelection = false;
             this.entityTreeView.Location = new System.Drawing.Point(3, 3);
             this.entityTreeView.Name = "entityTreeView";
-            this.entityTreeView.Size = new System.Drawing.Size(312, 183);
+            this.entityTreeView.Size = new System.Drawing.Size(307, 185);
             this.entityTreeView.TabIndex = 1;
             // 
             // tabPage3
@@ -1217,7 +946,7 @@
             this.tabPage3.Location = new System.Drawing.Point(4, 22);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage3.Size = new System.Drawing.Size(318, 189);
+            this.tabPage3.Size = new System.Drawing.Size(313, 191);
             this.tabPage3.TabIndex = 1;
             this.tabPage3.Text = "Hierarchy";
             this.tabPage3.UseVisualStyleBackColor = true;
@@ -1228,7 +957,7 @@
             this.hierarchyTreeView.HideSelection = false;
             this.hierarchyTreeView.Location = new System.Drawing.Point(3, 3);
             this.hierarchyTreeView.Name = "hierarchyTreeView";
-            this.hierarchyTreeView.Size = new System.Drawing.Size(312, 183);
+            this.hierarchyTreeView.Size = new System.Drawing.Size(307, 185);
             this.hierarchyTreeView.TabIndex = 0;
             // 
             // openFileDialog
@@ -1241,44 +970,42 @@
             this.saveFileDialog.DefaultExt = "nulyr";
             this.saveFileDialog.Filter = "Nu Layers|*.nulyr|All files|*.*";
             // 
-            // toolStrip
+            // layerTabControl
             // 
-            this.toolStrip.Dock = System.Windows.Forms.DockStyle.None;
-            this.toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.undoButton,
-            this.redoButton,
-            this.toolStripSeparator6,
-            this.positionSnapLabel,
-            this.positionSnapTextBox,
-            this.toolStripSeparator1,
-            this.rotationSnapLabel,
-            this.rotationSnapTextBox,
-            this.toolStripSeparator2,
-            this.createEntityButton,
-            this.createEntityComboBox,
-            this.toolStripLabel1,
-            this.overlayComboBox,
-            this.creationDepthLabel,
-            this.createDepthMinusButton,
-            this.createDepthTextBox,
-            this.createDepthPlusButton,
-            this.toolStripSeparator3,
-            this.quickSizeToolStripButton,
-            this.toolStripSeparator4,
-            this.deleteEntityButton,
-            this.toolStripSeparator5,
-            this.resetCameraButton,
-            this.toolStripSeparator8,
-            this.reloadAssetsButton,
-            this.toolStripSeparator9,
-            this.tickingButton,
-            this.resetTickTime,
-            this.editWhileInteractiveCheckBox});
-            this.toolStrip.Location = new System.Drawing.Point(92, 2);
-            this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1186, 25);
-            this.toolStrip.TabIndex = 1;
-            this.toolStrip.Text = "toolStrip1";
+            this.layerTabControl.Controls.Add(this.tabPage);
+            this.layerTabControl.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.layerTabControl.Location = new System.Drawing.Point(0, 0);
+            this.layerTabControl.Name = "layerTabControl";
+            this.layerTabControl.SelectedIndex = 0;
+            this.layerTabControl.Size = new System.Drawing.Size(1276, 25);
+            this.layerTabControl.TabIndex = 4;
+            // 
+            // tabPage
+            // 
+            this.tabPage.Location = new System.Drawing.Point(4, 22);
+            this.tabPage.Name = "tabPage";
+            this.tabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage.Size = new System.Drawing.Size(1268, 0);
+            this.tabPage.TabIndex = 0;
+            this.tabPage.UseVisualStyleBackColor = true;
+            // 
+            // splitContainer2
+            // 
+            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer2.Location = new System.Drawing.Point(0, 24);
+            this.splitContainer2.Name = "splitContainer2";
+            this.splitContainer2.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // splitContainer2.Panel1
+            // 
+            this.splitContainer2.Panel1.Controls.Add(this.layerTabControl);
+            // 
+            // splitContainer2.Panel2
+            // 
+            this.splitContainer2.Panel2.Controls.Add(this.splitContainer1);
+            this.splitContainer2.Size = new System.Drawing.Size(1276, 669);
+            this.splitContainer2.SplitterDistance = 25;
+            this.splitContainer2.TabIndex = 5;
             // 
             // undoButton
             // 
@@ -1287,7 +1014,7 @@
             this.undoButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.undoButton.Name = "undoButton";
             this.undoButton.Size = new System.Drawing.Size(40, 22);
-            this.undoButton.Text = "&Undo";
+            this.undoButton.Text = "Undo";
             // 
             // redoButton
             // 
@@ -1296,7 +1023,7 @@
             this.redoButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.redoButton.Name = "redoButton";
             this.redoButton.Size = new System.Drawing.Size(38, 22);
-            this.redoButton.Text = "&Redo";
+            this.redoButton.Text = "Redo";
             // 
             // toolStripSeparator6
             // 
@@ -1344,7 +1071,7 @@
             this.createEntityButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.createEntityButton.Name = "createEntityButton";
             this.createEntityButton.Size = new System.Drawing.Size(45, 22);
-            this.createEntityButton.Text = "&Create";
+            this.createEntityButton.Text = "Create";
             // 
             // createEntityComboBox
             // 
@@ -1412,7 +1139,7 @@
             this.quickSizeToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.quickSizeToolStripButton.Name = "quickSizeToolStripButton";
             this.quickSizeToolStripButton.Size = new System.Drawing.Size(65, 22);
-            this.quickSizeToolStripButton.Text = "&Quick Size";
+            this.quickSizeToolStripButton.Text = "Quick Size";
             // 
             // toolStripSeparator4
             // 
@@ -1425,8 +1152,8 @@
             this.deleteEntityButton.Image = ((System.Drawing.Image)(resources.GetObject("deleteEntityButton.Image")));
             this.deleteEntityButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.deleteEntityButton.Name = "deleteEntityButton";
-            this.deleteEntityButton.Size = new System.Drawing.Size(77, 22);
-            this.deleteEntityButton.Text = "&Delete Entity";
+            this.deleteEntityButton.Size = new System.Drawing.Size(44, 22);
+            this.deleteEntityButton.Text = "Delete";
             // 
             // toolStripSeparator5
             // 
@@ -1440,7 +1167,7 @@
             this.resetCameraButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.resetCameraButton.Name = "resetCameraButton";
             this.resetCameraButton.Size = new System.Drawing.Size(83, 22);
-            this.resetCameraButton.Text = "Reset Ca&mera";
+            this.resetCameraButton.Text = "Reset Camera";
             // 
             // toolStripSeparator8
             // 
@@ -1454,7 +1181,7 @@
             this.reloadAssetsButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.reloadAssetsButton.Name = "reloadAssetsButton";
             this.reloadAssetsButton.Size = new System.Drawing.Size(83, 22);
-            this.reloadAssetsButton.Text = "Reload &Assets";
+            this.reloadAssetsButton.Text = "Reload Assets";
             // 
             // toolStripSeparator9
             // 
@@ -1468,8 +1195,8 @@
             this.tickingButton.Image = ((System.Drawing.Image)(resources.GetObject("tickingButton.Image")));
             this.tickingButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tickingButton.Name = "tickingButton";
-            this.tickingButton.Size = new System.Drawing.Size(50, 22);
-            this.tickingButton.Text = "&Ticking";
+            this.tickingButton.Size = new System.Drawing.Size(73, 22);
+            this.tickingButton.Text = "Ticking (F5)";
             // 
             // resetTickTime
             // 
@@ -1492,61 +1219,339 @@
             this.editWhileInteractiveCheckBox.Size = new System.Drawing.Size(72, 22);
             this.editWhileInteractiveCheckBox.Text = "(Edit While)";
             // 
-            // layerTabControl
+            // toolStrip
             // 
-            this.layerTabControl.Controls.Add(this.tabPage);
-            this.layerTabControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.layerTabControl.Location = new System.Drawing.Point(0, 0);
-            this.layerTabControl.Name = "layerTabControl";
-            this.layerTabControl.SelectedIndex = 0;
-            this.layerTabControl.Size = new System.Drawing.Size(1276, 25);
-            this.layerTabControl.TabIndex = 4;
+            this.toolStrip.Dock = System.Windows.Forms.DockStyle.None;
+            this.toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.fileDropDownButton,
+            this.editDropDownButton,
+            this.undoButton,
+            this.redoButton,
+            this.toolStripSeparator6,
+            this.positionSnapLabel,
+            this.positionSnapTextBox,
+            this.toolStripSeparator1,
+            this.rotationSnapLabel,
+            this.rotationSnapTextBox,
+            this.toolStripSeparator2,
+            this.createEntityButton,
+            this.createEntityComboBox,
+            this.toolStripLabel1,
+            this.overlayComboBox,
+            this.creationDepthLabel,
+            this.createDepthMinusButton,
+            this.createDepthTextBox,
+            this.createDepthPlusButton,
+            this.toolStripSeparator3,
+            this.quickSizeToolStripButton,
+            this.toolStripSeparator4,
+            this.deleteEntityButton,
+            this.toolStripSeparator5,
+            this.resetCameraButton,
+            this.toolStripSeparator8,
+            this.reloadAssetsButton,
+            this.toolStripSeparator9,
+            this.tickingButton,
+            this.toolStripSeparator11,
+            this.resetTickTime,
+            this.editWhileInteractiveCheckBox});
+            this.toolStrip.Location = new System.Drawing.Point(0, 0);
+            this.toolStrip.Name = "toolStrip";
+            this.toolStrip.Size = new System.Drawing.Size(1291, 25);
+            this.toolStrip.TabIndex = 1;
+            this.toolStrip.Text = "toolStrip1";
             // 
-            // tabPage
+            // fileDropDownButton
             // 
-            this.tabPage.Location = new System.Drawing.Point(4, 22);
-            this.tabPage.Name = "tabPage";
-            this.tabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage.Size = new System.Drawing.Size(1268, 0);
-            this.tabPage.TabIndex = 0;
-            this.tabPage.UseVisualStyleBackColor = true;
+            this.fileDropDownButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.fileDropDownButton.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.newLayerToolStripMenuItem,
+            this.openLayerToolStripMenuItem,
+            this.saveLayerToolStripMenuItem,
+            this.saveLayerAsToolStripMenuItem,
+            this.toolStripMenuItem7,
+            this.clearLayerToolStripMenuItem,
+            this.closeLayerToolStripMenuItem,
+            this.toolStripMenuItem8,
+            this.exitToolStripMenuItem});
+            this.fileDropDownButton.Image = ((System.Drawing.Image)(resources.GetObject("fileDropDownButton.Image")));
+            this.fileDropDownButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.fileDropDownButton.Name = "fileDropDownButton";
+            this.fileDropDownButton.Size = new System.Drawing.Size(38, 22);
+            this.fileDropDownButton.Text = "File";
+            this.fileDropDownButton.ToolTipText = "File Commands";
             // 
-            // splitContainer2
+            // newLayerToolStripMenuItem
             // 
-            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer2.Location = new System.Drawing.Point(0, 27);
-            this.splitContainer2.Name = "splitContainer2";
-            this.splitContainer2.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            this.newLayerToolStripMenuItem.Name = "newLayerToolStripMenuItem";
+            this.newLayerToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
+            this.newLayerToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.newLayerToolStripMenuItem.Text = "[&N]ew Layer";
             // 
-            // splitContainer2.Panel1
+            // openLayerToolStripMenuItem
             // 
-            this.splitContainer2.Panel1.Controls.Add(this.layerTabControl);
+            this.openLayerToolStripMenuItem.Name = "openLayerToolStripMenuItem";
+            this.openLayerToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
+            this.openLayerToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.openLayerToolStripMenuItem.Text = "[&O]pen Layer";
             // 
-            // splitContainer2.Panel2
+            // saveLayerToolStripMenuItem
             // 
-            this.splitContainer2.Panel2.Controls.Add(this.splitContainer1);
-            this.splitContainer2.Size = new System.Drawing.Size(1276, 666);
-            this.splitContainer2.SplitterDistance = 25;
-            this.splitContainer2.TabIndex = 5;
+            this.saveLayerToolStripMenuItem.Name = "saveLayerToolStripMenuItem";
+            this.saveLayerToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
+            this.saveLayerToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.saveLayerToolStripMenuItem.Text = "[&S]ave Layer";
             // 
-            // toolStripMenuItem6
+            // saveLayerAsToolStripMenuItem
             // 
-            this.toolStripMenuItem6.Name = "toolStripMenuItem6";
-            this.toolStripMenuItem6.Size = new System.Drawing.Size(215, 6);
+            this.saveLayerAsToolStripMenuItem.Name = "saveLayerAsToolStripMenuItem";
+            this.saveLayerAsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.A)));
+            this.saveLayerAsToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.saveLayerAsToolStripMenuItem.Text = "Save Layer [&A]s";
             // 
-            // startStopTickingToolStripMenuItem
+            // toolStripMenuItem7
             // 
-            this.startStopTickingToolStripMenuItem.Name = "startStopTickingToolStripMenuItem";
-            this.startStopTickingToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F5;
-            this.startStopTickingToolStripMenuItem.Size = new System.Drawing.Size(218, 24);
-            this.startStopTickingToolStripMenuItem.Text = "&Start / Stop Ticking";
+            this.toolStripMenuItem7.Name = "toolStripMenuItem7";
+            this.toolStripMenuItem7.Size = new System.Drawing.Size(192, 6);
+            // 
+            // clearLayerToolStripMenuItem
+            // 
+            this.clearLayerToolStripMenuItem.Enabled = false;
+            this.clearLayerToolStripMenuItem.Name = "clearLayerToolStripMenuItem";
+            this.clearLayerToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.clearLayerToolStripMenuItem.Text = "Clear Layer";
+            // 
+            // closeLayerToolStripMenuItem
+            // 
+            this.closeLayerToolStripMenuItem.Name = "closeLayerToolStripMenuItem";
+            this.closeLayerToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.closeLayerToolStripMenuItem.Text = "Close Layer";
+            // 
+            // toolStripMenuItem8
+            // 
+            this.toolStripMenuItem8.Name = "toolStripMenuItem8";
+            this.toolStripMenuItem8.Size = new System.Drawing.Size(192, 6);
+            // 
+            // exitToolStripMenuItem
+            // 
+            this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.exitToolStripMenuItem.Text = "E[&x]it";
+            // 
+            // editDropDownButton
+            // 
+            this.editDropDownButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.editDropDownButton.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.undoToolStripMenuItem,
+            this.redoToolStripMenuItem,
+            this.toolStripMenuItem9,
+            this.cutToolStripMenuItem,
+            this.copyToolStripMenuItem,
+            this.pasteToolStripMenuItem,
+            this.toolStripMenuItem10,
+            this.createToolStripMenuItem,
+            this.deleteToolStripMenuItem,
+            this.quickSizeToolStripMenuItem,
+            this.toolStripMenuItem11,
+            this.startStopTickingToolStripMenuItem,
+            this.toolStripMenuItem12,
+            this.changeLayerNameToolStripMenuItem});
+            this.editDropDownButton.Image = ((System.Drawing.Image)(resources.GetObject("editDropDownButton.Image")));
+            this.editDropDownButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.editDropDownButton.Name = "editDropDownButton";
+            this.editDropDownButton.Size = new System.Drawing.Size(40, 22);
+            this.editDropDownButton.Text = "Edit";
+            this.editDropDownButton.ToolTipText = "Edit Commands";
+            // 
+            // undoToolStripMenuItem
+            // 
+            this.undoToolStripMenuItem.Name = "undoToolStripMenuItem";
+            this.undoToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.undoToolStripMenuItem.Text = "[&U]ndo";
+            // 
+            // redoToolStripMenuItem
+            // 
+            this.redoToolStripMenuItem.Name = "redoToolStripMenuItem";
+            this.redoToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.redoToolStripMenuItem.Text = "[&R]edo";
+            // 
+            // toolStripMenuItem9
+            // 
+            this.toolStripMenuItem9.Name = "toolStripMenuItem9";
+            this.toolStripMenuItem9.Size = new System.Drawing.Size(180, 6);
+            // 
+            // cutToolStripMenuItem
+            // 
+            this.cutToolStripMenuItem.Name = "cutToolStripMenuItem";
+            this.cutToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.cutToolStripMenuItem.Text = "C[&u]t";
+            // 
+            // copyToolStripMenuItem
+            // 
+            this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
+            this.copyToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.copyToolStripMenuItem.Text = "[&C]opy";
+            // 
+            // pasteToolStripMenuItem
+            // 
+            this.pasteToolStripMenuItem.Name = "pasteToolStripMenuItem";
+            this.pasteToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.pasteToolStripMenuItem.Text = "[&P]aste";
+            // 
+            // toolStripMenuItem10
+            // 
+            this.toolStripMenuItem10.Name = "toolStripMenuItem10";
+            this.toolStripMenuItem10.Size = new System.Drawing.Size(180, 6);
+            // 
+            // createToolStripMenuItem
+            // 
+            this.createToolStripMenuItem.Name = "createToolStripMenuItem";
+            this.createToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.createToolStripMenuItem.Text = "Cr[&e]ate";
+            // 
+            // deleteToolStripMenuItem
+            // 
+            this.deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
+            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.deleteToolStripMenuItem.Text = "[&D]elete";
             // 
             // quickSizeToolStripMenuItem
             // 
             this.quickSizeToolStripMenuItem.Name = "quickSizeToolStripMenuItem";
-            this.quickSizeToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Q)));
-            this.quickSizeToolStripMenuItem.Size = new System.Drawing.Size(218, 24);
-            this.quickSizeToolStripMenuItem.Text = "&Quick Size";
+            this.quickSizeToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.quickSizeToolStripMenuItem.Text = "[&Q]uick Size";
+            // 
+            // toolStripMenuItem11
+            // 
+            this.toolStripMenuItem11.Name = "toolStripMenuItem11";
+            this.toolStripMenuItem11.Size = new System.Drawing.Size(180, 6);
+            // 
+            // startStopTickingToolStripMenuItem
+            // 
+            this.startStopTickingToolStripMenuItem.Name = "startStopTickingToolStripMenuItem";
+            this.startStopTickingToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.startStopTickingToolStripMenuItem.Text = "[&S]tart / Stop Ticking";
+            // 
+            // toolStripMenuItem12
+            // 
+            this.toolStripMenuItem12.Name = "toolStripMenuItem12";
+            this.toolStripMenuItem12.Size = new System.Drawing.Size(180, 6);
+            // 
+            // changeLayerNameToolStripMenuItem
+            // 
+            this.changeLayerNameToolStripMenuItem.Enabled = false;
+            this.changeLayerNameToolStripMenuItem.Name = "changeLayerNameToolStripMenuItem";
+            this.changeLayerNameToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.changeLayerNameToolStripMenuItem.Text = "Change Layer Name";
+            // 
+            // toolStripSeparator11
+            // 
+            this.toolStripSeparator11.Name = "toolStripSeparator11";
+            this.toolStripSeparator11.Size = new System.Drawing.Size(6, 25);
+            // 
+            // displayPanel
+            // 
+            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
+            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.displayPanel.Location = new System.Drawing.Point(0, 0);
+            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
+            this.displayPanel.Name = "displayPanel";
+            this.displayPanel.Size = new System.Drawing.Size(952, 435);
+            this.displayPanel.TabIndex = 0;
+            this.displayPanel.TabStop = true;
+            // 
+            // propertyValueTextBox
+            // 
+            this.propertyValueTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.propertyValueTextBox.ExtraDescent = 1;
+            this.propertyValueTextBox.Keywords0 = "";
+            this.propertyValueTextBox.Keywords1 = "";
+            this.propertyValueTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.propertyValueTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.propertyValueTextBox.Location = new System.Drawing.Point(0, 0);
+            this.propertyValueTextBox.Name = "propertyValueTextBox";
+            this.propertyValueTextBox.Size = new System.Drawing.Size(758, 169);
+            this.propertyValueTextBox.TabIndex = 0;
+            // 
+            // evalInputTextBox
+            // 
+            this.evalInputTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.evalInputTextBox.ExtraDescent = 1;
+            this.evalInputTextBox.Keywords0 = "";
+            this.evalInputTextBox.Keywords1 = "";
+            this.evalInputTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.evalInputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.evalInputTextBox.Location = new System.Drawing.Point(0, 0);
+            this.evalInputTextBox.Name = "evalInputTextBox";
+            this.evalInputTextBox.Size = new System.Drawing.Size(559, 175);
+            this.evalInputTextBox.TabIndex = 0;
+            this.evalInputTextBox.Text = "; Evaluate script expressions here!\n[+ 2 2]";
+            // 
+            // evalOutputTextBox
+            // 
+            this.evalOutputTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.evalOutputTextBox.ExtraDescent = 1;
+            this.evalOutputTextBox.Keywords0 = "";
+            this.evalOutputTextBox.Keywords1 = "";
+            this.evalOutputTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.evalOutputTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.evalOutputTextBox.Location = new System.Drawing.Point(0, 0);
+            this.evalOutputTextBox.Name = "evalOutputTextBox";
+            this.evalOutputTextBox.ReadOnly = true;
+            this.evalOutputTextBox.Size = new System.Drawing.Size(333, 175);
+            this.evalOutputTextBox.TabIndex = 0;
+            // 
+            // preludeTextBox
+            // 
+            this.preludeTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.preludeTextBox.ExtraDescent = 1;
+            this.preludeTextBox.Keywords0 = "";
+            this.preludeTextBox.Keywords1 = "";
+            this.preludeTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.preludeTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.preludeTextBox.Location = new System.Drawing.Point(0, 0);
+            this.preludeTextBox.Name = "preludeTextBox";
+            this.preludeTextBox.Size = new System.Drawing.Size(758, 169);
+            this.preludeTextBox.TabIndex = 0;
+            // 
+            // assetGraphTextBox
+            // 
+            this.assetGraphTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.assetGraphTextBox.ExtraDescent = 1;
+            this.assetGraphTextBox.Keywords0 = "";
+            this.assetGraphTextBox.Keywords1 = "";
+            this.assetGraphTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.assetGraphTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.assetGraphTextBox.Location = new System.Drawing.Point(0, 0);
+            this.assetGraphTextBox.Name = "assetGraphTextBox";
+            this.assetGraphTextBox.Size = new System.Drawing.Size(758, 169);
+            this.assetGraphTextBox.TabIndex = 0;
+            // 
+            // overlayerTextBox
+            // 
+            this.overlayerTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.overlayerTextBox.ExtraDescent = 1;
+            this.overlayerTextBox.Keywords0 = "";
+            this.overlayerTextBox.Keywords1 = "";
+            this.overlayerTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.overlayerTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.overlayerTextBox.Location = new System.Drawing.Point(0, 0);
+            this.overlayerTextBox.Name = "overlayerTextBox";
+            this.overlayerTextBox.Size = new System.Drawing.Size(758, 169);
+            this.overlayerTextBox.TabIndex = 0;
+            // 
+            // eventFilterTextBox
+            // 
+            this.eventFilterTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.eventFilterTextBox.ExtraDescent = 1;
+            this.eventFilterTextBox.Keywords0 = "";
+            this.eventFilterTextBox.Keywords1 = "";
+            this.eventFilterTextBox.KeywordsImplicit = "True False Some None Right Left";
+            this.eventFilterTextBox.Lexer = ScintillaNET.Lexer.Lisp;
+            this.eventFilterTextBox.Location = new System.Drawing.Point(0, 0);
+            this.eventFilterTextBox.Name = "eventFilterTextBox";
+            this.eventFilterTextBox.Size = new System.Drawing.Size(758, 169);
+            this.eventFilterTextBox.TabIndex = 0;
             // 
             // GaiaForm
             // 
@@ -1556,12 +1561,11 @@
             this.Controls.Add(this.splitContainer2);
             this.Controls.Add(this.toolStrip);
             this.Controls.Add(this.menuStrip);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
             this.MainMenuStrip = this.menuStrip;
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "GaiaForm";
-            this.Text = "Gaia";
-            this.menuStrip.ResumeLayout(false);
-            this.menuStrip.PerformLayout();
+            this.Text = "Gaia for Nu Game Engine";
             this.contextMenuStrip.ResumeLayout(false);
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
@@ -1630,13 +1634,13 @@
             this.tabControl1.ResumeLayout(false);
             this.tabPage4.ResumeLayout(false);
             this.tabPage3.ResumeLayout(false);
-            this.toolStrip.ResumeLayout(false);
-            this.toolStrip.PerformLayout();
             this.layerTabControl.ResumeLayout(false);
             this.splitContainer2.Panel1.ResumeLayout(false);
             this.splitContainer2.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
             this.splitContainer2.ResumeLayout(false);
+            this.toolStrip.ResumeLayout(false);
+            this.toolStrip.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1645,95 +1649,46 @@
         #endregion
 
         public System.Windows.Forms.MenuStrip menuStrip;
-        public System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
-        public System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
-        public System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
-        public System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
         public Nu.Gaia.Design.SelectablePanel displayPanel;
         public System.Windows.Forms.OpenFileDialog openFileDialog;
         public System.Windows.Forms.SaveFileDialog saveFileDialog;
-        public System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
-        public System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
-        public System.Windows.Forms.ToolStripMenuItem pasteToolStripMenuItem;
-        public System.Windows.Forms.ToolStrip toolStrip;
-        public System.Windows.Forms.ToolStripLabel positionSnapLabel;
-        public System.Windows.Forms.ToolStripTextBox positionSnapTextBox;
-        public System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
-        public System.Windows.Forms.ToolStripLabel rotationSnapLabel;
-        public System.Windows.Forms.ToolStripTextBox rotationSnapTextBox;
-        public System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
-        public System.Windows.Forms.ToolStripButton createEntityButton;
-        public System.Windows.Forms.ToolStripComboBox createEntityComboBox;
-        public System.Windows.Forms.ToolStripLabel creationDepthLabel;
-        public System.Windows.Forms.ToolStripTextBox createDepthTextBox;
-        public System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
         public System.Windows.Forms.ContextMenuStrip contextMenuStrip;
         public System.Windows.Forms.ToolStripMenuItem copyContextMenuItem;
         public System.Windows.Forms.ToolStripMenuItem pasteContextMenuItem;
-        public System.Windows.Forms.ToolStripMenuItem cutToolStripMenuItem;
-        public System.Windows.Forms.ToolStripMenuItem deleteToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem cutContextMenuItem;
         public System.Windows.Forms.ToolStripMenuItem deleteContextMenuItem;
-        public System.Windows.Forms.ToolStripMenuItem newToolStripMenuItem;
-        public System.Windows.Forms.ToolStripSeparator toolStripMenuItem4;
-        public System.Windows.Forms.ToolStripMenuItem createToolStripMenuItem;
-        public System.Windows.Forms.ToolStripButton tickingButton;
         public System.Windows.Forms.ToolStripMenuItem createContextMenuItem;
         public System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
-        public System.Windows.Forms.ToolStripButton resetCameraButton;
-        public System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
-        public System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
         public System.Windows.Forms.SplitContainer splitContainer1;
-        public System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
-        public System.Windows.Forms.ToolStripMenuItem undoToolStripMenuItem;
-        public System.Windows.Forms.ToolStripMenuItem redoToolStripMenuItem;
-        public System.Windows.Forms.ToolStripButton deleteEntityButton;
-        public System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
-        public System.Windows.Forms.ToolStripButton undoButton;
-        public System.Windows.Forms.ToolStripButton redoButton;
-        public System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
-        public System.Windows.Forms.ToolStripButton quickSizeToolStripButton;
         public System.Windows.Forms.PropertyGrid entityPropertyGrid;
-        public System.Windows.Forms.ToolStripButton editWhileInteractiveCheckBox;
-        private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
-        public System.Windows.Forms.ToolStripButton reloadAssetsButton;
-        private System.Windows.Forms.ToolStripSeparator toolStripSeparator9;
         public System.Windows.Forms.TreeView entityTreeView;
         private System.Windows.Forms.SplitContainer splitContainer3;
-        public System.Windows.Forms.ToolStripButton createDepthPlusButton;
-        public System.Windows.Forms.ToolStripButton createDepthMinusButton;
-        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
-        private System.Windows.Forms.ToolStripMenuItem changeLayerNameToolStripMenuItem;
         private System.Windows.Forms.TabPage tabPage;
         private System.Windows.Forms.SplitContainer splitContainer2;
         public System.Windows.Forms.TabControl layerTabControl;
-        private System.Windows.Forms.ToolStripSeparator toolStripSeparator10;
-        public System.Windows.Forms.ToolStripMenuItem closeToolStripMenuItem;
         private System.Windows.Forms.SplitContainer splitContainer4;
         public System.Windows.Forms.SplitContainer propertyEditor;
         private System.Windows.Forms.SplitContainer splitContainer5;
         public System.Windows.Forms.TextBox propertyDescriptionTextBox;
         public System.Windows.Forms.Label propertyNameLabel;
-        public System.Windows.Forms.Button propertyApplyButton;
-        public System.Windows.Forms.Button propertyRefreshButton;
-        public System.Windows.Forms.ToolStripButton resetTickTime;
+        public System.Windows.Forms.Button applyPropertyButton;
+        public System.Windows.Forms.Button discardPropertyButton;
         public System.Windows.Forms.Button applyEventFilterButton;
         public System.Windows.Forms.CheckBox traceEventsCheckBox;
-        public System.Windows.Forms.Button refreshEventFilterButton;
+        public System.Windows.Forms.Button discardEventFilterButton;
         public System.Windows.Forms.TabPage propertyTabPage;
         public System.Windows.Forms.TabPage eventTracingTabPage;
         public System.Windows.Forms.TabControl rolloutTabControl;
         public SymbolicTextBox propertyValueTextBox;
         public SymbolicTextBox eventFilterTextBox;
         public System.Windows.Forms.TabPage overlayerTabPage;
-        public System.Windows.Forms.Button loadAssetGraphButton;
-        public System.Windows.Forms.Button saveAssetGraphButton;
+        public System.Windows.Forms.Button discardAssetGraphButton;
+        public System.Windows.Forms.Button applyAssetGraphButton;
         public SymbolicTextBox assetGraphTextBox;
-        public System.Windows.Forms.Button loadOverlayerButton;
-        public System.Windows.Forms.Button saveOverlayerButton;
+        public System.Windows.Forms.Button discardOverlayerButton;
+        public System.Windows.Forms.Button applyOverlayerButton;
         public SymbolicTextBox overlayerTextBox;
         public System.Windows.Forms.TabPage assetGraphTabPage;
-        private System.Windows.Forms.ToolStripMenuItem clearLayerToolStripMenuItem;
         private System.Windows.Forms.TabPage evaluatorTabPage;
         public SymbolicTextBox evalInputTextBox;
         public SymbolicTextBox evalOutputTextBox;
@@ -1747,13 +1702,11 @@
         public System.Windows.Forms.Button evalLineButton;
         private System.Windows.Forms.TabPage preludeTabPage;
         public System.Windows.Forms.SplitContainer splitContainer6;
-        public System.Windows.Forms.Button loadPreludeButton;
-        public System.Windows.Forms.Button savePreludeButton;
+        public System.Windows.Forms.Button discardPreludeButton;
+        public System.Windows.Forms.Button applyPreludeButton;
         public SymbolicTextBox preludeTextBox;
         public System.Windows.Forms.TabControl propertyTabControl;
         public System.Windows.Forms.PropertyGrid layerPropertyGrid;
-        public System.Windows.Forms.ToolStripComboBox overlayComboBox;
-        private System.Windows.Forms.ToolStripLabel toolStripLabel1;
         private System.Windows.Forms.TabControl tabControl1;
         private System.Windows.Forms.TabPage tabPage4;
         private System.Windows.Forms.TabPage tabPage3;
@@ -1768,13 +1721,65 @@
         public System.Windows.Forms.TextBox entityDesignerPropertyNameTextBox;
         public System.Windows.Forms.Button entityDesignerPropertyRemoveButton;
         public System.Windows.Forms.GroupBox entityPropertyDesigner;
-        public System.Windows.Forms.Button propertyPickButton;
+        public System.Windows.Forms.Button pickPropertyButton;
         public System.Windows.Forms.TabPage entityTabPage;
         public System.Windows.Forms.TabPage layerTabPage;
-        public System.Windows.Forms.ToolStripMenuItem saveAsToolStripMenuItem;
+        public System.Windows.Forms.ToolStripButton undoButton;
+        public System.Windows.Forms.ToolStripButton redoButton;
+        public System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
+        public System.Windows.Forms.ToolStripLabel positionSnapLabel;
+        public System.Windows.Forms.ToolStripTextBox positionSnapTextBox;
+        public System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        public System.Windows.Forms.ToolStripLabel rotationSnapLabel;
+        public System.Windows.Forms.ToolStripTextBox rotationSnapTextBox;
+        public System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
+        public System.Windows.Forms.ToolStripButton createEntityButton;
+        public System.Windows.Forms.ToolStripComboBox createEntityComboBox;
+        private System.Windows.Forms.ToolStripLabel toolStripLabel1;
+        public System.Windows.Forms.ToolStripComboBox overlayComboBox;
+        public System.Windows.Forms.ToolStripLabel creationDepthLabel;
+        public System.Windows.Forms.ToolStripButton createDepthMinusButton;
+        public System.Windows.Forms.ToolStripTextBox createDepthTextBox;
+        public System.Windows.Forms.ToolStripButton createDepthPlusButton;
+        public System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+        public System.Windows.Forms.ToolStripButton quickSizeToolStripButton;
+        public System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
+        public System.Windows.Forms.ToolStripButton deleteEntityButton;
+        public System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
+        public System.Windows.Forms.ToolStripButton resetCameraButton;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
+        public System.Windows.Forms.ToolStripButton reloadAssetsButton;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator9;
+        public System.Windows.Forms.ToolStripButton tickingButton;
+        public System.Windows.Forms.ToolStripButton resetTickTime;
+        public System.Windows.Forms.ToolStripButton editWhileInteractiveCheckBox;
+        public System.Windows.Forms.ToolStrip toolStrip;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator11;
+        public System.Windows.Forms.ToolStripDropDownButton fileDropDownButton;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem7;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem8;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem9;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem10;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem11;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem12;
+        public System.Windows.Forms.ToolStripDropDownButton editDropDownButton;
+        public System.Windows.Forms.ToolStripMenuItem newLayerToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem openLayerToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem saveLayerToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem saveLayerAsToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem clearLayerToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem closeLayerToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem undoToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem redoToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem cutToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem pasteToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem createToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem deleteToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem quickSizeToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem startStopTickingToolStripMenuItem;
-        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem6;
+        public System.Windows.Forms.ToolStripMenuItem changeLayerNameToolStripMenuItem;
     }
 }
 

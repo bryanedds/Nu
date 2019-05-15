@@ -412,7 +412,7 @@ module Gaia =
                 | selectedNodeParent ->
                     let assetTag = (AssetTag.make<obj> selectedNodeParent.Text selectedNode.Text)
                     form.propertyValueTextBoxText <- scstring assetTag
-                    form.propertyApplyButton.PerformClick ()
+                    form.applyPropertyButton.PerformClick ()
                     world
         | _ -> world
 
@@ -445,7 +445,7 @@ module Gaia =
                     form.propertyValueTextBoxText <- scstring parentRelation
                     if propertyDescriptor.Name = "ParentNodeOpt"
                     then entityTds.DescribedEntity.SetParentNodeOptWithAdjustment (Some parentRelation) world
-                    else (form.propertyApplyButton.PerformClick (); world)
+                    else (form.applyPropertyButton.PerformClick (); world)
             | _ -> world
         | _ -> world
 
@@ -505,20 +505,20 @@ module Gaia =
                         form.propertyValueTextBox.Keywords1 <- keywords1
                         form.propertyValueTextBox.SelectionStart <- selectionStart
                         form.propertyValueTextBox.ScrollCaret ()
-                        form.propertyPickButton.Visible <-
+                        form.pickPropertyButton.Visible <-
                             selectedGridItem.PropertyDescriptor.PropertyType = typeof<Image AssetTag> ||
                             selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option>
-                        form.propertyPickButton.Click.RemoveHandler propertyPickButtonClickHandler
+                        form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
                         propertyPickButtonClickHandler <- EventHandler (fun _ _ -> addWorldChanger ^ handlePropertyPickButton selectedGridItem.PropertyDescriptor selectedEntityTds form)
-                        form.propertyPickButton.Click.AddHandler propertyPickButtonClickHandler
+                        form.pickPropertyButton.Click.AddHandler propertyPickButtonClickHandler
                 | _ ->
                     form.propertyEditor.Enabled <- false
                     form.propertyNameLabel.Text <- String.Empty
                     form.propertyDescriptionTextBox.Text <- String.Empty
                     form.propertyValueTextBoxText <- String.Empty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
-                    form.propertyPickButton.Visible <- false
-                    form.propertyPickButton.Click.RemoveHandler propertyPickButtonClickHandler
+                    form.pickPropertyButton.Visible <- false
+                    form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
         else // assume layer
             match (form.layerPropertyGrid.SelectedObject, form.layerPropertyGrid.SelectedGridItem) with
             | (null, _) | (_, null) ->
@@ -553,14 +553,14 @@ module Gaia =
                         form.propertyValueTextBox.Keywords1 <- keywords1
                         form.propertyValueTextBox.SelectionStart <- selectionStart
                         form.propertyValueTextBox.ScrollCaret ()
-                        form.propertyPickButton.Visible <- false
+                        form.pickPropertyButton.Visible <- false
                 | _ ->
                     form.propertyEditor.Enabled <- false
                     form.propertyNameLabel.Text <- String.Empty
                     form.propertyDescriptionTextBox.Text <- String.Empty
                     form.propertyValueTextBoxText <- String.Empty
                     form.propertyValueTextBox.EmptyUndoBuffer ()
-                    form.propertyPickButton.Visible <- false
+                    form.pickPropertyButton.Visible <- false
 
     let private refreshEntityPropertyDesigner (form : GaiaForm) =
         form.entityPropertyDesigner.Enabled <- isNotNull form.entityPropertyGrid.SelectedObject
@@ -1225,8 +1225,8 @@ module Gaia =
             | _ -> world
 
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
-        match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.YesNo) with
-        | DialogResult.No -> args.Cancel <- true
+        match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.OKCancel) with
+        | DialogResult.Cancel -> args.Cancel <- true
         | _ -> ()
 
     let private updateEntityDrag (form : GaiaForm) world =
@@ -1295,7 +1295,7 @@ module Gaia =
         updateUndoButton form world
         updateRedoButton form world
         if not form.propertyValueTextBox.Focused &&
-           not form.propertyApplyButton.Focused &&
+           not form.applyPropertyButton.Focused &&
            not form.IsClosing then
            refreshPropertyEditor form
         if form.IsDisposed
@@ -1382,6 +1382,26 @@ module Gaia =
                     if Keys.Control = Control.ModifierKeys && Keys.V = enum<Keys> vkCode then handleFormPaste false form (EventArgs ())
                     if Keys.Control = Control.ModifierKeys && Keys.F5 = enum<Keys> vkCode then form.tickingButton.PerformClick ()
                     if Keys.Control = Control.ModifierKeys && Keys.Q = enum<Keys> vkCode then handleFormQuickSize form (EventArgs ())
+                    if Keys.Alt = Control.ModifierKeys && Keys.A = enum<Keys> vkCode then
+                        match form.rolloutTabControl.SelectedTab.Name with
+                        | "propertyEditorTabPage" -> form.applyPropertyButton.PerformClick ()
+                        | "preludeTabPage" -> form.applyPreludeButton.PerformClick ()
+                        | "assetGraphTabPage" -> form.applyAssetGraphButton.PerformClick ()
+                        | "overlayerTabPage" -> form.applyOverlayerButton.PerformClick ()
+                        | "eventTracingTabPage" -> form.applyEventFilterButton.PerformClick ()
+                        | _ -> ()
+                    if Keys.Alt = Control.ModifierKeys && Keys.R = enum<Keys> vkCode then
+                        match form.rolloutTabControl.SelectedTab.Name with
+                        | "propertyEditorTabPage" -> form.discardPropertyButton.PerformClick ()
+                        | "preludeTabPage" -> form.discardPreludeButton.PerformClick ()
+                        | "assetGraphTabPage" -> form.discardAssetGraphButton.PerformClick ()
+                        | "overlayerTabPage" -> form.discardOverlayerButton.PerformClick ()
+                        | "eventTracingTabPage" -> form.discardEventFilterButton.PerformClick ()
+                        | _ -> ()
+                    if Keys.Alt = Control.ModifierKeys && Keys.P = enum<Keys> vkCode && form.rolloutTabControl.SelectedTab.Name = "propertyEditorTabPage" then form.pickPropertyButton.PerformClick ()
+                    if Keys.Alt = Control.ModifierKeys && Keys.T = enum<Keys> vkCode && form.rolloutTabControl.SelectedTab.Name = "eventTracingTabPage" then form.traceEventsCheckBox.Checked <- not form.traceEventsCheckBox.Checked
+                    if Keys.Alt = Control.ModifierKeys && Keys.E = enum<Keys> vkCode && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalButton.PerformClick ()
+                    if Keys.Alt = Control.ModifierKeys && Keys.L = enum<Keys> vkCode && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalLineButton.PerformClick ()
                     if Keys.Delete = enum<Keys> vkCode then handleFormDeleteEntity form (EventArgs ())
             GaiaForm.CallNextHookEx (form.HookID, nCode, wParam, lParam)) |> ignore
         tryRun3 runWhile sdlDeps (form : GaiaForm)
@@ -1445,17 +1465,17 @@ module Gaia =
         form.layerPropertyGrid.SelectedObjectsChanged.Add (handleFormLayerPropertyGridSelectedObjectsChanged form)
         form.layerPropertyGrid.SelectedGridItemChanged.Add (handleFormLayerPropertyGridSelectedGridItemChanged form)
         form.propertyTabControl.SelectedIndexChanged.Add (handlePropertyTabControlSelectedIndexChanged form)
-        form.propertyRefreshButton.Click.Add (handleFormPropertyRefreshClick form)
-        form.propertyApplyButton.Click.Add (handleFormPropertyApplyClick form)
+        form.discardPropertyButton.Click.Add (handleFormPropertyRefreshClick form)
+        form.applyPropertyButton.Click.Add (handleFormPropertyApplyClick form)
         form.traceEventsCheckBox.CheckStateChanged.Add (handleTraceEventsCheckBoxChanged form)
         form.applyEventFilterButton.Click.Add (handleApplyEventFilterClick form)
-        form.refreshEventFilterButton.Click.Add (handleRefreshEventFilterClick form)
-        form.savePreludeButton.Click.Add (handleSavePreludeClick form)
-        form.loadPreludeButton.Click.Add (handleLoadPreludeClick form)
-        form.saveAssetGraphButton.Click.Add (handleSaveAssetGraphClick form)
-        form.loadAssetGraphButton.Click.Add (handleLoadAssetGraphClick form)
-        form.saveOverlayerButton.Click.Add (handleSaveOverlayerClick form)
-        form.loadOverlayerButton.Click.Add (handleLoadOverlayerClick form)
+        form.discardEventFilterButton.Click.Add (handleRefreshEventFilterClick form)
+        form.applyPreludeButton.Click.Add (handleSavePreludeClick form)
+        form.discardPreludeButton.Click.Add (handleLoadPreludeClick form)
+        form.applyAssetGraphButton.Click.Add (handleSaveAssetGraphClick form)
+        form.discardAssetGraphButton.Click.Add (handleLoadAssetGraphClick form)
+        form.applyOverlayerButton.Click.Add (handleSaveOverlayerClick form)
+        form.discardOverlayerButton.Click.Add (handleLoadOverlayerClick form)
         form.entityTreeView.AfterSelect.Add (handleFormEntityTreeViewNodeSelect form)
         form.hierarchyTreeView.AfterSelect.Add (handleFormHierarchyTreeViewNodeSelect form)
         form.createEntityButton.Click.Add (handleFormCreateEntity false form)
@@ -1466,11 +1486,11 @@ module Gaia =
         form.quickSizeToolStripMenuItem.Click.Add (handleFormQuickSize form)
         form.startStopTickingToolStripMenuItem.Click.Add (fun _ -> form.tickingButton.PerformClick ())
         form.deleteContextMenuItem.Click.Add (handleFormDeleteEntity form)
-        form.newToolStripMenuItem.Click.Add (handleFormNew form)
-        form.saveToolStripMenuItem.Click.Add (handleFormSave false form)
-        form.saveAsToolStripMenuItem.Click.Add (handleFormSave true form)
-        form.openToolStripMenuItem.Click.Add (handleFormOpen form)
-        form.closeToolStripMenuItem.Click.Add (handleFormClose form)
+        form.newLayerToolStripMenuItem.Click.Add (handleFormNew form)
+        form.saveLayerToolStripMenuItem.Click.Add (handleFormSave false form)
+        form.saveLayerAsToolStripMenuItem.Click.Add (handleFormSave true form)
+        form.openLayerToolStripMenuItem.Click.Add (handleFormOpen form)
+        form.closeLayerToolStripMenuItem.Click.Add (handleFormClose form)
         form.undoButton.Click.Add (handleFormUndo form)
         form.undoToolStripMenuItem.Click.Add (handleFormUndo form)
         form.redoButton.Click.Add (handleFormRedo form)

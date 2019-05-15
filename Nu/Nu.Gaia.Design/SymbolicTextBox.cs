@@ -140,6 +140,11 @@ namespace Nu.Gaia.Design
                 AutoCShow(false);
                 e.SuppressKeyPress = true;
             }
+            else if (e.Control)
+            {
+                e.SuppressKeyPress = true;
+                e.Handled = false;
+            }
             else if (e.Alt && e.KeyCode == Keys.Up)
             {
                 // TODO: P1: SelectParentSymbols();
@@ -149,6 +154,11 @@ namespace Nu.Gaia.Design
             {
                 // TODO: P1: SelectChildSymbols();
                 e.SuppressKeyPress = true;
+            }
+            else if (e.Alt)
+            {
+                e.SuppressKeyPress = true;
+                e.Handled = false;
             }
             // NOTE: auto [] completion feature disabled due to poor usability.
             //else if (e.KeyCode == Keys.OemOpenBrackets)
