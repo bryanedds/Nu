@@ -41,7 +41,7 @@
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer4 = new System.Windows.Forms.SplitContainer();
             this.rolloutTabControl = new System.Windows.Forms.TabControl();
-            this.propertyTabPage = new System.Windows.Forms.TabPage();
+            this.propertyEditorTabPage = new System.Windows.Forms.TabPage();
             this.propertyEditor = new System.Windows.Forms.SplitContainer();
             this.splitContainer5 = new System.Windows.Forms.SplitContainer();
             this.pickPropertyButton = new System.Windows.Forms.Button();
@@ -172,7 +172,7 @@
             this.splitContainer4.Panel2.SuspendLayout();
             this.splitContainer4.SuspendLayout();
             this.rolloutTabControl.SuspendLayout();
-            this.propertyTabPage.SuspendLayout();
+            this.propertyEditorTabPage.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.propertyEditor)).BeginInit();
             this.propertyEditor.Panel1.SuspendLayout();
             this.propertyEditor.Panel2.SuspendLayout();
@@ -332,7 +332,7 @@
             // 
             // rolloutTabControl
             // 
-            this.rolloutTabControl.Controls.Add(this.propertyTabPage);
+            this.rolloutTabControl.Controls.Add(this.propertyEditorTabPage);
             this.rolloutTabControl.Controls.Add(this.evaluatorTabPage);
             this.rolloutTabControl.Controls.Add(this.preludeTabPage);
             this.rolloutTabControl.Controls.Add(this.assetGraphTabPage);
@@ -345,16 +345,16 @@
             this.rolloutTabControl.Size = new System.Drawing.Size(952, 201);
             this.rolloutTabControl.TabIndex = 0;
             // 
-            // propertyTabPage
+            // propertyEditorTabPage
             // 
-            this.propertyTabPage.Controls.Add(this.propertyEditor);
-            this.propertyTabPage.Location = new System.Drawing.Point(4, 22);
-            this.propertyTabPage.Name = "propertyTabPage";
-            this.propertyTabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.propertyTabPage.Size = new System.Drawing.Size(944, 175);
-            this.propertyTabPage.TabIndex = 0;
-            this.propertyTabPage.Text = "Property Editor";
-            this.propertyTabPage.UseVisualStyleBackColor = true;
+            this.propertyEditorTabPage.Controls.Add(this.propertyEditor);
+            this.propertyEditorTabPage.Location = new System.Drawing.Point(4, 22);
+            this.propertyEditorTabPage.Name = "propertyEditorTabPage";
+            this.propertyEditorTabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.propertyEditorTabPage.Size = new System.Drawing.Size(944, 175);
+            this.propertyEditorTabPage.TabIndex = 0;
+            this.propertyEditorTabPage.Text = "[P]roperty Editor";
+            this.propertyEditorTabPage.UseVisualStyleBackColor = true;
             // 
             // propertyEditor
             // 
@@ -397,15 +397,15 @@
             this.splitContainer5.Panel2.Controls.Add(this.propertyDescriptionTextBox);
             this.splitContainer5.Size = new System.Drawing.Size(176, 169);
             this.splitContainer5.SplitterDistance = 98;
-            this.splitContainer5.TabIndex = 1;
+            this.splitContainer5.TabIndex = 0;
             // 
             // pickPropertyButton
             // 
             this.pickPropertyButton.Location = new System.Drawing.Point(121, 6);
             this.pickPropertyButton.Name = "pickPropertyButton";
             this.pickPropertyButton.Size = new System.Drawing.Size(42, 23);
-            this.pickPropertyButton.TabIndex = 4;
-            this.pickPropertyButton.Text = "[P]ick";
+            this.pickPropertyButton.TabIndex = 1;
+            this.pickPropertyButton.Text = "Pic[k]";
             this.pickPropertyButton.UseVisualStyleBackColor = true;
             this.pickPropertyButton.Visible = false;
             // 
@@ -414,7 +414,7 @@
             this.applyPropertyButton.Location = new System.Drawing.Point(16, 35);
             this.applyPropertyButton.Name = "applyPropertyButton";
             this.applyPropertyButton.Size = new System.Drawing.Size(147, 23);
-            this.applyPropertyButton.TabIndex = 1;
+            this.applyPropertyButton.TabIndex = 2;
             this.applyPropertyButton.Text = "[A]pply Change";
             this.applyPropertyButton.UseVisualStyleBackColor = true;
             // 
@@ -424,14 +424,14 @@
             this.propertyNameLabel.Location = new System.Drawing.Point(13, 11);
             this.propertyNameLabel.Name = "propertyNameLabel";
             this.propertyNameLabel.Size = new System.Drawing.Size(0, 13);
-            this.propertyNameLabel.TabIndex = 3;
+            this.propertyNameLabel.TabIndex = 0;
             // 
             // discardPropertyButton
             // 
             this.discardPropertyButton.Location = new System.Drawing.Point(16, 64);
             this.discardPropertyButton.Name = "discardPropertyButton";
             this.discardPropertyButton.Size = new System.Drawing.Size(147, 23);
-            this.discardPropertyButton.TabIndex = 0;
+            this.discardPropertyButton.TabIndex = 3;
             this.discardPropertyButton.Text = "[D]iscard Change";
             this.discardPropertyButton.UseVisualStyleBackColor = true;
             // 
@@ -452,7 +452,7 @@
             this.evaluatorTabPage.Name = "evaluatorTabPage";
             this.evaluatorTabPage.Size = new System.Drawing.Size(944, 175);
             this.evaluatorTabPage.TabIndex = 4;
-            this.evaluatorTabPage.Text = "Evaluator";
+            this.evaluatorTabPage.Text = "[E]valuator";
             this.evaluatorTabPage.UseVisualStyleBackColor = true;
             // 
             // terminal
@@ -744,7 +744,7 @@
             this.splitContainer3.Panel2.Controls.Add(this.tabControl1);
             this.splitContainer3.Size = new System.Drawing.Size(321, 640);
             this.splitContainer3.SplitterDistance = 419;
-            this.splitContainer3.TabIndex = 2;
+            this.splitContainer3.TabIndex = 0;
             // 
             // propertyTabControl
             // 
@@ -1257,7 +1257,7 @@
             this.editWhileInteractiveCheckBox});
             this.toolStrip.Location = new System.Drawing.Point(0, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1291, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1260, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -1380,7 +1380,7 @@
             // toolStripMenuItem9
             // 
             this.toolStripMenuItem9.Name = "toolStripMenuItem9";
-            this.toolStripMenuItem9.Size = new System.Drawing.Size(180, 6);
+            this.toolStripMenuItem9.Size = new System.Drawing.Size(199, 6);
             // 
             // cutToolStripMenuItem
             // 
@@ -1406,7 +1406,7 @@
             // toolStripMenuItem10
             // 
             this.toolStripMenuItem10.Name = "toolStripMenuItem10";
-            this.toolStripMenuItem10.Size = new System.Drawing.Size(180, 6);
+            this.toolStripMenuItem10.Size = new System.Drawing.Size(199, 6);
             // 
             // createToolStripMenuItem
             // 
@@ -1432,7 +1432,7 @@
             // toolStripMenuItem11
             // 
             this.toolStripMenuItem11.Name = "toolStripMenuItem11";
-            this.toolStripMenuItem11.Size = new System.Drawing.Size(180, 6);
+            this.toolStripMenuItem11.Size = new System.Drawing.Size(199, 6);
             // 
             // startStopTickingToolStripMenuItem
             // 
@@ -1444,13 +1444,13 @@
             // toolStripMenuItem12
             // 
             this.toolStripMenuItem12.Name = "toolStripMenuItem12";
-            this.toolStripMenuItem12.Size = new System.Drawing.Size(180, 6);
+            this.toolStripMenuItem12.Size = new System.Drawing.Size(199, 6);
             // 
             // changeLayerNameToolStripMenuItem
             // 
             this.changeLayerNameToolStripMenuItem.Enabled = false;
             this.changeLayerNameToolStripMenuItem.Name = "changeLayerNameToolStripMenuItem";
-            this.changeLayerNameToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.changeLayerNameToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.changeLayerNameToolStripMenuItem.Text = "Change Layer Name";
             // 
             // toolStripSeparator11
@@ -1585,7 +1585,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).EndInit();
             this.splitContainer4.ResumeLayout(false);
             this.rolloutTabControl.ResumeLayout(false);
-            this.propertyTabPage.ResumeLayout(false);
+            this.propertyEditorTabPage.ResumeLayout(false);
             this.propertyEditor.Panel1.ResumeLayout(false);
             this.propertyEditor.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.propertyEditor)).EndInit();
@@ -1685,7 +1685,7 @@
         public System.Windows.Forms.Button applyEventFilterButton;
         public System.Windows.Forms.CheckBox traceEventsCheckBox;
         public System.Windows.Forms.Button discardEventFilterButton;
-        public System.Windows.Forms.TabPage propertyTabPage;
+        public System.Windows.Forms.TabPage propertyEditorTabPage;
         public System.Windows.Forms.TabPage eventTracingTabPage;
         public System.Windows.Forms.TabControl rolloutTabControl;
         public SymbolicTextBox propertyValueTextBox;
@@ -1698,7 +1698,6 @@
         public System.Windows.Forms.Button applyOverlayerButton;
         public SymbolicTextBox overlayerTextBox;
         public System.Windows.Forms.TabPage assetGraphTabPage;
-        private System.Windows.Forms.TabPage evaluatorTabPage;
         public SymbolicTextBox evalInputTextBox;
         public SymbolicTextBox evalOutputTextBox;
         private System.Windows.Forms.SplitContainer splitContainer10;
@@ -1709,7 +1708,6 @@
         public System.Windows.Forms.Button evalButton;
         public System.Windows.Forms.Button clearOutputButton;
         public System.Windows.Forms.Button evalLineButton;
-        private System.Windows.Forms.TabPage preludeTabPage;
         public System.Windows.Forms.SplitContainer splitContainer6;
         public System.Windows.Forms.Button discardPreludeButton;
         public System.Windows.Forms.Button applyPreludeButton;
@@ -1789,6 +1787,8 @@
         public System.Windows.Forms.ToolStripMenuItem quickSizeToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem startStopTickingToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem changeLayerNameToolStripMenuItem;
+        public System.Windows.Forms.TabPage evaluatorTabPage;
+        public System.Windows.Forms.TabPage preludeTabPage;
     }
 }
 

@@ -1382,7 +1382,7 @@ module Gaia =
                     if Keys.Control = Control.ModifierKeys && Keys.V = enum<Keys> vkCode then handleFormPaste false form (EventArgs ())
                     if Keys.Control = Control.ModifierKeys && Keys.F5 = enum<Keys> vkCode then form.tickingButton.PerformClick ()
                     if Keys.Control = Control.ModifierKeys && Keys.Q = enum<Keys> vkCode then handleFormQuickSize form (EventArgs ())
-                    if Keys.Alt = Control.ModifierKeys && Keys.A = enum<Keys> vkCode then
+                    if Keys.Alt = Control.ModifierKeys && (Keys.A = enum<Keys> vkCode || Keys.Enter = enum<Keys> vkCode) then
                         match form.rolloutTabControl.SelectedTab.Name with
                         | "propertyEditorTabPage" -> form.applyPropertyButton.PerformClick ()
                         | "preludeTabPage" -> form.applyPreludeButton.PerformClick ()
@@ -1390,7 +1390,7 @@ module Gaia =
                         | "overlayerTabPage" -> form.applyOverlayerButton.PerformClick ()
                         | "eventTracingTabPage" -> form.applyEventFilterButton.PerformClick ()
                         | _ -> ()
-                    if Keys.Alt = Control.ModifierKeys && Keys.R = enum<Keys> vkCode then
+                    if Keys.Alt = Control.ModifierKeys && (Keys.D = enum<Keys> vkCode || Keys.Escape = enum<Keys> vkCode) then
                         match form.rolloutTabControl.SelectedTab.Name with
                         | "propertyEditorTabPage" -> form.discardPropertyButton.PerformClick ()
                         | "preludeTabPage" -> form.discardPreludeButton.PerformClick ()
@@ -1398,7 +1398,9 @@ module Gaia =
                         | "overlayerTabPage" -> form.discardOverlayerButton.PerformClick ()
                         | "eventTracingTabPage" -> form.discardEventFilterButton.PerformClick ()
                         | _ -> ()
-                    if Keys.Alt = Control.ModifierKeys && Keys.P = enum<Keys> vkCode && form.rolloutTabControl.SelectedTab.Name = "propertyEditorTabPage" then form.pickPropertyButton.PerformClick ()
+                    if Keys.Alt = Control.ModifierKeys && Keys.P = enum<Keys> vkCode then (form.rolloutTabControl.SelectTab "propertyEditorTabPage"; form.propertyValueTextBox.Select (); form.propertyValueTextBox.SelectAll ())
+                    if Keys.Alt = Control.ModifierKeys && Keys.E = enum<Keys> vkCode then (form.rolloutTabControl.SelectTab "evaluatorTabPage"; form.evalInputTextBox.Select ())
+                    if Keys.Alt = Control.ModifierKeys && Keys.K = enum<Keys> vkCode && form.rolloutTabControl.SelectedTab.Name = "propertyEditorTabPage" then form.pickPropertyButton.PerformClick ()
                     if Keys.Alt = Control.ModifierKeys && Keys.T = enum<Keys> vkCode && form.rolloutTabControl.SelectedTab.Name = "eventTracingTabPage" then form.traceEventsCheckBox.Checked <- not form.traceEventsCheckBox.Checked
                     if Keys.Alt = Control.ModifierKeys && Keys.E = enum<Keys> vkCode && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalButton.PerformClick ()
                     if Keys.Alt = Control.ModifierKeys && Keys.L = enum<Keys> vkCode && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalLineButton.PerformClick ()
