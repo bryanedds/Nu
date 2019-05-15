@@ -1366,13 +1366,15 @@
             // undoToolStripMenuItem
             // 
             this.undoToolStripMenuItem.Name = "undoToolStripMenuItem";
-            this.undoToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.undoToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Z)));
+            this.undoToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.undoToolStripMenuItem.Text = "[&U]ndo";
             // 
             // redoToolStripMenuItem
             // 
             this.redoToolStripMenuItem.Name = "redoToolStripMenuItem";
-            this.redoToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.redoToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Y)));
+            this.redoToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.redoToolStripMenuItem.Text = "[&R]edo";
             // 
             // toolStripMenuItem9
@@ -1383,19 +1385,22 @@
             // cutToolStripMenuItem
             // 
             this.cutToolStripMenuItem.Name = "cutToolStripMenuItem";
-            this.cutToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.cutToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.X)));
+            this.cutToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.cutToolStripMenuItem.Text = "C[&u]t";
             // 
             // copyToolStripMenuItem
             // 
             this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
-            this.copyToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.copyToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
+            this.copyToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.copyToolStripMenuItem.Text = "[&C]opy";
             // 
             // pasteToolStripMenuItem
             // 
             this.pasteToolStripMenuItem.Name = "pasteToolStripMenuItem";
-            this.pasteToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.pasteToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.V)));
+            this.pasteToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.pasteToolStripMenuItem.Text = "[&P]aste";
             // 
             // toolStripMenuItem10
@@ -1406,19 +1411,22 @@
             // createToolStripMenuItem
             // 
             this.createToolStripMenuItem.Name = "createToolStripMenuItem";
-            this.createToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.createToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.E)));
+            this.createToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.createToolStripMenuItem.Text = "Cr[&e]ate";
             // 
             // deleteToolStripMenuItem
             // 
             this.deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
-            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.deleteToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D)));
+            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.deleteToolStripMenuItem.Text = "[&D]elete";
             // 
             // quickSizeToolStripMenuItem
             // 
             this.quickSizeToolStripMenuItem.Name = "quickSizeToolStripMenuItem";
-            this.quickSizeToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.quickSizeToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Q)));
+            this.quickSizeToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.quickSizeToolStripMenuItem.Text = "[&Q]uick Size";
             // 
             // toolStripMenuItem11
@@ -1429,7 +1437,8 @@
             // startStopTickingToolStripMenuItem
             // 
             this.startStopTickingToolStripMenuItem.Name = "startStopTickingToolStripMenuItem";
-            this.startStopTickingToolStripMenuItem.Size = new System.Drawing.Size(183, 22);
+            this.startStopTickingToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F5;
+            this.startStopTickingToolStripMenuItem.Size = new System.Drawing.Size(202, 22);
             this.startStopTickingToolStripMenuItem.Text = "[&S]tart / Stop Ticking";
             // 
             // toolStripMenuItem12
