@@ -137,8 +137,8 @@ module PlayerModule =
         static let [<Literal>] FallForce = -30000.0f
         static let [<Literal>] ClimbForce = 12000.0f
 
-        static let createBullet (playerTransform : Transform) world =
-            let (bullet, world) = World.createEntity<BulletDispatcher> None DefaultOverlay Simulants.GameplayScene world
+        static let createBullet (player : Entity) (playerTransform : Transform) world =
+            let (bullet, world) = World.createEntity<BulletDispatcher> None DefaultOverlay (etol player) world
             let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetDepth playerTransform.Depth world
@@ -151,7 +151,7 @@ module PlayerModule =
 
         static let shootBullet (player : Entity) world =
             let playerTransform = player.GetTransform world
-            let (bullet, world) = createBullet playerTransform world
+            let (bullet, world) = createBullet player playerTransform world
             propelBullet bullet world
 
         static let handleSpawnBullet evt world =
