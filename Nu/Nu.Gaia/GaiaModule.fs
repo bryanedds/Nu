@@ -1230,7 +1230,6 @@ module Gaia =
         if Keys.Control = Control.ModifierKeys && Keys.N = key then handleFormNew form (EventArgs ())
         if Keys.Control = Control.ModifierKeys && Keys.O = key then handleFormOpen form (EventArgs ())
         if Keys.Control = Control.ModifierKeys && Keys.S = key then handleFormSave false form (EventArgs ())
-        if Keys.Control = Control.ModifierKeys && Keys.A = key then handleFormSave true form (EventArgs ())
         if Keys.Alt = Control.ModifierKeys && (Keys.A = key || Keys.Enter = key) then
             match form.rolloutTabControl.SelectedTab.Name with
             | "propertyEditorTabPage" -> form.applyPropertyButton.PerformClick ()
@@ -1254,6 +1253,7 @@ module Gaia =
         if Keys.Alt = Control.ModifierKeys && Keys.E = key && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalButton.PerformClick ()
         if Keys.Alt = Control.ModifierKeys && Keys.L = key && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalLineButton.PerformClick ()
         if not isKeyFromTextBox then
+            if Keys.Control = Control.ModifierKeys && Keys.A = key then handleFormSave true form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.Z = key then handleFormUndo form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.Y = key then handleFormRedo form (EventArgs ())
             if Keys.Control = Control.ModifierKeys && Keys.E = key then handleFormCreateEntity false form (EventArgs ())
