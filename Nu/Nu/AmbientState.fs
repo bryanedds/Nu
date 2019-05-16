@@ -52,6 +52,14 @@ module AmbientStateModule =
         let resetTickTimeImmediate state =
             { state with TickTime = 0L }
 
+        /// Increment the tick time.
+        let incTickTimeImmediate state =
+            { state with TickTime = inc state.TickTime }
+
+        /// Increment the tick time.
+        let decTickTimeImmediate state =
+            { state with TickTime = dec state.TickTime }
+
         /// Get the tick time.
         let getTickTime state =
             state.TickTime
