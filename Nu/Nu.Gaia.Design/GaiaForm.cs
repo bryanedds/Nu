@@ -10,10 +10,10 @@ namespace Nu.Gaia.Design
         public GaiaForm()
         {
             InitializeComponent();
-            _proc = HookCallback;
-            _hookID = SetHook(_proc);
+            proc = HookCallback;
+            hookId = SetLowLevelKeyboardHook(proc);
             FormClosing += (_, __) => isClosing = true;
-            FormClosed += (_, __) => UnhookWindowsHookEx(_hookID);
+            FormClosed += (_, __) => UnhookWindowsHookEx(hookId);
         }
 
         public bool IsClosing
@@ -23,7 +23,7 @@ namespace Nu.Gaia.Design
 
         public IntPtr HookID
         {
-            get { return _hookID; }
+            get { return hookId; }
         }
 
         public string propertyValueTextBoxText
@@ -38,14 +38,7 @@ namespace Nu.Gaia.Design
 
         public delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
 
-        public IntPtr SetHook(LowLevelKeyboardProc proc)
-        {
-            using (Process curProcess = Process.GetCurrentProcess())
-            using (ProcessModule curModule = curProcess.MainModule)
-            {
-                return SetWindowsHookEx(WH_KEYBOARD_LL, proc, GetModuleHandle(curModule.ModuleName), 0);
-            }
-        }
+        public event LowLevelKeyboardProc LowLevelKeyboardHook;
 
         public Control GetFocusedControl()
         {
@@ -55,14 +48,22 @@ namespace Nu.Gaia.Design
             return focusedControl;
         }
 
+        private IntPtr SetLowLevelKeyboardHook(LowLevelKeyboardProc proc)
+        {
+            using (Process curProcess = Process.GetCurrentProcess())
+                using (ProcessModule curModule = curProcess.MainModule)
+                    return SetWindowsHookEx(WH_KEYBOARD_LL, proc, GetModuleHandle(curModule.ModuleName), 0);
+        }
+
         private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            return CallNextHookEx(_hookID, nCode, wParam, lParam);
+            try { LowLevelKeyboardHook?.Invoke(nCode, wParam, lParam); } catch { }
+            return CallNextHookEx(hookId, nCode, wParam, lParam);
         }
 
         private const int WH_KEYBOARD_LL = 13;
-        private readonly LowLevelKeyboardProc _proc;
-        private readonly IntPtr _hookID = IntPtr.Zero;
+        private readonly LowLevelKeyboardProc proc;
+        private readonly IntPtr hookId;
         private bool isClosing;
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
