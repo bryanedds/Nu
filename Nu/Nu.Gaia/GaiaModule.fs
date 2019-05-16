@@ -961,6 +961,16 @@ module Gaia =
             let (pastWorld, world) = (world, World.resetTickTime world)
             pushPastWorld pastWorld world
 
+    let private handleFormIncTickTime (_ : GaiaForm) (_ : EventArgs) =
+        addWorldChanger ^ fun world ->
+            let (pastWorld, world) = (world, World.incTickTime world)
+            pushPastWorld pastWorld world
+
+    let private handleFormDecTickTime (_ : GaiaForm) (_ : EventArgs) =
+        addWorldChanger ^ fun world ->
+            let (pastWorld, world) = (world, World.decTickTime world)
+            pushPastWorld pastWorld world
+
     let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
             match form.entityPropertyGrid.SelectedObject with
@@ -1500,6 +1510,8 @@ module Gaia =
         form.redoToolStripMenuItem.Click.Add (handleFormRedo form)
         form.tickingButton.CheckedChanged.Add (handleFormTickingChanged form)
         form.resetTickTime.Click.Add (handleFormResetTickTime form)
+        form.incTickTime.Click.Add (handleFormIncTickTime form)
+        form.decTickTime.Click.Add (handleFormDecTickTime form)
         form.cutToolStripMenuItem.Click.Add (handleFormCut form)
         form.cutContextMenuItem.Click.Add (handleFormCut form)
         form.copyToolStripMenuItem.Click.Add (handleFormCopy form)

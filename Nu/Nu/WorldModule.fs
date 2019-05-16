@@ -264,6 +264,22 @@ module WorldModule =
                     { ScheduledTime = World.getTickTime world
                       Command = { Execute = fun world -> World.updateAmbientState AmbientState.resetTickTimeImmediate world }}) world
 
+        /// Increment the tick time at the end of the current frame.
+        [<FunctionBinding>]
+        static member incTickTime world =
+            World.updateAmbientState
+                (AmbientState.addTasklet
+                    { ScheduledTime = World.getTickTime world
+                      Command = { Execute = fun world -> World.updateAmbientState AmbientState.incTickTimeImmediate world }}) world
+
+        /// Increment the tick time at the end of the current frame.
+        [<FunctionBinding>]
+        static member decTickTime world =
+            World.updateAmbientState
+                (AmbientState.addTasklet
+                    { ScheduledTime = World.getTickTime world
+                      Command = { Execute = fun world -> World.updateAmbientState AmbientState.decTickTimeImmediate world }}) world
+
         /// Get the world's tick time.
         [<FunctionBinding>]
         static member getTickTime world =
