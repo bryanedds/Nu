@@ -18,33 +18,33 @@ module WorldBindings =
 
     let [<Literal>] BindingKeywords =
         "v2 v4 v2i get getAsStream set setAsStream update streamEvent stream equate self parent grandparent game toData monitor " +
-        "resolve reloadAssets tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
-        "isSelectedScreenIdling isSelectedScreenTransitioning selectScreen tryTransitionScreen " +
-        "transitionScreen createDissolveScreenFromLayerFile6 createDissolveScreenFromLayerFile createSplashScreen6 " +
-        "createSplashScreen getEntitiesInView2 getEntitiesInBounds3 getEntitiesAtPoint3 " +
-        "getEntitiesInView getEntitiesInBounds getEntitiesAtPoint playSong " +
-        "playSong4 playSound playSound3 fadeOutSong " +
-        "stopSong hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets " +
-        "hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets bodyExists " +
-        "getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt " +
-        "getBodyToGroundContactTangentOpt isBodyOnGround createBody createBodies " +
-        "destroyBody destroyBodies setBodyPosition setBodyRotation " +
-        "setBodyAngularVelocity setBodyLinearVelocity applyBodyAngularImpulse applyBodyLinearImpulse " +
-        "applyBodyForce isMouseButtonDown getMousePosition getMousePositionF " +
-        "isKeyboardKeyDown getSimulantSelected tryGetSimulantParent getSimulantChildren " +
-        "getSimulantExists getEntities0 getLayers0 isSimulantSelected " +
-        "writeGameToFile readGameFromFile getScreens destroyScreen " +
-        "createScreen createDissolveScreen writeScreenToFile readScreenFromFile " +
-        "getLayers destroyLayer destroyLayers writeLayerToFile " +
-        "readLayerFromFile getEntities destroyEntity destroyEntities " +
-        "tryPickEntity createEntity reassignEntity trySetEntityOverlayNameOpt " +
-        "trySetEntityFacetNames createLayer getEyeCenter setEyeCenter " +
-        "getEyeSize setEyeSize getOmniscreenOpt setOmniscreenOpt " +
-        "getOmniscreen setOmniscreen getSelectedScreenOpt setSelectedScreenOpt " +
-        "getSelectedScreen setSelectedScreen getScreenTransitionDestinationOpt getViewBoundsRelative " +
-        "getViewBoundsAbsolute getViewBounds isBoundsInView mouseToScreen " +
-        "mouseToWorld mouseToEntity getTickRate getTickRateF " +
-        "setTickRate resetTickTime getTickTime isTicking " +
+        "resolve reloadAssets tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning isSelectedScreenIdling " +
+        "isSelectedScreenTransitioning selectScreen tryTransitionScreen transitionScreen createDissolveScreenFromLayerFile6 " +
+        "createDissolveScreenFromLayerFile createSplashScreen6 createSplashScreen getEntitiesInView2 " +
+        "getEntitiesInBounds3 getEntitiesAtPoint3 getEntitiesInView getEntitiesInBounds " +
+        "getEntitiesAtPoint playSong playSong4 playSound " +
+        "playSound3 fadeOutSong stopSong hintAudioPackageUse " +
+        "hintAudioPackageDisuse reloadAudioAssets hintRenderPackageUse hintRenderPackageDisuse " +
+        "reloadRenderAssets bodyExists getBodyContactNormals getBodyLinearVelocity " +
+        "getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround " +
+        "createBody createBodies destroyBody destroyBodies " +
+        "setBodyPosition setBodyRotation setBodyAngularVelocity setBodyLinearVelocity " +
+        "applyBodyAngularImpulse applyBodyLinearImpulse applyBodyForce isMouseButtonDown " +
+        "getMousePosition getMousePositionF isKeyboardKeyDown getSimulantSelected " +
+        "tryGetSimulantParent getSimulantChildren getSimulantExists getEntities0 " +
+        "getLayers0 isSimulantSelected writeGameToFile readGameFromFile " +
+        "getScreens destroyScreen createScreen createDissolveScreen " +
+        "writeScreenToFile readScreenFromFile getLayers destroyLayer " +
+        "destroyLayers writeLayerToFile readLayerFromFile getEntities " +
+        "destroyEntity destroyEntities tryPickEntity createEntity " +
+        "reassignEntity trySetEntityOverlayNameOpt trySetEntityFacetNames createLayer " +
+        "getEyeCenter setEyeCenter getEyeSize setEyeSize " +
+        "getOmniscreenOpt setOmniscreenOpt getOmniscreen setOmniscreen " +
+        "getSelectedScreenOpt setSelectedScreenOpt getSelectedScreen setSelectedScreen " +
+        "getScreenTransitionDestinationOpt getViewBoundsRelative getViewBoundsAbsolute getViewBounds " +
+        "isBoundsInView mouseToScreen mouseToWorld mouseToEntity " +
+        "getTickRate getTickRateF setTickRate resetTickTime " +
+        "incTickTime decTickTime getTickTime isTicking " +
         "getUpdateCount getLiveness exit tryGetTextureSize " +
         "getTextureSize tryGetTextureSizeAsVector2 getTextureSizeAsVector2 reloadSymbols"
 
@@ -1903,6 +1903,24 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'resetTickTime' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let incTickTime world =
+        let oldWorld = world
+        try
+            let result = World.incTickTime world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'incTickTime' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let decTickTime world =
+        let oldWorld = world
+        try
+            let result = World.decTickTime world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'decTickTime' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
     let getTickTime world =
         let oldWorld = world
         try
@@ -3191,6 +3209,28 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalIncTickTimeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> incTickTime  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalDecTickTimeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> decTickTime  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalGetTickTimeBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3415,6 +3455,8 @@ module WorldBindings =
              ("getTickRateF", { Fn = evalGetTickRateFBinding; Pars = [||]; DocOpt = None })
              ("setTickRate", { Fn = evalSetTickRateBinding; Pars = [|"tickRate"|]; DocOpt = None })
              ("resetTickTime", { Fn = evalResetTickTimeBinding; Pars = [||]; DocOpt = None })
+             ("incTickTime", { Fn = evalIncTickTimeBinding; Pars = [||]; DocOpt = None })
+             ("decTickTime", { Fn = evalDecTickTimeBinding; Pars = [||]; DocOpt = None })
              ("getTickTime", { Fn = evalGetTickTimeBinding; Pars = [||]; DocOpt = None })
              ("isTicking", { Fn = evalIsTickingBinding; Pars = [||]; DocOpt = None })
              ("getUpdateCount", { Fn = evalGetUpdateCountBinding; Pars = [||]; DocOpt = None })

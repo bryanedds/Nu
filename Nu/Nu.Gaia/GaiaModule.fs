@@ -1240,6 +1240,9 @@ module Gaia =
         if Keys.Control = Control.ModifierKeys && Keys.N = key then handleFormNew form (EventArgs ())
         if Keys.Control = Control.ModifierKeys && Keys.O = key then handleFormOpen form (EventArgs ())
         if Keys.Control = Control.ModifierKeys && Keys.S = key then handleFormSave false form (EventArgs ())
+        if Keys.Control = Control.ModifierKeys && Keys.D0 = key then handleFormResetTickTime form (EventArgs ())
+        if Keys.Control = Control.ModifierKeys && (Keys.OemMinus = key || Keys.Add = key) then handleFormIncTickTime form ( EventArgs ())
+        if Keys.Control = Control.ModifierKeys && (Keys.Oemplus = key || Keys.Subtract = key) then handleFormDecTickTime form (EventArgs ())
         if Keys.Alt = Control.ModifierKeys && (Keys.A = key || Keys.Enter = key) then
             match form.rolloutTabControl.SelectedTab.Name with
             | "propertyEditorTabPage" -> form.applyPropertyButton.PerformClick ()
