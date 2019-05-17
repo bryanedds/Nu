@@ -1260,10 +1260,10 @@ module Gaia =
             | "eventTracingTabPage" -> form.discardEventFilterButton.PerformClick ()
             | _ -> ()
         if Keys.Alt = Control.ModifierKeys && (Keys.P = key || Keys.Enter = key) then (form.rolloutTabControl.SelectTab "propertyEditorTabPage"; form.propertyValueTextBox.Select (); form.propertyValueTextBox.SelectAll ())
-        if Keys.Alt = Control.ModifierKeys && Keys.V = key then (form.rolloutTabControl.SelectTab "evaluatorTabPage"; form.evalInputTextBox.Select ())
+        if Keys.Alt = Control.ModifierKeys && Keys.E = key then (form.rolloutTabControl.SelectTab "evaluatorTabPage"; form.evalInputTextBox.Select ())
         if Keys.Alt = Control.ModifierKeys && Keys.K = key && form.rolloutTabControl.SelectedTab.Name = "propertyEditorTabPage" then form.pickPropertyButton.PerformClick ()
         if Keys.Alt = Control.ModifierKeys && Keys.T = key && form.rolloutTabControl.SelectedTab.Name = "eventTracingTabPage" then form.traceEventsCheckBox.Checked <- not form.traceEventsCheckBox.Checked
-        if Keys.Alt = Control.ModifierKeys && Keys.E = key && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalButton.PerformClick ()
+        if Keys.Alt = Control.ModifierKeys && Keys.V = key && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalButton.PerformClick ()
         if Keys.Alt = Control.ModifierKeys && Keys.L = key && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalLineButton.PerformClick ()
         if not isKeyFromTextBox then
             if Keys.Control = Control.ModifierKeys && Keys.A = key then handleFormSave true form (EventArgs ())
