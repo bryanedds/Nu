@@ -1357,11 +1357,11 @@ module Gaia =
 
     /// Attach Gaia to the given world.
     let attachToWorld targetDir form world =
-        match World.getUserValue world : obj with
-        | :? unit ->
-            if World.getSelectedScreen world = Simulants.EditorScreen then
-                match World.getLayers Simulants.EditorScreen world |> Seq.toList with
-                | defaultLayer :: _ ->
+        if World.getSelectedScreen world = Simulants.EditorScreen then
+            match World.getLayers Simulants.EditorScreen world |> Seq.toList with
+            | defaultLayer :: _ ->
+                match World.getUserValue world : obj with
+                | :? unit ->
                     let world = flip World.updateUserValue world (fun _ ->
                         { TargetDir = targetDir
                           RightClickPosition = Vector2.Zero
@@ -1378,10 +1378,10 @@ module Gaia =
                     let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world |> snd
                     let world = subscribeToEntityEvents form world
                     (defaultLayer, world)
-                | [] -> failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring Simulants.EditorScreen + "' screen.")
-            else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring Simulants.EditorScreen + "'.")
-        | :? EditorState -> world // NOTE: conclude world is already attached
-        | _ -> failwith "Cannot attach Gaia to a world that has a user state of a type other than unit or EditorState."
+                | :? EditorState -> (defaultLayer, world) // NOTE: conclude world is already attached
+                | _ -> failwith "Cannot attach Gaia to a world that has a user state of a type other than unit or EditorState."
+            | [] -> failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring Simulants.EditorScreen + "' screen.")
+        else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring Simulants.EditorScreen + "'.")
 
     let rec private tryRun3 runWhile sdlDeps (form : GaiaForm) =
         try World.runWithoutCleanUp
