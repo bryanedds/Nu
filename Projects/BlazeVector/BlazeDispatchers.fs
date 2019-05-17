@@ -290,7 +290,7 @@ module GameplayScreenModule =
                 [0 .. Constants.BlazeVector.SectionCount - 1]
 
         static let createPlayerLayer world =
-            World.readLayerFromFile Assets.PlayerLayerFilePath (Some Simulants.GameplayScene.LayerName) Simulants.Gameplay world |> snd
+            World.readLayerFromFile Assets.PlayerLayerFilePath (Some Simulants.Scene.LayerName) Simulants.Gameplay world |> snd
 
         static let handleStartPlay _ world =
             let world = createPlayerLayer world
@@ -303,7 +303,7 @@ module GameplayScreenModule =
         static let handleStopPlay evt world =
             let screen = evt.Subscriber : Screen
             let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield SectionName + scstring i]
-            let layerNames = Simulants.GameplayScene.LayerName :: sectionNames
+            let layerNames = Simulants.Scene.LayerName :: sectionNames
             let layers = List.map (fun layerName -> screen => layerName) layerNames
             World.destroyLayers layers world
 

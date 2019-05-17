@@ -32,5 +32,5 @@ module Simulants =
     let Gameplay = !> "Gameplay"
     let GameplayGui = Gameplay => "Gui"
     let GameplayBack = GameplayGui => "Back"
-    let GameplayScene = Gameplay => "Scene"
-    let Player = GameplayScene => "Player"
+    let Scene = Gameplay => "Scene"
+    let Player = Scene => "Player"
