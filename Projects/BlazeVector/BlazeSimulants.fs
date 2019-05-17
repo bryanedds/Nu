@@ -23,14 +23,14 @@ module Simulants =
     let TitleCredits = TitleGui => "Credits"
     let TitleExit = TitleGui => "Exit"
 
-    // like those proceeding them, these are the various simulants of the gameplay screen
+    // like those proceeding them, these are the various simulants of the credits screen
+    let Credits = !> "Credits"
+    let CreditsGui = Credits => "Gui"
+    let CreditsBack = CreditsGui => "Back"
+
+    // gameplay simulants
     let Gameplay = !> "Gameplay"
     let GameplayGui = Gameplay => "Gui"
     let GameplayBack = GameplayGui => "Back"
     let GameplayScene = Gameplay => "Scene"
     let Player = GameplayScene => "Player"
-
-    // credits screen simulants
-    let Credits = !> "Credits"
-    let CreditsGui = Credits => "Gui"
-    let CreditsBack = CreditsGui => "Back"
