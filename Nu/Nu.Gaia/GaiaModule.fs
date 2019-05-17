@@ -1611,11 +1611,11 @@ module Gaia =
         | Right world ->
             let world = World.setEventFilter (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])]) world
             let (screen, world) = World.createScreen3 (plugin.GetEditorScreenDispatcherName ()) (Some Simulants.EditorScreen.ScreenName) world
+            let world = World.selectScreen Simulants.EditorScreen world
             let world =
                 if Seq.isEmpty (World.getLayers screen world)
                 then World.createLayer (Some Simulants.DefaultEditorLayer.LayerName) Simulants.EditorScreen world |> snd
                 else world
-            let world = World.selectScreen Simulants.EditorScreen world
             Right world
         | Left error -> Left error
 
