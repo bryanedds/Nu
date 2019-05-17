@@ -1235,46 +1235,47 @@ module Gaia =
             | _ -> world
 
     let private handleKeyboardInput key isKeyFromTextBox (form : GaiaForm) =
-        if Keys.F5 = key then form.tickingButton.PerformClick ()
-        if Keys.Control = Control.ModifierKeys && Keys.Q = key then handleFormQuickSize form (EventArgs ())
-        if Keys.Control = Control.ModifierKeys && Keys.N = key then handleFormNew form (EventArgs ())
-        if Keys.Control = Control.ModifierKeys && Keys.O = key then handleFormOpen form (EventArgs ())
-        if Keys.Control = Control.ModifierKeys && Keys.S = key then handleFormSave false form (EventArgs ())
-        if Keys.Control = Control.ModifierKeys && Keys.D0 = key then handleFormResetTickTime form (EventArgs ())
-        if Keys.Control = Control.ModifierKeys && (Keys.OemMinus = key || Keys.Add = key) then handleFormIncTickTime form ( EventArgs ())
-        if Keys.Control = Control.ModifierKeys && (Keys.Oemplus = key || Keys.Subtract = key) then handleFormDecTickTime form (EventArgs ())
-        if Keys.Alt = Control.ModifierKeys && (Keys.A = key || Keys.Enter = key) then
-            match form.rolloutTabControl.SelectedTab.Name with
-            | "propertyEditorTabPage" -> form.applyPropertyButton.PerformClick ()
-            | "preludeTabPage" -> form.applyPreludeButton.PerformClick ()
-            | "assetGraphTabPage" -> form.applyAssetGraphButton.PerformClick ()
-            | "overlayerTabPage" -> form.applyOverlayerButton.PerformClick ()
-            | "eventTracingTabPage" -> form.applyEventFilterButton.PerformClick ()
-            | _ -> ()
-        if Keys.Alt = Control.ModifierKeys && Keys.D = key then
-            match form.rolloutTabControl.SelectedTab.Name with
-            | "propertyEditorTabPage" -> form.discardPropertyButton.PerformClick ()
-            | "preludeTabPage" -> form.discardPreludeButton.PerformClick ()
-            | "assetGraphTabPage" -> form.discardAssetGraphButton.PerformClick ()
-            | "overlayerTabPage" -> form.discardOverlayerButton.PerformClick ()
-            | "eventTracingTabPage" -> form.discardEventFilterButton.PerformClick ()
-            | _ -> ()
-        if Keys.Alt = Control.ModifierKeys && (Keys.P = key || Keys.Enter = key) then (form.rolloutTabControl.SelectTab "propertyEditorTabPage"; form.propertyValueTextBox.Select (); form.propertyValueTextBox.SelectAll ())
-        if Keys.Alt = Control.ModifierKeys && Keys.E = key then (form.rolloutTabControl.SelectTab "evaluatorTabPage"; form.evalInputTextBox.Select ())
-        if Keys.Alt = Control.ModifierKeys && Keys.K = key && form.rolloutTabControl.SelectedTab.Name = "propertyEditorTabPage" then form.pickPropertyButton.PerformClick ()
-        if Keys.Alt = Control.ModifierKeys && Keys.T = key && form.rolloutTabControl.SelectedTab.Name = "eventTracingTabPage" then form.traceEventsCheckBox.Checked <- not form.traceEventsCheckBox.Checked
-        if Keys.Alt = Control.ModifierKeys && Keys.V = key && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalButton.PerformClick ()
-        if Keys.Alt = Control.ModifierKeys && Keys.L = key && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalLineButton.PerformClick ()
-        if not isKeyFromTextBox then
-            if Keys.Control = Control.ModifierKeys && Keys.A = key then handleFormSave true form (EventArgs ())
-            if Keys.Control = Control.ModifierKeys && Keys.Z = key then handleFormUndo form (EventArgs ())
-            if Keys.Control = Control.ModifierKeys && Keys.Y = key then handleFormRedo form (EventArgs ())
-            if Keys.Control = Control.ModifierKeys && Keys.E = key then handleFormCreateEntity false form (EventArgs ())
-            if Keys.Control = Control.ModifierKeys && Keys.D = key then handleFormDeleteEntity form (EventArgs ())
-            if Keys.Control = Control.ModifierKeys && Keys.U = key then handleFormCut form (EventArgs ())
-            if Keys.Control = Control.ModifierKeys && Keys.C = key then handleFormCopy form (EventArgs ())
-            if Keys.Control = Control.ModifierKeys && Keys.V = key then handleFormPaste false form (EventArgs ())
-            if Keys.Delete = key then handleFormDeleteEntity form (EventArgs ())
+        if form :> Form = Form.ActiveForm then
+            if Keys.F5 = key then form.tickingButton.PerformClick ()
+            if Keys.Control = Control.ModifierKeys && Keys.Q = key then handleFormQuickSize form (EventArgs ())
+            if Keys.Control = Control.ModifierKeys && Keys.N = key then handleFormNew form (EventArgs ())
+            if Keys.Control = Control.ModifierKeys && Keys.O = key then handleFormOpen form (EventArgs ())
+            if Keys.Control = Control.ModifierKeys && Keys.S = key then handleFormSave false form (EventArgs ())
+            if Keys.Control = Control.ModifierKeys && Keys.D0 = key then handleFormResetTickTime form (EventArgs ())
+            if Keys.Control = Control.ModifierKeys && (Keys.OemMinus = key || Keys.Add = key) then handleFormIncTickTime form ( EventArgs ())
+            if Keys.Control = Control.ModifierKeys && (Keys.Oemplus = key || Keys.Subtract = key) then handleFormDecTickTime form (EventArgs ())
+            if Keys.Alt = Control.ModifierKeys && (Keys.A = key || Keys.Enter = key) then
+                match form.rolloutTabControl.SelectedTab.Name with
+                | "propertyEditorTabPage" -> form.applyPropertyButton.PerformClick ()
+                | "preludeTabPage" -> form.applyPreludeButton.PerformClick ()
+                | "assetGraphTabPage" -> form.applyAssetGraphButton.PerformClick ()
+                | "overlayerTabPage" -> form.applyOverlayerButton.PerformClick ()
+                | "eventTracingTabPage" -> form.applyEventFilterButton.PerformClick ()
+                | _ -> ()
+            if Keys.Alt = Control.ModifierKeys && Keys.D = key then
+                match form.rolloutTabControl.SelectedTab.Name with
+                | "propertyEditorTabPage" -> form.discardPropertyButton.PerformClick ()
+                | "preludeTabPage" -> form.discardPreludeButton.PerformClick ()
+                | "assetGraphTabPage" -> form.discardAssetGraphButton.PerformClick ()
+                | "overlayerTabPage" -> form.discardOverlayerButton.PerformClick ()
+                | "eventTracingTabPage" -> form.discardEventFilterButton.PerformClick ()
+                | _ -> ()
+            if Keys.Alt = Control.ModifierKeys && (Keys.P = key || Keys.Enter = key) then (form.rolloutTabControl.SelectTab "propertyEditorTabPage"; form.propertyValueTextBox.Select (); form.propertyValueTextBox.SelectAll ())
+            if Keys.Alt = Control.ModifierKeys && Keys.E = key then (form.rolloutTabControl.SelectTab "evaluatorTabPage"; form.evalInputTextBox.Select ())
+            if Keys.Alt = Control.ModifierKeys && Keys.K = key && form.rolloutTabControl.SelectedTab.Name = "propertyEditorTabPage" then form.pickPropertyButton.PerformClick ()
+            if Keys.Alt = Control.ModifierKeys && Keys.T = key && form.rolloutTabControl.SelectedTab.Name = "eventTracingTabPage" then form.traceEventsCheckBox.Checked <- not form.traceEventsCheckBox.Checked
+            if Keys.Alt = Control.ModifierKeys && Keys.V = key && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalButton.PerformClick ()
+            if Keys.Alt = Control.ModifierKeys && Keys.L = key && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalLineButton.PerformClick ()
+            if not isKeyFromTextBox then
+                if Keys.Control = Control.ModifierKeys && Keys.A = key then handleFormSave true form (EventArgs ())
+                if Keys.Control = Control.ModifierKeys && Keys.Z = key then handleFormUndo form (EventArgs ())
+                if Keys.Control = Control.ModifierKeys && Keys.Y = key then handleFormRedo form (EventArgs ())
+                if Keys.Control = Control.ModifierKeys && Keys.E = key then handleFormCreateEntity false form (EventArgs ())
+                if Keys.Control = Control.ModifierKeys && Keys.D = key then handleFormDeleteEntity form (EventArgs ())
+                if Keys.Control = Control.ModifierKeys && Keys.U = key then handleFormCut form (EventArgs ())
+                if Keys.Control = Control.ModifierKeys && Keys.C = key then handleFormCopy form (EventArgs ())
+                if Keys.Control = Control.ModifierKeys && Keys.V = key then handleFormPaste false form (EventArgs ())
+                if Keys.Delete = key then handleFormDeleteEntity form (EventArgs ())
 
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.OKCancel) with
@@ -1609,8 +1610,11 @@ module Gaia =
         match worldEir with
         | Right world ->
             let world = World.setEventFilter (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])]) world
-            let world = World.createScreen3 (plugin.GetEditorScreenDispatcherName ()) (Some Simulants.EditorScreen.ScreenName) world |> snd
-            let world = World.createLayer (Some Simulants.DefaultEditorLayer.LayerName) Simulants.EditorScreen world |> snd
+            let (screen, world) = World.createScreen3 (plugin.GetEditorScreenDispatcherName ()) (Some Simulants.EditorScreen.ScreenName) world
+            let world =
+                if Seq.isEmpty (World.getLayers screen world)
+                then World.createLayer (Some Simulants.DefaultEditorLayer.LayerName) Simulants.EditorScreen world |> snd
+                else world
             let world = World.selectScreen Simulants.EditorScreen world
             Right world
         | Left error -> Left error
