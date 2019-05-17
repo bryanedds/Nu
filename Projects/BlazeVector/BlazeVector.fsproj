@@ -153,6 +153,7 @@
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>"$(ProjectDir)..\..\Nu\Nu.Pipe\bin\$(ConfigurationName)\Nu.Pipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)refinement" False</PostBuildEvent>
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <Target Name="AfterClean">
     <RemoveDir Directories="$(OutDir)Assets" />
