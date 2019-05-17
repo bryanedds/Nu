@@ -1360,7 +1360,8 @@ module Gaia =
         match World.getUserValue world : obj with
         | :? unit ->
             if World.getSelectedScreen world = Simulants.EditorScreen then
-                if World.getLayers Simulants.EditorScreen world |> Seq.isEmpty |> not then
+                match World.getLayers Simulants.EditorScreen world |> Seq.toList with
+                | defaultLayer :: _ ->
                     let world = flip World.updateUserValue world (fun _ ->
                         { TargetDir = targetDir
                           RightClickPosition = Vector2.Zero
@@ -1368,7 +1369,7 @@ module Gaia =
                           DragCameraState = DragCameraNone
                           PastWorlds = []
                           FutureWorlds = []
-                          SelectedLayer = Simulants.DefaultEditorLayer
+                          SelectedLayer = defaultLayer
                           FilePaths = Map.empty })
                     let world = World.subscribePlus (makeGuid ()) (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world |> snd
                     let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world |> snd
@@ -1376,7 +1377,7 @@ module Gaia =
                     let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world |> snd
                     let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world |> snd
                     subscribeToEntityEvents form world
-                else failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring Simulants.EditorScreen + "' screen.")
+                | [] -> failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring Simulants.EditorScreen + "' screen.")
             else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring Simulants.EditorScreen + "'.")
         | :? EditorState -> world // NOTE: conclude world is already attached
         | _ -> failwith "Cannot attach Gaia to a world that has a user state of a type other than unit or EditorState."
