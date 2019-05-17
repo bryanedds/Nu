@@ -1376,7 +1376,8 @@ module Gaia =
                     let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world |> snd
                     let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world |> snd
                     let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world |> snd
-                    subscribeToEntityEvents form world
+                    let world = subscribeToEntityEvents form world
+                    (defaultLayer, world)
                 | [] -> failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring Simulants.EditorScreen + "' screen.")
             else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring Simulants.EditorScreen + "'.")
         | :? EditorState -> world // NOTE: conclude world is already attached
@@ -1404,13 +1405,14 @@ module Gaia =
             | _ -> WorldRef := World.choose !WorldRef
 
     let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
-        WorldRef := attachToWorld targetDir form !WorldRef
+        let (defaultLayer, world) = attachToWorld targetDir form !WorldRef
+        WorldRef := world
         refreshOverlayComboBox form !WorldRef
         refreshCreateComboBox form !WorldRef
         refreshEntityTreeView form !WorldRef
         refreshHierarchyTreeView form !WorldRef
         refreshLayerTabs form !WorldRef
-        selectLayer form Simulants.DefaultLayer !WorldRef
+        selectLayer form defaultLayer !WorldRef
         form.tickingButton.CheckState <- CheckState.Unchecked
         form.add_LowLevelKeyboardHook (fun nCode wParam lParam ->
             let WM_KEYDOWN = 0x0100
