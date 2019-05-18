@@ -79,9 +79,9 @@ module CharacterAnimationFacetModule =
         | CharacterAnimationSlain
 
     type CharacterAnimationState =
-        { AnimationType : CharacterAnimationType
-          Direction : Direction
-          StartTime : int64 }
+        { StartTime : int64
+          AnimationType : CharacterAnimationType
+          Direction : Direction }
 
     type Entity with
     
@@ -145,9 +145,9 @@ module CharacterAnimationFacetModule =
         static member PropertyDefinitions =
             [Define?
                 CharacterAnimationState
-                    { AnimationType = CharacterAnimationFacing
-                      Direction = Upward
-                      StartTime = 0L }
+                    { StartTime = 0L
+                      AnimationType = CharacterAnimationFacing
+                      Direction = Upward }
              Define? CharacterAnimationSheet Assets.PlayerImage]
 
         override facet.Actualize (entity, world) =
