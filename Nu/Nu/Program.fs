@@ -90,13 +90,12 @@ module Program =
     the EffectFacet can host multiple Effects. It can be inconvenient, but the inconvenience seems
     otherwise marginal. *)
 
-    (* IDEA: Simplified networking...
+    (* IDEA: Networking
 
-    For networking, perhaps instead of having a useful Game value that synchronizes across players,
-    the true value of the world will be on one machine, and only messages like input will come from
-    players and messages for rendering / audio will go back to them.
-
-    Perhaps not realistic, but just an idea. *)
+    Networking will be done with Chain'd network events.
+    For server-based networking, we will use the input-propagation approach like is done with Overwatch.
+    For peer-to-peer networking, we will use simulant state-propagation like is done with my AR project
+    with Unity. *)
 
     (* IDEA: it was suggested that time-travel debugging a la Elm or http://vimeo.com/36579366
     would be appropriate to this engine given its pure functional nature. *)
