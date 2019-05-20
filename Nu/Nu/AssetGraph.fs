@@ -17,7 +17,7 @@ type Refinement =
     static member fromString str =
         match str with
         | "PsdToPng" -> PsdToPng
-        | "Retro4x" -> Retro
+        | "Retro" -> Retro
         | _ -> failwith ("Invalid refinement '" + str + "'.")
 
 /// Describes a means for looking up an asset.
@@ -102,7 +102,7 @@ module AssetGraphModule =
     [<Syntax
         ("Asset Assets",
          "nueffect nuscript bmp png ttf tmx wav ogg " +
-         "PsdToPng Retro4x Retro6x " +
+         "PsdToPng Retro Retro " +
          "Render Audio Symbol",
          "", "", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
