@@ -163,7 +163,7 @@ module WorldEntityModule =
             this.SetTransform transform world
 
         /// Check that an entity exists in the world.
-        member this.Exists world = World.entityExists this world
+        member this.GetExists world = World.getEntityExists this world
 
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =

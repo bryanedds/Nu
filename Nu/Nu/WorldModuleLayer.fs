@@ -120,7 +120,7 @@ module WorldModuleLayer =
             World.publishLayerChange propertyName layer oldWorld world
 
         /// Check that a layer exists in the world.
-        static member internal layerExists layer world =
+        static member internal getLayerExists layer world =
             FOption.isSome (World.getLayerStateOpt layer world)
 
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
@@ -160,7 +160,7 @@ module WorldModuleLayer =
             dispatcher.TryGetCalculatedProperty (propertyName, layer, world)
 
         static member internal tryGetLayerProperty propertyName layer world =
-            if World.layerExists layer world then
+            if World.getLayerExists layer world then
                 match Getters.TryGetValue propertyName with
                 | (false, _) ->
                     match LayerState.tryGetProperty propertyName (World.getLayerState layer world) with
@@ -181,7 +181,7 @@ module WorldModuleLayer =
             | (true, getter) -> getter layer world
 
         static member internal trySetLayerProperty propertyName property layer world =
-            if World.layerExists layer world then
+            if World.getLayerExists layer world then
                 match Setters.TryGetValue propertyName with
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
@@ -196,7 +196,7 @@ module WorldModuleLayer =
             else (false, world)
 
         static member internal setLayerProperty propertyName property layer world =
-            if World.layerExists layer world then
+            if World.getLayerExists layer world then
                 match Setters.TryGetValue propertyName with
                 | (false, _) -> World.updateLayerState (LayerState.setProperty propertyName property) propertyName layer world
                 | (true, setter) ->
@@ -206,12 +206,12 @@ module WorldModuleLayer =
             else world
 
         static member internal attachLayerProperty propertyName property layer world =
-            if World.layerExists layer world
+            if World.getLayerExists layer world
             then World.updateLayerState (LayerState.attachProperty propertyName property) propertyName layer world
             else failwith ("Cannot attach layer property '" + propertyName + "'; layer '" + layer.LayerName + "' is not found.")
 
         static member internal detachLayerProperty propertyName layer world =
-            if World.layerExists layer world
+            if World.getLayerExists layer world
             then World.updateLayerState (LayerState.detachProperty propertyName) propertyName layer world
             else failwith ("Cannot detach layer property '" + propertyName + "'; layer '" + layer.LayerName + "' is not found.")
 
@@ -256,14 +256,14 @@ module WorldModuleLayer =
             World.choose world
 
         static member private addLayer mayReplace layerState layer world =
-            let isNew = not (World.layerExists layer world)
+            let isNew = not (World.getLayerExists layer world)
             if isNew || mayReplace then
                 let world = World.addLayerState layerState layer world
                 if isNew then World.registerLayer layer world else world
             else failwith ("Adding a layer that the world already contains at address '" + scstring layer.LayerAddress + "'.")
 
         static member internal removeLayer3 removeEntities layer world =
-            if World.layerExists layer world then
+            if World.getLayerExists layer world then
                 let world = World.unregisterLayer layer world
                 let world = removeEntities layer world
                 World.removeLayerState layer world
