@@ -1075,17 +1075,22 @@ module WorldTypes =
 
             member this.GetEnv () =
                 this.ScriptingEnv
-        
+
             member this.TryGetExtrinsic fnName =
                 this.Dispatchers.TryGetExtrinsic fnName
-            
+
             member this.TryImport ty value =
                 match (ty.Name, value) with
                 | ("Vector2", (:? Vector2 as v2)) -> let v2p = { Vector2 = v2 } in v2p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Vector4", (:? Vector4 as v4)) -> let v4p = { Vector4 = v4 } in v4p :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Vector2i", (:? Vector2i as v2i)) -> let v2ip = { Vector2i = v2i } in v2ip :> Scripting.Pluggable |> Scripting.Pluggable |> Some
+                | ("Simulant", (:? Simulant as simulant)) -> simulant.SimulantAddress |> atos |> Scripting.Keyword |> Some
+                | ("Game", (:? Simulant as simulant)) -> simulant.SimulantAddress |> atos |> Scripting.Keyword |> Some
+                | ("Screen", (:? Screen as simulant)) -> simulant.ScreenAddress |> atos |> Scripting.Keyword |> Some
+                | ("Layer", (:? Layer as simulant)) -> simulant.LayerAddress |> atos |> Scripting.Keyword |> Some
+                | ("Entity", (:? Entity as simulant)) -> simulant.EntityAddress |> atos |> Scripting.Keyword |> Some
                 | (_, _) -> None
-            
+
             member this.TryExport ty value =
                 match (ty.Name, value) with
                 | ("Vector2", Scripting.Pluggable pluggable) -> let v2 = pluggable :?> Vector2Pluggable in v2.Vector2 :> obj |> Some
