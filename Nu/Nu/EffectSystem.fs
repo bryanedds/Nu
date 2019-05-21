@@ -472,7 +472,7 @@ module EffectSystemModule =
                 with exn ->
                     let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Effect>).PrettyPrinter
                     let effectStr = PrettyPrinter.prettyPrint (scstring effect) prettyPrinter
-                    Log.debug ("Error in effect:\n" + effectStr + "\ndue to: " + scstring exn)
+                    Log.debug ("Error in effect:\n" + effectStr + "\n due to: " + scstring exn)
                     release effectSystem
             else release effectSystem
 
