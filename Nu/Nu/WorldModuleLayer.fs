@@ -97,7 +97,7 @@ module WorldModuleLayer =
         static member private getLayerStateOpt layer world =
             World.layerStateFinder layer world
 
-        static member private getLayerState layer world =
+        static member internal getLayerState layer world =
             let layerStateOpt = World.getLayerStateOpt layer world
             if FOption.isSome layerStateOpt then FOption.get layerStateOpt
             else failwith ("Could not find layer with address '" + scstring layer.LayerAddress + "'.")
@@ -331,7 +331,7 @@ module WorldModuleLayer =
         static member internal viewLayerProperties layer world =
             let state = World.getLayerState layer world
             let properties = World.getProperties state
-            Array.ofList properties
+            properties |> Array.ofList |> Array.map a_c
 
     /// Initialize property getters.
     let private initGetters () =
