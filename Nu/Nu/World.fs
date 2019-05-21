@@ -151,9 +151,11 @@ module Nu =
                 let oldScriptContext = World.getScriptContext world
                 World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptContext world
+                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield ("self", Scripting.String (scstring scriptContext)) }) world
                 let struct (evaled, world) = World.evalInternal expr world
-                World.setLocalFrame oldLocalFrame world
+                ScriptingSystem.removeProceduralBindings world
                 let world = World.setScriptContext oldScriptContext world
+                World.setLocalFrame oldLocalFrame world
                 (evaled, world)
 
             // init evalMany F# reach-around
@@ -162,9 +164,11 @@ module Nu =
                 let oldScriptContext = World.getScriptContext world
                 World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptContext world
+                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield ("self", Scripting.String (scstring scriptContext)) }) world
                 let struct (evaleds, world) = World.evalManyInternal exprs world
-                World.setLocalFrame oldLocalFrame world
+                ScriptingSystem.removeProceduralBindings world
                 let world = World.setScriptContext oldScriptContext world
+                World.setLocalFrame oldLocalFrame world
                 (evaleds, world)
 
             // init evalWithLogging F# reach-around
@@ -173,9 +177,11 @@ module Nu =
                 let oldScriptContext = World.getScriptContext world
                 World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptContext world
+                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield ("self", Scripting.String (scstring scriptContext)) }) world
                 let struct (evaled, world) = World.evalWithLoggingInternal expr world
-                World.setLocalFrame oldLocalFrame world
+                ScriptingSystem.removeProceduralBindings world
                 let world = World.setScriptContext oldScriptContext world
+                World.setLocalFrame oldLocalFrame world
                 (evaled, world)
 
             // init evalMany F# reach-around
@@ -184,9 +190,11 @@ module Nu =
                 let oldScriptContext = World.getScriptContext world
                 World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptContext world
+                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield ("self", Scripting.String (scstring scriptContext)) }) world
                 let struct (evaleds, world) = World.evalManyWithLoggingInternal exprs world
-                World.setLocalFrame oldLocalFrame world
+                ScriptingSystem.removeProceduralBindings world
                 let world = World.setScriptContext oldScriptContext world
+                World.setLocalFrame oldLocalFrame world
                 (evaleds, world)
 
             // init addSimulantScriptUnsubscription F# reach-around

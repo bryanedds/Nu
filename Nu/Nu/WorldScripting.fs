@@ -647,10 +647,6 @@ module WorldScripting =
                 | (true, binding) -> FOption.some binding
                 | (false, _) -> FOption.none ()
 
-        static member internal evalSelf _ _ _ world =
-            let self = World.getScriptContext world
-            struct (String (atos self.SimulantAddress), world)
-
         static member internal evalParent fnName _ originOpt world =
             let self = World.getScriptContext world
             match World.tryGetSimulantParent self world with
@@ -755,7 +751,6 @@ module WorldScripting =
                  ("product_Stream", { Fn = World.evalProductStreamExtrinsic; Pars = [||]; DocOpt = None })
                  ("sum_Stream", { Fn = World.evalSumStreamExtrinsic; Pars = [||]; DocOpt = None })
                  ("monitor", { Fn = World.evalMonitorExtrinsic; Pars = [|"handler"; "event"|]; DocOpt = Some "Subscribe to an event for the lifetime of the simulant." })
-                 ("self", { Fn = World.evalSelf; Pars = [||]; DocOpt = Some "Get the simulant that defines the current context." })
                  ("parent", { Fn = World.evalParent; Pars = [||]; DocOpt = Some "Get the parent of the current context." })
                  ("grandparent", { Fn = World.evalGrandparent; Pars = [||]; DocOpt = Some "Get the grandparent of the current context." })
                  ("schedule", { Fn = World.evalSchedule; Pars = [|"time"; "body"|]; DocOpt = None })
