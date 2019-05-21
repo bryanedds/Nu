@@ -20,18 +20,18 @@ module WorldBindings =
         "v2 v4 v2i get getAsStream set setAsStream update streamEvent stream equate self parent grandparent game toData monitor " +
         "resolve reloadAssets tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning isSelectedScreenIdling " +
         "isSelectedScreenTransitioning selectScreen tryTransitionScreen transitionScreen createDissolveScreenFromLayerFile6 " +
-        "createDissolveScreenFromLayerFile createSplashScreen6 createSplashScreen getEntitiesInView2 " +
-        "getEntitiesInBounds3 getEntitiesAtPoint3 getEntitiesInView getEntitiesInBounds " +
-        "getEntitiesAtPoint playSong playSong4 playSound " +
-        "playSound3 fadeOutSong stopSong hintAudioPackageUse " +
-        "hintAudioPackageDisuse reloadAudioAssets hintRenderPackageUse hintRenderPackageDisuse " +
-        "reloadRenderAssets bodyExists getBodyContactNormals getBodyLinearVelocity " +
-        "getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround " +
-        "createBody createBodies destroyBody destroyBodies " +
-        "setBodyPosition setBodyRotation setBodyAngularVelocity setBodyLinearVelocity " +
-        "applyBodyAngularImpulse applyBodyLinearImpulse applyBodyForce isMouseButtonDown " +
-        "getMousePosition getMousePositionF isKeyboardKeyDown getSelected " +
-        "tryGetParent getChildren getExists getEntities0 " +
+        "createDissolveScreenFromLayerFile createSplashScreen6 createSplashScreen getEntitiesInView2 getEntitiesInBounds3 " +
+        "getEntitiesAtPoint3 getEntitiesInView getEntitiesInBounds getEntitiesAtPoint " +
+        "playSong playSong4 playSound playSound3 " +
+        "fadeOutSong stopSong hintAudioPackageUse hintAudioPackageDisuse " +
+        "reloadAudioAssets hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets " +
+        "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " +
+        "getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround createBody " +
+        "createBodies destroyBody destroyBodies setBodyPosition " +
+        "setBodyRotation setBodyAngularVelocity setBodyLinearVelocity applyBodyAngularImpulse " +
+        "applyBodyLinearImpulse applyBodyForce isMouseButtonDown getMousePosition " +
+        "getMousePositionF isKeyboardKeyDown getSelected tryGetParent " +
+        "getParent getChildren getExists getEntities0 " +
         "getLayers0 isSimulantSelected writeGameToFile readGameFromFile " +
         "getScreens destroyScreen createScreen createDissolveScreen " +
         "writeScreenToFile readScreenFromFile getLayers destroyLayer " +
@@ -989,6 +989,27 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetParent' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getParent simulant world =
+        let oldWorld = world
+        try
+            let struct (simulant, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal simulant world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (World.derive address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.getParent simulant world
+            let value = result
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getParent' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let getChildren simulant world =
@@ -2648,6 +2669,17 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalGetParentBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|simulant|] -> getParent simulant world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalGetChildrenBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3404,6 +3436,7 @@ module WorldBindings =
              ("isKeyboardKeyDown", { Fn = evalIsKeyboardKeyDownBinding; Pars = [|"scanCode"|]; DocOpt = None })
              ("getSelected", { Fn = evalGetSelectedBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("tryGetParent", { Fn = evalTryGetParentBinding; Pars = [|"simulant"|]; DocOpt = None })
+             ("getParent", { Fn = evalGetParentBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("getChildren", { Fn = evalGetChildrenBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("getExists", { Fn = evalGetExistsBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("getEntities0", { Fn = evalGetEntities0Binding; Pars = [||]; DocOpt = None })

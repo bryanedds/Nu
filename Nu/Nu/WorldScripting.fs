@@ -647,21 +647,6 @@ module WorldScripting =
                 | (true, binding) -> FOption.some binding
                 | (false, _) -> FOption.none ()
 
-        static member internal evalParent fnName _ originOpt world =
-            let self = World.getScriptContext world
-            match World.tryGetParent self world with
-            | Some parent -> struct (String (atos parent.SimulantAddress), world)
-            | None -> struct (Violation (["ParentNotFound"; String.capitalize fnName], "Parent not found for self.", originOpt), world)
-
-        static member internal evalGrandparent fnName _ originOpt world =
-            let self = World.getScriptContext world
-            match World.tryGetParent self world with
-            | Some parent ->
-                match World.tryGetParent parent world with
-                | Some grandparent -> struct (String (atos grandparent.SimulantAddress), world)
-                | None -> struct (Violation (["GrandparentNotFound"], "Grand parent not found for self.", originOpt), world)
-            | None -> struct (Violation (["GrandparentNotFound"; String.capitalize fnName], "Grand parent not found for self.", originOpt), world)
-
         static member internal evalSchedule fnName exprs originOpt world =
             match exprs with
             | [|Scripting.Int64 i; body|] ->
@@ -743,8 +728,6 @@ module WorldScripting =
                  ("product_Stream", { Fn = World.evalProductStreamExtrinsic; Pars = [||]; DocOpt = None })
                  ("sum_Stream", { Fn = World.evalSumStreamExtrinsic; Pars = [||]; DocOpt = None })
                  ("monitor", { Fn = World.evalMonitorExtrinsic; Pars = [|"handler"; "event"|]; DocOpt = Some "Subscribe to an event for the lifetime of the simulant." })
-                 ("parent", { Fn = World.evalParent; Pars = [||]; DocOpt = Some "Get the parent of the current context." })
-                 ("grandparent", { Fn = World.evalGrandparent; Pars = [||]; DocOpt = Some "Get the grandparent of the current context." })
                  ("schedule", { Fn = World.evalSchedule; Pars = [|"time"; "body"|]; DocOpt = None })
                  ("schedule1", { Fn = World.evalSchedule1; Pars = [|"body"|]; DocOpt = None })
                  ("blank", { Fn = World.evalBlank; Pars = [||]; DocOpt = None })

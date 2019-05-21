@@ -104,6 +104,16 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         [<FunctionBinding>]
+        static member getParent (simulant : Simulant) world =
+            ignore (world : World)
+            match simulant with
+            | :? Game -> failwithumf ()
+            | :? Screen -> Simulants.Game :> Simulant
+            | :? Layer as layer -> ltos layer :> Simulant
+            | :? Entity as entity -> etol entity :> Simulant
+            | _ -> failwithumf ()
+
+        [<FunctionBinding>]
         static member getChildren (simulant : Simulant) world =
             match simulant with
             | :? Game -> enumerable<Simulant> (World.getScreens world)
