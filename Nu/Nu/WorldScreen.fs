@@ -95,7 +95,7 @@ module WorldScreenModule =
                 | _ -> false
 
         /// Check that a screen exists in the world.
-        member this.Exists world = World.screenExists this world
+        member this.GetExists world = World.getScreenExists this world
 
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
         member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)

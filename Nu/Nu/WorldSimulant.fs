@@ -17,7 +17,7 @@ module WorldSimulantModule =
         static member internal unsubscribeSimulantScripts =
             WorldModule.unsubscribeSimulantScripts
 
-        static member internal tryGetSimulantState (simulant : Simulant) world =
+        static member internal tryGetState (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.getEntityState entity world :> SimulantState |> Some
             | :? Layer as layer -> World.getLayerState layer world :> SimulantState |> Some
@@ -25,7 +25,7 @@ module WorldSimulantModule =
             | :? Game -> World.getGameState world :> SimulantState |> Some
             | _ -> None
 
-        static member internal getSimulantState (simulant : Simulant) world =
+        static member internal getState (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.getEntityState entity world :> SimulantState
             | :? Layer as layer -> World.getLayerState layer world :> SimulantState
@@ -33,7 +33,7 @@ module WorldSimulantModule =
             | :? Game -> World.getGameState world :> SimulantState
             | _ -> failwithumf ()
 
-        static member tryGetSimulantProperty name (simulant : Simulant) world =
+        static member tryGetProperty name (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.tryGetGameProperty name world
             | :? Screen as screen -> World.tryGetScreenProperty name screen world
@@ -41,7 +41,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.tryGetEntityProperty name entity world
             | _ -> None
 
-        static member getSimulantProperty name (simulant : Simulant) world =
+        static member getProperty name (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.getGameProperty name world
             | :? Screen as screen -> World.getScreenProperty name screen world
@@ -49,7 +49,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.getEntityProperty name entity world
             | _ -> failwithumf ()
 
-        static member trySetSimulantProperty name alwaysPublish nonPersistent property (simulant : Simulant) world =
+        static member trySetProperty name alwaysPublish nonPersistent property (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.trySetGameProperty name property world
             | :? Screen as screen -> World.trySetScreenProperty name property screen world
@@ -57,7 +57,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.trySetEntityProperty name alwaysPublish nonPersistent property entity world
             | _ -> (false, world)
 
-        static member setSimulantProperty name alwaysPublish nonPersistent property (simulant : Simulant) world =
+        static member setProperty name alwaysPublish nonPersistent property (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.setGameProperty name property world
             | :? Screen as screen -> World.setScreenProperty name property screen world
@@ -65,7 +65,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.setEntityProperty name alwaysPublish nonPersistent property entity world
             | _ -> failwithumf ()
 
-        static member getSimulantDispatcher (simulant : Simulant) (world : World) =
+        static member getDispatcher (simulant : Simulant) (world : World) =
             match simulant with
             | :? Game -> Simulants.Game.GetDispatcher world :> Dispatcher
             | :? Screen as screen -> screen.GetDispatcher world :> Dispatcher
@@ -73,7 +73,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> entity.GetDispatcher world :> Dispatcher
             | _ -> failwithumf ()
 
-        static member internal tryGetSimulantScriptFrame (simulant : Simulant) world =
+        static member internal tryGetScriptFrame (simulant : Simulant) world =
             match simulant with
             | :? Game -> Some (World.getGameScriptFrame world)
             | :? Screen as screen -> Some (World.getScreenScriptFrame screen world)
@@ -84,21 +84,8 @@ module WorldSimulantModule =
                 | None -> None
             | _ -> failwithumf ()
 
-        static member tryDeriveSimulant address =
-            match Address.getNames address with
-            | [] -> Some (Game Address.empty :> Simulant)
-            | [_] -> Some (Screen (Address.changeType<obj, Screen> address) :> Simulant)
-            | [_; _] -> Some (Layer (Address.changeType<obj, Layer> address) :> Simulant)
-            | [_; _; _] -> Some (Entity (Address.changeType<obj, Entity> address) :> Simulant)
-            | _ -> None
-        
-        static member deriveSimulant address =
-            match World.tryDeriveSimulant address with
-            | Some simulant -> simulant
-            | None -> failwithf "Could not derive simulant from address '%s'." (scstring address)
-
         [<FunctionBinding>]
-        static member getSimulantSelected (simulant : Simulant) world =
+        static member getSelected (simulant : Simulant) world =
             match simulant with
             | :? Game -> true
             | :? Screen as screen -> screen.GetSelected world
@@ -107,7 +94,7 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         [<FunctionBinding>]
-        static member tryGetSimulantParent (simulant : Simulant) world =
+        static member tryGetParent (simulant : Simulant) world =
             ignore (world : World)
             match simulant with
             | :? Game -> None
@@ -117,7 +104,7 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         [<FunctionBinding>]
-        static member getSimulantChildren (simulant : Simulant) world =
+        static member getChildren (simulant : Simulant) world =
             match simulant with
             | :? Game -> enumerable<Simulant> (World.getScreens world)
             | :? Screen as screen -> enumerable<Simulant> (World.getLayers screen world)
@@ -126,5 +113,18 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         [<FunctionBinding>]
-        static member getSimulantExists (simulant : Simulant) (world : World) =
+        static member getExists (simulant : Simulant) (world : World) =
             (world :> EventSystem<World>).ParticipantExists simulant
+
+        static member tryDerive address =
+            match Address.getNames address with
+            | [] -> Some (Game Address.empty :> Simulant)
+            | [_] -> Some (Screen (Address.changeType<obj, Screen> address) :> Simulant)
+            | [_; _] -> Some (Layer (Address.changeType<obj, Layer> address) :> Simulant)
+            | [_; _; _] -> Some (Entity (Address.changeType<obj, Entity> address) :> Simulant)
+            | _ -> None
+
+        static member derive address =
+            match World.tryDerive address with
+            | Some simulant -> simulant
+            | None -> failwithf "Could not derive simulant from address '%s'." (scstring address)

@@ -194,7 +194,7 @@ module WorldModuleEntity =
             then List.fold (fun world (propertyName, _, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
             else world
 
-        static member internal entityExists entity world =
+        static member internal getEntityExists entity world =
             Option.isSome (World.getEntityStateOpt entity world)
 
         static member private getEntityStateBoundsMax entityState =
@@ -421,7 +421,7 @@ module WorldModuleEntity =
                     | [||] -> failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
                     | _ -> true
                 else false
-            if World.entityExists entity world
+            if World.getEntityExists entity world
             then setFlag publishUpdates entity world
             else world
 
@@ -476,7 +476,7 @@ module WorldModuleEntity =
             | Some _ as propertyOpt -> propertyOpt
 
         static member internal tryGetEntityProperty propertyName entity world =
-            if World.entityExists entity world then
+            if World.getEntityExists entity world then
                 match Getters.TryGetValue propertyName with
                 | (false, _) ->
                     let entityState = World.getEntityState entity world
@@ -499,7 +499,7 @@ module WorldModuleEntity =
             | (true, getter) -> getter entity world
 
         static member internal trySetEntityProperty propertyName alwaysPublish nonPersistent property entity world =
-            if World.entityExists entity world then
+            if World.getEntityExists entity world then
                 match Setters.TryGetValue propertyName with
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
@@ -514,7 +514,7 @@ module WorldModuleEntity =
             else (false, world)
 
         static member internal setEntityProperty propertyName alwaysPublish nonPersistent property entity world =
-            if World.entityExists entity world then
+            if World.getEntityExists entity world then
                 match Setters.TryGetValue propertyName with
                 | (false, _) ->
                     World.updateEntityState
@@ -527,12 +527,12 @@ module WorldModuleEntity =
             else world
 
         static member internal attachEntityProperty propertyName alwaysPublish nonPersistent property entity world =
-            if World.entityExists entity world
+            if World.getEntityExists entity world
             then World.updateEntityState (EntityState.attachProperty propertyName property) alwaysPublish nonPersistent true propertyName entity world
             else failwith ("Cannot attach entity property '" + propertyName + "'; entity '" + entity.EntityName + "' is not found.")
 
         static member internal detachEntityProperty propertyName entity world =
-            if World.entityExists entity world then
+            if World.getEntityExists entity world then
                 let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
                 let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                 World.updateEntityState (EntityState.detachProperty propertyName) alwaysPublish nonPersistent true propertyName entity world
@@ -601,7 +601,7 @@ module WorldModuleEntity =
         static member internal addEntity mayReplace entityState entity world =
 
             // add entity only if it is new or is explicitly able to be replaced
-            let isNew = not (World.entityExists entity world)
+            let isNew = not (World.getEntityExists entity world)
             if isNew || mayReplace then
 
                 // get old world for entity tree rebuild and change events
@@ -637,7 +637,7 @@ module WorldModuleEntity =
         static member destroyEntityImmediate entity world =
 
             // ensure entity exists in the world
-            if World.entityExists entity world then
+            if World.getEntityExists entity world then
                 
                 // unregister entity
                 let world = World.unregisterEntity entity world

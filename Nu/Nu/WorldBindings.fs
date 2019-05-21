@@ -30,8 +30,8 @@ module WorldBindings =
         "createBody createBodies destroyBody destroyBodies " +
         "setBodyPosition setBodyRotation setBodyAngularVelocity setBodyLinearVelocity " +
         "applyBodyAngularImpulse applyBodyLinearImpulse applyBodyForce isMouseButtonDown " +
-        "getMousePosition getMousePositionF isKeyboardKeyDown getSimulantSelected " +
-        "tryGetSimulantParent getSimulantChildren getSimulantExists getEntities0 " +
+        "getMousePosition getMousePositionF isKeyboardKeyDown getSelected " +
+        "tryGetParent getChildren getExists getEntities0 " +
         "getLayers0 isSimulantSelected writeGameToFile readGameFromFile " +
         "getScreens destroyScreen createScreen createDissolveScreen " +
         "writeScreenToFile readScreenFromFile getLayers destroyLayer " +
@@ -949,7 +949,7 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isKeyboardKeyDown' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getSimulantSelected simulant world =
+    let getSelected simulant world =
         let oldWorld = world
         try
             let struct (simulant, world) =
@@ -959,18 +959,18 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.deriveSimulant address, world)
+                    struct (World.derive address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.getSimulantSelected simulant world
+            let result = World.getSelected simulant world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSimulantSelected' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSelected' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let tryGetSimulantParent simulant world =
+    let tryGetParent simulant world =
         let oldWorld = world
         try
             let struct (simulant, world) =
@@ -980,18 +980,18 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.deriveSimulant address, world)
+                    struct (World.derive address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.tryGetSimulantParent simulant world
+            let result = World.tryGetParent simulant world
             let value = result
             let value = ScriptingSystem.tryImport typeof<FSharpOption<Simulant>> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetSimulantParent' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryGetParent' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getSimulantChildren simulant world =
+    let getChildren simulant world =
         let oldWorld = world
         try
             let struct (simulant, world) =
@@ -1001,18 +1001,18 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.deriveSimulant address, world)
+                    struct (World.derive address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.getSimulantChildren simulant world
+            let result = World.getChildren simulant world
             let value = result
             let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSimulantChildren' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getChildren' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getSimulantExists simulant world =
+    let getExists simulant world =
         let oldWorld = world
         try
             let struct (simulant, world) =
@@ -1022,15 +1022,15 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.deriveSimulant address, world)
+                    struct (World.derive address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.getSimulantExists simulant world
+            let result = World.getExists simulant world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getSimulantExists' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getExists' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let getEntities0 world =
@@ -1065,7 +1065,7 @@ module WorldBindings =
                 | struct (Scripting.Keyword str, world) ->
                     let relation = Relation.makeFromString str
                     let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.deriveSimulant address, world)
+                    struct (World.derive address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
             let result = World.isSimulantSelected simulant world
@@ -2626,45 +2626,45 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetSimulantSelectedBinding fnName exprs originOpt world =
+    let evalGetSelectedBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|simulant|] -> getSimulantSelected simulant world
+            | [|simulant|] -> getSelected simulant world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalTryGetSimulantParentBinding fnName exprs originOpt world =
+    let evalTryGetParentBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|simulant|] -> tryGetSimulantParent simulant world
+            | [|simulant|] -> tryGetParent simulant world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetSimulantChildrenBinding fnName exprs originOpt world =
+    let evalGetChildrenBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|simulant|] -> getSimulantChildren simulant world
+            | [|simulant|] -> getChildren simulant world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetSimulantExistsBinding fnName exprs originOpt world =
+    let evalGetExistsBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|simulant|] -> getSimulantExists simulant world
+            | [|simulant|] -> getExists simulant world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3402,10 +3402,10 @@ module WorldBindings =
              ("getMousePosition", { Fn = evalGetMousePositionBinding; Pars = [||]; DocOpt = None })
              ("getMousePositionF", { Fn = evalGetMousePositionFBinding; Pars = [||]; DocOpt = None })
              ("isKeyboardKeyDown", { Fn = evalIsKeyboardKeyDownBinding; Pars = [|"scanCode"|]; DocOpt = None })
-             ("getSimulantSelected", { Fn = evalGetSimulantSelectedBinding; Pars = [|"simulant"|]; DocOpt = None })
-             ("tryGetSimulantParent", { Fn = evalTryGetSimulantParentBinding; Pars = [|"simulant"|]; DocOpt = None })
-             ("getSimulantChildren", { Fn = evalGetSimulantChildrenBinding; Pars = [|"simulant"|]; DocOpt = None })
-             ("getSimulantExists", { Fn = evalGetSimulantExistsBinding; Pars = [|"simulant"|]; DocOpt = None })
+             ("getSelected", { Fn = evalGetSelectedBinding; Pars = [|"simulant"|]; DocOpt = None })
+             ("tryGetParent", { Fn = evalTryGetParentBinding; Pars = [|"simulant"|]; DocOpt = None })
+             ("getChildren", { Fn = evalGetChildrenBinding; Pars = [|"simulant"|]; DocOpt = None })
+             ("getExists", { Fn = evalGetExistsBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("getEntities0", { Fn = evalGetEntities0Binding; Pars = [||]; DocOpt = None })
              ("getLayers0", { Fn = evalGetLayers0Binding; Pars = [||]; DocOpt = None })
              ("isSimulantSelected", { Fn = evalIsSimulantSelectedBinding; Pars = [|"simulant"|]; DocOpt = None })

@@ -77,8 +77,8 @@ module WorldScripting =
                 let context = World.getScriptContext world
                 let relation = Relation.makeFromString str
                 let address = Relation.resolve context.SimulantAddress relation
-                match World.tryDeriveSimulant address with
-                | Some simulant -> struct (Bool (World.getSimulantExists simulant world), world)
+                match World.tryDerive address with
+                | Some simulant -> struct (Bool (World.getExists simulant world), world)
                 | None -> struct (Bool false, world)
             | _ -> struct (Violation (["InvalidArgumentType"; "SimulantExists"], "Function '" + fnName + "' requires 1 Relation argument.", originOpt), world)
 
@@ -89,7 +89,7 @@ module WorldScripting =
             | struct (Keyword str, world) ->
                 let relation = Relation.makeFromString str
                 let address = Relation.resolve context.SimulantAddress relation
-                match World.tryDeriveSimulant address with
+                match World.tryDerive address with
                 | Some simulant -> Right struct (simulant, world)
                 | None -> Left struct (Violation (["InvalidPropertyRelation"; String.capitalize fnName], "Relation must have 0 to 3 names.", originOpt), world)
             | struct (_, world) -> Left struct (Violation (["InvalidPropertyRelation"; String.capitalize fnName], "Relation must be either a String or Keyword.", originOpt), world)
@@ -117,7 +117,7 @@ module WorldScripting =
             let context = World.getScriptContext world
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
-                match World.tryGetSimulantProperty propertyName simulant world with
+                match World.tryGetProperty propertyName simulant world with
                 | Some property ->
                     match property.PropertyValue with
                     | :? DesignerProperty as dp ->
@@ -138,7 +138,7 @@ module WorldScripting =
                 let stream =
                     Stream.make (Events.SimulantChange propertyName ->>- simulant.SimulantAddress) |>
                     Stream.mapEvent (fun (evt : Event<ChangeData, _>) world ->
-                        match World.tryGetSimulantProperty evt.Data.PropertyName simulant world with
+                        match World.tryGetProperty evt.Data.PropertyName simulant world with
                         | Some property ->
                             match property.PropertyValue with
                             | :? DesignerProperty as dp -> ScriptingSystem.tryImport dp.DesignerType dp.DesignerValue world |> box
@@ -151,7 +151,7 @@ module WorldScripting =
             let context = World.getScriptContext world
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
-                match World.tryGetSimulantProperty propertyName simulant world with
+                match World.tryGetProperty propertyName simulant world with
                 | Some property ->
                     let struct (propertyValue, world) = World.evalInternal propertyValueExpr world
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
@@ -162,7 +162,7 @@ module WorldScripting =
                         | Some propertyValue ->
                             let propertyValue = { dp with DesignerValue = propertyValue }
                             let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                            match World.trySetSimulantProperty propertyName alwaysPublish nonPersistent property simulant world with
+                            match World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world with
                             | (true, world) -> struct (Unit, world)
                             | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
                         | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
@@ -170,7 +170,7 @@ module WorldScripting =
                         match ScriptingSystem.tryExport property.PropertyType propertyValue world with
                         | Some propertyValue ->
                             let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                            match World.trySetSimulantProperty propertyName alwaysPublish nonPersistent property simulant world with
+                            match World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world with
                             | (true, world) -> struct (Unit, world)
                             | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
                         | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
@@ -191,7 +191,7 @@ module WorldScripting =
                                 | :? (Expr option) as exprOpt ->
                                     match exprOpt with
                                     | Some expr ->
-                                        match World.tryGetSimulantProperty propertyName simulant world with
+                                        match World.tryGetProperty propertyName simulant world with
                                         | Some property ->
                                             let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
                                             let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
@@ -201,14 +201,14 @@ module WorldScripting =
                                                 | Some propertyValue ->
                                                     let propertyValue = { dp with DesignerValue = propertyValue }
                                                     let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                                                    let (_, world) = World.trySetSimulantProperty propertyName alwaysPublish nonPersistent property simulant world
+                                                    let (_, world) = World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world
                                                     (Cascade, world)
                                                 | None -> (Cascade, world)
                                             | _ ->
                                                 match ScriptingSystem.tryExport property.PropertyType expr world with
                                                 | Some propertyValue ->
                                                     let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                                                    let (_, world) = World.trySetSimulantProperty propertyName alwaysPublish nonPersistent property simulant world
+                                                    let (_, world) = World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world
                                                     (Cascade, world)
                                                 | None -> (Cascade, world)
                                         | None -> (Cascade, world)
@@ -254,7 +254,7 @@ module WorldScripting =
                                     match exprOpt with
                                     | Some expr ->
                                         let context = World.getScriptContext world
-                                        match World.tryGetSimulantScriptFrame context world with
+                                        match World.tryGetScriptFrame context world with
                                         | Some scriptFrame ->
                                             let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
                                             let application = Apply ([|fn; expr|], breakpoint, originOpt)
@@ -281,7 +281,7 @@ module WorldScripting =
                                     match exprOpt with
                                     | Some expr ->
                                         let context = World.getScriptContext world
-                                        match World.tryGetSimulantScriptFrame context world with
+                                        match World.tryGetScriptFrame context world with
                                         | Some scriptFrame ->
                                             let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
                                             let application = Apply ([|fn; Option.get stateOpt; expr|], breakpoint, originOpt)
@@ -309,7 +309,7 @@ module WorldScripting =
                                     match (exprOpt, expr2Opt) with
                                     | (Some expr, Some expr2) ->
                                         let context = World.getScriptContext world
-                                        match World.tryGetSimulantScriptFrame context world with
+                                        match World.tryGetScriptFrame context world with
                                         | Some scriptFrame ->
                                             let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
                                             let application = Apply ([|fn; expr; expr2|], breakpoint, originOpt)
@@ -365,7 +365,7 @@ module WorldScripting =
 
         static member internal evalMonitor5 subscription (eventAddress : obj Address) subscriber world =
             World.subscribe (fun evt world ->
-                match World.tryGetSimulantScriptFrame subscriber world with
+                match World.tryGetScriptFrame subscriber world with
                 | Some scriptFrame ->
                     match World.tryImportEvent evt world with
                     | Some evtImported ->
@@ -649,15 +649,15 @@ module WorldScripting =
 
         static member internal evalParent fnName _ originOpt world =
             let self = World.getScriptContext world
-            match World.tryGetSimulantParent self world with
+            match World.tryGetParent self world with
             | Some parent -> struct (String (atos parent.SimulantAddress), world)
             | None -> struct (Violation (["ParentNotFound"; String.capitalize fnName], "Parent not found for self.", originOpt), world)
 
         static member internal evalGrandparent fnName _ originOpt world =
             let self = World.getScriptContext world
-            match World.tryGetSimulantParent self world with
+            match World.tryGetParent self world with
             | Some parent ->
-                match World.tryGetSimulantParent parent world with
+                match World.tryGetParent parent world with
                 | Some grandparent -> struct (String (atos grandparent.SimulantAddress), world)
                 | None -> struct (Violation (["GrandparentNotFound"], "Grand parent not found for self.", originOpt), world)
             | None -> struct (Violation (["GrandparentNotFound"; String.capitalize fnName], "Grand parent not found for self.", originOpt), world)
@@ -669,7 +669,7 @@ module WorldScripting =
                     World.schedule
                         (fun world ->
                             let context = World.getScriptContext world
-                            match World.tryGetSimulantScriptFrame context world with
+                            match World.tryGetScriptFrame context world with
                             | Some scriptFrame -> World.eval body scriptFrame context world |> snd'
                             | None -> world)
                         i
@@ -685,7 +685,7 @@ module WorldScripting =
                     World.schedule2
                         (fun world ->
                             let context = World.getScriptContext world
-                            match World.tryGetSimulantScriptFrame context world with
+                            match World.tryGetScriptFrame context world with
                             | Some scriptFrame -> World.eval body scriptFrame context world |> snd'
                             | None -> world)
                         world
@@ -701,8 +701,8 @@ module WorldScripting =
             match exprs with
             | [|String addressStr|]
             | [|Keyword addressStr|] ->
-                let simulant = addressStr |> stoa |> World.deriveSimulant
-                match World.tryGetSimulantState simulant world with
+                let simulant = addressStr |> stoa |> World.derive
+                match World.tryGetState simulant world with
                 | Some state ->
                     let propStrs =
                         World.getProperties state |>

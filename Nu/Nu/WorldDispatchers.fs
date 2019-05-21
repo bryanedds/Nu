@@ -392,19 +392,19 @@ module NodeFacetModule =
                 | (Some relationOld, Some relationNew) ->
                     let parentOld = this.Resolve relationOld
                     let parentNew = this.Resolve relationNew
-                    if parentOld.Exists world && parentNew.Exists world then
+                    if parentOld.GetExists world && parentNew.GetExists world then
                         let translation = this.GetPosition world + parentOld.GetPosition world - parentOld.GetPosition world
                         this.SetPositionLocal translation world
                     else world
                 | (Some relationOld, None) ->
                     let parentOld = this.Resolve relationOld
-                    if parentOld.Exists world then
+                    if parentOld.GetExists world then
                         let translation = this.GetPositionLocal world + parentOld.GetPosition world
                         this.SetPosition translation world
                     else world
                 | (None, Some relationNew) ->
                     let parentNew = this.Resolve relationNew
-                    if parentNew.Exists world then
+                    if parentNew.GetExists world then
                         let translation = this.GetPosition world - parentNew.GetPosition world
                         this.SetPositionLocal translation world
                     else world
@@ -416,7 +416,7 @@ module NodeFacetModule =
 
         member this.ParentNodeExists world =
             match this.GetParentNodeOpt world with
-            | Some relation -> (this.Resolve relation).Exists world
+            | Some relation -> (this.Resolve relation).GetExists world
             | None -> false
 
         member private this.GetChildNodes2 nodes world =
@@ -461,7 +461,7 @@ module NodeFacetModule =
             match entity.GetParentNodeOpt world with
             | Some relation ->
                 let node = entity.Resolve relation
-                if World.entityExists node world
+                if World.getEntityExists node world
                 then (Cascade, updatePropertyFromLocal data.PropertyName node entity world)
                 else (Cascade, updatePropertyFromLocal3 data.PropertyName entity world)
             | None -> (Cascade, updatePropertyFromLocal3 data.PropertyName entity world)

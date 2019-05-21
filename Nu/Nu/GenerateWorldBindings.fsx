@@ -134,7 +134,7 @@ let generateNormalListParameterConversion (par : string) (ty : Type) =
     "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n"
 
 let generateRelationParameterConversion (par : string) (ty : Type) =
-    let addressToSimulant = if ty.Name = "Simulant" then "World.deriveSimulant" else ty.Name
+    let addressToSimulant = if ty.Name = "Simulant" then "World.derive" else ty.Name
     "            let struct (" + par + ", world) =\n" +
     "                let context = World.getScriptContext world\n" +
     "                match World.evalInternal " + par + " world with\n" +
@@ -147,7 +147,7 @@ let generateRelationParameterConversion (par : string) (ty : Type) =
     "                | struct (_, _) -> failwith \"Relation must be either a String or Keyword.\"\n"
 
 let generateRelationListParameterConversion (par : string) (ty : Type) =
-    let addressToSimulant = if ty.Name = "Simulant" then "World.deriveSimulant" else ty.Name
+    let addressToSimulant = if ty.Name = "Simulant" then "World.derive" else ty.Name
     "            let struct (" + par + ", world) =\n" +
     "                let context = World.getScriptContext world\n" +
     "                match World.evalInternal " + par + " world with\n" +

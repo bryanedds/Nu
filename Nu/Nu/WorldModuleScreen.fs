@@ -105,7 +105,7 @@ module WorldModuleScreen =
             World.publishScreenChange propertyName screen oldWorld world
 
         /// Check that a screen exists in the world.
-        static member internal screenExists screen world =
+        static member internal getScreenExists screen world =
             FOption.isSome (World.getScreenStateOpt screen world)
 
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
@@ -151,7 +151,7 @@ module WorldModuleScreen =
             dispatcher.TryGetCalculatedProperty (propertyName, screen, world)
 
         static member internal tryGetScreenProperty propertyName screen world =
-            if World.screenExists screen world then
+            if World.getScreenExists screen world then
                 match Getters.TryGetValue propertyName with
                 | (false, _) ->
                     match ScreenState.tryGetProperty propertyName (World.getScreenState screen world) with
@@ -172,7 +172,7 @@ module WorldModuleScreen =
             | (true, getter) -> getter screen world
 
         static member internal trySetScreenProperty propertyName property screen world =
-            if World.screenExists screen world then
+            if World.getScreenExists screen world then
                 match Setters.TryGetValue propertyName with
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
@@ -187,7 +187,7 @@ module WorldModuleScreen =
             else (false, world)
 
         static member internal setScreenProperty propertyName property screen world =
-            if World.screenExists screen world then
+            if World.getScreenExists screen world then
                 match Setters.TryGetValue propertyName with
                 | (false, _) -> World.updateScreenState (ScreenState.setProperty propertyName property) propertyName screen world
                 | (true, setter) ->
@@ -197,12 +197,12 @@ module WorldModuleScreen =
             else world
 
         static member internal attachScreenProperty propertyName property screen world =
-            if World.screenExists screen world
+            if World.getScreenExists screen world
             then World.updateScreenState (ScreenState.attachProperty propertyName property) propertyName screen world
             else failwith ("Cannot attach screen property '" + propertyName + "'; screen '" + screen.ScreenName + "' is not found.")
 
         static member internal detachScreenProperty propertyName screen world =
-            if World.screenExists screen world
+            if World.getScreenExists screen world
             then World.updateScreenState (ScreenState.detachProperty propertyName) propertyName screen world
             else failwith ("Cannot detach screen property '" + propertyName + "'; screen '" + screen.ScreenName + "' is not found.")
 
@@ -247,14 +247,14 @@ module WorldModuleScreen =
             World.choose world
 
         static member internal addScreen mayReplace screenState screen world =
-            let isNew = not (World.screenExists screen world)
+            let isNew = not (World.getScreenExists screen world)
             if isNew || mayReplace then
                 let world = World.addScreenState screenState screen world
                 if isNew then World.registerScreen screen world else world
             else failwith ("Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'.")
 
         static member internal removeScreen3 removeLayers screen world =
-            if World.screenExists screen world then
+            if World.getScreenExists screen world then
                 let world = World.unregisterScreen screen world
                 let world = removeLayers screen world
                 World.removeScreenState screen world
@@ -295,7 +295,7 @@ module WorldModuleScreen =
             // add the screen's state to the world
             let screen = Screen (ntoa screenState.Name)
             let screenState =
-                if World.screenExists screen world
+                if World.getScreenExists screen world
                 then { screenState with EntityTree = World.getScreenEntityTree screen world }
                 else screenState
             let world = World.addScreen true screenState screen world

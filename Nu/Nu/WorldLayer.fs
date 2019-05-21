@@ -86,7 +86,7 @@ module WorldLayerModule =
                 | _ -> false
 
         /// Check that a layer exists in the world.
-        member this.Exists world = World.layerExists this world
+        member this.GetExists world = World.getLayerExists this world
 
         /// Check that a layer dispatches in the same manner as the dispatcher with the given type.
         member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)

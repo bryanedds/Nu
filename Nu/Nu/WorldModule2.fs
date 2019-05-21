@@ -57,7 +57,7 @@ module WorldModule2 =
         [<FunctionBinding "resolve">]
         static member resolveGeneric (relation : obj Relation) world =
             World.resolve relation world
-            
+
         /// Send a message to the renderer to reload its rendering assets.
         [<FunctionBinding>]
         static member reloadAssets world =
@@ -132,7 +132,7 @@ module WorldModule2 =
         static member tryTransitionScreen destination world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
-                if World.screenExists selectedScreen world then
+                if World.getScreenExists selectedScreen world then
                     let subscriptionKey = makeGuid ()
                     let subscription = fun (_ : Event<unit, Screen>) world ->
                         match World.getScreenTransitionDestinationOpt world with
@@ -243,7 +243,7 @@ module WorldModule2 =
             else
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
-                    if World.screenExists selectedScreen world then
+                    if World.getScreenExists selectedScreen world then
                         let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
                         (Cascade, world)
                     else

@@ -46,7 +46,7 @@ module Nu =
             WorldTypes.getPropertyOpt <- fun propertyName propertied world ->
                 match propertied with
                 | :? Simulant as simulant ->
-                    match World.tryGetSimulantProperty propertyName simulant (world :?> World) with
+                    match World.tryGetProperty propertyName simulant (world :?> World) with
                     | Some property -> Some property.PropertyValue
                     | None -> None
                 | _ -> None
@@ -72,11 +72,11 @@ module Nu =
                     | :? Screen as screen ->
                         match (valueOpt, WorldModuleScreen.Setters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
-                            let world = if not (World.screenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
                             setter property screen world |> snd |> box
                         | (Some value, (false, _)) ->
-                            let world = if not (World.screenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
                             World.attachScreenProperty propertyName property screen world |> box
                         | (None, (true, _)) ->
@@ -87,14 +87,14 @@ module Nu =
                         match (valueOpt, WorldModuleLayer.Setters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
                             let screen = ltos layer
-                            let world = if not (World.screenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.layerExists layer world) then World.createLayer None screen world |> snd else world
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
                             setter property layer world |> snd |> box
                         | (Some value, (false, _)) ->
                             let screen = ltos layer
-                            let world = if not (World.screenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.layerExists layer world) then World.createLayer None screen world |> snd else world
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
                             World.attachLayerProperty propertyName property layer world |> box
                         | (None, (true, _)) ->
@@ -106,17 +106,17 @@ module Nu =
                         | (Some value, (true, setter)) ->
                             let layer = etol entity
                             let screen = ltos layer
-                            let world = if not (World.screenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.layerExists layer world) then World.createLayer None screen world |> snd else world
-                            let world = if not (World.entityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
+                            let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
                             setter property entity world |> snd |> box
                         | (Some value, (false, _)) ->
                             let layer = etol entity
                             let screen = ltos layer
-                            let world = if not (World.screenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.layerExists layer world) then World.createLayer None screen world |> snd else world
-                            let world = if not (World.entityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
+                            let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
                             let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
                             let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                             let property = { PropertyValue = value; PropertyType = ty }
