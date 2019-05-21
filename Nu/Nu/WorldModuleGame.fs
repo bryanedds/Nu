@@ -339,7 +339,7 @@ module WorldModuleGame =
         static member internal viewGameProperties world =
             let state = World.getGameState world
             let properties = World.getProperties state
-            Array.ofList properties
+            properties |> Array.ofList |> Array.map a_c
 
     /// Initialize property getters.
     let private initGetters () =

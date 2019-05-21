@@ -308,7 +308,7 @@ module WorldModuleScreen =
         static member internal viewScreenProperties screen world =
             let state = World.getScreenState screen world
             let properties = World.getProperties state
-            Array.ofList properties
+            properties |> Array.ofList |> Array.map a_c
 
     /// Initialize property getters.
     let private initGetters () =
