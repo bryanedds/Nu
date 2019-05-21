@@ -191,7 +191,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let properties = World.getProperties entityState
             if entityState.PublishChanges
-            then List.fold (fun world (propertyName, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
+            then List.fold (fun world (propertyName, _, _) -> World.publishEntityChange propertyName entity oldWorld world) world properties
             else world
 
         static member internal entityExists entity world =
@@ -924,7 +924,7 @@ module WorldModuleEntity =
         static member internal viewEntityProperties entity world =
             let state = World.getEntityState entity world
             let properties = World.getProperties state
-            Array.ofList properties
+            properties |> Array.ofList |> Array.map a_c
 
         static member internal updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax (entity : Entity) oldWorld world =
             

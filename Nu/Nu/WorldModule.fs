@@ -523,7 +523,7 @@ module WorldModule =
             state |>
             getType |>
             getProperties |>
-            Array.map (fun (property : PropertyInfo) -> (property.Name, property.GetValue state)) |>
+            Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state)) |>
             Array.toList
 
         /// View the xtension properties of some SimulantState.
@@ -532,7 +532,7 @@ module WorldModule =
             Xtension.toSeq |>
             List.ofSeq |>
             List.sortBy fst |>
-            List.map (fun (name, property) -> (name, property.PropertyValue))
+            List.map (fun (name, property) -> (name, property.PropertyType, property.PropertyValue))
 
         /// Provides a full view of all the properties of some SimulantState.
         static member internal getProperties state =

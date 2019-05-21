@@ -379,14 +379,5 @@
 [define equate [simulant property simulant2 property2]
     [setAsStream simulant property [getAsStream simulant2 property2]]]
 
-; The simulant currently in context
-[define self ?/?/?]
-
-; The parent simulant currently in context
-[define parent ?/?]
-
-; The grandparent simulant currently in context
-[define grandparent ?/?]
-
 ; The game.
 [define game nil]

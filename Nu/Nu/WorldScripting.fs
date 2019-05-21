@@ -647,6 +647,92 @@ module WorldScripting =
                 | (true, binding) -> FOption.some binding
                 | (false, _) -> FOption.none ()
 
+        static member internal evalSelf _ _ _ world =
+            let self = World.getScriptContext world
+            struct (String (atos self.SimulantAddress), world)
+
+        static member internal evalParent fnName _ originOpt world =
+            let self = World.getScriptContext world
+            match World.tryGetSimulantParent self world with
+            | Some parent -> struct (String (atos parent.SimulantAddress), world)
+            | None -> struct (Violation (["ParentNotFound"; String.capitalize fnName], "Parent not found for self.", originOpt), world)
+
+        static member internal evalGrandparent fnName _ originOpt world =
+            let self = World.getScriptContext world
+            match World.tryGetSimulantParent self world with
+            | Some parent ->
+                match World.tryGetSimulantParent parent world with
+                | Some grandparent -> struct (String (atos grandparent.SimulantAddress), world)
+                | None -> struct (Violation (["GrandparentNotFound"], "Grand parent not found for self.", originOpt), world)
+            | None -> struct (Violation (["GrandparentNotFound"; String.capitalize fnName], "Grand parent not found for self.", originOpt), world)
+
+        static member internal evalSchedule fnName exprs originOpt world =
+            match exprs with
+            | [|Scripting.Int64 i; body|] ->
+                let world =
+                    World.schedule
+                        (fun world ->
+                            let context = World.getScriptContext world
+                            match World.tryGetSimulantScriptFrame context world with
+                            | Some scriptFrame -> World.eval body scriptFrame context world |> snd'
+                            | None -> world)
+                        i
+                        world
+                struct (Unit, world)
+            | [|_; _|] -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an Int64 for the first argument.", originOpt), world)
+            | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
+        static member internal evalSchedule1 fnName exprs originOpt world =
+            match exprs with
+            | [|body|] ->
+                let world =
+                    World.schedule2
+                        (fun world ->
+                            let context = World.getScriptContext world
+                            match World.tryGetSimulantScriptFrame context world with
+                            | Some scriptFrame -> World.eval body scriptFrame context world |> snd'
+                            | None -> world)
+                        world
+                struct (Unit, world)
+            | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 1 argument required.", originOpt), world)
+
+        static member internal evalBlank _ _ _ world =
+            let self = World.getScriptContext world
+            // TODO: consider adding script operations to Simulant 'interface'
+            let unsubs =
+                match self with
+                | :? Entity as entity -> if entity.FacetedAs<ScriptFacet> world then entity.GetScriptUnsubscriptions world else []
+                | :? Layer as layer -> layer.GetScriptUnsubscriptions world
+                | :? Screen as screen -> screen.GetScriptUnsubscriptions world
+                | :? Game as game -> game.GetScriptUnsubscriptions world
+                | _ -> []
+            let world = List.fold (fun world unsub -> unsub world) world unsubs
+            struct (Unit, world)
+
+        static member internal evalInfo fnName exprs originOpt world =
+            match exprs with
+            | [|String addressStr|]
+            | [|Keyword addressStr|] ->
+                let simulant = addressStr |> stoa |> World.deriveSimulant
+                match World.tryGetSimulantState simulant world with
+                | Some state ->
+                    let propStrs =
+                        World.getProperties state |>
+                        List.filter (fun (name, _, _) ->
+                            match name with
+                            |"Xtension" | "Dispatcher" | "Facets" | "ScriptFrame" -> false
+                            | _ -> true) |>
+                        List.map (fun (name, ty, value) ->
+                            let ty = if isNull value then ty else getType value
+                            let converter = SymbolicConverter (false, None, ty)
+                            let valueStr = converter.ConvertToString value |> String.escape
+                            name + " = " + valueStr)
+                    let propsStr = String.Join ("\n", propStrs)
+                    struct (String propsStr, world)
+                | None -> struct (Unit, world)
+            | [|_|] -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires an Int64 for the first argument.", originOpt), world)
+            | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
         static member internal initScripting () =
             let extrinsics =
                 [("v2", { Fn = World.evalV2Extrinsic; Pars = [|"x"; "y"|]; DocOpt = Some "Construct a Vector2." })
@@ -669,7 +755,13 @@ module WorldScripting =
                  ("product_Stream", { Fn = World.evalProductStreamExtrinsic; Pars = [||]; DocOpt = None })
                  ("sum_Stream", { Fn = World.evalSumStreamExtrinsic; Pars = [||]; DocOpt = None })
                  ("monitor", { Fn = World.evalMonitorExtrinsic; Pars = [|"handler"; "event"|]; DocOpt = Some "Subscribe to an event for the lifetime of the simulant." })
-                 (*"info_String", { Fn = World.evalInfoSimulant; Pars = [||]; DocOpt = None }*)
-                 (*"info_Keyword", { Fn = World.evalInfoSimulant; Pars = [||]c; DocOpt = None }*)] |>
+                 ("self", { Fn = World.evalSelf; Pars = [||]; DocOpt = Some "Get the simulant that defines the current context." })
+                 ("parent", { Fn = World.evalParent; Pars = [||]; DocOpt = Some "Get the parent of the current context." })
+                 ("grandparent", { Fn = World.evalGrandparent; Pars = [||]; DocOpt = Some "Get the grandparent of the current context." })
+                 ("schedule", { Fn = World.evalSchedule; Pars = [|"time"; "body"|]; DocOpt = None })
+                 ("schedule1", { Fn = World.evalSchedule1; Pars = [|"body"|]; DocOpt = None })
+                 ("blank", { Fn = World.evalBlank; Pars = [||]; DocOpt = None })
+                 ("info_String", { Fn = World.evalInfo; Pars = [||]; DocOpt = None })
+                 ("info_Keyword", { Fn = World.evalInfo; Pars = [||]; DocOpt = None })] |>
                 dictPlus
             Extrinsics <- extrinsics
