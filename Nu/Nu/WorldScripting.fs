@@ -693,16 +693,8 @@ module WorldScripting =
             | _ -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 1 argument required.", originOpt), world)
 
         static member internal evalBlank _ _ _ world =
-            let self = World.getScriptContext world
-            // TODO: consider adding script operations to Simulant 'interface'
-            let unsubs =
-                match self with
-                | :? Entity as entity -> if entity.FacetedAs<ScriptFacet> world then entity.GetScriptUnsubscriptions world else []
-                | :? Layer as layer -> layer.GetScriptUnsubscriptions world
-                | :? Screen as screen -> screen.GetScriptUnsubscriptions world
-                | :? Game as game -> game.GetScriptUnsubscriptions world
-                | _ -> []
-            let world = List.fold (fun world unsub -> unsub world) world unsubs
+            let context = World.getScriptContext world
+            let world = World.unsubscribeSimulantScripts context world
             struct (Unit, world)
 
         static member internal evalInfo fnName exprs originOpt world =
