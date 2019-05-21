@@ -17,6 +17,22 @@ module WorldSimulantModule =
         static member internal unsubscribeSimulantScripts =
             WorldModule.unsubscribeSimulantScripts
 
+        static member internal tryGetSimulantState (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> World.getEntityState entity world :> SimulantState |> Some
+            | :? Layer as layer -> World.getLayerState layer world :> SimulantState |> Some
+            | :? Screen as screen -> World.getScreenState screen world :> SimulantState |> Some
+            | :? Game -> World.getGameState world :> SimulantState |> Some
+            | _ -> None
+
+        static member internal getSimulantState (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> World.getEntityState entity world :> SimulantState
+            | :? Layer as layer -> World.getLayerState layer world :> SimulantState
+            | :? Screen as screen -> World.getScreenState screen world :> SimulantState
+            | :? Game -> World.getGameState world :> SimulantState
+            | _ -> failwithumf ()
+
         static member tryGetSimulantProperty name (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.tryGetGameProperty name world
