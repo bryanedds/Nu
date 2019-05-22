@@ -1608,8 +1608,9 @@ module Gaia =
         form.assetGraphTextBox.EmptyUndoBuffer ()
         form.overlayerTextBox.EmptyUndoBuffer ()
 
-        // finally, show form
+        // finally, show and activate form
         form.Show ()
+        form.Activate ()
         form
 
     /// Attempt to make a world for use in the Gaia form.
@@ -1620,7 +1621,15 @@ module Gaia =
         match worldEir with
         | Right world ->
             let world = World.setEventFilter (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])]) world
-            let (screen, world) = World.createScreen3 (plugin.GetEditorScreenDispatcherName ()) (Some Simulants.EditorScreen.ScreenName) world
+            let screenDispatcherName =
+                let defaultScreenDispatcherName = typeof<ScreenDispatcher>.Name
+                let editorScreenDispatcherName = plugin.GetEditorScreenDispatcherName ()
+                if editorScreenDispatcherName <> defaultScreenDispatcherName then
+                    match MessageBox.Show ("Load the non-default Screen?", "Non-Default Screen", MessageBoxButtons.OKCancel) with
+                    | DialogResult.Cancel -> defaultScreenDispatcherName
+                    | _ -> editorScreenDispatcherName
+                else defaultScreenDispatcherName
+            let (screen, world) = World.createScreen3 screenDispatcherName (Some Simulants.EditorScreen.ScreenName) world
             let world = World.selectScreen Simulants.EditorScreen world
             let world =
                 if Seq.isEmpty (World.getLayers screen world)
