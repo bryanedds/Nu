@@ -162,10 +162,11 @@ module Gaia =
 
     let private refreshLayerTabs (form : GaiaForm) world =
 
-        // add layers imperatively to preserve existing layer tabs 
+        // add layers imperatively to preserve existing layer tabs
+        // NOTE: adding layers in reverse works better when opening anew
         let layers = World.getLayers Simulants.EditorScreen world
         let layerTabPages = form.layerTabControl.TabPages
-        for layer in layers do
+        for layer in Seq.rev layers do
             let layerName = layer.LayerName
             if not (layerTabPages.ContainsKey layerName) then
                 layerTabPages.Add (layerName, layerName)
