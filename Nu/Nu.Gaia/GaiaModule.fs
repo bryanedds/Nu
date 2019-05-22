@@ -240,13 +240,19 @@ module Gaia =
     let private handleNuEntityRegister (form : GaiaForm) evt world =
         let entity = Entity (atoa evt.Publisher.ParticipantAddress)
         addEntityTreeViewNode form entity world
-        refreshHierarchyTreeView form world
-        selectEntity form entity world
+        if not (World.isTicking world) then
+            // OPTIMIZATION: don't attempt to refresh the slow winforms UI while running the game
+            refreshHierarchyTreeView form world
+            selectEntity form entity world
         (Cascade, world)
 
     let private handleNuEntityUnregistering (form : GaiaForm) evt world =
         removeEntityTreeViewNode form evt.Publisher world
-        let world = World.schedule2 (fun world -> refreshHierarchyTreeView form world; world) world
+        let world =
+            // OPTIMIZATION: don't attempt to refresh the slow winforms UI while running the game
+            if not (World.isTicking world)
+            then World.schedule2 (fun world -> refreshHierarchyTreeView form world; world) world
+            else world
         match form.entityPropertyGrid.SelectedObject with
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
