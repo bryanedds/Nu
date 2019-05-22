@@ -114,6 +114,17 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         [<FunctionBinding>]
+        static member tryGetGrandparent (simulant : Simulant) world =
+            match World.tryGetParent simulant world with
+            | Some parent -> World.tryGetParent parent world
+            | None -> None
+
+        [<FunctionBinding>]
+        static member getGrandparent (simulant : Simulant) world =
+            let parent = World.getParent simulant world
+            World.getParent parent world
+
+        [<FunctionBinding>]
         static member getChildren (simulant : Simulant) world =
             match simulant with
             | :? Game -> enumerable<Simulant> (World.getScreens world)

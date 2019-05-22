@@ -20,7 +20,7 @@ type BlazePlugin () =
 
     // make our game-specific layer dispatchers...
     override this.MakeLayerDispatchers () =
-        [PlayerLayerDispatcher () :> LayerDispatcher]
+        [SceneLayerDispatcher () :> LayerDispatcher]
 
     // make our game-specific entity dispatchers...
     override this.MakeEntityDispatchers () =
@@ -28,9 +28,13 @@ type BlazePlugin () =
          PlayerDispatcher () :> EntityDispatcher
          EnemyDispatcher () :> EntityDispatcher]
 
-    // specify the correct game dispatcher to use
+    // specify the game dispatcher to use at run-time
     override this.GetStandAloneGameDispatcherName () =
         typeof<BlazeDispatcher>.Name
+            
+    // specify the sceen dispatcher to use in the editor
+    override this.GetEditorScreenDispatcherName () =
+        typeof<GameplayScreenDispatcher>.Name
 
 module Program =
 

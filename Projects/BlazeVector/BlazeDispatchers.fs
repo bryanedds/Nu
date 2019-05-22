@@ -227,26 +227,32 @@ module PlayerModule =
             world
 
 [<AutoOpen>]
-module PlayerLayerModule =
+module SceneLayerModule =
 
-    type PlayerLayerDispatcher () =
+    type SceneLayerDispatcher () =
         inherit LayerDispatcher ()
 
-        static let adjustCamera world =
-            let playerPosition = Simulants.Player.GetPosition world
-            let playerSize = Simulants.Player.GetSize world
+        static let adjustCamera scene world =
+            let player = Simulants.Player scene
+            let playerPosition = player.GetPosition world
+            let playerSize = player.GetSize world
             let eyeCenter = World.getEyeCenter world
             let eyeSize = World.getEyeSize world
             let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f, eyeCenter.Y)
             Simulants.Game.SetEyeCenter eyeCenter world
 
-        static let handleAdjustCamera _ world =
-            adjustCamera world
+        static let handleAdjustCamera evt world =
+            let scene = evt.Subscriber : Layer
+            adjustCamera scene world
 
-        static let handlePlayerFall _ world =
-            if Simulants.Player.HasFallen world && World.isSelectedScreenIdling world then
+        static let handlePlayerFall evt world =
+            let scene = evt.Subscriber : Layer
+            let player = Simulants.Player scene
+            if player.HasFallen world && World.isSelectedScreenIdling world then
                 let world = World.playSound 1.0f Assets.DeathSound world
-                World.transitionScreen Simulants.Title world
+                if Simulants.Title.GetExists world
+                then World.transitionScreen Simulants.Title world
+                else world
             else world
 
         override dispatcher.Register (layer, world) =
@@ -271,12 +277,12 @@ module GameplayScreenModule =
                 world
                 entities
 
-        static let createSectionFromFile filePath sectionName xShift world =
-            let (section, world) = World.readLayerFromFile filePath (Some sectionName) Simulants.Gameplay world
+        static let createSectionFromFile filePath sectionName xShift gameplay world =
+            let (section, world) = World.readLayerFromFile filePath (Some sectionName) gameplay world
             let sectionEntities = World.getEntities section world
             shiftEntities xShift sectionEntities world
 
-        static let createSectionLayers world =
+        static let createSectionLayers gameplay world =
             let random = System.Random ()
             let sectionFilePaths = List.toArray Assets.SectionFilePaths
             List.fold
@@ -285,26 +291,29 @@ module GameplayScreenModule =
                     let sectionFilePath = sectionFilePaths.[sectionFilePathIndex]
                     let sectionName = SectionName + scstring i
                     let sectionXShift = SectionXShift * single i
-                    createSectionFromFile sectionFilePath sectionName sectionXShift world)
+                    createSectionFromFile sectionFilePath sectionName sectionXShift gameplay world)
                 world
                 [0 .. Constants.BlazeVector.SectionCount - 1]
 
-        static let createPlayerLayer world =
-            World.readLayerFromFile Assets.PlayerLayerFilePath (Some Simulants.Scene.LayerName) Simulants.Gameplay world |> snd
+        static let createScene gameplay world =
+            let scene = Simulants.Scene gameplay
+            World.readLayerFromFile Assets.SceneLayerFilePath (Some scene.LayerName) gameplay world |> snd
 
-        static let handleStartPlay _ world =
-            let world = createPlayerLayer world
-            let world = createSectionLayers world
+        static let handleStartPlay evt world =
+            let gameplay = evt.Subscriber : Screen
+            let world = createScene gameplay world
+            let world = createSectionLayers gameplay world
             World.playSong 0 1.0f Assets.DeadBlazeSong world
 
         static let handleStoppingPlay _ world =
             World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
 
         static let handleStopPlay evt world =
-            let screen = evt.Subscriber : Screen
+            let gameplay = evt.Subscriber : Screen
+            let scene = Simulants.Scene gameplay
             let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield SectionName + scstring i]
-            let layerNames = Simulants.Scene.LayerName :: sectionNames
-            let layers = List.map (fun layerName -> screen => layerName) layerNames
+            let layerNames = scene.LayerName :: sectionNames
+            let layers = List.map (fun layerName -> gameplay => layerName) layerNames
             World.destroyLayers layers world
 
         override dispatcher.Register (screen, world) =
