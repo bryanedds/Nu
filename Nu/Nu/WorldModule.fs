@@ -84,7 +84,7 @@ module WorldModule =
 
         /// Set whether events are being traced.
         static member setEventTracing tracing (world : World) =
-            EventSystem.setEventTracing tracing world
+            World.choose (EventSystem.setEventTracing tracing world)
 
         /// Get the state of the event filter.
         static member getEventFilter (world : World) =
@@ -92,7 +92,7 @@ module WorldModule =
 
         /// Set the state of the event filter.
         static member setEventFilter filter (world : World) =
-            EventSystem.setEventFilter filter world
+            World.choose (EventSystem.setEventFilter filter world)
 
         /// Get the context of the event system.
         static member getEventContext (world : World) =
@@ -142,36 +142,36 @@ module WorldModule =
 
         /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
         static member publishPlus<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard world =
-            EventSystem.publishPlus<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher allowWildcard world
+            World.choose (EventSystem.publishPlus<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher allowWildcard world)
 
         /// Publish an event.
         static member publish<'a, 'p when 'p :> Simulant>
             (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-            EventSystem.publishPlus<'a, 'p, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher true world
+            World.choose (EventSystem.publishPlus<'a, 'p, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher true world)
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionKey world =
-            EventSystem.unsubscribe<World> subscriptionKey world
+            World.choose (EventSystem.unsubscribe<World> subscriptionKey world)
 
         /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
         static member subscribePlus<'a, 's when 's :> Participant>
             subscriptionKey (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventSystem.subscribePlus<'a, 's, World> subscriptionKey subscription eventAddress subscriber world
+            mapSnd World.choose (EventSystem.subscribePlus<'a, 's, World> subscriptionKey subscription eventAddress subscriber world)
 
         /// Subscribe to an event.
         static member subscribe<'a, 's when 's :> Participant>
             (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventSystem.subscribe<'a, 's, World> subscription eventAddress subscriber world
+            World.choose (EventSystem.subscribe<'a, 's, World> subscription eventAddress subscriber world)
 
         /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
         static member monitorPlus<'a, 's when 's :> Participant>
             (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventSystem.monitorPlus<'a, 's, World> subscription eventAddress subscriber world
+            mapSnd World.choose (EventSystem.monitorPlus<'a, 's, World> subscription eventAddress subscriber world)
 
         /// Keep active a subscription for the lifetime of a simulant.
         static member monitor<'a, 's when 's :> Participant>
             (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
-            EventSystem.monitor<'a, 's, World> subscription eventAddress subscriber world
+            World.choose (EventSystem.monitor<'a, 's, World> subscription eventAddress subscriber world)
 
     type World with // Dispatchers
 
@@ -207,10 +207,10 @@ module WorldModule =
             Subsystems.getSubsystemBy by name world.Subsystems
 
         static member addSubsystem<'s when 's :> World Subsystem> name (subsystem : 's) world =
-            { world with Subsystems = Subsystems.addSubsystem name subsystem world.Subsystems }
+            World.choose { world with Subsystems = Subsystems.addSubsystem name subsystem world.Subsystems }
 
         static member removeSubsystem<'s when 's :> World Subsystem> name world =
-            { world with Subsystems = Subsystems.removeSubsystem name world.Subsystems }
+            World.choose { world with Subsystems = Subsystems.removeSubsystem name world.Subsystems }
 
         static member internal updateSubsystem<'s when 's :> World Subsystem> (updater : 's -> World -> 's) name world =
             World.choose { world with Subsystems = Subsystems.updateSubsystem updater name world.Subsystems world }
