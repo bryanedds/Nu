@@ -23,12 +23,8 @@ module Gaia =
     // literals... TODO: move to Constants
     let [<Literal>] private NonePick = "\"None\""
 
-    // globals needed to sync Nu with WinForms
-    let private WorldRef = ref Unchecked.defaultof<World>
-    let private WorldChangers = WorldChangers ()
-
     let addWorldChanger worldChanger =
-        WorldChangers.Add worldChanger |> ignore
+        Globals.WorldChangers.Add worldChanger |> ignore
 
     let pushPastWorld pastWorld world =
         World.updateUserValue
@@ -177,43 +173,44 @@ module Gaia =
                 layerTabPages.RemoveByKey layerTabPage.Name
 
     let private selectEntity (form : GaiaForm) entity world =
-        WorldRef := world // must be set for property grid
-        let entityTds = { DescribedEntity = entity; Form = form; WorldChangers = WorldChangers; WorldRef = WorldRef }
+        Globals.WorldRef := world // must be set for property grid
+        let entityTds = { DescribedEntity = entity; Form = form }
         form.entityPropertyGrid.SelectedObject <- entityTds
         form.propertyTabControl.SelectTab 0 // show entity properties
 
     let private deselectEntity (form : GaiaForm) world =
-        WorldRef := world // must be set for property grid
+        Globals.WorldRef := world // must be set for property grid
         form.entityPropertyGrid.SelectedObject <- null
 
     let private refreshEntityPropertyGrid (form : GaiaForm) world =
         match form.entityPropertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
-            entityTds.WorldRef := world // must be set for property grid
+            Globals.WorldRef := world // must be set for property grid
             if entityTds.DescribedEntity.GetExists world
             then form.entityPropertyGrid.Refresh ()
             else deselectEntity form world
         | _ -> ()
 
     let private selectLayer (form : GaiaForm) layer world =
-        let layerTds = { DescribedLayer = layer; Form = form; WorldChangers = WorldChangers; WorldRef = WorldRef }
-        WorldRef := world // must be set for property grid
+        let layerTds = { DescribedLayer = layer; Form = form }
+        Globals.WorldRef := world // must be set for property grid
         form.layerPropertyGrid.SelectedObject <- layerTds
 
     let private deselectLayer (form : GaiaForm) world =
-        WorldRef := world // must be set for property grid
+        Globals.WorldRef := world // must be set for property grid
         form.layerPropertyGrid.SelectedObject <- null
 
     let private refreshLayerPropertyGrid (form : GaiaForm) world =
         match form.layerPropertyGrid.SelectedObject with
         | :? LayerTypeDescriptorSource as layerTds ->
-            layerTds.WorldRef := world // must be set for property grid
+            Globals.WorldRef := world // must be set for property grid
             if layerTds.DescribedLayer.GetExists world
             then form.layerPropertyGrid.Refresh ()
             else deselectLayer form world
         | _ -> ()
 
     let private refreshFormOnUndoRedo (form : GaiaForm) world =
+        Globals.WorldRef := world
         form.tickingButton.Checked <- false
         refreshEntityPropertyGrid form world
         refreshLayerPropertyGrid form world
@@ -489,11 +486,11 @@ module Gaia =
                         let (keywords0, keywords1, prettyPrinter) =
                             match selectedGridItem.Label with
                             | "OverlayNameOpt" ->
-                                let overlays = World.getIntrinsicOverlays !WorldRef @ World.getExtrinsicOverlays !WorldRef
+                                let overlays = World.getIntrinsicOverlays !Globals.WorldRef @ World.getExtrinsicOverlays !Globals.WorldRef
                                 let overlayNames = List.map (fun overlay -> overlay.OverlayName) overlays
                                 (String.concat " " overlayNames, "", PrettyPrinter.defaulted)
                             | "FacetNames" ->
-                                let facetNames = !WorldRef |> World.getFacets |> Map.toKeyList
+                                let facetNames = !Globals.WorldRef |> World.getFacets |> Map.toKeyList
                                 (String.concat " " facetNames, "", PrettyPrinter.defaulted)
                             | _ ->
                                 let syntax = SyntaxAttribute.getOrDefault ty
@@ -747,8 +744,8 @@ module Gaia =
 
     let private handlePropertyTabControlSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
         if form.propertyTabControl.SelectedIndex = 0
-        then refreshEntityPropertyGrid form !WorldRef
-        else refreshLayerPropertyGrid form !WorldRef
+        then refreshEntityPropertyGrid form !Globals.WorldRef
+        else refreshLayerPropertyGrid form !Globals.WorldRef
 
     let private handleFormPropertyRefreshClick (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
@@ -1016,7 +1013,7 @@ module Gaia =
                 let entity = entityTds.DescribedEntity
                 let world = entity.SetSize (entity.GetQuickSize world) world
                 let world = entity.PropagatePhysics world
-                entityTds.WorldRef := world // must be set for property grid
+                Globals.WorldRef := world // must be set for property grid
                 form.entityPropertyGrid.Refresh ()
                 world
             | _ -> Log.trace ("Invalid quick size operation (likely a code issue in Gaia)."); world
@@ -1201,7 +1198,7 @@ module Gaia =
                                 let dp = { DesignerType = dt; DesignerValue = dv }
                                 let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = dp }
                                 let world = entity.AttachProperty propertyName alwaysPublish nonPersistent property world
-                                entityTds.WorldRef := world // must be set for property grid
+                                Globals.WorldRef := world // must be set for property grid
                                 form.entityPropertyGrid.Refresh ()
                                 world
                             | None ->
@@ -1236,7 +1233,7 @@ module Gaia =
             | :? EntityTypeDescriptorSource as entityTds ->
                 let entity = entityTds.DescribedEntity
                 let world = entity.DetachProperty form.entityDesignerPropertyNameTextBox.Text world
-                entityTds.WorldRef := world // must be set for property grid
+                Globals.WorldRef := world // must be set for property grid
                 form.entityPropertyGrid.Refresh ()
                 world
             | _ -> world
@@ -1347,8 +1344,8 @@ module Gaia =
             form.redoToolStripMenuItem.Enabled <- true
 
     let private updateEditorWorld form world =
-        let worldChangersCopy = List.ofSeq WorldChangers
-        WorldChangers.Clear ()
+        let worldChangersCopy = List.ofSeq Globals.WorldChangers
+        Globals.WorldChangers.Clear ()
         let world = List.fold (fun world worldChanger -> worldChanger world) world worldChangersCopy
         let world = updateEntityDrag form world
         let world = updateCameraDrag form world
@@ -1393,11 +1390,11 @@ module Gaia =
     let rec private tryRun3 runWhile sdlDeps (form : GaiaForm) =
         try World.runWithoutCleanUp
                 runWhile
-                (fun world -> let world = updateEditorWorld form world in (WorldRef := world; world))
+                (fun world -> let world = updateEditorWorld form world in (Globals.WorldRef := world; world))
                 (fun world -> form.displayPanel.Invalidate (); world)
                 sdlDeps
                 Running
-                !WorldRef |>
+                !Globals.WorldRef |>
                 ignore
         with exn ->
             match MessageBox.Show
@@ -1407,19 +1404,19 @@ module Gaia =
                  MessageBoxIcon.Error) with
             | DialogResult.Yes ->
                 form.undoButton.PerformClick ()
-                WorldRef := World.choose !WorldRef
+                Globals.WorldRef := World.choose !Globals.WorldRef
                 tryRun3 runWhile sdlDeps form
-            | _ -> WorldRef := World.choose !WorldRef
+            | _ -> Globals.WorldRef := World.choose !Globals.WorldRef
 
     let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
-        let (defaultLayer, world) = attachToWorld targetDir form !WorldRef
-        WorldRef := world
-        refreshOverlayComboBox form !WorldRef
-        refreshCreateComboBox form !WorldRef
-        refreshEntityTreeView form !WorldRef
-        refreshHierarchyTreeView form !WorldRef
-        refreshLayerTabs form !WorldRef
-        selectLayer form defaultLayer !WorldRef
+        let (defaultLayer, world) = attachToWorld targetDir form !Globals.WorldRef
+        Globals.WorldRef := world
+        refreshOverlayComboBox form !Globals.WorldRef
+        refreshCreateComboBox form !Globals.WorldRef
+        refreshEntityTreeView form !Globals.WorldRef
+        refreshHierarchyTreeView form !Globals.WorldRef
+        refreshLayerTabs form !Globals.WorldRef
+        selectLayer form defaultLayer !Globals.WorldRef
         form.tickingButton.CheckState <- CheckState.Unchecked
         form.add_LowLevelKeyboardHook (fun nCode wParam lParam ->
             let WM_KEYDOWN = 0x0100
@@ -1651,9 +1648,9 @@ module Gaia =
 
     /// Run Gaia from the F# evaluator.
     let runFromRepl runWhile targetDir sdlDeps form world =
-        WorldRef := world
+        Globals.WorldRef := world
         run3 runWhile targetDir sdlDeps form
-        !WorldRef
+        !Globals.WorldRef
 
     /// Run Gaia in isolation.
     let run () =
@@ -1663,7 +1660,7 @@ module Gaia =
         | Right sdlDeps ->
             match tryMakeWorld plugin sdlDeps with
             | Right world ->
-                WorldRef := world
+                Globals.WorldRef := world
                 let _ = run3 tautology targetDir sdlDeps form
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error

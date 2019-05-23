@@ -13,9 +13,7 @@ open Nu.Gaia.Design
 
 type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTypeDescriptorSource =
     { DescribedEntity : Entity
-      Form : GaiaForm
-      WorldChangers : WorldChangers
-      WorldRef : World ref }
+      Form : GaiaForm }
 
 and EntityPropertyDescriptor (property, attributes) =
     inherit System.ComponentModel.PropertyDescriptor (
@@ -76,7 +74,7 @@ and EntityPropertyDescriptor (property, attributes) =
         | null -> null // WHY THE FUCK IS THIS EVER null???
         | source ->
             let entityTds = source :?> EntityTypeDescriptorSource
-            match EntityPropertyValue.tryGetValue property entityTds.DescribedEntity !entityTds.WorldRef with
+            match EntityPropertyValue.tryGetValue property entityTds.DescribedEntity !Globals.WorldRef with
             | Some value -> value
             | None -> null
 
@@ -102,7 +100,7 @@ and EntityPropertyDescriptor (property, attributes) =
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
                     let entity = entityTds.DescribedEntity
                     let world = World.reassignEntity entity (Some name) (etol entity) world
-                    entityTds.WorldRef := world // must be set for property grid
+                    Globals.WorldRef := world // must be set for property grid
                     world
                 else
                     MessageBox.Show
@@ -120,7 +118,7 @@ and EntityPropertyDescriptor (property, attributes) =
                     match World.trySetEntityFacetNames facetNames entity world with
                     | (Right (), world) -> world
                     | (Left error, world) -> Log.trace error; world
-                entityTds.WorldRef := world // must be set for property grid
+                Globals.WorldRef := world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
                 world
 
@@ -138,14 +136,14 @@ and EntityPropertyDescriptor (property, attributes) =
                         let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                         EntityPropertyValue.trySetValue alwaysPublish nonPersistent property value entity world |> snd
                 let world = entityTds.DescribedEntity.PropagatePhysics world
-                entityTds.WorldRef := world // must be set for property grid
+                Globals.WorldRef := world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
                 world)
 
         // NOTE: in order to update the view immediately, we have to apply the changer twice,
         // once immediately and once in the update function
-        entityTds.WorldRef := changer !entityTds.WorldRef
-        entityTds.WorldChangers.Add changer |> ignore
+        Globals.WorldRef := changer !Globals.WorldRef
+        Globals.WorldChangers.Add changer |> ignore
 
 and EntityTypeDescriptor (sourceOpt : obj) =
     inherit CustomTypeDescriptor ()
@@ -153,7 +151,7 @@ and EntityTypeDescriptor (sourceOpt : obj) =
     override this.GetProperties () =
         let contextOpt =
             match sourceOpt with
-            | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity, !source.WorldRef)
+            | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity, !Globals.WorldRef)
             | _ -> None
         let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
         let propertyDescriptors = EntityPropertyValue.getPropertyDescriptors makePropertyDescriptor contextOpt

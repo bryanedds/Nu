@@ -1060,16 +1060,27 @@ module WorldTypes =
                 this.EventSystemDelegate
             
             member this.UpdateEventSystemDelegateHook updater =
-                { this with EventSystemDelegate = updater this.EventSystemDelegate }
+                let this = { this with EventSystemDelegate = updater this.EventSystemDelegate }
+#if DEBUG
+                // inlined choose
+                Debug.World.Chosen <- this :> obj
+#endif
+                this
             
             member this.PublishEventHook (participant : Participant) publisher eventData eventAddress eventTrace subscription world =
-                match participant with
-                | :? GlobalParticipantGeneralized -> EventSystem.publishEvent<'a, 'p, Participant, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> participant publisher eventData eventAddress eventTrace subscription world
-                | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
-                | _ -> failwithumf ()
+                let (handling, world) =
+                    match participant with
+                    | :? GlobalParticipantGeneralized -> EventSystem.publishEvent<'a, 'p, Participant, World> participant publisher eventData eventAddress eventTrace subscription world
+                    | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
+                    | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> participant publisher eventData eventAddress eventTrace subscription world
+                    | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> participant publisher eventData eventAddress eventTrace subscription world
+                    | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
+                    | _ -> failwithumf ()
+#if DEBUG
+                // inlined choose
+                Debug.World.Chosen <- world :> obj
+#endif
+                (handling, world)
 
         interface World ScriptingSystem with
 

@@ -11,7 +11,6 @@ open Nu.Gaia
 open Nu.Gaia.Design
 
 type WorldChanger = World -> World
-
 type WorldChangers = WorldChanger List
 
 type DragEntityState =
@@ -32,3 +31,9 @@ type EditorState =
       FutureWorlds : World list
       SelectedLayer : Layer
       FilePaths : Map<Layer Address, string> }
+
+/// Globals needed to sync Nu with WinForms.
+module Globals =
+
+    let WorldRef = ref Unchecked.defaultof<World>
+    let WorldChangers = WorldChangers ()
