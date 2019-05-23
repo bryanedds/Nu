@@ -45,6 +45,12 @@ module WorldModule =
 #endif
             world
 
+        static member assertChosen (world : World) =
+#if DEBUG
+            if world :> obj <> Debug.World.Chosen then
+                Console.WriteLine "Fault"
+#endif
+
         /// Make the world.
         static member internal make eventDelegate dispatchers subsystems scriptingEnv ambientState activeGameDispatcher =
             let gameState = GameState.make activeGameDispatcher
@@ -100,7 +106,7 @@ module WorldModule =
 
         /// Set the context of the event system.
 #if DEBUG
-        static member internal withEventContext operation context (world : World) =
+        static member internal withEventContext operation (context : Participant) (world : World) =
             let oldContext = World.getEventContext world
             EventSystem.setEventContext context world
             let world = operation world
@@ -108,7 +114,7 @@ module WorldModule =
             world
 #else
         static member inline internal withEventContext operation _ (world : World) =
-            // NOTE: inlined in debug to hopefully get rid of the lambda
+            // NOTE: inlined to hopefully get rid of the lambda
             operation world
 #endif
 
@@ -494,7 +500,7 @@ module WorldModule =
 
         /// Get the context of the script system.
         static member internal setScriptContext context (world : World) =
-            { world with ScriptingContext = context }
+            World.choose { world with ScriptingContext = context }
 
         /// Evaluate a script expression.
         static member eval expr localFrame simulant world =

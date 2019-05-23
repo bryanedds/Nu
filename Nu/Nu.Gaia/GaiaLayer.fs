@@ -16,9 +16,7 @@ open Nu.Gaia.Design
 
 type [<TypeDescriptionProvider (typeof<LayerTypeDescriptorProvider>)>] LayerTypeDescriptorSource =
     { DescribedLayer : Layer
-      Form : GaiaForm
-      WorldChangers : WorldChangers
-      WorldRef : World ref }
+      Form : GaiaForm }
 
 and LayerPropertyDescriptor (property, attributes) =
     inherit System.ComponentModel.PropertyDescriptor (
@@ -63,7 +61,7 @@ and LayerPropertyDescriptor (property, attributes) =
         | null -> null // WHY THE FUCK IS THIS EVER null???
         | source ->
             let layerTds = source :?> LayerTypeDescriptorSource
-            LayerPropertyValue.getValue property layerTds.DescribedLayer !layerTds.WorldRef
+            LayerPropertyValue.getValue property layerTds.DescribedLayer !Globals.WorldRef
 
     override this.SetValue (source, value) =
         
@@ -103,14 +101,14 @@ and LayerPropertyDescriptor (property, attributes) =
                             ignore
                         world
                     | _ -> LayerPropertyValue.setValue property value layer world
-                layerTds.WorldRef := world // must be set for property grid
+                Globals.WorldRef := world // must be set for property grid
                 layerTds.Form.layerPropertyGrid.Refresh ()
                 world)
 
         // NOTE: in order to update the view immediately, we have to apply the changer twice,
         // once immediately and once in the update function
-        layerTds.WorldRef := changer !layerTds.WorldRef
-        layerTds.WorldChangers.Add changer |> ignore
+        Globals.WorldRef := changer !Globals.WorldRef
+        Globals.WorldChangers.Add changer |> ignore
 
 and LayerTypeDescriptor (sourceOpt : obj) =
     inherit CustomTypeDescriptor ()
@@ -118,7 +116,7 @@ and LayerTypeDescriptor (sourceOpt : obj) =
     override this.GetProperties () =
         let contextOpt =
             match sourceOpt with
-            | :? LayerTypeDescriptorSource as source -> Some (source.DescribedLayer, !source.WorldRef)
+            | :? LayerTypeDescriptorSource as source -> Some (source.DescribedLayer, !Globals.WorldRef)
             | _ -> None
         let makePropertyDescriptor = fun (epv, tcas) -> (LayerPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
         let propertyDescriptors = LayerPropertyValue.getPropertyDescriptors makePropertyDescriptor contextOpt
