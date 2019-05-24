@@ -396,11 +396,15 @@ module WorldModule2 =
         /// A hack for the physics subsystem that allows an old world value to displace the current
         /// one and have its physics values propagated to the imperative physics subsystem.
         static member continueHack world =
+            // NOTE: because there is an optimization that makes event context mutable, operations
+            // on the exist current world may affect past and future ones if the containing event
+            // world incidentally isn't copied. Therefore, we restore the initial event context
+            // here.
+            World.setEventContextHack Simulants.Game world
             // NOTE: since messages may be invalid upon continuing a world (especially physics
             // messages), all messages are eliminated. If this poses an issue, the editor will have
             // to instead store past / future worlds only once their current frame has been
             // processed.
-            World.setEventContext Simulants.Game world
             let world = World.clearSubsystemsMessages world
             let world = World.enqueuePhysicsMessage RebuildPhysicsHackMessage world
             let entities = World.getEntities1 world
