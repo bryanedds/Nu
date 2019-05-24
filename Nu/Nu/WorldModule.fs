@@ -105,6 +105,10 @@ module WorldModule =
             EventSystem.getEventContext world
 
         /// Set the context of the event system.
+        static member internal setEventContext context (world : World) =
+            EventSystem.setEventContext context world
+
+        /// Set the context of the event system.
 #if DEBUG
         static member internal withEventContext operation (context : Participant) (world : World) =
             let oldContext = World.getEventContext world
@@ -498,7 +502,7 @@ module WorldModule =
         static member internal getScriptContext (world : World) =
             world.ScriptingContext
 
-        /// Get the context of the script system.
+        /// Set the context of the script system.
         static member internal setScriptContext context (world : World) =
             World.choose { world with ScriptingContext = context }
 

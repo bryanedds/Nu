@@ -223,28 +223,24 @@ module WorldModuleScreen =
         static member internal registerScreen screen world =
             let world = World.monitor World.screenOnRegisterChanged (ltoa<World ParticipantChangeData> ["Change"; (Property? OnRegister); "Event"] ->- screen) screen world
             let world = World.monitor World.screenScriptOptChanged (ltoa<World ParticipantChangeData> ["Change"; (Property? ScriptOpt); "Event"] ->- screen) screen world
-            let world =
-                World.withEventContext (fun world ->
-                    let dispatcher = World.getScreenDispatcher screen world
-                    let world = dispatcher.Register (screen, world)
-                    let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
-                    let world = World.publish () (ltoa<unit> ["Register"; "Event"] ->- screen) eventTrace screen world
-                    eval (World.getScreenOnUnregister screen world) (World.getScreenScriptFrame screen world) screen world |> snd')
-                    screen
-                    world
-            World.choose world
+            World.withEventContext (fun world ->
+                let dispatcher = World.getScreenDispatcher screen world
+                let world = dispatcher.Register (screen, world)
+                let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
+                let world = World.publish () (ltoa<unit> ["Register"; "Event"] ->- screen) eventTrace screen world
+                eval (World.getScreenOnUnregister screen world) (World.getScreenScriptFrame screen world) screen world |> snd')
+                screen
+                world
 
         static member internal unregisterScreen screen world =
-            let world =
-                World.withEventContext (fun world ->
-                    let world = eval (World.getScreenOnRegister screen world) (World.getScreenScriptFrame screen world) screen world |> snd'
-                    let dispatcher = World.getScreenDispatcher screen world
-                    let eventTrace = EventTrace.record "World" "unregisteringScreen" EventTrace.empty
-                    let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] ->- screen) eventTrace screen world
-                    dispatcher.Unregister (screen, world))
-                    screen
-                    world
-            World.choose world
+            World.withEventContext (fun world ->
+                let world = eval (World.getScreenOnRegister screen world) (World.getScreenScriptFrame screen world) screen world |> snd'
+                let dispatcher = World.getScreenDispatcher screen world
+                let eventTrace = EventTrace.record "World" "unregisteringScreen" EventTrace.empty
+                let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] ->- screen) eventTrace screen world
+                dispatcher.Unregister (screen, world))
+                screen
+                world
 
         static member internal addScreen mayReplace screenState screen world =
             let isNew = not (World.getScreenExists screen world)

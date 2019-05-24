@@ -571,32 +571,28 @@ module WorldModuleEntity =
             world
 
         static member internal registerEntity entity world =
-            let world =
-                World.withEventContext (fun world ->
-                    let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
-                    let facets = World.getEntityFacets entity world
-                    let world = dispatcher.Register (entity, world)
-                    let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
-                    let world = World.updateEntityPublishFlags entity world
-                    let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
-                    let world = World.publish () (ltoa<unit> ["Register"; "Event"] ->- entity) eventTrace entity world
-                    world)
-                    entity
-                    world
-            World.choose world
+            World.withEventContext (fun world ->
+                let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
+                let facets = World.getEntityFacets entity world
+                let world = dispatcher.Register (entity, world)
+                let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
+                let world = World.updateEntityPublishFlags entity world
+                let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
+                let world = World.publish () (ltoa<unit> ["Register"; "Event"] ->- entity) eventTrace entity world
+                world)
+                entity
+                world
 
         static member internal unregisterEntity entity world =
-            let world =
-                World.withEventContext (fun world ->
-                    let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
-                    let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] ->- entity) eventTrace entity world
-                    let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
-                    let facets = World.getEntityFacets entity world
-                    let world = dispatcher.Unregister (entity, world)
-                    List.fold (fun world (facet : Facet) -> facet.Unregister (entity, world)) world facets)
-                    entity
-                    world
-            World.choose world
+            World.withEventContext (fun world ->
+                let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
+                let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] ->- entity) eventTrace entity world
+                let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
+                let facets = World.getEntityFacets entity world
+                let world = dispatcher.Unregister (entity, world)
+                List.fold (fun world (facet : Facet) -> facet.Unregister (entity, world)) world facets)
+                entity
+                world
 
         static member internal addEntity mayReplace entityState entity world =
 

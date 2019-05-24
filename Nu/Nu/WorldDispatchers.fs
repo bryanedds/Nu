@@ -1375,9 +1375,8 @@ module TileMapDispatcherModule =
             unregisterTileMapPhysics tileMap world
             
         override dispatcher.PropagatePhysics (tileMap, world) =
-            world |>
-            unregisterTileMapPhysics tileMap |>
-            registerTileMapPhysics tileMap
+            let world = unregisterTileMapPhysics tileMap world
+            registerTileMapPhysics tileMap world
 
         override dispatcher.Actualize (tileMap, world) =
             if tileMap.GetVisible world then

@@ -232,28 +232,24 @@ module WorldModuleLayer =
         static member internal registerLayer layer world =
             let world = World.monitor World.layerOnRegisterChanged (ltoa<World ParticipantChangeData> ["Change"; (Property? OnRegister); "Event"] ->- layer) layer world
             let world = World.monitor World.layerScriptOptChanged (ltoa<World ParticipantChangeData> ["Change"; (Property? ScriptOpt); "Event"] ->- layer) layer world
-            let world =
-                World.withEventContext (fun world ->
-                    let dispatcher = World.getLayerDispatcher layer world
-                    let world = dispatcher.Register (layer, world)
-                    let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
-                    let world = World.publish () (ltoa<unit> ["Register"; "Event"] ->- layer) eventTrace layer world
-                    eval (World.getLayerOnUnregister layer world) (World.getLayerScriptFrame layer world) layer world |> snd')
-                    layer
-                    world
-            World.choose world
+            World.withEventContext (fun world ->
+                let dispatcher = World.getLayerDispatcher layer world
+                let world = dispatcher.Register (layer, world)
+                let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
+                let world = World.publish () (ltoa<unit> ["Register"; "Event"] ->- layer) eventTrace layer world
+                eval (World.getLayerOnUnregister layer world) (World.getLayerScriptFrame layer world) layer world |> snd')
+                layer
+                world
 
         static member internal unregisterLayer layer world =
-            let world =
-                World.withEventContext (fun world ->
-                    let world = eval (World.getLayerOnRegister layer world) (World.getLayerScriptFrame layer world) layer world |> snd'
-                    let dispatcher = World.getLayerDispatcher layer world
-                    let eventTrace = EventTrace.record "World" "unregisteringLayer" EventTrace.empty
-                    let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] ->- layer) eventTrace layer world
-                    dispatcher.Unregister (layer, world))
-                    layer
-                    world
-            World.choose world
+            World.withEventContext (fun world ->
+                let world = eval (World.getLayerOnRegister layer world) (World.getLayerScriptFrame layer world) layer world |> snd'
+                let dispatcher = World.getLayerDispatcher layer world
+                let eventTrace = EventTrace.record "World" "unregisteringLayer" EventTrace.empty
+                let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] ->- layer) eventTrace layer world
+                dispatcher.Unregister (layer, world))
+                layer
+                world
 
         static member private addLayer mayReplace layerState layer world =
             let isNew = not (World.getLayerExists layer world)
