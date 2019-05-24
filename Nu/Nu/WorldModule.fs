@@ -105,7 +105,7 @@ module WorldModule =
             EventSystem.getEventContext world
 
         /// Set the context of the event system.
-        static member internal setEventContext context (world : World) =
+        static member internal setEventContextHack context (world : World) =
             EventSystem.setEventContext context world
 
         /// Set the context of the event system.
