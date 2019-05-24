@@ -2,7 +2,6 @@
 // Copyright (C) Bryan Edds, 2013-2018.
 
 namespace Nu.Gaia
-open SDL2
 open OpenTK
 open System
 open System.IO
@@ -47,10 +46,9 @@ module Gaia =
 
     let private getExpansionState (treeView : TreeView) =
         let nodeStates =
-            Seq.fold
-                (fun state (node : TreeNode) ->
-                    if node.Nodes.Count = 0 then state
-                    else (node.Name, node.IsExpanded) :: state)
+            Seq.fold (fun state (node : TreeNode) ->
+                if node.Nodes.Count = 0 then state
+                else (node.Name, node.IsExpanded) :: state)
                 []
                 (enumerable treeView.Nodes)
         Map.ofSeq nodeStates
@@ -210,7 +208,6 @@ module Gaia =
         | _ -> ()
 
     let private refreshFormOnUndoRedo (form : GaiaForm) world =
-        Globals.WorldRef := world
         form.tickingButton.Checked <- false
         refreshEntityPropertyGrid form world
         refreshLayerPropertyGrid form world
