@@ -400,7 +400,7 @@ module WorldModule2 =
             // on the exist current world may affect past and future ones if the containing event
             // world incidentally isn't copied. Therefore, we restore the initial event context
             // here.
-            World.setEventContextHack Simulants.Game world
+            World.continueEventSystemHack world
             // NOTE: since messages may be invalid upon continuing a world (especially physics
             // messages), all messages are eliminated. If this poses an issue, the editor will have
             // to instead store past / future worlds only once their current frame has been

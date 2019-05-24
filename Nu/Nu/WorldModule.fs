@@ -104,9 +104,9 @@ module WorldModule =
         static member getEventContext (world : World) =
             EventSystem.getEventContext world
 
-        /// Set the context of the event system.
-        static member internal setEventContextHack context (world : World) =
-            EventSystem.setEventContext context world
+        /// A hack to allow a sidelined event system to be continued by resetting its mutable state.
+        static member internal continueEventSystemHack (world : World) =
+            EventSystem.setEventContext (Game Address.empty) world
 
         /// Set the context of the event system.
 #if DEBUG
