@@ -238,7 +238,6 @@ module Gaia =
         if not (World.isTicking world) then
             // OPTIMIZATION: don't attempt to refresh the slow winforms UI while running the game
             refreshHierarchyTreeView form world
-            selectEntity form entity world
         (Cascade, world)
 
     let private handleNuEntityUnregistering (form : GaiaForm) evt world =
