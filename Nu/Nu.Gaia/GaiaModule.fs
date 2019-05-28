@@ -220,13 +220,20 @@ module Gaia =
         not form.editWhileInteractiveCheckBox.Checked
 
     let private tryMousePick (form : GaiaForm) mousePosition world =
-        let (entities, world) = getPickableEntities world
-        let pickedOpt = World.tryPickEntity mousePosition entities world
-        match pickedOpt with
-        | Some entity ->
-            selectEntity form entity world
-            (Some entity, world)
-        | None -> (None, world)
+        match form.entityPropertyGrid.SelectedObject with
+        | :? EntityTypeDescriptorSource as entityTds ->
+            let entity = entityTds.DescribedEntity
+            if Math.isPointInBounds mousePosition (entity.GetBounds world)
+            then (Some entity, world)
+            else
+                let (entities, world) = getPickableEntities world
+                let pickedOpt = World.tryPickEntity mousePosition entities world
+                match pickedOpt with
+                | Some entity ->
+                    selectEntity form entity world
+                    (Some entity, world)
+                | None -> (None, world)
+        | _ -> (None, world)
 
     let private handleNuChangeParentNodeOpt form _ world =
         refreshHierarchyTreeView form world
@@ -1232,7 +1239,7 @@ module Gaia =
                 world
             | _ -> world
 
-    let private handleKeyboardInput key isKeyFromTextBox (form : GaiaForm) =
+    let private handleKeyboardInput key isKeyFromKeyableControl (form : GaiaForm) world =
         if form :> Form = Form.ActiveForm then
             if Keys.F5 = key then form.tickingButton.PerformClick ()
             if Keys.Control = Control.ModifierKeys && Keys.Q = key then handleFormQuickSize form (EventArgs ())
@@ -1264,7 +1271,7 @@ module Gaia =
             if Keys.Alt = Control.ModifierKeys && Keys.T = key && form.rolloutTabControl.SelectedTab.Name = "eventTracingTabPage" then form.traceEventsCheckBox.Checked <- not form.traceEventsCheckBox.Checked
             if Keys.Alt = Control.ModifierKeys && Keys.V = key && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalButton.PerformClick ()
             if Keys.Alt = Control.ModifierKeys && Keys.L = key && form.rolloutTabControl.SelectedTab.Name = "evaluatorTabPage" then form.evalLineButton.PerformClick ()
-            if not isKeyFromTextBox then
+            if not isKeyFromKeyableControl then
                 if Keys.Control = Control.ModifierKeys && Keys.A = key then handleFormSave true form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.Z = key then handleFormUndo form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.Y = key then handleFormRedo form (EventArgs ())
@@ -1274,6 +1281,7 @@ module Gaia =
                 if Keys.Control = Control.ModifierKeys && Keys.C = key then handleFormCopy form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.V = key then handleFormPaste false form (EventArgs ())
                 if Keys.Delete = key then handleFormDeleteEntity form (EventArgs ())
+                if Keys.Escape = key then deselectEntity form world
 
     let private handleFormClosing (_ : GaiaForm) (args : CancelEventArgs) =
         match MessageBox.Show ("Are you sure you want to close Gaia?", "Close Gaia?", MessageBoxButtons.OKCancel) with
@@ -1418,9 +1426,10 @@ module Gaia =
             if nCode >= 0 && (wParam = IntPtr WM_KEYDOWN || wParam = IntPtr WM_SYSKEYDOWN) then
                 let key = lParam |> Marshal.ReadInt32 |> enum<Keys> 
                 match form.GetFocusedControl () with
-                | :? TextBox -> handleKeyboardInput key true form
-                | :? SymbolicTextBox -> handleKeyboardInput key true form
-                | _ -> handleKeyboardInput key false form
+                | :? ToolStripDropDown
+                | :? TextBox
+                | :? SymbolicTextBox -> handleKeyboardInput key true form !Globals.WorldRef
+                | _ -> handleKeyboardInput key false form !Globals.WorldRef
             GaiaForm.CallNextHookEx (form.HookID, nCode, wParam, lParam)) |> ignore
         tryRun3 runWhile sdlDeps (form : GaiaForm)
 
