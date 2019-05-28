@@ -12,7 +12,7 @@ module BulletModule =
     type Entity with
     
         member this.GetAge world : int64 = this.Get Property? Age world
-        member this.SetAge (value : int64) world = this.SetFast Property? Age false false value world
+        member this.SetAge (value : int64) world = this.Set Property? Age value world
         member this.Age = PropertyTag.make this Property? Age this.GetAge this.SetAge
 
     type BulletDispatcher () =
@@ -60,7 +60,7 @@ module EnemyModule =
     type Entity with
     
         member this.GetHealth world : int = this.Get Property? Health world
-        member this.SetHealth (value : int) world = this.SetFast Property? Health false false value world
+        member this.SetHealth (value : int) world = this.Set Property? Health value world
         member this.Health = PropertyTag.make this Property? Health this.GetHealth this.SetHealth
         
         member this.IsOnScreen world =
@@ -123,10 +123,10 @@ module PlayerModule =
     type Entity with
     
         member this.GetLastTimeOnGroundNp world : int64 = this.Get Property? LastTimeOnGroundNp world
-        member this.SetLastTimeOnGroundNp (value : int64) world = this.SetFast Property? LastTimeOnGroundNp false false value world
+        member this.SetLastTimeOnGroundNp (value : int64) world = this.Set Property? LastTimeOnGroundNp value world
         member this.LastTimeOnGroundNp = PropertyTag.make this Property? LastTimeOnGroundNp this.GetLastTimeOnGroundNp this.SetLastTimeOnGroundNp
         member this.GetLastTimeJumpNp world : int64 = this.Get Property? LastTimeJumpNp world
-        member this.SetLastTimeJumpNp (value : int64) world = this.SetFast Property? LastTimeJumpNp false false value world
+        member this.SetLastTimeJumpNp (value : int64) world = this.Set Property? LastTimeJumpNp value world
         member this.LastTimeJumpNp = PropertyTag.make this Property? LastTimeJumpNp this.GetLastTimeJumpNp this.SetLastTimeJumpNp
         member this.HasFallen world = (this.GetPosition world).Y < -600.0f
 
