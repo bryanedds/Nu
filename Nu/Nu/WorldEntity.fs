@@ -120,6 +120,9 @@ module WorldEntityModule =
         /// Get an entity's quick size.
         member this.GetQuickSize world = World.getEntityQuickSize this world
 
+        /// Set an entity's size by its quick size.
+        member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
+
         /// Get an entity's bounds, not taking into account its overflow.
         member this.GetBounds world = Math.makeBounds (this.GetPosition world) (this.GetSize world)
 
