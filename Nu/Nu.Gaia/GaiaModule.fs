@@ -255,9 +255,7 @@ module Gaia =
                 deselectEntity form world
                 (Cascade, world)
             else (Cascade, world)
-        | _ ->
-            Log.trace "Unexpected match failure in Nu.Gaia.Gaia.handleNuEntityUnregistering (probably a bug in Gaia or Nu)."
-            (Cascade, world)
+        | _ -> failwithumf ()
 
     let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         let handled = if World.isTicking world then Cascade else Resolve
@@ -571,7 +569,7 @@ module Gaia =
         | null -> ()
         | :? EntityTypeDescriptorSource as entityTds ->
             match form.entityPropertyGrid.SelectedGridItem with
-            | null -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
+            | null -> failwithumf ()
             | selectedGridItem ->
                 match selectedGridItem.GridItemType with
                 | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
@@ -976,7 +974,7 @@ module Gaia =
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds -> World.copyEntityToClipboard entityTds.DescribedEntity world; world
-            | _ -> Log.trace ("Invalid copy operation (likely a code issue in Gaia)."); world
+            | _ -> failwithumf ()
 
     let private handleFormCut (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
@@ -987,7 +985,7 @@ module Gaia =
                 let world = World.cutEntityToClipboard entityTds.DescribedEntity world
                 deselectEntity form world
                 world
-            | _ -> Log.trace ("Invalid cut operation (likely a code issue in Gaia)."); world
+            | _ -> failwithumf ()
 
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
@@ -1012,7 +1010,7 @@ module Gaia =
                 Globals.WorldRef := world // must be set for property grid
                 form.entityPropertyGrid.Refresh ()
                 world
-            | _ -> Log.trace ("Invalid quick size operation (likely a code issue in Gaia)."); world
+            | _ -> failwithumf ()
 
     let private handleFormResetCamera (_ : GaiaForm) (_ : EventArgs) =
         addWorldChanger ^ fun world ->
