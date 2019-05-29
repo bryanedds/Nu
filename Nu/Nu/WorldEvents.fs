@@ -77,4 +77,5 @@ module Events =
     let AssetsReload = stoa<unit> "Assets/Reload/Event"
     let SimulantRegister = stoa<unit> "Register/Event"
     let SimulantUnregistering = stoa<unit> "Unregistering/Event"
+    let SimulantMessage = stoa<Symbol> "Message/Event"
     let SimulantChange propertyName = stoa<ChangeData> ("Change/" + propertyName + "/Event")

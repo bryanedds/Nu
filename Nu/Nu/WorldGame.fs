@@ -43,6 +43,9 @@ module WorldGameModule =
         member this.GetOnPostUpdate world = World.getGameOnPostUpdate world
         member this.SetOnPostUpdate value world = World.setGameOnPostUpdate value world
         member this.OnPostUpdate = PropertyTag.make this Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate
+        member this.GetOnMessage world = World.getGameOnMessage world
+        member this.SetOnMessage value world = World.setGameOnMessage value world
+        member this.OnMessage = PropertyTag.make this Property? OnMessage this.GetOnMessage this.SetOnMessage
         member this.GetOmniscreenOpt world = World.getOmniscreenOpt world
         member this.SetOmniscreenOpt value world = World.setOmniscreenOpt value world
         member this.OmniscreenOpt = PropertyTag.make this Property? OmniscreenOpt this.GetOmniscreenOpt this.SetOmniscreenOpt
@@ -119,8 +122,24 @@ module WorldGameModule =
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
         member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
 
-        /// Resolve a relation in the context of an entity.
+        /// Resolve a relation in the context of a game.
         member this.Resolve relation = Game (Relation.resolve this.GameAddress relation)
+
+        /// Send a message to the game.
+        member this.Message message world =
+            World.withEventContext (fun world ->
+                let world =
+                    match ScriptingSystem.tryImport typeof<Symbol> message world with
+                    | Some messageExpr ->
+                        ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield ("message", messageExpr) }) world
+                        let world = World.eval (this.GetOnMessage world) (this.GetScriptFrame world) this world |> snd'
+                        ScriptingSystem.removeProceduralBindings world
+                        world
+                    | None -> failwithumf ()
+                let dispatcher = this.GetDispatcher world
+                dispatcher.Message (message, this, world))
+                this
+                world
 
     type World with
 
@@ -145,7 +164,7 @@ module WorldGameModule =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcher world
                     let world = dispatcher.Register (game, world)
-                    World.eval (game.GetOnUnregister world) (game.GetScriptFrame world) game world |> snd')
+                    World.eval (game.GetOnRegister world) (game.GetScriptFrame world) game world |> snd')
                     game
                     world
             World.choose world
@@ -155,7 +174,7 @@ module WorldGameModule =
             let world =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcher world
-                    let world = World.eval (game.GetOnRegister world) (game.GetScriptFrame world)game world |> snd'
+                    let world = World.eval (game.GetOnUnregister world) (game.GetScriptFrame world) game world |> snd'
                     dispatcher.Unregister (game, world))
                     game
                     world

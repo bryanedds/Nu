@@ -594,6 +594,17 @@ module WorldModuleEntity =
                 entity
                 world
 
+        static member internal messageEntity message entity world =
+            World.withEventContext (fun world ->
+                let eventTrace = EventTrace.record "World" "messageEntity" EventTrace.empty
+                let world = World.publish message (ltoa<Symbol> ["Message"; "Event"] ->- entity) eventTrace entity world
+                let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
+                let facets = World.getEntityFacets entity world
+                let world = dispatcher.Message (message, entity, world)
+                List.fold (fun world (facet : Facet) -> facet.Message (message, entity, world)) world facets)
+                entity
+                world
+
         static member internal addEntity mayReplace entityState entity world =
 
             // add entity only if it is new or is explicitly able to be replaced
