@@ -51,6 +51,9 @@ module WorldLayerModule =
         member this.GetOnPostUpdate world = World.getLayerOnPostUpdate this world
         member this.SetOnPostUpdate value world = World.setLayerOnPostUpdate value this world
         member this.OnPostUpdate = PropertyTag.make this Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate
+        member this.GetOnMessage world = World.getLayerOnMessage this world
+        member this.SetOnMessage value world = World.setLayerOnMessage value this world
+        member this.OnMessage = PropertyTag.make this Property? OnMessage this.GetOnMessage this.SetOnMessage
         member this.GetDepth world = World.getLayerDepth this world
         member this.SetDepth value world = World.setLayerDepth value this world
         member this.Depth = PropertyTag.make this Property? Depth this.GetDepth this.SetDepth
@@ -94,8 +97,11 @@ module WorldLayerModule =
         /// Check that a layer dispatches in the same manner as the dispatcher with the given type.
         member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
 
-        /// Resolve a relation in the context of an entity.
+        /// Resolve a relation in the context of a layer.
         member this.Resolve relation = Layer (Relation.resolve this.LayerAddress relation)
+
+        /// Send a message to the layer.
+        member this.Message message world = World.messageLayer message this world
 
     type World with
 

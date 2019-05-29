@@ -191,6 +191,10 @@ module ScriptFacetModule =
         member this.GetOnPostUpdate world : Scripting.Expr = this.Get Property? OnPostUpdate world
         member this.SetOnPostUpdate (value : Scripting.Expr) world = this.SetFast Property? OnPostUpdate false false value world
         member this.OnPostUpdate = PropertyTag.make this Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate
+        member this.GetOnMessage world : Scripting.Expr = this.Get Property? OnMessage world
+        member this.SetOnMessage (value : Scripting.Expr) world = this.SetFast Property? OnMessage false false value world
+        member this.OnMessage = PropertyTag.make this Property? OnMessage this.GetOnMessage this.SetOnMessage
+        member this.Message message world = World.messageEntity message this world
 
     type ScriptFacet () =
         inherit Facet ()
@@ -201,7 +205,7 @@ module ScriptFacetModule =
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = entity.SetScriptFrame scriptFrame world
             evalManyWithLogging script scriptFrame entity world |> snd'
-            
+
         static let handleOnRegisterChanged evt world =
             let entity = evt.Subscriber : Entity
             let world = World.unregisterEntity entity world
@@ -216,7 +220,8 @@ module ScriptFacetModule =
              Define? OnRegister Scripting.Unit
              Define? OnUnregister Scripting.Unit
              Define? OnUpdate Scripting.Unit
-             Define? OnPostUpdate Scripting.Unit]
+             Define? OnPostUpdate Scripting.Unit
+             Define? OnMessage Scripting.Unit]
 
         override facet.Register (entity, world) =
             let world =
@@ -241,6 +246,18 @@ module ScriptFacetModule =
             match entity.GetOnPostUpdate world with
             | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
             | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
+
+        override facet.Message (message, entity, world) =
+            match entity.GetOnMessage world with
+            | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
+            | handler ->
+                match ScriptingSystem.tryImport typeof<Symbol> message world with
+                | Some messageExpr ->
+                    ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield ("message", messageExpr) }) world
+                    let world = World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
+                    ScriptingSystem.removeProceduralBindings world
+                    world
+                | None -> failwithumf ()
 
 [<AutoOpen>]
 module RigidBodyFacetModule =

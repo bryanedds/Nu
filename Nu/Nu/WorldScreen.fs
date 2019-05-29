@@ -48,6 +48,9 @@ module WorldScreenModule =
         member this.GetOnPostUpdate world = World.getScreenOnPostUpdate this world
         member this.SetOnPostUpdate value world = World.setScreenOnPostUpdate value this world
         member this.OnPostUpdate = PropertyTag.make this Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate
+        member this.GetOnMessage world = World.getScreenOnMessage this world
+        member this.SetOnMessage value world = World.setScreenOnMessage value this world
+        member this.OnMessage = PropertyTag.make this Property? OnMessage this.GetOnMessage this.SetOnMessage
         member internal this.GetEntityTree world = World.getScreenEntityTree this world
         member internal this.SetEntityTreeNoEvent value world = World.setScreenEntityTreeNoEvent value this world
         member internal this.EntityTree = PropertyTag.makeReadOnly this Property? EntityTree this.GetEntityTree
@@ -103,8 +106,11 @@ module WorldScreenModule =
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
         member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
 
-        /// Resolve a relation in the context of an entity.
+        /// Resolve a relation in the context of a screen.
         member this.Resolve relation = Screen (Relation.resolve this.ScreenAddress relation)
+
+        /// Send a message to the screen.
+        member this.Message message world = World.messageScreen message this world
 
     type World with
 
