@@ -65,7 +65,7 @@ module Gaia =
                     else node.Collapse ())
             treeState
 
-    let private addEntityTreeViewNode (form : GaiaForm) (entity : Entity) world =
+    let private addEntityTreeViewNode (entity : Entity) (form : GaiaForm) world =
         let entityGroupName = getTypeName (entity.GetDispatcher world)
         let treeGroup = form.entityTreeView.Nodes.[entityGroupName]
         let treeGroupNodeName = scstring entity.EntityAddress
@@ -76,7 +76,7 @@ module Gaia =
             treeGroupNode.Name <- treeGroupNodeName
             treeGroup.Nodes.Add treeGroupNode |> ignore
 
-    let private removeEntityTreeViewNode (form : GaiaForm) (entity : Participant) (_ : World) =
+    let private removeEntityTreeViewNode (entity : Participant) (form : GaiaForm) (_ : World) =
         match form.entityTreeView.Nodes.Find (scstring entity.ParticipantAddress, true) with
         | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.entityTreeView.Nodes.Remove treeNodes.[0]
@@ -128,7 +128,7 @@ module Gaia =
             form.entityTreeView.Nodes.Add treeNode |> ignore
         let selectedLayer = (World.getUserValue world).SelectedLayer
         for entity in World.getEntities selectedLayer world do
-            addEntityTreeViewNode form entity world
+            addEntityTreeViewNode entity form world
         restoreExpansionState form.entityTreeView treeState
         setEntityTreeViewSelectionToEntityPropertyGridSelection form
 
@@ -170,7 +170,7 @@ module Gaia =
             if Seq.notExists (fun (layer : Layer) -> layer.LayerName = layerTabPage.Name) layers then
                 layerTabPages.RemoveByKey layerTabPage.Name
 
-    let private selectEntity (form : GaiaForm) entity world =
+    let private selectEntity entity (form : GaiaForm) world =
         Globals.WorldRef := world // must be set for property grid
         let entityTds = { DescribedEntity = entity; Form = form }
         form.entityPropertyGrid.SelectedObject <- entityTds
@@ -189,7 +189,7 @@ module Gaia =
             else deselectEntity form world
         | _ -> ()
 
-    let private selectLayer (form : GaiaForm) layer world =
+    let private selectLayer layer (form : GaiaForm) world =
         let layerTds = { DescribedLayer = layer; Form = form }
         Globals.WorldRef := world // must be set for property grid
         form.layerPropertyGrid.SelectedObject <- layerTds
@@ -219,21 +219,24 @@ module Gaia =
         World.isTicking world &&
         not form.editWhileInteractiveCheckBox.Checked
 
-    let private tryMousePick (form : GaiaForm) mousePosition world =
+    let private tryMousePickInner (form : GaiaForm) mousePosition world =
+        let (entities, world) = getPickableEntities world
+        let pickedOpt = World.tryPickEntity mousePosition entities world
+        match pickedOpt with
+        | Some entity ->
+            selectEntity entity form world
+            (Some entity, world)
+        | None -> (None, world)
+
+    let private tryMousePick mousePosition (form : GaiaForm) world =
         match form.entityPropertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             let entity = entityTds.DescribedEntity
-            if Math.isPointInBounds mousePosition (entity.GetBounds world)
+            let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
+            if Math.isPointInBounds mousePositionWorld (entity.GetBounds world)
             then (Some entity, world)
-            else
-                let (entities, world) = getPickableEntities world
-                let pickedOpt = World.tryPickEntity mousePosition entities world
-                match pickedOpt with
-                | Some entity ->
-                    selectEntity form entity world
-                    (Some entity, world)
-                | None -> (None, world)
-        | _ -> (None, world)
+            else tryMousePickInner form mousePosition world
+        | _ -> tryMousePickInner form mousePosition world
 
     let private handleNuChangeParentNodeOpt form _ world =
         refreshHierarchyTreeView form world
@@ -241,14 +244,14 @@ module Gaia =
 
     let private handleNuEntityRegister (form : GaiaForm) evt world =
         let entity = Entity (atoa evt.Publisher.ParticipantAddress)
-        addEntityTreeViewNode form entity world
+        addEntityTreeViewNode entity form world
         if not (World.isTicking world) then
             // OPTIMIZATION: don't attempt to refresh the slow winforms UI while running the game
             refreshHierarchyTreeView form world
         (Cascade, world)
 
     let private handleNuEntityUnregistering (form : GaiaForm) evt world =
-        removeEntityTreeViewNode form evt.Publisher world
+        removeEntityTreeViewNode evt.Publisher form world
         let world =
             // OPTIMIZATION: don't attempt to refresh the slow winforms UI while running the game
             if not (World.isTicking world)
@@ -267,7 +270,7 @@ module Gaia =
     let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         let handled = if World.isTicking world then Cascade else Resolve
         let mousePosition = World.getMousePositionF world
-        let (_, world) = tryMousePick form mousePosition world
+        let (_, world) = tryMousePick mousePosition form world
         let world = World.updateUserValue (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
         (handled, world)
 
@@ -275,7 +278,7 @@ module Gaia =
         if not (canEditWithMouse form world) then
             let handled = if World.isTicking world then Cascade else Resolve
             let mousePosition = World.getMousePositionF world
-            match tryMousePick form mousePosition world with
+            match tryMousePick mousePosition form world with
             | (Some entity, world) ->
                 let world = pushPastWorld world world
                 let world =
@@ -762,7 +765,7 @@ module Gaia =
                 match Address.getNames address with
                 | [_; _; _] ->
                     let entity = Entity address
-                    selectEntity form entity world
+                    selectEntity entity form world
                     world
                 | _ -> world // don't have an entity address
             else world
@@ -791,7 +794,7 @@ module Gaia =
                     form.layerTabControl.SelectTab layerTabIndex
 
                     // select the entity in the property grid
-                    selectEntity form entity world
+                    selectEntity entity form world
                     world
 
                 | _ -> world // don't have an entity address
@@ -823,7 +826,7 @@ module Gaia =
                       Depth = getCreationDepth form }
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
                 let world = entity.PropagatePhysics world
-                selectEntity form entity world
+                selectEntity entity form world
                 world
             with exn ->
                 let world = World.choose oldWorld
@@ -1002,7 +1005,7 @@ module Gaia =
             let editorState = World.getUserValue world
             let (entityOpt, world) = World.pasteEntityFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap selectedLayer world
             match entityOpt with
-            | Some entity -> selectEntity form entity world; world
+            | Some entity -> selectEntity entity form world; world
             | None -> world
 
     let private handleFormQuickSize (form : GaiaForm) (_ : EventArgs) =
@@ -1053,7 +1056,7 @@ module Gaia =
             let world = subscribeToEntityEvents form world
             refreshEntityTreeView form world
             refreshEntityPropertyGrid form world
-            selectLayer form selectedLayer world
+            selectLayer selectedLayer form world
             world
 
     let private handleTraceEventsCheckBoxChanged (form : GaiaForm) (_ : EventArgs) =
@@ -1418,7 +1421,7 @@ module Gaia =
         refreshEntityTreeView form !Globals.WorldRef
         refreshHierarchyTreeView form !Globals.WorldRef
         refreshLayerTabs form !Globals.WorldRef
-        selectLayer form defaultLayer !Globals.WorldRef
+        selectLayer defaultLayer form !Globals.WorldRef
         form.tickingButton.CheckState <- CheckState.Unchecked
         form.add_LowLevelKeyboardHook (fun nCode wParam lParam ->
             let WM_KEYDOWN = 0x0100
@@ -1427,6 +1430,7 @@ module Gaia =
                 let key = lParam |> Marshal.ReadInt32 |> enum<Keys> 
                 match form.GetFocusedControl () with
                 | :? ToolStripDropDown
+                // | :? ToolStripComboBox wtf?
                 | :? TextBox
                 | :? SymbolicTextBox -> handleKeyboardInput key true form !Globals.WorldRef
                 | _ -> handleKeyboardInput key false form !Globals.WorldRef
