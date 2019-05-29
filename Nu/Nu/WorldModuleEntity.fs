@@ -922,28 +922,49 @@ module WorldModuleEntity =
             let properties = World.getProperties state
             properties |> Array.ofList |> Array.map a_c
 
+        /// Construct a screen reference in an optimized way.
+        /// OPTIMIZATION: attempt to avoid constructing a screen address on each call to decrease
+        /// address hashing.
+        static member internal makeScreenFast (entity : Entity) world =
+            match (World.getGameState world).OmniscreenOpt with
+            | Some omniscreen when Address.getName omniscreen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> omniscreen
+            | Some _ | None ->
+                match (World.getGameState world).SelectedScreenOpt with
+                | Some screen when Address.getName screen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> screen
+                | Some _ | None -> entity.EntityAddress |> Address.getNames |> List.head |> ntoa<Screen> |> Screen
+
         static member internal updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax (entity : Entity) oldWorld world =
             
-            // OPTIMIZATION: only update when entity is not omnipresent
-            if  (not oldOmnipresent && oldViewType <> Absolute) ||
-                (not (World.getEntityOmnipresent entity world) && World.getEntityViewType entity world <> Absolute) then
+            // OPTIMIZATION: work with the entity state directly to avoid function call overheads
+            let entityState = World.getEntityState entity world
+            let oldOmnipresent = oldOmnipresent || oldViewType = Absolute
+            let newOmnipresent = entityState.Omnipresent || entityState.ViewType = Absolute
+            if newOmnipresent <> oldOmnipresent then
 
-                // OPTIMIZATION: attempts to avoid constructing a screen address on each call to decrease address hashing
-                // OPTIMIZATION: assumes a well-formed entity address with List.head on its names
-                let screen =
-                    match (World.getGameState world).OmniscreenOpt with
-                    | Some omniscreen when Address.getName omniscreen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> omniscreen
-                    | Some _ | None ->
-                        match (World.getGameState world).SelectedScreenOpt with
-                        | Some screen when Address.getName screen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> screen
-                        | Some _ | None -> entity.EntityAddress |> Address.getNames |> List.head |> ntoa<Screen> |> Screen
-
-                // proceed to update entity in entity tree
+                // remove and add entity in entity tree
+                let screen = World.makeScreenFast entity world
                 let entityTree =
                     MutantCache.mutateMutant
                         (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
                         (fun entityTree ->
-                            let entityState = World.getEntityState entity world
+                            let newBoundsMax = World.getEntityStateBoundsMax entityState
+                            SpatialTree.removeElement oldOmnipresent oldBoundsMax entity entityTree
+                            SpatialTree.addElement newOmnipresent newBoundsMax entity entityTree
+                            let entityBoundsMax = World.getEntityStateBoundsMax entityState
+                            SpatialTree.updateElement oldBoundsMax entityBoundsMax entity entityTree
+                            entityTree)
+                        (World.getScreenEntityTree screen world)
+                World.setScreenEntityTreeNoEvent entityTree screen world
+
+            // OPTIMIZATION: only update when entity is not omnipresent
+            elif not newOmnipresent then
+
+                // update entity in entity tree
+                let screen = World.makeScreenFast entity world
+                let entityTree =
+                    MutantCache.mutateMutant
+                        (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
+                        (fun entityTree ->
                             let entityBoundsMax = World.getEntityStateBoundsMax entityState
                             SpatialTree.updateElement oldBoundsMax entityBoundsMax entity entityTree
                             entityTree)
