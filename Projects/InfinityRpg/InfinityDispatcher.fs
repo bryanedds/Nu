@@ -32,8 +32,8 @@ type InfinityDispatcher () =
         World.monitor (World.handleAsScreenTransition Simulants.Title) (Events.Click ->- Simulants.HudBack) Simulants.Game world
 
     override dispatcher.Register (_, world) =
-        let world = World.hintRenderPackageUse Assets.GuiPackageName world
-        let world = World.hintRenderPackageUse Assets.GameplayPackageName world
+        let world = World.hintRenderPackageUse Assets.GuiPackage world
+        let world = World.hintRenderPackageUse Assets.GameplayPackage world
         let world = createOmniscreen world
         let world = createTitleScreen world
         let world = createCreditsScreen world
