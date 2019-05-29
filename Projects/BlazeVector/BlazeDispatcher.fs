@@ -68,8 +68,8 @@ module BlazeDispatcherModule =
         override dispatcher.Register (_, world) =
 
             // hint to the renderer and audio system that the 'Gui' package should be loaded up front
-            let world = World.hintRenderPackageUse Assets.GuiPackageName world
-            let world = World.hintAudioPackageUse Assets.GuiPackageName world
+            let world = World.hintRenderPackageUse Assets.GuiPackage world
+            let world = World.hintAudioPackageUse Assets.GuiPackage world
 
             // create our screens
             let world = createOmniscreen world

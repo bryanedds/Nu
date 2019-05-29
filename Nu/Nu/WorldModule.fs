@@ -564,11 +564,6 @@ module WorldModule =
         static member handleAsExit<'a, 's when 's :> Simulant> (_ : Event<'a, 's>) (world : World) =
             (Resolve, World.exit world)
 
-    //type World with // Combinators
-    //
-    //    static member iter fn seq world =
-            
-
 // TODO: consider putting this in its own WorldModuleDescriptors.fs file once we can sensibly use folders in F#.
 module Descriptors =
 
