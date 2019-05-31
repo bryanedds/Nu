@@ -133,7 +133,7 @@ module Program =
              game.EyeSize.ChangeEvent =|> Dec
              game.Script.ChangeEvent =|>! Exit]
 
-        override this.Update (message, model, _, _) =
+        override this.Message (message, model, _, _) =
             match message with
             | Inc -> { model with Count = inc model.Count }
             | Dec -> { model with Count = dec model.Count }
