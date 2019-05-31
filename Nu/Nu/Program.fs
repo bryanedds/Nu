@@ -121,7 +121,7 @@ module Program =
         member this.SetModel (value : Model) world = this.Set Property? Model value world
         member this.Model = PropertyTag.make this Property? Model this.GetModel this.SetModel
 
-    type SampleDisaptcher () =
+    type SampleDispatcher () =
         inherit GelmDispatcher<Model, Message, Effect> ()
 
         static member PropertyDefinitions = [Define? Model { Count = 0; Screen = !> "Screen" }]
@@ -129,14 +129,14 @@ module Program =
         override this.SetModel (model, game, world) = game.SetModel model world
 
         override this.Binding (game, _) =
-            [game.EyeCenter.ChangeEvent =|> Inc
-             game.EyeSize.ChangeEvent =|> Dec
-             game.Script.ChangeEvent =|>! Exit]
+            [game.EyeCenter.ChangeEvent ==> Inc
+             game.EyeSize.ChangeEvent ==> Dec
+             game.Script.ChangeEvent ==>! Exit]
 
         override this.Message (message, model, _, _) =
             match message with
-            | Inc -> { model with Count = inc model.Count }
-            | Dec -> { model with Count = dec model.Count }
+            | Inc -> nu { model with Count = inc model.Count }
+            | Dec -> nu { model with Count = dec model.Count }
 
         override this.Effect (effect, _, _, world) =
             match effect with

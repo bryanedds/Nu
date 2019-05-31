@@ -151,12 +151,12 @@ module Nu =
                 let oldScriptContext = World.getScriptContext world
                 World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptContext world
-                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield ("self", Scripting.String (scstring scriptContext)) }) world
+                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
                 let struct (evaled, world) = World.evalInternal expr world
                 ScriptingSystem.removeProceduralBindings world
                 let world = World.setScriptContext oldScriptContext world
                 World.setLocalFrame oldLocalFrame world
-                (evaled, world)
+                struct (evaled, world)
 
             // init evalMany F# reach-around
             WorldModule.evalMany <- fun exprs localFrame scriptContext world ->
@@ -164,12 +164,12 @@ module Nu =
                 let oldScriptContext = World.getScriptContext world
                 World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptContext world
-                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield ("self", Scripting.String (scstring scriptContext)) }) world
+                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
                 let struct (evaleds, world) = World.evalManyInternal exprs world
                 ScriptingSystem.removeProceduralBindings world
                 let world = World.setScriptContext oldScriptContext world
                 World.setLocalFrame oldLocalFrame world
-                (evaleds, world)
+                struct (evaleds, world)
 
             // init evalWithLogging F# reach-around
             WorldModule.evalWithLogging <- fun expr localFrame scriptContext world ->
@@ -177,12 +177,12 @@ module Nu =
                 let oldScriptContext = World.getScriptContext world
                 World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptContext world
-                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield ("self", Scripting.String (scstring scriptContext)) }) world
+                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
                 let struct (evaled, world) = World.evalWithLoggingInternal expr world
                 ScriptingSystem.removeProceduralBindings world
                 let world = World.setScriptContext oldScriptContext world
                 World.setLocalFrame oldLocalFrame world
-                (evaled, world)
+                struct (evaled, world)
 
             // init evalMany F# reach-around
             WorldModule.evalManyWithLogging <- fun exprs localFrame scriptContext world ->
@@ -190,12 +190,12 @@ module Nu =
                 let oldScriptContext = World.getScriptContext world
                 World.setLocalFrame localFrame world
                 let world = World.setScriptContext scriptContext world
-                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield ("self", Scripting.String (scstring scriptContext)) }) world
+                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
                 let struct (evaleds, world) = World.evalManyWithLoggingInternal exprs world
                 ScriptingSystem.removeProceduralBindings world
                 let world = World.setScriptContext oldScriptContext world
                 World.setLocalFrame oldLocalFrame world
-                (evaleds, world)
+                struct (evaleds, world)
 
             // init addSimulantScriptUnsubscription F# reach-around
             WorldModule.addSimulantScriptUnsubscription <- fun unsubscription (simulant : Simulant) world ->

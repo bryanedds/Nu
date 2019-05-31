@@ -140,7 +140,7 @@ module WorldGameModule =
                 let world =
                     match ScriptingSystem.tryImport typeof<Symbol> message world with
                     | Some messageExpr ->
-                        ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield ("message", messageExpr) }) world
+                        ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("message", messageExpr) }) world
                         let world = World.eval (this.GetOnMessage world) (this.GetScriptFrame world) this world |> snd'
                         ScriptingSystem.removeProceduralBindings world
                         world
