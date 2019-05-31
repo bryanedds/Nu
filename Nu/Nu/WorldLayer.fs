@@ -60,6 +60,12 @@ module WorldLayerModule =
         member this.GetVisible world = World.getLayerVisible this world
         member this.SetVisible value world = World.setLayerVisible value this world
         member this.Visible = PropertyTag.make this Property? Visible this.GetVisible this.SetVisible
+        member this.ChangeEvent propertyName = Events.Change propertyName --> this
+        member this.RegisterEvent = Events.Register --> this
+        member this.UnregisteringEvent = Events.Unregistering --> this
+        member this.UpdateEvent = Events.Update --> this
+        member this.PostUpdateEvent = Events.PostUpdate --> this
+        member this.MessageEvent = Events.Message --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetLayerProperty propertyName this world
