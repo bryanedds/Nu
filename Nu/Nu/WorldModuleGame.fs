@@ -20,7 +20,7 @@ module WorldModuleGame =
     type World with
 
         static member private publishGameChange (propertyName : string) oldWorld world =
-            let game = Game Address.empty
+            let game = Game ()
             let world =
                 let changeEventAddress = ltoa ["Change"; propertyName; "Event"] --> game.GameAddress
                 let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
@@ -59,7 +59,7 @@ module WorldModuleGame =
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script world
             let world = World.setGameScriptFrame scriptFrame world
-            evalManyWithLogging value scriptFrame (Game Address.empty) world |> snd'
+            evalManyWithLogging value scriptFrame (Game ()) world |> snd'
         static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
         static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> { gameState with ScriptFrame = value }) Property? ScriptFrame world
         static member internal getGameScriptUnsubscriptions world = (World.getGameState world).ScriptUnsubscriptions
@@ -252,7 +252,7 @@ module WorldModuleGame =
             (List.rev values, world)
 
         static member internal tryGetGameCalculatedProperty propertyName world =
-            let game = Game Address.empty
+            let game = Game ()
             let dispatcher = World.getGameDispatcher world
             dispatcher.TryGetCalculatedProperty (propertyName, game, world)
 

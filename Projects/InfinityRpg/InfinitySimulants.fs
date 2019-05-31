@@ -6,13 +6,13 @@ open InfinityRpg
 module Simulants =
 
     // omniscreen
-    let Omniscreen = !> "Omniscreen"
+    let Omniscreen = Screen "Omniscreen"
 
     // nu splash screen
-    let Splash = !> "Splash"
+    let Splash = Screen "Splash"
 
     // title screen
-    let Title = !> "Title"
+    let Title = Screen "Title"
     let TitleGui = Title => "Gui"
     let TitleNewGame = TitleGui => "NewGame"
     let TitleLoadGame = TitleGui => "LoadGame"
@@ -20,12 +20,12 @@ module Simulants =
     let TitleExit = TitleGui => "Exit"
 
     // credits screen
-    let Credits = !> "Credits"
+    let Credits = Screen "Credits"
     let CreditsGui = Credits => "Gui"
     let CreditsBack = CreditsGui => "Back"
 
     // gameplay screen
-    let Gameplay = !> "Gameplay"
+    let Gameplay = Screen "Gameplay"
     let Hud = Gameplay => "Hud"
     let HudBack = Hud => "Back"
     let HudSaveGame = Hud => "SaveGame"

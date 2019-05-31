@@ -3,13 +3,13 @@ open Nu
 module Simulants =
 
     // here we derive a screen handle from its name so that we can interface with it in code
-    let Omniscreen = !> "Omniscreen"
+    let Omniscreen = Screen "Omniscreen"
 
     // same as above, but for the splash screen
-    let Splash = !> "Splash"
+    let Splash = Screen "Splash"
 
     // same as above, but for the title screen
-    let Title = !> "Title"
+    let Title = Screen "Title"
 
     // this is the layer that is loaded into the title screen that contains all of its gui
     // entities. You'll notice that the layer is built from a combination of the title screen as
@@ -24,12 +24,12 @@ module Simulants =
     let TitleExit = TitleGui => "Exit"
 
     // like those proceeding them, these are the various simulants of the credits screen
-    let Credits = !> "Credits"
+    let Credits = Screen "Credits"
     let CreditsGui = Credits => "Gui"
     let CreditsBack = CreditsGui => "Back"
 
     // gameplay simulants
-    let Gameplay = !> "Gameplay"
+    let Gameplay = Screen "Gameplay"
     let GameplayGui = Gameplay => "Gui"
     let GameplayBack = GameplayGui => "Back"
 

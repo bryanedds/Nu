@@ -62,7 +62,7 @@ module WorldModule =
                   Dispatchers = dispatchers
                   Subsystems = subsystems
                   ScriptingEnv = scriptingEnv
-                  ScriptingContext = Game Address.empty
+                  ScriptingContext = Game ()
                   ScreenCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Screen>, screenStates)) (FOption.none ())
                   LayerCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Layer>, layerStates)) (FOption.none ())
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) (FOption.none ())
@@ -106,7 +106,7 @@ module WorldModule =
 
         /// A hack to allow a sidelined event system to be continued by resetting its mutable state.
         static member internal continueEventSystemHack (world : World) =
-            EventSystem.setEventContext (Game Address.empty) world
+            EventSystem.setEventContext (Game ()) world
 
         /// Set the context of the event system.
 #if DEBUG

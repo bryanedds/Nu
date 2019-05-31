@@ -244,7 +244,7 @@ module WorldEntityModule =
                     let entityDirectoryOpt = UMap.tryFindFast layerName layerDirectory.Value
                     if FOption.isSome entityDirectoryOpt then
                         let entityDirectory = FOption.get entityDirectoryOpt
-                        UMap.fold (fun state _ entityAddress -> Entity entityAddress :: state) [] entityDirectory.Value :> _ seq
+                        UMap.fold (fun state _ (entityAddress : _ Address) -> Entity entityAddress :: state) [] entityDirectory.Value :> _ seq
                     else failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
                 else failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
             | _ -> failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
