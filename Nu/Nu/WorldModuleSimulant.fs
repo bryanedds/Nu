@@ -25,13 +25,13 @@ module SimulantOperators =
     let stoe (screen : Screen) layerName entityName = ltoe (stol screen layerName) entityName
 
     /// Derive a layer from its entity.
-    let etol (entity : Entity) = !< entity
+    let etol (entity : Entity) = Layer (Address.allButLast entity.EntityAddress)
 
     /// Derive a screen from one of its layers.
-    let ltos (layer : Layer) = !< layer
+    let ltos (layer : Layer) = Screen (Address.allButLast layer.LayerAddress)
 
     /// Derive a screen from one of its entities.
-    let etos (entity : Entity) = !< (!< entity)
+    let etos (entity : Entity) = ltos (etol entity)
 
 module Simulants =
 

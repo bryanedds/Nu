@@ -122,11 +122,10 @@ module Program =
         member this.Model = PropertyTag.make this Property? Model this.GetModel this.SetModel
 
     type SampleDispatcher () =
-        inherit GelmDispatcher<Model, Message, Effect> ()
+        inherit GelmDispatcher<Model, Message, Effect> (fun game -> game.Model)
 
-        static member PropertyDefinitions = [Define? Model { Count = 0; Screen = !> "Screen" }]
-        override this.GetModel (game, world) = game.GetModel world
-        override this.SetModel (model, game, world) = game.SetModel model world
+        static member PropertyDefinitions =
+            [Define? Model { Count = 0; Screen = !> "Screen" }]
 
         override this.Binding (game, _) =
             [game.EyeCenter.ChangeEvent ==> Inc

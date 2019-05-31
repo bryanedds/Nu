@@ -938,9 +938,6 @@ module WorldTypes =
         /// Concatenate two addresses, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (layer : Layer) = acatff address layer.LayerAddress
     
-        /// Derive a screen from one of its layers.
-        static member (!<) (layer : Layer) = Screen (Address.allButLast layer.LayerAddress)
-    
         /// Derive an entity from its layer.
         static member (=>) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress ->- ntoa entityName)
     
@@ -1002,9 +999,6 @@ module WorldTypes =
         
         /// Concatenate two addresses, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (entity : Entity) = acatff address entity.EntityAddress
-    
-        /// Derive a layer from one of its entities.
-        static member (!<) (entity : Entity) = Layer (Address.allButLast entity.EntityAddress)
     
         /// Concatenate two addresses, taking the type of first address.
         static member (->-) (address : 'a Address, entity) = Entity.acatf address entity

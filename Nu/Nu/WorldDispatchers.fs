@@ -1455,49 +1455,50 @@ module TileMapDispatcherModule =
 module GelmDispatcherModule =
 
     type [<AbstractClass>]
-        GelmDispatcher<'model, 'message, 'effect> () =
+        GelmDispatcher<'model, 'message, 'effect> (propertyFn : Game -> PropertyTag<'model, World>) =
         inherit GameDispatcher ()
 
         override this.Register (game, world) =
+            let property = propertyFn game
             let bindings = this.Binding (game, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
                     | Message binding ->
                         Stream.monitor (fun evt world ->
-                            let model = this.GetModel (game, world)
+                            let model = property.Get world
                             let messageOpt = binding.MakeMessage evt
                             match messageOpt with
                             | Some message ->
                                 let (model, effect) = this.Message (message, model, game, world)
-                                let world = this.SetModel (model, game, world)
+                                let world = property.Set model world
                                 effect world
                             | None -> world)
                             game binding.Stream world
                     | Effect binding ->
                         Stream.monitor (fun evt world ->
-                            let model = this.GetModel (game, world)
+                            let model = property.Get world
                             let messageOpt = binding.MakeMessage evt
                             match messageOpt with
                             | Some message -> this.Effect (message, model, game, world)
                             | None -> world)
                             game binding.Stream world)
                     world bindings
-            let model = this.GetModel (game, world)
+            let model = property.Get world
             let world = this.View (Initialize, model, game, world)
             world
             
         override this.Unregister (game, world) =
-            let model = this.GetModel (game, world)
+            let property = propertyFn game
+            let model = property.Get world
             let world = this.View (Finalize, model, game, world)
             world
 
         override this.Actualize (game, world) =
-            let model = this.GetModel (game, world)
+            let property = propertyFn game
+            let model = property.Get world
             this.View (Actualize, model, game, world)
 
-        abstract member GetModel : Game * World -> 'model
-        abstract member SetModel : 'model * Game * World -> World
         abstract member Binding : Game * World -> Binding<'message, 'effect, Game, World> list
         abstract member Message : 'message * 'model * Game * World -> 'model * (World -> World)
         abstract member Effect : 'effect * 'model * Game * World -> World
