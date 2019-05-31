@@ -66,6 +66,12 @@ module WorldScreenModule =
         member this.GetOutgoing world = World.getScreenOutgoing this world
         member this.SetOutgoing value world = World.setScreenOutgoing value this world
         member this.Outgoing = PropertyTag.make this Property? Outgoing this.GetOutgoing this.SetOutgoing
+        member this.ChangeEvent propertyName = Events.Change propertyName --> this
+        member this.RegisterEvent = Events.Register --> this
+        member this.UnregisteringEvent = Events.Unregistering --> this
+        member this.UpdateEvent = Events.Update --> this
+        member this.PostUpdateEvent = Events.PostUpdate --> this
+        member this.MessageEvent = Events.Message --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetScreenProperty propertyName this world

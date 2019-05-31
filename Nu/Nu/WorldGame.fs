@@ -61,6 +61,12 @@ module WorldGameModule =
         member this.GetEyeSize world = World.getEyeSize world
         member this.SetEyeSize value world = World.setEyeSize value world
         member this.EyeSize = PropertyTag.make this Property? EyeSize this.GetEyeSize this.SetEyeSize
+        member this.ChangeEvent propertyName = Events.Change propertyName --> this
+        member this.RegisterEvent = Events.Register --> this
+        member this.UnregisteringEvent = Events.Unregistering --> this
+        member this.UpdateEvent = Events.Update --> this
+        member this.PostUpdateEvent = Events.PostUpdate --> this
+        member this.MessageEvent = Events.Message --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetGameProperty propertyName world

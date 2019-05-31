@@ -195,6 +195,12 @@ module ScriptFacetModule =
         member this.SetOnMessage (value : Scripting.Expr) world = this.SetFast Property? OnMessage false false value world
         member this.OnMessage = PropertyTag.make this Property? OnMessage this.GetOnMessage this.SetOnMessage
         member this.Message message world = World.messageEntity message this world
+        member this.ChangeEvent propertyName = Events.Change propertyName --> this
+        member this.RegisterEvent = Events.Register --> this
+        member this.UnregisteringEvent = Events.Unregistering --> this
+        member this.UpdateEvent = Events.Update --> this
+        member this.PostUpdateEvent = Events.PostUpdate --> this
+        member this.MessageEvent = Events.Message --> this
 
     type ScriptFacet () =
         inherit Facet ()
@@ -739,6 +745,7 @@ module ButtonDispatcherModule =
         member this.GetOnClick world : Scripting.Expr = this.Get Property? OnClick world
         member this.SetOnClick (value : Scripting.Expr) world = this.SetFast Property? OnClick false false value world
         member this.OnClick = PropertyTag.make this Property? OnClick this.GetOnClick this.SetOnClick
+        member this.ClickEvent = Events.Click --> this
 
     type ButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -953,6 +960,7 @@ module ToggleDispatcherModule =
         member this.GetOnToggle world : Scripting.Expr = this.Get Property? OnToggle world
         member this.SetOnToggle (value : Scripting.Expr) world = this.SetFast Property? OnToggle false false value world
         member this.OnToggle = PropertyTag.make this Property? OnToggle this.GetOnToggle this.SetOnToggle
+        member this.ToggleEvent = Events.Toggle --> this
 
     type ToggleDispatcher () =
         inherit GuiDispatcher ()
@@ -1050,6 +1058,9 @@ module FeelerDispatcherModule =
         member this.GetOnUntouch world : Scripting.Expr = this.Get Property? OnUntouch world
         member this.SetOnUntouch (value : Scripting.Expr) world = this.SetFast Property? OnUntouch false false value world
         member this.OnUntouch = PropertyTag.make this Property? OnUntouch this.GetOnUntouch this.SetOnUntouch
+        member this.TouchEvent = Events.Touch --> this
+        member this.UntouchEvent = Events.Untouch --> this
+
 
     type FeelerDispatcher () =
         inherit GuiDispatcher ()
