@@ -198,8 +198,6 @@ module ScriptFacetModule =
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
-        member this.UpdateEvent = Events.Update --> this
-        member this.PostUpdateEvent = Events.PostUpdate --> this
         member this.MessageEvent = Events.Message --> this
 
     type ScriptFacet () =
