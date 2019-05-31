@@ -9,9 +9,6 @@ open Nu
 [<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module SimulantOperators =
 
-    /// Derive a screen from a name string.
-    let (!>) screenName = Screen (ntoa screenName)
-
     /// Derive a screen from a name.
     let ntos screenName = Screen (ntoa screenName)
 
@@ -36,10 +33,10 @@ module SimulantOperators =
 module Simulants =
 
     /// The game. Always exists.
-    let Game = Game Address.empty
+    let Game = Game ()
 
     /// The default screen - may or may not exist.
-    let DefaultScreen = !> Constants.Engine.DefaultScreenName
+    let DefaultScreen = Screen Constants.Engine.DefaultScreenName
     
     /// The default layer - may or may not exist.
     let DefaultLayer = DefaultScreen => Constants.Engine.DefaultLayerName

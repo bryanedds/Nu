@@ -125,7 +125,7 @@ module Program =
         inherit GelmDispatcher<Model, Message, Effect> (fun game -> game.Model)
 
         static member PropertyDefinitions =
-            [Define? Model { Count = 0; Screen = !> "Screen" }]
+            [Define? Model { Count = 0; Screen = Screen "Screen" }]
 
         override this.Binding (game, _) =
             [game.EyeCenter.ChangeEvent ==> Inc

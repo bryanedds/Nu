@@ -820,6 +820,9 @@ module WorldTypes =
         // check that address is of correct length for a game
         do if Address.length gameAddress <> 0 then failwith "Game address must be length of 0."
 
+        /// Create a game reference.
+        new () = Game (Address.empty)
+
         /// The address of the game.
         member this.GameAddress = gameAddress
 
@@ -860,6 +863,9 @@ module WorldTypes =
         // check that address is of correct length for a screen
         do if Address.length screenAddress <> 1 then failwith "Screen address must be length of 1."
 
+        /// Create a screen reference from a name string.
+        new (screenName : string) = Screen (ntoa screenName)
+
         /// The address of the screen.
         member this.ScreenAddress = screenAddress
 
@@ -896,9 +902,6 @@ module WorldTypes =
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, screen) = Screen.acatff address screen
     
-        /// Derive a screen from a name string.
-        static member (!>) screenName = Screen (ntoa screenName)
-    
         /// Derive a layer from its screen.
         static member (=>) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress ->- ntoa layerName)
     
@@ -908,9 +911,18 @@ module WorldTypes =
         // check that address is of correct length for a layer
         do if Address.length layerAddress <> 2 then failwith "Layer address must be length of 2."
 
+        /// Create a layer reference from an address string.
+        new (layerAddressStr : string) = Layer (stoa layerAddressStr)
+
+        /// Create a layer reference from a list of names.
+        new (layerNames : string list) = Layer (ltoa layerNames)
+
+        /// Create a layer reference from a the required names.
+        new (screenName : string, layerName : string) = Layer [screenName; layerName]
+
         /// The address of the layer.
         member this.LayerAddress = layerAddress
-    
+
         interface Simulant with
             member this.ParticipantAddress = atoa<Layer, Participant> this.LayerAddress
             member this.SimulantAddress = atoa<Layer, Simulant> this.LayerAddress
@@ -958,6 +970,15 @@ module WorldTypes =
         let updateEvent = ltoa<unit> ["Update"; "Event"] --> entityAddress
         let postUpdateEvent = ltoa<unit> ["PostUpdate"; "Event"] --> entityAddress
         let mutable entityStateOpt = Unchecked.defaultof<EntityState>
+
+        // Create an entity reference from an address string.
+        new (entityAddressStr : string) = Entity (stoa entityAddressStr)
+
+        // Create an entity reference from a list of names.
+        new (entityNames : string list) = Entity (ltoa entityNames)
+
+        // Create an entity reference from a the required names.
+        new (screenName : string, layerName : string, entityName : string) = Entity [screenName; layerName; entityName]
 
         /// The address of the entity.
         member this.EntityAddress = entityAddress
