@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>prop</Title>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>Name</ID>
+          <Default>Property</Default>
+        </Literal>
+        <Literal>
+          <ID>Type</ID>
+          <Default>int</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp" Kind="any">
+        <![CDATA[
+        member this.Get$Name world : $Type = this.Get Property? $Name world
+        member this.Set$Name (value : $Type) world = this.Set Property? $Name value world
+        member this.$Name = PropertyTag.make this Property? $Name this.Get$Name this.Set$Name]]>
+      </Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

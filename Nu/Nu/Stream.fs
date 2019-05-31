@@ -51,7 +51,8 @@ module StreamOperators =
 
     /// Propagate the event data of a stream to a value in the observing participant when the
     /// subscriber exists (doing nothing otherwise).
-    let [<DebuggerHidden; DebuggerStepThrough>] (-->) stream (property : PropertyTag<'b, World>) = stream --> property
+    let [<DebuggerHidden; DebuggerStepThrough>] (-|>) stream (property : PropertyTag<'b, World>) = stream -|> property
 
-    // Propagate a value from the given source participant to a value in the given destination participant, but with update-based cycle-breaking.
-    let [<DebuggerHidden; DebuggerStepThrough>] (-/>) stream property = Stream.noMoreThanOncePerUpdate stream --> property
+    // Propagate a value from the given source participant to a value in the given destination
+    // participant, but with update-based cycle-breaking.
+    let [<DebuggerHidden; DebuggerStepThrough>] (-/>) stream property = Stream.noMoreThanOncePerUpdate stream -|> property

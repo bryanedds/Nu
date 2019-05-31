@@ -129,7 +129,7 @@ module WorldModuleEntity =
 
         static member private publishEntityChange propertyName (entity : Entity) (oldWorld : World) world =
             let world =
-                let changeEventAddress = ltoa ["Change"; propertyName; "Event"] ->>- entity.EntityAddress
+                let changeEventAddress = ltoa ["Change"; propertyName; "Event"] --> entity.EntityAddress
                 let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
                 let allowWildcard = propertyName = "ParentNodeOpt"
                 let changeData = { PropertyName = propertyName; OldWorld = oldWorld }
@@ -732,7 +732,7 @@ module WorldModuleEntity =
                 | None -> entityState
 
             // add entity's state to world
-            let entity = Entity (layer.LayerAddress -<<- ntoa<Entity> entityState.Name)
+            let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
             let world = World.addEntity false entityState entity world
             (entity, world)
 
@@ -813,7 +813,7 @@ module WorldModuleEntity =
                 | None -> entityState
 
             // add entity state to the world
-            let entity = Entity (layer.LayerAddress -<<- ntoa<Entity> entityState.Name)
+            let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
             let world = World.addEntity true entityState entity world
             (entity, world)
 
@@ -846,7 +846,7 @@ module WorldModuleEntity =
             let world = World.destroyEntityImmediate entity world
             let (id, name) = Reflection.deriveIdAndName nameOpt
             let entityState = { entityState with Id = id; Name = name }
-            let transmutedEntity = Entity (layer.LayerAddress -<<- ntoa<Entity> name)
+            let transmutedEntity = Entity (layer.LayerAddress <-- ntoa<Entity> name)
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
 
@@ -1010,7 +1010,7 @@ module WorldModuleEntity =
                 let transform = { EntityState.getTransform entityState with Position = position }
                 let transform = Math.snapTransform positionSnap rotationSnap transform
                 let entityState = EntityState.setTransform transform entityState
-                let entity = Entity (layer.LayerAddress -<<- ntoa<Entity> name)
+                let entity = Entity (layer.LayerAddress <-- ntoa<Entity> name)
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
             | None -> (None, world)

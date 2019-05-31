@@ -136,7 +136,7 @@ module WorldScripting =
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
                 let stream =
-                    Stream.make (Events.SimulantChange propertyName ->>- simulant.SimulantAddress) |>
+                    Stream.make (Events.Change propertyName --> simulant.SimulantAddress) |>
                     Stream.mapEvent (fun (evt : Event<ChangeData, _>) world ->
                         match World.tryGetProperty evt.Data.PropertyName simulant world with
                         | Some property ->

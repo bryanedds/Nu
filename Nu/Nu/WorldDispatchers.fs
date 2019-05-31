@@ -1441,3 +1441,54 @@ module TileMapDispatcherModule =
             match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with
             | Some (_, _, map) -> Vector2 (single (map.Width * map.TileWidth), single (map.Height * map.TileHeight))
             | None -> Constants.Engine.DefaultEntitySize
+
+[<AutoOpen>]
+module GelmDispatcherModule =
+
+    type [<AbstractClass>]
+        GelmDispatcher<'model, 'message, 'effect> () =
+        inherit GameDispatcher ()
+
+        override this.Register (game, world) =
+            let bindings = this.Binding (game, world)
+            let world =
+                List.fold (fun world binding ->
+                    match binding with
+                    | Message binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = this.GetModel (game, world)
+                            let messageOpt = binding.MakeMessage evt
+                            match messageOpt with
+                            | Some message ->
+                                let model = this.Update (message, model, game, world)
+                                this.SetModel (model, game, world)
+                            | None -> world)
+                            game binding.Stream world
+                    | Effect binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = this.GetModel (game, world)
+                            let messageOpt = binding.MakeMessage evt
+                            match messageOpt with
+                            | Some message -> this.Effect (message, model, game, world)
+                            | None -> world)
+                            game binding.Stream world)
+                    world bindings
+            let model = this.GetModel (game, world)
+            let world = this.View (Initialize, model, game, world)
+            world
+            
+        override this.Unregister (game, world) =
+            let model = this.GetModel (game, world)
+            let world = this.View (Finalize, model, game, world)
+            world
+
+        override this.Actualize (game, world) =
+            let model = this.GetModel (game, world)
+            this.View (Actualize, model, game, world)
+
+        abstract member GetModel : Game * World -> 'model
+        abstract member SetModel : 'model * Game * World -> World
+        abstract member Binding : Game * World -> Binding<'message, 'effect, Game, World> list
+        abstract member Update : 'message * 'model * Game * World -> 'model
+        abstract member Effect : 'effect * 'model * Game * World -> World
+        abstract member View : ViewPhase * 'model * Game * World -> World

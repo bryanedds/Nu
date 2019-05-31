@@ -109,6 +109,9 @@ module WorldScreenModule =
         /// Resolve a relation in the context of a screen.
         member this.Resolve relation = Screen (Relation.resolve this.ScreenAddress relation)
 
+        /// Get a screen's change event address.
+        member this.GetChangeEvent propertyName = Events.Change propertyName --> this.ScreenAddress
+
         /// Send a message to the screen.
         member this.Message message world = World.messageScreen message this world
 

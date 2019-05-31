@@ -78,7 +78,7 @@ module WorldModuleScreen =
 
         static member private publishScreenChange (propertyName : string) (screen : Screen) oldWorld world =
             let world =
-                let changeEventAddress = ltoa ["Change"; propertyName; "Event"] ->>- screen.ScreenAddress
+                let changeEventAddress = ltoa ["Change"; propertyName; "Event"] --> screen.ScreenAddress
                 let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
                 World.publishPlus World.sortSubscriptionsByHierarchy { PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace screen false world
             world

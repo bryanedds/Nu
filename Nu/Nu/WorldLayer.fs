@@ -100,6 +100,9 @@ module WorldLayerModule =
         /// Resolve a relation in the context of a layer.
         member this.Resolve relation = Layer (Relation.resolve this.LayerAddress relation)
 
+        /// Get a layer's change event address.
+        member this.GetChangeEvent propertyName = Events.Change propertyName --> this.LayerAddress
+
         /// Send a message to the layer.
         member this.Message message world = World.messageLayer message this world
 
