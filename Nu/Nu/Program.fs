@@ -129,9 +129,9 @@ module Program =
         override this.SetModel (model, game, world) = game.SetModel model world
 
         override this.Binding (game, _) =
-            [Events.Change Property? EyeCenter --> game =|> Inc
-             game.GetChangeEvent Property? EyeSize =|> Dec
-             game.GetChangeEvent Property? Script =|>! Exit]
+            [game.EyeCenter.ChangeEvent =|> Inc
+             game.EyeSize.ChangeEvent =|> Dec
+             game.Script.ChangeEvent =|>! Exit]
 
         override this.Update (message, model, _, _) =
             match message with
