@@ -135,8 +135,8 @@ module Program =
 
         override this.Message (message, model, _, _) =
             match message with
-            | Inc -> nu { model with Count = inc model.Count }
-            | Dec -> nu { model with Count = dec model.Count }
+            | Inc -> !!{ model with Count = inc model.Count }
+            | Dec -> !!{ model with Count = dec model.Count }
 
         override this.Effect (effect, _, _, world) =
             match effect with

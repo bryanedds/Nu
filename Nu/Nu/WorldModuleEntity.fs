@@ -560,10 +560,10 @@ module WorldModuleEntity =
             { SortDepth = entityState.Depth; SortTarget = entity }
 
         static member internal updateEntityPublishUpdateFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa entity.UpdateAddress) world
+            World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa entity.UpdateEvent) world
 
         static member internal updateEntityPublishPostUpdateFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishPostUpdates entity (atooa entity.PostUpdateAddress) world
+            World.updateEntityPublishEventFlag World.setEntityPublishPostUpdates entity (atooa entity.PostUpdateEvent) world
 
         static member internal updateEntityPublishFlags entity world =
             let world = World.updateEntityPublishUpdateFlag entity world

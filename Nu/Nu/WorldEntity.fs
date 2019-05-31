@@ -206,7 +206,7 @@ module WorldEntityModule =
                 let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
                 if World.getEntityPublishUpdates entity world then
                     let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.UpdateAddress eventTrace Simulants.Game false world
+                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.UpdateEvent eventTrace Simulants.Game false world
                 else world)
                 entity
                 world
@@ -219,7 +219,7 @@ module WorldEntityModule =
                 let world = List.foldBack (fun (facet : Facet) world -> facet.PostUpdate (entity, world)) facets world
                 if World.getEntityPublishPostUpdates entity world then
                     let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateAddress eventTrace Simulants.Game false world
+                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateEvent eventTrace Simulants.Game false world
                 else world)
                 entity
                 world

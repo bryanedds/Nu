@@ -958,18 +958,18 @@ module WorldTypes =
 
         // check that address is of correct length for an entity
         do if Address.length entityAddress <> 3 then failwith "Entity address must be length of 3."
-        let updateAddress = ltoa<unit> ["Update"; "Event"] --> entityAddress
-        let postUpdateAddress = ltoa<unit> ["PostUpdate"; "Event"] --> entityAddress
+        let updateEvent = ltoa<unit> ["Update"; "Event"] --> entityAddress
+        let postUpdateEvent = ltoa<unit> ["PostUpdate"; "Event"] --> entityAddress
         let mutable entityStateOpt = Unchecked.defaultof<EntityState>
 
         /// The address of the entity.
         member this.EntityAddress = entityAddress
 
         /// The address of the entity's update event.
-        member this.UpdateAddress = updateAddress
+        member this.UpdateEvent = updateEvent
 
         /// The address of the entity's post-update event.
-        member this.PostUpdateAddress = postUpdateAddress
+        member this.PostUpdateEvent = postUpdateEvent
 
         /// The cached entity state for imperative entities.
         member this.EntityStateOpt
