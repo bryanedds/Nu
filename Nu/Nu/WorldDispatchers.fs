@@ -259,7 +259,7 @@ module ScriptFacetModule =
             | handler ->
                 match ScriptingSystem.tryImport typeof<Symbol> message world with
                 | Some messageExpr ->
-                    ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield ("message", messageExpr) }) world
+                    ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("message", messageExpr) }) world
                     let world = World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
                     ScriptingSystem.removeProceduralBindings world
                     world
@@ -1471,8 +1471,9 @@ module GelmDispatcherModule =
                             let messageOpt = binding.MakeMessage evt
                             match messageOpt with
                             | Some message ->
-                                let model = this.Message (message, model, game, world)
-                                this.SetModel (model, game, world)
+                                let (model, effect) = this.Message (message, model, game, world)
+                                let world = this.SetModel (model, game, world)
+                                effect world
                             | None -> world)
                             game binding.Stream world
                     | Effect binding ->
@@ -1500,6 +1501,6 @@ module GelmDispatcherModule =
         abstract member GetModel : Game * World -> 'model
         abstract member SetModel : 'model * Game * World -> World
         abstract member Binding : Game * World -> Binding<'message, 'effect, Game, World> list
-        abstract member Message : 'message * 'model * Game * World -> 'model
+        abstract member Message : 'message * 'model * Game * World -> 'model * (World -> World)
         abstract member Effect : 'effect * 'model * Game * World -> World
         abstract member View : ViewPhase * 'model * Game * World -> World

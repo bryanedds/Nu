@@ -249,7 +249,7 @@ module WorldModuleScreen =
                 let world =
                     match ScriptingSystem.tryImport typeof<Symbol> message world with
                     | Some messageExpr ->
-                        ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield ("message", messageExpr) }) world
+                        ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("message", messageExpr) }) world
                         let world = eval (World.getScreenOnMessage screen world) (World.getScreenScriptFrame screen world) screen world |> snd'
                         ScriptingSystem.removeProceduralBindings world
                         world

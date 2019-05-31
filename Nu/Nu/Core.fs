@@ -75,3 +75,6 @@ module CoreOperators =
     /// Sequences two functions like Haskell ($).
     /// Same as the (^) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (^) f g = f g
+
+    /// 
+    let inline nu model = (model, id)
