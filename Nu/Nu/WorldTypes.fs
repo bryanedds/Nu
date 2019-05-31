@@ -21,6 +21,12 @@ open TiledSharp
 open Prime
 open Nu
 
+/// Specifies the view phase of the model-view-update.
+type ViewPhase =
+    | Initialize
+    | Finalize
+    | Actualize
+
 /// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
 /// means an existing screen being hidden.
 type TransitionType =
@@ -842,10 +848,10 @@ module WorldTypes =
         static member acatff<'a> (address : 'a Address) (game : Game) = acatff address game.GameAddress
 
         /// Concatenate two addresses, taking the type of first address.
-        static member (->-) (address, game) = Game.acatf address game
+        static member (->-) (address : 'a Address, game) = Game.acatf address game
 
         /// Concatenate two addresses, forcing the type of first address.
-        static member (->>-) (address, game) = acatff address game
+        static member (-->) (address : 'a Address, game) = Game.acatff address game
 
     /// The screen type that allows transitioning to and from other screens, and also hosts the
     /// currently interactive layers of entities.
@@ -885,10 +891,10 @@ module WorldTypes =
         static member acatff<'a> (address : 'a Address) (screen : Screen) = acatff address screen.ScreenAddress
     
         /// Concatenate two addresses, taking the type of first address.
-        static member (->-) (address, screen) = Screen.acatf address screen
+        static member (->-) (address : 'a Address, screen) = Screen.acatf address screen
     
         /// Concatenate two addresses, forcing the type of first address.
-        static member (->>-) (address, screen) = acatff address screen
+        static member (-->) (address : 'a Address, screen) = Screen.acatff address screen
     
         /// Derive a screen from a name string.
         static member (!>) screenName = Screen (ntoa screenName)
@@ -939,10 +945,10 @@ module WorldTypes =
         static member (=>) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress ->- ntoa entityName)
     
         /// Concatenate two addresses, taking the type of first address.
-        static member (->-) (address, layer) = Layer.acatf address layer
+        static member (->-) (address : 'a Address, layer) = Layer.acatf address layer
     
         /// Concatenate two addresses, forcing the type of first address.
-        static member (->>-) (address, layer) = acatff address layer
+        static member (-->) (address : 'a Address, layer) = Layer.acatff address layer
     
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
@@ -952,8 +958,8 @@ module WorldTypes =
 
         // check that address is of correct length for an entity
         do if Address.length entityAddress <> 3 then failwith "Entity address must be length of 3."
-        let updateAddress = ltoa<unit> ["Update"; "Event"] ->>- entityAddress
-        let postUpdateAddress = ltoa<unit> ["PostUpdate"; "Event"] ->>- entityAddress
+        let updateAddress = ltoa<unit> ["Update"; "Event"] --> entityAddress
+        let postUpdateAddress = ltoa<unit> ["PostUpdate"; "Event"] --> entityAddress
         let mutable entityStateOpt = Unchecked.defaultof<EntityState>
 
         /// The address of the entity.
@@ -1001,10 +1007,10 @@ module WorldTypes =
         static member (!<) (entity : Entity) = Layer (Address.allButLast entity.EntityAddress)
     
         /// Concatenate two addresses, taking the type of first address.
-        static member (->-) (address, entity) = Entity.acatf address entity
+        static member (->-) (address : 'a Address, entity) = Entity.acatf address entity
     
         /// Concatenate two addresses, forcing the type of first address.
-        static member (->>-) (address, entity) = acatff address entity
+        static member (-->) (address : 'a Address, entity) = Entity.acatff address entity
     
     /// The world's dispatchers (including facets).
     /// 

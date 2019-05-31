@@ -39,7 +39,7 @@ module WorldPhysicsModule =
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let entity = bodyCollisionMessage.SourceParticipant :?> Entity
                     if entity.GetExists world then
-                        let collisionAddress = Events.Collision ->>- entity.EntityAddress
+                        let collisionAddress = Events.Collision --> entity.EntityAddress
                         let collisionData =
                             { Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed

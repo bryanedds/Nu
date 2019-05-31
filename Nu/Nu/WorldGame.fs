@@ -125,6 +125,9 @@ module WorldGameModule =
         /// Resolve a relation in the context of a game.
         member this.Resolve relation = Game (Relation.resolve this.GameAddress relation)
 
+        /// Get a game's change event address.
+        member this.GetChangeEvent propertyName = Events.Change propertyName --> this.GameAddress
+
         /// Send a message to the game.
         member this.Message message world =
             World.withEventContext (fun world ->
@@ -158,8 +161,8 @@ module WorldGameModule =
 
         static member internal registerGame world =
             let game = Simulants.Game
-            let world = World.monitor World.gameOnRegisterChanged (Events.SimulantChange Property? OnRegister) game world
-            let world = World.monitor World.gameScriptOptChanged (Events.SimulantChange Property? ScriptOpt) game world
+            let world = World.monitor World.gameOnRegisterChanged (Events.Change Property? OnRegister) game world
+            let world = World.monitor World.gameScriptOptChanged (Events.Change Property? ScriptOpt) game world
             let world =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcher world

@@ -89,7 +89,7 @@ module WorldModuleLayer =
 
         static member private publishLayerChange (propertyName : string) (layer : Layer) oldWorld world =
             let world =
-                let changeEventAddress = ltoa ["Change"; propertyName; "Event"] ->>- layer.LayerAddress
+                let changeEventAddress = ltoa ["Change"; propertyName; "Event"] --> layer.LayerAddress
                 let eventTrace = EventTrace.record "World" "publishLayerChange" EventTrace.empty
                 World.publishPlus World.sortSubscriptionsByHierarchy { PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace layer false world
             world
@@ -294,7 +294,7 @@ module WorldModuleLayer =
                 | None -> failwith ("Could not find a LayerDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
             let layerState = LayerState.make nameOpt dispatcher
             let layerState = Reflection.attachProperties LayerState.copy dispatcher layerState
-            let layer = Layer (screen.ScreenAddress -<<- ntoa<Layer> layerState.Name)
+            let layer = Layer (screen.ScreenAddress <-- ntoa<Layer> layerState.Name)
             let world = World.addLayer false layerState layer world
             (layer, world)
 
@@ -335,7 +335,7 @@ module WorldModuleLayer =
                 | None -> layerState
 
             // add the layer's state to the world
-            let layer = Layer (screen.ScreenAddress -<<- ntoa<Layer> layerState.Name)
+            let layer = Layer (screen.ScreenAddress <-- ntoa<Layer> layerState.Name)
             let world = World.addLayer true layerState layer world
 
             // read the layer's entities

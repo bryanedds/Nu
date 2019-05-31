@@ -3,6 +3,8 @@
 
 namespace Nu
 open System
+open Prime
+open OpenTK
 open global.Nu
 module Program =
 
@@ -101,6 +103,53 @@ module Program =
     would be appropriate to this engine given its pure functional nature. *)
 
     (* TODO: investigate Gaia extensibility mechanism. *)
+
+    type [<NoComparison>] Model =
+        { Count : int
+          Screen : Screen }
+
+    type Message =
+        | Inc
+        | Dec
+
+    type Effect =
+        | Exit
+
+    type Game with
+
+        member this.GetModel world : Model = this.Get Property? Model world
+        member this.SetModel (value : Model) world = this.Set Property? Model value world
+        member this.Model = PropertyTag.make this Property? Model this.GetModel this.SetModel
+
+    type SampleDisaptcher () =
+        inherit GelmDispatcher<Model, Message, Effect> ()
+
+        static member PropertyDefinitions = [Define? Model { Count = 0; Screen = !> "Screen" }]
+        override this.GetModel (game, world) = game.GetModel world
+        override this.SetModel (model, game, world) = game.SetModel model world
+
+        override this.Binding (game, _) =
+            [Events.Change Property? EyeCenter --> game =|> Inc
+             game.GetChangeEvent Property? EyeSize =|> Dec
+             game.GetChangeEvent Property? Script =|>! Exit]
+
+        override this.Update (message, model, _, _) =
+            match message with
+            | Inc -> { model with Count = inc model.Count }
+            | Dec -> { model with Count = dec model.Count }
+
+        override this.Effect (effect, _, _, world) =
+            match effect with
+            | Exit -> World.exit world
+
+        override this.View (phase, model, _, world) =
+            match phase with
+            | Initialize -> World.createScreen (Some model.Screen.ScreenName) world |> snd
+            | Finalize -> World.destroyScreen model.Screen world
+            | Actualize -> world
+
+        override this.Update (game, world) =
+            game.EyeCenter.Update ((+) Vector2.One) world
 
     let [<EntryPoint; STAThread>] main _ =
         Nu.init false

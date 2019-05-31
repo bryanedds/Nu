@@ -322,9 +322,9 @@ module Gaia =
 
     let private subscribeToEntityEvents form world =
         let selectedLayer = (World.getUserValue world).SelectedLayer
-        let world = World.subscribePlus Constants.SubscriptionKeys.ChangeParentNodeOpt (handleNuChangeParentNodeOpt form) (Events.SimulantChange Property? ParentNodeOpt ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
-        let world = World.subscribePlus Constants.SubscriptionKeys.RegisterEntity (handleNuEntityRegister form) (Events.SimulantRegister ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
-        let world = World.subscribePlus Constants.SubscriptionKeys.UnregisteringEntity (handleNuEntityUnregistering form) (Events.SimulantUnregistering ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
+        let world = World.subscribePlus Constants.SubscriptionKeys.ChangeParentNodeOpt (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
+        let world = World.subscribePlus Constants.SubscriptionKeys.RegisterEntity (handleNuEntityRegister form) (Events.Register ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
+        let world = World.subscribePlus Constants.SubscriptionKeys.UnregisteringEntity (handleNuEntityUnregistering form) (Events.Unregistering ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
         world
 
     let private unsubscribeFromEntityEvents world =
