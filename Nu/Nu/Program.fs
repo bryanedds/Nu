@@ -104,47 +104,6 @@ module Program =
 
     (* TODO: investigate Gaia extensibility mechanism. *)
 
-    type [<NoComparison>] Model = { Count : int; Screen : Screen }
-    type Message = Reset | Inc | Dec
-    type Effect = Exit
-
-    type Game with
-
-        member this.GetModel world : Model = this.Get Property? Model world
-        member this.SetModel (value : Model) world = this.Set Property? Model value world
-        member this.Model = PropertyTag.make this Property? Model this.GetModel this.SetModel
-
-    type SampleDispatcher () =
-        inherit GameDispatcher<Model, Message, Effect> (fun game -> game.Model)
-
-        static member PropertyDefinitions =
-            [Define? Model { Count = 0; Screen = Screen "Screen" }]
-
-        override this.Binding (_, game, _) =
-            [game.RegisterEvent ==> Reset
-             game.EyeCenter.ChangeEvent ==> Inc
-             game.EyeSize.ChangeEvent ==> Dec
-             game.Script.ChangeEvent ==>! Exit]
-
-        override this.Message (message, model, _, _) =
-            match message with
-            | Reset -> just { model with Count = 0 }
-            | Inc -> just { model with Count = inc model.Count }
-            | Dec -> just { model with Count = dec model.Count }
-
-        override this.Effect (effect, _, _, world) =
-            match effect with
-            | Exit -> World.exit world
-
-        override this.View (phase, model, _, world) =
-            match phase with
-            | Initialize -> World.createScreen (Some model.Screen.ScreenName) world |> snd
-            | Finalize -> World.destroyScreen model.Screen world
-            | Actualize -> world
-
-        override this.Update (game, world) =
-            game.EyeCenter.Update ((+) Vector2.One) world
-
     let [<EntryPoint; STAThread>] main _ =
         Nu.init false
         Console.WriteLine "Running Nu.exe"
