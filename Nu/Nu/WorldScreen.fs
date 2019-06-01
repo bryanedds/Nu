@@ -72,6 +72,12 @@ module WorldScreenModule =
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
         member this.MessageEvent = Events.Message --> this
+        member this.SelectEvent = Events.Select --> this
+        member this.DeselectEvent = Events.Deselect --> this
+        member this.IncomingStartEvent = Events.IncomingStart --> this
+        member this.IncomingStopEvent = Events.IncomingFinish --> this
+        member this.OutgoingStartEvent = Events.OutgoingStart --> this
+        member this.OutgoOutgoingStopEvent = Events.OutgoingFinish --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetScreenProperty propertyName this world

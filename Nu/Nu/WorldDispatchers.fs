@@ -857,6 +857,8 @@ module ButtonDispatcherModule =
         member this.GetOnClick world : Scripting.Expr = this.Get Property? OnClick world
         member this.SetOnClick (value : Scripting.Expr) world = this.SetFast Property? OnClick false false value world
         member this.OnClick = PropertyTag.make this Property? OnClick this.GetOnClick this.SetOnClick
+        member this.UpEvent = Events.Up --> this
+        member this.DownEvent = Events.Down --> this
         member this.ClickEvent = Events.Click --> this
 
     type ButtonDispatcher () =
@@ -1102,7 +1104,7 @@ module ToggleDispatcherModule =
                     Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
                     if toggle.GetEnabled world && wasPressed then
                         let world = toggle.SetOpen (not (toggle.GetOpen world)) world
-                        let eventAddress = if toggle.GetOpen world then Events.Open else Events.Closed
+                        let eventAddress = if toggle.GetOpen world then Events.Open else Events.Close
                         let eventTrace = EventTrace.record "ToggleDispatcher" "handleMouseLeftUp" EventTrace.empty
                         let world = World.publish () (eventAddress ->- toggle) eventTrace toggle world
                         let eventTrace = EventTrace.record4 "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
