@@ -1452,10 +1452,169 @@ module TileMapDispatcherModule =
             | None -> Constants.Engine.DefaultEntitySize
 
 [<AutoOpen>]
-module GelmDispatcherModule =
+module EntityDispatcherModule =
 
-    type [<AbstractClass>]
-        GelmDispatcher<'model, 'message, 'effect> (propertyFn : Game -> PropertyTag<'model, World>) =
+    type [<AbstractClass>] EntityDispatcher<'model, 'message, 'effect>
+        (propertyFn : Entity -> PropertyTag<'model, World>) =
+        inherit EntityDispatcher ()
+
+        override this.Register (entity, world) =
+            let property = propertyFn entity
+            let bindings = this.Binding (entity, world)
+            let world =
+                List.fold (fun world binding ->
+                    match binding with
+                    | Message binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = property.Get world
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message ->
+                                let (model, effect) = this.Message (message, model, entity, world)
+                                let world = property.Set model world
+                                effect world
+                            | None -> world)
+                            entity binding.Stream world
+                    | Effect binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = property.Get world
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message -> this.Effect (message, model, entity, world)
+                            | None -> world)
+                            entity binding.Stream world)
+                    world bindings
+            let model = property.Get world
+            let world = this.View (Initialize, model, entity, world)
+            world
+            
+        override this.Unregister (entity, world) =
+            let property = propertyFn entity
+            let model = property.Get world
+            let world = this.View (Finalize, model, entity, world)
+            world
+
+        override this.Actualize (entity, world) =
+            let property = propertyFn entity
+            let model = property.Get world
+            this.View (Actualize, model, entity, world)
+
+        abstract member Binding : Entity * World -> Binding<'message, 'effect, Entity, World> list
+        abstract member Message : 'message * 'model * Entity * World -> 'model * (World -> World)
+        abstract member Effect : 'effect * 'model * Entity * World -> World
+        abstract member View : ViewPhase * 'model * Entity * World -> World
+
+[<AutoOpen>]
+module LayerDispatcherModule =
+
+    type [<AbstractClass>] LayerDispatcher<'model, 'message, 'effect>
+        (propertyFn : Layer -> PropertyTag<'model, World>) =
+        inherit LayerDispatcher ()
+
+        override this.Register (layer, world) =
+            let property = propertyFn layer
+            let bindings = this.Binding (layer, world)
+            let world =
+                List.fold (fun world binding ->
+                    match binding with
+                    | Message binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = property.Get world
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message ->
+                                let (model, effect) = this.Message (message, model, layer, world)
+                                let world = property.Set model world
+                                effect world
+                            | None -> world)
+                            layer binding.Stream world
+                    | Effect binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = property.Get world
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message -> this.Effect (message, model, layer, world)
+                            | None -> world)
+                            layer binding.Stream world)
+                    world bindings
+            let model = property.Get world
+            let world = this.View (Initialize, model, layer, world)
+            world
+            
+        override this.Unregister (layer, world) =
+            let property = propertyFn layer
+            let model = property.Get world
+            let world = this.View (Finalize, model, layer, world)
+            world
+
+        override this.Actualize (layer, world) =
+            let property = propertyFn layer
+            let model = property.Get world
+            this.View (Actualize, model, layer, world)
+
+        abstract member Binding : Layer * World -> Binding<'message, 'effect, Layer, World> list
+        abstract member Message : 'message * 'model * Layer * World -> 'model * (World -> World)
+        abstract member Effect : 'effect * 'model * Layer * World -> World
+        abstract member View : ViewPhase * 'model * Layer * World -> World
+
+[<AutoOpen>]
+module ScreenDispatcherModule =
+
+    type [<AbstractClass>] ScreenDispatcher<'model, 'message, 'effect>
+        (propertyFn : Screen -> PropertyTag<'model, World>) =
+        inherit ScreenDispatcher ()
+
+        override this.Register (screen, world) =
+            let property = propertyFn screen
+            let bindings = this.Binding (screen, world)
+            let world =
+                List.fold (fun world binding ->
+                    match binding with
+                    | Message binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = property.Get world
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message ->
+                                let (model, effect) = this.Message (message, model, screen, world)
+                                let world = property.Set model world
+                                effect world
+                            | None -> world)
+                            screen binding.Stream world
+                    | Effect binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = property.Get world
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message -> this.Effect (message, model, screen, world)
+                            | None -> world)
+                            screen binding.Stream world)
+                    world bindings
+            let model = property.Get world
+            let world = this.View (Initialize, model, screen, world)
+            world
+            
+        override this.Unregister (screen, world) =
+            let property = propertyFn screen
+            let model = property.Get world
+            let world = this.View (Finalize, model, screen, world)
+            world
+
+        override this.Actualize (screen, world) =
+            let property = propertyFn screen
+            let model = property.Get world
+            this.View (Actualize, model, screen, world)
+
+        abstract member Binding : Screen * World -> Binding<'message, 'effect, Screen, World> list
+        abstract member Message : 'message * 'model * Screen * World -> 'model * (World -> World)
+        abstract member Effect : 'effect * 'model * Screen * World -> World
+        abstract member View : ViewPhase * 'model * Screen * World -> World
+
+[<AutoOpen>]
+module GameDispatcherModule =
+
+    type [<AbstractClass>] GameDispatcher<'model, 'message, 'effect>
+        (propertyFn : Game -> PropertyTag<'model, World>) =
         inherit GameDispatcher ()
 
         override this.Register (game, world) =
@@ -1467,7 +1626,7 @@ module GelmDispatcherModule =
                     | Message binding ->
                         Stream.monitor (fun evt world ->
                             let model = property.Get world
-                            let messageOpt = binding.MakeMessage evt
+                            let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
                                 let (model, effect) = this.Message (message, model, game, world)
@@ -1478,7 +1637,7 @@ module GelmDispatcherModule =
                     | Effect binding ->
                         Stream.monitor (fun evt world ->
                             let model = property.Get world
-                            let messageOpt = binding.MakeMessage evt
+                            let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message -> this.Effect (message, model, game, world)
                             | None -> world)

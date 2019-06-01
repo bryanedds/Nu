@@ -122,7 +122,7 @@ module Program =
         member this.Model = PropertyTag.make this Property? Model this.GetModel this.SetModel
 
     type SampleDispatcher () =
-        inherit GelmDispatcher<Model, Message, Effect> (fun game -> game.Model)
+        inherit GameDispatcher<Model, Message, Effect> (fun game -> game.Model)
 
         static member PropertyDefinitions =
             [Define? Model { Count = 0; Screen = Screen "Screen" }]
