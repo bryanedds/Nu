@@ -651,10 +651,67 @@ module AnimatedSpriteFacetModule =
             entity.GetCelSize world
 
 [<AutoOpen>]
+module EntityDispatcherModule =
+
+    type [<AbstractClass>] EntityDispatcher<'model, 'message, 'effect>
+        (propertyFn : Entity -> PropertyTag<'model, World>) =
+        inherit EntityDispatcher ()
+
+        override this.Register (entity, world) =
+            let property = propertyFn entity
+            let bindings = this.Binding (entity, world)
+            let world =
+                List.fold (fun world binding ->
+                    match binding with
+                    | Message binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = property.Get world
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message ->
+                                let (model, effect) = this.Message (message, model, entity, world)
+                                let world = property.Set model world
+                                effect world
+                            | None -> world)
+                            entity binding.Stream world
+                    | Effect binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = property.Get world
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message -> this.Effect (message, model, entity, world)
+                            | None -> world)
+                            entity binding.Stream world)
+                    world bindings
+            let model = property.Get world
+            let world = this.View (Initialize, model, entity, world)
+            world
+            
+        override this.Unregister (entity, world) =
+            let property = propertyFn entity
+            let model = property.Get world
+            let world = this.View (Finalize, model, entity, world)
+            world
+
+        override this.Actualize (entity, world) =
+            let property = propertyFn entity
+            let model = property.Get world
+            this.View (Actualize, model, entity, world)
+
+        abstract member Binding : Entity * World -> Binding<'message, 'effect, Entity, World> list
+        abstract member Message : 'message * 'model * Entity * World -> 'model * (World -> World)
+        abstract member Effect : 'effect * 'model * Entity * World -> World
+        abstract member View : ViewPhase * 'model * Entity * World -> World
+
+[<AutoOpen>]
 module ImperativeDispatcherModule =
 
     type ImperativeDispatcher () =
         inherit EntityDispatcher ()
+        interface Imperative
+
+    type [<AbstractClass>] ImperativeDispatcher<'model, 'message, 'effect> (propertyFn) =
+        inherit EntityDispatcher<'model, 'message, 'effect> (propertyFn)
         interface Imperative
 
 [<AutoOpen>]
@@ -674,6 +731,12 @@ module NodeDispatcherModule =
 
     type NodeDispatcher () =
         inherit EntityDispatcher ()
+
+        static member IntrinsicFacetNames =
+            [typeof<NodeFacet>.Name]
+
+    type [<AbstractClass>] NodeDispatcher<'model, 'message, 'effect> (propertyFn) =
+        inherit EntityDispatcher<'model, 'message, 'effect> (propertyFn)
 
         static member IntrinsicFacetNames =
             [typeof<NodeFacet>.Name]
@@ -719,6 +782,42 @@ module GuiDispatcherModule =
              Define? SwallowMouseLeft true]
 
         override dispatcher.Register (gui, world) =
+            let world = World.monitorPlus handleMouseLeft Events.MouseLeftDown gui world |> snd
+            let world = World.monitorPlus handleMouseLeft Events.MouseLeftUp gui world |> snd
+            world
+
+    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'effect> (propertyFn) =
+        inherit EntityDispatcher<'model, 'message, 'effect> (propertyFn)
+
+        static let handleMouseLeft evt world =
+            let gui = evt.Subscriber : Entity
+            let data = evt.Data : MouseButtonData
+            let handling =
+                if gui.GetSelected world && gui.GetVisibleLayered world then
+                    let mousePositionWorld = World.mouseToWorld (gui.GetViewType world) data.Position world
+                    if data.Down &&
+                       gui.GetSwallowMouseLeft world &&
+                       Math.isPointInBounds mousePositionWorld (gui.GetBounds world) then
+                       Resolve
+                    else Cascade
+                else Cascade
+            (handling, world)
+
+        interface Imperative
+
+        static member IntrinsicFacetNames =
+            [typeof<NodeFacet>.Name
+             typeof<ScriptFacet>.Name]
+
+        static member PropertyDefinitions =
+            [Define? ViewType Absolute
+             Define? AlwaysUpdate true
+             Define? PublishChanges true
+             Define? DisabledColor (Vector4 0.75f)
+             Define? SwallowMouseLeft true]
+
+        override dispatcher.Register (gui, world) =
+            let world = base.Register (gui, world)
             let world = World.monitorPlus handleMouseLeft Events.MouseLeftDown gui world |> snd
             let world = World.monitorPlus handleMouseLeft Events.MouseLeftUp gui world |> snd
             world
@@ -1450,59 +1549,6 @@ module TileMapDispatcherModule =
             match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with
             | Some (_, _, map) -> Vector2 (single (map.Width * map.TileWidth), single (map.Height * map.TileHeight))
             | None -> Constants.Engine.DefaultEntitySize
-
-[<AutoOpen>]
-module EntityDispatcherModule =
-
-    type [<AbstractClass>] EntityDispatcher<'model, 'message, 'effect>
-        (propertyFn : Entity -> PropertyTag<'model, World>) =
-        inherit EntityDispatcher ()
-
-        override this.Register (entity, world) =
-            let property = propertyFn entity
-            let bindings = this.Binding (entity, world)
-            let world =
-                List.fold (fun world binding ->
-                    match binding with
-                    | Message binding ->
-                        Stream.monitor (fun evt world ->
-                            let model = property.Get world
-                            let messageOpt = binding.MakeValueOpt evt
-                            match messageOpt with
-                            | Some message ->
-                                let (model, effect) = this.Message (message, model, entity, world)
-                                let world = property.Set model world
-                                effect world
-                            | None -> world)
-                            entity binding.Stream world
-                    | Effect binding ->
-                        Stream.monitor (fun evt world ->
-                            let model = property.Get world
-                            let messageOpt = binding.MakeValueOpt evt
-                            match messageOpt with
-                            | Some message -> this.Effect (message, model, entity, world)
-                            | None -> world)
-                            entity binding.Stream world)
-                    world bindings
-            let model = property.Get world
-            let world = this.View (Initialize, model, entity, world)
-            world
-            
-        override this.Unregister (entity, world) =
-            let property = propertyFn entity
-            let model = property.Get world
-            let world = this.View (Finalize, model, entity, world)
-            world
-
-        override this.Actualize (entity, world) =
-            let property = propertyFn entity
-            let model = property.Get world
-            this.View (Actualize, model, entity, world)
-
-        abstract member Binding : Entity * World -> Binding<'message, 'effect, Entity, World> list
-        abstract member Message : 'message * 'model * Entity * World -> 'model * (World -> World)
-        abstract member Effect : 'effect * 'model * Entity * World -> World
-        abstract member View : ViewPhase * 'model * Entity * World -> World
 
 [<AutoOpen>]
 module LayerDispatcherModule =
