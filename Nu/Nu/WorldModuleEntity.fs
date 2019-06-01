@@ -718,7 +718,7 @@ module WorldModuleEntity =
                 | None -> entityState
 
             // attach the entity state's dispatcher properties
-            let entityState = Reflection.attachProperties EntityState.copy dispatcher entityState
+            let entityState = Reflection.attachProperties EntityState.copy entityState.Dispatcher entityState
 
             // apply the entity state's overlay if exists
             let entityState =
@@ -784,7 +784,7 @@ module WorldModuleEntity =
             let entityState = Reflection.readFacetNamesToTarget EntityState.copy entityDescriptor.EntityProperties entityState
 
             // attach the entity state's dispatcher properties
-            let entityState = Reflection.attachProperties EntityState.copy dispatcher entityState
+            let entityState = Reflection.attachProperties EntityState.copy entityState.Dispatcher entityState
             
             // synchronize the entity state's facets (and attach their properties)
             let entityState =

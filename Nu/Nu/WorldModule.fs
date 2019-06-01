@@ -54,6 +54,7 @@ module WorldModule =
         /// Make the world.
         static member internal make eventDelegate dispatchers subsystems scriptingEnv ambientState activeGameDispatcher =
             let gameState = GameState.make activeGameDispatcher
+            let gameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState
             let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let layerStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let entityStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
