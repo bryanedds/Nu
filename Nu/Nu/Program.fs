@@ -104,16 +104,9 @@ module Program =
 
     (* TODO: investigate Gaia extensibility mechanism. *)
 
-    type [<NoComparison>] Model =
-        { Count : int
-          Screen : Screen }
-
-    type Message =
-        | Inc
-        | Dec
-
-    type Effect =
-        | Exit
+    type [<NoComparison>] Model = { Count : int; Screen : Screen }
+    type Message = Reset | Inc | Dec
+    type Effect = Exit
 
     type Game with
 
@@ -128,12 +121,14 @@ module Program =
             [Define? Model { Count = 0; Screen = Screen "Screen" }]
 
         override this.Binding (game, _) =
-            [game.EyeCenter.ChangeEvent ==> Inc
+            [game.RegisterEvent ==> Reset
+             game.EyeCenter.ChangeEvent ==> Inc
              game.EyeSize.ChangeEvent ==> Dec
              game.Script.ChangeEvent ==>! Exit]
 
         override this.Message (message, model, _, _) =
             match message with
+            | Reset -> just { model with Count = 0 }
             | Inc -> just { model with Count = inc model.Count }
             | Dec -> just { model with Count = dec model.Count }
 
