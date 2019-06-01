@@ -76,5 +76,5 @@ module CoreOperators =
     /// Same as the (^) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (^) f g = f g
 
-    /// Append an id function to a model.
-    let inline (!!) model = (model, id)
+    /// Pair an id function with a model.
+    let inline just model = (model, id)
