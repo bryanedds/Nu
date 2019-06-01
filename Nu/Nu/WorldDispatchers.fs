@@ -12,8 +12,8 @@ open Nu
 [<AutoOpen>]
 module ModelViewMessageEffect =
 
-    /// Pair an id function with a model.
-    let inline just model = (model, id)
+    /// Pair a None value with a model.
+    let inline just model = (model, None)
 
     /// Specifies the view phase of Nu's MVME form factor.
     type Phase =
@@ -684,9 +684,13 @@ module EntityDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, effect) = this.Message (message, model, entity, world)
+                                let (model, effectOpt) = this.Message (message, model, entity, world)
                                 let world = property.Set model world
-                                effect world
+                                match effectOpt with
+                                | Some effect ->
+                                    let model = property.Get world
+                                    this.Effect (effect, model, entity, world)
+                                | None -> world
                             | None -> world)
                             entity binding.Stream world
                     | Effect binding ->
@@ -714,7 +718,7 @@ module EntityDispatcherModule =
             this.View (Actualize, model, entity, world)
 
         abstract member Binding : 'model * Entity * World -> Binding<'message, 'effect, Entity, World> list
-        abstract member Message : 'message * 'model * Entity * World -> 'model * (World -> World)
+        abstract member Message : 'message * 'model * Entity * World -> 'model * 'effect option
         abstract member Effect : 'effect * 'model * Entity * World -> World
         abstract member View : Phase * 'model * Entity * World -> World
 
@@ -1586,9 +1590,13 @@ module LayerDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, effect) = this.Message (message, model, layer, world)
+                                let (model, effectOpt) = this.Message (message, model, layer, world)
                                 let world = property.Set model world
-                                effect world
+                                match effectOpt with
+                                | Some effect ->
+                                    let model = property.Get world
+                                    this.Effect (effect, model, layer, world)
+                                | None -> world
                             | None -> world)
                             layer binding.Stream world
                     | Effect binding ->
@@ -1616,7 +1624,7 @@ module LayerDispatcherModule =
             this.View (Actualize, model, layer, world)
 
         abstract member Binding : 'model * Layer * World -> Binding<'message, 'effect, Layer, World> list
-        abstract member Message : 'message * 'model * Layer * World -> 'model * (World -> World)
+        abstract member Message : 'message * 'model * Layer * World -> 'model * 'effect option
         abstract member Effect : 'effect * 'model * Layer * World -> World
         abstract member View : Phase * 'model * Layer * World -> World
 
@@ -1639,9 +1647,13 @@ module ScreenDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, effect) = this.Message (message, model, screen, world)
+                                let (model, effectOpt) = this.Message (message, model, screen, world)
                                 let world = property.Set model world
-                                effect world
+                                match effectOpt with
+                                | Some effect ->
+                                    let model = property.Get world
+                                    this.Effect (effect, model, screen, world)
+                                | None -> world
                             | None -> world)
                             screen binding.Stream world
                     | Effect binding ->
@@ -1669,7 +1681,7 @@ module ScreenDispatcherModule =
             this.View (Actualize, model, screen, world)
 
         abstract member Binding : 'model * Screen * World -> Binding<'message, 'effect, Screen, World> list
-        abstract member Message : 'message * 'model * Screen * World -> 'model * (World -> World)
+        abstract member Message : 'message * 'model * Screen * World -> 'model * 'effect option
         abstract member Effect : 'effect * 'model * Screen * World -> World
         abstract member View : Phase * 'model * Screen * World -> World
 
@@ -1692,9 +1704,13 @@ module GameDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, effect) = this.Message (message, model, game, world)
+                                let (model, effectOpt) = this.Message (message, model, game, world)
                                 let world = property.Set model world
-                                effect world
+                                match effectOpt with
+                                | Some effect ->
+                                    let model = property.Get world
+                                    this.Effect (effect, model, game, world)
+                                | None -> world
                             | None -> world)
                             game binding.Stream world
                     | Effect binding ->
@@ -1722,6 +1738,6 @@ module GameDispatcherModule =
             this.View (Actualize, model, game, world)
 
         abstract member Binding : 'model * Game * World -> Binding<'message, 'effect, Game, World> list
-        abstract member Message : 'message * 'model * Game * World -> 'model * (World -> World)
+        abstract member Message : 'message * 'model * Game * World -> 'model * 'effect option
         abstract member Effect : 'effect * 'model * Game * World -> World
         abstract member View : Phase * 'model * Game * World -> World
