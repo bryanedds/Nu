@@ -197,6 +197,8 @@ module WorldGameModule =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcher world
                     let world = dispatcher.Register (game, world)
+                    let eventTrace = EventTrace.record "World" "registerGame" EventTrace.empty
+                    let world = World.publish () (ltoa<unit> ["Register"; "Event"] ->- game) eventTrace game world
                     World.eval (game.GetOnRegister world) (game.GetScriptFrame world) game world |> snd')
                     game
                     world
@@ -207,6 +209,8 @@ module WorldGameModule =
             let world =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcher world
+                    let eventTrace = EventTrace.record "World" "unregisteringGame" EventTrace.empty
+                    let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] ->- game) eventTrace game world
                     let world = World.eval (game.GetOnUnregister world) (game.GetScriptFrame world) game world |> snd'
                     dispatcher.Unregister (game, world))
                     game
