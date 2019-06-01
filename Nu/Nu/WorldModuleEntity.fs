@@ -538,6 +538,11 @@ module WorldModuleEntity =
                 World.updateEntityState (EntityState.detachProperty propertyName) alwaysPublish nonPersistent true propertyName entity world
             else failwith ("Cannot detach entity property '" + propertyName + "'; entity '" + entity.EntityName + "' is not found.")
 
+        static member internal getEntityDefaultOverlayName dispatcherName world =
+            match Option.flatten (World.tryFindRoutedOverlayNameOpt dispatcherName world) with
+            | Some _ as opt -> opt
+            | None -> Some dispatcherName
+
         static member internal getEntityBoundsMax entity world =
             let entityState = World.getEntityState entity world
             World.getEntityStateBoundsMax entityState
@@ -761,23 +766,21 @@ module WorldModuleEntity =
                         | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
                     (dispatcherName, dispatcher)
 
-            // try to route the overlay name
-            let overlayNameOpt =
-                match World.tryFindRoutedOverlayNameOpt dispatcherName world with
-                | Some overlayNameOpt -> overlayNameOpt
-                | None -> None
+            // get the default overlay name option
+            let defaultOverlayNameOpt = World.getEntityDefaultOverlayName dispatcherName world
 
             // make the bare entity state with name as id
-            let entityState = EntityState.make None overlayNameOpt dispatcher
+            let entityState = EntityState.make None defaultOverlayNameOpt dispatcher
 
             // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
             // read the entity state's overlay and apply it to its facet names if applicable
             let entityState = Reflection.tryReadOverlayNameOptToTarget EntityState.copy entityDescriptor.EntityProperties entityState
+            let entityState = if Option.isNone entityState.OverlayNameOpt then { entityState with OverlayNameOpt = defaultOverlayNameOpt } else entityState
             let entityState =
-                match (overlayNameOpt, entityState.OverlayNameOpt) with
-                | (Some overlayName, Some esOverlayName) -> Overlayer.applyOverlayToFacetNames EntityState.copy overlayName esOverlayName entityState overlayer overlayer
+                match (defaultOverlayNameOpt, entityState.OverlayNameOpt) with
+                | (Some defaultOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames EntityState.copy defaultOverlayName overlayName entityState overlayer overlayer
                 | (_, _) -> entityState
 
             // read the entity state's facet names
@@ -830,7 +833,7 @@ module WorldModuleEntity =
                 | None -> None
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "OverlayNameOpt" && propertyType = typeof<string option> then
-                    let defaultOverlayNameOpt = Option.flatten (World.tryFindRoutedOverlayNameOpt entityDispatcherName world)
+                    let defaultOverlayNameOpt = World.getEntityDefaultOverlayName entityDispatcherName world
                     defaultOverlayNameOpt <> (propertyValue :?> string option)
                 else
                     match overlaySymbolsOpt with
