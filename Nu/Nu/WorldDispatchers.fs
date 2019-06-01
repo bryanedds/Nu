@@ -10,10 +10,10 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module ModelViewMessageEffect =
+module ModelViewMessageCommand =
 
-    /// Pair a None value with a model.
-    let inline just model = (model, None)
+    /// Pair an empty list of commands with a model.
+    let inline just model = (model, [])
 
     /// Specifies the view phase of Nu's MVME form factor.
     type Phase =
@@ -21,8 +21,8 @@ module ModelViewMessageEffect =
         | Finalize
         | Actualize
 
-/// Specifies the view phase of Nu's model-view-message form factor.
-type Phase = ModelViewMessageEffect.Phase
+/// Specifies the view phase of Nu's model-view-message-command form factor.
+type Phase = ModelViewMessageCommand.Phase
 
 [<AutoOpen>]
 module EffectFacetModule =
@@ -668,7 +668,7 @@ module AnimatedSpriteFacetModule =
 [<AutoOpen>]
 module EntityDispatcherModule =
 
-    type [<AbstractClass>] EntityDispatcher<'model, 'message, 'effect>
+    type [<AbstractClass>] EntityDispatcher<'model, 'message, 'command>
         (propertyFn : Entity -> PropertyTag<'model, World>) =
         inherit EntityDispatcher ()
 
@@ -684,13 +684,12 @@ module EntityDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, effectOpt) = this.Message (message, model, entity, world)
+                                let (model, commands) = this.Message (message, model, entity, world)
                                 let world = property.Set model world
-                                match effectOpt with
-                                | Some effect ->
+                                List.fold (fun world command ->
                                     let model = property.Get world
-                                    this.Effect (effect, model, entity, world)
-                                | None -> world
+                                    this.Command (command, model, entity, world))
+                                    world commands
                             | None -> world)
                             entity binding.Stream world
                     | Effect binding ->
@@ -698,7 +697,7 @@ module EntityDispatcherModule =
                             let model = property.Get world
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
-                            | Some message -> this.Effect (message, model, entity, world)
+                            | Some message -> this.Command (message, model, entity, world)
                             | None -> world)
                             entity binding.Stream world)
                     world bindings
@@ -717,9 +716,9 @@ module EntityDispatcherModule =
             let model = property.Get world
             this.View (Actualize, model, entity, world)
 
-        abstract member Binding : 'model * Entity * World -> Binding<'message, 'effect, Entity, World> list
-        abstract member Message : 'message * 'model * Entity * World -> 'model * 'effect option
-        abstract member Effect : 'effect * 'model * Entity * World -> World
+        abstract member Binding : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
+        abstract member Message : 'message * 'model * Entity * World -> 'model * 'command list
+        abstract member Command : 'command * 'model * Entity * World -> World
         abstract member View : Phase * 'model * Entity * World -> World
 
 [<AutoOpen>]
@@ -729,8 +728,8 @@ module ImperativeDispatcherModule =
         inherit EntityDispatcher ()
         interface Imperative
 
-    type [<AbstractClass>] ImperativeDispatcher<'model, 'message, 'effect> (propertyFn) =
-        inherit EntityDispatcher<'model, 'message, 'effect> (propertyFn)
+    type [<AbstractClass>] ImperativeDispatcher<'model, 'message, 'command> (propertyFn) =
+        inherit EntityDispatcher<'model, 'message, 'command> (propertyFn)
         interface Imperative
 
 [<AutoOpen>]
@@ -754,8 +753,8 @@ module NodeDispatcherModule =
         static member IntrinsicFacetNames =
             [typeof<NodeFacet>.Name]
 
-    type [<AbstractClass>] NodeDispatcher<'model, 'message, 'effect> (propertyFn) =
-        inherit EntityDispatcher<'model, 'message, 'effect> (propertyFn)
+    type [<AbstractClass>] NodeDispatcher<'model, 'message, 'command> (propertyFn) =
+        inherit EntityDispatcher<'model, 'message, 'command> (propertyFn)
 
         static member IntrinsicFacetNames =
             [typeof<NodeFacet>.Name]
@@ -805,8 +804,8 @@ module GuiDispatcherModule =
             let world = World.monitorPlus handleMouseLeft Events.MouseLeftUp gui world |> snd
             world
 
-    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'effect> (propertyFn) =
-        inherit EntityDispatcher<'model, 'message, 'effect> (propertyFn)
+    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (propertyFn) =
+        inherit EntityDispatcher<'model, 'message, 'command> (propertyFn)
 
         static let handleMouseLeft evt world =
             let gui = evt.Subscriber : Entity
@@ -1574,7 +1573,7 @@ module TileMapDispatcherModule =
 [<AutoOpen>]
 module LayerDispatcherModule =
 
-    type [<AbstractClass>] LayerDispatcher<'model, 'message, 'effect>
+    type [<AbstractClass>] LayerDispatcher<'model, 'message, 'command>
         (propertyFn : Layer -> PropertyTag<'model, World>) =
         inherit LayerDispatcher ()
 
@@ -1590,13 +1589,12 @@ module LayerDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, effectOpt) = this.Message (message, model, layer, world)
+                                let (model, commands) = this.Message (message, model, layer, world)
                                 let world = property.Set model world
-                                match effectOpt with
-                                | Some effect ->
+                                List.fold (fun world command ->
                                     let model = property.Get world
-                                    this.Effect (effect, model, layer, world)
-                                | None -> world
+                                    this.Command (command, model, layer, world))
+                                    world commands
                             | None -> world)
                             layer binding.Stream world
                     | Effect binding ->
@@ -1604,7 +1602,7 @@ module LayerDispatcherModule =
                             let model = property.Get world
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
-                            | Some message -> this.Effect (message, model, layer, world)
+                            | Some message -> this.Command (message, model, layer, world)
                             | None -> world)
                             layer binding.Stream world)
                     world bindings
@@ -1623,15 +1621,15 @@ module LayerDispatcherModule =
             let model = property.Get world
             this.View (Actualize, model, layer, world)
 
-        abstract member Binding : 'model * Layer * World -> Binding<'message, 'effect, Layer, World> list
-        abstract member Message : 'message * 'model * Layer * World -> 'model * 'effect option
-        abstract member Effect : 'effect * 'model * Layer * World -> World
+        abstract member Binding : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
+        abstract member Message : 'message * 'model * Layer * World -> 'model * 'command list
+        abstract member Command : 'command * 'model * Layer * World -> World
         abstract member View : Phase * 'model * Layer * World -> World
 
 [<AutoOpen>]
 module ScreenDispatcherModule =
 
-    type [<AbstractClass>] ScreenDispatcher<'model, 'message, 'effect>
+    type [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command>
         (propertyFn : Screen -> PropertyTag<'model, World>) =
         inherit ScreenDispatcher ()
 
@@ -1647,13 +1645,12 @@ module ScreenDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, effectOpt) = this.Message (message, model, screen, world)
+                                let (model, commands) = this.Message (message, model, screen, world)
                                 let world = property.Set model world
-                                match effectOpt with
-                                | Some effect ->
+                                List.fold (fun world command ->
                                     let model = property.Get world
-                                    this.Effect (effect, model, screen, world)
-                                | None -> world
+                                    this.Command (command, model, screen, world))
+                                    world commands
                             | None -> world)
                             screen binding.Stream world
                     | Effect binding ->
@@ -1661,7 +1658,7 @@ module ScreenDispatcherModule =
                             let model = property.Get world
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
-                            | Some message -> this.Effect (message, model, screen, world)
+                            | Some message -> this.Command (message, model, screen, world)
                             | None -> world)
                             screen binding.Stream world)
                     world bindings
@@ -1680,15 +1677,15 @@ module ScreenDispatcherModule =
             let model = property.Get world
             this.View (Actualize, model, screen, world)
 
-        abstract member Binding : 'model * Screen * World -> Binding<'message, 'effect, Screen, World> list
-        abstract member Message : 'message * 'model * Screen * World -> 'model * 'effect option
-        abstract member Effect : 'effect * 'model * Screen * World -> World
+        abstract member Binding : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
+        abstract member Message : 'message * 'model * Screen * World -> 'model * 'command list
+        abstract member Command : 'command * 'model * Screen * World -> World
         abstract member View : Phase * 'model * Screen * World -> World
 
 [<AutoOpen>]
 module GameDispatcherModule =
 
-    type [<AbstractClass>] GameDispatcher<'model, 'message, 'effect>
+    type [<AbstractClass>] GameDispatcher<'model, 'message, 'command>
         (propertyFn : Game -> PropertyTag<'model, World>) =
         inherit GameDispatcher ()
 
@@ -1704,13 +1701,12 @@ module GameDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, effectOpt) = this.Message (message, model, game, world)
+                                let (model, commands) = this.Message (message, model, game, world)
                                 let world = property.Set model world
-                                match effectOpt with
-                                | Some effect ->
+                                List.fold (fun world command ->
                                     let model = property.Get world
-                                    this.Effect (effect, model, game, world)
-                                | None -> world
+                                    this.Command (command, model, game, world))
+                                    world commands
                             | None -> world)
                             game binding.Stream world
                     | Effect binding ->
@@ -1718,7 +1714,7 @@ module GameDispatcherModule =
                             let model = property.Get world
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
-                            | Some message -> this.Effect (message, model, game, world)
+                            | Some message -> this.Command (message, model, game, world)
                             | None -> world)
                             game binding.Stream world)
                     world bindings
@@ -1737,7 +1733,7 @@ module GameDispatcherModule =
             let model = property.Get world
             this.View (Actualize, model, game, world)
 
-        abstract member Binding : 'model * Game * World -> Binding<'message, 'effect, Game, World> list
-        abstract member Message : 'message * 'model * Game * World -> 'model * 'effect option
-        abstract member Effect : 'effect * 'model * Game * World -> World
+        abstract member Binding : 'model * Game * World -> Binding<'message, 'command, Game, World> list
+        abstract member Message : 'message * 'model * Game * World -> 'model * 'command list
+        abstract member Command : 'command * 'model * Game * World -> World
         abstract member View : Phase * 'model * Game * World -> World
