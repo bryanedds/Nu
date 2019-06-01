@@ -120,7 +120,7 @@ module Program =
         static member PropertyDefinitions =
             [Define? Model { Count = 0; Screen = Screen "Screen" }]
 
-        override this.Binding (game, _) =
+        override this.Binding (_, game, _) =
             [game.RegisterEvent ==> Reset
              game.EyeCenter.ChangeEvent ==> Inc
              game.EyeSize.ChangeEvent ==> Dec
