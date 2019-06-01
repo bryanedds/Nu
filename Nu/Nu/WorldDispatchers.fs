@@ -10,6 +10,21 @@ open Prime
 open Nu
 
 [<AutoOpen>]
+module ModelViewMessageEffect =
+
+    /// Pair an id function with a model.
+    let inline just model = (model, id)
+
+    /// Specifies the view phase of Nu's MVME form factor.
+    type Phase =
+        | Initialize
+        | Finalize
+        | Actualize
+
+/// Specifies the view phase of Nu's model-view-message form factor.
+type Phase = ModelViewMessageEffect.Phase
+
+[<AutoOpen>]
 module EffectFacetModule =
 
     type EffectTags =
@@ -701,7 +716,7 @@ module EntityDispatcherModule =
         abstract member Binding : Entity * World -> Binding<'message, 'effect, Entity, World> list
         abstract member Message : 'message * 'model * Entity * World -> 'model * (World -> World)
         abstract member Effect : 'effect * 'model * Entity * World -> World
-        abstract member View : ViewPhase * 'model * Entity * World -> World
+        abstract member View : Phase * 'model * Entity * World -> World
 
 [<AutoOpen>]
 module ImperativeDispatcherModule =
@@ -1601,7 +1616,7 @@ module LayerDispatcherModule =
         abstract member Binding : Layer * World -> Binding<'message, 'effect, Layer, World> list
         abstract member Message : 'message * 'model * Layer * World -> 'model * (World -> World)
         abstract member Effect : 'effect * 'model * Layer * World -> World
-        abstract member View : ViewPhase * 'model * Layer * World -> World
+        abstract member View : Phase * 'model * Layer * World -> World
 
 [<AutoOpen>]
 module ScreenDispatcherModule =
@@ -1654,7 +1669,7 @@ module ScreenDispatcherModule =
         abstract member Binding : Screen * World -> Binding<'message, 'effect, Screen, World> list
         abstract member Message : 'message * 'model * Screen * World -> 'model * (World -> World)
         abstract member Effect : 'effect * 'model * Screen * World -> World
-        abstract member View : ViewPhase * 'model * Screen * World -> World
+        abstract member View : Phase * 'model * Screen * World -> World
 
 [<AutoOpen>]
 module GameDispatcherModule =
@@ -1707,4 +1722,4 @@ module GameDispatcherModule =
         abstract member Binding : Game * World -> Binding<'message, 'effect, Game, World> list
         abstract member Message : 'message * 'model * Game * World -> 'model * (World -> World)
         abstract member Effect : 'effect * 'model * Game * World -> World
-        abstract member View : ViewPhase * 'model * Game * World -> World
+        abstract member View : Phase * 'model * Game * World -> World
