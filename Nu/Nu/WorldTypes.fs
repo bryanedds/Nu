@@ -21,12 +21,6 @@ open TiledSharp
 open Prime
 open Nu
 
-/// Specifies the view phase of the model-view-update.
-type ViewPhase =
-    | Initialize
-    | Finalize
-    | Actualize
-
 /// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
 /// means an existing screen being hidden.
 type TransitionType =
