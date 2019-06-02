@@ -566,27 +566,38 @@ module WorldModule =
             (Resolve, World.exit world)
 
 // TODO: consider putting this in its own WorldModuleDescriptors.fs file once we can sensibly use folders in F#.
-module Descriptors =
+module Describe =
 
     /// Describe a game with the given properties values and contained screens.
-    let Game<'d when 'd :> GameDispatcher> properties screens =
-        { GameDispatcher = typeof<'d>.Name
+    let game<'d when 'd :> GameDispatcher> (game : Game) (props : (World PropertyTag * obj) seq) (children : ScreenDescriptor seq) =
+        let properties = Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) props
+        { Game = game
+          GameDispatcher = typeof<'d>.Name
           GameProperties = Map.ofSeq properties
-          Screens = List.ofSeq screens }
+          Screens = Seq.toList children }
 
     /// Describe a screen with the given properties values and contained layers.
-    let Screen<'d when 'd :> ScreenDispatcher> properties layers =
-        { ScreenDispatcher = typeof<'d>.Name
+    let screen<'d when 'd :> ScreenDispatcher> (screen : Screen) (props : (World PropertyTag * obj) seq) (children : LayerDescriptor seq) =
+        let properties = Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) props
+        { Screen = screen
+          ScreenDispatcher = typeof<'d>.Name
           ScreenProperties = Map.ofSeq properties
-          Layers = List.ofSeq layers }
+          Layers = Seq.toList children }
 
     /// Describe a layer with the given properties values and contained entities.
-    let Layer<'d when 'd :> LayerDispatcher> properties entities =
-        { LayerDispatcher = typeof<'d>.Name
+    let layer<'d when 'd :> LayerDispatcher> (layer : Layer) (props : (World PropertyTag * obj) seq) (children : EntityDescriptor seq) =
+        let properties = Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) props
+        { Layer = layer
+          LayerDispatcher = typeof<'d>.Name
           LayerProperties = Map.ofSeq properties
-          Entities = List.ofSeq entities }
+          Entities = Seq.toList children }
 
     /// Describe an entity with the given properties values.
-    let Entity<'d when 'd :> EntityDispatcher> properties =
-        { EntityDispatcher = typeof<'d>.Name
+    let entity<'d when 'd :> EntityDispatcher> (entity : Entity) (props : (World PropertyTag * obj) seq) =
+        let properties = Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) props
+        { Entity = entity
+          EntityDispatcher = typeof<'d>.Name
           EntityProperties = Map.ofSeq properties }
+
+    let prop (p : PropertyTag<'a, World>) (v : 'a) =
+        (p :> PropertyTag<World>, v :> obj)

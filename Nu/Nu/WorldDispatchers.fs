@@ -675,7 +675,7 @@ module EntityDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, commands) = this.Message (message, model, entity, world)
+                                let (model, commands) = this.Update (message, model, entity, world)
                                 let world = property.Set model world
                                 List.fold (fun world command ->
                                     let model = property.Get world
@@ -692,17 +692,24 @@ module EntityDispatcherModule =
                             | None -> world)
                             entity binding.Stream world)
                     world bindings
+            let descriptors = this.View (property.Get world, entity, world)
+            let world =
+                List.fold (fun world descriptor ->
+                    World.readEntity descriptor (Some descriptor.Entity.EntityName) (etol descriptor.Entity) world |> snd)
+                    world descriptors
             world
 
         override this.Actualize (entity, world) =
             let property = propertyFn entity
             let model = property.Get world
-            this.View (model, entity, world)
+            this.Actualize (model, entity, world)
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
-        abstract member Message : 'message * 'model * Entity * World -> 'model * 'command list
+        abstract member Update : 'message * 'model * Entity * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Entity * World -> World
-        abstract member View : 'model * Entity * World -> World
+        abstract member View : 'model * Entity * World -> EntityDescriptor list
+        abstract member Actualize : 'model * Entity * World -> World
+        default this.Actualize (_, _, world) = world
 
 [<AutoOpen>]
 module ImperativeDispatcherModule =
@@ -1572,7 +1579,7 @@ module LayerDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, commands) = this.Message (message, model, layer, world)
+                                let (model, commands) = this.Update (message, model, layer, world)
                                 let world = property.Set model world
                                 List.fold (fun world command ->
                                     let model = property.Get world
@@ -1589,17 +1596,24 @@ module LayerDispatcherModule =
                             | None -> world)
                             layer binding.Stream world)
                     world bindings
+            let descriptors = this.View (property.Get world, layer, world)
+            let world =
+                List.fold (fun world descriptor ->
+                    World.readEntity descriptor (Some descriptor.Entity.EntityName) (etol descriptor.Entity) world |> snd)
+                    world descriptors
             world
 
         override this.Actualize (layer, world) =
             let property = propertyFn layer
             let model = property.Get world
-            this.View (model, layer, world)
+            this.Actualize (model, layer, world)
 
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
-        abstract member Message : 'message * 'model * Layer * World -> 'model * 'command list
+        abstract member Update : 'message * 'model * Layer * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Layer * World -> World
-        abstract member View : 'model * Layer * World -> World
+        abstract member View : 'model * Layer * World -> EntityDescriptor list
+        abstract member Actualize : 'model * Layer * World -> World
+        default this.Actualize (_, _, world) = world
 
 [<AutoOpen>]
 module ScreenDispatcherModule =
@@ -1620,7 +1634,7 @@ module ScreenDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, commands) = this.Message (message, model, screen, world)
+                                let (model, commands) = this.Update (message, model, screen, world)
                                 let world = property.Set model world
                                 List.fold (fun world command ->
                                     let model = property.Get world
@@ -1637,17 +1651,24 @@ module ScreenDispatcherModule =
                             | None -> world)
                             screen binding.Stream world)
                     world bindings
+            let descriptors = this.View (property.Get world, screen, world)
+            let world =
+                List.fold (fun world descriptor ->
+                    World.readLayer descriptor (Some descriptor.Layer.LayerName) (ltos descriptor.Layer) world |> snd)
+                    world descriptors
             world
 
         override this.Actualize (screen, world) =
             let property = propertyFn screen
             let model = property.Get world
-            this.View (model, screen, world)
+            this.Actualize (model, screen, world)
 
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
-        abstract member Message : 'message * 'model * Screen * World -> 'model * 'command list
+        abstract member Update : 'message * 'model * Screen * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Screen * World -> World
-        abstract member View : 'model * Screen * World -> World
+        abstract member View : 'model * Screen * World -> LayerDescriptor list
+        abstract member Actualize : 'model * Screen * World -> World
+        default this.Actualize (_, _, world) = world
 
 [<AutoOpen>]
 module GameDispatcherModule =
@@ -1668,7 +1689,7 @@ module GameDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, commands) = this.Message (message, model, game, world)
+                                let (model, commands) = this.Update (message, model, game, world)
                                 let world = property.Set model world
                                 List.fold (fun world command ->
                                     let model = property.Get world
@@ -1685,14 +1706,21 @@ module GameDispatcherModule =
                             | None -> world)
                             game binding.Stream world)
                     world bindings
+            let descriptors = this.View (property.Get world, game, world)
+            let world =
+                List.fold (fun world descriptor ->
+                    World.readScreen descriptor (Some descriptor.Screen.ScreenName) world |> snd)
+                    world descriptors
             world
 
         override this.Actualize (game, world) =
             let property = propertyFn game
             let model = property.Get world
-            this.View (model, game, world)
+            this.Actualize (model, game, world)
 
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
-        abstract member Message : 'message * 'model * Game * World -> 'model * 'command list
+        abstract member Update : 'message * 'model * Game * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Game * World -> World
-        abstract member View : 'model * Game * World -> World
+        abstract member View : 'model * Game * World -> ScreenDescriptor list
+        abstract member Actualize : 'model * Game * World -> World
+        default this.Actualize (_, _, world) = world
