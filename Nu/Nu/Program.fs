@@ -104,62 +104,6 @@ module Program =
 
     (* TODO: investigate Gaia extensibility mechanism. *)
 
-    let declare<'dispatcher> (simulant : Simulant) (props : (World PropertyTag * obj) seq) (children : SimulantDescriptor seq) =
-        let properties = Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) props
-        match simulant :> obj with
-        | :? Game as game ->
-            { Game = game
-              GameDispatcher = typeof<'dispatcher>.Name
-              GameProperties = Map.ofSeq properties
-              Screens = children |> Seq.map cast |> Seq.toList } :>
-            SimulantDescriptor
-        | :? Screen as screen ->
-            { Screen = screen
-              ScreenDispatcher = typeof<'dispatcher>.Name
-              ScreenProperties = Map.ofSeq properties
-              Layers = children |> Seq.map cast |> Seq.toList } :>
-            SimulantDescriptor
-        | :? Layer as layer ->
-            { Layer = layer
-              LayerDispatcher = typeof<'dispatcher>.Name
-              LayerProperties = Map.ofSeq properties
-              Entities = children |> Seq.map cast |> Seq.toList } :>
-            SimulantDescriptor
-        | :? Entity as entity ->
-            { Entity = entity
-              EntityDispatcher = typeof<'dispatcher>.Name
-              EntityProperties = Map.ofSeq properties } :>
-            SimulantDescriptor
-        | _ -> failwithumf ()
-
-    let prop (p : PropertyTag<'a, World>) (v : 'a) =
-        (p :> PropertyTag<World>, v :> obj)
-
-    let usage () =
-        let screen = Simulants.DefaultScreen
-        let layer = Simulants.DefaultLayer
-        declare<ScreenDispatcher>
-            screen
-            [prop screen.Persistent true]
-            [declare<ScreenDispatcher>
-                layer
-                [prop layer.Persistent true]
-                []]
-
-    open Describe
-
-    let usage' () =
-        let game = Simulants.Game
-        let screen = Simulants.DefaultScreen
-        let layer = Simulants.DefaultLayer
-        Describe.game<GameDispatcher>
-            game
-            [prop game.Script [||]]
-            [Describe.screen<ScreenDispatcher>
-                screen
-                [prop layer.Persistent true]
-                []]
-
     let [<EntryPoint; STAThread>] main _ =
         Nu.init false
         Console.WriteLine "Running Nu.exe"

@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.IO
 open OpenTK
 open Prime
 open Nu
@@ -819,6 +820,13 @@ module WorldModuleEntity =
             let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
             let world = World.addEntity true entityState entity world
             (entity, world)
+
+        /// Read an entity from a file.
+        [<FunctionBinding>]
+        static member readEntityFromFile (filePath : string) nameOpt layer world =
+            let entityDescriptorStr = File.ReadAllText filePath
+            let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
+            World.readEntity entityDescriptor nameOpt layer world
 
         /// Write an entity to an entity descriptor.
         static member writeEntity (entity : Entity) entityDescriptor world =
