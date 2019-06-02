@@ -91,14 +91,22 @@ module Reflection =
         match PropertyDefinitionsCache.TryGetValue targetType with
         | (true, definitions) -> definitions
         | (false, _) ->
-            let definitions =
+            let definitionsPropertyOpt =
                 match targetType.GetProperty ("PropertyDefinitions", BindingFlags.Static ||| BindingFlags.Public) with
-                | null -> []
-                | definitionsProperty ->
+                | null ->
+                    // NOTE: also looking for just Properties for succinctness
+                    match targetType.GetProperty ("Properties", BindingFlags.Static ||| BindingFlags.Public) with
+                    | null -> None
+                    | definitionsProperty -> Some definitionsProperty
+                | definitionsProperty -> Some definitionsProperty
+            let definitions =
+                match definitionsPropertyOpt with
+                | Some definitionsProperty ->
                     match definitionsProperty.GetValue null with
                     | :? (obj list) as definitions when List.isEmpty definitions -> []
                     | :? (PropertyDefinition list) as definitions -> definitions
-                    | _ -> failwith ("PropertyDefinitions property for type '" + targetType.Name + "' must be of type PropertyDefinition list.")
+                    | _ -> failwith ("PropertyDefinitions / Properties property for type '" + targetType.Name + "' must be of type PropertyDefinition list.")
+                | None -> []
             PropertyDefinitionsCache.Add (targetType, definitions)
             definitions
 
