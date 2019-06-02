@@ -686,13 +686,6 @@ module EntityDispatcherModule =
                             | None -> world)
                             entity binding.Stream world)
                     world bindings
-            let views = this.View (property.Get world, entity, world)
-            let world =
-                List.fold (fun world view ->
-                    match view with
-                    | EntityFromDescriptor (descriptor, entity) -> World.readEntity descriptor (Some entity.EntityName) (etol entity) world |> snd
-                    | EntityFromFile (fileName, entity) -> World.readEntityFromFile fileName (Some entity.EntityName) (etol entity) world |> snd)
-                    world views
             world
 
         override this.Actualize (entity, world) =
@@ -703,7 +696,6 @@ module EntityDispatcherModule =
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         abstract member Update : 'message * 'model * Entity * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Entity * World -> World
-        abstract member View : 'model * Entity * World -> EntityView list
         abstract member Actualize : 'model * Entity * World -> World
         default this.Actualize (_, _, world) = world
 
