@@ -665,7 +665,7 @@ module EntityDispatcherModule =
 
         override this.Register (entity, world) =
             let property = propertyFn entity
-            let bindings = this.Binding (property.Get world, entity, world)
+            let bindings = this.Bindings (property.Get world, entity, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
@@ -699,7 +699,7 @@ module EntityDispatcherModule =
             let model = property.Get world
             this.View (model, entity, world)
 
-        abstract member Binding : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
+        abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         abstract member Message : 'message * 'model * Entity * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Entity * World -> World
         abstract member View : 'model * Entity * World -> World
@@ -1562,7 +1562,7 @@ module LayerDispatcherModule =
 
         override this.Register (layer, world) =
             let property = propertyFn layer
-            let bindings = this.Binding (property.Get world, layer, world)
+            let bindings = this.Bindings (property.Get world, layer, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
@@ -1596,7 +1596,7 @@ module LayerDispatcherModule =
             let model = property.Get world
             this.View (model, layer, world)
 
-        abstract member Binding : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
+        abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
         abstract member Message : 'message * 'model * Layer * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Layer * World -> World
         abstract member View : 'model * Layer * World -> World
@@ -1610,7 +1610,7 @@ module ScreenDispatcherModule =
 
         override this.Register (screen, world) =
             let property = propertyFn screen
-            let bindings = this.Binding (property.Get world, screen, world)
+            let bindings = this.Bindings (property.Get world, screen, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
@@ -1644,7 +1644,7 @@ module ScreenDispatcherModule =
             let model = property.Get world
             this.View (model, screen, world)
 
-        abstract member Binding : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
+        abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
         abstract member Message : 'message * 'model * Screen * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Screen * World -> World
         abstract member View : 'model * Screen * World -> World
@@ -1658,7 +1658,7 @@ module GameDispatcherModule =
 
         override this.Register (game, world) =
             let property = propertyFn game
-            let bindings = this.Binding (property.Get world, game, world)
+            let bindings = this.Bindings (property.Get world, game, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
@@ -1692,7 +1692,7 @@ module GameDispatcherModule =
             let model = property.Get world
             this.View (model, game, world)
 
-        abstract member Binding : 'model * Game * World -> Binding<'message, 'command, Game, World> list
+        abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
         abstract member Message : 'message * 'model * Game * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Game * World -> World
         abstract member View : 'model * Game * World -> World
