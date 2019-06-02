@@ -341,14 +341,21 @@ module Reflection =
 
     /// Get the intrinsic facet names of a target type not considering inheritance.
     let getIntrinsicFacetNamesNoInherit (targetType : Type) =
-        match targetType.GetProperty ("IntrinsicFacetNames", BindingFlags.Static ||| BindingFlags.Public) with
-        | null -> []
-        | intrinsicFacetNamesProperty ->
+        let intrinsicFacetNamesPropertyOpt =
+            match targetType.GetProperty ("IntrinsicFacetNames", BindingFlags.Static ||| BindingFlags.Public) with
+            | null ->
+                match targetType.GetProperty ("FacetNames", BindingFlags.Static ||| BindingFlags.Public) with
+                | null -> None
+                | intrinsicFacetNamesProperty -> Some intrinsicFacetNamesProperty
+            | intrinsicFacetNamesProperty -> Some intrinsicFacetNamesProperty
+        match intrinsicFacetNamesPropertyOpt with
+        | Some intrinsicFacetNamesProperty ->
             let intrinsicFacetNames = intrinsicFacetNamesProperty.GetValue null
             match intrinsicFacetNames with
             | :? (obj list) as intrinsicFacetNames when List.isEmpty intrinsicFacetNames -> []
             | :? (string list) as intrinsicFacetNames -> intrinsicFacetNames
-            | _ -> failwith ("IntrinsicFacetNames property for type '" + targetType.Name + "' must be of type string list.")
+            | _ -> failwith ("IntrinsicFacetNames / FacetNames property for type '" + targetType.Name + "' must be of type string list.")
+        | None -> []
 
     /// Get the intrinsic facet names of a target type.
     let getIntrinsicFacetNames (targetType : Type) =
