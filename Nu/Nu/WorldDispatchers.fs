@@ -15,15 +15,6 @@ module ModelViewMessageCommand =
     /// Pair an empty list of commands with a model.
     let inline just model = (model, [])
 
-    /// Specifies the view phase of Nu's MVME form factor.
-    type Phase =
-        | Initialize
-        | Finalize
-        | Actualize
-
-/// Specifies the view phase of Nu's model-view-message-command form factor.
-type Phase = ModelViewMessageCommand.Phase
-
 [<AutoOpen>]
 module EffectFacetModule =
 
@@ -701,25 +692,17 @@ module EntityDispatcherModule =
                             | None -> world)
                             entity binding.Stream world)
                     world bindings
-            let model = property.Get world
-            let world = this.View (Initialize, model, entity, world)
-            world
-            
-        override this.Unregister (entity, world) =
-            let property = propertyFn entity
-            let model = property.Get world
-            let world = this.View (Finalize, model, entity, world)
             world
 
         override this.Actualize (entity, world) =
             let property = propertyFn entity
             let model = property.Get world
-            this.View (Actualize, model, entity, world)
+            this.View (model, entity, world)
 
         abstract member Binding : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         abstract member Message : 'message * 'model * Entity * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Entity * World -> World
-        abstract member View : Phase * 'model * Entity * World -> World
+        abstract member View : 'model * Entity * World -> World
 
 [<AutoOpen>]
 module ImperativeDispatcherModule =
@@ -1606,25 +1589,17 @@ module LayerDispatcherModule =
                             | None -> world)
                             layer binding.Stream world)
                     world bindings
-            let model = property.Get world
-            let world = this.View (Initialize, model, layer, world)
-            world
-            
-        override this.Unregister (layer, world) =
-            let property = propertyFn layer
-            let model = property.Get world
-            let world = this.View (Finalize, model, layer, world)
             world
 
         override this.Actualize (layer, world) =
             let property = propertyFn layer
             let model = property.Get world
-            this.View (Actualize, model, layer, world)
+            this.View (model, layer, world)
 
         abstract member Binding : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
         abstract member Message : 'message * 'model * Layer * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Layer * World -> World
-        abstract member View : Phase * 'model * Layer * World -> World
+        abstract member View : 'model * Layer * World -> World
 
 [<AutoOpen>]
 module ScreenDispatcherModule =
@@ -1662,25 +1637,17 @@ module ScreenDispatcherModule =
                             | None -> world)
                             screen binding.Stream world)
                     world bindings
-            let model = property.Get world
-            let world = this.View (Initialize, model, screen, world)
-            world
-            
-        override this.Unregister (screen, world) =
-            let property = propertyFn screen
-            let model = property.Get world
-            let world = this.View (Finalize, model, screen, world)
             world
 
         override this.Actualize (screen, world) =
             let property = propertyFn screen
             let model = property.Get world
-            this.View (Actualize, model, screen, world)
+            this.View (model, screen, world)
 
         abstract member Binding : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
         abstract member Message : 'message * 'model * Screen * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Screen * World -> World
-        abstract member View : Phase * 'model * Screen * World -> World
+        abstract member View : 'model * Screen * World -> World
 
 [<AutoOpen>]
 module GameDispatcherModule =
@@ -1718,22 +1685,14 @@ module GameDispatcherModule =
                             | None -> world)
                             game binding.Stream world)
                     world bindings
-            let model = property.Get world
-            let world = this.View (Initialize, model, game, world)
-            world
-            
-        override this.Unregister (game, world) =
-            let property = propertyFn game
-            let model = property.Get world
-            let world = this.View (Finalize, model, game, world)
             world
 
         override this.Actualize (game, world) =
             let property = propertyFn game
             let model = property.Get world
-            this.View (Actualize, model, game, world)
+            this.View (model, game, world)
 
         abstract member Binding : 'model * Game * World -> Binding<'message, 'command, Game, World> list
         abstract member Message : 'message * 'model * Game * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Game * World -> World
-        abstract member View : Phase * 'model * Game * World -> World
+        abstract member View : 'model * Game * World -> World
