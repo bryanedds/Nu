@@ -812,8 +812,12 @@ module GameDispatcherModule =
                         | ScreenFromDescriptor (descriptor, behavior, screen) ->
                             let world = World.readScreen descriptor (Some screen.ScreenName) world |> snd
                             (behavior, screen, world)
-                        | ScreenFromFile (fileName, behavior, screen) ->
-                            let world = World.readScreenFromFile fileName (Some screen.ScreenName) world |> snd
+                        | ScreenFromLayerFile (ty, layerFilePath, behavior, screen) ->
+                            let world = World.createScreen3 ty.Name (Some screen.ScreenName) world |> snd
+                            let world = World.readLayerFromFile layerFilePath None screen world |> snd
+                            (behavior, screen, world)
+                        | ScreenFromFile (filePath, behavior, screen) ->
+                            let world = World.readScreenFromFile filePath (Some screen.ScreenName) world |> snd
                             (behavior, screen, world)
                     match behavior with
                     | Vanilla -> world
