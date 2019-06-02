@@ -818,8 +818,10 @@ module GameDispatcherModule =
                     match behavior with
                     | Vanilla -> world
                     | Omniscreen -> World.setOmniscreen screen world
-                    | Splash (splashData, destination) -> World.setScreenSplash (Some splashData) destination screen world
-                    | Dissolve dissolveData -> World.setScreenDissolve dissolveData screen world)
+                    | Dissolve dissolveData -> World.setScreenDissolve dissolveData screen world
+                    | Splash (dissolveData, splashData, destination) ->
+                        let world = World.setScreenDissolve dissolveData screen world
+                        World.setScreenSplash (Some splashData) destination screen world)
                     world views
             world
 

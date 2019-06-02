@@ -77,8 +77,8 @@ and [<NoComparison>] EntityDescriptor =
 type [<NoComparison>] ScreenBehavior =
     | Vanilla
     | Omniscreen
-    | Splash of SplashData * Screen
     | Dissolve of DissolveData
+    | Splash of DissolveData * SplashData * Screen
 
 /// Describes the view for a simulant
 type SimulantView = interface end
