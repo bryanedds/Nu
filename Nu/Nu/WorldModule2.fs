@@ -806,7 +806,6 @@ module GameDispatcherModule =
                             game binding.Stream world)
                     world bindings
             let views = this.View (property.Get world, game, world)
-            let viewsCount = List.length views
             let world =
                 List.foldi (fun viewIndex world view ->
                     let (behavior, screen, world) =
@@ -829,7 +828,7 @@ module GameDispatcherModule =
                         | Splash (dissolveData, splashData, destination) ->
                             let world = World.setScreenDissolve dissolveData screen world
                             World.setScreenSplash (Some splashData) destination screen world
-                    if viewIndex = viewsCount - 1
+                    if viewIndex = 0
                     then World.selectScreen screen world
                     else world)
                     world views
