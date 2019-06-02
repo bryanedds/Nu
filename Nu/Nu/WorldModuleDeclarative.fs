@@ -164,16 +164,16 @@ module View =
         GameFromFile (fileName, game)
 
     /// Describe a screen to be loaded from a file.
-    let screenFromFile screen fileName =
-        GameFromFile (fileName, screen)
+    let screenFromFile screen fileName behavior =
+        ScreenFromFile (fileName, behavior, screen)
 
     /// Describe a layer to be loaded from a file.
     let layerFromFile layer fileName =
-        GameFromFile (fileName, layer)
+        LayerFromFile (fileName, layer)
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile entity fileName =
-        GameFromFile (fileName, entity)
+        EntityFromFile (fileName, entity)
 
 [<AutoOpen>]
 module WorldModelViewUpdateOperators =
