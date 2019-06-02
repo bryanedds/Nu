@@ -345,7 +345,7 @@ module WorldTypes =
         abstract Actualize : Entity * World -> World
         default facet.Actualize (_, world) = world
     
-        /// Message a facet when removing it from an entity.
+        /// Message a facet.
         abstract Message : Symbol * Entity * World -> World
         default facet.Message (symbol, entity, world) = facet.Message (symbol, entity, world)
     
