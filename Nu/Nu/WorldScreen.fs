@@ -175,6 +175,14 @@ module WorldScreenModule =
             UMap.fold (fun state _ screenDirectory -> Screen screenDirectory.Key :: state) [] :>
             _ seq
 
+        /// Set the dissolve properties of a screen.
+        [<FunctionBinding>]
+        static member setScreenDissolve dissolveData (screen : Screen) world =
+            let dissolveImageOpt = Some dissolveData.DissolveImage
+            let world = screen.SetIncoming { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; DissolveImageOpt = dissolveImageOpt } world
+            let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; DissolveImageOpt = dissolveImageOpt } world
+            world
+
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// screen's existence. Consider using World.destroyScreen instead.
         static member destroyScreenImmediate screen world =
@@ -208,14 +216,12 @@ module WorldScreenModule =
         /// Create a screen and add it to the world.
         static member createScreen<'d when 'd :> ScreenDispatcher> nameOpt world =
             World.createScreen3 typeof<'d>.Name nameOpt world
-        
+
         /// Create a screen with a dissolving transition, and add it to the world.
         [<FunctionBinding "createDissolveScreen">]
         static member createDissolveScreen5 dispatcherName nameOpt dissolveData world =
-            let dissolveImageOpt = Some dissolveData.DissolveImage
             let (screen, world) = World.createScreen3 dispatcherName nameOpt world
-            let world = screen.SetIncoming { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; DissolveImageOpt = dissolveImageOpt } world
-            let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; DissolveImageOpt = dissolveImageOpt } world
+            let world = World.setScreenDissolve dissolveData screen world
             (screen, world)
         
         /// Create a screen with a dissolving transition, and add it to the world.

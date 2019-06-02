@@ -357,84 +357,6 @@ module WorldTypes =
         abstract TryGetCalculatedProperty : string * Entity * World -> Property option
         default dispatcher.TryGetCalculatedProperty (_, _, _) = None
 
-    /// A marker interface for simulant descriptors.
-    and SimulantDescriptor =
-        interface
-            abstract Children : SimulantDescriptor list
-            end
-
-    /// Describes a game value independent of the engine.
-    and [<NoComparison>] GameDescriptor =
-        { Game : Game
-          GameDispatcher : string
-          GameProperties : Map<string, Symbol>
-          Screens : ScreenDescriptor list }
-
-        /// The empty game descriptor.
-        static member empty =
-            { Game = Game ()
-              GameDispatcher = String.Empty
-              GameProperties = Map.empty
-              Screens = [] }
-
-        interface SimulantDescriptor with
-            member this.Children =
-                this.Screens |> enumerable<SimulantDescriptor> |> List.ofSeq
-
-    /// Describes a screen value independent of the engine.
-    and [<NoComparison>] ScreenDescriptor =
-        { Screen : Screen
-          ScreenDispatcher : string
-          ScreenProperties : Map<string, Symbol>
-          Layers : LayerDescriptor list }
-
-        /// The empty screen descriptor.
-        static member empty =
-            { Screen = Screen Constants.Engine.DefaultScreenName
-              ScreenDispatcher = String.Empty
-              ScreenProperties = Map.empty
-              Layers = [] }
-              
-        interface SimulantDescriptor with
-            member this.Children =
-                this.Layers |> enumerable<SimulantDescriptor> |> List.ofSeq
-
-    /// Describes a layer value independent of the engine.
-    and [<NoComparison>] LayerDescriptor =
-        { Layer : Layer
-          LayerDispatcher : string
-          LayerProperties : Map<string, Symbol>
-          Entities : EntityDescriptor list }
-
-        /// The empty layer descriptor.
-        static member empty =
-            { Layer = Screen Constants.Engine.DefaultScreenName => Constants.Engine.DefaultLayerName
-              LayerDispatcher = String.Empty
-              LayerProperties = Map.empty
-              Entities = [] }
-
-        interface SimulantDescriptor with
-            member this.Children =
-                this.Entities |> enumerable<SimulantDescriptor> |> List.ofSeq
-
-    /// Describes an entity value independent of the engine.
-    and [<NoComparison>] EntityDescriptor =
-        { Entity : Entity
-          EntityDispatcher : string
-          EntityProperties : Map<string, Symbol> }
-
-        /// The empty entity descriptor.
-        static member empty =
-            { Entity =
-                Screen Constants.Engine.DefaultScreenName =>
-                Constants.Engine.DefaultLayerName =>
-                Constants.Engine.DefaultEntityName
-              EntityDispatcher = String.Empty
-              EntityProperties = Map.empty }
-
-        interface SimulantDescriptor with
-            member this.Children = []
-
     /// Generalized interface for simulant state.
     and SimulantState =
         interface
@@ -1241,18 +1163,6 @@ type EntityDispatcher = WorldTypes.EntityDispatcher
 
 /// Dynamically augments an entity's behavior in a composable way.
 type Facet = WorldTypes.Facet
-
-/// Describes a game value independent of the engine.
-type GameDescriptor = WorldTypes.GameDescriptor
-
-/// Describes a screen value independent of the engine.
-type ScreenDescriptor = WorldTypes.ScreenDescriptor
-
-/// Describes a layer value independent of the engine.
-type LayerDescriptor = WorldTypes.LayerDescriptor
-
-/// Describes an entity value independent of the engine.
-type EntityDescriptor = WorldTypes.EntityDescriptor
 
 /// A simulant in the world.
 type Simulant = WorldTypes.Simulant

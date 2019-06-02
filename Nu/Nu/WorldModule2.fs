@@ -257,6 +257,27 @@ module WorldModule2 =
             let world = World.subscribePlus SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update ->- splashScreen) evt.Subscriber world |> snd
             (Resolve, world)
 
+        /// Set the splash aspects of a screen.
+        [<FunctionBinding>]
+        static member setScreenSplash splashDataOpt destination (screen : Screen) world =
+            let splashLayer = screen => "SplashLayer"
+            let splashLabel = splashLayer => "SplashLabel"
+            let world = World.destroyLayerImmediate splashLayer world
+            match splashDataOpt with
+            | Some splashData ->
+                let cameraEyeSize = World.getEyeSize world
+                let world = World.createLayer<LayerDispatcher> (Some splashLayer.LayerName) screen world |> snd
+                let world = splashLayer.SetPersistent false world
+                let world = World.createEntity<LabelDispatcher> (Some splashLabel.EntityName) DefaultOverlay splashLayer world |> snd
+                let world = splashLabel.SetPersistent false world
+                let world = splashLabel.SetSize cameraEyeSize world
+                let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
+                let world = splashLabel.SetLabelImage splashData.SplashImage world
+                let world = World.monitorPlus (World.handleSplashScreenIdle splashData.IdlingTime screen) (Events.IncomingFinish ->- screen) splashLayer world |> snd
+                let world = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- screen) splashLayer world |> snd
+                world
+            | None -> world
+
         /// Create a dissolve screen whose contents is loaded from the given layer file.
         [<FunctionBinding>]
         static member createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData layerFilePath world =
@@ -272,15 +293,8 @@ module WorldModule2 =
         /// Create a splash screen that transitions to the given destination upon completion.
         [<FunctionBinding>]
         static member createSplashScreen6 dispatcherName nameOpt splashData destination world =
-            let cameraEyeSize = World.getEyeSize world
             let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashData.DissolveData world
-            let (splashLayer, world) = World.createLayer<LayerDispatcher> (Some "SplashLayer") splashScreen world
-            let (splashLabel, world) = World.createEntity<LabelDispatcher> (Some "SplashLabel") DefaultOverlay splashLayer world
-            let world = splashLabel.SetSize cameraEyeSize world
-            let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
-            let world = splashLabel.SetLabelImage splashData.SplashImage world
-            let world = World.monitorPlus (World.handleSplashScreenIdle splashData.IdlingTime splashScreen) (Events.IncomingFinish ->- splashScreen) splashScreen world |> snd
-            let world = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- splashScreen) splashScreen world |> snd
+            let world = World.setScreenSplash (Some splashData) destination splashScreen world
             (splashScreen, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
@@ -753,3 +767,70 @@ module WorldModule2 =
                 World.choose
                 World.cleanUp
                 sdlConfig
+
+[<AutoOpen>]
+module GameDispatcherModule =
+
+    type [<AbstractClass>] GameDispatcher<'model, 'message, 'command>
+        (propertyFn : Game -> PropertyTag<'model, World>) =
+        inherit GameDispatcher ()
+
+        override this.Register (game, world) =
+            let property = propertyFn game
+            let bindings = this.Bindings (property.Get world, game, world)
+            let world =
+                List.fold (fun world binding ->
+                    match binding with
+                    | Message binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = property.Get world
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message ->
+                                let (model, commands) = this.Update (message, model, game, world)
+                                let world = property.Set model world
+                                List.fold (fun world command ->
+                                    let model = property.Get world
+                                    this.Command (command, model, game, world))
+                                    world commands
+                            | None -> world)
+                            game binding.Stream world
+                    | Command binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = property.Get world
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message -> this.Command (message, model, game, world)
+                            | None -> world)
+                            game binding.Stream world)
+                    world bindings
+            let views = this.View (property.Get world, game, world)
+            let world =
+                List.fold (fun world view ->
+                    let (behavior, screen, world) =
+                        match view with
+                        | ScreenFromDescriptor (descriptor, behavior, screen) ->
+                            let world = World.readScreen descriptor (Some screen.ScreenName) world |> snd
+                            (behavior, screen, world)
+                        | ScreenFromFile (fileName, behavior, screen) ->
+                            let world = World.readScreenFromFile fileName (Some screen.ScreenName) world |> snd
+                            (behavior, screen, world)
+                    match behavior with
+                    | Vanilla -> world
+                    | Omniscreen -> World.setOmniscreen screen world
+                    | Splash (splashData, destination) -> World.setScreenSplash (Some splashData) destination screen world
+                    | Dissolve dissolveData -> World.setScreenDissolve dissolveData screen world)
+                    world views
+            world
+
+        override this.Actualize (game, world) =
+            let property = propertyFn game
+            let model = property.Get world
+            this.Actualize (model, game, world)
+
+        abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
+        abstract member Update : 'message * 'model * Game * World -> 'model * 'command list
+        abstract member Command : 'command * 'model * Game * World -> World
+        abstract member View : 'model * Game * World -> ScreenView list
+        abstract member Actualize : 'model * Game * World -> World
+        default this.Actualize (_, _, world) = world

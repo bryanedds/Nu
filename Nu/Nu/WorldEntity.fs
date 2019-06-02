@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.ComponentModel
+open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
 open Prime
@@ -302,6 +303,18 @@ module WorldEntityModule =
             Seq.filter (fun (entity : Entity) -> entity.GetPersistent world) |>
             Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) layerDescriptor.Entities |>
             fun entityDescriptors -> { layerDescriptor with Entities = entityDescriptors }
+
+        /// Write an entity to a file.
+        [<FunctionBinding>]
+        static member writeEntityToFile (filePath : string) enity world =
+            let filePathTmp = filePath + ".tmp"
+            let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<GameDescriptor>).PrettyPrinter
+            let enityDescriptor = World.writeEntity enity EntityDescriptor.empty world
+            let enityDescriptorStr = scstring enityDescriptor
+            let enityDescriptorPretty = PrettyPrinter.prettyPrint enityDescriptorStr prettyPrinter
+            File.WriteAllText (filePathTmp, enityDescriptorPretty)
+            File.Delete filePath
+            File.Move (filePathTmp, filePath)
 
         /// Read multiple entities from a layer descriptor.
         static member readEntities layerDescriptor layer world =

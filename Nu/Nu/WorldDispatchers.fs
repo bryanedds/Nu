@@ -10,12 +10,6 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module ModelViewMessageCommand =
-
-    /// Pair an empty list of commands with a model.
-    let inline just model = (model, [])
-
-[<AutoOpen>]
 module EffectFacetModule =
 
     type EffectTags =
@@ -692,11 +686,13 @@ module EntityDispatcherModule =
                             | None -> world)
                             entity binding.Stream world)
                     world bindings
-            let descriptors = this.View (property.Get world, entity, world)
+            let views = this.View (property.Get world, entity, world)
             let world =
-                List.fold (fun world descriptor ->
-                    World.readEntity descriptor (Some descriptor.Entity.EntityName) (etol descriptor.Entity) world |> snd)
-                    world descriptors
+                List.fold (fun world view ->
+                    match view with
+                    | EntityFromDescriptor (descriptor, entity) -> World.readEntity descriptor (Some entity.EntityName) (etol entity) world |> snd
+                    | EntityFromFile (fileName, entity) -> World.readEntityFromFile fileName (Some entity.EntityName) (etol entity) world |> snd)
+                    world views
             world
 
         override this.Actualize (entity, world) =
@@ -707,7 +703,7 @@ module EntityDispatcherModule =
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         abstract member Update : 'message * 'model * Entity * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Entity * World -> World
-        abstract member View : 'model * Entity * World -> EntityDescriptor list
+        abstract member View : 'model * Entity * World -> EntityView list
         abstract member Actualize : 'model * Entity * World -> World
         default this.Actualize (_, _, world) = world
 
@@ -1596,11 +1592,13 @@ module LayerDispatcherModule =
                             | None -> world)
                             layer binding.Stream world)
                     world bindings
-            let descriptors = this.View (property.Get world, layer, world)
+            let views = this.View (property.Get world, layer, world)
             let world =
-                List.fold (fun world descriptor ->
-                    World.readEntity descriptor (Some descriptor.Entity.EntityName) (etol descriptor.Entity) world |> snd)
-                    world descriptors
+                List.fold (fun world view ->
+                    match view with
+                    | EntityFromDescriptor (descriptor, entity) -> World.readEntity descriptor (Some entity.EntityName) (etol entity) world |> snd
+                    | EntityFromFile (fileName, entity) -> World.readEntityFromFile fileName (Some entity.EntityName) (etol entity) world |> snd)
+                    world views
             world
 
         override this.Actualize (layer, world) =
@@ -1611,7 +1609,7 @@ module LayerDispatcherModule =
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
         abstract member Update : 'message * 'model * Layer * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Layer * World -> World
-        abstract member View : 'model * Layer * World -> EntityDescriptor list
+        abstract member View : 'model * Layer * World -> EntityView list
         abstract member Actualize : 'model * Layer * World -> World
         default this.Actualize (_, _, world) = world
 
@@ -1651,11 +1649,13 @@ module ScreenDispatcherModule =
                             | None -> world)
                             screen binding.Stream world)
                     world bindings
-            let descriptors = this.View (property.Get world, screen, world)
+            let views = this.View (property.Get world, screen, world)
             let world =
-                List.fold (fun world descriptor ->
-                    World.readLayer descriptor (Some descriptor.Layer.LayerName) (ltos descriptor.Layer) world |> snd)
-                    world descriptors
+                List.fold (fun world view ->
+                    match view with
+                    | LayerFromDescriptor (descriptor, layer) -> World.readLayer descriptor (Some layer.LayerName) (ltos layer) world |> snd
+                    | LayerFromFile (fileName, layer) -> World.readLayerFromFile fileName (Some layer.LayerName) (ltos layer) world |> snd)
+                    world views
             world
 
         override this.Actualize (screen, world) =
@@ -1666,61 +1666,6 @@ module ScreenDispatcherModule =
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
         abstract member Update : 'message * 'model * Screen * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Screen * World -> World
-        abstract member View : 'model * Screen * World -> LayerDescriptor list
+        abstract member View : 'model * Screen * World -> LayerView list
         abstract member Actualize : 'model * Screen * World -> World
-        default this.Actualize (_, _, world) = world
-
-[<AutoOpen>]
-module GameDispatcherModule =
-
-    type [<AbstractClass>] GameDispatcher<'model, 'message, 'command>
-        (propertyFn : Game -> PropertyTag<'model, World>) =
-        inherit GameDispatcher ()
-
-        override this.Register (game, world) =
-            let property = propertyFn game
-            let bindings = this.Bindings (property.Get world, game, world)
-            let world =
-                List.fold (fun world binding ->
-                    match binding with
-                    | Message binding ->
-                        Stream.monitor (fun evt world ->
-                            let model = property.Get world
-                            let messageOpt = binding.MakeValueOpt evt
-                            match messageOpt with
-                            | Some message ->
-                                let (model, commands) = this.Update (message, model, game, world)
-                                let world = property.Set model world
-                                List.fold (fun world command ->
-                                    let model = property.Get world
-                                    this.Command (command, model, game, world))
-                                    world commands
-                            | None -> world)
-                            game binding.Stream world
-                    | Command binding ->
-                        Stream.monitor (fun evt world ->
-                            let model = property.Get world
-                            let messageOpt = binding.MakeValueOpt evt
-                            match messageOpt with
-                            | Some message -> this.Command (message, model, game, world)
-                            | None -> world)
-                            game binding.Stream world)
-                    world bindings
-            let descriptors = this.View (property.Get world, game, world)
-            let world =
-                List.fold (fun world descriptor ->
-                    World.readScreen descriptor (Some descriptor.Screen.ScreenName) world |> snd)
-                    world descriptors
-            world
-
-        override this.Actualize (game, world) =
-            let property = propertyFn game
-            let model = property.Get world
-            this.Actualize (model, game, world)
-
-        abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
-        abstract member Update : 'message * 'model * Game * World -> 'model * 'command list
-        abstract member Command : 'command * 'model * Game * World -> World
-        abstract member View : 'model * Game * World -> ScreenDescriptor list
-        abstract member Actualize : 'model * Game * World -> World
         default this.Actualize (_, _, world) = world
