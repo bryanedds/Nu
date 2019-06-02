@@ -254,7 +254,8 @@ module WorldModule2 =
                     (Resolve, World.exit world)
 
         static member private handleSplashScreenIdle idlingTime (splashScreen : Screen) evt world =
-            World.subscribePlus SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update ->- splashScreen) evt.Subscriber world
+            let world = World.subscribePlus SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update ->- splashScreen) evt.Subscriber world |> snd
+            (Cascade, world)
 
         /// Set the splash aspects of a screen.
         [<FunctionBinding>]
