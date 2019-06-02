@@ -365,13 +365,15 @@ module WorldTypes =
 
     /// Describes a game value independent of the engine.
     and [<NoComparison>] GameDescriptor =
-        { GameDispatcher : string
+        { Game : Game
+          GameDispatcher : string
           GameProperties : Map<string, Symbol>
           Screens : ScreenDescriptor list }
 
         /// The empty game descriptor.
         static member empty =
-            { GameDispatcher = String.Empty
+            { Game = Game ()
+              GameDispatcher = String.Empty
               GameProperties = Map.empty
               Screens = [] }
 
@@ -381,13 +383,15 @@ module WorldTypes =
 
     /// Describes a screen value independent of the engine.
     and [<NoComparison>] ScreenDescriptor =
-        { ScreenDispatcher : string
+        { Screen : Screen
+          ScreenDispatcher : string
           ScreenProperties : Map<string, Symbol>
           Layers : LayerDescriptor list }
 
         /// The empty screen descriptor.
         static member empty =
-            { ScreenDispatcher = String.Empty
+            { Screen = Screen Constants.Engine.DefaultScreenName
+              ScreenDispatcher = String.Empty
               ScreenProperties = Map.empty
               Layers = [] }
               
@@ -397,13 +401,15 @@ module WorldTypes =
 
     /// Describes a layer value independent of the engine.
     and [<NoComparison>] LayerDescriptor =
-        { LayerDispatcher : string
+        { Layer : Layer
+          LayerDispatcher : string
           LayerProperties : Map<string, Symbol>
           Entities : EntityDescriptor list }
 
         /// The empty layer descriptor.
         static member empty =
-            { LayerDispatcher = String.Empty
+            { Layer = Screen Constants.Engine.DefaultScreenName => Constants.Engine.DefaultLayerName
+              LayerDispatcher = String.Empty
               LayerProperties = Map.empty
               Entities = [] }
 
@@ -413,12 +419,17 @@ module WorldTypes =
 
     /// Describes an entity value independent of the engine.
     and [<NoComparison>] EntityDescriptor =
-        { EntityDispatcher : string
+        { Entity : Entity
+          EntityDispatcher : string
           EntityProperties : Map<string, Symbol> }
 
         /// The empty entity descriptor.
         static member empty =
-            { EntityDispatcher = String.Empty
+            { Entity =
+                Screen Constants.Engine.DefaultScreenName =>
+                Constants.Engine.DefaultLayerName =>
+                Constants.Engine.DefaultEntityName
+              EntityDispatcher = String.Empty
               EntityProperties = Map.empty }
 
         interface SimulantDescriptor with
