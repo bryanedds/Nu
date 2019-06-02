@@ -170,7 +170,7 @@ module View =
 
     /// Describe a screen to be loaded from a file.
     let screenFromLayerFile<'d when 'd :> ScreenDispatcher> screen fileName behavior =
-        ScreenFromFile (fileName, behavior, screen)
+        ScreenFromLayerFile (typeof<'d>, fileName, behavior, screen)
 
     /// Describe a layer to be loaded from a file.
     let layerFromFile<'d when 'd :> LayerDispatcher> layer fileName =
