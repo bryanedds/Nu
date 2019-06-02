@@ -149,7 +149,7 @@ module View =
         GameFromDescriptor (Describe.game<'d> props children, game)
 
     /// Describe a screen with the given properties values and contained layers.
-    let screen<'d when 'd :> ScreenDispatcher> behavior props children screen =
+    let screen<'d when 'd :> ScreenDispatcher> props children behavior screen =
         ScreenFromDescriptor (Describe.screen<'d> props children, behavior, screen)
 
     /// Describe a layer with the given properties values and contained entities.
