@@ -273,8 +273,9 @@ module WorldModule2 =
                 let world = splashLabel.SetSize cameraEyeSize world
                 let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
                 let world = splashLabel.SetLabelImage splashData.SplashImage world
-                let world = World.monitorPlus (World.handleSplashScreenIdle splashData.IdlingTime screen) (Events.IncomingFinish ->- screen) screen world |> snd
-                let world = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- screen) screen world |> snd
+                let (unsub, world) = World.monitorPlus (World.handleSplashScreenIdle splashData.IdlingTime screen) (Events.IncomingFinish ->- screen) screen world
+                let (unsub2, world) = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- screen) screen world
+                let world = World.monitor (fun _ -> unsub >> unsub2) (Events.Unregistering ->- splashLayer) screen world
                 world
             | None -> world
 
