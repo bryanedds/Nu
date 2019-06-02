@@ -683,7 +683,7 @@ module EntityDispatcherModule =
                                     world commands
                             | None -> world)
                             entity binding.Stream world
-                    | Effect binding ->
+                    | Command binding ->
                         Stream.monitor (fun evt world ->
                             let model = property.Get world
                             let messageOpt = binding.MakeValueOpt evt
@@ -1580,7 +1580,7 @@ module LayerDispatcherModule =
                                     world commands
                             | None -> world)
                             layer binding.Stream world
-                    | Effect binding ->
+                    | Command binding ->
                         Stream.monitor (fun evt world ->
                             let model = property.Get world
                             let messageOpt = binding.MakeValueOpt evt
@@ -1628,7 +1628,7 @@ module ScreenDispatcherModule =
                                     world commands
                             | None -> world)
                             screen binding.Stream world
-                    | Effect binding ->
+                    | Command binding ->
                         Stream.monitor (fun evt world ->
                             let model = property.Get world
                             let messageOpt = binding.MakeValueOpt evt
@@ -1676,7 +1676,7 @@ module GameDispatcherModule =
                                     world commands
                             | None -> world)
                             game binding.Stream world
-                    | Effect binding ->
+                    | Command binding ->
                         Stream.monitor (fun evt world ->
                             let model = property.Get world
                             let messageOpt = binding.MakeValueOpt evt
