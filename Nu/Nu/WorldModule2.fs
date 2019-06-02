@@ -806,8 +806,9 @@ module GameDispatcherModule =
                             game binding.Stream world)
                     world bindings
             let views = this.View (property.Get world, game, world)
+            let viewsCount = List.length views
             let world =
-                List.fold (fun world view ->
+                List.foldi (fun viewIndex world view ->
                     let (behavior, screen, world) =
                         match view with
                         | ScreenFromDescriptor (descriptor, behavior, screen) ->
@@ -820,13 +821,17 @@ module GameDispatcherModule =
                         | ScreenFromFile (filePath, behavior, screen) ->
                             let world = World.readScreenFromFile filePath (Some screen.ScreenName) world |> snd
                             (behavior, screen, world)
-                    match behavior with
-                    | Vanilla -> world
-                    | Omniscreen -> World.setOmniscreen screen world
-                    | Dissolve dissolveData -> World.setScreenDissolve dissolveData screen world
-                    | Splash (dissolveData, splashData, destination) ->
-                        let world = World.setScreenDissolve dissolveData screen world
-                        World.setScreenSplash (Some splashData) destination screen world)
+                    let world =
+                        match behavior with
+                        | Vanilla -> world
+                        | Omniscreen -> World.setOmniscreen screen world
+                        | Dissolve dissolveData -> World.setScreenDissolve dissolveData screen world
+                        | Splash (dissolveData, splashData, destination) ->
+                            let world = World.setScreenDissolve dissolveData screen world
+                            World.setScreenSplash (Some splashData) destination screen world
+                    if viewIndex = viewsCount - 1
+                    then World.selectScreen screen world
+                    else world)
                     world views
             world
 
