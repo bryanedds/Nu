@@ -54,26 +54,29 @@ module WorldModule =
         /// Make the world.
         static member internal make eventDelegate dispatchers subsystems scriptingEnv ambientState activeGameDispatcher =
             let gameState = GameState.make activeGameDispatcher
-            let gameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState
             let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let layerStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let entityStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let world =
-                { EventSystemDelegate = eventDelegate
-                  Dispatchers = dispatchers
-                  Subsystems = subsystems
-                  ScriptingEnv = scriptingEnv
-                  ScriptingContext = Game ()
-                  ScreenCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Screen>, screenStates)) (FOption.none ())
-                  LayerCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Layer>, layerStates)) (FOption.none ())
-                  EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) (FOption.none ())
-                  ScreenDirectory = UMap.makeEmpty Constants.Engine.SimulantMapConfig
-                  AmbientState = ambientState
-                  GameState = gameState
-                  ScreenStates = screenStates
-                  LayerStates = layerStates
-                  EntityStates = entityStates }
-            World.choose world
+                World.choose
+                    { EventSystemDelegate = eventDelegate
+                      Dispatchers = dispatchers
+                      Subsystems = subsystems
+                      ScriptingEnv = scriptingEnv
+                      ScriptingContext = Game ()
+                      ScreenCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Screen>, screenStates)) (FOption.none ())
+                      LayerCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Layer>, layerStates)) (FOption.none ())
+                      EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) (FOption.none ())
+                      ScreenDirectory = UMap.makeEmpty Constants.Engine.SimulantMapConfig
+                      AmbientState = ambientState
+                      GameState = gameState
+                      ScreenStates = screenStates
+                      LayerStates = layerStates
+                      EntityStates = entityStates }
+            let world =
+                World.choose
+                    { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
+            world
 
     type World with // EventSystem
 

@@ -298,7 +298,7 @@ module WorldModuleScreen =
 
             // make the screen state and populate its properties
             let screenState = ScreenState.make None dispatcher
-            let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState
+            let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
 
             // apply the name if one is provided

@@ -365,7 +365,7 @@ module Reflection =
         List.concat intrinsicFacetNamesLists
 
     /// Attach properties from the given definitions to a target.
-    let attachPropertiesViaDefinitions (copyTarget : 'a -> 'a) definitions target =
+    let attachPropertiesViaDefinitions (copyTarget : 'a -> 'a) definitions target world =
         let target = copyTarget target
         let targetType = target.GetType ()
         match targetType.GetPropertyWritable "Xtension" with
@@ -375,7 +375,7 @@ module Reflection =
             | :? Xtension as xtension ->
                 let mutable xtension = xtension
                 for definition in definitions do
-                    let propertyValue = PropertyExpr.eval definition.PropertyExpr
+                    let propertyValue = PropertyExpr.eval definition.PropertyExpr world
                     match targetType.GetPropertyWritable definition.PropertyName with
                     | null ->
                         let property = { PropertyType = definition.PropertyType; PropertyValue = propertyValue }
@@ -405,10 +405,10 @@ module Reflection =
         target
 
     /// Attach source's properties to a target.
-    let attachProperties (copyTarget : 'a -> 'a) (source : 'b) target =
+    let attachProperties (copyTarget : 'a -> 'a) (source : 'b) target world =
         let sourceType = source.GetType ()
         let definitions = getPropertyDefinitions sourceType
-        attachPropertiesViaDefinitions copyTarget definitions target
+        attachPropertiesViaDefinitions copyTarget definitions target world
 
     /// Detach source's properties to a target.
     let detachProperties (copyTarget : 'a -> 'a) (source : 'b) target =
@@ -444,7 +444,7 @@ module Reflection =
             facetTypes
 
     /// Attach intrinsic facets to a target by their names.
-    let attachIntrinsicFacetsViaNames (copyTarget : 'a -> 'a) dispatcherMap facetMap facetNames target =
+    let attachIntrinsicFacetsViaNames (copyTarget : 'a -> 'a) dispatcherMap facetMap facetNames target world =
         let target = copyTarget target
         let facets =
             List.map
@@ -464,13 +464,13 @@ module Reflection =
                     else ())
                 facets
             facetsProperty.SetValue (target, facets)
-            List.fold (fun target facet -> attachProperties copyTarget facet target) target facets
+            List.fold (fun target facet -> attachProperties copyTarget facet target world) target facets
 
     /// Attach source's intrinsic facets to a target.
-    let attachIntrinsicFacets (copyTarget : 'a -> 'a) dispatcherMap facetMap (source : 'b) target =
+    let attachIntrinsicFacets (copyTarget : 'a -> 'a) dispatcherMap facetMap (source : 'b) target world =
         let sourceType = source.GetType ()
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
-        attachIntrinsicFacetsViaNames copyTarget dispatcherMap facetMap instrinsicFacetNames target
+        attachIntrinsicFacetsViaNames copyTarget dispatcherMap facetMap instrinsicFacetNames target world
 
     /// Make intrinsic overlays.
     let makeIntrinsicOverlays requiresFacetNames sourceTypes =
