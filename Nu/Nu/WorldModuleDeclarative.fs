@@ -39,6 +39,12 @@ and [<NoComparison>] ScreenDescriptor =
         { ScreenDispatcher = String.Empty
           ScreenProperties = Map.empty
           Layers = [] }
+
+    /// Derive a name from the dispatcher.
+    static member getNameOpt dispatcher =
+        dispatcher.ScreenProperties |>
+        Map.tryFind (Property? Name) |>
+        Option.map symbolToValue<string>
           
     interface SimulantDescriptor with
         member this.Children =
@@ -56,6 +62,12 @@ and [<NoComparison>] LayerDescriptor =
           LayerProperties = Map.empty
           Entities = [] }
 
+    /// Derive a name from the dispatcher.
+    static member getNameOpt dispatcher =
+        dispatcher.LayerProperties |>
+        Map.tryFind (Property? Name) |>
+        Option.map symbolToValue<string>
+
     interface SimulantDescriptor with
         member this.Children =
             this.Entities |> enumerable<SimulantDescriptor> |> List.ofSeq
@@ -69,6 +81,12 @@ and [<NoComparison>] EntityDescriptor =
     static member empty =
         { EntityDispatcher = String.Empty
           EntityProperties = Map.empty }
+
+    /// Derive a name from the dispatcher.
+    static member getNameOpt dispatcher =
+        dispatcher.EntityProperties |>
+        Map.tryFind (Property? Name) |>
+        Option.map symbolToValue<string>
 
     interface SimulantDescriptor with
         member this.Children = []
@@ -112,31 +130,31 @@ type [<NoComparison>] EntityView =
 module Describe =
 
     /// Describe a game with the given properties values and contained screens.
-    let game<'d when 'd :> GameDispatcher> (props : (World PropertyTag * obj) seq) (children : ScreenDescriptor seq) =
-        let properties = Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) props
+    let game<'d when 'd :> GameDispatcher> (properties : (World PropertyTag * obj) seq) (screens : ScreenDescriptor seq) =
+        let properties = properties |> Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) |> Map.ofSeq
         { GameDispatcher = typeof<'d>.Name
-          GameProperties = Map.ofSeq properties
-          Screens = Seq.toList children }
+          GameProperties = properties
+          Screens = List.ofSeq screens }
 
     /// Describe a screen with the given properties values and contained layers.
-    let screen<'d when 'd :> ScreenDispatcher> (props : (World PropertyTag * obj) seq) (children : LayerDescriptor seq) =
-        let properties = Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) props
+    let screen<'d when 'd :> ScreenDispatcher> (properties : (World PropertyTag * obj) seq) (layers : LayerDescriptor seq) =
+        let properties = properties |> Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) |> Map.ofSeq
         { ScreenDispatcher = typeof<'d>.Name
-          ScreenProperties = Map.ofSeq properties
-          Layers = Seq.toList children }
+          ScreenProperties = properties
+          Layers = List.ofSeq layers }
 
     /// Describe a layer with the given properties values and contained entities.
-    let layer<'d when 'd :> LayerDispatcher> (props : (World PropertyTag * obj) seq) (children : EntityDescriptor seq) =
-        let properties = Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) props
+    let layer<'d when 'd :> LayerDispatcher> (properties : (World PropertyTag * obj) seq) (entities : EntityDescriptor seq) =
+        let properties = properties |> Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) |> Map.ofSeq
         { LayerDispatcher = typeof<'d>.Name
-          LayerProperties = Map.ofSeq properties
-          Entities = Seq.toList children }
+          LayerProperties = properties
+          Entities = List.ofSeq entities }
 
     /// Describe an entity with the given properties values.
-    let entity<'d when 'd :> EntityDispatcher> (props : (World PropertyTag * obj) seq) =
-        let properties = Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) props
+    let entity<'d when 'd :> EntityDispatcher> (properties : (World PropertyTag * obj) seq) =
+        let properties = properties |> Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) |> Map.ofSeq
         { EntityDispatcher = typeof<'d>.Name
-          EntityProperties = Map.ofSeq properties }
+          EntityProperties = properties }
 
     let prop (p : PropertyTag<'a, World>) (v : 'a) =
         (p :> PropertyTag<World>, v :> obj)
@@ -145,20 +163,20 @@ module Describe =
 module View =
 
     /// Describe a game with the given properties values and contained screens.
-    let game<'d when 'd :> GameDispatcher> props children game =
-        GameFromDescriptor (Describe.game<'d> props children, game)
+    let game<'d when 'd :> GameDispatcher> properties children game =
+        GameFromDescriptor (Describe.game<'d> properties children, game)
 
     /// Describe a screen with the given properties values and contained layers.
-    let screen<'d when 'd :> ScreenDispatcher> props children behavior screen =
-        ScreenFromDescriptor (Describe.screen<'d> props children, behavior, screen)
+    let screen<'d when 'd :> ScreenDispatcher> properties children behavior screen =
+        ScreenFromDescriptor (Describe.screen<'d> properties children, behavior, screen)
 
     /// Describe a layer with the given properties values and contained entities.
-    let layer<'d when 'd :> LayerDispatcher> props children layer =
-        LayerFromDescriptor (Describe.layer<'d> props children, layer)
+    let layer<'d when 'd :> LayerDispatcher> properties children layer =
+        LayerFromDescriptor (Describe.layer<'d> properties children, layer)
 
     /// Describe an entity with the given properties values.
-    let entity<'d when 'd :> EntityDispatcher> props entity =
-        EntityFromDescriptor (Describe.entity<'d> props, entity)
+    let entity<'d when 'd :> EntityDispatcher> properties entity =
+        EntityFromDescriptor (Describe.entity<'d> properties, entity)
 
     /// Describe a game to be loaded from a file.
     let gameFromFile<'d when 'd :> GameDispatcher> fileName game =
