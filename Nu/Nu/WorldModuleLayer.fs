@@ -293,7 +293,7 @@ module WorldModuleLayer =
                 | Some dispatcher -> dispatcher
                 | None -> failwith ("Could not find a LayerDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
             let layerState = LayerState.make nameOpt dispatcher
-            let layerState = Reflection.attachProperties LayerState.copy layerState.Dispatcher layerState
+            let layerState = Reflection.attachProperties LayerState.copy layerState.Dispatcher layerState world
             let layer = Layer (screen.ScreenAddress <-- ntoa<Layer> layerState.Name)
             let world = World.addLayer false layerState layer world
             (layer, world)
@@ -325,7 +325,7 @@ module WorldModuleLayer =
 
             // make the layer state and populate its properties
             let layerState = LayerState.make None dispatcher
-            let layerState = Reflection.attachProperties LayerState.copy layerState.Dispatcher layerState
+            let layerState = Reflection.attachProperties LayerState.copy layerState.Dispatcher layerState world
             let layerState = Reflection.readPropertiesToTarget LayerState.copy layerDescriptor.LayerProperties layerState
 
             // apply the name if one is provided

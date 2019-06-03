@@ -380,7 +380,7 @@ module WorldModuleEntity =
                             entityState.Facets <- facets
                             entityState
                         else { entityState with FacetNames = facetNames; Facets = facets }
-                    let entityState = Reflection.attachProperties EntityState.copy facet entityState
+                    let entityState = Reflection.attachProperties EntityState.copy facet entityState world
                     match entityOpt with
                     | Some entity ->
                         let oldWorld = world
@@ -445,7 +445,7 @@ module WorldModuleEntity =
         static member internal attachIntrinsicFacetsViaNames entityState world =
             let entityDispatchers = World.getEntityDispatchers world
             let facets = World.getFacets world
-            Reflection.attachIntrinsicFacets EntityState.copy entityDispatchers facets entityState.Dispatcher entityState
+            Reflection.attachIntrinsicFacets EntityState.copy entityDispatchers facets entityState.Dispatcher entityState world
 
         static member internal applyEntityOverlay oldOverlayer overlayer world entity =
             let entityState = World.getEntityState entity world
@@ -724,7 +724,7 @@ module WorldModuleEntity =
                 | None -> entityState
 
             // attach the entity state's dispatcher properties
-            let entityState = Reflection.attachProperties EntityState.copy entityState.Dispatcher entityState
+            let entityState = Reflection.attachProperties EntityState.copy entityState.Dispatcher entityState world
 
             // apply the entity state's overlay if exists
             let entityState =
@@ -788,7 +788,7 @@ module WorldModuleEntity =
             let entityState = Reflection.readFacetNamesToTarget EntityState.copy entityDescriptor.EntityProperties entityState
 
             // attach the entity state's dispatcher properties
-            let entityState = Reflection.attachProperties EntityState.copy entityState.Dispatcher entityState
+            let entityState = Reflection.attachProperties EntityState.copy entityState.Dispatcher entityState world
             
             // synchronize the entity state's facets (and attach their properties)
             let entityState =
