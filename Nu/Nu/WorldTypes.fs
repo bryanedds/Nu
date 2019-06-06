@@ -355,7 +355,7 @@ module WorldTypes =
 
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Entity * World -> Property option
-        default dispatcher.TryGetCalculatedProperty (_, _, _) = None
+        default facet.TryGetCalculatedProperty (_, _, _) = None
 
     /// Generalized interface for simulant state.
     and SimulantState =
