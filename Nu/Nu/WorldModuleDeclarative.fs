@@ -160,39 +160,39 @@ module Describe =
 module View =
 
     /// Describe a game with the given properties values and contained screens.
-    let game<'d when 'd :> GameDispatcher> properties children game =
+    let game<'d when 'd :> GameDispatcher> game properties children =
         GameFromDescriptor (Describe.game<'d> properties children, game)
 
     /// Describe a screen with the given properties values and contained layers.
-    let screen<'d when 'd :> ScreenDispatcher> properties children behavior screen =
+    let screen<'d when 'd :> ScreenDispatcher> screen properties children behavior =
         ScreenFromDescriptor (Describe.screen<'d> properties children, behavior, screen)
 
     /// Describe a layer with the given properties values and contained entities.
-    let layer<'d when 'd :> LayerDispatcher> properties children layer =
+    let layer<'d when 'd :> LayerDispatcher> layer properties children =
         LayerFromDescriptor (Describe.layer<'d> properties children, layer)
 
     /// Describe an entity with the given properties values.
-    let entity<'d when 'd :> EntityDispatcher> properties entity =
+    let entity<'d when 'd :> EntityDispatcher> entity properties =
         EntityFromDescriptor (Describe.entity<'d> properties, entity)
 
     /// Describe a game to be loaded from a file.
-    let gameFromFile<'d when 'd :> GameDispatcher> fileName game =
+    let gameFromFile<'d when 'd :> GameDispatcher> game fileName =
         GameFromFile (fileName, game)
 
     /// Describe a screen to be loaded from a file.
-    let screenFromFile<'d when 'd :> ScreenDispatcher> fileName behavior screen =
+    let screenFromFile<'d when 'd :> ScreenDispatcher> screen fileName behavior =
         ScreenFromFile (fileName, behavior, screen)
 
     /// Describe a screen to be loaded from a file.
-    let screenFromLayerFile<'d when 'd :> ScreenDispatcher> fileName behavior screen =
+    let screenFromLayerFile<'d when 'd :> ScreenDispatcher> screen fileName behavior =
         ScreenFromLayerFile (typeof<'d>, fileName, behavior, screen)
 
     /// Describe a layer to be loaded from a file.
-    let layerFromFile<'d when 'd :> LayerDispatcher> fileName layer =
+    let layerFromFile<'d when 'd :> LayerDispatcher> layer fileName =
         LayerFromFile (fileName, layer)
 
     /// Describe an entity to be loaded from a file.
-    let entityFromFile<'d when 'd :> EntityDispatcher> fileName entity =
+    let entityFromFile<'d when 'd :> EntityDispatcher> entity fileName =
         EntityFromFile (fileName, entity)
 
 [<AutoOpen>]
