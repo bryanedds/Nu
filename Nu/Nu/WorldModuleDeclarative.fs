@@ -140,26 +140,26 @@ type SimulantView = interface end
 
 /// Describes the view for an entity.
 type [<NoComparison>] EntityView =
-    | EntityFromDescriptor of string * string * (World PropertyTag * obj) list
+    | EntityFromProperties of string * string * (World PropertyTag * obj) list
     | EntityFromFile of string * string
     interface SimulantView
 
     /// Expand an entity view to its constituent parts.
     static member expand entityView =
         match entityView with
-        | EntityFromDescriptor (dispatcherName, name, properties) -> Left (Describe.entity3 dispatcherName (Some name) properties)
+        | EntityFromProperties (dispatcherName, name, properties) -> Left (Describe.entity3 dispatcherName (Some name) properties)
         | EntityFromFile (name, filePath) -> Right (name, filePath)
 
 /// Describes the view for a layer.
 type [<NoComparison>] LayerView =
-    | LayerFromDescriptor of string * string * (World PropertyTag * obj) list * EntityView list
+    | LayerFromProperties of string * string * (World PropertyTag * obj) list * EntityView list
     | LayerFromFile of string * string
     interface SimulantView
     
     /// Expand a layer view to its constituent parts.
     static member expand layerView =
         match layerView with
-        | LayerFromDescriptor (dispatcherName, name, properties, entities) ->
+        | LayerFromProperties (dispatcherName, name, properties, entities) ->
             let entitiesAndFilePaths = List.map EntityView.expand entities
             let entityDescriptors = Either.getLeftValues entitiesAndFilePaths []
             let entityFilePaths = Either.getRightValues entitiesAndFilePaths [] |> List.map (fun (entityName, path) -> (name, entityName, path))
@@ -168,7 +168,7 @@ type [<NoComparison>] LayerView =
 
 /// Describes the view for a screen.
 type [<NoComparison>] ScreenView =
-    | ScreenFromDescriptor of string * string * ScreenBehavior * (World PropertyTag * obj) list * LayerView list
+    | ScreenFromProperties of string * string * ScreenBehavior * (World PropertyTag * obj) list * LayerView list
     | ScreenFromLayerFile of string * ScreenBehavior * Type * string
     | ScreenFromFile of string * ScreenBehavior * string
     interface SimulantView
@@ -176,7 +176,7 @@ type [<NoComparison>] ScreenView =
     /// Expand a screen view to its constituent parts.
     static member expand screenView =
         match screenView with
-        | ScreenFromDescriptor (dispatcherName, name, behavior, properties, layers) ->
+        | ScreenFromProperties (dispatcherName, name, behavior, properties, layers) ->
             let descriptorsPlusPlus = List.map LayerView.expand layers
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus []
             let layerFilePaths = Either.getRightValues descriptorsPlusPlus [] |> List.map (fun (layerName, filePath) -> (name, layerName, filePath))
@@ -188,14 +188,14 @@ type [<NoComparison>] ScreenView =
 
 /// Describes the view for a game.
 type [<NoComparison>] GameView =
-    | GameFromDescriptor of string * (World PropertyTag * obj) list * ScreenView list
+    | GameFromProperties of string * (World PropertyTag * obj) list * ScreenView list
     | GameFromFile of string
     interface SimulantView
 
     /// Expand a game view to its constituent parts.
     static member expand gameView =
         match gameView with
-        | GameFromDescriptor (dispatcherName, properties, screens) ->
+        | GameFromProperties (dispatcherName, properties, screens) ->
             let descriptorsPlusPlus = List.map ScreenView.expand screens
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus []
             let filePaths = Either.getRightValues descriptorsPlusPlus []
@@ -210,19 +210,19 @@ module View =
 
     /// Describe a game with the given properties values and contained screens.
     let game<'d when 'd :> GameDispatcher> properties children =
-        GameFromDescriptor (typeof<'d>.Name, properties, children)
+        GameFromProperties (typeof<'d>.Name, properties, children)
 
     /// Describe a screen with the given properties values and contained layers.
     let screen<'d when 'd :> ScreenDispatcher> screenName behavior properties children =
-        ScreenFromDescriptor (typeof<'d>.Name, screenName, behavior, properties, children)
+        ScreenFromProperties (typeof<'d>.Name, screenName, behavior, properties, children)
 
     /// Describe a layer with the given properties values and contained entities.
     let layer<'d when 'd :> LayerDispatcher> layerName properties children =
-        LayerFromDescriptor (typeof<'d>.Name, layerName, properties, children)
+        LayerFromProperties (typeof<'d>.Name, layerName, properties, children)
 
     /// Describe an entity with the given properties values.
     let entity<'d when 'd :> EntityDispatcher> entityName properties =
-        EntityFromDescriptor (typeof<'d>.Name, entityName, properties)
+        EntityFromProperties (typeof<'d>.Name, entityName, properties)
 
     /// Describe a game to be loaded from a file.
     let gameFromFile<'d when 'd :> GameDispatcher> filePath =
