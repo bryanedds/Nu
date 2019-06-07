@@ -357,7 +357,7 @@ module Gaia =
             let layerName = match layerDescriptor.LayerProperties.TryFind "Name" with Some (Atom (name, _)) -> name | _ -> failwithumf ()
             let layer = Simulants.EditorScreen => layerName            
             if not (layer.GetExists world) then
-                let (layer, world) = World.readLayer layerDescriptor None Simulants.EditorScreen world
+                let (layer, world) = World.readLayer layerDescriptor Simulants.EditorScreen world
                 let layerName = layer.GetName world
                 form.layerTabControl.SelectedTab.Text <- layerName
                 form.layerTabControl.SelectedTab.Name <- layerName

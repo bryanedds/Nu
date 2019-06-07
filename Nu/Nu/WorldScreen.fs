@@ -256,14 +256,14 @@ module WorldScreenModule =
             File.Move (filePathTmp, filePath)
 
         /// Read a screen from a screen descriptor.
-        static member readScreen screenDescriptor nameOpt world =
-            World.readScreen4 World.readLayers screenDescriptor nameOpt world
+        static member readScreen screenDescriptor world =
+            World.readScreen4 World.readLayers screenDescriptor world
 
         /// Read multiple screens from a game descriptor.
         static member readScreens gameDescriptor world =
             List.foldBack
                 (fun screenDescriptor (screens, world) ->
-                    let (screen, world) = World.readScreen screenDescriptor None world
+                    let (screen, world) = World.readScreen screenDescriptor world
                     (screen :: screens, world))
                 gameDescriptor.Screens
                 ([], world)
@@ -272,8 +272,8 @@ module WorldScreenModule =
         [<FunctionBinding>]
         static member readScreenFromFile (filePath : string) nameOpt world =
             let screenDescriptorStr = File.ReadAllText filePath
-            let screenDescriptor = scvalue<ScreenDescriptor> screenDescriptorStr
-            World.readScreen screenDescriptor nameOpt world
+            let screenDescriptor = { scvalue<ScreenDescriptor> screenDescriptorStr with ScreenNameOpt = nameOpt }
+            World.readScreen screenDescriptor world
 
 namespace Debug
 open Nu

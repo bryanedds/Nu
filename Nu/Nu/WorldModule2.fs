@@ -776,6 +776,37 @@ module GameDispatcherModule =
         (propertyFn : Game -> PropertyTag<'model, World>) =
         inherit GameDispatcher ()
 
+        static let applyBehavior behavior screen world =
+            match behavior with
+            | Vanilla -> (screen, world)
+            | Omniscreen -> (screen, World.setOmniscreen screen world)
+            | Dissolve dissolveData -> (screen, World.setScreenDissolve dissolveData screen world)
+            | Splash (dissolveData, splashData, destination) ->
+                let world = World.setScreenDissolve dissolveData screen world
+                let world = World.setScreenSplash (Some splashData) destination screen world
+                (screen, world)
+
+        static let createScreen view world =
+            match ScreenView.expand view with
+            | Left (descriptor, behavior, layerFilePaths, entityFilePaths) ->
+                let (screen, world) = World.readScreen descriptor world
+                let world =
+                    List.fold (fun world (screenName : string, layerName, filePath) ->
+                        World.readLayerFromFile filePath (Some layerName) (Screen screenName) world |> snd)
+                        world layerFilePaths
+                let world =
+                    List.fold (fun world (screenName : string, layerName, entityName, filePath) ->
+                        World.readEntityFromFile filePath (Some entityName) (Screen screenName => layerName) world |> snd)
+                        world entityFilePaths
+                applyBehavior behavior screen world
+            | Right (name, behavior, Some dispatcherType, layerFilePath) ->
+                let (screen, world) = World.createScreen3 dispatcherType.Name (Some name) world
+                let world = World.readLayerFromFile layerFilePath (Some name) screen world |> snd
+                applyBehavior behavior screen world
+            | Right (name, behavior, None, filePath) ->
+                let (screen, world) = World.readScreenFromFile filePath (Some name) world
+                applyBehavior behavior screen world
+
         override this.Register (game, world) =
             let property = propertyFn game
             let bindings = this.Bindings (property.Get world, game, world)
@@ -808,29 +839,8 @@ module GameDispatcherModule =
             let views = this.View (property.Get world, game, world)
             let world =
                 List.foldi (fun viewIndex world view ->
-                    let (behavior, screen, world) =
-                        match view with
-                        | ScreenFromDescriptor (descriptor, behavior, screen) ->
-                            let world = World.readScreen descriptor (Some screen.ScreenName) world |> snd
-                            (behavior, screen, world)
-                        | ScreenFromLayerFile (ty, layerFilePath, behavior, screen) ->
-                            let world = World.createScreen3 ty.Name (Some screen.ScreenName) world |> snd
-                            let world = World.readLayerFromFile layerFilePath None screen world |> snd
-                            (behavior, screen, world)
-                        | ScreenFromFile (filePath, behavior, screen) ->
-                            let world = World.readScreenFromFile filePath (Some screen.ScreenName) world |> snd
-                            (behavior, screen, world)
-                    let world =
-                        match behavior with
-                        | Vanilla -> world
-                        | Omniscreen -> World.setOmniscreen screen world
-                        | Dissolve dissolveData -> World.setScreenDissolve dissolveData screen world
-                        | Splash (dissolveData, splashData, destination) ->
-                            let world = World.setScreenDissolve dissolveData screen world
-                            World.setScreenSplash (Some splashData) destination screen world
-                    if viewIndex = 0
-                    then World.selectScreen screen world
-                    else world)
+                    let (screen, world) = createScreen view world
+                    if viewIndex = 0 then World.selectScreen screen world else world)
                     world views
             world
 

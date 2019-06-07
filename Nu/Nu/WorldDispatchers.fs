@@ -1587,9 +1587,9 @@ module LayerDispatcherModule =
             let views = this.View (property.Get world, layer, world)
             let world =
                 List.fold (fun world view ->
-                    match view with
-                    | EntityFromDescriptor (descriptor, entity) -> World.readEntity descriptor (Some entity.EntityName) (etol entity) world |> snd
-                    | EntityFromFile (fileName, entity) -> World.readEntityFromFile fileName (Some entity.EntityName) (etol entity) world |> snd)
+                    match EntityView.expand view with
+                    | Left descriptor -> World.readEntity descriptor layer world |> snd
+                    | Right (entityName, filePath) -> World.readEntityFromFile filePath (Some entityName) layer world |> snd)
                     world views
             world
 
@@ -1644,9 +1644,14 @@ module ScreenDispatcherModule =
             let views = this.View (property.Get world, screen, world)
             let world =
                 List.fold (fun world view ->
-                    match view with
-                    | LayerFromDescriptor (descriptor, layer) -> World.readLayer descriptor (Some layer.LayerName) (ltos layer) world |> snd
-                    | LayerFromFile (fileName, layer) -> World.readLayerFromFile fileName (Some layer.LayerName) (ltos layer) world |> snd)
+                    match LayerView.expand view with
+                    | Left (descriptor, entityFilePaths) ->
+                        let world = World.readLayer descriptor screen world |> snd
+                        List.fold (fun world (layerName, entityName, filePath) ->
+                            World.readEntityFromFile filePath (Some entityName) (screen => layerName) world |> snd)
+                            world entityFilePaths
+                    | Right (layerName, filePath) ->
+                        World.readLayerFromFile filePath (Some layerName) screen world |> snd)
                     world views
             world
 

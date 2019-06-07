@@ -747,13 +747,13 @@ module WorldModuleEntity =
             World.createEntity5 typeof<'d>.Name nameOpt overlayNameDescriptor layer world
 
         /// Read an entity from an entity descriptor.
-        static member readEntity entityDescriptor nameOpt (layer : Layer) world =
+        static member readEntity entityDescriptor (layer : Layer) world =
 
             // grab overlay dependencies
             let overlayer = World.getOverlayer world
 
             // create the dispatcher
-            let dispatcherName = entityDescriptor.EntityDispatcher
+            let dispatcherName = entityDescriptor.EntityDispatcherName
             let dispatchers = World.getEntityDispatchers world
             let (dispatcherName, dispatcher) =
                 match Map.tryFind dispatcherName dispatchers with
@@ -812,7 +812,7 @@ module WorldModuleEntity =
 
             // apply the name if one is provided
             let entityState =
-                match nameOpt with
+                match entityDescriptor.EntityNameOpt with
                 | Some name -> { entityState with Name = name }
                 | None -> entityState
 
@@ -825,15 +825,15 @@ module WorldModuleEntity =
         [<FunctionBinding>]
         static member readEntityFromFile (filePath : string) nameOpt layer world =
             let entityDescriptorStr = File.ReadAllText filePath
-            let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
-            World.readEntity entityDescriptor nameOpt layer world
+            let entityDescriptor = { scvalue<EntityDescriptor> entityDescriptorStr with EntityNameOpt = nameOpt }
+            World.readEntity entityDescriptor layer world
 
         /// Write an entity to an entity descriptor.
         static member writeEntity (entity : Entity) entityDescriptor world =
             let overlayer = World.getOverlayer world
             let entityState = World.getEntityState entity world
             let entityDispatcherName = getTypeName entityState.Dispatcher
-            let entityDescriptor = { entityDescriptor with EntityDispatcher = entityDispatcherName }
+            let entityDescriptor = { entityDescriptor with EntityDispatcherName = entityDispatcherName }
             let entityFacetNames = World.getEntityFacetNamesReflectively entityState
             let overlaySymbolsOpt =
                 match entityState.OverlayNameOpt with
