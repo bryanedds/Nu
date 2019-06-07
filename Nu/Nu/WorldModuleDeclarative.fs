@@ -156,9 +156,6 @@ module Describe =
         { EntityDispatcher = typeof<'d>.Name
           EntityProperties = properties }
 
-    let prop (p : PropertyTag<'a, World>) (v : 'a) =
-        (p :> PropertyTag<World>, v :> obj)
-
 /// Contains primitives for describing simulant views.    
 module View =
 
@@ -200,6 +197,10 @@ module View =
 
 [<AutoOpen>]
 module WorldModelDeclarative =
+
+    /// Create a property declaration.
+    let prop (p : PropertyTag<'a, World>) (v : 'a) =
+        (p :> PropertyTag<World>, v :> obj)
 
     /// Pair an empty list of commands with a model.
     let inline just model = (model, [])
