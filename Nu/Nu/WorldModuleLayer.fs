@@ -305,15 +305,15 @@ module WorldModuleLayer =
         static member internal writeLayer4 writeEntities layer layerDescriptor world =
             let layerState = World.getLayerState layer world
             let layerDispatcherName = getTypeName layerState.Dispatcher
-            let layerDescriptor = { layerDescriptor with LayerDispatcher = layerDispatcherName }
+            let layerDescriptor = { layerDescriptor with LayerDispatcherName = layerDispatcherName }
             let getLayerProperties = Reflection.writePropertiesFromTarget tautology3 layerDescriptor.LayerProperties layerState
             let layerDescriptor = { layerDescriptor with LayerProperties = getLayerProperties }
             writeEntities layer layerDescriptor world
 
-        static member internal readLayer5 readEntities layerDescriptor nameOpt (screen : Screen) world =
+        static member internal readLayer5 readEntities layerDescriptor (screen : Screen) world =
 
             // create the dispatcher
-            let dispatcherName = layerDescriptor.LayerDispatcher
+            let dispatcherName = layerDescriptor.LayerDispatcherName
             let dispatchers = World.getLayerDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
@@ -330,7 +330,7 @@ module WorldModuleLayer =
 
             // apply the name if one is provided
             let layerState =
-                match nameOpt with
+                match layerDescriptor.LayerNameOpt with
                 | Some name -> { layerState with Name = name }
                 | None -> layerState
 

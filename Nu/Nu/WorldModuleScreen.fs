@@ -278,15 +278,15 @@ module WorldModuleScreen =
         static member internal writeScreen4 writeLayers screen screenDescriptor world =
             let screenState = World.getScreenState screen world
             let screenDispatcherName = getTypeName screenState.Dispatcher
-            let screenDescriptor = { screenDescriptor with ScreenDispatcher = screenDispatcherName }
+            let screenDescriptor = { screenDescriptor with ScreenDispatcherName = screenDispatcherName }
             let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
             let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
             writeLayers screen screenDescriptor world
 
-        static member internal readScreen4 readLayers screenDescriptor nameOpt world =
+        static member internal readScreen4 readLayers screenDescriptor world =
             
             // create the dispatcher
-            let dispatcherName = screenDescriptor.ScreenDispatcher
+            let dispatcherName = screenDescriptor.ScreenDispatcherName
             let dispatchers = World.getScreenDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
@@ -303,7 +303,7 @@ module WorldModuleScreen =
 
             // apply the name if one is provided
             let screenState =
-                match nameOpt with
+                match screenDescriptor.ScreenNameOpt with
                 | Some name -> { screenState with Name = name }
                 | None -> screenState
 

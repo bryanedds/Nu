@@ -305,7 +305,7 @@ module WorldModuleGame =
         static member internal writeGame3 writeScreens gameDescriptor world =
             let gameState = World.getGameState world
             let gameDispatcherName = getTypeName gameState.Dispatcher
-            let gameDescriptor = { gameDescriptor with GameDispatcher = gameDispatcherName }
+            let gameDescriptor = { gameDescriptor with GameDispatcherName = gameDispatcherName }
             let viewGameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
             let gameDescriptor = { gameDescriptor with GameProperties = viewGameProperties }
             writeScreens gameDescriptor world
@@ -313,7 +313,7 @@ module WorldModuleGame =
         static member internal readGame3 readScreens gameDescriptor world =
 
             // create the dispatcher
-            let dispatcherName = gameDescriptor.GameDispatcher
+            let dispatcherName = gameDescriptor.GameDispatcherName
             let dispatchers = World.getGameDispatchers world
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
