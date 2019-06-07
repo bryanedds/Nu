@@ -213,36 +213,36 @@ module View =
         GameFromProperties (typeof<'d>.Name, properties, children)
 
     /// Describe a screen with the given properties values and contained layers.
-    let screen<'d when 'd :> ScreenDispatcher> screenName behavior properties children =
-        ScreenFromProperties (typeof<'d>.Name, screenName, behavior, properties, children)
+    let screen<'d when 'd :> ScreenDispatcher> (screen : Screen) behavior properties children =
+        ScreenFromProperties (typeof<'d>.Name, screen.ScreenName, behavior, properties, children)
 
     /// Describe a layer with the given properties values and contained entities.
-    let layer<'d when 'd :> LayerDispatcher> layerName properties children =
-        LayerFromProperties (typeof<'d>.Name, layerName, properties, children)
+    let layer<'d when 'd :> LayerDispatcher> (layer : Layer) properties children =
+        LayerFromProperties (typeof<'d>.Name, layer.LayerName, properties, children)
 
     /// Describe an entity with the given properties values.
-    let entity<'d when 'd :> EntityDispatcher> entityName properties =
-        EntityFromProperties (typeof<'d>.Name, entityName, properties)
+    let entity<'d when 'd :> EntityDispatcher> (entity : Entity) properties =
+        EntityFromProperties (typeof<'d>.Name, entity.EntityName, properties)
 
     /// Describe a game to be loaded from a file.
     let gameFromFile<'d when 'd :> GameDispatcher> filePath =
         GameFromFile filePath
 
     /// Describe a screen to be loaded from a file.
-    let screenFromFile<'d when 'd :> ScreenDispatcher> screenName behavior filePath =
-        ScreenFromFile (screenName, behavior, filePath)
+    let screenFromFile<'d when 'd :> ScreenDispatcher> (screen : Screen) behavior filePath =
+        ScreenFromFile (screen.ScreenName, behavior, filePath)
 
     /// Describe a screen to be loaded from a file.
-    let screenFromLayerFile<'d when 'd :> ScreenDispatcher> screenName behavior filePath =
-        ScreenFromLayerFile (screenName, behavior, typeof<'d>, filePath)
+    let screenFromLayerFile<'d when 'd :> ScreenDispatcher> (screen : Screen) behavior filePath =
+        ScreenFromLayerFile (screen.ScreenName, behavior, typeof<'d>, filePath)
 
     /// Describe a layer to be loaded from a file.
-    let layerFromFile<'d when 'd :> LayerDispatcher> layerName filePath =
-        LayerFromFile (layerName, filePath)
+    let layerFromFile<'d when 'd :> LayerDispatcher> (layer : Layer) filePath =
+        LayerFromFile (layer.LayerName, filePath)
 
     /// Describe an entity to be loaded from a file.
-    let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =
-        EntityFromFile (entityName, filePath)
+    let entityFromFile<'d when 'd :> EntityDispatcher> (entity : Entity) filePath =
+        EntityFromFile (entity.EntityName, filePath)
 
 [<AutoOpen>]
 module WorldModelDeclarative =
