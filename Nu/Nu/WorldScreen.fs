@@ -263,7 +263,8 @@ module WorldScreenModule =
         static member readScreens gameDescriptor world =
             List.foldBack
                 (fun screenDescriptor (screens, world) ->
-                    let (screen, world) = World.readScreen screenDescriptor None world
+                    let screenNameOpt = ScreenDescriptor.getNameOpt screenDescriptor
+                    let (screen, world) = World.readScreen screenDescriptor screenNameOpt world
                     (screen :: screens, world))
                 gameDescriptor.Screens
                 ([], world)

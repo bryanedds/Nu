@@ -39,6 +39,12 @@ and [<NoComparison>] ScreenDescriptor =
         { ScreenDispatcherName = String.Empty
           ScreenProperties = Map.empty
           Layers = [] }
+
+    /// Derive a name from the dispatcher.
+    static member getNameOpt dispatcher =
+        dispatcher.ScreenProperties |>
+        Map.tryFind (Property? Name) |>
+        Option.map symbolToValue<string>
           
     interface SimulantDescriptor with
         member this.Children =
@@ -56,6 +62,12 @@ and [<NoComparison>] LayerDescriptor =
           LayerProperties = Map.empty
           Entities = [] }
 
+    /// Derive a name from the dispatcher.
+    static member getNameOpt dispatcher =
+        dispatcher.LayerProperties |>
+        Map.tryFind (Property? Name) |>
+        Option.map symbolToValue<string>
+
     interface SimulantDescriptor with
         member this.Children =
             this.Entities |> enumerable<SimulantDescriptor> |> List.ofSeq
@@ -69,6 +81,12 @@ and [<NoComparison>] EntityDescriptor =
     static member empty =
         { EntityDispatcherName = String.Empty
           EntityProperties = Map.empty }
+
+    /// Derive a name from the dispatcher.
+    static member getNameOpt dispatcher =
+        dispatcher.EntityProperties |>
+        Map.tryFind (Property? Name) |>
+        Option.map symbolToValue<string>
 
     interface SimulantDescriptor with
         member this.Children = []
@@ -152,7 +170,7 @@ type [<NoComparison>] LayerView =
         match layerView with
         | LayerFromProperties (dispatcherName, name, properties, entities) ->
             let entitiesAndFilePaths = List.map EntityView.expand entities
-            let entityDescriptors = Either.getLeftValues entitiesAndFilePaths [] |> List.map snd
+            let entityDescriptors = Either.getLeftValues entitiesAndFilePaths [] |> List.map (fun (entityName, descriptor) -> { descriptor with EntityProperties = Map.add (Property? Name) (valueToSymbol entityName) descriptor.EntityProperties })
             let entityFilePaths = Either.getRightValues entitiesAndFilePaths [] |> List.map (fun (entityName, path) -> (name, entityName, path))
             Left (name, Describe.layer3 dispatcherName properties entityDescriptors, entityFilePaths)
         | LayerFromFile (name, filePath) -> Right (name, filePath)
@@ -172,7 +190,7 @@ type [<NoComparison>] ScreenView =
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus []
             let layerFilePaths = Either.getRightValues descriptorsPlusPlus [] |> List.map (fun (layerName, filePath) -> (name, layerName, filePath))
             let entityFilePaths = List.map (fun (_, _, filePaths) -> List.map (fun (layerName, entityName, filePath) -> (name, layerName, entityName, filePath)) filePaths) descriptorsPlus |> List.concat
-            let descriptors = descriptorsPlus |> List.map _b_
+            let descriptors = descriptorsPlus |> List.map (fun (layerName, descriptor, _) -> { descriptor with LayerProperties = Map.add (Property? Name) (valueToSymbol layerName) descriptor.LayerProperties })
             Left (name, Describe.screen3 dispatcherName properties descriptors, behavior, layerFilePaths, entityFilePaths)
         | ScreenFromLayerFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
         | ScreenFromFile (name, behavior, filePath) -> Right (name, behavior, None, filePath)
@@ -192,7 +210,7 @@ type [<NoComparison>] GameView =
             let filePaths = Either.getRightValues descriptorsPlusPlus []
             let layerFilePaths = List.map (fun (_, _, _, layerFilePaths, _) -> layerFilePaths) descriptorsPlus
             let entityFilePaths = List.map (fun (_, _, _, _, entityFilePaths) -> entityFilePaths) descriptorsPlus
-            let descriptors = List.map (fun (_, descriptor, _, _, _) -> descriptor) descriptorsPlus
+            let descriptors = List.map (fun (screenName, descriptor, _, _, _) -> { descriptor with ScreenProperties = Map.add (Property? Name) (valueToSymbol screenName) descriptor.ScreenProperties }) descriptorsPlus
             Left (Describe.game3 dispatcherName properties descriptors, filePaths, layerFilePaths, entityFilePaths)
         | GameFromFile filePath -> Right filePath
 
