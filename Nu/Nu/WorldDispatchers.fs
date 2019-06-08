@@ -418,7 +418,7 @@ module NodeFacetModule =
                         let depth = this.GetDepthLocal world + parentNew.GetDepth world
                         let world = this.SetPosition position world
                         let world = this.SetDepth depth world
-                        let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisibleLocal world) world
+                        let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisible world) world
                         let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
                         world
                     else world
@@ -440,7 +440,7 @@ module NodeFacetModule =
                         let depth = this.GetDepth world - parentNew.GetDepth world
                         let world = this.SetPositionLocal position world
                         let world = this.SetDepthLocal depth world
-                        let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisibleLocal world) world
+                        let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisible world) world
                         let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
                         world
                     else world
