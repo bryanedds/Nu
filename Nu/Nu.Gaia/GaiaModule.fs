@@ -430,6 +430,7 @@ module Gaia =
         let entityNames =
             World.getEntities selectedLayer world |>
             Seq.filter (fun entity -> entity.FacetedAs<NodeFacet> world) |>
+            Seq.filter (fun entity -> not (String.isGuid entity.EntityName)) |>
             Seq.map (fun entity -> entity.GetName world) |>
             flip Seq.append [NonePick] |>
             Seq.toArray
