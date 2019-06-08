@@ -209,10 +209,10 @@ type [<NoComparison>] GameView =
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus []
             let descriptors = List.map (fun (screenName, descriptor, _, _, _) -> { descriptor with ScreenProperties = Map.add (Property? Name) (valueToSymbol screenName) descriptor.ScreenProperties }) descriptorsPlus
             let screenBehaviors = List.map (fun (screenName, _, behavior, _, _) -> (screenName, behavior)) descriptorsPlus |> Map.ofList
-            let filePaths = Either.getRightValues descriptorsPlusPlus []
+            let screenFilePaths = Either.getRightValues descriptorsPlusPlus []
             let layerFilePaths = List.map (fun (_, _, _, layerFilePaths, _) -> layerFilePaths) descriptorsPlus |> List.concat
             let entityFilePaths = List.map (fun (_, _, _, _, entityFilePaths) -> entityFilePaths) descriptorsPlus |> List.concat
-            Left (Describe.game3 dispatcherName properties descriptors, screenBehaviors, filePaths, layerFilePaths, entityFilePaths)
+            Left (Describe.game3 dispatcherName properties descriptors, screenBehaviors, screenFilePaths, layerFilePaths, entityFilePaths)
         | GameFromFile filePath -> Right filePath
 
 /// Contains primitives for describing simulant views.    
