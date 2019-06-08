@@ -283,7 +283,7 @@ module WorldModuleScreen =
             let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
             writeLayers screen screenDescriptor world
 
-        static member internal readScreen4 readLayers screenDescriptor world =
+        static member internal readScreen4 readLayers screenDescriptor nameOpt world =
             
             // create the dispatcher
             let dispatcherName = screenDescriptor.ScreenDispatcherName
@@ -303,7 +303,7 @@ module WorldModuleScreen =
 
             // apply the name if one is provided
             let screenState =
-                match screenDescriptor.ScreenNameOpt with
+                match nameOpt with
                 | Some name -> { screenState with Name = name }
                 | None -> screenState
 

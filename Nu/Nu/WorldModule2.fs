@@ -788,8 +788,8 @@ module GameDispatcherModule =
 
         static let createScreen view world =
             match ScreenView.expand view with
-            | Left (descriptor, behavior, layerFilePaths, entityFilePaths) ->
-                let (screen, world) = World.readScreen descriptor world
+            | Left (name, descriptor, behavior, layerFilePaths, entityFilePaths) ->
+                let (screen, world) = World.readScreen descriptor (Some name) world
                 let world =
                     List.fold (fun world (screenName : string, layerName, filePath) ->
                         World.readLayerFromFile filePath (Some layerName) (Screen screenName) world |> snd)

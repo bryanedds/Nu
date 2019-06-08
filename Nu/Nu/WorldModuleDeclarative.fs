@@ -31,14 +31,12 @@ type [<NoComparison>] GameDescriptor =
 /// Describes a screen value independent of the engine.
 and [<NoComparison>] ScreenDescriptor =
     { ScreenDispatcherName : string
-      ScreenNameOpt : string option
       ScreenProperties : Map<string, Symbol>
       Layers : LayerDescriptor list }
 
     /// The empty screen descriptor.
     static member empty =
         { ScreenDispatcherName = String.Empty
-          ScreenNameOpt = None
           ScreenProperties = Map.empty
           Layers = [] }
           
@@ -49,14 +47,12 @@ and [<NoComparison>] ScreenDescriptor =
 /// Describes a layer value independent of the engine.
 and [<NoComparison>] LayerDescriptor =
     { LayerDispatcherName : string
-      LayerNameOpt : string option
       LayerProperties : Map<string, Symbol>
       Entities : EntityDescriptor list }
 
     /// The empty layer descriptor.
     static member empty =
         { LayerDispatcherName = String.Empty
-          LayerNameOpt = None
           LayerProperties = Map.empty
           Entities = [] }
 
@@ -67,13 +63,11 @@ and [<NoComparison>] LayerDescriptor =
 /// Describes an entity value independent of the engine.
 and [<NoComparison>] EntityDescriptor =
     { EntityDispatcherName : string
-      EntityNameOpt : string option
       EntityProperties : Map<string, Symbol> }
 
     /// The empty entity descriptor.
     static member empty =
         { EntityDispatcherName = String.Empty
-          EntityNameOpt = None
           EntityProperties = Map.empty }
 
     interface SimulantDescriptor with
@@ -94,39 +88,36 @@ module Describe =
         game3 typeof<'d>.Name properties screens
 
     /// Describe a screen with the given properties values and contained layers.
-    let screen4 dispatcherName screenNameOpt (properties : (World PropertyTag * obj) seq) (layers : LayerDescriptor seq) =
+    let screen3 dispatcherName (properties : (World PropertyTag * obj) seq) (layers : LayerDescriptor seq) =
         let properties = properties |> Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) |> Map.ofSeq
         { ScreenDispatcherName = dispatcherName
-          ScreenNameOpt = screenNameOpt
           ScreenProperties = properties
           Layers = List.ofSeq layers }
 
     /// Describe a screen with the given properties values and contained layers.
-    let screen<'d when 'd :> ScreenDispatcher> screenNameOpt properties layers =
-        screen4 typeof<'d>.Name screenNameOpt properties layers
+    let screen<'d when 'd :> ScreenDispatcher> properties layers =
+        screen3 typeof<'d>.Name properties layers
 
     /// Describe a layer with the given properties values and contained entities.
-    let layer4 dispatcherName layerNameOpt (properties : (World PropertyTag * obj) seq) (entities : EntityDescriptor seq) =
+    let layer3 dispatcherName (properties : (World PropertyTag * obj) seq) (entities : EntityDescriptor seq) =
         let properties = properties |> Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) |> Map.ofSeq
         { LayerDispatcherName = dispatcherName
-          LayerNameOpt = layerNameOpt
           LayerProperties = properties
           Entities = List.ofSeq entities }
 
     /// Describe a layer with the given properties values and contained entities.
-    let layer<'d when 'd :> LayerDispatcher> layerNameOpt properties entities =
-        layer4 typeof<'d>.Name layerNameOpt properties entities
+    let layer<'d when 'd :> LayerDispatcher> properties entities =
+        layer3 typeof<'d>.Name properties entities
 
     /// Describe an entity with the given properties values.
-    let entity3 dispatcherName nameOpt (properties : (World PropertyTag * obj) seq) =
+    let entity2 dispatcherName (properties : (World PropertyTag * obj) seq) =
         let properties = properties |> Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) |> Map.ofSeq
         { EntityDispatcherName = dispatcherName
-          EntityNameOpt = nameOpt
           EntityProperties = properties }
 
     /// Describe an entity with the given properties values.
-    let entity<'d when 'd :> EntityDispatcher> nameOpt properties =
-        entity3 typeof<'d>.Name nameOpt properties
+    let entity<'d when 'd :> EntityDispatcher> properties =
+        entity2 typeof<'d>.Name properties
 
 /// Describes the behavior of a screen.
 type [<NoComparison>] ScreenBehavior =
@@ -147,7 +138,7 @@ type [<NoComparison>] EntityView =
     /// Expand an entity view to its constituent parts.
     static member expand entityView =
         match entityView with
-        | EntityFromProperties (dispatcherName, name, properties) -> Left (Describe.entity3 dispatcherName (Some name) properties)
+        | EntityFromProperties (dispatcherName, name, properties) -> Left (name, Describe.entity2 dispatcherName properties)
         | EntityFromFile (name, filePath) -> Right (name, filePath)
 
 /// Describes the view for a layer.
@@ -161,9 +152,9 @@ type [<NoComparison>] LayerView =
         match layerView with
         | LayerFromProperties (dispatcherName, name, properties, entities) ->
             let entitiesAndFilePaths = List.map EntityView.expand entities
-            let entityDescriptors = Either.getLeftValues entitiesAndFilePaths []
+            let entityDescriptors = Either.getLeftValues entitiesAndFilePaths [] |> List.map snd
             let entityFilePaths = Either.getRightValues entitiesAndFilePaths [] |> List.map (fun (entityName, path) -> (name, entityName, path))
-            Left (Describe.layer4 dispatcherName (Some name) properties entityDescriptors, entityFilePaths)
+            Left (name, Describe.layer3 dispatcherName properties entityDescriptors, entityFilePaths)
         | LayerFromFile (name, filePath) -> Right (name, filePath)
 
 /// Describes the view for a screen.
@@ -180,9 +171,9 @@ type [<NoComparison>] ScreenView =
             let descriptorsPlusPlus = List.map LayerView.expand layers
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus []
             let layerFilePaths = Either.getRightValues descriptorsPlusPlus [] |> List.map (fun (layerName, filePath) -> (name, layerName, filePath))
-            let entityFilePaths = List.map (fun (_, filePaths) -> List.map (fun (layerName, entityName, filePath) -> (name, layerName, entityName, filePath)) filePaths) descriptorsPlus |> List.concat
-            let descriptors = descriptorsPlus |> List.map fst
-            Left (Describe.screen4 dispatcherName (Some name) properties descriptors, behavior, layerFilePaths, entityFilePaths)
+            let entityFilePaths = List.map (fun (_, _, filePaths) -> List.map (fun (layerName, entityName, filePath) -> (name, layerName, entityName, filePath)) filePaths) descriptorsPlus |> List.concat
+            let descriptors = descriptorsPlus |> List.map _b_
+            Left (name, Describe.screen3 dispatcherName properties descriptors, behavior, layerFilePaths, entityFilePaths)
         | ScreenFromLayerFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
         | ScreenFromFile (name, behavior, filePath) -> Right (name, behavior, None, filePath)
 
@@ -199,9 +190,9 @@ type [<NoComparison>] GameView =
             let descriptorsPlusPlus = List.map ScreenView.expand screens
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus []
             let filePaths = Either.getRightValues descriptorsPlusPlus []
-            let layerFilePaths = List.map (fun (_, _, layerFilePaths, _) -> layerFilePaths) descriptorsPlus
-            let entityFilePaths = List.map (fun (_, _, _, entityFilePaths) -> entityFilePaths) descriptorsPlus
-            let descriptors = List.map (fun (descriptor, _, _, _) -> descriptor) descriptorsPlus
+            let layerFilePaths = List.map (fun (_, _, _, layerFilePaths, _) -> layerFilePaths) descriptorsPlus
+            let entityFilePaths = List.map (fun (_, _, _, _, entityFilePaths) -> entityFilePaths) descriptorsPlus
+            let descriptors = List.map (fun (_, descriptor, _, _, _) -> descriptor) descriptorsPlus
             Left (Describe.game3 dispatcherName properties descriptors, filePaths, layerFilePaths, entityFilePaths)
         | GameFromFile filePath -> Right filePath
 
