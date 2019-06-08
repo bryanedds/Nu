@@ -414,20 +414,35 @@ module NodeFacetModule =
                     let parentOld = this.Resolve relationOld
                     let parentNew = this.Resolve relationNew
                     if parentOld.GetExists world && parentNew.GetExists world then
-                        let translation = this.GetPosition world + parentOld.GetPosition world - parentOld.GetPosition world
-                        this.SetPositionLocal translation world
+                        let position = this.GetPositionLocal world + parentNew.GetPosition world
+                        let depth = this.GetDepthLocal world + parentNew.GetDepth world
+                        let world = this.SetPosition position world
+                        let world = this.SetDepth depth world
+                        let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisibleLocal world) world
+                        let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
+                        world
                     else world
                 | (Some relationOld, None) ->
                     let parentOld = this.Resolve relationOld
                     if parentOld.GetExists world then
-                        let translation = this.GetPositionLocal world + parentOld.GetPosition world
-                        this.SetPosition translation world
+                        let position = this.GetPositionLocal world + parentOld.GetPosition world
+                        let depth = this.GetDepthLocal world + parentOld.GetDepth world
+                        let world = this.SetPosition position world
+                        let world = this.SetDepth depth world
+                        let world = this.SetVisible (this.GetVisibleLocal world) world
+                        let world = this.SetEnabled (this.GetEnabledLocal world) world
+                        world
                     else world
                 | (None, Some relationNew) ->
                     let parentNew = this.Resolve relationNew
                     if parentNew.GetExists world then
-                        let translation = this.GetPosition world - parentNew.GetPosition world
-                        this.SetPositionLocal translation world
+                        let position = this.GetPosition world - parentNew.GetPosition world
+                        let depth = this.GetDepth world - parentNew.GetDepth world
+                        let world = this.SetPositionLocal position world
+                        let world = this.SetDepthLocal depth world
+                        let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisibleLocal world) world
+                        let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
+                        world
                     else world
                 | (None, None) -> world
             this.SetParentNodeOpt value world
