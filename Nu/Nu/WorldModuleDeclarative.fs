@@ -169,10 +169,10 @@ type [<NoComparison>] LayerView =
     static member expand layerView =
         match layerView with
         | LayerFromProperties (dispatcherName, name, properties, entities) ->
-            let entitiesAndFilePaths = List.map EntityView.expand entities
-            let entityDescriptors = Either.getLeftValues entitiesAndFilePaths [] |> List.map (fun (entityName, descriptor) -> { descriptor with EntityProperties = Map.add (Property? Name) (valueToSymbol entityName) descriptor.EntityProperties })
-            let entityFilePaths = Either.getRightValues entitiesAndFilePaths [] |> List.map (fun (entityName, path) -> (name, entityName, path))
-            Left (name, Describe.layer3 dispatcherName properties entityDescriptors, entityFilePaths)
+            let descriptorsPlus = List.map EntityView.expand entities
+            let descriptors = Either.getLeftValues descriptorsPlus [] |> List.map (fun (entityName, descriptor) -> { descriptor with EntityProperties = Map.add (Property? Name) (valueToSymbol entityName) descriptor.EntityProperties })
+            let filePaths = Either.getRightValues descriptorsPlus [] |> List.map (fun (entityName, path) -> (name, entityName, path))
+            Left (name, Describe.layer3 dispatcherName properties descriptors, filePaths)
         | LayerFromFile (name, filePath) -> Right (name, filePath)
 
 /// Describes the view for a screen.
@@ -188,9 +188,9 @@ type [<NoComparison>] ScreenView =
         | ScreenFromProperties (dispatcherName, name, behavior, properties, layers) ->
             let descriptorsPlusPlus = List.map LayerView.expand layers
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus []
+            let descriptors = descriptorsPlus |> List.map (fun (layerName, descriptor, _) -> { descriptor with LayerProperties = Map.add (Property? Name) (valueToSymbol layerName) descriptor.LayerProperties })
             let layerFilePaths = Either.getRightValues descriptorsPlusPlus [] |> List.map (fun (layerName, filePath) -> (name, layerName, filePath))
             let entityFilePaths = List.map (fun (_, _, filePaths) -> List.map (fun (layerName, entityName, filePath) -> (name, layerName, entityName, filePath)) filePaths) descriptorsPlus |> List.concat
-            let descriptors = descriptorsPlus |> List.map (fun (layerName, descriptor, _) -> { descriptor with LayerProperties = Map.add (Property? Name) (valueToSymbol layerName) descriptor.LayerProperties })
             Left (name, Describe.screen3 dispatcherName properties descriptors, behavior, layerFilePaths, entityFilePaths)
         | ScreenFromLayerFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
         | ScreenFromFile (name, behavior, filePath) -> Right (name, behavior, None, filePath)
@@ -207,11 +207,12 @@ type [<NoComparison>] GameView =
         | GameFromProperties (dispatcherName, properties, screens) ->
             let descriptorsPlusPlus = List.map ScreenView.expand screens
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus []
-            let filePaths = Either.getRightValues descriptorsPlusPlus []
-            let layerFilePaths = List.map (fun (_, _, _, layerFilePaths, _) -> layerFilePaths) descriptorsPlus
-            let entityFilePaths = List.map (fun (_, _, _, _, entityFilePaths) -> entityFilePaths) descriptorsPlus
             let descriptors = List.map (fun (screenName, descriptor, _, _, _) -> { descriptor with ScreenProperties = Map.add (Property? Name) (valueToSymbol screenName) descriptor.ScreenProperties }) descriptorsPlus
-            Left (Describe.game3 dispatcherName properties descriptors, filePaths, layerFilePaths, entityFilePaths)
+            let screenBehaviors = List.map (fun (screenName, _, behavior, _, _) -> (screenName, behavior)) descriptorsPlus |> Map.ofList
+            let filePaths = Either.getRightValues descriptorsPlusPlus []
+            let layerFilePaths = List.map (fun (_, _, _, layerFilePaths, _) -> layerFilePaths) descriptorsPlus |> List.concat
+            let entityFilePaths = List.map (fun (_, _, _, _, entityFilePaths) -> entityFilePaths) descriptorsPlus |> List.concat
+            Left (Describe.game3 dispatcherName properties descriptors, screenBehaviors, filePaths, layerFilePaths, entityFilePaths)
         | GameFromFile filePath -> Right filePath
 
 /// Contains primitives for describing simulant views.    
