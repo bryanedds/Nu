@@ -227,14 +227,14 @@ module WorldLayerModule =
             File.Move (filePathTmp, filePath)
 
         /// Read a layer from a layer descriptor.
-        static member readLayer layerDescriptor screen world =
-            World.readLayer5 World.readEntities layerDescriptor screen world
+        static member readLayer layerDescriptor nameOpt screen world =
+            World.readLayer5 World.readEntities layerDescriptor nameOpt screen world
 
         /// Read multiple layers from a screen descriptor.
         static member readLayers screenDescriptor screen world =
             List.foldBack
                 (fun layerDescriptor (layers, world) ->
-                    let (layer, world) = World.readLayer layerDescriptor screen world
+                    let (layer, world) = World.readLayer layerDescriptor None screen world
                     (layer :: layers, world))
                 screenDescriptor.Layers
                 ([], world)
@@ -243,8 +243,8 @@ module WorldLayerModule =
         [<FunctionBinding>]
         static member readLayerFromFile (filePath : string) nameOpt screen world =
             let layerDescriptorStr = File.ReadAllText filePath
-            let layerDescriptor = { scvalue<LayerDescriptor> layerDescriptorStr with LayerNameOpt = nameOpt }
-            World.readLayer layerDescriptor screen world
+            let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
+            World.readLayer layerDescriptor nameOpt screen world
 
     /// Represents the property value of an layer as accessible via reflection.
     type [<ReferenceEquality>] LayerPropertyValue =

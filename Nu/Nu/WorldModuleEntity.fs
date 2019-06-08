@@ -747,7 +747,7 @@ module WorldModuleEntity =
             World.createEntity5 typeof<'d>.Name nameOpt overlayNameDescriptor layer world
 
         /// Read an entity from an entity descriptor.
-        static member readEntity entityDescriptor (layer : Layer) world =
+        static member readEntity entityDescriptor nameOpt (layer : Layer) world =
 
             // grab overlay dependencies
             let overlayer = World.getOverlayer world
@@ -812,7 +812,7 @@ module WorldModuleEntity =
 
             // apply the name if one is provided
             let entityState =
-                match entityDescriptor.EntityNameOpt with
+                match nameOpt with
                 | Some name -> { entityState with Name = name }
                 | None -> entityState
 
@@ -825,8 +825,8 @@ module WorldModuleEntity =
         [<FunctionBinding>]
         static member readEntityFromFile (filePath : string) nameOpt layer world =
             let entityDescriptorStr = File.ReadAllText filePath
-            let entityDescriptor = { scvalue<EntityDescriptor> entityDescriptorStr with EntityNameOpt = nameOpt }
-            World.readEntity entityDescriptor layer world
+            let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
+            World.readEntity entityDescriptor nameOpt layer world
 
         /// Write an entity to an entity descriptor.
         static member writeEntity (entity : Entity) entityDescriptor world =

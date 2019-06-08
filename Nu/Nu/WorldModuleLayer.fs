@@ -310,7 +310,7 @@ module WorldModuleLayer =
             let layerDescriptor = { layerDescriptor with LayerProperties = getLayerProperties }
             writeEntities layer layerDescriptor world
 
-        static member internal readLayer5 readEntities layerDescriptor (screen : Screen) world =
+        static member internal readLayer5 readEntities layerDescriptor nameOpt (screen : Screen) world =
 
             // create the dispatcher
             let dispatcherName = layerDescriptor.LayerDispatcherName
@@ -330,7 +330,7 @@ module WorldModuleLayer =
 
             // apply the name if one is provided
             let layerState =
-                match layerDescriptor.LayerNameOpt with
+                match nameOpt with
                 | Some name -> { layerState with Name = name }
                 | None -> layerState
 

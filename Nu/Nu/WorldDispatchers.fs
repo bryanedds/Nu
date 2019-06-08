@@ -92,7 +92,7 @@ module EffectFacetModule =
              Define? EffectPhysicsShapes ()
              Define? EffectTags (Map.empty : EffectTags)
              Define? EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
-             Variable? EffectHistory (fun () -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
+             Variable? EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
 
         override facet.Actualize (entity, world) =
             
@@ -329,7 +329,7 @@ module RigidBodyFacetModule =
             PhysicsEngine.localizeCollisionBody (entity.GetSize world) (entity.GetCollisionBody world)
 
         static member PropertyDefinitions =
-            [Variable? MinorId (fun () -> makeGuid ())
+            [Variable? MinorId (fun _ -> makeGuid ())
              Define? BodyType Dynamic
              Define? Awake true
              Define? Density Constants.Physics.NormalDensity
@@ -1588,7 +1588,7 @@ module LayerDispatcherModule =
             let world =
                 List.fold (fun world view ->
                     match EntityView.expand view with
-                    | Left descriptor -> World.readEntity descriptor layer world |> snd
+                    | Left (entityName, descriptor) -> World.readEntity descriptor (Some entityName) layer world |> snd
                     | Right (entityName, filePath) -> World.readEntityFromFile filePath (Some entityName) layer world |> snd)
                     world views
             world
@@ -1645,8 +1645,8 @@ module ScreenDispatcherModule =
             let world =
                 List.fold (fun world view ->
                     match LayerView.expand view with
-                    | Left (descriptor, entityFilePaths) ->
-                        let world = World.readLayer descriptor screen world |> snd
+                    | Left (name, descriptor, entityFilePaths) ->
+                        let world = World.readLayer descriptor (Some name) screen world |> snd
                         List.fold (fun world (layerName, entityName, filePath) ->
                             World.readEntityFromFile filePath (Some entityName) (screen => layerName) world |> snd)
                             world entityFilePaths

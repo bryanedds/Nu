@@ -320,7 +320,7 @@ module WorldEntityModule =
         static member readEntities layerDescriptor layer world =
             List.foldBack
                 (fun entityDescriptor (entities, world) ->
-                    let (entity, world) = World.readEntity entityDescriptor layer world
+                    let (entity, world) = World.readEntity entityDescriptor None layer world
                     (entity :: entities, world))
                     layerDescriptor.Entities
                     ([], world)
