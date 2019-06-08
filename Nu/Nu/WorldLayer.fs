@@ -234,7 +234,8 @@ module WorldLayerModule =
         static member readLayers screenDescriptor screen world =
             List.foldBack
                 (fun layerDescriptor (layers, world) ->
-                    let (layer, world) = World.readLayer layerDescriptor None screen world
+                    let layerNameOpt = LayerDescriptor.getNameOpt layerDescriptor
+                    let (layer, world) = World.readLayer layerDescriptor layerNameOpt screen world
                     (layer :: layers, world))
                 screenDescriptor.Layers
                 ([], world)
