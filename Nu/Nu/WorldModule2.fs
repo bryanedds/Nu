@@ -786,8 +786,8 @@ module GameDispatcherModule =
                 let world = World.setScreenSplash (Some splashData) destination screen world
                 (screen, world)
 
-        static let createScreen view world =
-            match ScreenLayout.expand view world with
+        static let createScreen layout world =
+            match ScreenLayout.expand layout world with
             | Left (name, descriptor, behavior, layerFilePaths, entityFilePaths) ->
                 let (screen, world) = World.readScreen descriptor (Some name) world
                 let world =
@@ -836,12 +836,12 @@ module GameDispatcherModule =
                             | None -> world)
                             game binding.Stream world)
                     world bindings
-            let views = this.View (property.Get world, game, world)
+            let layouts = this.Layout (property.Get world, game, world)
             let world =
-                List.foldi (fun viewIndex world view ->
-                    let (screen, world) = createScreen view world
-                    if viewIndex = 0 then World.selectScreen screen world else world)
-                    world views
+                List.foldi (fun layoutIndex world layout ->
+                    let (screen, world) = createScreen layout world
+                    if layoutIndex = 0 then World.selectScreen screen world else world)
+                    world layouts
             world
 
         override this.Actualize (game, world) =
@@ -852,6 +852,6 @@ module GameDispatcherModule =
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
         abstract member Update : 'message * 'model * Game * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Game * World -> World
-        abstract member View : 'model * Game * World -> ScreenLayout list
+        abstract member Layout : 'model * Game * World -> ScreenLayout list
         abstract member Actualize : 'model * Game * World -> World
         default this.Actualize (_, _, world) = world
