@@ -274,6 +274,14 @@ module Layout =
     let entityFromFile<'d when 'd :> EntityDispatcher> (entity : Entity) filePath =
         EntityFromFile (entity.EntityName, filePath)
 
+type [<NoEquality; NoComparison>] View =
+    | Render of RenderDescriptor
+    | PlaySound of single * Audio AssetTag
+    | PlaySong of int * single * Audio AssetTag
+    | FadeOutSong of int
+    | StopSong
+    | Effect of (World -> World)
+
 [<AutoOpen>]
 module DeclarativeOperators =
 
