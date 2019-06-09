@@ -34,6 +34,10 @@ module BulletModule =
             then World.destroyEntity bullet world
             else world
 
+        static member IntrinsicFacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<StaticSpriteFacet>.Name]
+
         static member PropertyDefinitions =
             [define Entity.Size (Vector2 (20.0f, 20.0f))
              define Entity.Omnipresent true
@@ -45,10 +49,6 @@ module BulletModule =
              define Entity.CollisionBody (BodyCircle { Radius = 0.5f; Center = Vector2.Zero })
              define Entity.StaticImage Assets.PlayerBulletImage
              define Entity.Age 0L]
-
-        static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<StaticSpriteFacet>.Name]
 
         override dispatcher.Register (bullet, world) =
             let world = World.monitor handleUpdate (Events.Update ->- bullet) bullet world
@@ -96,6 +96,10 @@ module EnemyModule =
                 else world
             else world
 
+        static member IntrinsicFacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<AnimatedSpriteFacet>.Name]
+
         static member PropertyDefinitions =
             [define Entity.Size (Vector2 (48.0f, 96.0f))
              define Entity.FixedRotation true
@@ -108,10 +112,6 @@ module EnemyModule =
              define Entity.AnimationStutter 8L
              define Entity.AnimationSheet Assets.EnemyImage
              define Entity.Health 7]
-
-        static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<AnimatedSpriteFacet>.Name]
 
         override dispatcher.Register (enemy, world) =
             let world = World.monitor handleUpdate (Events.Update ->- enemy) enemy world
@@ -202,6 +202,10 @@ module PlayerModule =
                 | _ -> world
             else world
 
+        static member IntrinsicFacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<AnimatedSpriteFacet>.Name]
+
         static member PropertyDefinitions =
             [define Entity.Size (Vector2 (48.0f, 96.0f))
              define Entity.FixedRotation true
@@ -215,10 +219,6 @@ module PlayerModule =
              define Entity.AnimationSheet Assets.PlayerImage
              define Entity.LastTimeOnGroundNp Int64.MinValue
              define Entity.LastTimeJumpNp Int64.MinValue]
-
-        static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<AnimatedSpriteFacet>.Name]
 
         override dispatcher.Register (player, world) =
             let world = World.monitor handleSpawnBullet (Events.Update ->- player) player world
