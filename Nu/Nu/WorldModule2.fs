@@ -801,7 +801,7 @@ module GameDispatcherModule =
                 applyBehavior behavior screen world
             | Right (name, behavior, Some dispatcherType, layerFilePath) ->
                 let (screen, world) = World.createScreen3 dispatcherType.Name (Some name) world
-                let world = World.readLayerFromFile layerFilePath (Some name) screen world |> snd
+                let world = World.readLayerFromFile layerFilePath None screen world |> snd
                 applyBehavior behavior screen world
             | Right (name, behavior, None, filePath) ->
                 let (screen, world) = World.readScreenFromFile filePath (Some name) world
