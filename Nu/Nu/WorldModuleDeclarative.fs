@@ -164,49 +164,49 @@ type [<NoComparison>] ScreenBehavior =
     | Dissolve of DissolveData
     | Splash of DissolveData * SplashData * Screen
 
-/// Describes the view for a simulant
-type SimulantView = interface end
+/// Describes the layout of a simulant
+type SimulantLayout = interface end
 
-/// Describes the view for an entity.
-type [<NoEquality; NoComparison>] EntityView =
+/// Describes the layout of an entity.
+type [<NoEquality; NoComparison>] EntityLayout =
     | EntityFromProperties of string * string * PropertyDefinition list
     | EntityFromFile of string * string
-    interface SimulantView
+    interface SimulantLayout
 
-    /// Expand an entity view to its constituent parts.
-    static member expand entityView world =
-        match entityView with
+    /// Expand an entity layout to its constituent parts.
+    static member expand layout world =
+        match layout with
         | EntityFromProperties (dispatcherName, name, properties) -> Left (name, Describe.entity2 dispatcherName properties world)
         | EntityFromFile (name, filePath) -> Right (name, filePath)
 
-/// Describes the view for a layer.
-type [<NoEquality; NoComparison>] LayerView =
-    | LayerFromProperties of string * string * PropertyDefinition list * EntityView list
+/// Describes the layout of a layer.
+type [<NoEquality; NoComparison>] LayerLayout =
+    | LayerFromProperties of string * string * PropertyDefinition list * EntityLayout list
     | LayerFromFile of string * string
-    interface SimulantView
+    interface SimulantLayout
     
-    /// Expand a layer view to its constituent parts.
-    static member expand layerView world =
-        match layerView with
+    /// Expand a layer layout to its constituent parts.
+    static member expand layout world =
+        match layout with
         | LayerFromProperties (dispatcherName, name, properties, entities) ->
-            let descriptorsPlus = List.map (flip EntityView.expand world) entities
+            let descriptorsPlus = List.map (flip EntityLayout.expand world) entities
             let descriptors = Either.getLeftValues descriptorsPlus |> List.map (fun (entityName, descriptor) -> { descriptor with EntityProperties = Map.add (Property? Name) (valueToSymbol entityName) descriptor.EntityProperties })
             let filePaths = Either.getRightValues descriptorsPlus |> List.map (fun (entityName, path) -> (name, entityName, path))
             Left (name, Describe.layer3 dispatcherName properties descriptors world, filePaths)
         | LayerFromFile (name, filePath) -> Right (name, filePath)
 
-/// Describes the view for a screen.
-type [<NoEquality; NoComparison>] ScreenView =
-    | ScreenFromProperties of string * string * ScreenBehavior * PropertyDefinition list * LayerView list
+/// Describes the layout of a screen.
+type [<NoEquality; NoComparison>] ScreenLayout =
+    | ScreenFromProperties of string * string * ScreenBehavior * PropertyDefinition list * LayerLayout list
     | ScreenFromLayerFile of string * ScreenBehavior * Type * string
     | ScreenFromFile of string * ScreenBehavior * string
-    interface SimulantView
+    interface SimulantLayout
 
-    /// Expand a screen view to its constituent parts.
-    static member expand screenView world =
-        match screenView with
+    /// Expand a screen layout to its constituent parts.
+    static member expand layout world =
+        match layout with
         | ScreenFromProperties (dispatcherName, name, behavior, properties, layers) ->
-            let descriptorsPlusPlus = List.map (flip LayerView.expand world) layers
+            let descriptorsPlusPlus = List.map (flip LayerLayout.expand world) layers
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus
             let descriptors = descriptorsPlus |> List.map (fun (layerName, descriptor, _) -> { descriptor with LayerProperties = Map.add (Property? Name) (valueToSymbol layerName) descriptor.LayerProperties })
             let layerFilePaths = Either.getRightValues descriptorsPlusPlus |> List.map (fun (layerName, filePath) -> (name, layerName, filePath))
@@ -215,17 +215,17 @@ type [<NoEquality; NoComparison>] ScreenView =
         | ScreenFromLayerFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
         | ScreenFromFile (name, behavior, filePath) -> Right (name, behavior, None, filePath)
 
-/// Describes the view for a game.
-type [<NoEquality; NoComparison>] GameView =
-    | GameFromProperties of string * PropertyDefinition list * ScreenView list
+/// Describes the layout of a game.
+type [<NoEquality; NoComparison>] GameLayout =
+    | GameFromProperties of string * PropertyDefinition list * ScreenLayout list
     | GameFromFile of string
-    interface SimulantView
+    interface SimulantLayout
 
-    /// Expand a game view to its constituent parts.
-    static member expand gameView world =
-        match gameView with
+    /// Expand a game layout to its constituent parts.
+    static member expand layout world =
+        match layout with
         | GameFromProperties (dispatcherName, properties, screens) ->
-            let descriptorsPlusPlus = List.map (flip ScreenView.expand world) screens
+            let descriptorsPlusPlus = List.map (flip ScreenLayout.expand world) screens
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus
             let descriptors = List.map (fun (screenName, descriptor, _, _, _) -> { descriptor with ScreenProperties = Map.add (Property? Name) (valueToSymbol screenName) descriptor.ScreenProperties }) descriptorsPlus
             let screenBehaviors = List.map (fun (screenName, _, behavior, _, _) -> (screenName, behavior)) descriptorsPlus |> Map.ofList
@@ -235,8 +235,8 @@ type [<NoEquality; NoComparison>] GameView =
             Left (Describe.game3 dispatcherName properties descriptors world, screenBehaviors, screenFilePaths, layerFilePaths, entityFilePaths)
         | GameFromFile filePath -> Right filePath
 
-/// Contains primitives for describing simulant views.    
-module View =
+/// Contains primitives for describing simulant layouts.    
+module Layout =
 
     /// Describe a game with the given properties values and contained screens.
     let game<'d when 'd :> GameDispatcher> properties children =
