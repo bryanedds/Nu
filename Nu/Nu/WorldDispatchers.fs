@@ -707,13 +707,22 @@ module EntityDispatcherModule =
         override this.Actualize (entity, world) =
             let property = propertyFn entity
             let model = property.Get world
-            this.Actualize (model, entity, world)
+            let views = this.View (model, entity, world)
+            List.fold (fun world view ->
+                match view with
+                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
+                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
+                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
+                | FadeOutSong fade -> World.fadeOutSong fade world
+                | StopSong -> World.stopSong world
+                | Effect effect -> effect world)
+                world views
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         abstract member Update : 'message * 'model * Entity * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Entity * World -> World
-        abstract member Actualize : 'model * Entity * World -> World
-        default this.Actualize (_, _, world) = world
+        abstract member View : 'model * Entity * World -> View list
+        default this.View (_, _, _) = []
 
 [<AutoOpen>]
 module ImperativeDispatcherModule =
@@ -1612,14 +1621,23 @@ module LayerDispatcherModule =
         override this.Actualize (layer, world) =
             let property = propertyFn layer
             let model = property.Get world
-            this.Actualize (model, layer, world)
+            let views = this.View (model, layer, world)
+            List.fold (fun world view ->
+                match view with
+                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
+                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
+                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
+                | FadeOutSong fade -> World.fadeOutSong fade world
+                | StopSong -> World.stopSong world
+                | Effect effect -> effect world)
+                world views
 
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
         abstract member Update : 'message * 'model * Layer * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Layer * World -> World
         abstract member Layout : 'model * Layer * World -> EntityLayout list
-        abstract member Actualize : 'model * Layer * World -> World
-        default this.Actualize (_, _, world) = world
+        abstract member View : 'model * Layer * World -> View list
+        default this.View (_, _, _) = []
 
 [<AutoOpen>]
 module ScreenDispatcherModule =
@@ -1674,11 +1692,20 @@ module ScreenDispatcherModule =
         override this.Actualize (screen, world) =
             let property = propertyFn screen
             let model = property.Get world
-            this.Actualize (model, screen, world)
+            let views = this.View (model, screen, world)
+            List.fold (fun world view ->
+                match view with
+                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
+                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
+                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
+                | FadeOutSong fade -> World.fadeOutSong fade world
+                | StopSong -> World.stopSong world
+                | Effect effect -> effect world)
+                world views
 
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
         abstract member Update : 'message * 'model * Screen * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Screen * World -> World
         abstract member Layout : 'model * Screen * World -> LayerLayout list
-        abstract member Actualize : 'model * Screen * World -> World
-        default this.Actualize (_, _, world) = world
+        abstract member View : 'model * Screen * World -> View list
+        default this.View (_, _, _) = []

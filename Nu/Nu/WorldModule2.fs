@@ -847,11 +847,20 @@ module GameDispatcherModule =
         override this.Actualize (game, world) =
             let property = propertyFn game
             let model = property.Get world
-            this.Actualize (model, game, world)
+            let views = this.View (model, game, world)
+            List.fold (fun world view ->
+                match view with
+                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
+                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
+                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
+                | FadeOutSong fade -> World.fadeOutSong fade world
+                | StopSong -> World.stopSong world
+                | Effect effect -> effect world)
+                world views
 
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
         abstract member Update : 'message * 'model * Game * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Game * World -> World
         abstract member Layout : 'model * Game * World -> ScreenLayout list
-        abstract member Actualize : 'model * Game * World -> World
-        default this.Actualize (_, _, world) = world
+        abstract member View : 'model * Game * World -> View list
+        default this.View (_, _, _) = []
