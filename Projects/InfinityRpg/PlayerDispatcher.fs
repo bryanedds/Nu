@@ -11,9 +11,9 @@ module PlayerDispatcherModule =
     type PlayerDispatcher () =
         inherit CharacterDispatcher ()
 
+        static member IntrinsicFacetNames =
+            [typeof<CharacterCameraFacet>.Name]
+
         static member PropertyDefinitions =
             [define Entity.HitPoints 30 // note this is an arbitrary number as hp max is calculated
              define Entity.ControlType PlayerControlled]
-
-        static member IntrinsicFacetNames =
-            [typeof<CharacterCameraFacet>.Name]
