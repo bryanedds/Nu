@@ -125,8 +125,8 @@ module EffectFacetModule =
                     let (artifacts, _) = EffectSystem.eval effect effectSlice effectSystem
 
                     // pass a single render message for efficiency
-                    let renderDescriptors = artifacts.RenderArtifacts |> Seq.toArray |> Array.map (function Effects.RenderArtifact descriptor -> descriptor) |> RenderDescriptorsMessage 
-                    let world = World.enqueueRenderMessage renderDescriptors world
+                    let renderMessage = artifacts.RenderArtifacts |> Seq.toArray |> Array.map (function Effects.RenderArtifact descriptor -> descriptor) |> RenderDescriptorsMessage 
+                    let world = World.enqueueRenderMessage renderMessage world
 
                     // pass sound messages
                     let world = Seq.fold (fun world (Effects.SoundArtifact (volume, sound)) -> World.playSound volume sound world) world artifacts.SoundArtifacts
@@ -1600,13 +1600,13 @@ module LayerDispatcherModule =
                             | None -> world)
                             layer binding.Stream world)
                     world bindings
-            let views = this.View (property.Get world, layer, world)
+            let layouts = this.Layout (property.Get world, layer, world)
             let world =
-                List.fold (fun world view ->
-                    match EntityView.expand view world with
+                List.fold (fun world layout ->
+                    match EntityLayout.expand layout world with
                     | Left (entityName, descriptor) -> World.readEntity descriptor (Some entityName) layer world |> snd
                     | Right (entityName, filePath) -> World.readEntityFromFile filePath (Some entityName) layer world |> snd)
-                    world views
+                    world layouts
             world
 
         override this.Actualize (layer, world) =
@@ -1617,7 +1617,7 @@ module LayerDispatcherModule =
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
         abstract member Update : 'message * 'model * Layer * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Layer * World -> World
-        abstract member View : 'model * Layer * World -> EntityView list
+        abstract member Layout : 'model * Layer * World -> EntityLayout list
         abstract member Actualize : 'model * Layer * World -> World
         default this.Actualize (_, _, world) = world
 
@@ -1657,10 +1657,10 @@ module ScreenDispatcherModule =
                             | None -> world)
                             screen binding.Stream world)
                     world bindings
-            let views = this.View (property.Get world, screen, world)
+            let layouts = this.Layout (property.Get world, screen, world)
             let world =
-                List.fold (fun world view ->
-                    match LayerView.expand view world with
+                List.fold (fun world layout ->
+                    match LayerLayout.expand layout world with
                     | Left (name, descriptor, entityFilePaths) ->
                         let world = World.readLayer descriptor (Some name) screen world |> snd
                         List.fold (fun world (layerName, entityName, filePath) ->
@@ -1668,7 +1668,7 @@ module ScreenDispatcherModule =
                             world entityFilePaths
                     | Right (layerName, filePath) ->
                         World.readLayerFromFile filePath (Some layerName) screen world |> snd)
-                    world views
+                    world layouts
             world
 
         override this.Actualize (screen, world) =
@@ -1679,6 +1679,6 @@ module ScreenDispatcherModule =
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
         abstract member Update : 'message * 'model * Screen * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Screen * World -> World
-        abstract member View : 'model * Screen * World -> LayerView list
+        abstract member Layout : 'model * Screen * World -> LayerLayout list
         abstract member Actualize : 'model * Screen * World -> World
         default this.Actualize (_, _, world) = world
