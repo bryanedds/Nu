@@ -3,6 +3,7 @@ open System
 open OpenTK
 open Prime
 open Nu
+open Nu.Declarative
 open InfinityRpg
 
 [<AutoOpen>]
@@ -54,19 +55,19 @@ module CharacterStateFacetModule =
         inherit Facet ()
 
         static member PropertyDefinitions =
-            [Define? CharacterType Player
-             Define? ActivityState NoActivity
-             Define? HitPoints 10 // note this is an arbitrary number as hp max is calculated
-             Define? SpecialPoints 1 // sp max is calculated
-             Define? PowerBuff 1.0f // rate at which power is buffed / debuffed
-             Define? ShieldBuff 1.0f // rate at which shield is buffed / debuffed
-             Define? MindBuff 1.0f // rate at which mind is buffed / debuffed
-             Define? CounterBuff 1.0f // rate at which counter is buffed / debuffed
-             Define? Statuses Set.empty<StatusType>
-             Define? EquippedWeapon Option<WeaponType>.None
-             Define? EquippedArmor Option<ArmorType>.None
-             Define? EquippedRelics list<RelicType>.Empty
-             Define? ControlType Uncontrolled] // level is calculated from base experience + added experience
+            [define Entity.CharacterType Player
+             define Entity.ActivityState NoActivity
+             define Entity.HitPoints 10 // note this is an arbitrary number as hp max is calculated
+             define Entity.SpecialPoints 1 // sp max is calculated
+             define Entity.PowerBuff 1.0f // rate at which power is buffed / debuffed
+             define Entity.ShieldBuff 1.0f // rate at which shield is buffed / debuffed
+             define Entity.MindBuff 1.0f // rate at which mind is buffed / debuffed
+             define Entity.CounterBuff 1.0f // rate at which counter is buffed / debuffed
+             define Entity.Statuses Set.empty<StatusType>
+             define Entity.EquippedWeapon Option<WeaponType>.None
+             define Entity.EquippedArmor Option<ArmorType>.None
+             define Entity.EquippedRelics list<RelicType>.Empty
+             define Entity.ControlType Uncontrolled] // level is calculated from base experience + added experience
 
 [<AutoOpen>]
 module CharacterAnimationFacetModule =
@@ -143,12 +144,11 @@ module CharacterAnimationFacetModule =
             Some spriteInset
 
         static member PropertyDefinitions =
-            [Define?
-                CharacterAnimationState
+            [define Entity.CharacterAnimationState
                     { StartTime = 0L
                       AnimationType = CharacterAnimationFacing
                       Direction = Upward }
-             Define? CharacterAnimationSheet Assets.PlayerImage]
+             define Entity.CharacterAnimationSheet Assets.PlayerImage]
 
         override facet.Actualize (entity, world) =
             if entity.GetInView world then

@@ -4,6 +4,7 @@ open System.Collections.Generic
 open OpenTK
 open Prime
 open Nu
+open Nu.Declarative
 open InfinityRpg
 
 [<AutoOpen>]
@@ -34,8 +35,8 @@ module FieldDispatcherModule =
             Some tileInset
 
         static member PropertyDefinitions =
-            [Define? Omnipresent true
-             Define? FieldMapNp DefaultFieldMap]
+            [define Entity.Omnipresent true
+             define Entity.FieldMapNp DefaultFieldMap]
 
         override dispatcher.Actualize (field, world) =
             let viewType =
