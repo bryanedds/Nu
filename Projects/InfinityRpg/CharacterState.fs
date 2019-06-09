@@ -162,7 +162,7 @@ type CharacterData =
       Reward : RewardData }
 
 type ControlType =
-    | Player
+    | PlayerControlled
     | Chaos
     | Uncontrolled
 

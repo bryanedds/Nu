@@ -95,47 +95,67 @@ and [<NoComparison>] EntityDescriptor =
 module Describe =
 
     /// Describe a game with the given properties values and contained screens.
-    let game3 dispatcherName (properties : (World PropertyTag * obj) seq) (screens : ScreenDescriptor seq) =
-        let properties = properties |> Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) |> Map.ofSeq
+    let game3 dispatcherName (properties : PropertyDefinition seq) (screens : ScreenDescriptor seq) world =
+        let properties =
+            properties |>
+            Seq.map (fun def -> (def.PropertyName, def.PropertyExpr)) |>
+            Seq.map (mapSnd (function DefineExpr value -> value | VariableExpr fn -> fn world)) |>
+            Seq.map (mapSnd valueToSymbol) |>
+            Map.ofSeq
         { GameDispatcherName = dispatcherName
           GameProperties = properties
           Screens = List.ofSeq screens }
 
     /// Describe a game with the given properties values and contained screens.
-    let game<'d when 'd :> GameDispatcher> properties screens =
-        game3 typeof<'d>.Name properties screens
+    let game<'d when 'd :> GameDispatcher> properties screens world =
+        game3 typeof<'d>.Name properties screens world
 
     /// Describe a screen with the given properties values and contained layers.
-    let screen3 dispatcherName (properties : (World PropertyTag * obj) seq) (layers : LayerDescriptor seq) =
-        let properties = properties |> Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) |> Map.ofSeq
+    let screen3 dispatcherName (properties : PropertyDefinition seq) (layers : LayerDescriptor seq) world =
+        let properties =
+            properties |>
+            Seq.map (fun def -> (def.PropertyName, def.PropertyExpr)) |>
+            Seq.map (mapSnd (function DefineExpr value -> value | VariableExpr fn -> fn world)) |>
+            Seq.map (mapSnd valueToSymbol) |>
+            Map.ofSeq
         { ScreenDispatcherName = dispatcherName
           ScreenProperties = properties
           Layers = List.ofSeq layers }
 
     /// Describe a screen with the given properties values and contained layers.
-    let screen<'d when 'd :> ScreenDispatcher> properties layers =
-        screen3 typeof<'d>.Name properties layers
+    let screen<'d when 'd :> ScreenDispatcher> properties layers world =
+        screen3 typeof<'d>.Name properties layers world
 
     /// Describe a layer with the given properties values and contained entities.
-    let layer3 dispatcherName (properties : (World PropertyTag * obj) seq) (entities : EntityDescriptor seq) =
-        let properties = properties |> Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) |> Map.ofSeq
+    let layer3 dispatcherName (properties : PropertyDefinition seq) (entities : EntityDescriptor seq) world =
+        let properties =
+            properties |>
+            Seq.map (fun def -> (def.PropertyName, def.PropertyExpr)) |>
+            Seq.map (mapSnd (function DefineExpr value -> value | VariableExpr fn -> fn world)) |>
+            Seq.map (mapSnd valueToSymbol) |>
+            Map.ofSeq
         { LayerDispatcherName = dispatcherName
           LayerProperties = properties
           Entities = List.ofSeq entities }
 
     /// Describe a layer with the given properties values and contained entities.
-    let layer<'d when 'd :> LayerDispatcher> properties entities =
-        layer3 typeof<'d>.Name properties entities
+    let layer<'d when 'd :> LayerDispatcher> properties entities world =
+        layer3 typeof<'d>.Name properties entities world
 
     /// Describe an entity with the given properties values.
-    let entity2 dispatcherName (properties : (World PropertyTag * obj) seq) =
-        let properties = properties |> Seq.map (fun (tag : World PropertyTag, value) -> (tag.Name, valueToSymbol value)) |> Map.ofSeq
+    let entity2 dispatcherName (properties : PropertyDefinition seq) world =
+        let properties =
+            properties |>
+            Seq.map (fun def -> (def.PropertyName, def.PropertyExpr)) |>
+            Seq.map (mapSnd (function DefineExpr value -> value | VariableExpr fn -> fn world)) |>
+            Seq.map (mapSnd valueToSymbol) |>
+            Map.ofSeq
         { EntityDispatcherName = dispatcherName
           EntityProperties = properties }
 
     /// Describe an entity with the given properties values.
-    let entity<'d when 'd :> EntityDispatcher> properties =
-        entity2 typeof<'d>.Name properties
+    let entity<'d when 'd :> EntityDispatcher> properties world =
+        entity2 typeof<'d>.Name properties world
 
 /// Describes the behavior of a screen.
 type [<NoComparison>] ScreenBehavior =
@@ -148,71 +168,71 @@ type [<NoComparison>] ScreenBehavior =
 type SimulantView = interface end
 
 /// Describes the view for an entity.
-type [<NoComparison>] EntityView =
-    | EntityFromProperties of string * string * (World PropertyTag * obj) list
+type [<NoEquality; NoComparison>] EntityView =
+    | EntityFromProperties of string * string * PropertyDefinition list
     | EntityFromFile of string * string
     interface SimulantView
 
     /// Expand an entity view to its constituent parts.
-    static member expand entityView =
+    static member expand entityView world =
         match entityView with
-        | EntityFromProperties (dispatcherName, name, properties) -> Left (name, Describe.entity2 dispatcherName properties)
+        | EntityFromProperties (dispatcherName, name, properties) -> Left (name, Describe.entity2 dispatcherName properties world)
         | EntityFromFile (name, filePath) -> Right (name, filePath)
 
 /// Describes the view for a layer.
-type [<NoComparison>] LayerView =
-    | LayerFromProperties of string * string * (World PropertyTag * obj) list * EntityView list
+type [<NoEquality; NoComparison>] LayerView =
+    | LayerFromProperties of string * string * PropertyDefinition list * EntityView list
     | LayerFromFile of string * string
     interface SimulantView
     
     /// Expand a layer view to its constituent parts.
-    static member expand layerView =
+    static member expand layerView world =
         match layerView with
         | LayerFromProperties (dispatcherName, name, properties, entities) ->
-            let descriptorsPlus = List.map EntityView.expand entities
+            let descriptorsPlus = List.map (flip EntityView.expand world) entities
             let descriptors = Either.getLeftValues descriptorsPlus |> List.map (fun (entityName, descriptor) -> { descriptor with EntityProperties = Map.add (Property? Name) (valueToSymbol entityName) descriptor.EntityProperties })
             let filePaths = Either.getRightValues descriptorsPlus |> List.map (fun (entityName, path) -> (name, entityName, path))
-            Left (name, Describe.layer3 dispatcherName properties descriptors, filePaths)
+            Left (name, Describe.layer3 dispatcherName properties descriptors world, filePaths)
         | LayerFromFile (name, filePath) -> Right (name, filePath)
 
 /// Describes the view for a screen.
-type [<NoComparison>] ScreenView =
-    | ScreenFromProperties of string * string * ScreenBehavior * (World PropertyTag * obj) list * LayerView list
+type [<NoEquality; NoComparison>] ScreenView =
+    | ScreenFromProperties of string * string * ScreenBehavior * PropertyDefinition list * LayerView list
     | ScreenFromLayerFile of string * ScreenBehavior * Type * string
     | ScreenFromFile of string * ScreenBehavior * string
     interface SimulantView
 
     /// Expand a screen view to its constituent parts.
-    static member expand screenView =
+    static member expand screenView world =
         match screenView with
         | ScreenFromProperties (dispatcherName, name, behavior, properties, layers) ->
-            let descriptorsPlusPlus = List.map LayerView.expand layers
+            let descriptorsPlusPlus = List.map (flip LayerView.expand world) layers
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus
             let descriptors = descriptorsPlus |> List.map (fun (layerName, descriptor, _) -> { descriptor with LayerProperties = Map.add (Property? Name) (valueToSymbol layerName) descriptor.LayerProperties })
             let layerFilePaths = Either.getRightValues descriptorsPlusPlus |> List.map (fun (layerName, filePath) -> (name, layerName, filePath))
             let entityFilePaths = List.map (fun (_, _, filePaths) -> List.map (fun (layerName, entityName, filePath) -> (name, layerName, entityName, filePath)) filePaths) descriptorsPlus |> List.concat
-            Left (name, Describe.screen3 dispatcherName properties descriptors, behavior, layerFilePaths, entityFilePaths)
+            Left (name, Describe.screen3 dispatcherName properties descriptors world, behavior, layerFilePaths, entityFilePaths)
         | ScreenFromLayerFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
         | ScreenFromFile (name, behavior, filePath) -> Right (name, behavior, None, filePath)
 
 /// Describes the view for a game.
-type [<NoComparison>] GameView =
-    | GameFromProperties of string * (World PropertyTag * obj) list * ScreenView list
+type [<NoEquality; NoComparison>] GameView =
+    | GameFromProperties of string * PropertyDefinition list * ScreenView list
     | GameFromFile of string
     interface SimulantView
 
     /// Expand a game view to its constituent parts.
-    static member expand gameView =
+    static member expand gameView world =
         match gameView with
         | GameFromProperties (dispatcherName, properties, screens) ->
-            let descriptorsPlusPlus = List.map ScreenView.expand screens
+            let descriptorsPlusPlus = List.map (flip ScreenView.expand world) screens
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus
             let descriptors = List.map (fun (screenName, descriptor, _, _, _) -> { descriptor with ScreenProperties = Map.add (Property? Name) (valueToSymbol screenName) descriptor.ScreenProperties }) descriptorsPlus
             let screenBehaviors = List.map (fun (screenName, _, behavior, _, _) -> (screenName, behavior)) descriptorsPlus |> Map.ofList
             let screenFilePaths = Either.getRightValues descriptorsPlusPlus
             let layerFilePaths = List.map (fun (_, _, _, layerFilePaths, _) -> layerFilePaths) descriptorsPlus |> List.concat
             let entityFilePaths = List.map (fun (_, _, _, _, entityFilePaths) -> entityFilePaths) descriptorsPlus |> List.concat
-            Left (Describe.game3 dispatcherName properties descriptors, screenBehaviors, screenFilePaths, layerFilePaths, entityFilePaths)
+            Left (Describe.game3 dispatcherName properties descriptors world, screenBehaviors, screenFilePaths, layerFilePaths, entityFilePaths)
         | GameFromFile filePath -> Right filePath
 
 /// Contains primitives for describing simulant views.    
@@ -255,11 +275,13 @@ module View =
         EntityFromFile (entity.EntityName, filePath)
 
 [<AutoOpen>]
-module WorldModelDeclarative =
-
-    /// Create a property declaration.
-    let prop (p : PropertyTag<'a, World>) (v : 'a) =
-        (p :> PropertyTag<World>, v :> obj)
+module DeclarativeOperators =
 
     /// Pair an empty list of commands with a model.
     let inline just model = (model, [])
+
+module Declarative =
+    let Game = Nu.Game.Prop
+    let Screen = Nu.Screen.Prop
+    let Layer = Nu.Layer.Prop
+    let Entity = Nu.Entity.Prop

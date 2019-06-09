@@ -4,6 +4,7 @@ open System.IO
 open OpenTK
 open Prime
 open Nu
+open Nu.Declarative
 open InfinityRpg
 
 [<AutoOpen>]
@@ -215,7 +216,7 @@ module GameplayDispatcherModule =
 
         static let determineDesiredEnemyTurn occupationMap (player : Entity) (enemy : Entity) rand world =
             match enemy.GetControlType world with
-            | Player ->
+            | PlayerControlled ->
                 Log.debug ("Invalid ControlType '" + scstring (enemy.GetControlType world) + "' for enemy.")
                 (NoTurn, rand)
             | Chaos ->
@@ -565,9 +566,9 @@ module GameplayDispatcherModule =
             World.destroyLayer Simulants.Scene world
 
         static member PropertyDefinitions =
-            [Define? ContentRandState Rand.DefaultSeedState
-             Define? OngoingRandState Rand.DefaultSeedState
-             Define? ShallLoadGame false]
+            [define Screen.ContentRandState Rand.DefaultSeedState
+             define Screen.OngoingRandState Rand.DefaultSeedState
+             define Screen.ShallLoadGame false]
 
         override dispatcher.Register (gameplay, world) =
             let world = Stream.make Simulants.Player.ActivityState.ChangeEvent |> Stream.subscribe handlePlayerActivityChange gameplay <| world

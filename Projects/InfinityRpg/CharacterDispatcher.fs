@@ -2,6 +2,7 @@
 open System
 open Prime
 open Nu
+open Nu.Declarative
 open InfinityRpg
 
 [<AutoOpen>]
@@ -15,5 +16,5 @@ module CharacterDispatcherModule =
              typeof<CharacterAnimationFacet>.Name]
 
         static member PropertyDefinitions =
-            [Define? Omnipresent true
-             Define? PublishChanges true]
+            [define Entity.Omnipresent true
+             define Entity.PublishChanges true]

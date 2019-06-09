@@ -4,6 +4,7 @@ open OpenTK
 open SDL2
 open Prime
 open Nu
+open Nu.Declarative
 open BlazeVector
 
 [<AutoOpen>]
@@ -34,16 +35,16 @@ module BulletModule =
             else world
 
         static member PropertyDefinitions =
-            [Define? Size (Vector2 (20.0f, 20.0f))
-             Define? Omnipresent true
-             Define? Density 0.25f
-             Define? Restitution 0.5f
-             Define? LinearDamping 0.0f
-             Define? GravityScale 0.0f
-             Define? IsBullet true
-             Define? CollisionBody (BodyCircle { Radius = 0.5f; Center = Vector2.Zero })
-             Define? StaticImage Assets.PlayerBulletImage
-             Define? Age 0L]
+            [define Entity.Size (Vector2 (20.0f, 20.0f))
+             define Entity.Omnipresent true
+             define Entity.Density 0.25f
+             define Entity.Restitution 0.5f
+             define Entity.LinearDamping 0.0f
+             define Entity.GravityScale 0.0f
+             define Entity.IsBullet true
+             define Entity.CollisionBody (BodyCircle { Radius = 0.5f; Center = Vector2.Zero })
+             define Entity.StaticImage Assets.PlayerBulletImage
+             define Entity.Age 0L]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -96,17 +97,17 @@ module EnemyModule =
             else world
 
         static member PropertyDefinitions =
-            [Define? Size (Vector2 (48.0f, 96.0f))
-             Define? FixedRotation true
-             Define? LinearDamping 3.0f
-             Define? GravityScale 0.0f
-             Define? CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
-             Define? CelCount 6
-             Define? CelRun 4
-             Define? CelSize (Vector2 (48.0f, 96.0f))
-             Define? AnimationStutter 8L
-             Define? AnimationSheet Assets.EnemyImage
-             Define? Health 7]
+            [define Entity.Size (Vector2 (48.0f, 96.0f))
+             define Entity.FixedRotation true
+             define Entity.LinearDamping 3.0f
+             define Entity.GravityScale 0.0f
+             define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
+             define Entity.CelCount 6
+             define Entity.CelRun 4
+             define Entity.CelSize (Vector2 (48.0f, 96.0f))
+             define Entity.AnimationStutter 8L
+             define Entity.AnimationSheet Assets.EnemyImage
+             define Entity.Health 7]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -202,18 +203,18 @@ module PlayerModule =
             else world
 
         static member PropertyDefinitions =
-            [Define? Size (Vector2 (48.0f, 96.0f))
-             Define? FixedRotation true
-             Define? LinearDamping 3.0f
-             Define? GravityScale 0.0f
-             Define? CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
-             Define? CelCount 16
-             Define? CelRun 4
-             Define? CelSize (Vector2 (48.0f, 96.0f))
-             Define? AnimationStutter 3L
-             Define? AnimationSheet Assets.PlayerImage
-             Define? LastTimeOnGroundNp Int64.MinValue
-             Define? LastTimeJumpNp Int64.MinValue]
+            [define Entity.Size (Vector2 (48.0f, 96.0f))
+             define Entity.FixedRotation true
+             define Entity.LinearDamping 3.0f
+             define Entity.GravityScale 0.0f
+             define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
+             define Entity.CelCount 16
+             define Entity.CelRun 4
+             define Entity.CelSize (Vector2 (48.0f, 96.0f))
+             define Entity.AnimationStutter 3L
+             define Entity.AnimationSheet Assets.PlayerImage
+             define Entity.LastTimeOnGroundNp Int64.MinValue
+             define Entity.LastTimeJumpNp Int64.MinValue]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name

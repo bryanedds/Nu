@@ -2,6 +2,7 @@
 open System
 open Prime
 open Nu
+open Nu.Declarative
 open InfinityRpg
 
 [<AutoOpen>]
@@ -17,6 +18,6 @@ module EnemyDispatcherModule =
         inherit CharacterDispatcher ()
 
         static member PropertyDefinitions =
-            [Define? HitPoints 10 // note this is an arbitrary number as hp max is calculated
-             Define? ControlType Chaos
-             Define? DesiredTurn NoTurn]
+            [define Entity.HitPoints 10 // note this is an arbitrary number as hp max is calculated
+             define Entity.ControlType Chaos
+             define Entity.DesiredTurn NoTurn]

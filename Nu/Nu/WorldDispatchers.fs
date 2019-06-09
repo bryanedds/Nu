@@ -8,6 +8,7 @@ open OpenTK
 open TiledSharp
 open Prime
 open Nu
+open Nu.Declarative
 
 [<AutoOpen>]
 module EffectFacetModule =
@@ -83,16 +84,16 @@ module EffectFacetModule =
             setEffect effectsOpt entity world
 
         static member PropertyDefinitions =
-            [Define? SelfDestruct false
-             Define? EffectsOpt (None : Symbol AssetTag list option)
-             Define? EffectStartTimeOpt (None : int64 option)
-             Define? EffectDefinitions (Map.empty : Effects.Definitions)
-             Define? Effect Effect.empty
-             Define? EffectOffset (Vector2 0.5f)
-             Define? EffectPhysicsShapes ()
-             Define? EffectTags (Map.empty : EffectTags)
-             Define? EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
-             Variable? EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
+            [define Entity.SelfDestruct false
+             define Entity.EffectsOpt None
+             define Entity.EffectStartTimeOpt None
+             define Entity.EffectDefinitions Map.empty
+             define Entity.Effect Effect.empty
+             define Entity.EffectOffset (Vector2 0.5f)
+             define Entity.EffectPhysicsShapes ()
+             define Entity.EffectTags Map.empty
+             define Entity.EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
+             variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
 
         override facet.Actualize (entity, world) =
             
@@ -170,9 +171,9 @@ module ScriptFacetModule =
         member this.GetScriptOpt world : Symbol AssetTag option = this.Get Property? ScriptOpt world
         member this.SetScriptOpt (value : Symbol AssetTag option) world = this.SetFast Property? ScriptOpt true false value world
         member this.ScriptOpt = PropertyTag.make this Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt
-        member this.GetGetScript world : Scripting.Expr array = this.Get Property? Script world
-        member this.SetGetScript (value : Scripting.Expr array) world = this.SetFast Property? Script true false value world
-        member this.GetScript = PropertyTag.make this Property? Script this.GetGetScript this.SetGetScript
+        member this.GetScript world : Scripting.Expr array = this.Get Property? Script world
+        member this.SetScript (value : Scripting.Expr array) world = this.SetFast Property? Script true false value world
+        member this.Script = PropertyTag.make this Property? Script this.GetScript this.SetScript
         member this.GetScriptFrame world : Scripting.DeclarationFrame = this.Get Property? ScriptFrame world
         member internal this.SetScriptFrame (value : Scripting.DeclarationFrame) world = this.SetFast Property? ScriptFrame false true value world
         member this.ScriptFrame = PropertyTag.makeReadOnly this Property? ScriptFrame this.GetScriptFrame
@@ -205,7 +206,7 @@ module ScriptFacetModule =
 
         static let handleScriptChanged evt world =
             let entity = evt.Subscriber : Entity
-            let script = entity.GetGetScript world
+            let script = entity.GetScript world
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
             let world = entity.SetScriptFrame scriptFrame world
             evalManyWithLogging script scriptFrame entity world |> snd'
@@ -216,16 +217,16 @@ module ScriptFacetModule =
             World.registerEntity entity world
 
         static member PropertyDefinitions =
-            [Define? PublishChanges true
-             Define? ScriptOpt (None : Symbol AssetTag option)
-             Define? Script ([||] : Scripting.Expr array)
-             Define? ScriptFrame (Scripting.DeclarationFrame HashIdentity.Structural)
-             Define? ScriptUnsubscriptions ([] : Unsubscription list)
-             Define? OnRegister Scripting.Unit
-             Define? OnUnregister Scripting.Unit
-             Define? OnUpdate Scripting.Unit
-             Define? OnPostUpdate Scripting.Unit
-             Define? OnMessage Scripting.Unit]
+            [define Entity.PublishChanges true
+             define Entity.ScriptOpt None
+             define Entity.Script [||]
+             define Entity.ScriptFrame (Scripting.DeclarationFrame HashIdentity.Structural)
+             define Entity.ScriptUnsubscriptions []
+             define Entity.OnRegister Scripting.Unit
+             define Entity.OnUnregister Scripting.Unit
+             define Entity.OnUpdate Scripting.Unit
+             define Entity.OnPostUpdate Scripting.Unit
+             define Entity.OnMessage Scripting.Unit]
 
         override facet.Register (entity, world) =
             let world =
@@ -330,22 +331,22 @@ module RigidBodyFacetModule =
 
         static member PropertyDefinitions =
             [Variable? MinorId (fun _ -> makeGuid ())
-             Define? BodyType Dynamic
-             Define? Awake true
-             Define? Density Constants.Physics.NormalDensity
-             Define? Friction 0.0f
-             Define? Restitution 0.0f
-             Define? FixedRotation false
-             Define? AngularVelocity 0.0f
-             Define? AngularDamping 1.0f
-             Define? LinearVelocity Vector2.Zero
-             Define? LinearDamping 1.0f
-             Define? GravityScale 1.0f
-             Define? CollisionCategories "1"
-             Define? CollisionMask "@"
-             Define? CollisionBody (BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero })
-             Define? IsBullet false
-             Define? IsSensor false]
+             define Entity.BodyType Dynamic
+             define Entity.Awake true
+             define Entity.Density Constants.Physics.NormalDensity
+             define Entity.Friction 0.0f
+             define Entity.Restitution 0.0f
+             define Entity.FixedRotation false
+             define Entity.AngularVelocity 0.0f
+             define Entity.AngularDamping 1.0f
+             define Entity.LinearVelocity Vector2.Zero
+             define Entity.LinearDamping 1.0f
+             define Entity.GravityScale 1.0f
+             define Entity.CollisionCategories "1"
+             define Entity.CollisionMask "@"
+             define Entity.CollisionBody (BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero })
+             define Entity.IsBullet false
+             define Entity.IsSensor false]
 
         override facet.RegisterPhysics (entity, world) =
             let bodyProperties = 
@@ -532,12 +533,12 @@ module NodeFacetModule =
             subscribeToNodePropertyChanges evt.Subscriber world
 
         static member PropertyDefinitions =
-            [Define? ParentNodeOpt (None : Entity Relation option)
-             Define? PositionLocal Vector2.Zero
-             Define? DepthLocal 0.0f
-             Define? VisibleLocal true
-             Define? EnabledLocal true
-             Define? NodeUnsubscribe (id : World -> World)]
+            [define Entity.ParentNodeOpt None
+             define Entity.PositionLocal Vector2.Zero
+             define Entity.DepthLocal 0.0f
+             define Entity.VisibleLocal true
+             define Entity.EnabledLocal true
+             define Entity.NodeUnsubscribe (id : World -> World)]
 
         override facet.Register (entity, world) =
             let world = entity.SetNodeUnsubscribe id world // ensure unsubscribe function reference doesn't get copied in Gaia...
@@ -570,7 +571,7 @@ module StaticSpriteFacetModule =
         inherit Facet ()
 
         static member PropertyDefinitions =
-            [Define? StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
+            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
 
         override facet.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
@@ -636,11 +637,11 @@ module AnimatedSpriteFacetModule =
             else None
 
         static member PropertyDefinitions =
-            [Define? CelCount 16 
-             Define? CelSize (Vector2 (16.0f, 16.0f))
-             Define? CelRun 4
-             Define? AnimationStutter 4L
-             Define? AnimationSheet (AssetTag.make<Image> Assets.DefaultPackageName "Image7")]
+            [define Entity.CelCount 16 
+             define Entity.CelSize (Vector2 (16.0f, 16.0f))
+             define Entity.CelRun 4
+             define Entity.AnimationStutter 4L
+             define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackageName "Image7")]
 
         override facet.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
@@ -732,7 +733,7 @@ module EffectDispatcherModule =
         inherit EntityDispatcher ()
 
         static member PropertyDefinitions =
-            [Define? Effect (scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
+            [define Entity.Effect (scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
         static member IntrinsicFacetNames =
             [typeof<EffectFacet>.Name]
@@ -786,11 +787,11 @@ module GuiDispatcherModule =
              typeof<ScriptFacet>.Name]
 
         static member PropertyDefinitions =
-            [Define? ViewType Absolute
-             Define? AlwaysUpdate true
-             Define? PublishChanges true
-             Define? DisabledColor (Vector4 0.75f)
-             Define? SwallowMouseLeft true]
+            [define Entity.ViewType Absolute
+             define Entity.AlwaysUpdate true
+             define Entity.PublishChanges true
+             define Entity.DisabledColor (Vector4 0.75f)
+             define Entity.SwallowMouseLeft true]
 
         override dispatcher.Register (gui, world) =
             let world = World.monitorPlus handleMouseLeft Events.MouseLeftDown gui world |> snd
@@ -821,11 +822,11 @@ module GuiDispatcherModule =
              typeof<ScriptFacet>.Name]
 
         static member PropertyDefinitions =
-            [Define? ViewType Absolute
-             Define? AlwaysUpdate true
-             Define? PublishChanges true
-             Define? DisabledColor (Vector4 0.75f)
-             Define? SwallowMouseLeft true]
+            [define Entity.ViewType Absolute
+             define Entity.AlwaysUpdate true
+             define Entity.PublishChanges true
+             define Entity.DisabledColor (Vector4 0.75f)
+             define Entity.SwallowMouseLeft true]
 
         override dispatcher.Register (gui, world) =
             let world = base.Register (gui, world)
@@ -901,12 +902,12 @@ module ButtonDispatcherModule =
             else (Cascade, world)
 
         static member PropertyDefinitions =
-            [Define? SwallowMouseLeft false
-             Define? Down false
-             Define? UpImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
-             Define? DownImage (AssetTag.make<Image> Assets.DefaultPackageName "Image2")
-             Define? ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackageName "Sound"))
-             Define? OnClick Scripting.Unit]
+            [define Entity.SwallowMouseLeft false
+             define Entity.Down false
+             define Entity.UpImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
+             define Entity.DownImage (AssetTag.make<Image> Assets.DefaultPackageName "Image2")
+             define Entity.ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackageName "Sound"))
+             define Entity.OnClick Scripting.Unit]
 
         override dispatcher.Register (button, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown button world |> snd
@@ -951,8 +952,8 @@ module LabelDispatcherModule =
         inherit GuiDispatcher ()
 
         static member PropertyDefinitions =
-            [Define? SwallowMouseLeft true
-             Define? LabelImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
+            [define Entity.SwallowMouseLeft true
+             define Entity.LabelImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
         override dispatcher.Actualize (label, world) =
             if label.GetVisibleLayered world then
@@ -1004,12 +1005,12 @@ module TextDispatcherModule =
         inherit GuiDispatcher ()
 
         static member PropertyDefinitions =
-            [Define? SwallowMouseLeft true
-             Define? Text String.Empty
-             Define? TextFont (AssetTag.make<Font> Assets.DefaultPackageName "Font")
-             Define? TextOffset Vector2.Zero
-             Define? TextColor Vector4.One
-             Define? BackgroundImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
+            [define Entity.SwallowMouseLeft true
+             define Entity.Text String.Empty
+             define Entity.TextFont (AssetTag.make<Font> Assets.DefaultPackageName "Font")
+             define Entity.TextOffset Vector2.Zero
+             define Entity.TextColor Vector4.One
+             define Entity.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
         override dispatcher.Actualize (text, world) =
             if text.GetVisibleLayered world then
@@ -1116,13 +1117,13 @@ module ToggleDispatcherModule =
             else (Cascade, world)
 
         static member PropertyDefinitions =
-            [Define? SwallowMouseLeft false
-             Define? Open true
-             Define? Pressed false
-             Define? OpenImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
-             Define? ClosedImage (AssetTag.make<Image> Assets.DefaultPackageName "Image2")
-             Define? ToggleSoundOpt (Some (AssetTag.make<Image> Assets.DefaultPackageName "Sound"))
-             Define? OnToggle Scripting.Unit]
+            [define Entity.SwallowMouseLeft false
+             define Entity.Open true
+             define Entity.Pressed false
+             define Entity.OpenImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
+             define Entity.ClosedImage (AssetTag.make<Image> Assets.DefaultPackageName "Image2")
+             define Entity.ToggleSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackageName "Sound"))
+             define Entity.OnToggle Scripting.Unit]
 
         override dispatcher.Register (toggle, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown toggle world |> snd
@@ -1206,10 +1207,10 @@ module FeelerDispatcherModule =
             else (Cascade, world)
 
         static member PropertyDefinitions =
-            [Define? SwallowMouseLeft false
-             Define? Touched false
-             Define? OnTouch Scripting.Unit
-             Define? OnUntouch Scripting.Unit]
+            [define Entity.SwallowMouseLeft false
+             define Entity.Touched false
+             define Entity.OnTouch Scripting.Unit
+             define Entity.OnUntouch Scripting.Unit]
 
         override dispatcher.Register (feeler, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown feeler world |> snd
@@ -1249,11 +1250,11 @@ module FillBarDispatcherModule =
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
         static member PropertyDefinitions =
-            [Define? SwallowMouseLeft true
-             Define? Fill 0.0f
-             Define? FillInset 0.0f
-             Define? FillImage (AssetTag.make<Image> Assets.DefaultPackageName "Image9")
-             Define? BorderImage (AssetTag.make<Image> Assets.DefaultPackageName "Image10")]
+            [define Entity.SwallowMouseLeft true
+             define Entity.Fill 0.0f
+             define Entity.FillInset 0.0f
+             define Entity.FillImage (AssetTag.make<Image> Assets.DefaultPackageName "Image9")
+             define Entity.BorderImage (AssetTag.make<Image> Assets.DefaultPackageName "Image10")]
 
         override dispatcher.Actualize (fillBar, world) =
             if fillBar.GetVisibleLayered world then
@@ -1302,8 +1303,8 @@ module BlockDispatcherModule =
         inherit EntityDispatcher ()
 
         static member PropertyDefinitions =
-            [Define? BodyType Static
-             Define? StaticImage (AssetTag.make<Image> Assets.DefaultPackageName  "Image3")]
+            [define Entity.BodyType Static
+             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName  "Image3")]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -1316,7 +1317,7 @@ module BoxDispatcherModule =
         inherit EntityDispatcher ()
 
         static member PropertyDefinitions =
-            [Define? StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
+            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -1329,11 +1330,11 @@ module TopViewCharacterDispatcherModule =
         inherit EntityDispatcher ()
 
         static member PropertyDefinitions =
-            [Define? FixedRotation true
-             Define? LinearDamping 10.0f
-             Define? GravityScale 0.0f
-             Define? CollisionBody (BodyCircle { Radius = 0.5f; Center = Vector2.Zero })
-             Define? StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image7")]
+            [define Entity.FixedRotation true
+             define Entity.LinearDamping 10.0f
+             define Entity.GravityScale 0.0f
+             define Entity.CollisionBody (BodyCircle { Radius = 0.5f; Center = Vector2.Zero })
+             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image7")]
         
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -1346,10 +1347,10 @@ module SideViewCharacterDispatcherModule =
         inherit EntityDispatcher ()
 
         static member PropertyDefinitions =
-            [Define? FixedRotation true
-             Define? LinearDamping 3.0f
-             Define? CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
-             Define? StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image6")]
+            [define Entity.FixedRotation true
+             define Entity.LinearDamping 3.0f
+             define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
+             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image6")]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -1367,7 +1368,10 @@ module TileMapDispatcherModule =
         member this.SetParallax (value : single) world = this.SetFast Property? Parallax false false value world
         member this.Parallax = PropertyTag.make this Property? Parallax this.GetParallax this.SetParallax
 
-        static member tryMakeTileMapData (tileMapAsset : TileMap AssetTag) world =
+    type TileMapDispatcher () =
+        inherit EntityDispatcher ()
+
+        let tryMakeTileMapData (tileMapAsset : TileMap AssetTag) world =
             let metadataMap = World.getMetadata world
             match Metadata.tryGetTileMapMetadata tileMapAsset metadataMap with
             | Some (_, _, map) ->
@@ -1384,7 +1388,7 @@ module TileMapDispatcherModule =
                 Some { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
             | None -> None
 
-        static member makeTileData (tm : Entity) tmd (tl : TmxLayer) tileIndex world =
+        let makeTileData (tm : Entity) tmd (tl : TmxLayer) tileIndex world =
             let mapRun = tmd.MapSize.X
             let tileSetRun = tmd.TileSetSize.X
             let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
@@ -1399,9 +1403,6 @@ module TileMapDispatcherModule =
                      int tileMapPosition.Y - tmd.TileSize.Y * (j + 1)) // subtraction for right-handedness
             let tileSetTileOpt = Seq.tryFind (fun (item : TmxTilesetTile) -> tile.Gid - 1 = item.Id) tmd.TileSet.Tiles
             { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; TileSetTileOpt = tileSetTileOpt }
-
-    type TileMapDispatcher () =
-        inherit EntityDispatcher ()
 
         let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr world =
             let tileShape = PhysicsEngine.localizeCollisionBody (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
@@ -1430,7 +1431,7 @@ module TileMapDispatcherModule =
               IsSensor = false }
 
         let getTileBodyProperties tm tmd (tl : TmxLayer) tli ti world =
-            let td = Entity.makeTileData tm tmd tl ti world
+            let td = makeTileData tm tmd tl ti world
             match td.TileSetTileOpt with
             | Some tileSetTile ->
                 match tileSetTile.Properties.TryGetValue Constants.Physics.CollisionProperty with
@@ -1461,7 +1462,7 @@ module TileMapDispatcherModule =
 
         let registerTileMapPhysics (tileMap : Entity) world =
             let tileMapAsset = tileMap.GetTileMapAsset world
-            match Entity.tryMakeTileMapData tileMapAsset world with
+            match tryMakeTileMapData tileMapAsset world with
             | Some tileMapData ->
                 Seq.foldi
                     (registerTileLayerPhysics tileMap tileMapData)
@@ -1472,7 +1473,7 @@ module TileMapDispatcherModule =
         let getTileLayerPhysicsIds (tileMap : Entity) tileMapData tileLayer tileLayerIndex world =
             Seq.foldi
                 (fun tileIndex physicsIds _ ->
-                    let tileData = Entity.makeTileData tileMap tileMapData tileLayer tileIndex world
+                    let tileData = makeTileData tileMap tileMapData tileLayer tileIndex world
                     match tileData.TileSetTileOpt with
                     | Some tileSetTile ->
                         if tileSetTile.Properties.ContainsKey Constants.Physics.CollisionProperty then
@@ -1485,7 +1486,7 @@ module TileMapDispatcherModule =
 
         let unregisterTileMapPhysics (tileMap : Entity) world =
             let tileMapAsset = tileMap.GetTileMapAsset world
-            match Entity.tryMakeTileMapData tileMapAsset world with
+            match tryMakeTileMapData tileMapAsset world with
             | Some tileMapData ->
                 Seq.foldi
                     (fun tileLayerIndex world (tileLayer : TmxLayer) ->
@@ -1498,13 +1499,13 @@ module TileMapDispatcherModule =
             | None -> Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'."); world
 
         static member PropertyDefinitions =
-            [Define? Omnipresent true
-             Define? Friction 0.0f
-             Define? Restitution 0.0f
-             Define? CollisionCategories "1"
-             Define? CollisionMask "@"
-             Define? TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackageName "TileMap")
-             Define? Parallax 0.0f]
+            [define Entity.Omnipresent true
+             define Entity.Friction 0.0f
+             define Entity.Restitution 0.0f
+             define Entity.CollisionCategories "1"
+             define Entity.CollisionMask "@"
+             define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackageName "TileMap")
+             define Entity.Parallax 0.0f]
 
         override dispatcher.Register (tileMap, world) =
             registerTileMapPhysics tileMap world
@@ -1602,7 +1603,7 @@ module LayerDispatcherModule =
             let views = this.View (property.Get world, layer, world)
             let world =
                 List.fold (fun world view ->
-                    match EntityView.expand view with
+                    match EntityView.expand view world with
                     | Left (entityName, descriptor) -> World.readEntity descriptor (Some entityName) layer world |> snd
                     | Right (entityName, filePath) -> World.readEntityFromFile filePath (Some entityName) layer world |> snd)
                     world views
@@ -1659,7 +1660,7 @@ module ScreenDispatcherModule =
             let views = this.View (property.Get world, screen, world)
             let world =
                 List.fold (fun world view ->
-                    match LayerView.expand view with
+                    match LayerView.expand view world with
                     | Left (name, descriptor, entityFilePaths) ->
                         let world = World.readLayer descriptor (Some name) screen world |> snd
                         List.fold (fun world (layerName, entityName, filePath) ->

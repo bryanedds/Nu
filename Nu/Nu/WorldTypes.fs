@@ -752,6 +752,9 @@ module WorldTypes =
 
         /// The address of the game.
         member this.GameAddress = gameAddress
+        
+        /// Helper for accessing strongly-type entity property tags.
+        static member Prop = Unchecked.defaultof<Game>
 
         interface Simulant with
             member this.ParticipantAddress = atoa<Game, Participant> this.GameAddress
@@ -795,6 +798,9 @@ module WorldTypes =
 
         /// The address of the screen.
         member this.ScreenAddress = screenAddress
+
+        /// Helper for accessing strongly-type entity property tags.
+        static member Prop = Unchecked.defaultof<Screen>
 
         interface Simulant with
             member this.ParticipantAddress = atoa<Screen, Participant> this.ScreenAddress
@@ -849,6 +855,9 @@ module WorldTypes =
 
         /// The address of the layer.
         member this.LayerAddress = layerAddress
+
+        /// Helper for accessing strongly-type entity property tags.
+        static member Prop = Unchecked.defaultof<Layer>
 
         interface Simulant with
             member this.ParticipantAddress = atoa<Layer, Participant> this.LayerAddress
@@ -920,6 +929,9 @@ module WorldTypes =
         member this.EntityStateOpt
             with get () = entityStateOpt
             and set value = entityStateOpt <- value
+
+        /// Helper for accessing strongly-type entity property tags.
+        static member Prop = Unchecked.defaultof<Entity>
         
         interface Simulant with
             member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress
