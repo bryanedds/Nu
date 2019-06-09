@@ -186,7 +186,7 @@ module WorldScripting =
                     match stream with
                     | :? StreamPluggable as stream ->
                         let (unsubscribe, world) =
-                            Stream.monitorPlus (fun (evt : Event<obj, _>) world ->
+                            Stream.monitorEffect (fun (evt : Event<obj, _>) world ->
                                 match evt.Data with
                                 | :? (Expr option) as exprOpt ->
                                     match exprOpt with
