@@ -289,7 +289,11 @@ module DeclarativeOperators =
     let inline just model = (model, [])
 
 module Declarative =
-    let Game = Nu.Game.Prop
-    let Screen = Nu.Screen.Prop
-    let Layer = Nu.Layer.Prop
-    let Entity = Nu.Entity.Prop
+    type game = Game
+    type screen = Screen
+    type layer = Layer
+    type entity = Entity
+    let Game = Game.Prop
+    let Screen = Screen.Prop
+    let Layer = Layer.Prop
+    let Entity = Entity.Prop
