@@ -11,6 +11,64 @@ open Nu
 open Nu.Declarative
 
 [<AutoOpen>]
+module FacetModule =
+
+    type [<AbstractClass>] Facet<'model, 'message, 'command>
+        (propertyFn : Entity -> PropertyTag<'model, World>) =
+        inherit Facet ()
+
+        override this.Register (entity, world) =
+            let property = propertyFn entity
+            let bindings = this.Bindings (property.Get world, entity, world)
+            let world =
+                List.fold (fun world binding ->
+                    match binding with
+                    | Message binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = property.Get world
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message ->
+                                let (model, commands) = this.Update (message, model, entity, world)
+                                let world = property.Set model world
+                                List.fold (fun world command ->
+                                    let model = property.Get world
+                                    this.Command (command, model, entity, world))
+                                    world commands
+                            | None -> world)
+                            entity binding.Stream world
+                    | Command binding ->
+                        Stream.monitor (fun evt world ->
+                            let model = property.Get world
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message -> this.Command (message, model, entity, world)
+                            | None -> world)
+                            entity binding.Stream world)
+                    world bindings
+            world
+
+        override this.Actualize (entity, world) =
+            let property = propertyFn entity
+            let model = property.Get world
+            let views = this.View (model, entity, world)
+            List.fold (fun world view ->
+                match view with
+                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
+                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
+                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
+                | FadeOutSong fade -> World.fadeOutSong fade world
+                | StopSong -> World.stopSong world
+                | Effect effect -> effect world)
+                world views
+
+        abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
+        abstract member Update : 'message * 'model * Entity * World -> 'model * 'command list
+        abstract member Command : 'command * 'model * Entity * World -> World
+        abstract member View : 'model * Entity * World -> View list
+        default this.View (_, _, _) = []
+
+[<AutoOpen>]
 module EffectFacetModule =
 
     type EffectTags =
