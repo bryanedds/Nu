@@ -755,6 +755,8 @@ module WorldTypes =
         
         /// Helper for accessing strongly-type entity property tags.
         static member Prop = Unchecked.defaultof<Game>
+        static member op_Implicit () = Game ()
+        static member op_Implicit (gameAddress : Game Address) = Game gameAddress
 
         interface Simulant with
             member this.ParticipantAddress = atoa<Game, Participant> this.GameAddress
@@ -801,6 +803,8 @@ module WorldTypes =
 
         /// Helper for accessing strongly-type entity property tags.
         static member Prop = Unchecked.defaultof<Screen>
+        static member op_Implicit (screenName : string) = Screen screenName
+        static member op_Implicit (screenAddress : Screen Address) = Screen screenAddress
 
         interface Simulant with
             member this.ParticipantAddress = atoa<Screen, Participant> this.ScreenAddress
@@ -825,16 +829,16 @@ module WorldTypes =
 
         /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (screen : Screen) = acatf address (atooa screen.ScreenAddress)
-        
+
         /// Concatenate two addresses, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (screen : Screen) = acatff address screen.ScreenAddress
-    
+
         /// Concatenate two addresses, taking the type of first address.
         static member (->-) (address : 'a Address, screen) = Screen.acatf address screen
-    
+
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, screen) = Screen.acatff address screen
-    
+
         /// Derive a layer from its screen.
         static member (=>) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress ->- ntoa layerName)
     
@@ -858,6 +862,8 @@ module WorldTypes =
 
         /// Helper for accessing strongly-type entity property tags.
         static member Prop = Unchecked.defaultof<Layer>
+        static member op_Implicit (layerName : string) = Layer layerName
+        static member op_Implicit (layerAddress : Layer Address) = Layer layerAddress
 
         interface Simulant with
             member this.ParticipantAddress = atoa<Layer, Participant> this.LayerAddress
@@ -932,6 +938,8 @@ module WorldTypes =
 
         /// Helper for accessing strongly-type entity property tags.
         static member Prop = Unchecked.defaultof<Entity>
+        static member op_Implicit (entityName : string) = Entity entityName
+        static member op_Implicit (entityAddress : Entity Address) = Entity entityAddress
         
         interface Simulant with
             member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress

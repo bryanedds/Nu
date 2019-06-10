@@ -289,10 +289,6 @@ module DeclarativeOperators =
     let inline just model = (model, [])
 
 module Declarative =
-    type game = Game
-    type screen = Screen
-    type layer = Layer
-    type entity = Entity
     let Game = Game.Prop
     let Screen = Screen.Prop
     let Layer = Layer.Prop
