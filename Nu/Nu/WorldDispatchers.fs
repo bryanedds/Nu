@@ -13,12 +13,11 @@ open Nu.Declarative
 [<AutoOpen>]
 module FacetModule =
 
-    type [<AbstractClass>] Facet<'model, 'message, 'command>
-        (propertyFn : Entity -> PropertyTag<'model, World>) =
+    type [<AbstractClass>] Facet<'model, 'message, 'command> (property : PropertyTag<'model, World>) =
         inherit Facet ()
-
+        
         override this.Register (entity, world) =
-            let property = propertyFn entity
+            let property = { property with This = entity }
             let bindings = this.Bindings (property.Get world, entity, world)
             let world =
                 List.fold (fun world binding ->
@@ -49,7 +48,7 @@ module FacetModule =
             world
 
         override this.Actualize (entity, world) =
-            let property = propertyFn entity
+            let property = { property with This = entity }
             let model = property.Get world
             let views = this.View (model, entity, world)
             List.fold (fun world view ->
@@ -727,12 +726,11 @@ module AnimatedSpriteFacetModule =
 [<AutoOpen>]
 module EntityDispatcherModule =
 
-    type [<AbstractClass>] EntityDispatcher<'model, 'message, 'command>
-        (propertyFn : Entity -> PropertyTag<'model, World>) =
+    type [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (property : PropertyTag<'model, World>) =
         inherit EntityDispatcher ()
 
         override this.Register (entity, world) =
-            let property = propertyFn entity
+            let property = { property with This = entity }
             let bindings = this.Bindings (property.Get world, entity, world)
             let world =
                 List.fold (fun world binding ->
@@ -763,7 +761,7 @@ module EntityDispatcherModule =
             world
 
         override this.Actualize (entity, world) =
-            let property = propertyFn entity
+            let property = { property with This = entity }
             let model = property.Get world
             let views = this.View (model, entity, world)
             List.fold (fun world view ->
@@ -1634,12 +1632,11 @@ module TileMapDispatcherModule =
 [<AutoOpen>]
 module LayerDispatcherModule =
 
-    type [<AbstractClass>] LayerDispatcher<'model, 'message, 'command>
-        (propertyFn : Layer -> PropertyTag<'model, World>) =
+    type [<AbstractClass>] LayerDispatcher<'model, 'message, 'command> (property : PropertyTag<'model, World>) =
         inherit LayerDispatcher ()
 
         override this.Register (layer, world) =
-            let property = propertyFn layer
+            let property = { property with This = layer }
             let bindings = this.Bindings (property.Get world, layer, world)
             let world =
                 List.fold (fun world binding ->
@@ -1677,7 +1674,7 @@ module LayerDispatcherModule =
             world
 
         override this.Actualize (layer, world) =
-            let property = propertyFn layer
+            let property = { property with This = layer }
             let model = property.Get world
             let views = this.View (model, layer, world)
             List.fold (fun world view ->
@@ -1700,12 +1697,11 @@ module LayerDispatcherModule =
 [<AutoOpen>]
 module ScreenDispatcherModule =
 
-    type [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command>
-        (propertyFn : Screen -> PropertyTag<'model, World>) =
+    type [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command> (property : PropertyTag<'model, World>) =
         inherit ScreenDispatcher ()
 
         override this.Register (screen, world) =
-            let property = propertyFn screen
+            let property = { property with This = screen }
             let bindings = this.Bindings (property.Get world, screen, world)
             let world =
                 List.fold (fun world binding ->
@@ -1748,7 +1744,7 @@ module ScreenDispatcherModule =
             world
 
         override this.Actualize (screen, world) =
-            let property = propertyFn screen
+            let property = { property with This = screen }
             let model = property.Get world
             let views = this.View (model, screen, world)
             List.fold (fun world view ->
