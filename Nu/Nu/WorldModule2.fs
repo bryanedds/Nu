@@ -772,7 +772,7 @@ module WorldModule2 =
 [<AutoOpen>]
 module GameDispatcherModule =
 
-    type [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (property : PropertyTag<'model, World>) =
+    type [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (getModelProperty : Game -> PropertyTag<'model, World>) =
         inherit GameDispatcher ()
 
         static let applyBehavior behavior screen world =
@@ -807,7 +807,7 @@ module GameDispatcherModule =
                 applyBehavior behavior screen world
 
         override this.Register (game, world) =
-            let property = { property with This = game }
+            let property = getModelProperty game
             let bindings = this.Bindings (property.Get world, game, world)
             let world =
                 List.fold (fun world binding ->
@@ -844,7 +844,7 @@ module GameDispatcherModule =
             world
 
         override this.Actualize (game, world) =
-            let property = { property with This = game }
+            let property = getModelProperty game
             let model = property.Get world
             let views = this.View (model, game, world)
             List.fold (fun world view ->
