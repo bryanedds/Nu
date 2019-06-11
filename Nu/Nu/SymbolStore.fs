@@ -21,12 +21,20 @@ module SymbolStoreModule =
 
         let private tryLoadSymbol3 implicitDelimiters packageName (asset : Symbol Asset) =
             try let text = File.ReadAllText asset.FilePath
-                let text = if implicitDelimiters then Symbol.OpenSymbolsStr + text + Symbol.CloseSymbolsStr else text
-                try let symbol = Symbol.fromString text
-                    Some (asset.AssetTag.AssetName, (implicitDelimiters, symbol))
-                with exn ->
-                    Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
-                    None
+                match Path.GetExtension asset.FilePath with
+                | ".csv" ->
+                    try let symbol = Csv.readSymbolFromCsv text (Some asset.FilePath)
+                        Some (asset.AssetTag.AssetName, (implicitDelimiters, symbol))
+                    with exn ->
+                        Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
+                        None
+                | _ ->
+                    let text = if implicitDelimiters then Symbol.OpenSymbolsStr + text + Symbol.CloseSymbolsStr else text
+                    try let symbol = Symbol.fromString text
+                        Some (asset.AssetTag.AssetName, (implicitDelimiters, symbol))
+                    with exn ->
+                        Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
+                        None
             with _ ->
                 Log.info ("Failed to load symbol file '" + asset.FilePath + "' for package '" + packageName + "' due to: " + scstring exn)
                 None
@@ -79,19 +87,19 @@ module SymbolStoreModule =
         let tryFindSymbol implicitDelimiters assetTag symbolStore =
             // NOTE: converting canonical option here as I've not yet decided to allow FOption to
             // leak into the engine's public interface...
-            let (symbolOpt, world) = tryLoadSymbol implicitDelimiters assetTag symbolStore
-            (FOption.ToOpt symbolOpt, world)
+            let (symbolOpt, symbolStore) = tryLoadSymbol implicitDelimiters assetTag symbolStore
+            (FOption.ToOpt symbolOpt, symbolStore)
             
         /// Try to find the symbols with the given asset tags.
-        let tryFindSymbols implicitDelimiters assetTags world =
+        let tryFindSymbols implicitDelimiters assetTags symbolStore =
             List.foldBack
-                (fun assetTag (symbolOpts, world) ->
-                    let (symbolOpt, world) = tryFindSymbol implicitDelimiters assetTag world
+                (fun assetTag (symbolOpts, symbolStore) ->
+                    let (symbolOpt, symbolStore) = tryFindSymbol implicitDelimiters assetTag symbolStore
                     match symbolOpt with
-                    | Some symbol -> (Some symbol :: symbolOpts, world)
-                    | None -> (None :: symbolOpts, world))
+                    | Some symbol -> (Some symbol :: symbolOpts, symbolStore)
+                    | None -> (None :: symbolOpts, symbolStore))
                 assetTags
-                ([], world)
+                ([], symbolStore)
     
         /// Reload all the assets in the symbolStore.
         let reloadSymbols symbolStore =
@@ -107,8 +115,7 @@ module SymbolStoreModule =
                 oldPackageMap
     
         /// The empty symbolStore.
-        let empty =
-            { SymbolStorePackageMap = UMap.makeEmpty Constants.SymbolStore.SymbolMapConfig }
+        let empty = { SymbolStorePackageMap = UMap.makeEmpty Constants.SymbolStore.SymbolMapConfig }
 
 /// Provides references to Symbols that are loaded from files.
 type SymbolStore = SymbolStoreModule.SymbolStore
