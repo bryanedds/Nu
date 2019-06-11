@@ -29,7 +29,7 @@ type MyGamePlugin () =
 // this is the main module for our program.
 module Program =
 
-    // this the entry point for the your Nu application
+    // this the entry point for your Nu application
     let [<EntryPoint; STAThread>] main _ =
 
         // initialize Nu

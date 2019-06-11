@@ -1669,6 +1669,8 @@ module Gaia =
             match tryMakeWorld plugin sdlDeps with
             | Right world ->
                 Globals.WorldRef := world
+                let (symbol, _) = World.tryFindSymbol false (AssetTag.make Assets.DefaultPackageName "Test.csv") world
+                ignore symbol
                 let _ = run3 tautology targetDir sdlDeps form
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error

@@ -70,6 +70,7 @@
     <Compile Include="Assets.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="Math.fs" />
+    <Compile Include="Csv.fs" />
     <Compile Include="SpatialTree.fs" />
     <Compile Include="Overlayer.fs" />
     <Compile Include="OverlayRouter.fs" />
