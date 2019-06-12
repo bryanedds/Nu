@@ -24,7 +24,6 @@ module Csv =
             let! number = numberLiteral Symbol.NumberFormat "number"
             do! nextCharSatisfies (function '\r' | '\n' | ',' -> true | _ -> false) <|> eof
             let! stop = getPosition
-            do! Symbol.skipWhitespaces
             let originOpt = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
             let suffix =
                 (if number.SuffixChar1 <> (char)65535 then string number.SuffixChar1 else "") + 
@@ -41,7 +40,6 @@ module Csv =
             let! escaped = many (noneOf Symbol.CloseStringStr)
             do! Symbol.closeString
             let! stop = getPosition
-            do! Symbol.skipWhitespaces
             let str = String.implode escaped
             let originOpt = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
             return String (str, originOpt) }
