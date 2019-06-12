@@ -64,6 +64,7 @@ module Csv =
             let! start = getPosition
             let! symbols = sepBy readRowFromCsv skipNewline
             let symbols = List.trySkip (if stripHeader then 1 else 0) symbols
+            let symbols = List.allButLast symbols // NOTE: assumes that all CSV files end with an empty new-line.
             let! stop = getPosition
             let originOpt = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
             return Symbols (symbols, originOpt) }
