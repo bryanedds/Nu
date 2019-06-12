@@ -60,17 +60,18 @@ module Csv =
             let originOpt = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
             return Symbols (symbols, originOpt) }
 
-    let readRowsFromCsv =
+    let readRowsFromCsv stripHeader =
         parse {
             let! userState = getUserState
             let! start = getPosition
             let! symbols = sepBy readRowFromCsv skipNewline
+            let symbols = List.trySkip (if stripHeader then 1 else 0) symbols
             let! stop = getPosition
             let originOpt = Some { Source = userState.SymbolSource; Start = start; Stop = stop }
             return Symbols (symbols, originOpt) }
 
-    let readSymbolFromCsv csvStr filePathOpt =
+    let readSymbolFromCsv stripHeader csvStr filePathOpt =
         let symbolSource = { SymbolSource = { FileNameOpt = filePathOpt; Text = csvStr }}
-        match runParserOnString readRowsFromCsv symbolSource "" csvStr with
+        match runParserOnString (readRowsFromCsv stripHeader) symbolSource "" csvStr with
         | Success (symbol, _, _) -> symbol
         | Failure (_, error, _) -> failwithf "Csv parse error at %s." (scstring error.Position)

@@ -124,7 +124,8 @@ module EffectFacetModule =
         static let setEffect effectsOpt (entity : Entity) world =
             match effectsOpt with
             | Some effectAssetTags ->
-                let (effectOpts, world) = World.assetTagsToValueOpts<Effect> false effectAssetTags world
+                let symbolLoadMetadata = { ImplicitDelimiters = false; StripCsvHeader = false }
+                let (effectOpts, world) = World.assetTagsToValueOpts<Effect> symbolLoadMetadata effectAssetTags world
                 let effects = List.definitize effectOpts
                 let effectCombined = EffectSystem.combineEffects effects
                 entity.SetEffect effectCombined world

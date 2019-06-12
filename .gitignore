@@ -49,3 +49,8 @@ refinement/
 #########
 packages/
 !packages/repositories.config
+
+##############
+# Temp Files #
+##############
+*.csv#

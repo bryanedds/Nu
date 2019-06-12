@@ -226,7 +226,8 @@ module WorldModuleLayer =
             let layer = evt.Subscriber : Layer
             match World.getLayerScriptOpt layer world with
             | Some script ->
-                match World.assetTagToValueOpt<Scripting.Expr array> true script world with
+                let symbolLoadMetadata = { ImplicitDelimiters = true; StripCsvHeader = false }
+                match World.assetTagToValueOpt<Scripting.Expr array> symbolLoadMetadata script world with
                 | (Some script, world) -> World.setLayerScript script layer world
                 | (None, world) -> world
             | None -> world
