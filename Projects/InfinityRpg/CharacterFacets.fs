@@ -11,78 +11,22 @@ module CharacterStateFacetModule =
 
     type Entity with
 
-        member this.GetCharacterType world : CharacterType = this.Get Property? CharacterType world
-        member this.SetCharacterType (value : CharacterType) world = this.Set Property? ActivityState value world
-        member this.CharacterType = PropertyTag.make this Property? CharacterType this.GetCharacterType this.SetCharacterType
+        member this.GetCharacterState world : CharacterState = this.Get Property? CharacterState world
+        member this.SetCharacterState (value : CharacterState) world = this.Set Property? CharacterState value world
+        member this.CharacterState = PropertyTag.make this Property? CharacterState this.GetCharacterState this.SetCharacterState
         member this.GetActivityState world : ActivityState = this.Get Property? ActivityState world
         member this.SetActivityState (value : ActivityState) world = this.Set Property? ActivityState value world
         member this.ActivityState = PropertyTag.make this Property? ActivityState this.GetActivityState this.SetActivityState
-        member this.GetHitPoints world : int = this.Get Property? HitPoints world
-        member this.SetHitPoints (value : int) world = this.Set Property? HitPoints value world
-        member this.HitPoints = PropertyTag.make this Property? HitPoints this.GetHitPoints this.SetHitPoints
-        member this.GetSpecialPoints world : int = this.Get Property? SpecialPoints world
-        member this.SetSpecialPoints (value : int) world = this.Set Property? SpecialPoints value world
-        member this.SpecialPoints = PropertyTag.make this Property? SpecialPoints this.GetSpecialPoints this.SetSpecialPoints
-        member this.GetPowerBuff world : single = this.Get Property? PowerBuff world
-        member this.SetPowerBuff (value : single) world = this.Set Property? PowerBuff value world
-        member this.PowerBuff = PropertyTag.make this Property? PowerBuff this.GetPowerBuff this.SetPowerBuff
-        member this.GetShieldBuff world : single = this.Get Property? ShieldBuff world
-        member this.SetShieldBuff (value : single) world = this.Set Property? ShieldBuff value world
-        member this.ShieldBuff = PropertyTag.make this Property? ShieldBuff this.GetShieldBuff this.SetShieldBuff
-        member this.GetMindBuff world : single = this.Get Property? MindBuff world
-        member this.SetMindBuff (value : single) world = this.Set Property? MindBuff value world
-        member this.MindBuff = PropertyTag.make this Property? MindBuff this.GetMindBuff this.SetMindBuff
-        member this.GetCounterBuff world : single = this.Get Property? CounterBuff world
-        member this.SetCounterBuff (value : single) world = this.Set Property? CounterBuff value world
-        member this.CounterBuff = PropertyTag.make this Property? CounterBuff this.GetCounterBuff this.SetCounterBuff
-        member this.GetStatuses world : StatusType Set = this.Get Property? Statuses world
-        member this.SetStatuses (value : StatusType Set) world = this.Set Property? Statuses value world
-        member this.Statuses = PropertyTag.make this Property? Statuses this.GetStatuses this.SetStatuses
-        member this.GetEquippedWeapon world : WeaponType option = this.Get Property? EquippedWeapon world
-        member this.SetEquippedWeapon (value : WeaponType option) world = this.Set Property? EquippedWeapon value world
-        member this.EquippedWeapon = PropertyTag.make this Property? EquippedWeapon this.GetEquippedWeapon this.SetEquippedWeapon
-        member this.GetEquippedArmor world : ArmorType option = this.Get Property? EquippedArmor world
-        member this.SetEquippedArmor (value : ArmorType option) world = this.Set Property? EquippedArmor value world
-        member this.EquippedArmor = PropertyTag.make this Property? EquippedArmor this.GetEquippedArmor this.SetEquippedArmor
-        member this.GetEquippedRelics world : RelicType list = this.Get Property? EquippedRelics world
-        member this.SetEquippedRelics (value : RelicType list) world = this.Set Property? EquippedRelics value world
-        member this.EquippedRelics = PropertyTag.make this Property? EquippedRelics this.GetEquippedRelics this.SetEquippedRelics
-        member this.GetControlType world : ControlType = this.Get Property? ControlType world
-        member this.SetControlType (value : ControlType) world = this.Set Property? ControlType value world
-        member this.ControlType = PropertyTag.make this Property? ControlType this.GetControlType this.SetControlType
 
     type CharacterStateFacet () =
         inherit Facet ()
 
         static member PropertyDefinitions =
-            [define Entity.CharacterType (Ally Player)
-             define Entity.ActivityState NoActivity
-             define Entity.HitPoints 10 // note this is an arbitrary number as hp max is calculated
-             define Entity.SpecialPoints 1 // sp max is calculated
-             define Entity.PowerBuff 1.0f // rate at which power is buffed / debuffed
-             define Entity.ShieldBuff 1.0f // rate at which shield is buffed / debuffed
-             define Entity.MindBuff 1.0f // rate at which mind is buffed / debuffed
-             define Entity.CounterBuff 1.0f // rate at which counter is buffed / debuffed
-             define Entity.Statuses Set.empty<StatusType>
-             define Entity.EquippedWeapon Option<WeaponType>.None
-             define Entity.EquippedArmor Option<ArmorType>.None
-             define Entity.EquippedRelics list<RelicType>.Empty
-             define Entity.ControlType Uncontrolled] // level is calculated from base experience + added experience
+            [define Entity.CharacterState CharacterState.empty
+             define Entity.ActivityState NoActivity]
 
 [<AutoOpen>]
 module CharacterAnimationFacetModule =
-
-    type CharacterAnimationType =
-        | CharacterAnimationFacing
-        | CharacterAnimationActing
-        | CharacterAnimationDefending
-        | CharacterAnimationSpecial // works for jump, cast magic, being healed, and perhaps others!
-        | CharacterAnimationSlain
-
-    type CharacterAnimationState =
-        { StartTime : int64
-          AnimationType : CharacterAnimationType
-          Direction : Direction }
 
     type Entity with
     
@@ -201,4 +145,4 @@ module CharacterCameraFacetModule =
             World.setEyeCenter eyeCenter world
 
         override facet.Register (entity, world) =
-            Stream.monitor handlePostUpdate entity (Stream.make (Events.PostUpdate ->- entity)) world
+            Stream.monitor handlePostUpdate entity (Stream.make entity.PostUpdateEvent) world

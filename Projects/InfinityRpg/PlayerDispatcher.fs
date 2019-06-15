@@ -15,5 +15,4 @@ module PlayerDispatcherModule =
             [typeof<CharacterCameraFacet>.Name]
 
         static member PropertyDefinitions =
-            [define Entity.HitPoints 30 // note this is an arbitrary number as hp max is calculated
-             define Entity.ControlType PlayerControlled]
+            [define Entity.CharacterState { CharacterState.empty with HitPoints = 30; ControlType = PlayerControlled }]

@@ -18,6 +18,5 @@ module EnemyDispatcherModule =
         inherit CharacterDispatcher ()
 
         static member PropertyDefinitions =
-            [define Entity.HitPoints 10 // note this is an arbitrary number as hp max is calculated
-             define Entity.ControlType Chaos
+            [define Entity.CharacterState { CharacterState.empty with HitPoints = 10; ControlType = Chaos }
              define Entity.DesiredTurn NoTurn]

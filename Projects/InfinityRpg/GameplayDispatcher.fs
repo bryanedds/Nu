@@ -215,9 +215,9 @@ module GameplayDispatcherModule =
             else NoTurn
 
         static let determineDesiredEnemyTurn occupationMap (player : Entity) (enemy : Entity) rand world =
-            match enemy.GetControlType world with
-            | PlayerControlled ->
-                Log.debug ("Invalid ControlType '" + scstring (enemy.GetControlType world) + "' for enemy.")
+            match (enemy.GetCharacterState world).ControlType with
+            | PlayerControlled as controlType ->
+                Log.debug ("Invalid ControlType '" + scstring controlType + "' for enemy.")
                 (NoTurn, rand)
             | Chaos ->
                 let nextPlayerPosition =
@@ -341,10 +341,9 @@ module GameplayDispatcherModule =
                         (initiator.GetPosition world)
                         (initiator.GetCharacterAnimationState world).Direction
                         world
-                let reactorDamage = initiator.GetPowerBuff world * 5.0f - reactor.GetShieldBuff world |> int
-                let reactorHitPoints = reactor.GetHitPoints world - reactorDamage
-                let world = reactor.SetHitPoints reactorHitPoints world
-                if reactor.GetHitPoints world <= 0 then
+                let reactorDamage = 4 // NOTE: just hard-coding damage for now
+                let world = reactor.CharacterState.Update (fun state -> { state with HitPoints = state.HitPoints - reactorDamage }) world
+                if reactor.CharacterState.GetBy (fun state -> state.HitPoints <= 0) world then
                     if reactor.GetName world = Simulants.Player.EntityName
                     then World.transitionScreen Simulants.Title world
                     else World.destroyEntity reactor world
