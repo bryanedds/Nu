@@ -121,20 +121,20 @@ module GameplayDispatcherModule =
             | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
 
         static let isPlayerNavigatingPath world =
-            ActivityState.isNavigatingPath (Simulants.Player.GetActivityState world)
+            (Simulants.Player.GetCharacterActivityState world).IsNavigatingPath
 
         static let cancelNavigation (character : Entity) world =
             let characterActivity =
-                match character.GetActivityState world with
+                match character.GetCharacterActivityState world with
                 | Action _ as action -> action
                 | NoActivity -> NoActivity
                 | Navigation navDescriptor -> Navigation { navDescriptor with NavigationPathOpt = None }
-            character.SetActivityState characterActivity world
+            character.SetCharacterActivityState characterActivity world
 
         static let anyTurnsInProgress2 (player : Entity) enemies world =
-            player.GetActivityState world <> NoActivity ||
+            player.GetCharacterActivityState world <> NoActivity ||
             Seq.exists
-                (fun (enemy : Entity) -> enemy.GetDesiredTurn world <> NoTurn || enemy.GetActivityState world <> NoActivity)
+                (fun (enemy : Entity) -> enemy.GetDesiredTurn world <> NoTurn || enemy.GetCharacterActivityState world <> NoActivity)
                 enemies
 
         static let anyTurnsInProgress world =
@@ -153,13 +153,13 @@ module GameplayDispatcherModule =
             | WalkFinished ->
                 match navigationDescriptor.NavigationPathOpt with
                 | Some [] -> failwith "NavigationPath should never be empty here."
-                | Some (_ :: []) -> character.SetActivityState NoActivity world
+                | Some (_ :: []) -> character.SetCharacterActivityState NoActivity world
                 | Some (currentNode :: navigationPath) ->
                     let walkDirection = vmtod ((List.head navigationPath).PositionM - currentNode.PositionM)
                     let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = vftovm (character.GetPosition world) }
                     let navigationDescriptor = { WalkDescriptor = walkDescriptor; NavigationPathOpt = Some navigationPath }
-                    character.SetActivityState (Navigation navigationDescriptor) world
-                | None -> character.SetActivityState NoActivity world
+                    character.SetCharacterActivityState (Navigation navigationDescriptor) world
+                | None -> character.SetCharacterActivityState NoActivity world
             | WalkContinuing -> world
 
         static let updateCharacterByNavigation navigationDescriptor character world =
@@ -170,17 +170,17 @@ module GameplayDispatcherModule =
             if actionDescriptor.ActionTicks = 0L then
                 world |>
                     character.SetCharacterAnimationState (getCharacterAnimationStateByActionBegin (World.getTickTime world) (character.GetPosition world) (character.GetCharacterAnimationState world) actionDescriptor) |>
-                    character.SetActivityState (Action { actionDescriptor with ActionTicks = inc actionDescriptor.ActionTicks })
+                    character.SetCharacterActivityState (Action { actionDescriptor with ActionTicks = inc actionDescriptor.ActionTicks })
             elif actionDescriptor.ActionTicks > 0L && actionDescriptor.ActionTicks < Constants.InfinityRpg.ActionTicksMax then
                 world |>
-                    character.SetActivityState (Action { actionDescriptor with ActionTicks = inc actionDescriptor.ActionTicks })
+                    character.SetCharacterActivityState (Action { actionDescriptor with ActionTicks = inc actionDescriptor.ActionTicks })
             else
                 world |>
-                    character.SetActivityState NoActivity |>
+                    character.SetCharacterActivityState NoActivity |>
                     character.SetCharacterAnimationState (getCharacterAnimationStateByActionEnd (World.getTickTime world) (character.GetCharacterAnimationState world))
 
         static let determineCharacterTurnFromDirection direction occupationMap (character : Entity) opponents world =
-            match character.GetActivityState world with
+            match character.GetCharacterActivityState world with
             | Action _ -> NoTurn
             | Navigation _ -> NoTurn
             | NoActivity ->
@@ -195,7 +195,7 @@ module GameplayDispatcherModule =
                     else NoTurn
 
         static let determineCharacterTurnFromTouch touchPosition occupationMap (character : Entity) opponents world =
-            if character.GetActivityState world = NoActivity then
+            if character.GetCharacterActivityState world = NoActivity then
                 match tryGetNavigationPath touchPosition occupationMap character world with
                 | Some navigationPath ->
                     match navigationPath with
@@ -221,7 +221,7 @@ module GameplayDispatcherModule =
                 (NoTurn, rand)
             | Chaos ->
                 let nextPlayerPosition =
-                    match player.GetActivityState world with
+                    match player.GetCharacterActivityState world with
                     | Action _ -> player.GetPosition world
                     | Navigation navigationDescriptor -> NavigationDescriptor.nextPosition navigationDescriptor
                     | NoActivity -> player.GetPosition world
@@ -284,7 +284,7 @@ module GameplayDispatcherModule =
             | NoInput -> NoTurn
 
         static let determinePlayerTurn world =
-            match Simulants.Player.GetActivityState world with
+            match Simulants.Player.GetCharacterActivityState world with
             | Action _ -> NoTurn
             | Navigation navigationDescriptor ->
                 let walkDescriptor = navigationDescriptor.WalkDescriptor
@@ -303,8 +303,8 @@ module GameplayDispatcherModule =
             List.foldBack
                 (fun (enemy : Entity) precedingEnemyActivities ->
                     let enemyActivity =
-                        let noPrecedingEnemyActionActivity = Seq.notExists ActivityState.isActing precedingEnemyActivities
-                        let noCurrentEnemyActionActivity = Seq.notExists (fun (enemy : Entity) -> ActivityState.isActing (enemy.GetActivityState world)) enemies
+                        let noPrecedingEnemyActionActivity = Seq.notExists (fun (state : CharacterActivityState) -> state.IsActing) precedingEnemyActivities
+                        let noCurrentEnemyActionActivity = Seq.notExists (fun (enemy : Entity) -> (enemy.GetCharacterActivityState world).IsActing) enemies
                         if noPrecedingEnemyActionActivity && noCurrentEnemyActionActivity then
                             match enemy.GetDesiredTurn world with
                             | ActionTurn actionDescriptor -> Action actionDescriptor
@@ -320,7 +320,7 @@ module GameplayDispatcherModule =
             List.foldBack
                 (fun (enemy : Entity) enemyActivities ->
                     let noCurrentEnemyActionActivity =
-                        Seq.notExists (fun (enemy : Entity) -> ActivityState.isActing (enemy.GetActivityState world)) enemies
+                        Seq.notExists (fun (enemy : Entity) -> (enemy.GetCharacterActivityState world).IsActing) enemies
                     let enemyActivity =
                         if noCurrentEnemyActionActivity then
                             match enemy.GetDesiredTurn world with
@@ -352,15 +352,15 @@ module GameplayDispatcherModule =
 
         static let runCharacterNavigation newNavigationDescriptor (character : Entity) world =
             let chain = chain {
-                do! Chain.update (character.SetActivityState (Navigation newNavigationDescriptor))
+                do! Chain.update (character.SetCharacterActivityState (Navigation newNavigationDescriptor))
                 do! Chain.during (fun world ->
-                    match character.GetActivityState world with
+                    match character.GetCharacterActivityState world with
                     | Navigation navigationDescriptor -> newNavigationDescriptor.WalkDescriptor.WalkOriginM = navigationDescriptor.WalkDescriptor.WalkOriginM
                     | Action _ -> false
                     | NoActivity -> false) ^ chain {
                     do! Chain.update ^ fun world ->
                         let navigationDescriptor =
-                            match character.GetActivityState world with
+                            match character.GetCharacterActivityState world with
                             | Navigation navigationDescriptor -> navigationDescriptor
                             | _ -> failwithumf ()
                         updateCharacterByNavigation navigationDescriptor character world
@@ -374,11 +374,11 @@ module GameplayDispatcherModule =
         static let runCharacterAction newActionDescriptor (character : Entity) world =
             // NOTE: currently just implements attack
             let chain = chain {
-                do! Chain.update ^ character.SetActivityState (Action newActionDescriptor)
-                do! Chain.during (ActivityState.isActing << character.GetActivityState) ^ chain {
+                do! Chain.update ^ character.SetCharacterActivityState (Action newActionDescriptor)
+                do! Chain.during (character.CharacterActivityState.GetBy (fun state -> state.IsActing)) ^ chain {
                     do! Chain.update ^ fun world ->
                         let actionDescriptor =
-                            match character.GetActivityState world with
+                            match character.GetCharacterActivityState world with
                             | Action actionDescriptor -> actionDescriptor
                             | _ -> failwithumf ()
                         let world = updateCharacterByAction actionDescriptor character world
@@ -391,7 +391,7 @@ module GameplayDispatcherModule =
             Chain.runAssumingCascade chain stream world |> snd
 
         static let runCharacterNoActivity (character : Entity) world =
-            character.SetActivityState NoActivity world
+            character.SetCharacterActivityState NoActivity world
 
         static let runCharacterActivity newActivity character world =
             match newActivity with
@@ -406,12 +406,12 @@ module GameplayDispatcherModule =
             else world
 
         static let runEnemyNavigationActivities enemyNavigationActivities enemies world =
-            if Seq.exists ActivityState.isNavigating enemyNavigationActivities
+            if Seq.exists (fun (state : CharacterActivityState) -> state.IsNavigating) enemyNavigationActivities
             then Seq.fold2 tryRunEnemyActivity world enemyNavigationActivities enemies
             else world
 
         static let runEnemyActivities enemyActionActivities enemyNavigationActivities enemies world =
-            let anyEnemyActionActivity = Seq.exists ActivityState.isActing enemyActionActivities
+            let anyEnemyActionActivity = Seq.exists (fun (state : CharacterActivityState) -> state.IsActing) enemyActionActivities
             let newEnemyActivities = if anyEnemyActionActivity then enemyActionActivities else enemyNavigationActivities
             Seq.fold2 tryRunEnemyActivity world newEnemyActivities enemies
             
@@ -454,13 +454,13 @@ module GameplayDispatcherModule =
             // run enemy activities in accordance with the player's current activity
             let world =
                 let enemies = getEnemies world
-                match Simulants.Player.GetActivityState world with
+                match Simulants.Player.GetCharacterActivityState world with
                 | Action _ -> world
                 | Navigation _ 
                 | NoActivity ->
                     let newEnemyActionActivities = determineEnemyActionActivities enemies world
                     let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies world
-                    if List.exists ActivityState.isActing newEnemyActionActivities then
+                    if List.exists (fun (state : CharacterActivityState) -> state.IsActing) newEnemyActionActivities then
                         let world = runEnemyActivities newEnemyActionActivities newEnemyNavigationActivities enemies world
                         cancelNavigation Simulants.Player world
                     else runEnemyNavigationActivities newEnemyNavigationActivities enemies world
@@ -570,7 +570,7 @@ module GameplayDispatcherModule =
              define Screen.ShallLoadGame false]
 
         override dispatcher.Register (gameplay, world) =
-            let world = Stream.make Simulants.Player.ActivityState.ChangeEvent |> Stream.subscribe handlePlayerActivityChange gameplay <| world
+            let world = Stream.make Simulants.Player.CharacterActivityState.ChangeEvent |> Stream.subscribe handlePlayerActivityChange gameplay <| world
             let world = Stream.make (Events.Touch ->- Simulants.HudFeeler) |> Stream.isSimulantSelected Simulants.HudFeeler |> Stream.monitor handleTouchFeeler gameplay <| world
             let world = Stream.make (Events.Down ->- Simulants.HudDetailUp) |> Stream.isSimulantSelected Simulants.HudDetailUp |> Stream.monitor (handleDownDetail Upward) gameplay <| world
             let world = Stream.make (Events.Down ->- Simulants.HudDetailRight) |> Stream.isSimulantSelected Simulants.HudDetailRight |> Stream.monitor (handleDownDetail Rightward) gameplay <| world

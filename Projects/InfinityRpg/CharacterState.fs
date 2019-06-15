@@ -222,15 +222,3 @@ type CharacterState =
         elif this.ExpPoints < 7500 then 18
         elif this.ExpPoints < 10000 then 19
         else 20
-
-type CharacterAnimationType =
-    | CharacterAnimationFacing
-    | CharacterAnimationActing
-    | CharacterAnimationDefending
-    | CharacterAnimationSpecial // works for jump, cast magic, being healed, and perhaps others!
-    | CharacterAnimationSlain
-
-type CharacterAnimationState =
-    { StartTime : int64
-      AnimationType : CharacterAnimationType
-      Direction : Direction }
