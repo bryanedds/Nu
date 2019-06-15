@@ -1,9 +1,5 @@
 ﻿namespace InfinityRpg
-open System
-open OpenTK
 open Prime
-open Nu
-open InfinityRpg
 
 type ElementType =
     | Fire // beats nothing; strongest
@@ -169,87 +165,72 @@ type ControlType =
     | Chaos
     | Uncontrolled
 
-type [<CustomEquality; NoComparison>] NavigationNode =
-    { PositionM : Vector2i
-      mutable Neighbors : NavigationNode list } // OPTIMIZATION: has to be mutable to be efficiently populated.
+type CharacterState =
+    { CharacterType : CharacterType
+      ControlType : ControlType
+      ExpPoints : int
+      HitPoints : int
+      SpecialPoints : int
+      PowerBuff : single
+      ShieldBuff : single
+      MagicBuff : single
+      CounterBuff : single
+      Statuses : StatusType Set
+      WeaponOpt : WeaponType option
+      ArmorOpt : ArmorType option
+      Relics : RelicType list }
 
-    interface NavigationNode IHasNeighbors with
-        member this.Neighbors = this.Neighbors :> _ seq
+    static member empty =
+        { CharacterType = Ally Player
+          ControlType = PlayerControlled
+          ExpPoints = 0
+          HitPoints = 10 // note this is an arbitrary number as hp max is calculated
+          SpecialPoints = 1 // sp max is calculated
+          PowerBuff = 1.0f // rate at which power is buffed / debuffed
+          MagicBuff = 1.0f // rate at which magic is buffed / debuffed
+          ShieldBuff = 1.0f // rate at which shield is buffed / debuffed
+          CounterBuff = 1.0f // rate at which counter is buffed / debuffed
+          Statuses = Set.empty<StatusType>
+          WeaponOpt = Option<WeaponType>.None
+          ArmorOpt = Option<ArmorType>.None
+          Relics = [] } // level is calculated from base experience + added experience
 
-    interface NavigationNode IEquatable with
-        member this.Equals that =
-            this.PositionM = that.PositionM
+    member this.IsAlly =
+        match this.CharacterType with Ally _ -> true | Enemy _ -> false
 
-    override this.Equals that =
-        match that with
-        | :? NavigationNode as that -> this.PositionM = that.PositionM
-        | _ -> false
+    member this.IsEnemy =
+        not this.IsAlly
 
-    override this.GetHashCode () =
-        this.PositionM.GetHashCode ()
+    member this.Level =
+        if this.ExpPoints < 8 then 1
+        elif this.ExpPoints < 16 then 2
+        elif this.ExpPoints < 24 then 3
+        elif this.ExpPoints < 36 then 4
+        elif this.ExpPoints < 50 then 5
+        elif this.ExpPoints < 75 then 6
+        elif this.ExpPoints < 100 then 6
+        elif this.ExpPoints < 150 then 8
+        elif this.ExpPoints < 225 then 9
+        elif this.ExpPoints < 350 then 10
+        elif this.ExpPoints < 500 then 11
+        elif this.ExpPoints < 750 then 12
+        elif this.ExpPoints < 1000 then 13
+        elif this.ExpPoints < 1500 then 14
+        elif this.ExpPoints < 2250 then 15
+        elif this.ExpPoints < 3500 then 16
+        elif this.ExpPoints < 5000 then 17
+        elif this.ExpPoints < 7500 then 18
+        elif this.ExpPoints < 10000 then 19
+        else 20
 
-type WalkState =
-    | WalkFinished
-    | WalkContinuing
+type CharacterAnimationType =
+    | CharacterAnimationFacing
+    | CharacterAnimationActing
+    | CharacterAnimationDefending
+    | CharacterAnimationSpecial // works for jump, cast magic, being healed, and perhaps others!
+    | CharacterAnimationSlain
 
-type WalkDescriptor =
-    { WalkDirection : Direction
-      WalkOriginM : Vector2i }
-
-    static member nextPositionM walkDescriptor =
-        walkDescriptor.WalkOriginM + dtovm walkDescriptor.WalkDirection
-
-type [<StructuralEquality; NoComparison>] NavigationDescriptor =
-    { WalkDescriptor : WalkDescriptor
-      NavigationPathOpt : NavigationNode list option }
-
-    static member nextPositionM navigationDescriptor =
-        WalkDescriptor.nextPositionM navigationDescriptor.WalkDescriptor
-
-    static member nextPositionI navigationDescriptor =
-        navigationDescriptor |> NavigationDescriptor.nextPositionM |> vmtovi
-
-    static member nextPosition navigationDescriptor =
-        navigationDescriptor |> NavigationDescriptor.nextPositionI |> vitovf
-
-type [<StructuralEquality; NoComparison>] ActionDescriptor =
-    { ActionTicks : int64 // an arbitrary number to show a hacky action animation
-      ActionTargetPositionMOpt : Vector2i option
-      ActionDataName : string }
-
-    static member getActionDirection currentPosition currentDirection actionDescriptor =
-        match actionDescriptor.ActionTargetPositionMOpt with
-        | Some targetPositionM -> targetPositionM - vftovm currentPosition |> vmtod
-        | None -> currentDirection
-        
-type [<StructuralEquality; NoComparison>] ActivityState =
-    | Action of ActionDescriptor
-    | Navigation of NavigationDescriptor
-    | NoActivity
-
-    static member isActing activity =
-        match activity with
-        | Action _ -> true
-        | Navigation _ | NoActivity -> false
-
-    static member isNotActing activity =
-        not (ActivityState.isActing activity)
-
-    static member isNavigating activity =
-        match activity with
-        | Action _ | NoActivity -> false
-        | Navigation _ -> true
-
-    static member isNotNavigating activity =
-        not (ActivityState.isNavigating activity)
-
-    static member isNavigatingPath activity =
-        match activity with
-        | Navigation navigationDescriptor -> Option.isSome navigationDescriptor.NavigationPathOpt
-        | Action _ | NoActivity -> false
-
-type [<StructuralEquality; NoComparison>] Turn =
-    | ActionTurn of ActionDescriptor
-    | NavigationTurn of NavigationDescriptor
-    | CancelTurn
-    | NoTurn
+type CharacterAnimationState =
+    { StartTime : int64
+      AnimationType : CharacterAnimationType
+      Direction : Direction }
