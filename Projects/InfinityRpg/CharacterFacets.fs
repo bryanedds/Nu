@@ -55,7 +55,7 @@ module CharacterStateFacetModule =
         inherit Facet ()
 
         static member PropertyDefinitions =
-            [define Entity.CharacterType Player
+            [define Entity.CharacterType (Ally Player)
              define Entity.ActivityState NoActivity
              define Entity.HitPoints 10 // note this is an arbitrary number as hp max is calculated
              define Entity.SpecialPoints 1 // sp max is calculated

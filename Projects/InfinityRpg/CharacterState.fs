@@ -66,8 +66,6 @@ type SpecialType =
     | Poison
     | Immunity // immunizes against status changes
 
-// NOTE: this seems to be a wierd type; I can't specify the Consume type without also specifying
-// a ConsumableType, for example. Whether this is a real problem remains to be seen.
 type ActionType =
     | Attack
     | Defend // auto counters at rate of counter stat
@@ -78,26 +76,66 @@ type ActionType =
 type WeaponType =
     | BentSword
     | WindCutter
-    | BigMeany
+    | BFS
+
+type WeaponSubtype =
+    | Melee
+    | Sword
+    | Axe
+    | Bow
+    | Staff
+    | Rod
+
+type WeaponData =
+    { WeaponType : WeaponType // key
+      WeaponSubtype : WeaponSubtype
+      PowerBase : int
+      MagicBase : int }
 
 type ArmorType =
-    | HobosClobos
+    | HoboRags
     | LeatherHide
     | ChainMail
 
+type ArmorSubtype =
+    | Robe
+    | Vest
+    | Mail
+
+type ArmorData =
+    { ArmorType : ArmorType // key
+      ArmorSubtype : ArmorSubtype
+      HitPointsBase : int
+      SpecialPointsBase : int }
+
 type RelicType =
-    | WussInBoots
+    | LeatherBoots
     | BlingRing
     | MagicPorkRinds
 
-type CharacterType =
+type RelicData =
+    { RelicType : RelicType // key
+      ShieldBase : int
+      CounterBase : int }
+
+type AllyType =
     | Player
-    | Goopy
-    | Batsy
+
+type EnemyType =
+    | Goblin
+    | Snake
     | Zommie
 
-type SpecialData =
-    { SpecialType : SpecialType
+type CharacterType =
+    | Ally of AllyType
+    | Enemy of EnemyType
+
+type DrainData =
+    { EffectType : EffectType
+      Percentage : single }
+
+type ActionData =
+    { ActionType : ActionType
       EffectType : EffectType
       SpecialPointCost : int
       SuccessRate : single
@@ -107,57 +145,22 @@ type SpecialData =
       RemoveStatusType : StatusType Set
       TargetType : TargetType }
 
-type EquipmentRatingData =
-    { PhysicalRating : single // physical power = Level * PhysicalRating
-      MagicalRating : single } // magical power = Level * MagicalRating
-
-type WeaponData =
-    { EquipmentRating : EquipmentRatingData }
-
-type ArmorData =
-    { EquipmentRating : EquipmentRatingData }
-       
-type RelicData =
-    { EquipmentRating : EquipmentRatingData }
-
-type EquipmentData =
-    | WeaponData of WeaponData
-    | ArmorData of ArmorData
-    | RelicData of RelicData
-
 type ConsumableData =
     { ConsumableData : unit }
 
 type KeyItemData =
     { KeyItemData : unit }
 
-type BasicItemData =
-    | EquipmentData of EquipmentData
-    | ConsumableData of ConsumableData
-    | KeyItemData of KeyItemData
-
 type ItemData =
-    { Name : string
-      Description : string
-      BasicData : BasicItemData }
-
-type ActionData =
-    { Name : string
-      ActionType : ActionType }
-
-type CharacterRatingData =
-    { PhysicalRating : int // physical power is calculated based on level
-      MagicRating : int // magic power is calculated based on level
-      StaminaRating : int // hp max is calculated based on level
-      WillRating : int } // sp max is calculated based on level
+    { ItemType : ItemType // key
+      Description : string }
 
 type RewardData =
     { Gold : int }
 
 type CharacterData =
-    { Name : string
-      CharacterType : CharacterType
-      CharacterRating : CharacterRatingData
+    { CharacterType : CharacterType // key
+      CharacterName : string
       BaseActions : ActionData list // base actions for all instances of character
       Reward : RewardData }
 
@@ -219,7 +222,6 @@ type [<StructuralEquality; NoComparison>] ActionDescriptor =
         | Some targetPositionM -> targetPositionM - vftovm currentPosition |> vmtod
         | None -> currentDirection
         
-
 type [<StructuralEquality; NoComparison>] ActivityState =
     | Action of ActionDescriptor
     | Navigation of NavigationDescriptor
