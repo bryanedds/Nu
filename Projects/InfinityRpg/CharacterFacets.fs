@@ -10,20 +10,20 @@ open InfinityRpg
 module CharacterStateFacetModule =
 
     type Entity with
-
+    
+        member this.GetCharacterActivityState world : CharacterActivityState = this.Get Property? ActivityState world
+        member this.SetCharacterActivityState (value : CharacterActivityState) world = this.Set Property? ActivityState value world
+        member this.CharacterActivityState = PropertyTag.make this Property? ActivityState this.GetCharacterActivityState this.SetCharacterActivityState
         member this.GetCharacterState world : CharacterState = this.Get Property? CharacterState world
         member this.SetCharacterState (value : CharacterState) world = this.Set Property? CharacterState value world
         member this.CharacterState = PropertyTag.make this Property? CharacterState this.GetCharacterState this.SetCharacterState
-        member this.GetActivityState world : ActivityState = this.Get Property? ActivityState world
-        member this.SetActivityState (value : ActivityState) world = this.Set Property? ActivityState value world
-        member this.ActivityState = PropertyTag.make this Property? ActivityState this.GetActivityState this.SetActivityState
 
     type CharacterStateFacet () =
         inherit Facet ()
 
         static member PropertyDefinitions =
-            [define Entity.CharacterState CharacterState.empty
-             define Entity.ActivityState NoActivity]
+            [define Entity.CharacterActivityState NoActivity
+             define Entity.CharacterState CharacterState.empty]
 
 [<AutoOpen>]
 module CharacterAnimationFacetModule =

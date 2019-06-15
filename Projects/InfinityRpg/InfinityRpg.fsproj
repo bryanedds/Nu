@@ -72,11 +72,12 @@
     <Compile Include="InfinityConstants.fs" />
     <Compile Include="InfinitySimulants.fs" />
     <Compile Include="InfinityMath.fs" />
-    <Compile Include="InfinityState.fs" />
+    <Compile Include="CharacterActivityState.fs" />
+    <Compile Include="CharacterAnimationState.fs" />
+    <Compile Include="CharacterState.fs" />
     <Compile Include="MetaMap.fs" />
     <Compile Include="FieldMap.fs" />
     <Compile Include="FieldDispatcher.fs" />
-    <Compile Include="ActivityState.fs" />
     <Compile Include="CharacterFacets.fs" />
     <Compile Include="CharacterDispatcher.fs" />
     <Compile Include="EnemyDispatcher.fs" />

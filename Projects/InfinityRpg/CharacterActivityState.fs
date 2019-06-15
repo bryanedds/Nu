@@ -57,30 +57,30 @@ type [<StructuralEquality; NoComparison>] ActionDescriptor =
         match actionDescriptor.ActionTargetPositionMOpt with
         | Some targetPositionM -> targetPositionM - vftovm currentPosition |> vmtod
         | None -> currentDirection
-        
-type [<StructuralEquality; NoComparison>] ActivityState =
+
+type [<StructuralEquality; NoComparison>] CharacterActivityState =
     | Action of ActionDescriptor
     | Navigation of NavigationDescriptor
     | NoActivity
 
-    static member isActing activity =
-        match activity with
+    member this.IsActing =
+        match this with
         | Action _ -> true
         | Navigation _ | NoActivity -> false
 
-    static member isNotActing activity =
-        not (ActivityState.isActing activity)
+    member this.IsNotActing =
+        not this.IsActing
 
-    static member isNavigating activity =
-        match activity with
+    member this.IsNavigating =
+        match this with
         | Action _ | NoActivity -> false
         | Navigation _ -> true
 
-    static member isNotNavigating activity =
-        not (ActivityState.isNavigating activity)
+    member this.IsNotNavigating =
+        not this.IsNavigating
 
-    static member isNavigatingPath activity =
-        match activity with
+    member this.IsNavigatingPath =
+        match this with
         | Navigation navigationDescriptor -> Option.isSome navigationDescriptor.NavigationPathOpt
         | Action _ | NoActivity -> false
 
