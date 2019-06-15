@@ -32,29 +32,29 @@ type WalkDescriptor =
     { WalkDirection : Direction
       WalkOriginM : Vector2i }
 
-    static member nextPositionM walkDescriptor =
-        walkDescriptor.WalkOriginM + dtovm walkDescriptor.WalkDirection
+    member this.NextPositionM =
+        this.WalkOriginM + dtovm this.WalkDirection
 
 type [<StructuralEquality; NoComparison>] NavigationDescriptor =
     { WalkDescriptor : WalkDescriptor
       NavigationPathOpt : NavigationNode list option }
 
-    static member nextPositionM navigationDescriptor =
-        WalkDescriptor.nextPositionM navigationDescriptor.WalkDescriptor
+    member this.NextPositionM =
+        this.WalkDescriptor.NextPositionM 
 
-    static member nextPositionI navigationDescriptor =
-        navigationDescriptor |> NavigationDescriptor.nextPositionM |> vmtovi
+    member this.NextPositionI =
+        this.NextPositionM |> vmtovi
 
-    static member nextPosition navigationDescriptor =
-        navigationDescriptor |> NavigationDescriptor.nextPositionI |> vitovf
+    member this.NextPosition =
+        this.NextPositionI |> vitovf
 
 type [<StructuralEquality; NoComparison>] ActionDescriptor =
     { ActionTicks : int64 // an arbitrary number to show a hacky action animation
       ActionTargetPositionMOpt : Vector2i option
       ActionDataName : string }
 
-    static member getActionDirection currentPosition currentDirection actionDescriptor =
-        match actionDescriptor.ActionTargetPositionMOpt with
+    member this.ComputeActionDirection currentPosition currentDirection =
+        match this.ActionTargetPositionMOpt with
         | Some targetPositionM -> targetPositionM - vftovm currentPosition |> vmtod
         | None -> currentDirection
 

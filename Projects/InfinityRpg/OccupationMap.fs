@@ -27,9 +27,7 @@ module OccupationMap =
     let occupyByDesiredTurn desiredTurn occupationMap =
         match desiredTurn with
         | ActionTurn _ -> occupationMap
-        | NavigationTurn navigationDescriptor ->
-            let nextPositionM = NavigationDescriptor.nextPositionM navigationDescriptor
-            Map.add nextPositionM true occupationMap
+        | NavigationTurn navigationDescriptor -> Map.add navigationDescriptor.NextPositionM true occupationMap
         | CancelTurn -> occupationMap
         | NoTurn -> occupationMap
 

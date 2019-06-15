@@ -93,9 +93,9 @@ module GameplayDispatcherModule =
             | Downward -> let (newY, arrival) = walk3 false position.Y walkDestination.Y in (Vector2 (position.X, newY), arrival)
             | Leftward -> let (newX, arrival) = walk3 false position.X walkDestination.X in (Vector2 (newX, position.Y), arrival)
 
-        static let getCharacterAnimationStateByActionBegin tickTime characterPosition characterAnimationState actionDescriptor =
+        static let getCharacterAnimationStateByActionBegin tickTime characterPosition characterAnimationState (actionDescriptor : ActionDescriptor) =
             let currentDirection = characterAnimationState.Direction
-            let direction = ActionDescriptor.getActionDirection characterPosition currentDirection actionDescriptor
+            let direction = actionDescriptor.ComputeActionDirection characterPosition currentDirection
             { characterAnimationState with
                 Direction = direction
                 AnimationType = CharacterAnimationActing
@@ -223,7 +223,7 @@ module GameplayDispatcherModule =
                 let nextPlayerPosition =
                     match player.GetCharacterActivityState world with
                     | Action _ -> player.GetPosition world
-                    | Navigation navigationDescriptor -> NavigationDescriptor.nextPosition navigationDescriptor
+                    | Navigation navigationDescriptor -> navigationDescriptor.NextPosition
                     | NoActivity -> player.GetPosition world
                 if Math.arePositionsAdjacent (enemy.GetPosition world) nextPlayerPosition then
                     let enemyTurn = makeAttackTurn (vftovm nextPlayerPosition)
