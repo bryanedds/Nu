@@ -6,7 +6,7 @@ open Nu.Declarative
 open InfinityRpg
 
 [<AutoOpen>]
-module InfinityGame =
+module InfinityDispatcherModule =
 
     type [<NoComparison>] Simulants =
         { Splash : Screen
@@ -41,7 +41,7 @@ module InfinityGame =
         static member Properties =
             [define Game.Simulants
                 { Splash = !! "Splash"
-                  Title = Simulants.Title
+                  Title = !! "Title"
                   TitleGui = !! "Title/Gui"
                   TitleNewGame = !! "Title/Gui/NewGame"
                   TitleLoadGame = !! "Title/Gui/LoadGame"

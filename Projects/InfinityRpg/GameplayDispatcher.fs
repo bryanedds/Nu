@@ -345,7 +345,7 @@ module GameplayDispatcherModule =
                 let world = reactor.CharacterState.Update (fun state -> { state with HitPoints = state.HitPoints - reactorDamage }) world
                 if reactor.CharacterState.GetBy (fun state -> state.HitPoints <= 0) world then
                     if reactor.GetName world = Simulants.Player.EntityName
-                    then World.transitionScreen Simulants.Title world
+                    then World.transitionScreen (!! "Title") world
                     else World.destroyEntity reactor world
                 else world
             else world
@@ -367,8 +367,8 @@ module GameplayDispatcherModule =
                     do! Chain.pass }}
             let stream =
                 Stream.until
-                    (Stream.make (Events.Deselect ->- Simulants.Gameplay))
-                    (Stream.make (Events.Update ->- character))
+                    (Stream.make Simulants.Gameplay.DeselectEvent)
+                    (Stream.make character.UpdateEvent)
             Chain.runAssumingCascade chain stream world |> snd
 
         static let runCharacterAction newActionDescriptor (character : Entity) world =
@@ -386,8 +386,8 @@ module GameplayDispatcherModule =
                     do! Chain.pass }}
             let stream =
                 Stream.until
-                    (Stream.make (Events.Deselect ->- Simulants.Gameplay))
-                    (Stream.make (Events.Update ->- character))
+                    (Stream.make Simulants.Gameplay.DeselectEvent)
+                    (Stream.make character.UpdateEvent)
             Chain.runAssumingCascade chain stream world |> snd
 
         static let runCharacterNoActivity (character : Entity) world =
@@ -486,10 +486,10 @@ module GameplayDispatcherModule =
                     do! Chain.update (Simulants.HudSaveGame.SetEnabled true) }
                 let stream =
                     Stream.until
-                        (Stream.make (Events.Deselect ->- Simulants.Gameplay))
+                        (Stream.make Simulants.Gameplay.DeselectEvent)
                         (Stream.sum
-                            (Stream.make (Events.Click ->- Simulants.HudHalt))
-                            (Stream.make (Events.Update ->- Simulants.Player)))
+                            (Stream.make Simulants.HudHalt.ClickEvent)
+                            (Stream.make Simulants.Player.UpdateEvent))
                 Chain.runAssumingCascade chain stream world |> snd
             else world
 
@@ -571,13 +571,13 @@ module GameplayDispatcherModule =
 
         override dispatcher.Register (gameplay, world) =
             let world = Stream.make Simulants.Player.CharacterActivityState.ChangeEvent |> Stream.subscribe handlePlayerActivityChange gameplay <| world
-            let world = Stream.make (Events.Touch ->- Simulants.HudFeeler) |> Stream.isSimulantSelected Simulants.HudFeeler |> Stream.monitor handleTouchFeeler gameplay <| world
-            let world = Stream.make (Events.Down ->- Simulants.HudDetailUp) |> Stream.isSimulantSelected Simulants.HudDetailUp |> Stream.monitor (handleDownDetail Upward) gameplay <| world
-            let world = Stream.make (Events.Down ->- Simulants.HudDetailRight) |> Stream.isSimulantSelected Simulants.HudDetailRight |> Stream.monitor (handleDownDetail Rightward) gameplay <| world
-            let world = Stream.make (Events.Down ->- Simulants.HudDetailDown) |> Stream.isSimulantSelected Simulants.HudDetailDown |> Stream.monitor (handleDownDetail Downward) gameplay <| world
-            let world = Stream.make (Events.Down ->- Simulants.HudDetailLeft) |> Stream.isSimulantSelected Simulants.HudDetailLeft |> Stream.monitor (handleDownDetail Leftward) gameplay <| world
-            let world = World.monitor handleSelectTitle (Events.Select ->- Simulants.Title) gameplay world
-            let world = World.monitor handleSelectGameplay (Events.Select ->- gameplay) gameplay world
-            let world = World.monitor handleClickSaveGame (Events.Click ->- Simulants.HudSaveGame) gameplay world
-            let world = World.monitor handleDeselectGameplay (Events.Deselect ->- gameplay) gameplay world
+            let world = Stream.make Simulants.HudFeeler.TouchEvent |> Stream.isSimulantSelected Simulants.HudFeeler |> Stream.monitor handleTouchFeeler gameplay <| world
+            let world = Stream.make Simulants.HudDetailUp.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailUp |> Stream.monitor (handleDownDetail Upward) gameplay <| world
+            let world = Stream.make Simulants.HudDetailRight.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailRight |> Stream.monitor (handleDownDetail Rightward) gameplay <| world
+            let world = Stream.make Simulants.HudDetailDown.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailDown |> Stream.monitor (handleDownDetail Downward) gameplay <| world
+            let world = Stream.make Simulants.HudDetailLeft.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailLeft |> Stream.monitor (handleDownDetail Leftward) gameplay <| world
+            let world = World.monitor handleSelectTitle (!! "Title" : Screen).SelectEvent gameplay world
+            let world = World.monitor handleSelectGameplay gameplay.SelectEvent gameplay world
+            let world = World.monitor handleClickSaveGame Simulants.HudSaveGame.ClickEvent gameplay world
+            let world = World.monitor handleDeselectGameplay gameplay.DeselectEvent gameplay world
             world

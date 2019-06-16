@@ -1,11 +1,9 @@
 ﻿namespace InfinityRpg
 open System
-open Prime
 open Nu
 module Simulants =
 
-    // globally-accessible simulants
-    let Title = Screen "Title"
+    // gameplay simulants
     let Gameplay = Screen "Gameplay"
     let Hud = Gameplay => "Hud"
     let HudBack = Hud => "Back"
