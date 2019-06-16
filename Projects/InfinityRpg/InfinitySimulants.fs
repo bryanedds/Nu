@@ -2,29 +2,10 @@
 open System
 open Prime
 open Nu
-open InfinityRpg
 module Simulants =
 
-    // omniscreen
-    let Omniscreen = Screen "Omniscreen"
-
-    // nu splash screen
-    let Splash = Screen "Splash"
-
-    // title screen
+    // globally-accessible simulants
     let Title = Screen "Title"
-    let TitleGui = Title => "Gui"
-    let TitleNewGame = TitleGui => "NewGame"
-    let TitleLoadGame = TitleGui => "LoadGame"
-    let TitleCredits = TitleGui => "Credits"
-    let TitleExit = TitleGui => "Exit"
-
-    // credits screen
-    let Credits = Screen "Credits"
-    let CreditsGui = Credits => "Gui"
-    let CreditsBack = CreditsGui => "Back"
-
-    // gameplay screen
     let Gameplay = Screen "Gameplay"
     let Hud = Gameplay => "Hud"
     let HudBack = Hud => "Back"
