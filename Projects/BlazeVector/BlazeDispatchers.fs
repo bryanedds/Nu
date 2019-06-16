@@ -51,8 +51,8 @@ module BulletModule =
              define Entity.Age 0L]
 
         override dispatcher.Register (bullet, world) =
-            let world = World.monitor handleUpdate (Events.Update ->- bullet) bullet world
-            let world = World.monitor handleCollision (Events.Collision ->- bullet) bullet world
+            let world = World.monitor handleUpdate bullet.UpdateEvent bullet world
+            let world = World.monitor handleCollision bullet.CollisionEvent bullet world
             world
 
 [<AutoOpen>]
@@ -114,8 +114,8 @@ module EnemyModule =
              define Entity.Health 7]
 
         override dispatcher.Register (enemy, world) =
-            let world = World.monitor handleUpdate (Events.Update ->- enemy) enemy world
-            let world = World.monitor handleCollision (Events.Collision ->- enemy) enemy world
+            let world = World.monitor handleUpdate enemy.UpdateEvent enemy world
+            let world = World.monitor handleCollision enemy.CollisionEvent enemy world
             world
 
 [<AutoOpen>]
@@ -221,8 +221,8 @@ module PlayerModule =
              define Entity.LastTimeJumpNp Int64.MinValue]
 
         override dispatcher.Register (player, world) =
-            let world = World.monitor handleSpawnBullet (Events.Update ->- player) player world
-            let world = World.monitor handleMovement (Events.Update ->- player) player world
+            let world = World.monitor handleSpawnBullet player.UpdateEvent player world
+            let world = World.monitor handleMovement player.UpdateEvent player world
             let world = World.monitor handleJump Events.MouseLeftDown player world
             let world = World.monitor handleJumpByKeyboardKey Events.KeyboardKeyDown player world
             world
@@ -257,8 +257,8 @@ module SceneLayerModule =
             else world
 
         override dispatcher.Register (layer, world) =
-            let world = World.monitor handleAdjustCamera (Events.Update ->- layer) layer world
-            let world = World.monitor handlePlayerFall (Events.Update ->- layer) layer world
+            let world = World.monitor handleAdjustCamera layer.UpdateEvent layer world
+            let world = World.monitor handlePlayerFall layer.UpdateEvent layer world
             world
 
 [<AutoOpen>]
@@ -318,7 +318,7 @@ module GameplayScreenModule =
             World.destroyLayers layers world
 
         override dispatcher.Register (screen, world) =
-            let world = World.monitor handleStartPlay (Events.Select ->- screen) screen world
-            let world = World.monitor handleStoppingPlay (Events.OutgoingStart ->- screen) screen world
-            let world = World.monitor handleStopPlay (Events.Deselect ->- screen) screen world
+            let world = World.monitor handleStartPlay screen.SelectEvent screen world
+            let world = World.monitor handleStoppingPlay screen.OutgoingStartEvent screen world
+            let world = World.monitor handleStopPlay screen.DeselectEvent screen world
             world

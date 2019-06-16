@@ -50,7 +50,7 @@ refinement/
 packages/
 !packages/repositories.config
 
-##############
-# Temp Files #
-##############
-*.csv#
+##########################
+# LibreOffice Temp Files #
+##########################
+*.*#

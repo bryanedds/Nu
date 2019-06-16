@@ -380,6 +380,7 @@ module RigidBodyFacetModule =
         member this.IsSensor = PropertyTag.make this Property? IsSensor this.GetIsSensor this.SetIsSensor
         member this.GetPhysicsId world = { SourceId = this.GetId world; BodyId = this.GetMinorId world }
         member this.PhysicsId = PropertyTag.makeReadOnly this Property? PhysicsId this.GetPhysicsId
+        member this.CollisionEvent = Events.Collision --> this
 
     type RigidBodyFacet () =
         inherit Facet ()

@@ -89,7 +89,6 @@ module WorldGameModule =
         member this.KeyboardKeyChangeEvent = Events.KeyboardKeyChange --> this
         member this.KeyboardKeyDownEvent = Events.KeyboardKeyDown --> this
         member this.KeyboardKeyUpEvent = Events.KeyboardKeyUp --> this
-        member this.CollisionEvent = Events.Collision --> this
         member this.AssetsReloadEvent = Events.AssetsReload --> this
 
         /// Try to get a property value and type.
