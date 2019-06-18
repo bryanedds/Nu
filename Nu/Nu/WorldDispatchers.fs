@@ -78,9 +78,9 @@ module EffectFacetModule =
         member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
         member this.SetSelfDestruct (value : bool) world = this.SetFast Property? SelfDestruct false false value world
         member this.SelfDestruct = PropertyTag.make this Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct
-        member this.GetEffectsOpt world : Symbol AssetTag list option = this.Get Property? EffectsOpt world
-        member this.SetEffectsOpt (value : Symbol AssetTag list option) world = this.SetFast Property? EffectsOpt true false value world
-        member this.EffectsOpt = PropertyTag.make this Property? EffectsOpt this.GetEffectsOpt this.SetEffectsOpt
+        member this.GetEffects world : Symbol AssetTag list = this.Get Property? Effects world
+        member this.SetEffects (value : Symbol AssetTag list) world = this.SetFast Property? Effects true false value world
+        member this.Effects = PropertyTag.make this Property? Effects this.GetEffects this.SetEffects
         member this.GetEffectStartTimeOpt world : int64 option = this.Get Property? EffectStartTimeOpt world
         member this.SetEffectStartTimeOpt (value : int64 option) world = this.SetFast Property? EffectStartTimeOpt false false value world
         member this.EffectStartTimeOpt = PropertyTag.make this Property? EffectStartTimeOpt this.GetEffectStartTimeOpt this.SetEffectStartTimeOpt
@@ -121,29 +121,29 @@ module EffectFacetModule =
     type EffectFacet () =
         inherit Facet ()
 
-        static let setEffect effectsOpt (entity : Entity) world =
-            match effectsOpt with
-            | Some effectAssetTags ->
+        static let setEffect effects (entity : Entity) world =
+            match effects with
+            | [] -> world
+            | effectAssetTags ->
                 let symbolLoadMetadata = { ImplicitDelimiters = false; StripCsvHeader = false }
                 let (effectOpts, world) = World.assetTagsToValueOpts<Effect> symbolLoadMetadata effectAssetTags world
                 let effects = List.definitize effectOpts
                 let effectCombined = EffectSystem.combineEffects effects
                 entity.SetEffect effectCombined world
-            | None -> world
 
-        static let handleEffectsOptChanged evt world =
+        static let handleEffectsChanged evt world =
             let entity = evt.Subscriber : Entity
-            let effectsOpt = entity.GetEffectsOpt world
+            let effectsOpt = entity.GetEffects world
             setEffect effectsOpt entity world
 
         static let handleAssetsReload evt world =
             let entity = evt.Subscriber : Entity
-            let effectsOpt = entity.GetEffectsOpt world
+            let effectsOpt = entity.GetEffects world
             setEffect effectsOpt entity world
 
         static member PropertyDefinitions =
             [define Entity.SelfDestruct false
-             define Entity.EffectsOpt None
+             define Entity.Effects []
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
              define Entity.Effect Effect.empty
@@ -218,7 +218,7 @@ module EffectFacetModule =
         override facet.Register (entity, world) =
             let effectStartTime = Option.getOrDefault (World.getTickTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
-            let world = World.monitor handleEffectsOptChanged (entity.GetChangeEvent Property? EffectsOpt) entity world
+            let world = World.monitor handleEffectsChanged (entity.GetChangeEvent Property? Effects) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
 [<AutoOpen>]
