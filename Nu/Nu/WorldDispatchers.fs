@@ -1055,15 +1055,18 @@ module TextDispatcherModule =
         member this.GetText world : string = this.Get Property? Text world
         member this.SetText (value : string) world = this.SetFast Property? Text false false value world
         member this.Text = PropertyTag.make this Property? Text this.GetText this.SetText
-        member this.GetTextFont world : Font AssetTag = this.Get Property? TextFont world
-        member this.SetTextFont (value : Font AssetTag) world = this.SetFast Property? TextFont false false value world
-        member this.TextFont = PropertyTag.make this Property? TextFont this.GetTextFont this.SetTextFont
-        member this.GetTextOffset world : Vector2 = this.Get Property? TextOffset world
-        member this.SetTextOffset (value : Vector2) world = this.SetFast Property? TextOffset false false value world
-        member this.TextOffset = PropertyTag.make this Property? TextOffset this.GetTextOffset this.SetTextOffset
-        member this.GetTextColor world : Vector4 = this.Get Property? TextColor world
-        member this.SetTextColor (value : Vector4) world = this.SetFast Property? TextColor false false value world
-        member this.TextColor = PropertyTag.make this Property? TextColor this.GetTextColor this.SetTextColor
+        member this.GetFont world : Font AssetTag = this.Get Property? Font world
+        member this.SetFont (value : Font AssetTag) world = this.SetFast Property? Font false false value world
+        member this.Font = PropertyTag.make this Property? Font this.GetFont this.SetFont
+        member this.GetMargins world : Vector2 = this.Get Property? Margins world
+        member this.SetMargins (value : Vector2) world = this.SetFast Property? Margins false false value world
+        member this.Margins = PropertyTag.make this Property? Margins this.GetMargins this.SetMargins
+        member this.GetJustification world : Justification = this.Get Property? Justification world
+        member this.SetJustification (value : Justification) world = this.SetFast Property? Justification false false value world
+        member this.Justification = PropertyTag.make this Property? Justification this.GetJustification this.SetJustification
+        member this.GetColor world : Vector4 = this.Get Property? Color world
+        member this.SetColor (value : Vector4) world = this.SetFast Property? Color false false value world
+        member this.Color = PropertyTag.make this Property? Color this.GetColor this.SetColor
         member this.GetBackgroundImage world : Image AssetTag = this.Get Property? BackgroundImage world
         member this.SetBackgroundImage (value : Image AssetTag) world = this.SetFast Property? BackgroundImage false false value world
         member this.BackgroundImage = PropertyTag.make this Property? BackgroundImage this.GetBackgroundImage this.SetBackgroundImage
@@ -1073,10 +1076,11 @@ module TextDispatcherModule =
 
         static member PropertyDefinitions =
             [define Entity.SwallowMouseLeft true
-             define Entity.Text String.Empty
-             define Entity.TextFont (AssetTag.make<Font> Assets.DefaultPackageName "Font")
-             define Entity.TextOffset Vector2.Zero
-             define Entity.TextColor Vector4.One
+             define Entity.Text ""
+             define Entity.Font (AssetTag.make<Font> Assets.DefaultPackageName "Font")
+             define Entity.Margins Vector2.Zero
+             define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
+             define Entity.Color Vector4.One
              define Entity.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
         override dispatcher.Actualize (text, world) =
@@ -1089,11 +1093,12 @@ module TextDispatcherModule =
                               LayeredDescriptor =
                                 TextDescriptor
                                     { Text = text.GetText world
-                                      Position = (text.GetPosition world + text.GetTextOffset world)
-                                      Size = text.GetSize world - text.GetTextOffset world
+                                      Position = text.GetPosition world + text.GetMargins world
+                                      Size = text.GetSize world - text.GetMargins world * 2.0f
                                       ViewType = Absolute
-                                      Font = text.GetTextFont world
-                                      Color = text.GetTextColor world }}
+                                      Font = text.GetFont world
+                                      Color = text.GetColor world
+                                      Justification = text.GetJustification world }}
                           LayerableDescriptor
                             { Depth = text.GetDepthLayered world
                               PositionY = (text.GetPosition world).Y
