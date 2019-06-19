@@ -797,16 +797,7 @@ module GameDispatcherModule =
                     List.fold (fun world (screenName : string, layerName, entityName, filePath) ->
                         World.readEntityFromFile filePath (Some entityName) (Screen screenName => layerName) world |> snd)
                         world entityFilePaths
-                let world =
-                    List.fold (fun world (name, simulant, right : World PropertyTag) ->
-                        let nonPersistent = not (Reflection.isPropertyPersistentByName name)
-                        let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
-                        let propagate (_ : Event<obj, Participant>) world =
-                            let property = { PropertyType = right.Type; PropertyValue = right.Get world }
-                            World.setProperty name nonPersistent alwaysPublish property simulant world
-                        let world = World.monitor propagate (Events.Register --> right.This.ParticipantAddress |> atooa) right.This world
-                        World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress |> atooa) right.This world)
-                        world equations
+                let world = World.runEquations equations world
                 applyBehavior behavior screen world
             | Right (name, behavior, Some dispatcherType, layerFilePath) ->
                 let (screen, world) = World.createScreen3 dispatcherType.Name (Some name) world
