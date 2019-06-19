@@ -1709,15 +1709,7 @@ module LayerDispatcherModule =
                     match EntityLayout.expand layout layer world with
                     | Left (entityName, descriptor, equations) ->
                         let world = World.readEntity descriptor (Some entityName) layer world |> snd
-                        List.fold (fun world (name, simulant, right : World PropertyTag) ->
-                            let nonPersistent = not (Reflection.isPropertyPersistentByName name)
-                            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
-                            let propagate (_ : Event<obj, Participant>) world =
-                                let property = { PropertyType = right.Type; PropertyValue = right.Get world }
-                                World.setProperty name nonPersistent alwaysPublish property simulant world
-                            let world = World.monitor propagate (Events.Register --> right.This.ParticipantAddress |> atooa) right.This world
-                            World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress |> atooa) right.This world)
-                            world equations
+                        World.runEquations equations world
                     | Right (entityName, filePath) -> World.readEntityFromFile filePath (Some entityName) layer world |> snd)
                     world layouts
             world
@@ -1789,15 +1781,8 @@ module ScreenDispatcherModule =
                             List.fold (fun world (layerName, entityName, filePath) ->
                                 World.readEntityFromFile filePath (Some entityName) (screen => layerName) world |> snd)
                                 world entityFilePaths
-                        List.fold (fun world (name, simulant, right : World PropertyTag) ->
-                            let nonPersistent = not (Reflection.isPropertyPersistentByName name)
-                            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
-                            let propagate (_ : Event<obj, Participant>) world =
-                                let property = { PropertyType = right.Type; PropertyValue = right.Get world }
-                                World.setProperty name nonPersistent alwaysPublish property simulant world
-                            let world = World.monitor propagate (Events.Register --> right.This.ParticipantAddress |> atooa) right.This world
-                            World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress |> atooa) right.This world)
-                            world equations
+                        let world = World.runEquations equations world
+                        world
                     | Right (layerName, filePath) ->
                         World.readLayerFromFile filePath (Some layerName) screen world |> snd)
                     world layouts

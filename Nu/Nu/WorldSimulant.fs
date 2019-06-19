@@ -149,3 +149,17 @@ module WorldSimulantModule =
             match World.tryDerive address with
             | Some simulant -> simulant
             | None -> failwithf "Could not derive simulant from address '%s'." (scstring address)
+
+        static member runEquation name simulant (property : World PropertyTag) world =
+            let nonPersistent = not (Reflection.isPropertyPersistentByName name)
+            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
+            let propagate (_ : Event<obj, Participant>) world =
+                let property = { PropertyType = property.Type; PropertyValue = property.Get world }
+                World.setProperty name nonPersistent alwaysPublish property simulant world
+            let world = World.monitor propagate (Events.Register --> property.This.ParticipantAddress |> atooa) property.This world
+            World.monitor propagate (Events.Change property.Name --> property.This.ParticipantAddress |> atooa) property.This world
+
+        static member runEquations equations world =
+            List.fold
+                (fun world (name, simulant, property) -> World.runEquation name simulant property world)
+                world equations
