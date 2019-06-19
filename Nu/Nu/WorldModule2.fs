@@ -799,11 +799,12 @@ module GameDispatcherModule =
                         world entityFilePaths
                 let world =
                     List.fold (fun world (name, simulant, right : World PropertyTag) ->
-                        let property = { PropertyType = right.Type; PropertyValue = right.Get world }
                         let nonPersistent = not (Reflection.isPropertyPersistentByName name)
                         let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
-                        let propagate _ world = World.setProperty name nonPersistent alwaysPublish property simulant world
-                        World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress) right.This world)
+                        let propagate (_ : Event<obj, Participant>) world =
+                            let property = { PropertyType = right.Type; PropertyValue = right.Get world }
+                            World.setProperty name nonPersistent alwaysPublish property simulant world
+                        World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress |> atooa) right.This world)
                         world equations
                 applyBehavior behavior screen world
             | Right (name, behavior, Some dispatcherType, layerFilePath) ->
