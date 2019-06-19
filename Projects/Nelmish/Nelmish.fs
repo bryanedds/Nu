@@ -1,5 +1,6 @@
 ﻿namespace Nelmish
 open Prime
+open OpenTK
 open Nu
 open Nu.Declarative
 module Nelmish =
@@ -30,6 +31,10 @@ module Nelmish =
     type NelmishDispatcher () =
         inherit GameDispatcher<Model, Message, unit> (fun game -> game.Model)
 
+        // here we initialize the value of our model
+        static member Properties =
+            [define Game.Model 0]
+
         // here we define the Bindings used to connect events to their desired messages
         override this.Bindings (_, _, _) =
             [IncButton.ClickEvent ==> Increment
@@ -46,6 +51,12 @@ module Nelmish =
         override this.Layout (_, game, _) =
             [Layout.screen Screen Vanilla []
                 [Layout.layer Layer []
-                    [Layout.entity<ButtonDispatcher> IncButton [Entity.Text == "Increment"]
-                     Layout.entity<ButtonDispatcher> DecButton [Entity.Text == "Decrement"]
-                     Layout.entity<TextDispatcher> CountText [Entity.Text === game.Model.MapOut scstring]]]]
+                    [Layout.entity<ButtonDispatcher> IncButton
+                        [Entity.Text == "Increment"
+                         Entity.Position == Vector2 (-100.0f, 50.0f)]
+                     Layout.entity<ButtonDispatcher> DecButton
+                        [Entity.Text == "Decrement"
+                         Entity.Position == Vector2 (0.0f, 50.0f)]
+                     Layout.entity<TextDispatcher> CountText
+                        [Entity.Text === game.Model.MapOut string
+                         Entity.Position == Vector2 (-50.0f, -50.0f)]]]]
