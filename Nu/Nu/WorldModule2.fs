@@ -785,8 +785,8 @@ module GameDispatcherModule =
                 let world = World.setScreenSplash (Some splashData) destination screen world
                 (screen, world)
 
-        static let createScreen layout world =
-            match ScreenLayout.expand layout world with
+        static let createScreen layout game world =
+            match ScreenLayout.expand layout game world with
             | Left (name, descriptor, equations, behavior, layerFilePaths, entityFilePaths) ->
                 let (screen, world) = World.readScreen descriptor (Some name) world
                 let world =
@@ -798,9 +798,12 @@ module GameDispatcherModule =
                         World.readEntityFromFile filePath (Some entityName) (Screen screenName => layerName) world |> snd)
                         world entityFilePaths
                 let world =
-                    List.fold (fun world (left : World PropertyTag, right : World PropertyTag) ->
-                        let propagate _ world = match left.SetOpt with Some set -> set (right.Get world) world | None -> world
-                        World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress) left.This world)
+                    List.fold (fun world (name, simulant, right : World PropertyTag) ->
+                        let property = { PropertyType = right.Type; PropertyValue = right.Get world }
+                        let nonPersistent = not (Reflection.isPropertyPersistentByName name)
+                        let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
+                        let propagate _ world = World.setProperty name nonPersistent alwaysPublish property simulant world
+                        World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress) right.This world)
                         world equations
                 applyBehavior behavior screen world
             | Right (name, behavior, Some dispatcherType, layerFilePath) ->
@@ -843,7 +846,7 @@ module GameDispatcherModule =
             let layouts = this.Layout (property.Get world, game, world)
             let world =
                 List.foldi (fun layoutIndex world layout ->
-                    let (screen, world) = createScreen layout world
+                    let (screen, world) = createScreen layout game world
                     if layoutIndex = 0 then World.selectScreen screen world else world)
                     world layouts
             world

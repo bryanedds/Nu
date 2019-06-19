@@ -70,7 +70,7 @@ module Csv =
             return Symbols (symbols, originOpt) }
 
     let readSymbolFromCsv stripHeader csvStr filePathOpt =
-        let symbolSource = { SymbolSource = { FileNameOpt = filePathOpt; Text = csvStr }}
+        let symbolSource = { SymbolSource = { FilePathOpt = filePathOpt; Text = csvStr }}
         match runParserOnString (readRowsFromCsv stripHeader) symbolSource "" csvStr with
         | Success (symbol, _, _) -> symbol
         | Failure (_, error, _) -> failwithf "Csv parse error at %s." (scstring error.Position)

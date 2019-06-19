@@ -1698,12 +1698,15 @@ module LayerDispatcherModule =
             let layouts = this.Layout (property.Get world, layer, world)
             let world =
                 List.fold (fun world layout ->
-                    match EntityLayout.expand layout world with
+                    match EntityLayout.expand layout layer world with
                     | Left (entityName, descriptor, equations) ->
                         let world = World.readEntity descriptor (Some entityName) layer world |> snd
-                        List.fold (fun world (left : World PropertyTag, right : World PropertyTag) ->
-                            let propagate _ world = match left.SetOpt with Some set -> set (right.Get world) world | None -> world
-                            World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress) left.This world)
+                        List.fold (fun world (name, simulant, right : World PropertyTag) ->
+                            let property = { PropertyType = right.Type; PropertyValue = right.Get world }
+                            let nonPersistent = not (Reflection.isPropertyPersistentByName name)
+                            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
+                            let propagate _ world = World.setProperty name nonPersistent alwaysPublish property simulant world
+                            World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress) right.This world)
                             world equations
                     | Right (entityName, filePath) -> World.readEntityFromFile filePath (Some entityName) layer world |> snd)
                     world layouts
@@ -1768,16 +1771,19 @@ module ScreenDispatcherModule =
             let layouts = this.Layout (property.Get world, screen, world)
             let world =
                 List.fold (fun world layout ->
-                    match LayerLayout.expand layout world with
+                    match LayerLayout.expand layout screen world with
                     | Left (name, descriptor, equations, entityFilePaths) ->
                         let world = World.readLayer descriptor (Some name) screen world |> snd
                         let world =
                             List.fold (fun world (layerName, entityName, filePath) ->
                                 World.readEntityFromFile filePath (Some entityName) (screen => layerName) world |> snd)
                                 world entityFilePaths
-                        List.fold (fun world (left : World PropertyTag, right : World PropertyTag) ->
-                            let propagate _ world = match left.SetOpt with Some set -> set (right.Get world) world | None -> world
-                            World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress) left.This world)
+                        List.fold (fun world (name, simulant, right : World PropertyTag) ->
+                            let property = { PropertyType = right.Type; PropertyValue = right.Get world }
+                            let nonPersistent = not (Reflection.isPropertyPersistentByName name)
+                            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
+                            let propagate _ world = World.setProperty name nonPersistent alwaysPublish property simulant world
+                            World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress) right.This world)
                             world equations
                     | Right (layerName, filePath) ->
                         World.readLayerFromFile filePath (Some layerName) screen world |> snd)

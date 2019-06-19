@@ -93,13 +93,13 @@ and [<NoComparison>] EntityDescriptor =
 
 type [<NoEquality; NoComparison>] DeclarativeDefinition =
     | PropertyDefinition of PropertyDefinition
-    | Equate of World PropertyTag * World PropertyTag
+    | Equate of string * World PropertyTag
 
 /// Contains primitives for describing simulants.
 module Describe =
 
     /// Describe a game with the given definitions and contained screens.
-    let game3 dispatcherName (definitions : DeclarativeDefinition seq) (screens : ScreenDescriptor seq) world =
+    let game3 dispatcherName (definitions : DeclarativeDefinition seq) (screens : ScreenDescriptor seq) (game : Game) world =
         let properties =
             definitions |>
             Seq.map (fun def -> match def with PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr) | Equate _ -> None) |>
@@ -109,7 +109,7 @@ module Describe =
             Map.ofSeq
         let equations =
             definitions |>
-            Seq.map (fun def -> match def with Equate (left, right) -> Some (left, right) | PropertyDefinition _ -> None) |>
+            Seq.map (fun def -> match def with Equate (leftName, right) -> Some (leftName, game :> Simulant, right) | PropertyDefinition _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let descriptor =
@@ -119,11 +119,11 @@ module Describe =
         (descriptor, equations)
 
     /// Describe a game with the given definitions and contained screens.
-    let game<'d when 'd :> GameDispatcher> properties screens world =
-        game3 typeof<'d>.Name properties screens world
+    let game<'d when 'd :> GameDispatcher> properties screens game world =
+        game3 typeof<'d>.Name properties screens game world
 
     /// Describe a screen with the given definitions and contained layers.
-    let screen3 dispatcherName (definitions : DeclarativeDefinition seq) (layers : LayerDescriptor seq) world =
+    let screen3 dispatcherName (definitions : DeclarativeDefinition seq) (layers : LayerDescriptor seq) (screen : Screen) world =
         let properties =
             definitions |>
             Seq.map (fun def -> match def with PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr) | Equate _ -> None) |>
@@ -133,7 +133,7 @@ module Describe =
             Map.ofSeq
         let equations =
             definitions |>
-            Seq.map (fun def -> match def with Equate (left, right) -> Some (left, right) | PropertyDefinition _ -> None) |>
+            Seq.map (fun def -> match def with Equate (leftName, right) -> Some (leftName, screen :> Simulant, right) | PropertyDefinition _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let descriptor =
@@ -143,11 +143,11 @@ module Describe =
         (descriptor, equations)
 
     /// Describe a screen with the given definitions and contained layers.
-    let screen<'d when 'd :> ScreenDispatcher> definitions layers world =
-        screen3 typeof<'d>.Name definitions layers world
+    let screen<'d when 'd :> ScreenDispatcher> definitions layers screen world =
+        screen3 typeof<'d>.Name definitions layers screen world
 
     /// Describe a layer with the given definitions and contained entities.
-    let layer3 dispatcherName (definitions : DeclarativeDefinition seq) (entities : EntityDescriptor seq) world =
+    let layer3 dispatcherName (definitions : DeclarativeDefinition seq) (entities : EntityDescriptor seq) (layer : Layer) world =
         let properties =
             definitions |>
             Seq.map (fun def -> match def with PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr) | Equate _ -> None) |>
@@ -157,7 +157,7 @@ module Describe =
             Map.ofSeq
         let equations =
             definitions |>
-            Seq.map (fun def -> match def with Equate (left, right) -> Some (left, right) | PropertyDefinition _ -> None) |>
+            Seq.map (fun def -> match def with Equate (leftName, right) -> Some (leftName, layer :> Simulant, right) | PropertyDefinition _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let descriptor =
@@ -171,7 +171,7 @@ module Describe =
         layer3 typeof<'d>.Name definitions entities world
 
     /// Describe an entity with the given definitions.
-    let entity2 dispatcherName (definitions : DeclarativeDefinition seq) world =
+    let entity2 dispatcherName (definitions : DeclarativeDefinition seq) (entity : Entity) world =
         let properties =
             definitions |>
             Seq.map (fun def -> match def with PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr) | Equate _ -> None) |>
@@ -181,7 +181,7 @@ module Describe =
             Map.ofSeq
         let equations =
             definitions |>
-            Seq.map (fun def -> match def with Equate (left, right) -> Some (left, right) | PropertyDefinition _ -> None) |>
+            Seq.map (fun def -> match def with Equate (leftName, right) -> Some (leftName, entity :> Simulant, right) | PropertyDefinition _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let descriptor =
@@ -210,10 +210,10 @@ type [<NoEquality; NoComparison>] EntityLayout =
     interface SimulantLayout
 
     /// Expand an entity layout to its constituent parts.
-    static member expand layout world =
+    static member expand layout layer world =
         match layout with
         | EntityFromDefinitions (dispatcherName, name, definitions) ->
-            let (descriptor, definitions) = Describe.entity2 dispatcherName definitions world
+            let (descriptor, definitions) = Describe.entity2 dispatcherName definitions (layer => name) world
             Left (name, descriptor, definitions)
         | EntityFromFile (name, filePath) -> Right (name, filePath)
 
@@ -224,15 +224,16 @@ type [<NoEquality; NoComparison>] LayerLayout =
     interface SimulantLayout
     
     /// Expand a layer layout to its constituent parts.
-    static member expand layout world =
+    static member expand layout screen world =
         match layout with
         | LayerFromDefinitions (dispatcherName, name, definitions, entities) ->
-            let descriptorsPlusPlus = List.map (flip EntityLayout.expand world) entities
+            let layer = screen => name
+            let descriptorsPlusPlus = List.map (fun layout -> EntityLayout.expand layout layer world) entities
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus
             let descriptors = descriptorsPlus |> List.map (fun (entityName, descriptor, _) -> { descriptor with EntityProperties = Map.add (Property? Name) (valueToSymbol entityName) descriptor.EntityProperties })
             let equations = descriptorsPlus |> List.map __c |> List.concat
             let filePaths = Either.getRightValues descriptorsPlusPlus |> List.map (fun (entityName, path) -> (name, entityName, path))
-            let (descriptor, equationsLayer) = Describe.layer3 dispatcherName definitions descriptors world
+            let (descriptor, equationsLayer) = Describe.layer3 dispatcherName definitions descriptors layer world
             let equationsAll = equations @ equationsLayer
             Left (name, descriptor, equationsAll, filePaths)
         | LayerFromFile (name, filePath) -> Right (name, filePath)
@@ -245,16 +246,17 @@ type [<NoEquality; NoComparison>] ScreenLayout =
     interface SimulantLayout
 
     /// Expand a screen layout to its constituent parts.
-    static member expand layout world =
+    static member expand layout (_ : Game) world =
         match layout with
         | ScreenFromDefinitions (dispatcherName, name, behavior, definitions, layers) ->
-            let descriptorsPlusPlus = List.map (flip LayerLayout.expand world) layers
+            let screen = Screen name
+            let descriptorsPlusPlus = List.map (fun layout -> LayerLayout.expand layout screen world) layers
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus
             let descriptors = descriptorsPlus |> List.map (fun (layerName, descriptor, _, _) -> { descriptor with LayerProperties = Map.add (Property? Name) (valueToSymbol layerName) descriptor.LayerProperties })
             let equations = descriptorsPlus |> List.map (fun (_, _, equations, _) -> equations) |> List.concat
             let layerFilePaths = Either.getRightValues descriptorsPlusPlus |> List.map (fun (layerName, filePath) -> (name, layerName, filePath))
             let entityFilePaths = List.map (fun (_, _, _, filePaths) -> List.map (fun (layerName, entityName, filePath) -> (name, layerName, entityName, filePath)) filePaths) descriptorsPlus |> List.concat
-            let (descriptor, equationsScreen) = Describe.screen3 dispatcherName definitions descriptors world
+            let (descriptor, equationsScreen) = Describe.screen3 dispatcherName definitions descriptors screen world
             let equationsAll = equations @ equationsScreen
             Left (name, descriptor, equationsAll, behavior, layerFilePaths, entityFilePaths)
         | ScreenFromLayerFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
@@ -270,7 +272,8 @@ type [<NoEquality; NoComparison>] GameLayout =
     static member expand layout world =
         match layout with
         | GameFromDefinitions (dispatcherName, definitions, screens) ->
-            let descriptorsPlusPlus = List.map (flip ScreenLayout.expand world) screens
+            let game = Game ()
+            let descriptorsPlusPlus = List.map (fun layout -> ScreenLayout.expand layout game world) screens
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus
             let descriptors = List.map (fun (screenName, descriptor, _, _, _, _) -> { descriptor with ScreenProperties = Map.add (Property? Name) (valueToSymbol screenName) descriptor.ScreenProperties }) descriptorsPlus
             let equations = List.map (fun (_, _, equations, _, _, _) -> equations) descriptorsPlus |> List.concat
@@ -278,7 +281,7 @@ type [<NoEquality; NoComparison>] GameLayout =
             let screenFilePaths = Either.getRightValues descriptorsPlusPlus
             let layerFilePaths = List.map (fun (_, _, _, _, layerFilePaths, _) -> layerFilePaths) descriptorsPlus |> List.concat
             let entityFilePaths = List.map (fun (_, _, _, _, _, entityFilePaths) -> entityFilePaths) descriptorsPlus |> List.concat
-            let (descriptor, equationsGame) = Describe.game3 dispatcherName definitions descriptors world
+            let (descriptor, equationsGame) = Describe.game3 dispatcherName definitions descriptors game world
             let equationsAll = equations @ equationsGame
             Left (descriptor, equationsAll, screenBehaviors, screenFilePaths, layerFilePaths, entityFilePaths)
         | GameFromFile filePath -> Right filePath
@@ -338,9 +341,9 @@ module DeclarativeOperators =
 
     /// Create an instruction to equate two properties.
     let equate (leftTag : PropertyTag<'a, World>) (rightTag : PropertyTag<'a, World>) =
-        if leftTag.This :> obj |> isNull || rightTag.This :> obj |> isNull
+        if rightTag.This :> obj |> isNull
         then failwith "Equate expects an authentic PropertyTag where its This is not null."
-        else Equate (leftTag, rightTag)
+        else Equate (leftTag.Name, rightTag)
 
     /// Pair an empty list of commands with a model.
     let inline just model = (model, [])
