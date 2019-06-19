@@ -60,6 +60,7 @@ module Nelmish =
                          Entity.Position == Vector2 (0.0f, 50.0f)
                          Entity.Size == Vector2 (200.0f, 50.0f)]
                      Layout.entity<TextDispatcher> CountText
-                        [Entity.Text != game.Model.MapOut string
-                         Entity.Position == Vector2 (-150.0f, -50.0f)
-                         Entity.Size == Vector2 (300.0f, 50.0f)]]]]
+                        [Entity.Text =! game.Model.MapOut string
+                         Entity.Position == Vector2 (-100.0f, -20.0f)
+                         Entity.Size == Vector2 (200.0f, 50.0f)
+                         Entity.BackgroundImage == AssetTag.make "Default" "Image2"]]]]
