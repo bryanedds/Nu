@@ -804,6 +804,7 @@ module GameDispatcherModule =
                         let propagate (_ : Event<obj, Participant>) world =
                             let property = { PropertyType = right.Type; PropertyValue = right.Get world }
                             World.setProperty name nonPersistent alwaysPublish property simulant world
+                        let world = World.monitor propagate (Events.Register --> right.This.ParticipantAddress |> atooa) right.This world
                         World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress |> atooa) right.This world)
                         world equations
                 applyBehavior behavior screen world
