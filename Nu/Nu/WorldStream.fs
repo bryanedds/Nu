@@ -40,6 +40,10 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenTransitioning stream =
         Stream.filterEvent (fun _ -> World.isSelectedScreenTransitioning) stream
 
+    /// Identity for streams. NOTE: this is moved to Prime in the next release.
+    let [<DebuggerHidden; DebuggerStepThrough>] id stream =
+        stream
+
 [<AutoOpen>]
 module StreamOperators =
 

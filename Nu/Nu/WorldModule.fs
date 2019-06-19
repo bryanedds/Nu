@@ -35,6 +35,9 @@ module WorldModule =
     let mutable internal unsubscribeSimulantScripts : Simulant -> World -> World =
         Unchecked.defaultof<Simulant -> World -> World>
 
+    let mutable internal equate5 : string -> Participant -> World PropertyTag -> bool -> World -> World =
+        Unchecked.defaultof<string -> Participant -> World PropertyTag -> bool -> World -> World>
+
     type World with // Construction
 
         /// Choose a world to be used for debugging. Call this whenever the most recently constructed

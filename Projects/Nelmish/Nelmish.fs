@@ -58,5 +58,5 @@ module Nelmish =
                         [Entity.Text == "+"
                          Entity.Position == Vector2 (0.0f, 64.0f)]
                      Layout.entity<TextDispatcher> CountText
-                        [Entity.Text ==! game.Model.MapOut string
+                        [Entity.Text =|= game.Model.MapOut string
                          Entity.Position == Vector2 (-128.0f, -32.0f)]]]]

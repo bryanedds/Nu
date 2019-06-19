@@ -222,6 +222,17 @@ module Nu =
                     property.Set [] world
                 | None -> world
 
+            // init equate5 F# reach-around
+            WorldModule.equate5 <- fun name (participant : Participant) (property : World PropertyTag) breaking world ->
+                let nonPersistent = not (Reflection.isPropertyPersistentByName name)
+                let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
+                let propagate (_ : Event<obj, Participant>) world =
+                    let property = { PropertyType = property.Type; PropertyValue = property.Get world }
+                    World.setProperty name nonPersistent alwaysPublish property (participant :?> Simulant) world
+                let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
+                let world = Stream.make (atooa Events.Register --> property.This.ParticipantAddress) |> breaker |> Stream.monitor propagate participant <| world
+                Stream.make (atooa (Events.Change property.Name) --> property.This.ParticipantAddress) |> breaker |> Stream.monitor propagate participant <| world
+
             // init scripting
             World.initScripting ()
             WorldBindings.initBindings ()

@@ -93,7 +93,7 @@ and [<NoComparison>] EntityDescriptor =
 
 type [<NoEquality; NoComparison>] DeclarativeDefinition =
     | PropertyDefinition of PropertyDefinition
-    | Equate of string * World PropertyTag
+    | Equate of string * World PropertyTag * bool
 
 /// Contains primitives for describing simulants.
 module Describe =
@@ -109,7 +109,7 @@ module Describe =
             Map.ofSeq
         let equations =
             definitions |>
-            Seq.map (fun def -> match def with Equate (leftName, right) -> Some (leftName, game :> Simulant, right) | PropertyDefinition _ -> None) |>
+            Seq.map (fun def -> match def with Equate (leftName, right, breaking) -> Some (leftName, game :> Simulant, right, breaking) | PropertyDefinition _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let descriptor =
@@ -133,7 +133,7 @@ module Describe =
             Map.ofSeq
         let equations =
             definitions |>
-            Seq.map (fun def -> match def with Equate (leftName, right) -> Some (leftName, screen :> Simulant, right) | PropertyDefinition _ -> None) |>
+            Seq.map (fun def -> match def with Equate (leftName, right, breaking) -> Some (leftName, screen :> Simulant, right, breaking) | PropertyDefinition _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let descriptor =
@@ -157,7 +157,7 @@ module Describe =
             Map.ofSeq
         let equations =
             definitions |>
-            Seq.map (fun def -> match def with Equate (leftName, right) -> Some (leftName, layer :> Simulant, right) | PropertyDefinition _ -> None) |>
+            Seq.map (fun def -> match def with Equate (leftName, right, breaking) -> Some (leftName, layer :> Simulant, right, breaking) | PropertyDefinition _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let descriptor =
@@ -181,7 +181,7 @@ module Describe =
             Map.ofSeq
         let equations =
             definitions |>
-            Seq.map (fun def -> match def with Equate (leftName, right) -> Some (leftName, entity :> Simulant, right) | PropertyDefinition _ -> None) |>
+            Seq.map (fun def -> match def with Equate (leftName, right, breaking) -> Some (leftName, entity :> Simulant, right, breaking) | PropertyDefinition _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let descriptor =
@@ -340,19 +340,22 @@ module DeclarativeOperators =
     let inline just model = (model, [])
 
     /// Declare an instruction to set a property.
-    let set property value = PropertyDefinition (define property value)
+    let init property value = PropertyDefinition (define property value)
 
     /// Declare an instruction to equate two properties.
-    let equate (leftTag : PropertyTag<'a, World>) (rightTag : PropertyTag<'a, World>) =
+    let equate (leftTag : PropertyTag<'a, World>) (rightTag : PropertyTag<'a, World>) breaking =
         if rightTag.This :> obj |> isNull
         then failwith "Equate expects an authentic PropertyTag where its This is not null."
-        else Equate (leftTag.Name, rightTag)
+        else Equate (leftTag.Name, rightTag, breaking)
 
     /// Declare an instruction to set a property.
-    let inline (==) left right = set left right
+    let inline (==) left right = init left right
 
     /// Declare an instruction to equate two properties.
-    let inline (==!) left right = equate left right
+    let inline (=|=) left right = equate left right false
+
+    /// Declare an instruction to equate two properties.
+    let inline (=/=) left right = equate left right true
 
 module Declarative =
     let Game = Game.Prop
