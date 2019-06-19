@@ -352,7 +352,7 @@ module TextFacetModule =
              define Entity.Font (AssetTag.make<Font> Assets.DefaultPackageName "Font")
              define Entity.Margins Vector2.Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
-             define Entity.Color Vector4.One]
+             define Entity.Color (Vector4 (0.0f, 0.0f, 0.0f, 1.0f))]
 
         override facet.Actualize (text, world) =
             if text.GetVisibleLayered world then
@@ -681,7 +681,7 @@ module StaticSpriteFacetModule =
         inherit Facet ()
 
         static member PropertyDefinitions =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
+            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
         override facet.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
@@ -1024,7 +1024,8 @@ module ButtonDispatcherModule =
             [typeof<TextFacet>.Name]
 
         static member PropertyDefinitions =
-            [define Entity.SwallowMouseLeft false
+            [define Entity.Size (Vector2 (256.0f, 64.0f))
+             define Entity.SwallowMouseLeft false
              define Entity.Down false
              define Entity.UpImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
              define Entity.DownImage (AssetTag.make<Image> Assets.DefaultPackageName "Image2")
@@ -1074,8 +1075,9 @@ module LabelDispatcherModule =
         inherit GuiDispatcher ()
 
         static member PropertyDefinitions =
-            [define Entity.SwallowMouseLeft true
-             define Entity.LabelImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
+            [define Entity.Size (Vector2 (256.0f, 64.0f))
+             define Entity.SwallowMouseLeft false
+             define Entity.LabelImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
 
         override dispatcher.Actualize (label, world) =
             if label.GetVisibleLayered world then
@@ -1118,8 +1120,9 @@ module TextDispatcherModule =
             [typeof<TextFacet>.Name]
 
         static member PropertyDefinitions =
-            [define Entity.SwallowMouseLeft true
-             define Entity.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
+            [define Entity.Size (Vector2 (256.0f, 64.0f))
+             define Entity.SwallowMouseLeft false
+             define Entity.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
 
         override dispatcher.Actualize (text, world) =
             if text.GetVisibleLayered world then
@@ -1215,7 +1218,8 @@ module ToggleDispatcherModule =
             else (Cascade, world)
 
         static member PropertyDefinitions =
-            [define Entity.SwallowMouseLeft false
+            [define Entity.Size (Vector2 (256.0f, 64.0f))
+             define Entity.SwallowMouseLeft false
              define Entity.Open true
              define Entity.Pressed false
              define Entity.OpenImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
@@ -1305,7 +1309,8 @@ module FeelerDispatcherModule =
             else (Cascade, world)
 
         static member PropertyDefinitions =
-            [define Entity.SwallowMouseLeft false
+            [define Entity.Size (Vector2 (256.0f, 64.0f))
+             define Entity.SwallowMouseLeft false
              define Entity.Touched false
              define Entity.OnTouch Scripting.Unit
              define Entity.OnUntouch Scripting.Unit]
@@ -1348,7 +1353,8 @@ module FillBarDispatcherModule =
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
         static member PropertyDefinitions =
-            [define Entity.SwallowMouseLeft true
+            [define Entity.Size (Vector2 (256.0f, 64.0f))
+             define Entity.SwallowMouseLeft false
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
              define Entity.FillImage (AssetTag.make<Image> Assets.DefaultPackageName "Image9")
@@ -1402,7 +1408,7 @@ module BlockDispatcherModule =
 
         static member PropertyDefinitions =
             [define Entity.BodyType Static
-             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName  "Image3")]
+             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
@@ -1415,7 +1421,7 @@ module BoxDispatcherModule =
         inherit EntityDispatcher ()
 
         static member PropertyDefinitions =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
+            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
