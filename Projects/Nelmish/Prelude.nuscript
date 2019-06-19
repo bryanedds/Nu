@@ -1,0 +1,383 @@
+; Nu Game Engine.
+; Copyright (C) Bryan Edds, 2013-2018.
+
+#| The Unit type indicator.             |# [define -u- []]
+#| The Bool type indicator.             |# [define -b- false]
+#| The Int type indicator.              |# [define -i- 0]
+#| The Int64 type indicator.            |# [define -L- 0L]
+#| The Single type indicator.           |# [define -f- 0f]
+#| The Double type indicator.           |# [define -d- 0d]
+#| The String type indicator.           |# [define -s- ""]
+#| The Keyword type indicator.          |# [define -K- nil]
+#| The Tuple type indicator.            |# [define -T- [tuple]]
+#| The Union type indicator.            |# [define -U- [nil]]
+#| The Option type indicator.           |# [define -o- none]
+#| The Either type indicator.           |# [define -e- [left []]]
+#| The List type indicator.             |# [define -l- [list]]
+#| The Ring type indicator.             |# [define -r- [ring]]
+#| The Table type indicator.            |# [define -t- [table]]
+#| The Record type indicator.           |# [define -R- [record nil]]
+#| The Function type indicator.         |# [define -F- [fun [] []]]
+
+#| Check that a value is Unit.          |# [define isUnit [a] [= [getTypeName a] "Unit"]]
+#| Check that a value is a Bool.        |# [define isBool [a] [= [getTypeName a] "Bool"]]
+#| Check that a value is an Int.        |# [define isInt [a] [= [getTypeName a] "Int"]]
+#| Check that a value is an Int64.      |# [define isInt64 [a] [= [getTypeName a] "Int64"]]
+#| Check that a value is a Single.      |# [define isSingle [a] [= [getTypeName a] "Single"]]
+#| Check that a value is a Double.      |# [define isDouble [a] [= [getTypeName a] "Double"]]
+#| Check that a value is a String.      |# [define isString [a] [= [getTypeName a] "String"]]
+#| Check that a value is a Keyword.     |# [define isKeyword [a] [= [getTypeName a] "Keyword"]]
+#| Check that a value is a Tuple.       |# [define isTuple [a] [= [getTypeName a] "Tuple"]]
+#| Check that a value is a Union.       |# [define isUnion [a] [= [getTypeName a] "Union"]]
+#| Check that a value is an Option.     |# [define isOption [a] [= [getTypeName a] "Option"]]
+#| Check that a value is an Either.     |# [define isEither [a] [= [getTypeName a] "Either"]]
+#| Check that a value is a List.        |# [define isList [a] [= [getTypeName a] "List"]]
+#| Check that a value is a Ring.        |# [define isRing [a] [= [getTypeName a] "Ring"]]
+#| Check that a value is a Table.       |# [define isTable [a] [= [getTypeName a] "Table"]]
+#| Check that a value is a Record.      |# [define isRecord [a] [= [getTypeName a] "Record"]]
+#| Check that a value is a Function.    |# [define isFunction [a] [= [getTypeName a] "Function"]]
+
+; The identity function.
+[define id [a] a]
+
+; Flip a binary function's arguments.
+[define flip [f]
+    [fun [a b] [f b a]]]
+
+; Determine that a value is its identity.
+[define isIdentity [a]
+    [= a [identity a]]]
+
+; Check that a value is positive.
+[define isPositive [a]
+    [>= a [empty a]]]
+
+; Check that a value is negative.
+[define isNegative [a]
+    [<= a [empty a]]]
+
+; Check that a value is positive infinity.
+[define isPositiveInfinity [a]
+    [> a [maximum a]]]
+
+; Check that a value is negative infinity.
+[define isNegativeInfinity [a]
+    [< a [minimum a]]]
+
+; Check that a value is IEEE not-a-number.
+[define isNaN [a]
+    [|| [isPositiveInfinity a]
+        [isNegativeInfinity a]]]
+
+; Select the mininum value.
+[define min [a b]
+    [if [< a b] a b]]
+
+; Select the maximum value.
+[define max [a b]
+    [if [> a b] a b]]
+
+; Compare two values. Returns Lt, Gt, or Eq.
+[define compare [a b]
+    [if [< a b]
+        Lt
+        [if [> a b] Gt Eq]]]
+
+; The sign of a value. Returns Positive, Negative, or Zero.
+[define sign [a]
+    [if [> a [empty a]]
+        Positive
+        [if [< a [empty a]] Negative Zero]]]
+
+; Compute the absolute value.
+[define abs [a]
+    [if [isNegative a]
+        [negate a]
+        a]]
+
+; Dereference a structure, then get its first item.
+[define fst! [a]
+    [fst [! a]]]
+
+; Dereference a structure, then get its second item.
+[define snd! [a]
+    [snd [! a]]]
+
+; Reverse the elements in a container.
+[define rev [ctr]
+    [fold [flip cons] [empty ctr] ctr]]
+
+; Fold over a container backward while state satisfies the given predicate.
+[define foldBackWhile [folder state ctr]
+    [foldWhile folder state [rev ctr]]]
+
+; Fold over a container backward, providing the reverse index of each element.
+[define foldBacki [folder state ctr]
+    [foldi folder state [rev ctr]]]
+
+; Fold over a container backward.
+[define foldBack [folder state ctr]
+    [fold folder state [rev ctr]]]
+
+; Reduce a container with at least one element while the reducer function returns some.
+[define reduceWhile [reducer ctr]
+    [let [pr [split ctr]]
+         [foldWhile reducer [fst pr] [snd pr]]]]
+
+; Reduce a container with at least one element, providing the index of each element.
+[define reducei [reducer ctr]
+    [let [pr [split ctr]]
+         [foldi reducer [fst pr] [snd pr]]]]
+
+; Reduce a container with at least one element.
+[define reduce [reducer ctr]
+    [let [pr [split ctr]]
+         [fold reducer [fst pr] [snd pr]]]]
+
+; Get only the some elements of a container.
+[define definitize [ctr]
+    [foldBack
+        [fun [elems elemOpt] [if [isSome elemOpt] [cons [! elemOpt] elems] elems]]
+        [empty ctr]
+        ctr]]
+
+; Filter for elements that satifsy the given predicate.
+[define filter [pred ctr]
+    [foldBack
+        [fun [elems elem] [if [pred elem] [cons elem elems] elems]]
+        [empty ctr]
+        ctr]]
+
+; Build a container of elements taken from the given container while a predicate succeeds.
+[define takeWhile [pred ctr]
+    [rev
+        [foldWhile
+            [fun [elems elem] [if [pred elem] [some [cons elem elems]] none]]
+            [empty ctr]
+            ctr]]]
+
+[define take3 [current n ctr]
+    [let [opt [tryUncons ctr]]
+         [if [&& [isSome opt] [< current n]]
+             [cons [fst! opt] [take3 [inc current] n [snd! opt]]]
+             [empty ctr]]]]
+
+; Build a container of n elements taken from the given container, skipping n elements.
+; NOTE: this can blow the stack when n is very large.
+[define take [n ctr]
+    [take3 0 n ctr]]
+
+; Build a container of elements taken from the given container, skipping elements while a predicate succeeds.
+[define skipWhile [pred ctr]
+    [rev [snd [foldWhile
+        [fun [pr elem]
+            [let [taken [fst pr]]
+                 [elems [snd pr]]
+                 [if taken
+                     [some [pair taken [cons elem elems]]]
+                     [if [pred elem]
+                         [some [pair false elems]]
+                         [some [pair true [cons elem elems]]]]]]]
+        [pair false [empty ctr]]
+        ctr]]]]
+
+[define skip3 [current n ctr]
+    [let [opt [tryUncons ctr]]
+         [if [isSome opt]
+             [if [< current n]
+                 [skip3 [inc current] n [snd! opt]]
+                 [cons [fst! opt] [skip3 current n [snd! opt]]]]
+             ctr]]]
+
+; Build a container of elements taken from the given container, skipping n elements.
+; NOTE: this can blow the stack when n is very large.
+[define skip [n ctr]
+    [skip3 0 n ctr]]
+
+; Count the number of a container's elements that satisfy the given predicate.
+[define countBy [pred ctr]
+    [fold [fun [count elem] [if [pred elem] [inc count] count]] 0 ctr]]
+
+; Count the number of a container's elements that equal the given value.
+[define count [a ctr]
+    [fold [fun [count elem] [if [= elem a] [inc count] count]] 0 ctr]]
+
+; Tally up the number of a container's elements.
+[define tally [ctr]
+    [fold [fun [i _] [inc i]] 0 ctr]]
+
+; Determine whether a container doesn't hold the given element.
+[define notContains [pred ctr]
+    [not [contains pred ctr]]]
+
+; Determine that a container holds an element that satisfies the given predicate.
+[define exists [pred ctr]
+    [fold
+        [fun [exist elem] [|| exist [pred elem]]]
+        false
+        ctr]]
+
+; Determine whether a container doesn't hold an element that satisfies the given predicate.
+[define notExists [pred ctr]
+    [not [exists pred ctr]]]
+
+; Zip two containers by the given zipper function.
+; NOTE: will blow stack when both containers are very large.
+[define zipBy [zipper ctr ctr2]
+     [let [opt [tryUncons ctr]]
+          [opt2 [tryUncons ctr2]] 
+          [if [|| [isNone opt] [isNone opt2]]
+              [empty ctr]
+              [cons [zipper [fst! opt] [fst! opt2]]
+                    [zipBy zipper [snd! opt] [snd! opt2]]]]]]
+
+; Zip two containers into a container of pairs.
+[define zip [ctr ctr2]
+    [zipBy pair ctr ctr2]]
+
+; Mathematical constant pi as a single value.
+[define pi 3.14159f]
+
+; Mathematical constant e as a single value.
+[define e 2.71828f]
+
+#| Nu Script Extensions. |#
+
+; Vector2 extensions.
+[define empty_Vector2 [_] [v2 0f 0f]]
+[define identity_Vector2 [_] [v2 1f 1f]]
+[define minimum_Vector2 [_] [let [m [minimum -s-]] [v2 m m]]]
+[define maximum_Vector2 [_] [let [m [maximum -s-]] [v2 m m]]]
+[define inc_Vector2 [v] [v2 [inc v.X] [inc v.Y]]]
+[define dec_Vector2 [v] [v2 [dec v.X] [dec v.Y]]]
+[define negate_Vector2 [v] [v2 [negate v.X] [negate v.Y]]]
+[define pow_Vector2 [v] [v2 [pow v.X] [pow v.Y]]]
+[define root_Vector2 [v] [v2 [root v.X] [root v.Y]]]
+[define sqr_Vector2 [v] [v2 [sqr v.X] [sqr v.Y]]]
+[define sqrt_Vector2 [v] [v2 [sqrt v.X] [sqrt v.Y]]]
+[define floor_Vector2 [v] [v2 [floor v.X] [floor v.Y]]]
+[define ceiling_Vector2 [v] [v2 [ceiling v.X] [ceiling v.Y]]]
+[define truncate_Vector2 [v] [v2 [truncate v.X] [truncate v.Y]]]
+[define round_Vector2 [v] [v2 [round v.X] [round v.Y]]]
+[define exp_Vector2 [v] [v2 [exp v.X] [exp v.Y]]]
+[define log_Vector2 [v] [v2 [log v.X] [log v.Y]]]
+[define sin_Vector2 [v] [v2 [sin v.X] [sin v.Y]]]
+[define cos_Vector2 [v] [v2 [cos v.X] [cos v.Y]]]
+[define tan_Vector2 [v] [v2 [tan v.X] [tan v.Y]]]
+[define asin_Vector2 [v] [v2 [asin v.X] [asin v.Y]]]
+[define acos_Vector2 [v] [v2 [acos v.X] [acos v.Y]]]
+[define atan_Vector2 [v] [v2 [atan v.X] [atan v.Y]]]
+[define length_Vector2 [v] [sqrt [+ [sqr v.X] [sqr v.Y]]]]
+[define normal_Vector2 [v] [/ v [length v]]]
+[define =_Vector2 [u v] [&& [= u.X v.X] [= u.Y v.Y]]]
+[define <>_Vector2 [u v] [&& [<> u.X v.X] [<> u.Y v.Y]]]
+[define <_Vector2 [u v] [&& [< u.X v.X] [< u.Y v.Y]]]
+[define >_Vector2 [u v] [&& [> u.X v.X] [> u.Y v.Y]]]
+[define <=_Vector2 [u v] [&& [<= u.X v.X] [<= u.Y v.Y]]]
+[define >=_Vector2 [u v] [&& [>= u.X v.X] [>= u.Y v.Y]]]
+[define +_Vector2 [u v] [v2 [+ u.X v.X] [+ u.Y v.Y]]]
+[define -_Vector2 [u v] [v2 [- u.X v.X] [- u.Y v.Y]]]
+[define *_Vector2 [u v] [v2 [* u.X v.X] [* u.Y v.Y]]]
+[define /_Vector2 [u v] [v2 [/ u.X v.X] [/ u.Y v.Y]]]
+[define %_Vector2 [u v] [v2 [% u.X v.X] [% u.Y v.Y]]]
+[define dot_Vector2 [u v] [+ [* u.X v.X] [* u.Y v.Y]]]
+[define -v2- [v2 0f 0f]]
+
+; Vector4 extensions.
+[define empty_Vector4 [_] [v4 0f 0f 0f 0f]]
+[define identity_Vector4 [_] [v4 1f 1f 1f 1f]]
+[define minimum_Vector4 [_] [let [m [minimum -s-]] [v4 m m m m]]]
+[define maximum_Vector4 [_] [let [m [maximum -s-]] [v4 m m m m]]]
+[define inc_Vector4 [v] [v4 [inc v.X] [inc v.Y] [inc v.Z] [inc v.W]]]
+[define dec_Vector4 [v] [v4 [dec v.X] [dec v.Y] [dec v.Z] [dec v.W]]]
+[define negate_Vector4 [v] [v4 [negate v.X] [negate v.Y] [negate v.Z] [negate v.W]]]
+[define pow_Vector4 [v] [v4 [pow v.X] [pow v.Y] [pow v.Z] [pow v.W]]]
+[define root_Vector4 [v] [v4 [root v.X] [root v.Y] [root v.Z] [root v.W]]]
+[define sqr_Vector4 [v] [v4 [sqr v.X] [sqr v.Y] [sqr v.Z] [sqr v.W]]]
+[define sqrt_Vector4 [v] [v4 [sqrt v.X] [sqrt v.Y] [sqrt v.Z] [sqrt v.W]]]
+[define floor_Vector4 [v] [v4 [floor v.X] [floor v.Y] [floor v.Z] [floor v.W]]]
+[define ceiling_Vector4 [v] [v4 [ceiling v.X] [ceiling v.Y] [ceiling v.Z] [ceiling v.W]]]
+[define truncate_Vector4 [v] [v4 [truncate v.X] [truncate v.Y] [truncate v.Z] [truncate v.W]]]
+[define round_Vector4 [v] [v4 [round v.X] [round v.Y] [round v.Z] [round v.W]]]
+[define exp_Vector4 [v] [v4 [exp v.X] [exp v.Y] [exp v.Z] [exp v.W]]]
+[define log_Vector4 [v] [v4 [log v.X] [log v.Y] [log v.Z] [log v.W]]]
+[define sin_Vector4 [v] [v4 [sin v.X] [sin v.Y] [sin v.Z] [sin v.W]]]
+[define cos_Vector4 [v] [v4 [cos v.X] [cos v.Y] [cos v.Z] [cos v.W]]]
+[define tan_Vector4 [v] [v4 [tan v.X] [tan v.Y] [tan v.Z] [tan v.W]]]
+[define asin_Vector4 [v] [v4 [asin v.X] [asin v.Y] [asin v.Z] [asin v.W]]]
+[define acos_Vector4 [v] [v4 [acos v.X] [acos v.Y] [acos v.Z] [acos v.W]]]
+[define atan_Vector4 [v] [v4 [atan v.X] [atan v.Y] [atan v.Z] [atan v.W]]]
+[define length_Vector4 [v] [sqrt [+ [+ [+ [sqr v.X] [sqr v.Y]] [sqr v.Z]] [sqr v.W]]]]
+[define normal_Vector4 [v] [/ v [length v]]]
+[define =_Vector4 [u v] [&& [= u.X v.X] [= u.Y v.Y] [= u.Z v.Z] [= u.W v.W]]]
+[define <>_Vector4 [u v] [&& [<> u.X v.X] [<> u.Y v.Y] [<> u.Z v.Z] [<> u.W v.W]]]
+[define <_Vector4 [u v] [&& [< u.X v.X] [< u.Y v.Y] [< u.Z v.Z] [< u.W v.W]]]
+[define >_Vector4 [u v] [&& [> u.X v.X] [> u.Y v.Y] [> u.Z v.Z] [> u.W v.W]]]
+[define <=_Vector4 [u v] [&& [<= u.X v.X] [<= u.Y v.Y] [<= u.Z v.Z] [<= u.W v.W]]]
+[define >=_Vector4 [u v] [&& [>= u.X v.X] [>= u.Y v.Y] [>= u.Z v.Z] [>= u.W v.W]]]
+[define +_Vector4 [u v] [v4 [+ u.X v.X] [+ u.Y v.Y] [+ u.Z v.Z] [+ u.W v.W]]]
+[define -_Vector4 [u v] [v4 [- u.X v.X] [- u.Y v.Y] [- u.Z v.Z] [- u.W v.W]]]
+[define *_Vector4 [u v] [v4 [* u.X v.X] [* u.Y v.Y] [* u.Z v.Z] [* u.W v.W]]]
+[define /_Vector4 [u v] [v4 [/ u.X v.X] [/ u.Y v.Y] [/ u.Z v.Z] [/ u.W v.W]]]
+[define %_Vector4 [u v] [v4 [% u.X v.X] [% u.Y v.Y] [% u.Z v.Z] [% u.W v.W]]]
+[define dot_Vector4 [u v] [+ [* u.X v.X] [* u.Y v.Y] [* u.Z v.Z] [* u.W v.W]]]
+[define -v4- [v4 0f 0f 0f 0f]]
+
+; Vector2i extensions.
+[define empty_Vector2i [_] [v2i 0 0]]
+[define identity_Vector2i [_] [v2i 1 1]]
+[define minimum_Vector2i [_] [let [m [minimum -i-]] [v2i m m]]]
+[define maximum_Vector2i [_] [let [m [maximum -i-]] [v2i m m]]]
+[define inc_Vector2i [v] [v2i [inc v.X] [inc v.Y]]]
+[define dec_Vector2i [v] [v2i [dec v.X] [dec v.Y]]]
+[define negate_Vector2i [v] [v2i [negate v.X] [negate v.Y]]]
+[define pow_Vector2i [v] [v2i [pow v.X] [pow v.Y]]]
+[define root_Vector2i [v] [v2i [root v.X] [root v.Y]]]
+[define sqr_Vector2i [v] [v2i [sqr v.X] [sqr v.Y]]]
+[define sqrt_Vector2i [v] [v2i [sqrt v.X] [sqrt v.Y]]]
+[define floor_Vector2i [v] [v2i [floor v.X] [floor v.Y]]]
+[define ceiling_Vector2i [v] [v2i [ceiling v.X] [ceiling v.Y]]]
+[define truncate_Vector2i [v] [v2i [truncate v.X] [truncate v.Y]]]
+[define round_Vector2i [v] [v2i [round v.X] [round v.Y]]]
+[define exp_Vector2i [v] [v2i [exp v.X] [exp v.Y]]]
+[define log_Vector2i [v] [v2i [log v.X] [log v.Y]]]
+[define sin_Vector2i [v] [v2i [sin v.X] [sin v.Y]]]
+[define cos_Vector2i [v] [v2i [cos v.X] [cos v.Y]]]
+[define tan_Vector2i [v] [v2i [tan v.X] [tan v.Y]]]
+[define asin_Vector2i [v] [v2i [asin v.X] [asin v.Y]]]
+[define acos_Vector2i [v] [v2i [acos v.X] [acos v.Y]]]
+[define atan_Vector2i [v] [v2i [atan v.X] [atan v.Y]]]
+[define length_Vector2i [v] [sqrt [+ [sqr v.X] [sqr v.Y]]]]
+[define normal_Vector2i [v] [/ v [length v]]]
+[define =_Vector2i [u v] [&& [= u.X v.X] [= u.Y v.Y]]]
+[define <>_Vector2i [u v] [&& [<> u.X v.X] [<> u.Y v.Y]]]
+[define <_Vector2i [u v] [&& [< u.X v.X] [< u.Y v.Y]]]
+[define >_Vector2i [u v] [&& [> u.X v.X] [> u.Y v.Y]]]
+[define <=_Vector2i [u v] [&& [<= u.X v.X] [<= u.Y v.Y]]]
+[define >=_Vector2i [u v] [&& [>= u.X v.X] [>= u.Y v.Y]]]
+[define +_Vector2i [u v] [v2i [+ u.X v.X] [+ u.Y v.Y]]]
+[define -_Vector2i [u v] [v2i [- u.X v.X] [- u.Y v.Y]]]
+[define *_Vector2i [u v] [v2i [* u.X v.X] [* u.Y v.Y]]]
+[define /_Vector2i [u v] [v2i [/ u.X v.X] [/ u.Y v.Y]]]
+[define %_Vector2i [u v] [v2i [% u.X v.X] [% u.Y v.Y]]]
+[define dot_Vector2i [u v] [+ [* u.X v.X] [* u.Y v.Y]]]
+[define -v2i- [v2i 0 0]]
+
+; Update function.
+[define update [property updater]
+    [set property [updater [get property]]]]
+
+; Convert an event stream to a data stream.
+[define toData [stream]
+    [map [fun [evt] evt.Data] stream]]
+
+; Make stream with event data directly.
+[define stream [event]
+    [toData [streamEvent event]]]
+
+; Equate two simulant's properties.
+[define equate [simulant property simulant2 property2]
+    [setAsStream simulant property [getAsStream simulant2 property2]]]
+
+; The game.
+[define game nil]

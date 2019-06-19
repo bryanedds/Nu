@@ -28,6 +28,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "BlazeVector", "Projects\Bla
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "InfinityRpg", "Projects\InfinityRpg\InfinityRpg.fsproj", "{DCE0536A-59E0-4AB5-86C5-EE919E430583}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nelmish", "Projects\Nelmish\Nelmish.fsproj", "{6C1968A2-094C-4BD5-B779-B150FC969DB6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,6 +70,10 @@ Global
 		{DCE0536A-59E0-4AB5-86C5-EE919E430583}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DCE0536A-59E0-4AB5-86C5-EE919E430583}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DCE0536A-59E0-4AB5-86C5-EE919E430583}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C1968A2-094C-4BD5-B779-B150FC969DB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C1968A2-094C-4BD5-B779-B150FC969DB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C1968A2-094C-4BD5-B779-B150FC969DB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C1968A2-094C-4BD5-B779-B150FC969DB6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
