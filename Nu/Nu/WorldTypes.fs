@@ -735,11 +735,17 @@ module WorldTypes =
         private
             | SimulantOperators
 
-        /// Concatenate two addresses, forcing the type of first address.
+        /// Concatenate two addresses, taking the type of first address.
         static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
 
-        /// Concatenate two addresses, takings the type of first address.
+        /// Concatenate two addresses, forcing the type of first address.
+        static member acatff<'a> (address : 'a Address) (simulant : Simulant) = acatff address simulant.SimulantAddress
+
+        /// Concatenate two addresses, taking the type of first address.
         static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
+
+        /// Concatenate two addresses, forcing the type of first address.
+        static member (-->) (address, simulant : Simulant) = SimulantOperators.acatff address simulant
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =

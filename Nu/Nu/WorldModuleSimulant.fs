@@ -30,6 +30,9 @@ module SimulantOperators =
     /// Derive a screen from one of its entities.
     let etos (entity : Entity) = ltos (etol entity)
 
+    /// Derive a screen from its name.
+    let (!>) (screenName : string) = Screen screenName
+
 module Simulants =
 
     /// The game. Always exists.
