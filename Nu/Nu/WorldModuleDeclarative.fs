@@ -352,7 +352,7 @@ module DeclarativeOperators =
     let inline (==) left right = set left right
 
     /// Declare an instruction to equate two properties.
-    let inline (===) left right = equate left right
+    let inline (!=) left right = equate left right
 
 module Declarative =
     let Game = Game.Prop
