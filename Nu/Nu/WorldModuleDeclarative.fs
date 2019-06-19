@@ -348,9 +348,9 @@ module DeclarativeOperators =
     /// Pair an empty list of commands with a model.
     let inline just model = (model, [])
 
-    let ( @= ) = set
+    let ( == ) = set
 
-    let ( == ) = equate
+    let ( != ) = equate
 
 module Declarative =
     let Game = Game.Prop
