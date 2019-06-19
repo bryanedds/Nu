@@ -324,6 +324,56 @@ module ScriptFacetModule =
                 | None -> failwithumf ()
 
 [<AutoOpen>]
+module TextFacetModule =
+
+    type Entity with
+    
+        member this.GetText world : string = this.Get Property? Text world
+        member this.SetText (value : string) world = this.SetFast Property? Text false false value world
+        member this.Text = PropertyTag.make this Property? Text this.GetText this.SetText
+        member this.GetFont world : Font AssetTag = this.Get Property? Font world
+        member this.SetFont (value : Font AssetTag) world = this.SetFast Property? Font false false value world
+        member this.Font = PropertyTag.make this Property? Font this.GetFont this.SetFont
+        member this.GetMargins world : Vector2 = this.Get Property? Margins world
+        member this.SetMargins (value : Vector2) world = this.SetFast Property? Margins false false value world
+        member this.Margins = PropertyTag.make this Property? Margins this.GetMargins this.SetMargins
+        member this.GetJustification world : Justification = this.Get Property? Justification world
+        member this.SetJustification (value : Justification) world = this.SetFast Property? Justification false false value world
+        member this.Justification = PropertyTag.make this Property? Justification this.GetJustification this.SetJustification
+        member this.GetColor world : Vector4 = this.Get Property? Color world
+        member this.SetColor (value : Vector4) world = this.SetFast Property? Color false false value world
+        member this.Color = PropertyTag.make this Property? Color this.GetColor this.SetColor
+
+    type TextFacet () =
+        inherit Facet ()
+
+        static member PropertyDefinitions =
+            [define Entity.Text ""
+             define Entity.Font (AssetTag.make<Font> Assets.DefaultPackageName "Font")
+             define Entity.Margins Vector2.Zero
+             define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
+             define Entity.Color Vector4.One]
+
+        override facet.Actualize (text, world) =
+            if text.GetVisibleLayered world then
+                World.enqueueRenderMessage
+                    (RenderDescriptorsMessage
+                        [|LayerableDescriptor
+                            { Depth = text.GetDepthLayered world
+                              PositionY = (text.GetPosition world).Y
+                              LayeredDescriptor =
+                                TextDescriptor
+                                    { Text = text.GetText world
+                                      Position = text.GetPosition world + text.GetMargins world
+                                      Size = text.GetSize world - text.GetMargins world * 2.0f
+                                      ViewType = Absolute
+                                      Font = text.GetFont world
+                                      Color = text.GetColor world
+                                      Justification = text.GetJustification world }}|])
+                    world
+            else world
+
+[<AutoOpen>]
 module RigidBodyFacetModule =
 
     type Entity with
@@ -725,56 +775,6 @@ module AnimatedSpriteFacetModule =
 
         override facet.GetQuickSize (entity, world) =
             entity.GetCelSize world
-
-[<AutoOpen>]
-module TextFacetModule =
-
-    type Entity with
-    
-        member this.GetText world : string = this.Get Property? Text world
-        member this.SetText (value : string) world = this.SetFast Property? Text false false value world
-        member this.Text = PropertyTag.make this Property? Text this.GetText this.SetText
-        member this.GetFont world : Font AssetTag = this.Get Property? Font world
-        member this.SetFont (value : Font AssetTag) world = this.SetFast Property? Font false false value world
-        member this.Font = PropertyTag.make this Property? Font this.GetFont this.SetFont
-        member this.GetMargins world : Vector2 = this.Get Property? Margins world
-        member this.SetMargins (value : Vector2) world = this.SetFast Property? Margins false false value world
-        member this.Margins = PropertyTag.make this Property? Margins this.GetMargins this.SetMargins
-        member this.GetJustification world : Justification = this.Get Property? Justification world
-        member this.SetJustification (value : Justification) world = this.SetFast Property? Justification false false value world
-        member this.Justification = PropertyTag.make this Property? Justification this.GetJustification this.SetJustification
-        member this.GetColor world : Vector4 = this.Get Property? Color world
-        member this.SetColor (value : Vector4) world = this.SetFast Property? Color false false value world
-        member this.Color = PropertyTag.make this Property? Color this.GetColor this.SetColor
-
-    type TextFacet () =
-        inherit Facet ()
-
-        static member PropertyDefinitions =
-            [define Entity.Text ""
-             define Entity.Font (AssetTag.make<Font> Assets.DefaultPackageName "Font")
-             define Entity.Margins Vector2.Zero
-             define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
-             define Entity.Color Vector4.One]
-
-        override facet.Actualize (text, world) =
-            if text.GetVisibleLayered world then
-                World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
-                            { Depth = text.GetDepthLayered world
-                              PositionY = (text.GetPosition world).Y
-                              LayeredDescriptor =
-                                TextDescriptor
-                                    { Text = text.GetText world
-                                      Position = text.GetPosition world + text.GetMargins world
-                                      Size = text.GetSize world - text.GetMargins world * 2.0f
-                                      ViewType = Absolute
-                                      Font = text.GetFont world
-                                      Color = text.GetColor world
-                                      Justification = text.GetJustification world }}|])
-                    world
-            else world
 
 [<AutoOpen>]
 module EntityDispatcherModule =
