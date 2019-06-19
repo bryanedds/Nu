@@ -83,23 +83,6 @@
     <Content Include="Prelude.nuscript">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Assets\Default\Effect.nueffect" />
-    <Content Include="Assets\Default\Effect2.nueffect" />
-    <Content Include="Assets\Default\Image.png" />
-    <Content Include="Assets\Default\Image2.png" />
-    <Content Include="Assets\Default\Image3.png" />
-    <Content Include="Assets\Default\Image4.png" />
-    <Content Include="Assets\Default\Image5.png" />
-    <Content Include="Assets\Default\Image6.png" />
-    <Content Include="Assets\Default\Image7.png" />
-    <Content Include="Assets\Default\Image8.png" />
-    <Content Include="Assets\Default\Image9.png" />
-    <Content Include="Assets\Default\Image10.png" />
-    <Content Include="Assets\Default\FreeMonoBold.032.ttf" />
-    <Content Include="Assets\Default\Song.ogg" />
-    <Content Include="Assets\Default\Sound.wav" />
-    <Content Include="Assets\Default\TileMap.tmx" />
-    <Content Include="Assets\Default\TileSet.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Nu\Nu.SDL2\Nu.SDL2.csproj">

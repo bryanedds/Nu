@@ -53,14 +53,10 @@ module Nelmish =
                 [Layout.layer Layer []
                     [Layout.entity<ButtonDispatcher> DecButton
                         [Entity.Text == "Decrement"
-                         Entity.Position == Vector2 (-200.0f, 50.0f)
-                         Entity.Size == Vector2 (200.0f, 50.0f)]
+                         Entity.Position == Vector2 (-256.0f, 64.0f)]
                      Layout.entity<ButtonDispatcher> IncButton
                         [Entity.Text == "Increment"
-                         Entity.Position == Vector2 (0.0f, 50.0f)
-                         Entity.Size == Vector2 (200.0f, 50.0f)]
+                         Entity.Position == Vector2 (0.0f, 64.0f)]
                      Layout.entity<TextDispatcher> CountText
                         [Entity.Text =! game.Model.MapOut string
-                         Entity.Position == Vector2 (-100.0f, -20.0f)
-                         Entity.Size == Vector2 (200.0f, 50.0f)
-                         Entity.BackgroundImage == AssetTag.make "Default" "Image2"]]]]
+                         Entity.Position == Vector2 (-128.0f, -32.0f)]]]]
