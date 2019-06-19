@@ -18,8 +18,8 @@ module Nelmish =
 
     // this is our Elm-style message type
     type Message =
-        | Increment
         | Decrement
+        | Increment
 
     // this is our model property declaration
     type Game with
@@ -37,26 +37,29 @@ module Nelmish =
 
         // here we define the Bindings used to connect events to their desired messages
         override this.Bindings (_, _, _) =
-            [IncButton.ClickEvent ==> Increment
-             DecButton.ClickEvent ==> Decrement]
+            [DecButton.ClickEvent ==> Decrement
+             IncButton.ClickEvent ==> Increment]
 
         // here we handle the above messages
         override this.Update (message, model, _, _) =
             match message with
-            | Increment -> just (inc model)
             | Decrement -> just (dec model)
+            | Increment -> just (inc model)
 
         // here we describe the layout of the game including its one screen, one layer, and three
         // entities, two of which are button controls and one of which is a text control
         override this.Layout (_, game, _) =
             [Layout.screen Screen Vanilla []
                 [Layout.layer Layer []
-                    [Layout.entity<ButtonDispatcher> IncButton
-                        [Entity.Text == "Increment"
-                         Entity.Position == Vector2 (-100.0f, 50.0f)]
-                     Layout.entity<ButtonDispatcher> DecButton
+                    [Layout.entity<ButtonDispatcher> DecButton
                         [Entity.Text == "Decrement"
-                         Entity.Position == Vector2 (0.0f, 50.0f)]
+                         Entity.Position == Vector2 (-200.0f, 50.0f)
+                         Entity.Size == Vector2 (200.0f, 50.0f)]
+                     Layout.entity<ButtonDispatcher> IncButton
+                        [Entity.Text == "Increment"
+                         Entity.Position == Vector2 (0.0f, 50.0f)
+                         Entity.Size == Vector2 (200.0f, 50.0f)]
                      Layout.entity<TextDispatcher> CountText
-                        [Entity.Text === game.Model.MapOut string
-                         Entity.Position == Vector2 (-50.0f, -50.0f)]]]]
+                        [Entity.Text != game.Model.MapOut string
+                         Entity.Position == Vector2 (-150.0f, -50.0f)
+                         Entity.Size == Vector2 (300.0f, 50.0f)]]]]
