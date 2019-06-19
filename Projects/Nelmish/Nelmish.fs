@@ -5,8 +5,8 @@ open Nu
 open Nu.Declarative
 module Nelmish =
 
-    // here we create addresses for the simulants that we are going to define for our game
-    let Screen = new Screen "Screen"
+    // here we create references for the simulants that we are going to define for our game
+    let Screen = !> "Screen"
     let Layer = Screen => "Layer"
     let IncButton = Layer => "Inc"
     let DecButton = Layer => "Dec"
