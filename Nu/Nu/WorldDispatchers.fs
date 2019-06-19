@@ -726,6 +726,56 @@ module AnimatedSpriteFacetModule =
             entity.GetCelSize world
 
 [<AutoOpen>]
+module TextFacetModule =
+
+    type Entity with
+    
+        member this.GetText world : string = this.Get Property? Text world
+        member this.SetText (value : string) world = this.SetFast Property? Text false false value world
+        member this.Text = PropertyTag.make this Property? Text this.GetText this.SetText
+        member this.GetFont world : Font AssetTag = this.Get Property? Font world
+        member this.SetFont (value : Font AssetTag) world = this.SetFast Property? Font false false value world
+        member this.Font = PropertyTag.make this Property? Font this.GetFont this.SetFont
+        member this.GetMargins world : Vector2 = this.Get Property? Margins world
+        member this.SetMargins (value : Vector2) world = this.SetFast Property? Margins false false value world
+        member this.Margins = PropertyTag.make this Property? Margins this.GetMargins this.SetMargins
+        member this.GetJustification world : Justification = this.Get Property? Justification world
+        member this.SetJustification (value : Justification) world = this.SetFast Property? Justification false false value world
+        member this.Justification = PropertyTag.make this Property? Justification this.GetJustification this.SetJustification
+        member this.GetColor world : Vector4 = this.Get Property? Color world
+        member this.SetColor (value : Vector4) world = this.SetFast Property? Color false false value world
+        member this.Color = PropertyTag.make this Property? Color this.GetColor this.SetColor
+
+    type TextFacet () =
+        inherit Facet ()
+
+        static member PropertyDefinitions =
+            [define Entity.Text ""
+             define Entity.Font (AssetTag.make<Font> Assets.DefaultPackageName "Font")
+             define Entity.Margins Vector2.Zero
+             define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
+             define Entity.Color Vector4.One]
+
+        override facet.Actualize (text, world) =
+            if text.GetVisibleLayered world then
+                World.enqueueRenderMessage
+                    (RenderDescriptorsMessage
+                        [|LayerableDescriptor
+                            { Depth = text.GetDepthLayered world
+                              PositionY = (text.GetPosition world).Y
+                              LayeredDescriptor =
+                                TextDescriptor
+                                    { Text = text.GetText world
+                                      Position = text.GetPosition world + text.GetMargins world
+                                      Size = text.GetSize world - text.GetMargins world * 2.0f
+                                      ViewType = Absolute
+                                      Font = text.GetFont world
+                                      Color = text.GetColor world
+                                      Justification = text.GetJustification world }}|])
+                    world
+            else world
+
+[<AutoOpen>]
 module EntityDispatcherModule =
 
     type [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (getModelProperty : Entity -> PropertyTag<'model, World>) =
@@ -968,6 +1018,9 @@ module ButtonDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
+        static member IntrinsicFacetNames =
+            [typeof<TextFacet>.Name]
+
         static member PropertyDefinitions =
             [define Entity.SwallowMouseLeft false
              define Entity.Down false
@@ -1052,21 +1105,6 @@ module TextDispatcherModule =
 
     type Entity with
     
-        member this.GetText world : string = this.Get Property? Text world
-        member this.SetText (value : string) world = this.SetFast Property? Text false false value world
-        member this.Text = PropertyTag.make this Property? Text this.GetText this.SetText
-        member this.GetFont world : Font AssetTag = this.Get Property? Font world
-        member this.SetFont (value : Font AssetTag) world = this.SetFast Property? Font false false value world
-        member this.Font = PropertyTag.make this Property? Font this.GetFont this.SetFont
-        member this.GetMargins world : Vector2 = this.Get Property? Margins world
-        member this.SetMargins (value : Vector2) world = this.SetFast Property? Margins false false value world
-        member this.Margins = PropertyTag.make this Property? Margins this.GetMargins this.SetMargins
-        member this.GetJustification world : Justification = this.Get Property? Justification world
-        member this.SetJustification (value : Justification) world = this.SetFast Property? Justification false false value world
-        member this.Justification = PropertyTag.make this Property? Justification this.GetJustification this.SetJustification
-        member this.GetColor world : Vector4 = this.Get Property? Color world
-        member this.SetColor (value : Vector4) world = this.SetFast Property? Color false false value world
-        member this.Color = PropertyTag.make this Property? Color this.GetColor this.SetColor
         member this.GetBackgroundImage world : Image AssetTag = this.Get Property? BackgroundImage world
         member this.SetBackgroundImage (value : Image AssetTag) world = this.SetFast Property? BackgroundImage false false value world
         member this.BackgroundImage = PropertyTag.make this Property? BackgroundImage this.GetBackgroundImage this.SetBackgroundImage
@@ -1074,13 +1112,11 @@ module TextDispatcherModule =
     type TextDispatcher () =
         inherit GuiDispatcher ()
 
+        static member IntrinsicFacetNames =
+            [typeof<TextFacet>.Name]
+
         static member PropertyDefinitions =
             [define Entity.SwallowMouseLeft true
-             define Entity.Text ""
-             define Entity.Font (AssetTag.make<Font> Assets.DefaultPackageName "Font")
-             define Entity.Margins Vector2.Zero
-             define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
-             define Entity.Color Vector4.One
              define Entity.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
         override dispatcher.Actualize (text, world) =
@@ -1088,18 +1124,6 @@ module TextDispatcherModule =
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
-                            { Depth = text.GetDepthLayered world
-                              PositionY = (text.GetPosition world).Y
-                              LayeredDescriptor =
-                                TextDescriptor
-                                    { Text = text.GetText world
-                                      Position = text.GetPosition world + text.GetMargins world
-                                      Size = text.GetSize world - text.GetMargins world * 2.0f
-                                      ViewType = Absolute
-                                      Font = text.GetFont world
-                                      Color = text.GetColor world
-                                      Justification = text.GetJustification world }}
-                          LayerableDescriptor
                             { Depth = text.GetDepthLayered world
                               PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
@@ -1675,7 +1699,12 @@ module LayerDispatcherModule =
             let world =
                 List.fold (fun world layout ->
                     match EntityLayout.expand layout world with
-                    | Left (entityName, descriptor) -> World.readEntity descriptor (Some entityName) layer world |> snd
+                    | Left (entityName, descriptor, equations) ->
+                        let world = World.readEntity descriptor (Some entityName) layer world |> snd
+                        List.fold (fun world (left : World PropertyTag, right : World PropertyTag) ->
+                            let propagate _ world = match left.SetOpt with Some set -> set (right.Get world) world | None -> world
+                            World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress) left.This world)
+                            world equations
                     | Right (entityName, filePath) -> World.readEntityFromFile filePath (Some entityName) layer world |> snd)
                     world layouts
             world
@@ -1740,11 +1769,16 @@ module ScreenDispatcherModule =
             let world =
                 List.fold (fun world layout ->
                     match LayerLayout.expand layout world with
-                    | Left (name, descriptor, entityFilePaths) ->
+                    | Left (name, descriptor, equations, entityFilePaths) ->
                         let world = World.readLayer descriptor (Some name) screen world |> snd
-                        List.fold (fun world (layerName, entityName, filePath) ->
-                            World.readEntityFromFile filePath (Some entityName) (screen => layerName) world |> snd)
-                            world entityFilePaths
+                        let world =
+                            List.fold (fun world (layerName, entityName, filePath) ->
+                                World.readEntityFromFile filePath (Some entityName) (screen => layerName) world |> snd)
+                                world entityFilePaths
+                        List.fold (fun world (left : World PropertyTag, right : World PropertyTag) ->
+                            let propagate _ world = match left.SetOpt with Some set -> set (right.Get world) world | None -> world
+                            World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress) left.This world)
+                            world equations
                     | Right (layerName, filePath) ->
                         World.readLayerFromFile filePath (Some layerName) screen world |> snd)
                     world layouts

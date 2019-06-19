@@ -787,7 +787,7 @@ module GameDispatcherModule =
 
         static let createScreen layout world =
             match ScreenLayout.expand layout world with
-            | Left (name, descriptor, behavior, layerFilePaths, entityFilePaths) ->
+            | Left (name, descriptor, equations, behavior, layerFilePaths, entityFilePaths) ->
                 let (screen, world) = World.readScreen descriptor (Some name) world
                 let world =
                     List.fold (fun world (screenName : string, layerName, filePath) ->
@@ -797,6 +797,11 @@ module GameDispatcherModule =
                     List.fold (fun world (screenName : string, layerName, entityName, filePath) ->
                         World.readEntityFromFile filePath (Some entityName) (Screen screenName => layerName) world |> snd)
                         world entityFilePaths
+                let world =
+                    List.fold (fun world (left : World PropertyTag, right : World PropertyTag) ->
+                        let propagate _ world = match left.SetOpt with Some set -> set (right.Get world) world | None -> world
+                        World.monitor propagate (Events.Change right.Name --> right.This.ParticipantAddress) left.This world)
+                        world equations
                 applyBehavior behavior screen world
             | Right (name, behavior, Some dispatcherType, layerFilePath) ->
                 let (screen, world) = World.createScreen3 dispatcherType.Name (Some name) world
