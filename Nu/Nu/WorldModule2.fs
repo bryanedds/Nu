@@ -797,7 +797,7 @@ module GameDispatcherModule =
                     List.fold (fun world (screenName : string, layerName, entityName, filePath) ->
                         World.readEntityFromFile filePath (Some entityName) (Screen screenName => layerName) world |> snd)
                         world entityFilePaths
-                let world = World.runEquations equations world
+                let world = List.fold (fun world (name, simulant, property) -> World.equate4 name simulant property world) world equations
                 applyBehavior behavior screen world
             | Right (name, behavior, Some dispatcherType, layerFilePath) ->
                 let (screen, world) = World.createScreen3 dispatcherType.Name (Some name) world

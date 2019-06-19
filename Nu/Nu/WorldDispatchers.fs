@@ -1709,7 +1709,7 @@ module LayerDispatcherModule =
                     match EntityLayout.expand layout layer world with
                     | Left (entityName, descriptor, equations) ->
                         let world = World.readEntity descriptor (Some entityName) layer world |> snd
-                        World.runEquations equations world
+                        List.fold (fun world (name, simulant, property) -> World.equate4 name simulant property world) world equations
                     | Right (entityName, filePath) -> World.readEntityFromFile filePath (Some entityName) layer world |> snd)
                     world layouts
             world
@@ -1781,8 +1781,7 @@ module ScreenDispatcherModule =
                             List.fold (fun world (layerName, entityName, filePath) ->
                                 World.readEntityFromFile filePath (Some entityName) (screen => layerName) world |> snd)
                                 world entityFilePaths
-                        let world = World.runEquations equations world
-                        world
+                        List.fold (fun world (name, simulant, property) -> World.equate4 name simulant property world) world equations
                     | Right (layerName, filePath) ->
                         World.readLayerFromFile filePath (Some layerName) screen world |> snd)
                     world layouts
