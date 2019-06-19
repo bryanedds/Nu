@@ -5,7 +5,6 @@ open Nu
 open Nu.Declarative
 module Nelmish =
 
-    let Game = new Game ()
     let Screen = new Screen "Screen"
     let Layer = Screen => "Layer"
     let IncButton = Layer => "Inc"
@@ -36,12 +35,9 @@ module Nelmish =
             | Increment -> just (inc model)
             | Decrement -> just (dec model)
 
-        override this.Command (_, _, _, world) =
-            world
-
-        override this.Layout (_, _, _) =
+        override this.Layout (_, game, _) =
             [Layout.screen Screen Vanilla []
                 [Layout.layer Layer []
                     [Layout.entity<ButtonDispatcher> IncButton [Entity.Text == "Increment"]
                      Layout.entity<ButtonDispatcher> DecButton [Entity.Text == "Decrement"]
-                     Layout.entity<TextDispatcher> CountText [Entity.Text != Game.Model.MapOut scstring]]]]
+                     Layout.entity<TextDispatcher> CountText [Entity.Text === game.Model.MapOut scstring]]]]
