@@ -336,21 +336,23 @@ type [<NoEquality; NoComparison>] View =
 [<AutoOpen>]
 module DeclarativeOperators =
 
-    /// Create an instruction to Set a property.
-    let set tag value = PropertyDefinition (define tag value)
+    /// Pair an empty list of commands with a model.
+    let inline just model = (model, [])
 
-    /// Create an instruction to equate two properties.
+    /// Declare an instruction to set a property.
+    let set property value = PropertyDefinition (define property value)
+
+    /// Declare an instruction to equate two properties.
     let equate (leftTag : PropertyTag<'a, World>) (rightTag : PropertyTag<'a, World>) =
         if rightTag.This :> obj |> isNull
         then failwith "Equate expects an authentic PropertyTag where its This is not null."
         else Equate (leftTag.Name, rightTag)
 
-    /// Pair an empty list of commands with a model.
-    let inline just model = (model, [])
+    /// Declare an instruction to set a property.
+    let inline (==) left right = set left right
 
-    let ( == ) = set
-
-    let ( != ) = equate
+    /// Declare an instruction to equate two properties.
+    let inline (===) left right = equate left right
 
 module Declarative =
     let Game = Game.Prop

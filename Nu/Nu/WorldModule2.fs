@@ -870,4 +870,5 @@ module GameDispatcherModule =
         abstract member Command : 'command * 'model * Game * World -> World
         abstract member Layout : 'model * Game * World -> ScreenLayout list
         abstract member View : 'model * Game * World -> View list
+        default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []

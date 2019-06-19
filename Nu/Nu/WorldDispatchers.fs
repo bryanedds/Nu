@@ -65,6 +65,7 @@ module FacetModule =
         abstract member Update : 'message * 'model * Entity * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Entity * World -> World
         abstract member View : 'model * Entity * World -> View list
+        default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
 
 [<AutoOpen>]
@@ -830,6 +831,7 @@ module EntityDispatcherModule =
         abstract member Update : 'message * 'model * Entity * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Entity * World -> World
         abstract member View : 'model * Entity * World -> View list
+        default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
 
 [<AutoOpen>]
@@ -1731,6 +1733,7 @@ module LayerDispatcherModule =
         abstract member Command : 'command * 'model * Layer * World -> World
         abstract member Layout : 'model * Layer * World -> EntityLayout list
         abstract member View : 'model * Layer * World -> View list
+        default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
 
 [<AutoOpen>]
@@ -1809,4 +1812,5 @@ module ScreenDispatcherModule =
         abstract member Command : 'command * 'model * Screen * World -> World
         abstract member Layout : 'model * Screen * World -> LayerLayout list
         abstract member View : 'model * Screen * World -> View list
+        default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
