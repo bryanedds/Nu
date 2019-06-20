@@ -142,7 +142,7 @@ module EffectFacetModule =
             let effectsOpt = entity.GetEffects world
             setEffect effectsOpt entity world
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.SelfDestruct false
              define Entity.Effects []
              define Entity.EffectStartTimeOpt None
@@ -275,7 +275,7 @@ module ScriptFacetModule =
             let world = World.unregisterEntity entity world
             World.registerEntity entity world
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.PublishChanges true
              define Entity.ScriptOpt None
              define Entity.Script [||]
@@ -347,7 +347,7 @@ module TextFacetModule =
     type TextFacet () =
         inherit Facet ()
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.Text ""
              define Entity.Font (AssetTag.make<Font> Assets.DefaultPackageName "Font")
              define Entity.Margins Vector2.Zero
@@ -439,7 +439,7 @@ module RigidBodyFacetModule =
         static let getBodyShape (entity : Entity) world =
             PhysicsEngine.localizeCollisionBody (entity.GetSize world) (entity.GetCollisionBody world)
 
-        static member PropertyDefinitions =
+        static member Properties =
             [Variable? MinorId (fun _ -> makeGuid ())
              define Entity.BodyType Dynamic
              define Entity.Awake true
@@ -642,7 +642,7 @@ module NodeFacetModule =
         static let handleNodeChange evt world =
             subscribeToNodePropertyChanges evt.Subscriber world
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.ParentNodeOpt None
              define Entity.PositionLocal Vector2.Zero
              define Entity.DepthLocal 0.0f
@@ -680,7 +680,7 @@ module StaticSpriteFacetModule =
     type StaticSpriteFacet () =
         inherit Facet ()
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
         override facet.Actualize (entity, world) =
@@ -746,7 +746,7 @@ module AnimatedSpriteFacetModule =
                 Some inset
             else None
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.CelCount 16 
              define Entity.CelSize (Vector2 (16.0f, 16.0f))
              define Entity.CelRun 4
@@ -851,11 +851,11 @@ module EffectDispatcherModule =
     type EffectDispatcher () =
         inherit EntityDispatcher ()
 
-        static member PropertyDefinitions =
-            [define Entity.Effect (scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
-
-        static member IntrinsicFacetNames =
+        static member FacetNames =
             [typeof<EffectFacet>.Name]
+
+        static member Properties =
+            [define Entity.Effect (scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
 [<AutoOpen>]
 module NodeDispatcherModule =
@@ -863,13 +863,13 @@ module NodeDispatcherModule =
     type NodeDispatcher () =
         inherit EntityDispatcher ()
 
-        static member IntrinsicFacetNames =
+        static member FacetNames =
             [typeof<NodeFacet>.Name]
 
     type [<AbstractClass>] NodeDispatcher<'model, 'message, 'command> (propertyFn) =
         inherit EntityDispatcher<'model, 'message, 'command> (propertyFn)
 
-        static member IntrinsicFacetNames =
+        static member FacetNames =
             [typeof<NodeFacet>.Name]
 
 [<AutoOpen>]
@@ -901,11 +901,11 @@ module GuiDispatcherModule =
                 else Cascade
             (handling, world)
 
-        static member IntrinsicFacetNames =
+        static member FacetNames =
             [typeof<NodeFacet>.Name
              typeof<ScriptFacet>.Name]
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.ViewType Absolute
              define Entity.AlwaysUpdate true
              define Entity.PublishChanges true
@@ -936,11 +936,11 @@ module GuiDispatcherModule =
 
         interface Imperative
 
-        static member IntrinsicFacetNames =
+        static member FacetNames =
             [typeof<NodeFacet>.Name
              typeof<ScriptFacet>.Name]
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.ViewType Absolute
              define Entity.AlwaysUpdate true
              define Entity.PublishChanges true
@@ -1020,10 +1020,10 @@ module ButtonDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        static member IntrinsicFacetNames =
+        static member FacetNames =
             [typeof<TextFacet>.Name]
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
              define Entity.Down false
@@ -1074,7 +1074,7 @@ module LabelDispatcherModule =
     type LabelDispatcher () =
         inherit GuiDispatcher ()
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
              define Entity.LabelImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
@@ -1116,10 +1116,10 @@ module TextDispatcherModule =
     type TextDispatcher () =
         inherit GuiDispatcher ()
 
-        static member IntrinsicFacetNames =
+        static member FacetNames =
             [typeof<TextFacet>.Name]
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
              define Entity.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
@@ -1217,7 +1217,7 @@ module ToggleDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
              define Entity.Open true
@@ -1308,7 +1308,7 @@ module FeelerDispatcherModule =
                 else (Resolve, world)
             else (Cascade, world)
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
              define Entity.Touched false
@@ -1352,7 +1352,7 @@ module FillBarDispatcherModule =
             let spriteHeight = spriteSize.Y - spriteInset.Y * 2.0f
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
              define Entity.Fill 0.0f
@@ -1406,13 +1406,13 @@ module BlockDispatcherModule =
     type BlockDispatcher () =
         inherit EntityDispatcher ()
 
-        static member PropertyDefinitions =
-            [define Entity.BodyType Static
-             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
-
-        static member IntrinsicFacetNames =
+        static member FacetNames =
             [typeof<RigidBodyFacet>.Name
              typeof<StaticSpriteFacet>.Name]
+
+        static member Properties =
+            [define Entity.BodyType Static
+             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
 [<AutoOpen>]
 module BoxDispatcherModule =
@@ -1420,12 +1420,12 @@ module BoxDispatcherModule =
     type BoxDispatcher () =
         inherit EntityDispatcher ()
 
-        static member PropertyDefinitions =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
-
-        static member IntrinsicFacetNames =
+        static member FacetNames =
             [typeof<RigidBodyFacet>.Name
              typeof<StaticSpriteFacet>.Name]
+
+        static member Properties =
+            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
 [<AutoOpen>]
 module TopViewCharacterDispatcherModule =
@@ -1433,16 +1433,16 @@ module TopViewCharacterDispatcherModule =
     type TopViewCharacterDispatcher () =
         inherit EntityDispatcher ()
 
-        static member PropertyDefinitions =
+        static member FacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<StaticSpriteFacet>.Name]
+
+        static member Properties =
             [define Entity.FixedRotation true
              define Entity.LinearDamping 10.0f
              define Entity.GravityScale 0.0f
              define Entity.CollisionBody (BodyCircle { Radius = 0.5f; Center = Vector2.Zero })
              define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image7")]
-        
-        static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<StaticSpriteFacet>.Name]
 
 [<AutoOpen>]
 module SideViewCharacterDispatcherModule =
@@ -1450,15 +1450,15 @@ module SideViewCharacterDispatcherModule =
     type SideViewCharacterDispatcher () =
         inherit EntityDispatcher ()
 
-        static member PropertyDefinitions =
+        static member FacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<StaticSpriteFacet>.Name]
+
+        static member Properties =
             [define Entity.FixedRotation true
              define Entity.LinearDamping 3.0f
              define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
              define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image6")]
-
-        static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<StaticSpriteFacet>.Name]
 
 [<AutoOpen>]
 module TileMapDispatcherModule =
@@ -1602,7 +1602,7 @@ module TileMapDispatcherModule =
                     tileMapData.Map.Layers
             | None -> Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'."); world
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.Omnipresent true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
@@ -1808,3 +1808,81 @@ module ScreenDispatcherModule =
         abstract member View : 'model * Screen * World -> View list
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
+
+/// Contains primitives for describing simulant layouts.    
+module Layout =
+
+    /// Describe a game to be loaded from a file.
+    let gameFromFile<'d when 'd :> GameDispatcher> filePath =
+        GameFromFile filePath
+
+    /// Describe a game with the given definitions and contained screens.
+    let game<'d when 'd :> GameDispatcher> definitions children =
+        GameFromDefinitions (typeof<'d>.Name, definitions, children)
+
+    /// Describe a screen to be loaded from a file.
+    let screenFromFile<'d when 'd :> ScreenDispatcher> (screen : Screen) behavior filePath =
+        ScreenFromFile (screen.ScreenName, behavior, filePath)
+
+    /// Describe a screen to be loaded from a file.
+    let screenFromLayerFile<'d when 'd :> ScreenDispatcher> (screen : Screen) behavior filePath =
+        ScreenFromLayerFile (screen.ScreenName, behavior, typeof<'d>, filePath)
+
+    /// Describe a screen with the given definitions and contained layers.
+    let screen<'d when 'd :> ScreenDispatcher> (screen : Screen) behavior definitions children =
+        ScreenFromDefinitions (typeof<'d>.Name, screen.ScreenName, behavior, definitions, children)
+
+    /// Describe a layer to be loaded from a file.
+    let layerFromFile<'d when 'd :> LayerDispatcher> (layer : Layer) filePath =
+        LayerFromFile (layer.LayerName, filePath)
+
+    /// Describe a layer with the given definitions and contained entities.
+    let layer<'d when 'd :> LayerDispatcher> (layer : Layer) definitions children =
+        LayerFromDefinitions (typeof<'d>.Name, layer.LayerName, definitions, children)
+
+    /// Describe an entity to be loaded from a file.
+    let entityFromFile<'d when 'd :> EntityDispatcher> (entity : Entity) filePath =
+        EntityFromFile (entity.EntityName, filePath)
+
+    /// Describe an entity with the given definitions.
+    let entity<'d when 'd :> EntityDispatcher> (entity : Entity) definitions =
+        EntityFromDefinitions (typeof<'d>.Name, entity.EntityName, definitions)
+
+    /// Describe an effect with the given definitions.
+    let effect entity_ definitions = entity<EffectDispatcher> entity_ definitions
+
+    /// Describe a node with the given definitions.
+    let node entity_ definitions = entity<NodeDispatcher> entity_ definitions
+
+    /// Describe a button with the given definitions.
+    let button entity_ definitions = entity<ButtonDispatcher> entity_ definitions
+
+    /// Describe a label with the given definitions.
+    let label entity_ definitions = entity<LabelDispatcher> entity_ definitions
+
+    /// Describe a text with the given definitions.
+    let text entity_ definitions = entity<TextDispatcher> entity_ definitions
+
+    /// Describe a toggle with the given definitions.
+    let toggle entity_ definitions = entity<ToggleDispatcher> entity_ definitions
+
+    /// Describe a feeler with the given definitions.
+    let feeler entity_ definitions = entity<FeelerDispatcher> entity_ definitions
+
+    /// Describe a fill bar with the given definitions.
+    let fillBar entity_ definitions = entity<FillBarDispatcher> entity_ definitions
+
+    /// Describe a block with the given definitions.
+    let block entity_ definitions = entity<BlockDispatcher> entity_ definitions
+
+    /// Describe a box with the given definitions.
+    let box entity_ definitions = entity<BoxDispatcher> entity_ definitions
+
+    /// Describe a top-view character with the given definitions.
+    let topViewCharacter entity_ definitions = entity<TopViewCharacterDispatcher> entity_ definitions
+
+    /// Describe a side-view character with the given definitions.
+    let sideViewCharacter entity_ definitions = entity<SideViewCharacterDispatcher> entity_ definitions
+
+    /// Describe a tile map with the given definitions.
+    let tileMap entity_ definitions = entity<TileMapDispatcher> entity_ definitions

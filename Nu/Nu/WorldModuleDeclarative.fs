@@ -286,45 +286,6 @@ type [<NoEquality; NoComparison>] GameLayout =
             Left (descriptor, equationsAll, screenBehaviors, screenFilePaths, layerFilePaths, entityFilePaths)
         | GameFromFile filePath -> Right filePath
 
-/// Contains primitives for describing simulant layouts.    
-module Layout =
-
-    /// Describe a game with the given definitions and contained screens.
-    let game<'d when 'd :> GameDispatcher> definitions children =
-        GameFromDefinitions (typeof<'d>.Name, definitions, children)
-
-    /// Describe a screen with the given definitions and contained layers.
-    let screen<'d when 'd :> ScreenDispatcher> (screen : Screen) behavior definitions children =
-        ScreenFromDefinitions (typeof<'d>.Name, screen.ScreenName, behavior, definitions, children)
-
-    /// Describe a layer with the given definitions and contained entities.
-    let layer<'d when 'd :> LayerDispatcher> (layer : Layer) definitions children =
-        LayerFromDefinitions (typeof<'d>.Name, layer.LayerName, definitions, children)
-
-    /// Describe an entity with the given definitions.
-    let entity<'d when 'd :> EntityDispatcher> (entity : Entity) definitions =
-        EntityFromDefinitions (typeof<'d>.Name, entity.EntityName, definitions)
-
-    /// Describe a game to be loaded from a file.
-    let gameFromFile<'d when 'd :> GameDispatcher> filePath =
-        GameFromFile filePath
-
-    /// Describe a screen to be loaded from a file.
-    let screenFromFile<'d when 'd :> ScreenDispatcher> (screen : Screen) behavior filePath =
-        ScreenFromFile (screen.ScreenName, behavior, filePath)
-
-    /// Describe a screen to be loaded from a file.
-    let screenFromLayerFile<'d when 'd :> ScreenDispatcher> (screen : Screen) behavior filePath =
-        ScreenFromLayerFile (screen.ScreenName, behavior, typeof<'d>, filePath)
-
-    /// Describe a layer to be loaded from a file.
-    let layerFromFile<'d when 'd :> LayerDispatcher> (layer : Layer) filePath =
-        LayerFromFile (layer.LayerName, filePath)
-
-    /// Describe an entity to be loaded from a file.
-    let entityFromFile<'d when 'd :> EntityDispatcher> (entity : Entity) filePath =
-        EntityFromFile (entity.EntityName, filePath)
-
 type [<NoEquality; NoComparison>] View =
     | Render of RenderDescriptor
     | PlaySound of single * Audio AssetTag

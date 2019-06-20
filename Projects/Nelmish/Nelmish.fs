@@ -32,7 +32,7 @@ module Nelmish =
     type NelmishDispatcher () =
         inherit GameDispatcher<Model, Message, unit> (fun game -> game.Model)
 
-        // here we define the value of our model
+        // this is our model property definition
         static member Properties =
             [define Game.Model 0]
 
@@ -53,12 +53,12 @@ module Nelmish =
         override this.Layout (_, game, _) =
             [Layout.screen Screen Vanilla []
                 [Layout.layer Layer []
-                    [Layout.entity<ButtonDispatcher> DecrementButton
+                    [Layout.button DecrementButton
                         [Entity.Text == "-"
                          Entity.Position == Vector2 (-256.0f, 64.0f)]
-                     Layout.entity<ButtonDispatcher> IncrementButton
+                     Layout.button IncrementButton
                         [Entity.Text == "+"
                          Entity.Position == Vector2 (0.0f, 64.0f)]
-                     Layout.entity<ButtonDispatcher> CounterButton
+                     Layout.button CounterButton
                         [Entity.Text =|= game.Model --> string
                          Entity.Position == Vector2 (-128.0f, -32.0f)]]]]

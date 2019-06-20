@@ -258,7 +258,7 @@ module WorldTypes =
     and EntityDispatcher () =
         inherit SimulantDispatcher ()
     
-        static member PropertyDefinitions =
+        static member Properties =
             [Define? Persistent true
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize

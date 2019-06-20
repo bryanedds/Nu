@@ -34,11 +34,11 @@ module BulletModule =
             then World.destroyEntity bullet world
             else world
 
-        static member IntrinsicFacetNames =
+        static member FacetNames =
             [typeof<RigidBodyFacet>.Name
              typeof<StaticSpriteFacet>.Name]
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.Size (Vector2 (20.0f, 20.0f))
              define Entity.Omnipresent true
              define Entity.Density 0.25f
@@ -96,11 +96,11 @@ module EnemyModule =
                 else world
             else world
 
-        static member IntrinsicFacetNames =
+        static member FacetNames =
             [typeof<RigidBodyFacet>.Name
              typeof<AnimatedSpriteFacet>.Name]
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.Size (Vector2 (48.0f, 96.0f))
              define Entity.FixedRotation true
              define Entity.LinearDamping 3.0f
@@ -202,11 +202,11 @@ module PlayerModule =
                 | _ -> world
             else world
 
-        static member IntrinsicFacetNames =
+        static member FacetNames =
             [typeof<RigidBodyFacet>.Name
              typeof<AnimatedSpriteFacet>.Name]
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.Size (Vector2 (48.0f, 96.0f))
              define Entity.FixedRotation true
              define Entity.LinearDamping 3.0f
