@@ -10,9 +10,9 @@ module EnemyDispatcherModule =
 
     type Entity with
 
-        member this.GetDesiredTurn world : Turn = this.Get Property? DesiredTurn world
-        member this.SetDesiredTurn (value : Turn) world = this.Set Property? DesiredTurn value world
-        member this.DesiredTurn = Lens.make this Property? DesiredTurn this.GetDesiredTurn this.SetDesiredTurn
+        member this.GetDesiredTurn = this.Get<Turn> Property? DesiredTurn
+        member this.SetDesiredTurn = this.Set<Turn> Property? DesiredTurn
+        member this.DesiredTurn = Lens.make Property? DesiredTurn this.GetDesiredTurn this.SetDesiredTurn this
 
     type EnemyDispatcher () =
         inherit CharacterDispatcher ()

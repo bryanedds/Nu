@@ -23,9 +23,9 @@ module Nelmish =
 
     // this is our model property declaration
     type Game with
-        member this.GetModel world : Model = this.Get Property? Model world
-        member this.SetModel (value : Model) world = this.Set Property? Model value world
-        member this.Model = Lens.make this Property? Model this.GetModel this.SetModel
+        member this.GetModel = this.Get<Model> Property? Model
+        member this.SetModel = this.Set<Model> Property? Model
+        member this.Model = Lens.make Property? Model this.GetModel this.SetModel this
 
     // this is our Elm-style game simulant dispatcher
     type NelmishDispatcher () =

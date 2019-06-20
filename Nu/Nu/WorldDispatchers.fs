@@ -78,34 +78,34 @@ module EffectFacetModule =
     
         member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
         member this.SetSelfDestruct (value : bool) world = this.SetFast Property? SelfDestruct false false value world
-        member this.SelfDestruct = Lens.make this Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct
+        member this.SelfDestruct = Lens.make Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct this
         member this.GetEffects world : Symbol AssetTag list = this.Get Property? Effects world
         member this.SetEffects (value : Symbol AssetTag list) world = this.SetFast Property? Effects true false value world
-        member this.Effects = Lens.make this Property? Effects this.GetEffects this.SetEffects
+        member this.Effects = Lens.make Property? Effects this.GetEffects this.SetEffects this
         member this.GetEffectStartTimeOpt world : int64 option = this.Get Property? EffectStartTimeOpt world
         member this.SetEffectStartTimeOpt (value : int64 option) world = this.SetFast Property? EffectStartTimeOpt false false value world
-        member this.EffectStartTimeOpt = Lens.make this Property? EffectStartTimeOpt this.GetEffectStartTimeOpt this.SetEffectStartTimeOpt
+        member this.EffectStartTimeOpt = Lens.make Property? EffectStartTimeOpt this.GetEffectStartTimeOpt this.SetEffectStartTimeOpt this
         member this.GetEffectDefinitions world : Effects.Definitions = this.Get Property? EffectDefinitions world
         member this.SetEffectDefinitions (value : Effects.Definitions) world = this.SetFast Property? EffectDefinitions false false value world
-        member this.EffectDefinitions = Lens.make this Property? EffectDefinitions this.GetEffectDefinitions this.SetEffectDefinitions
+        member this.EffectDefinitions = Lens.make Property? EffectDefinitions this.GetEffectDefinitions this.SetEffectDefinitions this
         member this.GetEffect world : Effect = this.Get Property? Effect world
         member this.SetEffect (value : Effect) world = this.SetFast Property? Effect false false value world
-        member this.Effect = Lens.make this Property? Effect this.GetEffect this.SetEffect
+        member this.Effect = Lens.make Property? Effect this.GetEffect this.SetEffect this
         member this.GetEffectOffset world : Vector2 = this.Get Property? EffectOffset world
         member this.SetEffectOffset (value : Vector2) world = this.SetFast Property? EffectOffset false false value world
-        member this.EffectOffset = Lens.make this Property? EffectOffset this.GetEffectOffset this.SetEffectOffset
+        member this.EffectOffset = Lens.make Property? EffectOffset this.GetEffectOffset this.SetEffectOffset this
         member this.GetEffectPhysicsShapes world : unit = this.Get Property? EffectPhysicsShapes world // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
         member private this.SetEffectPhysicsShapes (value : unit) world = this.SetFast Property? EffectPhysicsShapes false true value world
-        member this.EffectPhysicsShapes = Lens.makeReadOnly this Property? EffectPhysicsShapes this.GetEffectPhysicsShapes
+        member this.EffectPhysicsShapes = Lens.makeReadOnly Property? EffectPhysicsShapes this.GetEffectPhysicsShapes this
         member this.GetEffectTags world : EffectTags = this.Get Property? EffectTags world
         member private this.SetEffectTags (value : EffectTags) world = this.SetFast Property? EffectTags false true value world
-        member this.EffectTags = Lens.makeReadOnly this Property? EffectTags this.GetEffectTags
+        member this.EffectTags = Lens.makeReadOnly Property? EffectTags this.GetEffectTags this
         member this.GetEffectHistoryMax world : int = this.Get Property? EffectHistoryMax world
         member this.SetEffectHistoryMax (value : int) world = this.SetFast Property? EffectHistoryMax false false value world
-        member this.EffectHistoryMax = Lens.make this Property? EffectHistoryMax this.GetEffectHistoryMax this.SetEffectHistoryMax
+        member this.EffectHistoryMax = Lens.make Property? EffectHistoryMax this.GetEffectHistoryMax this.SetEffectHistoryMax this
         member this.GetEffectHistory world : Effects.Slice Deque = this.Get Property? EffectHistory world
         member private this.SetEffectHistory (value : Effects.Slice Deque) world = this.SetFast Property? EffectHistory false true value world
-        member this.EffectHistory = Lens.makeReadOnly this Property? EffectHistory this.GetEffectHistory
+        member this.EffectHistory = Lens.makeReadOnly Property? EffectHistory this.GetEffectHistory this
         
         /// The start time of the effect, or zero if none.
         member this.GetEffectStartTime world =
@@ -229,31 +229,31 @@ module ScriptFacetModule =
     
         member this.GetScriptOpt world : Symbol AssetTag option = this.Get Property? ScriptOpt world
         member this.SetScriptOpt (value : Symbol AssetTag option) world = this.SetFast Property? ScriptOpt true false value world
-        member this.ScriptOpt = Lens.make this Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt
+        member this.ScriptOpt = Lens.make Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt this
         member this.GetScript world : Scripting.Expr array = this.Get Property? Script world
         member this.SetScript (value : Scripting.Expr array) world = this.SetFast Property? Script true false value world
-        member this.Script = Lens.make this Property? Script this.GetScript this.SetScript
+        member this.Script = Lens.make Property? Script this.GetScript this.SetScript this
         member this.GetScriptFrame world : Scripting.DeclarationFrame = this.Get Property? ScriptFrame world
         member internal this.SetScriptFrame (value : Scripting.DeclarationFrame) world = this.SetFast Property? ScriptFrame false true value world
-        member this.ScriptFrame = Lens.makeReadOnly this Property? ScriptFrame this.GetScriptFrame
+        member this.ScriptFrame = Lens.makeReadOnly Property? ScriptFrame this.GetScriptFrame this
         member internal this.GetScriptUnsubscriptions world : Unsubscription list = this.Get Property? ScriptUnsubscriptions world
         member internal this.SetScriptUnsubscriptions (value : Unsubscription list) world = this.SetFast Property? ScriptUnsubscriptions false true value world
-        member internal this.ScriptUnsubscriptions = Lens.make this Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions
+        member internal this.ScriptUnsubscriptions = Lens.make Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions this
         member this.GetOnRegister world : Scripting.Expr = this.Get Property? OnRegister world
         member this.SetOnRegister (value : Scripting.Expr) world = this.SetFast Property? OnRegister true false value world
-        member this.OnRegister = Lens.make this Property? OnRegister this.GetOnRegister this.SetOnRegister
+        member this.OnRegister = Lens.make Property? OnRegister this.GetOnRegister this.SetOnRegister this
         member this.GetOnUnregister world : Scripting.Expr = this.Get Property? OnUnregister world
         member this.SetOnUnregister (value : Scripting.Expr) world = this.SetFast Property? OnUnregister false false value world
-        member this.OnUnregister = Lens.make this Property? OnUnregister this.GetOnUnregister this.SetOnUnregister
+        member this.OnUnregister = Lens.make Property? OnUnregister this.GetOnUnregister this.SetOnUnregister this
         member this.GetOnUpdate world : Scripting.Expr = this.Get Property? OnUpdate world
         member this.SetOnUpdate (value : Scripting.Expr) world = this.SetFast Property? OnUpdate false false value world
-        member this.OnUpdate = Lens.make this Property? OnUpdate this.GetOnUpdate this.SetOnUpdate
+        member this.OnUpdate = Lens.make Property? OnUpdate this.GetOnUpdate this.SetOnUpdate this
         member this.GetOnPostUpdate world : Scripting.Expr = this.Get Property? OnPostUpdate world
         member this.SetOnPostUpdate (value : Scripting.Expr) world = this.SetFast Property? OnPostUpdate false false value world
-        member this.OnPostUpdate = Lens.make this Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate
+        member this.OnPostUpdate = Lens.make Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
         member this.GetOnMessage world : Scripting.Expr = this.Get Property? OnMessage world
         member this.SetOnMessage (value : Scripting.Expr) world = this.SetFast Property? OnMessage false false value world
-        member this.OnMessage = Lens.make this Property? OnMessage this.GetOnMessage this.SetOnMessage
+        member this.OnMessage = Lens.make Property? OnMessage this.GetOnMessage this.SetOnMessage this
         member this.Message message world = World.messageEntity message this world
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
@@ -330,19 +330,19 @@ module TextFacetModule =
     
         member this.GetText world : string = this.Get Property? Text world
         member this.SetText (value : string) world = this.SetFast Property? Text false false value world
-        member this.Text = Lens.make this Property? Text this.GetText this.SetText
+        member this.Text = Lens.make Property? Text this.GetText this.SetText this
         member this.GetFont world : Font AssetTag = this.Get Property? Font world
         member this.SetFont (value : Font AssetTag) world = this.SetFast Property? Font false false value world
-        member this.Font = Lens.make this Property? Font this.GetFont this.SetFont
+        member this.Font = Lens.make Property? Font this.GetFont this.SetFont this
         member this.GetMargins world : Vector2 = this.Get Property? Margins world
         member this.SetMargins (value : Vector2) world = this.SetFast Property? Margins false false value world
-        member this.Margins = Lens.make this Property? Margins this.GetMargins this.SetMargins
+        member this.Margins = Lens.make Property? Margins this.GetMargins this.SetMargins this
         member this.GetJustification world : Justification = this.Get Property? Justification world
         member this.SetJustification (value : Justification) world = this.SetFast Property? Justification false false value world
-        member this.Justification = Lens.make this Property? Justification this.GetJustification this.SetJustification
+        member this.Justification = Lens.make Property? Justification this.GetJustification this.SetJustification this
         member this.GetColor world : Vector4 = this.Get Property? Color world
         member this.SetColor (value : Vector4) world = this.SetFast Property? Color false false value world
-        member this.Color = Lens.make this Property? Color this.GetColor this.SetColor
+        member this.Color = Lens.make Property? Color this.GetColor this.SetColor this
 
     type TextFacet () =
         inherit Facet ()
@@ -380,57 +380,57 @@ module RigidBodyFacetModule =
 
         member this.GetMinorId world : Guid = this.Get Property? MinorId world
         member this.SetMinorId (value : Guid) world = this.SetFast Property? MinorId false false value world
-        member this.MinorId = Lens.make this Property? MinorId this.GetMinorId this.SetMinorId
+        member this.MinorId = Lens.make Property? MinorId this.GetMinorId this.SetMinorId this
         member this.GetBodyType world : BodyType = this.Get Property? BodyType world
         member this.SetBodyType (value : BodyType) world = this.SetFast Property? BodyType false false value world
-        member this.BodyType = Lens.make this Property? BodyType this.GetBodyType this.SetBodyType
+        member this.BodyType = Lens.make Property? BodyType this.GetBodyType this.SetBodyType this
         member this.GetAwake world : bool = this.Get Property? Awake world
         member this.SetAwake (value : bool) world = this.SetFast Property? Awake false false value world
-        member this.Awake = Lens.make this Property? Awake this.GetAwake this.SetAwake
+        member this.Awake = Lens.make Property? Awake this.GetAwake this.SetAwake this
         member this.GetDensity world : single = this.Get Property? Density world
         member this.SetDensity (value : single) world = this.SetFast Property? Density false false value world
-        member this.Density = Lens.make this Property? Density this.GetDensity this.SetDensity
+        member this.Density = Lens.make Property? Density this.GetDensity this.SetDensity this
         member this.GetFriction world : single = this.Get Property? Friction world
         member this.SetFriction (value : single) world = this.SetFast Property? Friction false false value world
-        member this.Friction = Lens.make this Property? Friction this.GetFriction this.SetFriction
+        member this.Friction = Lens.make Property? Friction this.GetFriction this.SetFriction this
         member this.GetRestitution world : single = this.Get Property? Restitution world
         member this.SetRestitution (value : single) world = this.SetFast Property? Restitution false false value world
-        member this.Restitution = Lens.make this Property? Restitution this.GetRestitution this.SetRestitution
+        member this.Restitution = Lens.make Property? Restitution this.GetRestitution this.SetRestitution this
         member this.GetFixedRotation world : bool = this.Get Property? FixedRotation world
         member this.SetFixedRotation (value : bool) world = this.SetFast Property? FixedRotation false false value world
-        member this.FixedRotation = Lens.make this Property? FixedRotation this.GetFixedRotation this.SetFixedRotation
+        member this.FixedRotation = Lens.make Property? FixedRotation this.GetFixedRotation this.SetFixedRotation this
         member this.GetAngularVelocity world : single = this.Get Property? AngularVelocity world
         member this.SetAngularVelocity (value : single) world = this.SetFast Property? AngularVelocity false false value world
-        member this.AngularVelocity = Lens.make this Property? AngularVelocity this.GetAngularVelocity this.SetAngularVelocity
+        member this.AngularVelocity = Lens.make Property? AngularVelocity this.GetAngularVelocity this.SetAngularVelocity this
         member this.GetAngularDamping world : single = this.Get Property? AngularDamping world
         member this.SetAngularDamping (value : single) world = this.SetFast Property? AngularDamping false false value world
-        member this.AngularDamping = Lens.make this Property? AngularDamping this.GetAngularDamping this.SetAngularDamping
+        member this.AngularDamping = Lens.make Property? AngularDamping this.GetAngularDamping this.SetAngularDamping this
         member this.GetLinearVelocity world : Vector2 = this.Get Property? LinearVelocity world
         member this.SetLinearVelocity (value : Vector2) world = this.SetFast Property? LinearVelocity false false value world
-        member this.LinearVelocity = Lens.make this Property? LinearVelocity this.GetLinearVelocity this.SetLinearVelocity
+        member this.LinearVelocity = Lens.make Property? LinearVelocity this.GetLinearVelocity this.SetLinearVelocity this
         member this.GetLinearDamping world : single = this.Get Property? LinearDamping world
         member this.SetLinearDamping (value : single) world = this.SetFast Property? LinearDamping false false value world
-        member this.LinearDamping = Lens.make this Property? LinearDamping this.GetLinearDamping this.SetLinearDamping
+        member this.LinearDamping = Lens.make Property? LinearDamping this.GetLinearDamping this.SetLinearDamping this
         member this.GetGravityScale world : single = this.Get Property? GravityScale world
         member this.SetGravityScale (value : single) world = this.SetFast Property? GravityScale false false value world
-        member this.GravityScale = Lens.make this Property? GravityScale this.GetGravityScale this.SetGravityScale
+        member this.GravityScale = Lens.make Property? GravityScale this.GetGravityScale this.SetGravityScale this
         member this.GetCollisionCategories world : string = this.Get Property? CollisionCategories world
         member this.SetCollisionCategories (value : string) world = this.SetFast Property? CollisionCategories false false value world
-        member this.CollisionCategories = Lens.make this Property? CollisionCategories this.GetCollisionCategories this.SetCollisionCategories
+        member this.CollisionCategories = Lens.make Property? CollisionCategories this.GetCollisionCategories this.SetCollisionCategories this
         member this.GetCollisionMask world : string = this.Get Property? CollisionMask world
         member this.SetCollisionMask (value : string) world = this.SetFast Property? CollisionMask false false value world
-        member this.CollisionMask = Lens.make this Property? CollisionMask this.GetCollisionMask this.SetCollisionMask
+        member this.CollisionMask = Lens.make Property? CollisionMask this.GetCollisionMask this.SetCollisionMask this
         member this.GetCollisionBody world : BodyShape = this.Get Property? CollisionBody world
         member this.SetCollisionBody (value : BodyShape) world = this.SetFast Property? CollisionBody false false value world
-        member this.CollisionBody = Lens.make this Property? CollisionBody this.GetCollisionBody this.SetCollisionBody
+        member this.CollisionBody = Lens.make Property? CollisionBody this.GetCollisionBody this.SetCollisionBody this
         member this.GetIsBullet world : bool = this.Get Property? IsBullet world
         member this.SetIsBullet (value : bool) world = this.SetFast Property? IsBullet false false value world
-        member this.IsBullet = Lens.make this Property? IsBullet this.GetIsBullet this.SetIsBullet
+        member this.IsBullet = Lens.make Property? IsBullet this.GetIsBullet this.SetIsBullet this
         member this.GetIsSensor world : bool = this.Get Property? IsSensor world
         member this.SetIsSensor (value : bool) world = this.SetFast Property? IsSensor false false value world
-        member this.IsSensor = Lens.make this Property? IsSensor this.GetIsSensor this.SetIsSensor
+        member this.IsSensor = Lens.make Property? IsSensor this.GetIsSensor this.SetIsSensor this
         member this.GetPhysicsId world = { SourceId = this.GetId world; BodyId = this.GetMinorId world }
-        member this.PhysicsId = Lens.makeReadOnly this Property? PhysicsId this.GetPhysicsId
+        member this.PhysicsId = Lens.makeReadOnly Property? PhysicsId this.GetPhysicsId this
         member this.CollisionEvent = Events.Collision --> this
 
     type RigidBodyFacet () =
@@ -501,22 +501,22 @@ module NodeFacetModule =
     
         member this.GetParentNodeOpt world : Entity Relation option = this.Get Property? ParentNodeOpt world
         member this.SetParentNodeOpt (value : Entity Relation option) world = this.SetFast Property? ParentNodeOpt false false value world
-        member this.ParentNodeOpt = Lens.make this Property? ParentNodeOpt this.GetParentNodeOpt this.SetParentNodeOpt
+        member this.ParentNodeOpt = Lens.make Property? ParentNodeOpt this.GetParentNodeOpt this.SetParentNodeOpt this
         member this.GetPositionLocal world : Vector2 = this.Get Property? PositionLocal world
         member this.SetPositionLocal (value : Vector2) world = this.SetFast Property? PositionLocal false false value world
-        member this.PositionLocal = Lens.make this Property? PositionLocal this.GetPositionLocal this.SetPositionLocal
+        member this.PositionLocal = Lens.make Property? PositionLocal this.GetPositionLocal this.SetPositionLocal this
         member this.GetDepthLocal world : single = this.Get Property? DepthLocal world
         member this.SetDepthLocal (value : single) world = this.SetFast Property? DepthLocal false false value world
-        member this.DepthLocal = Lens.make this Property? DepthLocal this.GetDepthLocal this.SetDepthLocal
+        member this.DepthLocal = Lens.make Property? DepthLocal this.GetDepthLocal this.SetDepthLocal this
         member this.GetVisibleLocal world : bool = this.Get Property? VisibleLocal world
         member this.SetVisibleLocal (value : bool) world = this.SetFast Property? VisibleLocal false false value world
-        member this.VisibleLocal = Lens.make this Property? VisibleLocal this.GetVisibleLocal this.SetVisibleLocal
+        member this.VisibleLocal = Lens.make Property? VisibleLocal this.GetVisibleLocal this.SetVisibleLocal this
         member this.GetEnabledLocal world : bool = this.Get Property? EnabledLocal world
         member this.SetEnabledLocal (value : bool) world = this.SetFast Property? EnabledLocal false false value world
-        member this.EnabledLocal = Lens.make this Property? EnabledLocal this.GetEnabledLocal this.SetEnabledLocal
+        member this.EnabledLocal = Lens.make Property? EnabledLocal this.GetEnabledLocal this.SetEnabledLocal this
         member private this.GetNodeUnsubscribe world : World -> World = this.Get Property? NodeUnsubscribe world
         member private this.SetNodeUnsubscribe (value : World -> World) world = this.SetFast Property? NodeUnsubscribe false true value world
-        member private this.NodeUnsubscribe = Lens.make this Property? NodeUnsubscribe this.GetNodeUnsubscribe this.SetNodeUnsubscribe
+        member private this.NodeUnsubscribe = Lens.make Property? NodeUnsubscribe this.GetNodeUnsubscribe this.SetNodeUnsubscribe this
         
         member this.SetParentNodeOptWithAdjustment (value : Entity Relation option) world =
             let world =
@@ -675,7 +675,7 @@ module StaticSpriteFacetModule =
 
         member this.GetStaticImage world : Image AssetTag = this.Get Property? StaticImage world
         member this.SetStaticImage (value : Image AssetTag) world = this.SetFast Property? StaticImage false false value world
-        member this.StaticImage = Lens.make this Property? StaticImage this.GetStaticImage this.SetStaticImage
+        member this.StaticImage = Lens.make Property? StaticImage this.GetStaticImage this.SetStaticImage this
 
     type StaticSpriteFacet () =
         inherit Facet ()
@@ -715,19 +715,19 @@ module AnimatedSpriteFacetModule =
     
         member this.GetCelSize world : Vector2 = this.Get Property? CelSize world
         member this.SetCelSize (value : Vector2) world = this.SetFast Property? CelSize false false value world
-        member this.CelSize = Lens.make this Property? CelSize this.GetCelSize this.SetCelSize
+        member this.CelSize = Lens.make Property? CelSize this.GetCelSize this.SetCelSize this
         member this.GetCelRun world : int = this.Get Property? CelRun world
         member this.SetCelRun (value : int) world = this.SetFast Property? CelRun false false value world
-        member this.CelRun = Lens.make this Property? CelRun this.GetCelRun this.SetCelRun
+        member this.CelRun = Lens.make Property? CelRun this.GetCelRun this.SetCelRun this
         member this.GetCelCount world : int = this.Get Property? CelCount world
         member this.SetCelCount (value : int) world = this.SetFast Property? CelCount false false value world
-        member this.CelCount = Lens.make this Property? CelCount this.GetCelCount this.SetCelCount
+        member this.CelCount = Lens.make Property? CelCount this.GetCelCount this.SetCelCount this
         member this.GetAnimationStutter world : int64 = this.Get Property? AnimationStutter world
         member this.SetAnimationStutter (value : int64) world = this.SetFast Property? AnimationStutter false false value world
-        member this.AnimationStutter = Lens.make this Property? AnimationStutter this.GetAnimationStutter this.SetAnimationStutter
+        member this.AnimationStutter = Lens.make Property? AnimationStutter this.GetAnimationStutter this.SetAnimationStutter this
         member this.GetAnimationSheet world : Image AssetTag = this.Get Property? AnimationSheet world
         member this.SetAnimationSheet (value : Image AssetTag) world = this.SetFast Property? AnimationSheet false false value world
-        member this.AnimationSheet = Lens.make this Property? AnimationSheet this.GetAnimationSheet this.SetAnimationSheet
+        member this.AnimationSheet = Lens.make Property? AnimationSheet this.GetAnimationSheet this.SetAnimationSheet this
 
     type AnimatedSpriteFacet () =
         inherit Facet ()
@@ -879,10 +879,10 @@ module GuiDispatcherModule =
     
         member this.GetDisabledColor world : Vector4 = this.Get Property? DisabledColor world
         member this.SetDisabledColor (value : Vector4) world = this.SetFast Property? DisabledColor false false value world
-        member this.DisabledColor = Lens.make this Property? DisabledColor this.GetDisabledColor this.SetDisabledColor
+        member this.DisabledColor = Lens.make Property? DisabledColor this.GetDisabledColor this.SetDisabledColor this
         member this.GetSwallowMouseLeft world : bool = this.Get Property? SwallowMouseLeft world
         member this.SetSwallowMouseLeft (value : bool) world = this.SetFast Property? SwallowMouseLeft false false value world
-        member this.SwallowMouseLeft = Lens.make this Property? SwallowMouseLeft this.GetSwallowMouseLeft this.SetSwallowMouseLeft
+        member this.SwallowMouseLeft = Lens.make Property? SwallowMouseLeft this.GetSwallowMouseLeft this.SetSwallowMouseLeft this
 
     type GuiDispatcher () =
         inherit EntityDispatcher ()
@@ -960,19 +960,19 @@ module ButtonDispatcherModule =
     
         member this.GetDown world : bool = this.Get Property? Down world
         member this.SetDown (value : bool) world = this.SetFast Property? Down false false value world
-        member this.Down = Lens.make this Property? Down this.GetDown this.SetDown
+        member this.Down = Lens.make Property? Down this.GetDown this.SetDown this
         member this.GetUpImage world : Image AssetTag = this.Get Property? UpImage world
         member this.SetUpImage (value : Image AssetTag) world = this.SetFast Property? UpImage false false value world
-        member this.UpImage = Lens.make this Property? UpImage this.GetUpImage this.SetUpImage
+        member this.UpImage = Lens.make Property? UpImage this.GetUpImage this.SetUpImage this
         member this.GetDownImage world : Image AssetTag = this.Get Property? DownImage world
         member this.SetDownImage (value : Image AssetTag) world = this.SetFast Property? DownImage false false value world
-        member this.DownImage = Lens.make this Property? DownImage this.GetDownImage this.SetDownImage
+        member this.DownImage = Lens.make Property? DownImage this.GetDownImage this.SetDownImage this
         member this.GetClickSoundOpt world : Audio AssetTag option = this.Get Property? ClickSoundOpt world
         member this.SetClickSoundOpt (value : Audio AssetTag option) world = this.SetFast Property? ClickSoundOpt false false value world
-        member this.ClickSoundOpt = Lens.make this Property? ClickSoundOpt this.GetClickSoundOpt this.SetClickSoundOpt
+        member this.ClickSoundOpt = Lens.make Property? ClickSoundOpt this.GetClickSoundOpt this.SetClickSoundOpt this
         member this.GetOnClick world : Scripting.Expr = this.Get Property? OnClick world
         member this.SetOnClick (value : Scripting.Expr) world = this.SetFast Property? OnClick false false value world
-        member this.OnClick = Lens.make this Property? OnClick this.GetOnClick this.SetOnClick
+        member this.OnClick = Lens.make Property? OnClick this.GetOnClick this.SetOnClick this
         member this.UpEvent = Events.Up --> this
         member this.DownEvent = Events.Down --> this
         member this.ClickEvent = Events.Click --> this
@@ -1069,7 +1069,7 @@ module LabelDispatcherModule =
     
         member this.GetLabelImage world : Image AssetTag = this.Get Property? LabelImage world
         member this.SetLabelImage (value : Image AssetTag) world = this.SetFast Property? LabelImage false false value world
-        member this.LabelImage = Lens.make this Property? LabelImage this.GetLabelImage this.SetLabelImage
+        member this.LabelImage = Lens.make Property? LabelImage this.GetLabelImage this.SetLabelImage this
 
     type LabelDispatcher () =
         inherit GuiDispatcher ()
@@ -1111,7 +1111,7 @@ module TextDispatcherModule =
     
         member this.GetBackgroundImage world : Image AssetTag = this.Get Property? BackgroundImage world
         member this.SetBackgroundImage (value : Image AssetTag) world = this.SetFast Property? BackgroundImage false false value world
-        member this.BackgroundImage = Lens.make this Property? BackgroundImage this.GetBackgroundImage this.SetBackgroundImage
+        member this.BackgroundImage = Lens.make Property? BackgroundImage this.GetBackgroundImage this.SetBackgroundImage this
 
     type TextDispatcher () =
         inherit GuiDispatcher ()
@@ -1156,22 +1156,22 @@ module ToggleDispatcherModule =
     
         member this.GetOpen world : bool = this.Get Property? Open world
         member this.SetOpen (value : bool) world = this.SetFast Property? Open false false value world
-        member this.Open = Lens.make this Property? Open this.GetOpen this.SetOpen
+        member this.Open = Lens.make Property? Open this.GetOpen this.SetOpen this
         member this.GetPressed world : bool = this.Get Property? Pressed world
         member this.SetPressed (value : bool) world = this.SetFast Property? Pressed false false value world
-        member this.Pressed = Lens.make this Property? Pressed this.GetPressed this.SetPressed
+        member this.Pressed = Lens.make Property? Pressed this.GetPressed this.SetPressed this
         member this.GetOpenImage world : Image AssetTag = this.Get Property? OpenImage world
         member this.SetOpenImage (value : Image AssetTag) world = this.SetFast Property? OpenImage false false value world
-        member this.OpenImage = Lens.make this Property? OpenImage this.GetOpenImage this.SetOpenImage
+        member this.OpenImage = Lens.make Property? OpenImage this.GetOpenImage this.SetOpenImage this
         member this.GetClosedImage world : Image AssetTag = this.Get Property? ClosedImage world
         member this.SetClosedImage (value : Image AssetTag) world = this.SetFast Property? ClosedImage false false value world
-        member this.ClosedImage = Lens.make this Property? ClosedImage this.GetClosedImage this.SetClosedImage
+        member this.ClosedImage = Lens.make Property? ClosedImage this.GetClosedImage this.SetClosedImage this
         member this.GetToggleSoundOpt world : Audio AssetTag option = this.Get Property? ToggleSoundOpt world
         member this.SetToggleSoundOpt (value : Audio AssetTag option) world = this.SetFast Property? ToggleSoundOpt false false value world
-        member this.ToggleSoundOpt = Lens.make this Property? ToggleSoundOpt this.GetToggleSoundOpt this.SetToggleSoundOpt
+        member this.ToggleSoundOpt = Lens.make Property? ToggleSoundOpt this.GetToggleSoundOpt this.SetToggleSoundOpt this
         member this.GetOnToggle world : Scripting.Expr = this.Get Property? OnToggle world
         member this.SetOnToggle (value : Scripting.Expr) world = this.SetFast Property? OnToggle false false value world
-        member this.OnToggle = Lens.make this Property? OnToggle this.GetOnToggle this.SetOnToggle
+        member this.OnToggle = Lens.make Property? OnToggle this.GetOnToggle this.SetOnToggle this
         member this.ToggleEvent = Events.Toggle --> this
 
     type ToggleDispatcher () =
@@ -1264,13 +1264,13 @@ module FeelerDispatcherModule =
     
         member this.GetTouched world : bool = this.Get Property? Touched world
         member this.SetTouched (value : bool) world = this.SetFast Property? Touched false false value world
-        member this.Touched = Lens.make this Property? Touched this.GetTouched this.SetTouched
+        member this.Touched = Lens.make Property? Touched this.GetTouched this.SetTouched this
         member this.GetOnTouch world : Scripting.Expr = this.Get Property? OnTouch world
         member this.SetOnTouch (value : Scripting.Expr) world = this.SetFast Property? OnTouch false false value world
-        member this.OnTouch = Lens.make this Property? OnTouch this.GetOnTouch this.SetOnTouch
+        member this.OnTouch = Lens.make Property? OnTouch this.GetOnTouch this.SetOnTouch this
         member this.GetOnUntouch world : Scripting.Expr = this.Get Property? OnUntouch world
         member this.SetOnUntouch (value : Scripting.Expr) world = this.SetFast Property? OnUntouch false false value world
-        member this.OnUntouch = Lens.make this Property? OnUntouch this.GetOnUntouch this.SetOnUntouch
+        member this.OnUntouch = Lens.make Property? OnUntouch this.GetOnUntouch this.SetOnUntouch this
         member this.TouchEvent = Events.Touch --> this
         member this.UntouchEvent = Events.Untouch --> this
 
@@ -1330,16 +1330,16 @@ module FillBarDispatcherModule =
     
         member this.GetFill world : single = this.Get Property? Fill world
         member this.SetFill (value : single) world = this.SetFast Property? Fill false false value world
-        member this.Fill = Lens.make this Property? Fill this.GetFill this.SetFill
+        member this.Fill = Lens.make Property? Fill this.GetFill this.SetFill this
         member this.GetFillInset world : single = this.Get Property? FillInset world
         member this.SetFillInset (value : single) world = this.SetFast Property? FillInset false false value world
-        member this.FillInset = Lens.make this Property? FillInset this.GetFillInset this.SetFillInset
+        member this.FillInset = Lens.make Property? FillInset this.GetFillInset this.SetFillInset this
         member this.GetFillImage world : Image AssetTag = this.Get Property? FillImage world
         member this.SetFillImage (value : Image AssetTag) world = this.SetFast Property? FillImage false false value world
-        member this.FillImage = Lens.make this Property? FillImage this.GetFillImage this.SetFillImage
+        member this.FillImage = Lens.make Property? FillImage this.GetFillImage this.SetFillImage this
         member this.GetBorderImage world : Image AssetTag = this.Get Property? BorderImage world
         member this.SetBorderImage (value : Image AssetTag) world = this.SetFast Property? BorderImage false false value world
-        member this.BorderImage = Lens.make this Property? BorderImage this.GetBorderImage this.SetBorderImage
+        member this.BorderImage = Lens.make Property? BorderImage this.GetBorderImage this.SetBorderImage this
 
     type FillBarDispatcher () =
         inherit GuiDispatcher ()
@@ -1467,10 +1467,10 @@ module TileMapDispatcherModule =
     
         member this.GetTileMapAsset world : TileMap AssetTag = this.Get Property? TileMapAsset world
         member this.SetTileMapAsset (value : TileMap AssetTag) world = this.SetFast Property? TileMapAsset false false value world
-        member this.TileMapAsset = Lens.make this Property? TileMapAsset this.GetTileMapAsset this.SetTileMapAsset
+        member this.TileMapAsset = Lens.make Property? TileMapAsset this.GetTileMapAsset this.SetTileMapAsset this
         member this.GetParallax world : single = this.Get Property? Parallax world
         member this.SetParallax (value : single) world = this.SetFast Property? Parallax false false value world
-        member this.Parallax = Lens.make this Property? Parallax this.GetParallax this.SetParallax
+        member this.Parallax = Lens.make Property? Parallax this.GetParallax this.SetParallax this
 
     type TileMapDispatcher () =
         inherit EntityDispatcher ()
