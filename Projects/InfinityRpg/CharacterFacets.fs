@@ -11,12 +11,12 @@ module CharacterStateFacetModule =
 
     type Entity with
     
-        member this.GetCharacterActivityState = this.Get<CharacterActivityState> Property? ActivityState
-        member this.SetCharacterActivityState = this.Set<CharacterActivityState> Property? ActivityState
-        member this.CharacterActivityState = Lens.make Property? ActivityState this.GetCharacterActivityState this.SetCharacterActivityState this
-        member this.GetCharacterState = this.Get<CharacterState> Property? CharacterState
-        member this.SetCharacterState = this.Set<CharacterState> Property? CharacterState
-        member this.CharacterState = Lens.make Property? CharacterState this.GetCharacterState this.SetCharacterState this
+        member this.GetCharacterActivityState = this.Get Property? CharacterActivityState
+        member this.SetCharacterActivityState = this.Set Property? CharacterActivityState
+        member this.CharacterActivityState = Lens.make<CharacterActivityState, World> Property? CharacterActivityState this.GetCharacterActivityState this.SetCharacterActivityState this
+        member this.GetCharacterState = this.Get Property? CharacterState
+        member this.SetCharacterState = this.Set Property? CharacterState
+        member this.CharacterState = Lens.make<CharacterState, World> Property? CharacterState this.GetCharacterState this.SetCharacterState this
 
     type CharacterStateFacet () =
         inherit Facet ()
@@ -30,12 +30,12 @@ module CharacterAnimationFacetModule =
 
     type Entity with
     
-        member this.GetCharacterAnimationState = this.Get<CharacterAnimationState> Property? CharacterAnimationState
-        member this.SetCharacterAnimationState = this.Set<CharacterAnimationState> Property? CharacterAnimationState
-        member this.CharacterAnimationState = Lens.make Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState this
-        member this.GetCharacterAnimationSheet = this.Get<Image AssetTag> Property? CharacterAnimationSheet
-        member this.SetCharacterAnimationSheet = this.Set<Image AssetTag> Property? CharacterAnimationSheet
-        member this.CharacterAnimationSheet = Lens.make Property? CharacterAnimationSheet this.GetCharacterAnimationSheet this.SetCharacterAnimationSheet this
+        member this.GetCharacterAnimationState = this.Get Property? CharacterAnimationState
+        member this.SetCharacterAnimationState = this.Set Property? CharacterAnimationState
+        member this.CharacterAnimationState = Lens.make<CharacterAnimationState, World> Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState this
+        member this.GetCharacterAnimationSheet = this.Get Property? CharacterAnimationSheet
+        member this.SetCharacterAnimationSheet = this.Set Property? CharacterAnimationSheet
+        member this.CharacterAnimationSheet = Lens.make<Image AssetTag, World> Property? CharacterAnimationSheet this.GetCharacterAnimationSheet this.SetCharacterAnimationSheet this
 
     type CharacterAnimationFacet () =
         inherit Facet ()
