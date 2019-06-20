@@ -8,9 +8,9 @@ module Nelmish =
     // here we create references for the simulants that we are going to define for our game
     let Screen = !> "Screen"
     let Layer = Screen => "Layer"
-    let IncButton = Layer => "Inc"
-    let DecButton = Layer => "Dec"
-    let CountText = Layer => "Count"
+    let DecrementButton = Layer => "Decrement"
+    let IncrementButton = Layer => "Increment"
+    let CounterButton = Layer => "Counter"
 
     // this is our Elm-style model type
     type Model =
@@ -20,6 +20,7 @@ module Nelmish =
     type Message =
         | Decrement
         | Increment
+        | Reset
 
     // this is our model property declaration
     type Game with
@@ -37,26 +38,27 @@ module Nelmish =
 
         // here we define the Bindings used to connect events to their desired messages
         override this.Bindings (_, _, _) =
-            [DecButton.ClickEvent ==> Decrement
-             IncButton.ClickEvent ==> Increment]
+            [DecrementButton.ClickEvent ==> Decrement
+             IncrementButton.ClickEvent ==> Increment
+             CounterButton.ClickEvent ==> Reset]
 
         // here we handle the above messages
         override this.Update (message, model, _, _) =
             match message with
             | Decrement -> just (dec model)
             | Increment -> just (inc model)
+            | Reset -> just 0
 
-        // here we describe the layout of the game including its one screen, one layer, and three
-        // entities, two of which are button controls and one of which is a text control
+        // here we describe the layout of the game including its one screen, one layer, and three button entities
         override this.Layout (_, game, _) =
             [Layout.screen Screen Vanilla []
                 [Layout.layer Layer []
-                    [Layout.entity<ButtonDispatcher> DecButton
+                    [Layout.entity<ButtonDispatcher> DecrementButton
                         [Entity.Text == "-"
                          Entity.Position == Vector2 (-256.0f, 64.0f)]
-                     Layout.entity<ButtonDispatcher> IncButton
+                     Layout.entity<ButtonDispatcher> IncrementButton
                         [Entity.Text == "+"
                          Entity.Position == Vector2 (0.0f, 64.0f)]
-                     Layout.entity<TextDispatcher> CountText
+                     Layout.entity<ButtonDispatcher> CounterButton
                         [Entity.Text =|= game.Model --> string
                          Entity.Position == Vector2 (-128.0f, -32.0f)]]]]

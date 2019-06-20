@@ -1,6 +1,5 @@
 ﻿namespace InfinityRpg
 open System
-open System.Collections.Generic
 open OpenTK
 open Prime
 open Nu
