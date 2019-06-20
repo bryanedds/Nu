@@ -19,13 +19,13 @@ module GameplayDispatcherModule =
 
         member this.GetContentRandState world : uint64 = this.Get Property? ContentRandState world
         member this.SetContentRandState (value : uint64) world = this.Set Property? ContentRandState value world
-        member this.ContentRandState = PropertyTag.make this Property? ContentRandState this.GetContentRandState this.SetContentRandState
+        member this.ContentRandState = Lens.make this Property? ContentRandState this.GetContentRandState this.SetContentRandState
         member this.GetOngoingRandState world : uint64 = this.Get Property? OngoingRandState world
         member this.SetOngoingRandState (value : uint64) world = this.Set Property? OngoingRandState value world
-        member this.OngoingRandState = PropertyTag.make this Property? OngoingRandState this.GetOngoingRandState this.SetOngoingRandState
+        member this.OngoingRandState = Lens.make this Property? OngoingRandState this.GetOngoingRandState this.SetOngoingRandState
         member this.GetShallLoadGame world : bool = this.Get Property? ShallLoadGame world
         member this.SetShallLoadGame (value : bool) world = this.Set Property? ShallLoadGame value world
-        member this.ShallLoadGame = PropertyTag.make this Property? ShallLoadGame this.GetShallLoadGame this.SetShallLoadGame
+        member this.ShallLoadGame = Lens.make this Property? ShallLoadGame this.GetShallLoadGame this.SetShallLoadGame
 
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
@@ -357,8 +357,8 @@ module GameplayDispatcherModule =
                     match character.GetCharacterActivityState world with
                     | Navigation navigationDescriptor -> newNavigationDescriptor.WalkDescriptor.WalkOriginM = navigationDescriptor.WalkDescriptor.WalkOriginM
                     | Action _ -> false
-                    | NoActivity -> false) ^ chain {
-                    do! Chain.update ^ fun world ->
+                    | NoActivity -> false) $ chain {
+                    do! Chain.update $ fun world ->
                         let navigationDescriptor =
                             match character.GetCharacterActivityState world with
                             | Navigation navigationDescriptor -> navigationDescriptor
@@ -374,9 +374,9 @@ module GameplayDispatcherModule =
         static let runCharacterAction newActionDescriptor (character : Entity) world =
             // NOTE: currently just implements attack
             let chain = chain {
-                do! Chain.update ^ character.SetCharacterActivityState (Action newActionDescriptor)
-                do! Chain.during (character.CharacterActivityState.GetBy (fun state -> state.IsActing)) ^ chain {
-                    do! Chain.update ^ fun world ->
+                do! Chain.update $ character.SetCharacterActivityState (Action newActionDescriptor)
+                do! Chain.during (character.CharacterActivityState.GetBy (fun state -> state.IsActing)) $ chain {
+                    do! Chain.update $ fun world ->
                         let actionDescriptor =
                             match character.GetCharacterActivityState world with
                             | Action actionDescriptor -> actionDescriptor
@@ -471,8 +471,8 @@ module GameplayDispatcherModule =
         static let tryRunPlayerTurn playerInput world =
             if not (anyTurnsInProgress world) then
                 let chain = chain {
-                    do! Chain.update ^ Simulants.HudSaveGame.SetEnabled false
-                    do! Chain.loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress world) ^ fun i -> chain {
+                    do! Chain.update $ Simulants.HudSaveGame.SetEnabled false
+                    do! Chain.loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress world) $ fun i -> chain {
                         let! evt = Chain.next
                         do! match evt.Data with
                             | Right _ -> chain {
@@ -570,12 +570,12 @@ module GameplayDispatcherModule =
              define Screen.ShallLoadGame false]
 
         override dispatcher.Register (gameplay, world) =
-            let world = Stream.make Simulants.Player.CharacterActivityState.ChangeEvent |> Stream.subscribe handlePlayerActivityChange gameplay <| world
-            let world = Stream.make Simulants.HudFeeler.TouchEvent |> Stream.isSimulantSelected Simulants.HudFeeler |> Stream.monitor handleTouchFeeler gameplay <| world
-            let world = Stream.make Simulants.HudDetailUp.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailUp |> Stream.monitor (handleDownDetail Upward) gameplay <| world
-            let world = Stream.make Simulants.HudDetailRight.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailRight |> Stream.monitor (handleDownDetail Rightward) gameplay <| world
-            let world = Stream.make Simulants.HudDetailDown.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailDown |> Stream.monitor (handleDownDetail Downward) gameplay <| world
-            let world = Stream.make Simulants.HudDetailLeft.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailLeft |> Stream.monitor (handleDownDetail Leftward) gameplay <| world
+            let world = Stream.make Simulants.Player.CharacterActivityState.ChangeEvent |> Stream.subscribe handlePlayerActivityChange gameplay $ world
+            let world = Stream.make Simulants.HudFeeler.TouchEvent |> Stream.isSimulantSelected Simulants.HudFeeler |> Stream.monitor handleTouchFeeler gameplay $ world
+            let world = Stream.make Simulants.HudDetailUp.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailUp |> Stream.monitor (handleDownDetail Upward) gameplay $ world
+            let world = Stream.make Simulants.HudDetailRight.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailRight |> Stream.monitor (handleDownDetail Rightward) gameplay $ world
+            let world = Stream.make Simulants.HudDetailDown.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailDown |> Stream.monitor (handleDownDetail Downward) gameplay $ world
+            let world = Stream.make Simulants.HudDetailLeft.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailLeft |> Stream.monitor (handleDownDetail Leftward) gameplay $ world
             let world = World.monitor handleSelectTitle (!! "Title" : Screen).SelectEvent gameplay world
             let world = World.monitor handleSelectGameplay gameplay.SelectEvent gameplay world
             let world = World.monitor handleClickSaveGame Simulants.HudSaveGame.ClickEvent gameplay world

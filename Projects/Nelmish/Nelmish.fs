@@ -25,7 +25,7 @@ module Nelmish =
     type Game with
         member this.GetModel world : Model = this.Get Property? Model world
         member this.SetModel (value : Model) world = this.Set Property? Model value world
-        member this.Model = PropertyTag.make this Property? Model this.GetModel this.SetModel
+        member this.Model = Lens.make this Property? Model this.GetModel this.SetModel
 
     // this is our Elm-style game simulant dispatcher
     type NelmishDispatcher () =
@@ -58,5 +58,5 @@ module Nelmish =
                         [Entity.Text == "+"
                          Entity.Position == Vector2 (0.0f, 64.0f)]
                      Layout.entity<TextDispatcher> CountText
-                        [Entity.Text =|= game.Model.MapOut string
+                        [Entity.Text =|= game.Model --> string
                          Entity.Position == Vector2 (-128.0f, -32.0f)]]]]

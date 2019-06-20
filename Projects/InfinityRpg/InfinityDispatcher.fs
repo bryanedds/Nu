@@ -33,7 +33,7 @@ module InfinityDispatcherModule =
 
         member this.GetSimulants world : Simulants = this.Get Property? Simulants world
         member internal this.SetSimulants (value : Simulants) world = this.Set Property? Simulants value world
-        member this.Simulants = PropertyTag.make this Property? Simulants this.GetSimulants this.SetSimulants
+        member this.Simulants = Lens.make this Property? Simulants this.GetSimulants this.SetSimulants
 
     type InfinityDispatcher () =
         inherit GameDispatcher<Simulants, unit, InfinityCommand> (fun game -> game.Simulants)

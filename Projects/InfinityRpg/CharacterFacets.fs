@@ -13,10 +13,10 @@ module CharacterStateFacetModule =
     
         member this.GetCharacterActivityState world : CharacterActivityState = this.Get Property? ActivityState world
         member this.SetCharacterActivityState (value : CharacterActivityState) world = this.Set Property? ActivityState value world
-        member this.CharacterActivityState = PropertyTag.make this Property? ActivityState this.GetCharacterActivityState this.SetCharacterActivityState
+        member this.CharacterActivityState = Lens.make this Property? ActivityState this.GetCharacterActivityState this.SetCharacterActivityState
         member this.GetCharacterState world : CharacterState = this.Get Property? CharacterState world
         member this.SetCharacterState (value : CharacterState) world = this.Set Property? CharacterState value world
-        member this.CharacterState = PropertyTag.make this Property? CharacterState this.GetCharacterState this.SetCharacterState
+        member this.CharacterState = Lens.make this Property? CharacterState this.GetCharacterState this.SetCharacterState
 
     type CharacterStateFacet () =
         inherit Facet ()
@@ -32,10 +32,10 @@ module CharacterAnimationFacetModule =
     
         member this.GetCharacterAnimationState world : CharacterAnimationState = this.Get Property? CharacterAnimationState world
         member this.SetCharacterAnimationState (value : CharacterAnimationState) world = this.Set Property? CharacterAnimationState value world
-        member this.CharacterAnimationState = PropertyTag.make this Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState
+        member this.CharacterAnimationState = Lens.make this Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState
         member this.GetCharacterAnimationSheet world : Image AssetTag = this.Get Property? CharacterAnimationSheet world
         member this.SetCharacterAnimationSheet (value : Image AssetTag) world = this.Set Property? CharacterAnimationSheet value world
-        member this.CharacterAnimationSheet = PropertyTag.make this Property? CharacterAnimationSheet this.GetCharacterAnimationSheet this.SetCharacterAnimationSheet
+        member this.CharacterAnimationSheet = Lens.make this Property? CharacterAnimationSheet this.GetCharacterAnimationSheet this.SetCharacterAnimationSheet
 
     type CharacterAnimationFacet () =
         inherit Facet ()

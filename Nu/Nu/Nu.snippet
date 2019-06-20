@@ -19,7 +19,7 @@
         <![CDATA[
         member this.Get$Name world : $Type = this.Get Property? $Name world
         member this.Set$Name (value : $Type) world = this.Set Property? $Name value world
-        member this.$Name = PropertyTag.make this Property? $Name this.Get$Name this.Set$Name]]>
+        member this.$Name = Lens.make this Property? $Name this.Get$Name this.Set$Name]]>
       </Code>
     </Snippet>
   </CodeSnippet>

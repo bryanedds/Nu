@@ -5,7 +5,7 @@ namespace Nu
 open System
 open System.Diagnostics
 open Prime
-open global.Nu
+open Nu
 
 [<RequireQualifiedAccess>]
 module Stream =
@@ -40,10 +40,6 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenTransitioning stream =
         Stream.filterEvent (fun _ -> World.isSelectedScreenTransitioning) stream
 
-    /// Identity for streams. NOTE: this is moved to Prime in the next release.
-    let [<DebuggerHidden; DebuggerStepThrough>] id stream =
-        stream
-
 [<AutoOpen>]
 module StreamOperators =
 
@@ -51,12 +47,12 @@ module StreamOperators =
     let (---) = (|>)
 
     /// Make a stream of the subscriber's change events.
-    let [<DebuggerHidden; DebuggerStepThrough>] (!--) (property : PropertyTag<'b, World>) = !-- property
+    let [<DebuggerHidden; DebuggerStepThrough>] (!--) (lens : Lens<'b, World>) = !-- lens
 
     /// Propagate the event data of a stream to a value in the observing participant when the
     /// subscriber exists (doing nothing otherwise).
-    let [<DebuggerHidden; DebuggerStepThrough>] (-|>) stream (property : PropertyTag<'b, World>) = stream -|> property
+    let [<DebuggerHidden; DebuggerStepThrough>] (-|>) stream (lens : Lens<'b, World>) = stream -|> lens
 
     // Propagate a value from the given source participant to a value in the given destination
     // participant, but with update-based cycle-breaking.
-    let [<DebuggerHidden; DebuggerStepThrough>] (-/>) stream property = Stream.noMoreThanOncePerUpdate stream -|> property
+    let [<DebuggerHidden; DebuggerStepThrough>] (-/>) stream lens = Stream.noMoreThanOncePerUpdate stream -|> lens

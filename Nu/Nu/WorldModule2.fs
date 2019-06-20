@@ -772,7 +772,7 @@ module WorldModule2 =
 [<AutoOpen>]
 module GameDispatcherModule =
 
-    type [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (getModelProperty : Game -> PropertyTag<'model, World>) =
+    type [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (getModelLens : Game -> Lens<'model, World>) =
         inherit GameDispatcher ()
 
         static let applyBehavior behavior screen world =
@@ -808,35 +808,35 @@ module GameDispatcherModule =
                 applyBehavior behavior screen world
 
         override this.Register (game, world) =
-            let property = getModelProperty game
-            let bindings = this.Bindings (property.Get world, game, world)
+            let lens = getModelLens game
+            let bindings = this.Bindings (lens.Get world, game, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
                     | Message binding ->
                         Stream.monitor (fun evt world ->
-                            let model = property.Get world
+                            let model = lens.Get world
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
                                 let (model, commands) = this.Update (message, model, game, world)
-                                let world = property.Set model world
+                                let world = lens.Set model world
                                 List.fold (fun world command ->
-                                    let model = property.Get world
+                                    let model = lens.Get world
                                     this.Command (command, model, game, world))
                                     world commands
                             | None -> world)
                             game binding.Stream world
                     | Command binding ->
                         Stream.monitor (fun evt world ->
-                            let model = property.Get world
+                            let model = lens.Get world
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message -> this.Command (message, model, game, world)
                             | None -> world)
                             game binding.Stream world)
                     world bindings
-            let layouts = this.Layout (property.Get world, game, world)
+            let layouts = this.Layout (lens.Get world, game, world)
             let world =
                 List.foldi (fun layoutIndex world layout ->
                     let (screen, world) = createScreen layout game world
@@ -845,8 +845,8 @@ module GameDispatcherModule =
             world
 
         override this.Actualize (game, world) =
-            let property = getModelProperty game
-            let model = property.Get world
+            let lens = getModelLens game
+            let model = lens.Get world
             let views = this.View (model, game, world)
             List.fold (fun world view ->
                 match view with
