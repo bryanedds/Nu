@@ -564,7 +564,7 @@ module GameplayDispatcherModule =
         static let handleDeselectGameplay _ world =
             World.destroyLayer Simulants.Scene world
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Screen.ContentRandState Rand.DefaultSeedState
              define Screen.OngoingRandState Rand.DefaultSeedState
              define Screen.ShallLoadGame false]

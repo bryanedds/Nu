@@ -11,8 +11,8 @@ module PlayerDispatcherModule =
     type PlayerDispatcher () =
         inherit CharacterDispatcher ()
 
-        static member IntrinsicFacetNames =
+        static member FacetNames =
             [typeof<CharacterCameraFacet>.Name]
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.CharacterState { CharacterState.empty with HitPoints = 30; ControlType = PlayerControlled }]

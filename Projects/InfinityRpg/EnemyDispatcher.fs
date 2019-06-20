@@ -17,6 +17,6 @@ module EnemyDispatcherModule =
     type EnemyDispatcher () =
         inherit CharacterDispatcher ()
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.CharacterState { CharacterState.empty with HitPoints = 10; ControlType = Chaos }
              define Entity.DesiredTurn NoTurn]

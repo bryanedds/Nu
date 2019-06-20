@@ -21,7 +21,7 @@ module CharacterStateFacetModule =
     type CharacterStateFacet () =
         inherit Facet ()
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.CharacterActivityState NoActivity
              define Entity.CharacterState CharacterState.empty]
 
@@ -87,7 +87,7 @@ module CharacterAnimationFacetModule =
                      spriteOffset.Y + Constants.Layout.TileSize.Y)
             Some spriteInset
 
-        static member PropertyDefinitions =
+        static member Properties =
             [define Entity.CharacterAnimationState
                     { StartTime = 0L
                       AnimationType = CharacterAnimationFacing
