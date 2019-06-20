@@ -12,9 +12,9 @@ module FieldDispatcherModule =
 
     type Entity with
     
-        member this.GetFieldMapNp = this.Get<FieldMap> Property? FieldMapNp
-        member this.SetFieldMapNp = this.Set<FieldMap> Property? FieldMapNp
-        member this.FieldMapNp = Lens.make Property? FieldMapNp this.GetFieldMapNp this.SetFieldMapNp this
+        member this.GetFieldMapNp = this.Get Property? FieldMapNp
+        member this.SetFieldMapNp = this.Set Property? FieldMapNp
+        member this.FieldMapNp = Lens.make<FieldMap, World> Property? FieldMapNp this.GetFieldMapNp this.SetFieldMapNp this
 
     type FieldDispatcher () =
         inherit EntityDispatcher ()
