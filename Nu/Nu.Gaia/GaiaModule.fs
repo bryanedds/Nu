@@ -42,7 +42,7 @@ module Gaia =
         (positionSnap, rotationSnap)
     
     let private getCreationDepth (form : GaiaForm) =
-        snd ^ Single.TryParse form.createDepthTextBox.Text
+        snd (Single.TryParse form.createDepthTextBox.Text)
 
     let private getExpansionState (treeView : TreeView) =
         let nodeStates =
@@ -518,7 +518,7 @@ module Gaia =
                             selectedGridItem.PropertyDescriptor.PropertyType = typeof<Image AssetTag> ||
                             selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option>
                         form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
-                        propertyPickButtonClickHandler <- EventHandler (fun _ _ -> addWorldChanger ^ handlePropertyPickButton selectedGridItem.PropertyDescriptor selectedEntityTds form)
+                        propertyPickButtonClickHandler <- EventHandler (fun _ _ -> addWorldChanger $ handlePropertyPickButton selectedGridItem.PropertyDescriptor selectedEntityTds form)
                         form.pickPropertyButton.Click.AddHandler propertyPickButtonClickHandler
                 | _ ->
                     form.propertyEditor.Enabled <- false
@@ -759,7 +759,7 @@ module Gaia =
         applyPropertyEditor form
 
     let private handleFormEntityTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             if  isNotNull form.entityTreeView.SelectedNode &&
                 form.entityTreeView.SelectedNode.Level = 1 then
                 let address = Address.makeFromString form.entityTreeView.SelectedNode.Name
@@ -772,7 +772,7 @@ module Gaia =
             else world
 
     let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             if isNotNull form.hierarchyTreeView.SelectedNode then
                 let address = Address.makeFromString form.hierarchyTreeView.SelectedNode.Name
                 match Address.getNames address with
@@ -802,7 +802,7 @@ module Gaia =
             else world
 
     let private handleFormCreateEntity atMouse (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let oldWorld = world
             try let world = pushPastWorld world world
                 let selectedLayer = (World.getUserValue world).SelectedLayer
@@ -835,7 +835,7 @@ module Gaia =
                 world
 
     let private handleFormDeleteEntity (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let world = pushPastWorld world world
             match form.entityPropertyGrid.SelectedObject with
             | :? EntityTypeDescriptorSource as entityTds ->
@@ -848,8 +848,8 @@ module Gaia =
         use layerCreationForm = new LayerCreationForm ()
         layerCreationForm.StartPosition <- FormStartPosition.CenterParent
         layerCreationForm.dispatcherTextBox.Text <- typeof<LayerDispatcher>.Name
-        layerCreationForm.okButton.Click.Add ^ fun _ ->
-            addWorldChanger ^ fun world ->
+        layerCreationForm.okButton.Click.Add $ fun _ ->
+            addWorldChanger $ fun world ->
                 let oldWorld = world
                 let world = pushPastWorld world world
                 let layerName = layerCreationForm.nameTextBox.Text
@@ -870,7 +870,7 @@ module Gaia =
         layerCreationForm.ShowDialog form |> ignore
 
     let private handleFormSave saveAs (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let layer = (World.getUserValue world).SelectedLayer
             form.saveFileDialog.Title <- "Save '" + layer.LayerName + "' As"
             match Map.tryFind layer.LayerAddress (World.getUserValue world).FilePaths with
@@ -889,7 +889,7 @@ module Gaia =
             else trySaveSelectedLayer form.saveFileDialog.FileName world; world
 
     let private handleFormOpen (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             form.openFileDialog.FileName <- String.Empty
             match form.openFileDialog.ShowDialog form with
             | DialogResult.OK ->
@@ -908,7 +908,7 @@ module Gaia =
             | _ -> world
 
     let private handleFormClose (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             match form.layerTabControl.TabPages.Count with
             | 1 ->
                 MessageBox.Show ("Cannot close the only remaining layer.", "Layer close error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
@@ -928,7 +928,7 @@ module Gaia =
                     world
 
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             match (World.getUserValue world).PastWorlds with
             | [] -> world
             | pastWorld :: pastWorlds ->
@@ -944,7 +944,7 @@ module Gaia =
                 world
 
     let private handleFormRedo (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             match (World.getUserValue world).FutureWorlds with
             | [] -> world
             | futureWorld :: futureWorlds ->
@@ -960,35 +960,35 @@ module Gaia =
                 world
 
     let private handleFormTickingChanged (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let tickRate = if form.tickingButton.Checked then 1L else 0L
             let (pastWorld, world) = (world, World.setTickRate tickRate world)
             if tickRate = 1L then pushPastWorld pastWorld world else world
 
     let private handleFormResetTickTime (_ : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let (pastWorld, world) = (world, World.resetTickTime world)
             pushPastWorld pastWorld world
 
     let private handleFormIncTickTime (_ : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let (pastWorld, world) = (world, World.incTickTime world)
             pushPastWorld pastWorld world
 
     let private handleFormDecTickTime (_ : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let (pastWorld, world) = (world, World.decTickTime world)
             pushPastWorld pastWorld world
 
     let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds -> World.copyEntityToClipboard entityTds.DescribedEntity world; world
             | _ -> failwithumf ()
 
     let private handleFormCut (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
@@ -999,7 +999,7 @@ module Gaia =
             | _ -> failwithumf ()
 
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let world = pushPastWorld world world
             let selectedLayer = (World.getUserValue world).SelectedLayer
             let (positionSnap, rotationSnap) = getSnaps form
@@ -1010,7 +1010,7 @@ module Gaia =
             | None -> world
 
     let private handleFormQuickSize (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
@@ -1024,11 +1024,11 @@ module Gaia =
             | _ -> failwithumf ()
 
     let private handleFormResetCamera (_ : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             World.setEyeCenter Vector2.Zero world
 
     let private handleFormReloadAssets (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             match tryReloadAssetGraph form world with
             | (Right assetGraph, world) ->
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
@@ -1039,7 +1039,7 @@ module Gaia =
                 world
 
     let private handleFormLayerTabDeselected (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let world = unsubscribeFromEntityEvents world
             deselectEntity form world
             refreshEntityTreeView form world
@@ -1048,7 +1048,7 @@ module Gaia =
             world
 
     let private handleFormLayerTabSelected (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let selectedLayer =
                 let layerTabControl = form.layerTabControl
                 let layerTab = layerTabControl.SelectedTab
@@ -1061,11 +1061,11 @@ module Gaia =
             world
 
     let private handleTraceEventsCheckBoxChanged (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             World.setEventTracing form.traceEventsCheckBox.Checked world
 
     let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let oldWorld = world
             try let eventFilter = scvalue<EventFilter.Filter> form.eventFilterTextBox.Text
                 let world = World.setEventFilter eventFilter world
@@ -1078,7 +1078,7 @@ module Gaia =
                 world
 
     let private handleRefreshEventFilterClick (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let eventFilter = World.getEventFilter world
             let eventFilterStr = scstring eventFilter
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<EventFilter.Filter>).PrettyPrinter
@@ -1087,7 +1087,7 @@ module Gaia =
             world
 
     let private handleSavePreludeClick (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             match trySavePrelude form world with
             | (true, world) ->
                 match tryReloadPrelude form world with
@@ -1098,11 +1098,11 @@ module Gaia =
             | (false, world) -> world
 
     let private handleLoadPreludeClick (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             tryLoadPrelude form world
 
     let private handleSaveAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             match trySaveAssetGraph form world with
             | (true, world) ->
                 match tryReloadAssetGraph form world with
@@ -1113,11 +1113,11 @@ module Gaia =
             | (false, world) -> world
 
     let private handleLoadAssetGraphClick (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             tryLoadAssetGraph form world
 
     let private handleSaveOverlayerClick (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             match trySaveOverlayer form world with
             | (true, world) ->
                 match tryReloadOverlays form world with
@@ -1128,11 +1128,11 @@ module Gaia =
             | (false, world) -> world
 
     let private handleLoadOverlayerClick (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             tryLoadOverlayer form world
 
     let private handleEvalClick (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let exprsStr =
                 if String.notEmpty form.evalInputTextBox.SelectedText
                 then form.evalInputTextBox.SelectedText
@@ -1170,7 +1170,7 @@ module Gaia =
         form.overlayComboBox.SelectedIndex <- 0
 
     let private handleEntityDesignerPropertyAddClick defaulting (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             let propertyTypeText = form.entityDesignerPropertyTypeComboBox.Text
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
@@ -1232,7 +1232,7 @@ module Gaia =
             | _ -> world
 
     let private handleEntityDesignerPropertyRemoveClick (form : GaiaForm) (_ : EventArgs) =
-        addWorldChanger ^ fun world ->
+        addWorldChanger $ fun world ->
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->

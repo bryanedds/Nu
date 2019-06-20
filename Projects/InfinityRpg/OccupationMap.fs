@@ -13,7 +13,7 @@ module OccupationMap =
         | None -> false
 
     let getOpenDirectionsAtPositionM positionM occupationMap =
-        Set.ofSeq ^
+        Set.ofSeq $
             seq {
                 if isOpenAtPositionM (positionM + Vector2i.Up) occupationMap then yield Upward
                 if isOpenAtPositionM (positionM + Vector2i.Right) occupationMap then yield Rightward

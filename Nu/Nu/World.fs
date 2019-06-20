@@ -223,15 +223,15 @@ module Nu =
                 | None -> world
 
             // init equate5 F# reach-around
-            WorldModule.equate5 <- fun name (participant : Participant) (property : World PropertyTag) breaking world ->
+            WorldModule.equate5 <- fun name (participant : Participant) (lens : World Lens) breaking world ->
                 let nonPersistent = not (Reflection.isPropertyPersistentByName name)
                 let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
                 let propagate (_ : Event<obj, Participant>) world =
-                    let property = { PropertyType = property.Type; PropertyValue = property.Get world }
+                    let property = { PropertyType = lens.Type; PropertyValue = lens.Get world }
                     World.setProperty name nonPersistent alwaysPublish property (participant :?> Simulant) world
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
-                let world = Stream.make (atooa Events.Register --> property.This.ParticipantAddress) |> breaker |> Stream.monitor propagate participant <| world
-                Stream.make (atooa (Events.Change property.Name) --> property.This.ParticipantAddress) |> breaker |> Stream.monitor propagate participant <| world
+                let world = Stream.make (atooa Events.Register --> lens.This.ParticipantAddress) |> breaker |> Stream.monitor propagate participant $ world
+                Stream.make (atooa (Events.Change lens.Name) --> lens.This.ParticipantAddress) |> breaker |> Stream.monitor propagate participant $ world
 
             // init scripting
             World.initScripting ()
@@ -273,7 +273,7 @@ module WorldModule3 =
 
         static member private makeDefaultEntityDispatchers () =
             // TODO: consider if we shoud reflectively generate these
-            Map.ofListBy World.pairWithName ^
+            Map.ofListBy World.pairWithName $
                 [EntityDispatcher ()
                  ImperativeDispatcher () :> EntityDispatcher
                  NodeDispatcher () :> EntityDispatcher

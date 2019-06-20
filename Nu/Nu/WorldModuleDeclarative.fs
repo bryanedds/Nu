@@ -93,7 +93,7 @@ and [<NoComparison>] EntityDescriptor =
 
 type [<NoEquality; NoComparison>] DeclarativeDefinition =
     | PropertyDefinition of PropertyDefinition
-    | Equate of string * World PropertyTag * bool
+    | Equate of string * World Lens * bool
 
 /// Contains primitives for describing simulants.
 module Describe =
@@ -340,13 +340,13 @@ module DeclarativeOperators =
     let inline just model = (model, [])
 
     /// Declare an instruction to set a property.
-    let init property value = PropertyDefinition (define property value)
+    let init lens value = PropertyDefinition (define lens value)
 
     /// Declare an instruction to equate two properties.
-    let equate (leftTag : PropertyTag<'a, World>) (rightTag : PropertyTag<'a, World>) breaking =
-        if rightTag.This :> obj |> isNull
-        then failwith "Equate expects an authentic PropertyTag where its This is not null."
-        else Equate (leftTag.Name, rightTag, breaking)
+    let equate (left : Lens<'a, World>) (right : Lens<'a, World>) breaking =
+        if right.This :> obj |> isNull
+        then failwith "Equate expects an authentic Lens where its This is not null."
+        else Equate (left.Name, right, breaking)
 
     /// Declare an instruction to set a property.
     let inline (==) left right = init left right

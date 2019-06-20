@@ -38,7 +38,7 @@ module WorldTests =
         let world = World.makeDefault ()
         let world = World.createEntity (Some Jim.EntityName) DefaultOverlay DefaultLayer world |> snd
         let world = World.createEntity (Some Bob.EntityName) DefaultOverlay DefaultLayer world |> snd
-        let world = !-- Bob.Visible --- Stream.map not -|> Jim.Visible ^ world
+        let world = !-- Bob.Visible --- Stream.map not -|> Jim.Visible $ world
         let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
         Assert.True (Jim.GetVisible world)
@@ -47,8 +47,8 @@ module WorldTests =
         let world = World.makeDefault ()
         let world = World.createEntity (Some Jim.EntityName) DefaultOverlay DefaultLayer world |> snd
         let world = World.createEntity (Some Bob.EntityName) DefaultOverlay DefaultLayer world |> snd
-        let world = !-- Bob.Visible -/> Jim.Visible ^ world
-        let world = !-- Jim.Visible -|> Bob.Visible ^ world
+        let world = !-- Bob.Visible -/> Jim.Visible $ world
+        let world = !-- Jim.Visible -|> Bob.Visible $ world
         let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
         Assert.True (Jim.GetVisible world)

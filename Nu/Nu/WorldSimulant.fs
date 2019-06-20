@@ -150,5 +150,5 @@ module WorldSimulantModule =
             | Some simulant -> simulant
             | None -> failwithf "Could not derive simulant from address '%s'." (scstring address)
 
-        static member equate (left : World PropertyTag) right world =
+        static member equate (left : World Lens) right world =
             WorldModule.equate5 left.Name (left.This :?> Simulant) right world
