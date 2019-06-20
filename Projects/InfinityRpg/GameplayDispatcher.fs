@@ -17,15 +17,15 @@ module GameplayDispatcherModule =
 
     type Screen with
 
-        member this.GetContentRandState world : uint64 = this.Get Property? ContentRandState world
-        member this.SetContentRandState (value : uint64) world = this.Set Property? ContentRandState value world
-        member this.ContentRandState = Lens.make this Property? ContentRandState this.GetContentRandState this.SetContentRandState
-        member this.GetOngoingRandState world : uint64 = this.Get Property? OngoingRandState world
-        member this.SetOngoingRandState (value : uint64) world = this.Set Property? OngoingRandState value world
-        member this.OngoingRandState = Lens.make this Property? OngoingRandState this.GetOngoingRandState this.SetOngoingRandState
-        member this.GetShallLoadGame world : bool = this.Get Property? ShallLoadGame world
-        member this.SetShallLoadGame (value : bool) world = this.Set Property? ShallLoadGame value world
-        member this.ShallLoadGame = Lens.make this Property? ShallLoadGame this.GetShallLoadGame this.SetShallLoadGame
+        member this.GetContentRandState = this.Get<uint64> Property? ContentRandState
+        member this.SetContentRandState = this.Set<uint64> Property? ContentRandState
+        member this.ContentRandState = Lens.make Property? ContentRandState this.GetContentRandState this.SetContentRandState this
+        member this.GetOngoingRandState = this.Get<uint64> Property? OngoingRandState
+        member this.SetOngoingRandState = this.Set<uint64> Property? OngoingRandState
+        member this.OngoingRandState = Lens.make Property? OngoingRandState this.GetOngoingRandState this.SetOngoingRandState this
+        member this.GetShallLoadGame = this.Get<bool> Property? ShallLoadGame
+        member this.SetShallLoadGame = this.Set<bool> Property? ShallLoadGame
+        member this.ShallLoadGame = Lens.make Property? ShallLoadGame this.GetShallLoadGame this.SetShallLoadGame this
 
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
