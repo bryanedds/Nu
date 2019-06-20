@@ -3,9 +3,7 @@
 
 namespace Nu
 open Nu
-
-[<AutoOpen>]
-module StateOperators =
+module State =
 
     let peek f = fun (world : World) -> (f world, world)
     let poke f = fun (world : World) -> ((), f world) : unit * World
