@@ -33,16 +33,17 @@ module SimulantOperators =
     /// Derive a screen from its name.
     let (!>) (screenName : string) = Screen screenName
 
-module Simulants =
+[<RequireQualifiedAccess>]
+module Default =
 
-    /// The game. Always exists.
+    /// The default game. Always exists.
     let Game = Game ()
 
     /// The default screen - may or may not exist.
-    let DefaultScreen = Screen Constants.Engine.DefaultScreenName
+    let Screen = Screen Constants.Engine.DefaultScreenName
     
     /// The default layer - may or may not exist.
-    let DefaultLayer = DefaultScreen => Constants.Engine.DefaultLayerName
+    let Layer = Screen => Constants.Engine.DefaultLayerName
     
     /// The default entity - may or may not exist.
-    let DefaultEntity = DefaultLayer => Constants.Engine.DefaultEntityName
+    let Entity = Layer => Constants.Engine.DefaultEntityName

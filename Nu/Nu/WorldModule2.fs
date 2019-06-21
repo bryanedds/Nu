@@ -38,7 +38,7 @@ module WorldModule2 =
                     let priority =
                         match participant with
                         | :? GlobalParticipantGeneralized
-                        | :? Game -> { SortDepth = Constants.Engine.GameSortPriority; SortTarget = Simulants.Game }
+                        | :? Game -> { SortDepth = Constants.Engine.GameSortPriority; SortTarget = Default.Game }
                         | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortTarget = screen }
                         | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority + layer.GetDepth world; SortTarget = layer }
                         | :? Entity as entity -> { SortDepth = entity.GetDepthLayered world; SortTarget = entity }
@@ -105,12 +105,12 @@ module WorldModule2 =
                 world
             | IncomingState
             | OutgoingState ->
-                let world = World.subscribePlus ScreenTransitionMouseLeftKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Simulants.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseCenterKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Simulants.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseRightKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Simulants.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseX1Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X1/@/Event") Simulants.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseX2Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X2/@/Event") Simulants.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionKeyboardKeyKey World.handleAsSwallow (stoa<KeyboardKeyData> "KeyboardKey/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseLeftKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Default.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseCenterKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Default.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseRightKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Default.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX1Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X1/@/Event") Default.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX2Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X2/@/Event") Default.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionKeyboardKeyKey World.handleAsSwallow (stoa<KeyboardKeyData> "KeyboardKey/@/Event") Default.Game world |> snd
                 world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
@@ -401,7 +401,7 @@ module WorldModule2 =
                     let world = World.reloadRenderAssets world
                     let world = World.reloadAudioAssets world
                     let world = World.reloadSymbols world
-                    let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishAssetsReload" EventTrace.empty) Simulants.Game world
+                    let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishAssetsReload" EventTrace.empty) Default.Game world
                     (Right assetGraph, world)
         
                 // propagate errors
@@ -472,10 +472,10 @@ module WorldModule2 =
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
                             let eventTrace = EventTrace.record4 "World" "processInput" "MouseDrag" EventTrace.empty
-                            World.publishPlus World.sortSubscriptionsByDepth { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Simulants.Game true world
+                            World.publishPlus World.sortSubscriptionsByDepth { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Default.Game true world
                         else world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseMove" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByDepth { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true world
+                    World.publishPlus World.sortSubscriptionsByDepth { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Default.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
@@ -483,9 +483,9 @@ module WorldModule2 =
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonDown" EventTrace.empty
-                    let world = World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonDownEvent eventTrace Simulants.Game true world
+                    let world = World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonDownEvent eventTrace Default.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
+                    World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonChangeEvent eventTrace Default.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
@@ -493,25 +493,25 @@ module WorldModule2 =
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonUp" EventTrace.empty
-                    let world = World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonUpEvent eventTrace Simulants.Game true world
+                    let world = World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonUpEvent eventTrace Default.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
+                    World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonChangeEvent eventTrace Default.Game true world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = true }
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyDown" EventTrace.empty
-                    let world = World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDown eventTrace Simulants.Game true world
+                    let world = World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDown eventTrace Default.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange eventTrace Simulants.Game true world
+                    World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange eventTrace Default.Game true world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = false }
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyUp" EventTrace.empty
-                    let world = World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp eventTrace Simulants.Game true world
+                    let world = World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp eventTrace Default.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange eventTrace Simulants.Game true world
+                    World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange eventTrace Default.Game true world
                 | _ -> world
             (World.getLiveness world, world)
 
@@ -539,9 +539,9 @@ module WorldModule2 =
         static member getEntitiesInView world =
             let entities = HashSet<Entity> HashIdentity.Structural
             let world =
-                match World.getOmniscreenOpt world with
-                | Some omniscreen ->
-                    let (entities2, world) = World.getEntitiesInView2 omniscreen world
+                match World.getOmniScreenOpt world with
+                | Some omniScreen ->
+                    let (entities2, world) = World.getEntitiesInView2 omniScreen world
                     entities.UnionWith entities2
                     world
                 | None -> world
@@ -558,9 +558,9 @@ module WorldModule2 =
         static member getEntitiesInBounds bounds world =
             let entities = HashSet<Entity> HashIdentity.Structural
             let world =
-                match World.getOmniscreenOpt world with
-                | Some omniscreen ->
-                    let (entities2, world) = World.getEntitiesInBounds3 bounds omniscreen world
+                match World.getOmniScreenOpt world with
+                | Some omniScreen ->
+                    let (entities2, world) = World.getEntitiesInBounds3 bounds omniScreen world
                     entities.UnionWith entities2
                     world
                 | None -> world
@@ -577,9 +577,9 @@ module WorldModule2 =
         static member getEntitiesAtPoint point world =
             let entities = HashSet<Entity> HashIdentity.Structural
             let world =
-                match World.getOmniscreenOpt world with
-                | Some omniscreen ->
-                    let (entities2, world) = World.getEntitiesAtPoint3 point omniscreen world
+                match World.getOmniScreenOpt world with
+                | Some omniScreen ->
+                    let (entities2, world) = World.getEntitiesAtPoint3 point omniScreen world
                     entities.UnionWith entities2
                     world
                 | None -> world
@@ -595,7 +595,7 @@ module WorldModule2 =
         static member private updateSimulants world =
 
             // gather simulants
-            let screens = match World.getOmniscreenOpt world with Some omniscreen -> [omniscreen] | None -> []
+            let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let layers = Seq.concat (List.map (flip World.getLayers world) screens)
@@ -671,7 +671,7 @@ module WorldModule2 =
         static member private actualizeSimulants world =
 
             // gather simulants
-            let screens = match World.getOmniscreenOpt world with Some omniscreen -> [omniscreen] | None -> []
+            let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let layers = Seq.concat (List.map (flip World.getLayers world) screens)
@@ -778,7 +778,7 @@ module GameDispatcherModule =
         static let applyBehavior behavior screen world =
             match behavior with
             | Vanilla -> (screen, world)
-            | Omniscreen -> (screen, World.setOmniscreen screen world)
+            | OmniScreen -> (screen, World.setOmniScreen screen world)
             | Dissolve dissolveData -> (screen, World.setScreenDissolve dissolveData screen world)
             | Splash (dissolveData, splashData, destination) ->
                 let world = World.setScreenDissolve dissolveData screen world
@@ -863,5 +863,6 @@ module GameDispatcherModule =
         abstract member Command : 'command * 'model * Game * World -> World
         abstract member Layout : 'model * Game * World -> ScreenLayout list
         abstract member View : 'model * Game * World -> View list
+        default this.Update (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []

@@ -46,9 +46,9 @@ module WorldGameModule =
         member this.GetOnMessage world = World.getGameOnMessage world
         member this.SetOnMessage value world = World.setGameOnMessage value world
         member this.OnMessage = Lens.make Property? OnMessage this.GetOnMessage this.SetOnMessage this
-        member this.GetOmniscreenOpt world = World.getOmniscreenOpt world
-        member this.SetOmniscreenOpt value world = World.setOmniscreenOpt value world
-        member this.OmniscreenOpt = Lens.make Property? OmniscreenOpt this.GetOmniscreenOpt this.SetOmniscreenOpt this
+        member this.GetOmniScreenOpt world = World.getOmniScreenOpt world
+        member this.SetOmniScreenOpt value world = World.setOmniScreenOpt value world
+        member this.OmniScreenOpt = Lens.make Property? OmniScreenOpt this.GetOmniScreenOpt this.SetOmniScreenOpt this
         member this.GetSelectedScreenOpt world = World.getSelectedScreenOpt world
         member this.SetSelectedScreenOpt value world = World.setSelectedScreenOpt value world
         member this.SelectedScreenOpt = Lens.make Property? SelectedScreenOpt this.GetSelectedScreenOpt this.SetSelectedScreenOpt this
@@ -190,7 +190,7 @@ module WorldGameModule =
             | None -> world
 
         static member internal registerGame world =
-            let game = Simulants.Game
+            let game = Default.Game
             let world = World.monitor World.gameOnRegisterChanged (Events.Change Property? OnRegister) game world
             let world = World.monitor World.gameScriptOptChanged (Events.Change Property? ScriptOpt) game world
             let world =
@@ -205,7 +205,7 @@ module WorldGameModule =
             World.choose world
 
         static member internal unregisterGame world =
-            let game = Simulants.Game
+            let game = Default.Game
             let world =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcher world
@@ -218,7 +218,7 @@ module WorldGameModule =
             World.choose world
 
         static member internal updateGame world =
-            let game = Simulants.Game
+            let game = Default.Game
             World.withEventContext (fun world ->
 
                 // update via dispatcher
@@ -236,7 +236,7 @@ module WorldGameModule =
                 world
 
         static member internal postUpdateGame world =
-            let game = Simulants.Game
+            let game = Default.Game
             World.withEventContext (fun world ->
                 
                 // post-update via dispatcher
@@ -254,7 +254,7 @@ module WorldGameModule =
                 world
 
         static member internal actualizeGame world =
-            let game = Simulants.Game
+            let game = Default.Game
             World.withEventContext (fun world ->
                 let dispatcher = game.GetDispatcher world
                 let world = dispatcher.Actualize (game, world)
@@ -276,15 +276,15 @@ module WorldGameModule =
             Seq.map (fun screen -> World.getLayers screen world) |>
             Seq.concat
 
-        /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omniscreen.
+        /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omni-screen.
         /// Game is always considered 'selected' as well.
         [<FunctionBinding>]
         static member isSimulantSelected (simulant : Simulant) world =
             match Address.getNames simulant.SimulantAddress with
             | [] -> true
             | screenName :: _ ->
-                match World.getOmniscreenOpt world with
-                | Some omniscreen when Address.getName omniscreen.ScreenAddress = screenName -> true
+                match World.getOmniScreenOpt world with
+                | Some omniScreen when Address.getName omniScreen.ScreenAddress = screenName -> true
                 | _ -> 
                     match World.getSelectedScreenOpt world with
                     | Some screen when Address.getName screen.ScreenAddress = screenName -> true

@@ -87,8 +87,8 @@ module WorldLayerModule =
 
         /// Check that a layer is selected.
         member this.GetSelected world =
-            match (World.getGameState world).OmniscreenOpt with
-            | Some omniscreen when Address.head this.LayerAddress = Address.head omniscreen.ScreenAddress -> true
+            match (World.getGameState world).OmniScreenOpt with
+            | Some omniScreen when Address.head this.LayerAddress = Address.head omniScreen.ScreenAddress -> true
             | _ ->
                 match (World.getGameState world).SelectedScreenOpt with
                 | Some screen when Address.head this.LayerAddress = Address.head screen.ScreenAddress -> true
@@ -126,7 +126,7 @@ module WorldLayerModule =
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update ->- layer) eventTrace Simulants.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update ->- layer) eventTrace Default.Game true world)
                 layer
                 world
 
@@ -142,7 +142,7 @@ module WorldLayerModule =
 
                 // run script post-update
                 let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- layer) eventTrace Simulants.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- layer) eventTrace Default.Game true world)
                 layer
                 world
 

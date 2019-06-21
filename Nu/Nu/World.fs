@@ -140,7 +140,7 @@ module Nu =
                             let world = handler data.OldWorld world
                             (Cascade, world))
                         (Address.makeFromList ("Change" :: propertyName :: "Event" :: Address.getNames participant.ParticipantAddress))
-                        (Simulants.Game :> Participant)
+                        (Default.Game :> Participant)
                         (world :?> World)
                 (box unsubscribe, box world)
 
@@ -314,7 +314,7 @@ module WorldModule3 =
                 let eventTracer = Log.remark "Event"
                 let eventTracing = Core.getEventTracing ()
                 let eventFilter = Core.getEventFilter ()
-                let globalParticipant = Simulants.Game
+                let globalParticipant = Default.Game
                 let globalParticipantGeneralized = { GpgAddress = atoa globalParticipant.GameAddress }
                 EventSystemDelegate.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
 
@@ -355,8 +355,8 @@ module WorldModule3 =
             let world = World.make eventDelegate dispatchers subsystems scriptingEnv ambientState (snd defaultGameDispatcher)
             
             // subscribe to subscribe and unsubscribe events
-            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
-            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Simulants.Game world
+            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Default.Game world
+            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Default.Game world
 
             // finally, register the game
             World.registerGame world
@@ -364,9 +364,9 @@ module WorldModule3 =
         /// Make a default world with a default screen, layer, and entity, such as for testing.
         static member makeDefault () =
             let world = World.makeEmpty ()
-            let world = World.createScreen (Some Simulants.DefaultScreen.ScreenName) world |> snd
-            let world = World.createLayer (Some Simulants.DefaultLayer.LayerName) Simulants.DefaultScreen world |> snd
-            let world = World.createEntity (Some Simulants.DefaultEntity.EntityName) DefaultOverlay Simulants.DefaultLayer world |> snd
+            let world = World.createScreen (Some Default.Screen.ScreenName) world |> snd
+            let world = World.createLayer (Some Default.Layer.LayerName) Default.Screen world |> snd
+            let world = World.createEntity (Some Default.Entity.EntityName) DefaultOverlay Default.Layer world |> snd
             world
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
@@ -386,7 +386,7 @@ module WorldModule3 =
                     let eventTracer = Log.remark "Event"
                     let eventTracing = Core.getEventTracing ()
                     let eventFilter = Core.getEventFilter ()
-                    let globalParticipant = Simulants.Game
+                    let globalParticipant = Default.Game
                     let globalParticipantGeneralized = { GpgAddress = atoa globalParticipant.GameAddress }
                     EventSystemDelegate.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
 
@@ -424,7 +424,7 @@ module WorldModule3 =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> SdlRenderer.make renderContext :> Renderer
                         | None -> MockRenderer.make () :> Renderer
-                    let renderer = renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.DefaultPackageName)
+                    let renderer = renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.DefaultPackage)
                     let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> World Subsystem
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
@@ -461,8 +461,8 @@ module WorldModule3 =
                     let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState activeGameDispatcher
 
                     // subscribe to subscribe and unsubscribe events
-                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
-                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Simulants.Game world
+                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Default.Game world
+                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Default.Game world
 
                     // try to load the prelude for the scripting language
                     match World.tryEvalPrelude world with

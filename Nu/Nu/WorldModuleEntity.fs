@@ -948,8 +948,8 @@ module WorldModuleEntity =
         /// OPTIMIZATION: attempt to avoid constructing a screen address on each call to decrease
         /// address hashing.
         static member internal makeScreenFast (entity : Entity) world =
-            match (World.getGameState world).OmniscreenOpt with
-            | Some omniscreen when Address.getName omniscreen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> omniscreen
+            match (World.getGameState world).OmniScreenOpt with
+            | Some omniScreen when Address.getName omniScreen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> omniScreen
             | Some _ | None ->
                 match (World.getGameState world).SelectedScreenOpt with
                 | Some screen when Address.getName screen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> screen

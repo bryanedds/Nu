@@ -65,6 +65,7 @@ module FacetModule =
         abstract member Update : 'message * 'model * Entity * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Entity * World -> World
         abstract member View : 'model * Entity * World -> View list
+        default this.Update (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
 
@@ -349,7 +350,7 @@ module TextFacetModule =
 
         static member Properties =
             [define Entity.Text ""
-             define Entity.Font (AssetTag.make<Font> Assets.DefaultPackageName "Font")
+             define Entity.Font (AssetTag.make<Font> Assets.DefaultPackage "Font")
              define Entity.Margins Vector2.Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
              define Entity.Color (Vector4 (0.0f, 0.0f, 0.0f, 1.0f))]
@@ -681,7 +682,7 @@ module StaticSpriteFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
+            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")]
 
         override facet.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
@@ -751,7 +752,7 @@ module AnimatedSpriteFacetModule =
              define Entity.CelSize (Vector2 (16.0f, 16.0f))
              define Entity.CelRun 4
              define Entity.AnimationStutter 4L
-             define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackageName "Image7")]
+             define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackage "Image7")]
 
         override facet.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
@@ -831,6 +832,7 @@ module EntityDispatcherModule =
         abstract member Update : 'message * 'model * Entity * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Entity * World -> World
         abstract member View : 'model * Entity * World -> View list
+        default this.Update (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
 
@@ -1027,9 +1029,9 @@ module ButtonDispatcherModule =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
              define Entity.Down false
-             define Entity.UpImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
-             define Entity.DownImage (AssetTag.make<Image> Assets.DefaultPackageName "Image2")
-             define Entity.ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackageName "Sound"))
+             define Entity.UpImage (AssetTag.make<Image> Assets.DefaultPackage "Image")
+             define Entity.DownImage (AssetTag.make<Image> Assets.DefaultPackage "Image2")
+             define Entity.ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))
              define Entity.OnClick Scripting.Unit]
 
         override dispatcher.Register (button, world) =
@@ -1077,7 +1079,7 @@ module LabelDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
-             define Entity.LabelImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
+             define Entity.LabelImage (AssetTag.make<Image> Assets.DefaultPackage "Image3")]
 
         override dispatcher.Actualize (label, world) =
             if label.GetVisibleLayered world then
@@ -1122,7 +1124,7 @@ module TextDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
-             define Entity.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
+             define Entity.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackage "Image3")]
 
         override dispatcher.Actualize (text, world) =
             if text.GetVisibleLayered world then
@@ -1222,9 +1224,9 @@ module ToggleDispatcherModule =
              define Entity.SwallowMouseLeft false
              define Entity.Open true
              define Entity.Pressed false
-             define Entity.OpenImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
-             define Entity.ClosedImage (AssetTag.make<Image> Assets.DefaultPackageName "Image2")
-             define Entity.ToggleSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackageName "Sound"))
+             define Entity.OpenImage (AssetTag.make<Image> Assets.DefaultPackage "Image")
+             define Entity.ClosedImage (AssetTag.make<Image> Assets.DefaultPackage "Image2")
+             define Entity.ToggleSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))
              define Entity.OnToggle Scripting.Unit]
 
         override dispatcher.Register (toggle, world) =
@@ -1357,8 +1359,8 @@ module FillBarDispatcherModule =
              define Entity.SwallowMouseLeft false
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
-             define Entity.FillImage (AssetTag.make<Image> Assets.DefaultPackageName "Image9")
-             define Entity.BorderImage (AssetTag.make<Image> Assets.DefaultPackageName "Image10")]
+             define Entity.FillImage (AssetTag.make<Image> Assets.DefaultPackage "Image9")
+             define Entity.BorderImage (AssetTag.make<Image> Assets.DefaultPackage "Image10")]
 
         override dispatcher.Actualize (fillBar, world) =
             if fillBar.GetVisibleLayered world then
@@ -1412,7 +1414,7 @@ module BlockDispatcherModule =
 
         static member Properties =
             [define Entity.BodyType Static
-             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
+             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")]
 
 [<AutoOpen>]
 module BoxDispatcherModule =
@@ -1425,7 +1427,7 @@ module BoxDispatcherModule =
              typeof<StaticSpriteFacet>.Name]
 
         static member Properties =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
+            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")]
 
 [<AutoOpen>]
 module TopViewCharacterDispatcherModule =
@@ -1442,7 +1444,7 @@ module TopViewCharacterDispatcherModule =
              define Entity.LinearDamping 10.0f
              define Entity.GravityScale 0.0f
              define Entity.CollisionBody (BodyCircle { Radius = 0.5f; Center = Vector2.Zero })
-             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image7")]
+             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image7")]
 
 [<AutoOpen>]
 module SideViewCharacterDispatcherModule =
@@ -1458,7 +1460,7 @@ module SideViewCharacterDispatcherModule =
             [define Entity.FixedRotation true
              define Entity.LinearDamping 3.0f
              define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
-             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image6")]
+             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image6")]
 
 [<AutoOpen>]
 module TileMapDispatcherModule =
@@ -1608,7 +1610,7 @@ module TileMapDispatcherModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackageName "TileMap")
+             define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackage "TileMap")
              define Entity.Parallax 0.0f]
 
         override dispatcher.Register (tileMap, world) =
@@ -1733,6 +1735,7 @@ module LayerDispatcherModule =
         abstract member Command : 'command * 'model * Layer * World -> World
         abstract member Layout : 'model * Layer * World -> EntityLayout list
         abstract member View : 'model * Layer * World -> View list
+        default this.Update (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
 
@@ -1806,6 +1809,7 @@ module ScreenDispatcherModule =
         abstract member Command : 'command * 'model * Screen * World -> World
         abstract member Layout : 'model * Screen * World -> LayerLayout list
         abstract member View : 'model * Screen * World -> View list
+        default this.Update (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
 

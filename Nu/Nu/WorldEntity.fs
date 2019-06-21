@@ -135,8 +135,8 @@ module WorldEntityModule =
 
         /// Check that an entity is selected.
         member this.GetSelected world =
-            match (World.getGameState world).OmniscreenOpt with
-            | Some omniscreen when Address.head this.EntityAddress = Address.head omniscreen.ScreenAddress -> true
+            match (World.getGameState world).OmniScreenOpt with
+            | Some omniScreen when Address.head this.EntityAddress = Address.head omniScreen.ScreenAddress -> true
             | _ ->
                 match (World.getGameState world).SelectedScreenOpt with
                 | Some screen when Address.head this.EntityAddress = Address.head screen.ScreenAddress -> true
@@ -207,7 +207,7 @@ module WorldEntityModule =
                 let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
                 if World.getEntityPublishUpdates entity world then
                     let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.UpdateEvent eventTrace Simulants.Game false world
+                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.UpdateEvent eventTrace Default.Game false world
                 else world)
                 entity
                 world
@@ -220,7 +220,7 @@ module WorldEntityModule =
                 let world = List.foldBack (fun (facet : Facet) world -> facet.PostUpdate (entity, world)) facets world
                 if World.getEntityPublishPostUpdates entity world then
                     let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateEvent eventTrace Simulants.Game false world
+                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateEvent eventTrace Default.Game false world
                 else world)
                 entity
                 world

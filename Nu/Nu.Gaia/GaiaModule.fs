@@ -32,7 +32,7 @@ module Gaia =
 
     let private getPickableEntities world =
         let selectedLayer = (World.getUserValue world).SelectedLayer
-        let (entities, world) = World.getEntitiesInView2 Simulants.EditorScreen world
+        let (entities, world) = World.getEntitiesInView2 EditorScreen world
         let entitiesInLayer = Enumerable.ToList (Enumerable.Where (entities, fun entity -> etol entity = selectedLayer))
         (entitiesInLayer, world)
 
@@ -135,7 +135,7 @@ module Gaia =
     let private refreshHierarchyTreeView (form : GaiaForm) world =
         let treeState = getExpansionState form.hierarchyTreeView
         form.hierarchyTreeView.Nodes.Clear ()
-        let layers = World.getLayers Simulants.EditorScreen world
+        let layers = World.getLayers EditorScreen world
         for layer in layers do
             let layerNode = TreeNode layer.LayerName
             layerNode.Name <- scstring layer
@@ -158,7 +158,7 @@ module Gaia =
 
         // add layers imperatively to preserve existing layer tabs
         // NOTE: adding layers in reverse works better when opening anew
-        let layers = World.getLayers Simulants.EditorScreen world
+        let layers = World.getLayers EditorScreen world
         let layerTabPages = form.layerTabControl.TabPages
         for layer in Seq.rev layers do
             let layerName = layer.LayerName
@@ -322,9 +322,9 @@ module Gaia =
 
     let private subscribeToEntityEvents form world =
         let selectedLayer = (World.getUserValue world).SelectedLayer
-        let world = World.subscribePlus Constants.SubscriptionKeys.ChangeParentNodeOpt (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
-        let world = World.subscribePlus Constants.SubscriptionKeys.RegisterEntity (handleNuEntityRegister form) (Events.Register ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
-        let world = World.subscribePlus Constants.SubscriptionKeys.UnregisteringEntity (handleNuEntityUnregistering form) (Events.Unregistering ->- selectedLayer ->- Events.Wildcard) Simulants.Game world |> snd
+        let world = World.subscribePlus Constants.SubscriptionKeys.ChangeParentNodeOpt (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt ->- selectedLayer ->- Events.Wildcard) Default.Game world |> snd
+        let world = World.subscribePlus Constants.SubscriptionKeys.RegisterEntity (handleNuEntityRegister form) (Events.Register ->- selectedLayer ->- Events.Wildcard) Default.Game world |> snd
+        let world = World.subscribePlus Constants.SubscriptionKeys.UnregisteringEntity (handleNuEntityUnregistering form) (Events.Unregistering ->- selectedLayer ->- Events.Wildcard) Default.Game world |> snd
         world
 
     let private unsubscribeFromEntityEvents world =
@@ -355,9 +355,9 @@ module Gaia =
             let layerDescriptorStr = File.ReadAllText filePath
             let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
             let layerName = match layerDescriptor.LayerProperties.TryFind "Name" with Some (Atom (name, _)) -> name | _ -> failwithumf ()
-            let layer = Simulants.EditorScreen => layerName            
+            let layer = EditorScreen => layerName
             if not (layer.GetExists world) then
-                let (layer, world) = World.readLayer layerDescriptor None Simulants.EditorScreen world
+                let (layer, world) = World.readLayer layerDescriptor None EditorScreen world
                 let layerName = layer.GetName world
                 form.layerTabControl.SelectedTab.Text <- layerName
                 form.layerTabControl.SelectedTab.Name <- layerName
@@ -855,7 +855,7 @@ module Gaia =
                 let layerName = layerCreationForm.nameTextBox.Text
                 let layerDispatcherName = layerCreationForm.dispatcherTextBox.Text
                 try if String.length layerName = 0 then failwith "Layer name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createLayer4 layerDispatcherName (Some layerName) Simulants.EditorScreen world |> snd
+                    let world = World.createLayer4 layerDispatcherName (Some layerName) EditorScreen world |> snd
                     refreshLayerTabs form world
                     refreshHierarchyTreeView form world
                     deselectEntity form world
@@ -923,7 +923,7 @@ module Gaia =
                     let layerTabControl = form.layerTabControl
                     let layerTab = layerTabControl.SelectedTab
                     { editorState with
-                        SelectedLayer = stol Simulants.EditorScreen layerTab.Text
+                        SelectedLayer = stol EditorScreen layerTab.Text
                         FilePaths = Map.remove layer.LayerAddress editorState.FilePaths })
                     world
 
@@ -1052,7 +1052,7 @@ module Gaia =
             let selectedLayer =
                 let layerTabControl = form.layerTabControl
                 let layerTab = layerTabControl.SelectedTab
-                stol Simulants.EditorScreen layerTab.Text
+                stol EditorScreen layerTab.Text
             let world = World.updateUserValue (fun editorState -> { editorState with SelectedLayer = selectedLayer}) world
             let world = subscribeToEntityEvents form world
             refreshEntityTreeView form world
@@ -1367,8 +1367,8 @@ module Gaia =
 
     /// Attach Gaia to the given world.
     let attachToWorld targetDir form world =
-        if World.getSelectedScreen world = Simulants.EditorScreen then
-            match World.getLayers Simulants.EditorScreen world |> Seq.toList with
+        if World.getSelectedScreen world = EditorScreen then
+            match World.getLayers EditorScreen world |> Seq.toList with
             | defaultLayer :: _ ->
                 match World.getUserValue world : obj with
                 | :? unit ->
@@ -1381,17 +1381,17 @@ module Gaia =
                           FutureWorlds = []
                           SelectedLayer = defaultLayer
                           FilePaths = Map.empty })
-                    let world = World.subscribePlus (makeGuid ()) (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world |> snd
-                    let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world |> snd
-                    let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world |> snd
-                    let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world |> snd
-                    let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world |> snd
+                    let world = World.subscribePlus (makeGuid ()) (handleNuMouseRightDown form) Events.MouseRightDown Default.Game world |> snd
+                    let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragBegin form) Events.MouseLeftDown Default.Game world |> snd
+                    let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragEnd form) Events.MouseLeftUp Default.Game world |> snd
+                    let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragBegin form) Events.MouseCenterDown Default.Game world |> snd
+                    let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragEnd form) Events.MouseCenterUp Default.Game world |> snd
                     let world = subscribeToEntityEvents form world
                     (defaultLayer, world)
                 | :? EditorState -> (defaultLayer, world) // NOTE: conclude world is already attached
                 | _ -> failwith "Cannot attach Gaia to a world that has a user state of a type other than unit or EditorState."
-            | [] -> failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring Simulants.EditorScreen + "' screen.")
-        else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring Simulants.EditorScreen + "'.")
+            | [] -> failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring EditorScreen + "' screen.")
+        else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring EditorScreen + "'.")
 
     let rec private tryRun3 runWhile sdlDeps (form : GaiaForm) =
         try World.runWithoutCleanUp
@@ -1634,11 +1634,11 @@ module Gaia =
                     | DialogResult.Cancel -> defaultScreenDispatcherName
                     | _ -> editorScreenDispatcherName
                 else defaultScreenDispatcherName
-            let (screen, world) = World.createScreen3 screenDispatcherName (Some Simulants.EditorScreen.ScreenName) world
-            let world = World.selectScreen Simulants.EditorScreen world
+            let (screen, world) = World.createScreen3 screenDispatcherName (Some EditorScreen.ScreenName) world
+            let world = World.selectScreen EditorScreen world
             let world =
                 if Seq.isEmpty (World.getLayers screen world)
-                then World.createLayer (Some Simulants.DefaultEditorLayer.LayerName) Simulants.EditorScreen world |> snd
+                then World.createLayer (Some DefaultEditorLayer.LayerName) EditorScreen world |> snd
                 else world
             Right world
         | Left error -> Left error
