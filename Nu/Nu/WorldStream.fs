@@ -90,7 +90,7 @@ module Stream =
                 Seq.fold (fun world entityAndLayout ->
                     let (entity : Entity, layout) = PartialComparable.unmake entityAndLayout
                     if not (entity.GetExists world)
-                    then World.expandEntity layout layer world
+                    then World.expandEntity (Some entity.EntityName) layout layer world |> snd
                     else world)
                     world added
             let world =

@@ -327,12 +327,16 @@ module WorldEntityModule =
                     ([], world)
 
         /// Turn an entity layout into an entity.
-        static member expandEntity layout layer world =
-            match EntityLayout.expand layout layer world with
+        static member expandEntity nameOpt layout layer world =
+            match EntityLayout.expand nameOpt layout layer world with
             | Left (entityName, descriptor, equations) ->
-                let world = World.readEntity descriptor (Some entityName) layer world |> snd
-                List.fold (fun world (name, simulant, property, breaking) -> WorldModule.equate5 name simulant property breaking world) world equations
-            | Right (entityName, filePath) -> World.readEntityFromFile filePath (Some entityName) layer world |> snd
+                let (entity, world) = World.readEntity descriptor (Some entityName) layer world
+                let world =
+                    List.fold (fun world (name, simulant, property, breaking) ->
+                        WorldModule.equate5 name simulant property breaking world)
+                        world equations
+                (entity, world)
+            | Right (entityName, filePath) -> World.readEntityFromFile filePath (Some entityName) layer world
 
     /// Represents the property value of an entity as accessible via reflection.
     type [<ReferenceEquality>] EntityPropertyValue =
