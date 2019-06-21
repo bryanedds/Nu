@@ -3,7 +3,6 @@ open System
 open Prime
 open Nu
 open Nu.Declarative
-open OpenTK
 open InfinityRpg
 
 [<AutoOpen>]
@@ -45,7 +44,7 @@ module InfinityDispatcherModule =
             // get based
             let world = base.Register (game, world)
 
-            // do not persist the Hud when saving gameplay
+            // do not persist the hud when saving gameplay
             Hud.SetPersistent false world
 
         override this.Bindings (_, _, _) =
