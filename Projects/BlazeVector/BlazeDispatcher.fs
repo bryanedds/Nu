@@ -22,17 +22,13 @@ module BlazeDispatcherModule =
             World.transitionScreen Gameplay world
 
         // this function creates the BlazeVector title screen
-        static let createTitleScreen game world =
+        static let createTitleScreen (game : Game) world =
 
             // this creates a dissolve screen from the specified file with the given parameters
             let world = World.createDissolveScreenFromLayerFile (Some Title.ScreenName) Constants.BlazeVector.DissolveData Assets.TitleLayerFilePath world |> snd
 
             // this subscribes to the event that is raised when the Title screen is selected for
             // display and interaction, and handles the event by playing the song "Machinery".
-            //
-            // You will need to familiarize yourself with the calling conventions of the various
-            // World.monitor functions as well as the event address operators '-->' and its ilk
-            // by studying their types and documentation comments.
             let world = World.monitor handleSelectTitleScreen Title.SelectEvent game world
 
             // subscribes to the event that is raised when the Title screen's Play button is
@@ -48,12 +44,12 @@ module BlazeDispatcherModule =
             World.monitorPlus World.handleAsExit TitleExit.ClickEvent game world |> snd
 
         // pretty much the same as above, but for the Credits screen
-        static let createCreditsScreen game world =
+        static let createCreditsScreen (game : Game) world =
             let world = World.createDissolveScreenFromLayerFile (Some Credits.ScreenName) Constants.BlazeVector.DissolveData Assets.CreditsLayerFilePath world |> snd
             World.monitor (World.handleAsScreenTransition Title) CreditsBack.ClickEvent game world
 
         // and so on.
-        static let createGameplayScreen game world =
+        static let createGameplayScreen (game : Game) world =
             let world = World.createDissolveScreenFromLayerFile<GameplayScreenDispatcher> (Some Gameplay.ScreenName) Constants.BlazeVector.DissolveData Assets.GameplayLayerFilePath world |> snd
             World.monitor (World.handleAsScreenTransition Title) GameplayBack.ClickEvent game world
 
