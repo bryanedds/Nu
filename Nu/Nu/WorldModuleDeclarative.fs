@@ -210,12 +210,15 @@ type [<NoEquality; NoComparison>] EntityLayout =
     interface SimulantLayout
 
     /// Expand an entity layout to its constituent parts.
-    static member expand layout layer world =
+    static member expand nameOpt layout layer world =
         match layout with
         | EntityFromDefinitions (dispatcherName, name, definitions) ->
+            let name = Option.getOrDefault name nameOpt
             let (descriptor, definitions) = Describe.entity2 dispatcherName definitions (layer => name) world
             Left (name, descriptor, definitions)
-        | EntityFromFile (name, filePath) -> Right (name, filePath)
+        | EntityFromFile (name, filePath) ->
+            let name = Option.getOrDefault name nameOpt
+            Right (name, filePath)
 
 /// Describes the layout of a layer.
 type [<NoEquality; NoComparison>] LayerLayout =
@@ -228,7 +231,7 @@ type [<NoEquality; NoComparison>] LayerLayout =
         match layout with
         | LayerFromDefinitions (dispatcherName, name, definitions, entities) ->
             let layer = screen => name
-            let descriptorsPlusPlus = List.map (fun layout -> EntityLayout.expand layout layer world) entities
+            let descriptorsPlusPlus = List.map (fun layout -> EntityLayout.expand None layout layer world) entities
             let descriptorsPlus = Either.getLeftValues descriptorsPlusPlus
             let descriptors = descriptorsPlus |> List.map (fun (entityName, descriptor, _) -> { descriptor with EntityProperties = Map.add (Property? Name) (valueToSymbol entityName) descriptor.EntityProperties })
             let equations = descriptorsPlus |> List.map __c |> List.concat

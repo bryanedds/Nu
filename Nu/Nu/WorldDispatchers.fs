@@ -1706,8 +1706,7 @@ module LayerDispatcherModule =
                             layer binding.Stream world)
                     world bindings
             let layouts = this.Layout (lens.Get world, layer, world)
-            let world = List.fold (fun world layout -> World.expandEntity layout layer world) world layouts
-            world
+            List.fold (fun world layout -> World.expandEntity None layout layer world |> snd) world layouts
 
         override this.Actualize (layer, world) =
             let lens = getModelLens layer
