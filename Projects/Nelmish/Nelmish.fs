@@ -5,12 +5,10 @@ open Nu
 open Nu.Declarative
 module Nelmish =
 
-    // here we create references for the simulants that we are going to define for our game
-    let Screen = !> "Screen"
-    let Layer = Screen => "Layer"
-    let DecrementButton = Layer => "Decrement"
-    let IncrementButton = Layer => "Increment"
-    let CounterButton = Layer => "Counter"
+    // here we create references for the entities that we are going to define for our game
+    let DecrementButton = Default.Layer => "Decrement"
+    let IncrementButton = Default.Layer => "Increment"
+    let CounterButton = Default.Layer => "Counter"
 
     // this is our Elm-style model type
     type Model =
@@ -28,7 +26,7 @@ module Nelmish =
         member this.SetModel = this.Set Property? Model
         member this.Model = Lens.make<Model, World> Property? Model this.GetModel this.SetModel this
 
-    // this is our Elm-style game simulant dispatcher
+    // this is our Elm-style game dispatcher
     type NelmishDispatcher () =
         inherit GameDispatcher<Model, Message, unit> (fun game -> game.Model)
 
@@ -51,8 +49,8 @@ module Nelmish =
 
         // here we describe the layout of the game including its one screen, one layer, and three button entities
         override this.Layout (_, game, _) =
-            [Layout.screen Screen Vanilla []
-                [Layout.layer Layer []
+            [Layout.screen Default.Screen Vanilla []
+                [Layout.layer Default.Layer []
                     [Layout.button DecrementButton
                         [Entity.Text == "-"
                          Entity.Position == Vector2 (-256.0f, 64.0f)]
