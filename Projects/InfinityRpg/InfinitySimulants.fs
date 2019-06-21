@@ -5,14 +5,14 @@ open Nu
 [<AutoOpen>]
 module Simulants =
 
-    // the game reference
-    let Infinity = Game ()
+    // the game handle
+    let Infinity = Default.Game
 
     // same as above, but for the splash screen
-    let Splash = Screen "Splash"
+    let Splash = !> "Splash"
 
     // same as above, but for the title screen
-    let Title = Screen "Title"
+    let Title = !> "Title"
 
     // this is the layer that is loaded into the title screen that contains all of its gui
     // entities. You'll notice that the layer is built from a combination of the title screen as
