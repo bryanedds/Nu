@@ -69,11 +69,10 @@ module Stream =
 
     /// Make a Guid deterministically.
     /// HACK: this is an ugly hack to create a deterministic sequance of guids.
-    /// Limited to creating 65,536 guids.
+    /// Limited to creating 255 guids.
     /// NOTE: this will be in Prime in the next version.
     let makeGuidDeterministic offset (guid : Guid) =
         let arr = guid.ToByteArray ()
-        if arr.[15] + byte offset < arr.[15] then arr.[14] <- arr.[14] + byte 1
         arr.[15] <- arr.[15] + byte offset                    
         Guid arr
 
