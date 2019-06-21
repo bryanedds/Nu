@@ -1,9 +1,11 @@
 ﻿namespace BlazeVector
 open Nu
+
+[<AutoOpen>]
 module Simulants =
 
-    // here we derive a screen handle from its name so that we can interface with it in code
-    let Omniscreen = Screen "Omniscreen"
+    // the game reference
+    let Blaze = Game ()
 
     // same as above, but for the splash screen
     let Splash = Screen "Splash"
@@ -18,7 +20,7 @@ module Simulants =
 
     // this is like the above, but for the play button found in the above layer
     let TitlePlay = TitleGui => "Play"
-    
+
     // and so on for the title screens credits and exit buttons
     let TitleCredits = TitleGui => "Credits"
     let TitleExit = TitleGui => "Exit"

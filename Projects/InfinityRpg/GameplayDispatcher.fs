@@ -31,7 +31,7 @@ module GameplayDispatcherModule =
         inherit ScreenDispatcher ()
 
         static let getCharacters world =
-            let entities = World.getEntities Simulants.Scene world
+            let entities = World.getEntities Scene world
             Seq.filter (fun (entity : Entity) -> entity.DispatchesAs<CharacterDispatcher> world) entities
 
         static let tryGetCharacterAtPosition position world =
@@ -45,7 +45,7 @@ module GameplayDispatcherModule =
             Option.get (tryGetCharacterInDirection position direction world)
 
         static let getEnemies world =
-            let entities = World.getEntities Simulants.Scene world
+            let entities = World.getEntities Scene world
             Seq.filter (fun (entity : Entity) -> entity.DispatchesAs<EnemyDispatcher> world) entities
 
         static let makeAttackTurn targetPositionM =
@@ -57,7 +57,7 @@ module GameplayDispatcherModule =
         static let createField scene rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
             let (fieldMap, rand) = FieldMap.make Assets.FieldTileSheetImage (Vector2i 22) pathEdgesM rand
-            let (field, world) = World.createEntity<FieldDispatcher> (Some Simulants.Field.EntityName) DefaultOverlay scene world
+            let (field, world) = World.createEntity<FieldDispatcher> (Some Field.EntityName) DefaultOverlay scene world
             let world = field.SetFieldMapNp fieldMap world
             let world = field.SetSize (field.GetQuickSize world) world
             let world = field.SetPersistent false world
@@ -121,7 +121,7 @@ module GameplayDispatcherModule =
             | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
 
         static let isPlayerNavigatingPath world =
-            (Simulants.Player.GetCharacterActivityState world).IsNavigatingPath
+            (Player.GetCharacterActivityState world).IsNavigatingPath
 
         static let cancelNavigation (character : Entity) world =
             let characterActivity =
@@ -139,7 +139,7 @@ module GameplayDispatcherModule =
 
         static let anyTurnsInProgress world =
             let enemies = getEnemies world
-            anyTurnsInProgress2 Simulants.Player enemies world
+            anyTurnsInProgress2 Player enemies world
 
         static let updateCharacterByWalk walkDescriptor (character : Entity) world =
             let (newPosition, walkState) = walk walkDescriptor (character.GetPosition world)
@@ -247,17 +247,17 @@ module GameplayDispatcherModule =
             (enemyTurns, rand)
 
         static let determinePlayerTurnFromTouch touchPosition world =
-            let fieldMap = Simulants.Field.GetFieldMapNp world
+            let fieldMap = Field.GetFieldMapNp world
             let enemies = getEnemies world
             let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
-            if not (anyTurnsInProgress2 Simulants.Player enemies world) then
+            if not (anyTurnsInProgress2 Player enemies world) then
                 let touchPositionW = World.mouseToWorld Relative touchPosition world
                 let occupationMapWithAdjacentEnemies =
                     OccupationMap.makeFromFieldTilesAndAdjacentCharacters
-                        (vftovm (Simulants.Player.GetPosition world))
+                        (vftovm (Player.GetPosition world))
                         fieldMap.FieldTiles
                         enemyPositions
-                match determineCharacterTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies Simulants.Player enemies world with
+                match determineCharacterTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies Player enemies world with
                 | ActionTurn _ as actionTurn -> actionTurn
                 | NavigationTurn navigationDescriptor as navigationTurn ->
                     let headNavigationNode = navigationDescriptor.NavigationPathOpt |> Option.get |> List.head
@@ -269,12 +269,12 @@ module GameplayDispatcherModule =
             else NoTurn
 
         static let determinePlayerTurnFromDetailNavigation direction world =
-            let fieldMap = Simulants.Field.GetFieldMapNp world
+            let fieldMap = Field.GetFieldMapNp world
             let enemies = getEnemies world
             let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
-            if not (anyTurnsInProgress2 Simulants.Player enemies world) then
+            if not (anyTurnsInProgress2 Player enemies world) then
                 let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters fieldMap.FieldTiles enemyPositions
-                determineCharacterTurnFromDirection direction occupationMapWithEnemies Simulants.Player enemies world
+                determineCharacterTurnFromDirection direction occupationMapWithEnemies Player enemies world
             else NoTurn
 
         static let determinePlayerTurnFromInput playerInput world =
@@ -284,12 +284,12 @@ module GameplayDispatcherModule =
             | NoInput -> NoTurn
 
         static let determinePlayerTurn world =
-            match Simulants.Player.GetCharacterActivityState world with
+            match Player.GetCharacterActivityState world with
             | Action _ -> NoTurn
             | Navigation navigationDescriptor ->
                 let walkDescriptor = navigationDescriptor.WalkDescriptor
-                if Simulants.Player.GetPosition world = vmtovf walkDescriptor.WalkOriginM then
-                    let fieldMap = Simulants.Field.GetFieldMapNp world
+                if Player.GetPosition world = vmtovf walkDescriptor.WalkOriginM then
+                    let fieldMap = Field.GetFieldMapNp world
                     let enemies = getEnemies world
                     let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
                     let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters fieldMap.FieldTiles enemyPositions
@@ -344,7 +344,7 @@ module GameplayDispatcherModule =
                 let reactorDamage = 4 // NOTE: just hard-coding damage for now
                 let world = reactor.CharacterState.Update (fun state -> { state with HitPoints = state.HitPoints - reactorDamage }) world
                 if reactor.CharacterState.GetBy (fun state -> state.HitPoints <= 0) world then
-                    if reactor.GetName world = Simulants.Player.EntityName
+                    if reactor.GetName world = Player.EntityName
                     then World.transitionScreen (!! "Title") world
                     else World.destroyEntity reactor world
                 else world
@@ -367,7 +367,7 @@ module GameplayDispatcherModule =
                     do! Chain.pass }}
             let stream =
                 Stream.until
-                    (Stream.make Simulants.Gameplay.DeselectEvent)
+                    (Stream.make Gameplay.DeselectEvent)
                     (Stream.make character.UpdateEvent)
             Chain.runAssumingCascade chain stream world |> snd
 
@@ -386,7 +386,7 @@ module GameplayDispatcherModule =
                     do! Chain.pass }}
             let stream =
                 Stream.until
-                    (Stream.make Simulants.Gameplay.DeselectEvent)
+                    (Stream.make Gameplay.DeselectEvent)
                     (Stream.make character.UpdateEvent)
             Chain.runAssumingCascade chain stream world |> snd
 
@@ -419,7 +419,7 @@ module GameplayDispatcherModule =
 
             // construct occupation map
             let occupationMap =
-                let fieldMap = Simulants.Field.GetFieldMapNp world
+                let fieldMap = Field.GetFieldMapNp world
                 let enemies = getEnemies world
                 let enemyPositions = Seq.map (fun (enemy : Entity) -> enemy.GetPosition world) enemies
                 OccupationMap.makeFromFieldTilesAndCharactersAndDesiredTurn fieldMap.FieldTiles enemyPositions playerTurn
@@ -435,7 +435,7 @@ module GameplayDispatcherModule =
             // run player activity
             let world =
                 match newPlayerActivityOpt with
-                | Some newPlayerActivity -> runCharacterActivity newPlayerActivity Simulants.Player world
+                | Some newPlayerActivity -> runCharacterActivity newPlayerActivity Player world
                 | None -> world
 
             // determine (and set) enemy desired turns if applicable
@@ -443,18 +443,18 @@ module GameplayDispatcherModule =
                 match newPlayerActivityOpt with
                 | Some (Action _)
                 | Some (Navigation _) ->
-                    let rand = Rand.makeFromSeedState (Simulants.Gameplay.GetOngoingRandState world)
+                    let rand = Rand.makeFromSeedState (Gameplay.GetOngoingRandState world)
                     let enemies = getEnemies world
-                    let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap Simulants.Player enemies rand world
+                    let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap Player enemies rand world
                     let world = Seq.fold2 (fun world (enemy : Entity) turn -> enemy.SetDesiredTurn turn world) world enemies enemyDesiredTurns
-                    Simulants.Gameplay.SetOngoingRandState (Rand.getState rand) world
+                    Gameplay.SetOngoingRandState (Rand.getState rand) world
                 | Some NoActivity
                 | None -> world
 
             // run enemy activities in accordance with the player's current activity
             let world =
                 let enemies = getEnemies world
-                match Simulants.Player.GetCharacterActivityState world with
+                match Player.GetCharacterActivityState world with
                 | Action _ -> world
                 | Navigation _ 
                 | NoActivity ->
@@ -462,7 +462,7 @@ module GameplayDispatcherModule =
                     let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies world
                     if List.exists (fun (state : CharacterActivityState) -> state.IsActing) newEnemyActionActivities then
                         let world = runEnemyActivities newEnemyActionActivities newEnemyNavigationActivities enemies world
-                        cancelNavigation Simulants.Player world
+                        cancelNavigation Player world
                     else runEnemyNavigationActivities newEnemyNavigationActivities enemies world
 
             // fin
@@ -471,7 +471,7 @@ module GameplayDispatcherModule =
         static let tryRunPlayerTurn playerInput world =
             if not (anyTurnsInProgress world) then
                 let chain = chain {
-                    do! Chain.update $ Simulants.HudSaveGame.SetEnabled false
+                    do! Chain.update $ HudSaveGame.SetEnabled false
                     do! Chain.loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress world) $ fun i -> chain {
                         let! evt = Chain.next
                         do! match evt.Data with
@@ -482,20 +482,20 @@ module GameplayDispatcherModule =
                                     else Chain.getBy determinePlayerTurn
                                 do! Chain.update (runPlayerTurn playerTurn) }
                             | Left _ -> chain {
-                                do! Chain.update (cancelNavigation Simulants.Player) }}
-                    do! Chain.update (Simulants.HudSaveGame.SetEnabled true) }
+                                do! Chain.update (cancelNavigation Player) }}
+                    do! Chain.update (HudSaveGame.SetEnabled true) }
                 let stream =
                     Stream.until
-                        (Stream.make Simulants.Gameplay.DeselectEvent)
+                        (Stream.make Gameplay.DeselectEvent)
                         (Stream.sum
-                            (Stream.make Simulants.HudHalt.ClickEvent)
-                            (Stream.make Simulants.Player.UpdateEvent))
+                            (Stream.make HudHalt.ClickEvent)
+                            (Stream.make Player.UpdateEvent))
                 Chain.runAssumingCascade chain stream world |> snd
             else world
 
         static let handlePlayerActivityChange _ world =
             let playerNavigatingPath = isPlayerNavigatingPath world
-            Simulants.HudHalt.SetEnabled playerNavigatingPath world
+            HudHalt.SetEnabled playerNavigatingPath world
 
         static let handleTouchFeeler evt world =
             let playerInput = TouchInput evt.Data
@@ -513,20 +513,20 @@ module GameplayDispatcherModule =
             let ongoingSeedState = uint64 (sysrandom.Next ())
 
             // initialize gameplay screen
-            let world = Simulants.Gameplay.SetContentRandState contentSeedState world
-            let world = Simulants.Gameplay.SetOngoingRandState ongoingSeedState world
+            let world = Gameplay.SetContentRandState contentSeedState world
+            let world = Gameplay.SetOngoingRandState ongoingSeedState world
 
             // make scene layer
-            let (scene, world) = World.createLayer (Some Simulants.Scene.LayerName) Simulants.Gameplay world
+            let (scene, world) = World.createLayer (Some Scene.LayerName) Gameplay world
 
             // make rand from gameplay
-            let rand = Rand.makeFromSeedState (Simulants.Gameplay.GetContentRandState world)
+            let rand = Rand.makeFromSeedState (Gameplay.GetContentRandState world)
 
             // make field
             let (rand, world) = _bc (createField scene rand world)
 
             // make player
-            let (player, world) = World.createEntity<PlayerDispatcher> (Some Simulants.Player.EntityName) DefaultOverlay scene world
+            let (player, world) = World.createEntity<PlayerDispatcher> (Some Player.EntityName) DefaultOverlay scene world
             let world = player.SetDepth Constants.Layout.CharacterDepth world
 
             // make enemies
@@ -535,14 +535,14 @@ module GameplayDispatcherModule =
         static let handleLoadGame world =
 
             // get and initialize gameplay screen from read
-            let world = World.readScreenFromFile Assets.SaveFilePath (Some Simulants.Gameplay.ScreenName) world |> snd
-            let world = Simulants.Gameplay.SetTransitionState IncomingState world
+            let world = World.readScreenFromFile Assets.SaveFilePath (Some Gameplay.ScreenName) world |> snd
+            let world = Gameplay.SetTransitionState IncomingState world
 
             // make rand from gameplay
-            let rand = Rand.makeFromSeedState (Simulants.Gameplay.GetContentRandState world)
+            let rand = Rand.makeFromSeedState (Gameplay.GetContentRandState world)
 
             // make field from rand (field is not serialized, but generated deterministically with ContentRandState)
-            __c (createField Simulants.Scene rand world)
+            __c (createField Scene rand world)
 
         static let handleSelectTitle _ world =
             World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Assets.ButterflyGirlSong world
@@ -551,7 +551,7 @@ module GameplayDispatcherModule =
             let world =
                 // NOTE: doing a File.Exists then loading the file is dangerous since the file can
                 // always be deleted / moved between the two operations!
-                if Simulants.Gameplay.GetShallLoadGame world && File.Exists Assets.SaveFilePath
+                if Gameplay.GetShallLoadGame world && File.Exists Assets.SaveFilePath
                 then handleLoadGame world
                 else handleNewGame world
             World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Assets.HerosVengeanceSong world
@@ -562,7 +562,7 @@ module GameplayDispatcherModule =
             world
 
         static let handleDeselectGameplay _ world =
-            World.destroyLayer Simulants.Scene world
+            World.destroyLayer Scene world
 
         static member Properties =
             [define Screen.ContentRandState Rand.DefaultSeedState
@@ -570,14 +570,14 @@ module GameplayDispatcherModule =
              define Screen.ShallLoadGame false]
 
         override dispatcher.Register (gameplay, world) =
-            let world = Stream.make Simulants.Player.CharacterActivityState.ChangeEvent |> Stream.subscribe handlePlayerActivityChange gameplay $ world
-            let world = Stream.make Simulants.HudFeeler.TouchEvent |> Stream.isSimulantSelected Simulants.HudFeeler |> Stream.monitor handleTouchFeeler gameplay $ world
-            let world = Stream.make Simulants.HudDetailUp.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailUp |> Stream.monitor (handleDownDetail Upward) gameplay $ world
-            let world = Stream.make Simulants.HudDetailRight.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailRight |> Stream.monitor (handleDownDetail Rightward) gameplay $ world
-            let world = Stream.make Simulants.HudDetailDown.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailDown |> Stream.monitor (handleDownDetail Downward) gameplay $ world
-            let world = Stream.make Simulants.HudDetailLeft.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailLeft |> Stream.monitor (handleDownDetail Leftward) gameplay $ world
+            let world = Stream.make Player.CharacterActivityState.ChangeEvent |> Stream.subscribe handlePlayerActivityChange gameplay $ world
+            let world = Stream.make HudFeeler.TouchEvent |> Stream.isSimulantSelected HudFeeler |> Stream.monitor handleTouchFeeler gameplay $ world
+            let world = Stream.make HudDetailUp.DownEvent |> Stream.isSimulantSelected HudDetailUp |> Stream.monitor (handleDownDetail Upward) gameplay $ world
+            let world = Stream.make HudDetailRight.DownEvent |> Stream.isSimulantSelected HudDetailRight |> Stream.monitor (handleDownDetail Rightward) gameplay $ world
+            let world = Stream.make HudDetailDown.DownEvent |> Stream.isSimulantSelected HudDetailDown |> Stream.monitor (handleDownDetail Downward) gameplay $ world
+            let world = Stream.make HudDetailLeft.DownEvent |> Stream.isSimulantSelected HudDetailLeft |> Stream.monitor (handleDownDetail Leftward) gameplay $ world
             let world = World.monitor handleSelectTitle (!! "Title" : Screen).SelectEvent gameplay world
             let world = World.monitor handleSelectGameplay gameplay.SelectEvent gameplay world
-            let world = World.monitor handleClickSaveGame Simulants.HudSaveGame.ClickEvent gameplay world
+            let world = World.monitor handleClickSaveGame HudSaveGame.ClickEvent gameplay world
             let world = World.monitor handleDeselectGameplay gameplay.DeselectEvent gameplay world
             world

@@ -124,12 +124,12 @@ module CharacterCameraFacetModule =
             let character = evt.Subscriber : Entity
             let eyeCenter = character.GetPosition world + character.GetSize world * 0.5f
             let eyeCenter =
-                if Simulants.Field.GetExists world then
+                if Field.GetExists world then
                     let eyeSize = World.getEyeSize world
                     let eyeCornerNegative = eyeCenter - eyeSize * 0.5f
                     let eyeCornerPositive = eyeCenter + eyeSize * 0.5f
-                    let fieldCornerNegative = Simulants.Field.GetPosition world
-                    let fieldCornerPositive = Simulants.Field.GetPosition world + Simulants.Field.GetSize world
+                    let fieldCornerNegative = Field.GetPosition world
+                    let fieldCornerPositive = Field.GetPosition world + Field.GetSize world
                     let fieldBoundsNegative = fieldCornerNegative + eyeSize * 0.5f
                     let fieldBoundsPositive = fieldCornerPositive - eyeSize * 0.5f
                     let eyeCenterX =

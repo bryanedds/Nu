@@ -196,7 +196,7 @@ module Describe =
 /// Describes the behavior of a screen.
 type [<NoComparison>] ScreenBehavior =
     | Vanilla
-    | Omniscreen
+    | OmniScreen
     | Dissolve of DissolveData
     | Splash of DissolveData * SplashData * Screen
 

@@ -13,13 +13,13 @@ module Constants =
         let DissolveData =
             { IncomingTime = 20L
               OutgoingTime = 30L
-              DissolveImage = AssetTag.make<Image> Assets.DefaultPackageName "Image8" }
+              DissolveImage = AssetTag.make Assets.DefaultPackage "Image8" }
     
         // this constant describes the 'splashing' behavior of game's splash screen
         let SplashData =
             { DissolveData = DissolveData
               IdlingTime = 60L
-              SplashImage = AssetTag.make<Image> Assets.DefaultPackageName "Image5" }
+              SplashImage = AssetTag.make Assets.DefaultPackage "Image5" }
 
         // and finally, this constant simply specifies how many sections are added to a game
         let SectionCount = 16

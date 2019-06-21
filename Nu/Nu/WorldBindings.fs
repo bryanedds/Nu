@@ -40,7 +40,7 @@ module WorldBindings =
         "destroyEntity destroyEntities tryPickEntity createEntity " +
         "reassignEntity trySetEntityOverlayNameOpt trySetEntityFacetNames createLayer " +
         "getEyeCenter setEyeCenter getEyeSize setEyeSize " +
-        "getOmniscreenOpt setOmniscreenOpt getOmniscreen setOmniscreen " +
+        "getOmniScreenOpt setOmniScreenOpt getOmniScreen setOmniScreen " +
         "getSelectedScreenOpt setSelectedScreenOpt getSelectedScreen setSelectedScreen " +
         "getScreenTransitionDestinationOpt getViewBoundsRelative getViewBoundsAbsolute getViewBounds " +
         "isBoundsInView mouseToScreen mouseToWorld mouseToEntity " +
@@ -1691,42 +1691,42 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setEyeSize' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getOmniscreenOpt world =
+    let getOmniScreenOpt world =
         let oldWorld = world
         try
-            let result = World.getOmniscreenOpt world
+            let result = World.getOmniScreenOpt world
             let value = result
             let value = ScriptingSystem.tryImport typeof<FSharpOption<Screen>> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getOmniscreenOpt' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getOmniScreenOpt' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let setOmniscreenOpt value world =
+    let setOmniScreenOpt value world =
         let oldWorld = world
         try
             let value =
                 match ScriptingSystem.tryExport typeof<FSharpOption<Screen>> value world with
                 | Some value -> value :?> FSharpOption<Screen>
                 | None -> failwith "Invalid argument type for 'value'; expecting a value convertable to FSharpOption`1."
-            let result = World.setOmniscreenOpt value world
+            let result = World.setOmniScreenOpt value world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setOmniscreenOpt' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setOmniScreenOpt' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getOmniscreen world =
+    let getOmniScreen world =
         let oldWorld = world
         try
-            let result = World.getOmniscreen world
+            let result = World.getOmniScreen world
             let value = result
             let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getOmniscreen' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getOmniScreen' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let setOmniscreen value world =
+    let setOmniScreen value world =
         let oldWorld = world
         try
             let struct (value, world) =
@@ -1739,10 +1739,10 @@ module WorldBindings =
                     struct (Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.setOmniscreen value world
+            let result = World.setOmniScreen value world
             struct (Scripting.Unit, result)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setOmniscreen' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setOmniScreen' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let getSelectedScreenOpt world =
@@ -3086,45 +3086,45 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetOmniscreenOptBinding fnName exprs originOpt world =
+    let evalGetOmniScreenOptBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getOmniscreenOpt  world
+            | [||] -> getOmniScreenOpt  world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalSetOmniscreenOptBinding fnName exprs originOpt world =
+    let evalSetOmniScreenOptBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|value|] -> setOmniscreenOpt value world
+            | [|value|] -> setOmniScreenOpt value world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetOmniscreenBinding fnName exprs originOpt world =
+    let evalGetOmniScreenBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getOmniscreen  world
+            | [||] -> getOmniScreen  world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalSetOmniscreenBinding fnName exprs originOpt world =
+    let evalSetOmniScreenBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|value|] -> setOmniscreen value world
+            | [|value|] -> setOmniScreen value world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3535,10 +3535,10 @@ module WorldBindings =
              ("setEyeCenter", { Fn = evalSetEyeCenterBinding; Pars = [|"value"|]; DocOpt = None })
              ("getEyeSize", { Fn = evalGetEyeSizeBinding; Pars = [||]; DocOpt = None })
              ("setEyeSize", { Fn = evalSetEyeSizeBinding; Pars = [|"value"|]; DocOpt = None })
-             ("getOmniscreenOpt", { Fn = evalGetOmniscreenOptBinding; Pars = [||]; DocOpt = None })
-             ("setOmniscreenOpt", { Fn = evalSetOmniscreenOptBinding; Pars = [|"value"|]; DocOpt = None })
-             ("getOmniscreen", { Fn = evalGetOmniscreenBinding; Pars = [||]; DocOpt = None })
-             ("setOmniscreen", { Fn = evalSetOmniscreenBinding; Pars = [|"value"|]; DocOpt = None })
+             ("getOmniScreenOpt", { Fn = evalGetOmniScreenOptBinding; Pars = [||]; DocOpt = None })
+             ("setOmniScreenOpt", { Fn = evalSetOmniScreenOptBinding; Pars = [|"value"|]; DocOpt = None })
+             ("getOmniScreen", { Fn = evalGetOmniScreenBinding; Pars = [||]; DocOpt = None })
+             ("setOmniScreen", { Fn = evalSetOmniScreenBinding; Pars = [|"value"|]; DocOpt = None })
              ("getSelectedScreenOpt", { Fn = evalGetSelectedScreenOptBinding; Pars = [||]; DocOpt = None })
              ("setSelectedScreenOpt", { Fn = evalSetSelectedScreenOptBinding; Pars = [|"value"|]; DocOpt = None })
              ("getSelectedScreen", { Fn = evalGetSelectedScreenBinding; Pars = [||]; DocOpt = None })

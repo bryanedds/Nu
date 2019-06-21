@@ -102,8 +102,8 @@ module WorldScreenModule =
 
         /// Check that a screen is selected.
         member this.GetSelected world =
-            match (World.getGameState world).OmniscreenOpt with
-            | Some omniscreen when Address.head this.ScreenAddress = Address.head omniscreen.ScreenAddress -> true
+            match (World.getGameState world).OmniScreenOpt with
+            | Some omniScreen when Address.head this.ScreenAddress = Address.head omniScreen.ScreenAddress -> true
             | _ ->
                 match (World.getGameState world).SelectedScreenOpt with
                 | Some screen when Address.head this.ScreenAddress = Address.head screen.ScreenAddress -> true
@@ -141,7 +141,7 @@ module WorldScreenModule =
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update ->- screen) eventTrace Simulants.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update ->- screen) eventTrace Default.Game true world)
                 screen
                 world
 
@@ -157,7 +157,7 @@ module WorldScreenModule =
                 
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- screen) eventTrace Simulants.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- screen) eventTrace Default.Game true world)
                 screen
                 world
 

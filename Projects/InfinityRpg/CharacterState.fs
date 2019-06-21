@@ -115,7 +115,7 @@ type RelicData =
       CounterBase : int }
 
 type AllyType =
-    | Player
+    | Avatar
 
 type EnemyType =
     | Goblin
@@ -181,7 +181,7 @@ type CharacterState =
       Relics : RelicType list }
 
     static member empty =
-        { CharacterType = Ally Player
+        { CharacterType = Ally Avatar
           ControlType = PlayerControlled
           ExpPoints = 0
           HitPoints = 10 // note this is an arbitrary number as hp max is calculated

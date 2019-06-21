@@ -46,7 +46,7 @@ module WorldConsole =
             showWindowByTitle gameTitle
             world
         | input ->
-            let context = Simulants.Game
+            let context = Default.Game
             let frame = context.GetScriptFrame world
             let expr = scvalue<Scripting.Expr> input
             try let struct (result, world) = World.eval expr frame context world
@@ -67,7 +67,7 @@ module WorldConsole =
                     then run (getActiveWindowTitle ()) world
                     else world)
                     Events.KeyboardKeyDown
-                    Simulants.Game
+                    Default.Game
                     world
             (true, world)
         | _ -> (false, world) // non-Windows platforms are not currently supported

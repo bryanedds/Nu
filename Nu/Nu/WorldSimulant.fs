@@ -67,7 +67,7 @@ module WorldSimulantModule =
 
         static member getDispatcher (simulant : Simulant) (world : World) =
             match simulant with
-            | :? Game -> Simulants.Game.GetDispatcher world :> Dispatcher
+            | :? Game -> Default.Game.GetDispatcher world :> Dispatcher
             | :? Screen as screen -> screen.GetDispatcher world :> Dispatcher
             | :? Layer as layer -> layer.GetDispatcher world :> Dispatcher
             | :? Entity as entity -> entity.GetDispatcher world :> Dispatcher
@@ -98,7 +98,7 @@ module WorldSimulantModule =
             ignore (world : World)
             match simulant with
             | :? Game -> None
-            | :? Screen -> Some (Simulants.Game :> Simulant)
+            | :? Screen -> Some (Default.Game :> Simulant)
             | :? Layer as layer -> Some (ltos layer :> Simulant)
             | :? Entity as entity -> Some (etol entity :> Simulant)
             | _ -> failwithumf ()
@@ -108,7 +108,7 @@ module WorldSimulantModule =
             ignore (world : World)
             match simulant with
             | :? Game -> failwithumf ()
-            | :? Screen -> Simulants.Game :> Simulant
+            | :? Screen -> Default.Game :> Simulant
             | :? Layer as layer -> ltos layer :> Simulant
             | :? Entity as entity -> etol entity :> Simulant
             | _ -> failwithumf ()
@@ -139,7 +139,7 @@ module WorldSimulantModule =
 
         static member tryDerive address =
             match Address.getNames address with
-            | [] -> Some (Simulants.Game :> Simulant)
+            | [] -> Some (Default.Game :> Simulant)
             | [_] -> Some (Screen (Address.changeType<obj, Screen> address) :> Simulant)
             | [_; _] -> Some (Layer (Address.changeType<obj, Layer> address) :> Simulant)
             | [_; _; _] -> Some (Entity (Address.changeType<obj, Entity> address) :> Simulant)

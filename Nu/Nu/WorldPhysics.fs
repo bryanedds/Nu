@@ -45,7 +45,7 @@ module WorldPhysicsModule =
                               Speed = bodyCollisionMessage.Speed
                               Collidee = bodyCollisionMessage.SourceParticipant2 :?> Entity }
                         let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
-                        World.publish collisionData collisionAddress eventTrace Simulants.Game world
+                        World.publish collisionData collisionAddress eventTrace Default.Game world
                     else world
             | Exiting -> world
     
