@@ -1706,14 +1706,7 @@ module LayerDispatcherModule =
                             layer binding.Stream world)
                     world bindings
             let layouts = this.Layout (lens.Get world, layer, world)
-            let world =
-                List.fold (fun world layout ->
-                    match EntityLayout.expand layout layer world with
-                    | Left (entityName, descriptor, equations) ->
-                        let world = World.readEntity descriptor (Some entityName) layer world |> snd
-                        List.fold (fun world (name, simulant, property, breaking) -> WorldModule.equate5 name simulant property breaking world) world equations
-                    | Right (entityName, filePath) -> World.readEntityFromFile filePath (Some entityName) layer world |> snd)
-                    world layouts
+            let world = List.fold (fun world layout -> World.expandEntity layout layer world) world layouts
             world
 
         override this.Actualize (layer, world) =

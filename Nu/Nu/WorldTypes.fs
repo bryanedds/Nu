@@ -776,6 +776,16 @@ module WorldTypes =
 
         override this.GetHashCode () = this.GameAddress.GetHashCode ()
 
+        interface Game IComparable with
+            member this.CompareTo that =
+                Address.compare this.GameAddress that.GameAddress
+
+        interface IComparable with
+            member this.CompareTo that =
+                match that with
+                | :? Game as that -> (this :> Game IComparable).CompareTo that
+                | _ -> failwith "Invalid Game comparison (comparee not of type Game)."
+
         override this.ToString () = scstring this.GameAddress
 
         /// Get the latest value of a game's properties.
@@ -823,6 +833,16 @@ module WorldTypes =
             | _ -> false
 
         override this.GetHashCode () = this.ScreenAddress.GetHashCode ()
+
+        interface Screen IComparable with
+            member this.CompareTo that =
+                Address.compare this.ScreenAddress that.ScreenAddress
+
+        interface IComparable with
+            member this.CompareTo that =
+                match that with
+                | :? Screen as that -> (this :> Screen IComparable).CompareTo that
+                | _ -> failwith "Invalid Screen comparison (comparee not of type Screen)."
 
         override this.ToString () = scstring this.ScreenAddress
 
@@ -882,6 +902,16 @@ module WorldTypes =
             | _ -> false
 
         override this.GetHashCode () = this.LayerAddress.GetHashCode ()
+
+        interface Layer IComparable with
+            member this.CompareTo that =
+                Address.compare this.LayerAddress that.LayerAddress
+
+        interface IComparable with
+            member this.CompareTo that =
+                match that with
+                | :? Layer as that -> (this :> Layer IComparable).CompareTo that
+                | _ -> failwith "Invalid Layer comparison (comparee not of type Layer)."
     
         override this.ToString () = scstring this.LayerAddress
     
@@ -958,9 +988,20 @@ module WorldTypes =
             | _ -> false
 
         override this.GetHashCode () = this.EntityAddress.GetHashCode ()
+
+        interface Entity IComparable with
+            member this.CompareTo that =
+                Address.compare this.EntityAddress that.EntityAddress
+
+        interface IComparable with
+            member this.CompareTo that =
+                match that with
+                | :? Entity as that -> (this :> Entity IComparable).CompareTo that
+                | _ -> failwith "Invalid Entity comparison (comparee not of type Entity)."
+
     
         override this.ToString () = scstring this.EntityAddress
-    
+
         /// Get the name of an entity.
         member this.EntityName = Address.getName this.EntityAddress
     
