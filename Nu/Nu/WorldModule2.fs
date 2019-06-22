@@ -775,38 +775,6 @@ module GameDispatcherModule =
     type [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (getModelLens : Game -> Lens<'model, World>) =
         inherit GameDispatcher ()
 
-        static let applyBehavior behavior screen world =
-            match behavior with
-            | Vanilla -> (screen, world)
-            | OmniScreen -> (screen, World.setOmniScreen screen world)
-            | Dissolve dissolveData -> (screen, World.setScreenDissolve dissolveData screen world)
-            | Splash (dissolveData, splashData, destination) ->
-                let world = World.setScreenDissolve dissolveData screen world
-                let world = World.setScreenSplash (Some splashData) destination screen world
-                (screen, world)
-
-        static let createScreen layout game world =
-            match ScreenLayout.expand layout game world with
-            | Left (name, descriptor, equations, behavior, layerFilePaths, entityFilePaths) ->
-                let (screen, world) = World.readScreen descriptor (Some name) world
-                let world =
-                    List.fold (fun world (screenName : string, layerName, filePath) ->
-                        World.readLayerFromFile filePath (Some layerName) (Screen screenName) world |> snd)
-                        world layerFilePaths
-                let world =
-                    List.fold (fun world (screenName : string, layerName, entityName, filePath) ->
-                        World.readEntityFromFile filePath (Some entityName) (Screen screenName => layerName) world |> snd)
-                        world entityFilePaths
-                let world = List.fold (fun world (name, simulant, property, breaking) -> WorldModule.equate5 name simulant property breaking world) world equations
-                applyBehavior behavior screen world
-            | Right (name, behavior, Some dispatcherType, layerFilePath) ->
-                let (screen, world) = World.createScreen3 dispatcherType.Name (Some name) world
-                let world = World.readLayerFromFile layerFilePath None screen world |> snd
-                applyBehavior behavior screen world
-            | Right (name, behavior, None, filePath) ->
-                let (screen, world) = World.readScreenFromFile filePath (Some name) world
-                applyBehavior behavior screen world
-
         override this.Register (game, world) =
             let lens = getModelLens game
             let bindings = this.Bindings (lens.Get world, game, world)
@@ -839,7 +807,7 @@ module GameDispatcherModule =
             let layouts = this.Layout (lens.Get world, game, world)
             let world =
                 List.foldi (fun layoutIndex world layout ->
-                    let (screen, world) = createScreen layout game world
+                    let (screen, world) = World.expandScreen World.setScreenSplash layout game world
                     if layoutIndex = 0 then World.selectScreen screen world else world)
                     world layouts
             world

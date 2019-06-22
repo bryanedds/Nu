@@ -276,6 +276,43 @@ module WorldScreenModule =
             let screenDescriptor = scvalue<ScreenDescriptor> screenDescriptorStr
             World.readScreen screenDescriptor nameOpt world
 
+        /// Apply a screen behavior to a screen.
+        static member applyScreenBehavior setScreenSplash behavior screen world =
+            match behavior with
+            | Vanilla -> (screen, world)
+            | OmniScreen -> (screen, World.setOmniScreen screen world)
+            | Dissolve dissolveData -> (screen, World.setScreenDissolve dissolveData screen world)
+            | Splash (dissolveData, splashData, destination) ->
+                let world = World.setScreenDissolve dissolveData screen world
+                let world = setScreenSplash (Some splashData) destination screen world
+                (screen, world)
+
+        /// Turn a screen layout into a screen.
+        static member expandScreen setScreenSplash layout game world =
+            match ScreenLayout.expand layout game world with
+            | Left (name, descriptor, equations, behavior, layerFilePaths, entityFilePaths) ->
+                let (screen, world) = World.readScreen descriptor (Some name) world
+                let world =
+                    List.fold (fun world (screenName : string, layerName, filePath) ->
+                        World.readLayerFromFile filePath (Some layerName) (Screen screenName) world |> snd)
+                        world layerFilePaths
+                let world =
+                    List.fold (fun world (screenName : string, layerName, entityName, filePath) ->
+                        World.readEntityFromFile filePath (Some entityName) (Screen screenName => layerName) world |> snd)
+                        world entityFilePaths
+                let world =
+                    List.fold (fun world (name, simulant, property, breaking) ->
+                        WorldModule.equate5 name simulant property breaking world)
+                        world equations
+                World.applyScreenBehavior setScreenSplash behavior screen world
+            | Right (name, behavior, Some dispatcherType, layerFilePath) ->
+                let (screen, world) = World.createScreen3 dispatcherType.Name (Some name) world
+                let world = World.readLayerFromFile layerFilePath None screen world |> snd
+                World.applyScreenBehavior setScreenSplash behavior screen world
+            | Right (name, behavior, None, filePath) ->
+                let (screen, world) = World.readScreenFromFile filePath (Some name) world
+                World.applyScreenBehavior setScreenSplash behavior screen world
+
 namespace Debug
 open Nu
 type Screen =
