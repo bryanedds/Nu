@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Diagnostics
 open Nito.Collections
 open OpenTK
 open TiledSharp
@@ -1706,7 +1707,7 @@ module LayerDispatcherModule =
                             layer binding.Stream world)
                     world bindings
             let layouts = this.Layout (lens.Get world, layer, world)
-            List.fold (fun world layout -> World.expandEntity None layout layer world |> snd) world layouts
+            List.fold (fun world layout -> World.expandEntity None layout layer world) world layouts
 
         override this.Actualize (layer, world) =
             let lens = getModelLens layer
@@ -1770,13 +1771,21 @@ module ScreenDispatcherModule =
             let world =
                 List.fold (fun world layout ->
                     match LayerLayout.expand layout screen world with
-                    | Left (name, descriptor, equations, entityFilePaths) ->
-                        let world = World.readLayer descriptor (Some name) screen world |> snd
+                    | Left (name, descriptor, equations, streams, entityFilePaths) ->
+                        let (layer, world) = World.readLayer descriptor (Some name) screen world
                         let world =
-                            List.fold (fun world (layerName, entityName, filePath) ->
-                                World.readEntityFromFile filePath (Some entityName) (screen => layerName) world |> snd)
+                            List.fold (fun world (_, entityName, filePath) ->
+                                World.readEntityFromFile filePath (Some entityName) layer world |> snd)
                                 world entityFilePaths
-                        List.fold (fun world (name, simulant, property, breaking) -> WorldModule.equate5 name simulant property breaking world) world equations
+                        let world =
+                            List.fold (fun world (name, simulant, property, breaking) ->
+                                WorldModule.equate5 name simulant property breaking world)
+                                world equations
+                        let world =
+                            List.fold (fun world (lens, mapper) ->
+                                World.expandEntityStream lens mapper layer world)
+                                world streams
+                        world
                     | Right (layerName, filePath) ->
                         World.readLayerFromFile filePath (Some layerName) screen world |> snd)
                     world layouts
@@ -1835,6 +1844,11 @@ module Layout =
     /// Describe a layer with the given definitions and contained entities.
     let layer<'d when 'd :> LayerDispatcher> (layer : Layer) definitions children =
         LayerFromDefinitions (typeof<'d>.Name, layer.LayerName, definitions, children)
+
+    /// Describe entities to be streamed from a lens value.
+    let entities (lens : Lens<'a list, World>) (mapper : 'a -> EntityLayout) =
+        let mapper = fun (a : obj) -> mapper (a :?> 'a)
+        EntitiesFromStream (lens, mapper)
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile<'d when 'd :> EntityDispatcher> (entity : Entity) filePath =

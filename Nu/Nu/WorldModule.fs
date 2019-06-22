@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open System.Reflection
 open Prime
 open Nu

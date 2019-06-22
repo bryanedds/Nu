@@ -90,12 +90,13 @@
     <Compile Include="WorldTypes.fs" />
     <Compile Include="WorldEvents.fs" />
     <Compile Include="WorldModule.fs" />
-    <Compile Include="WorldModuleDeclarative.fs" />
+    <Compile Include="WorldModuleDescriptive.fs" />
     <Compile Include="WorldModuleGame.fs" />
     <Compile Include="WorldModuleScreen.fs" />
     <Compile Include="WorldModuleLayer.fs" />
     <Compile Include="WorldModuleEntity.fs" />
     <Compile Include="WorldModuleSimulant.fs" />
+    <Compile Include="WorldDeclarative.fs" />
     <Compile Include="WorldEntity.fs" />
     <Compile Include="WorldLayer.fs" />
     <Compile Include="WorldScreen.fs" />
