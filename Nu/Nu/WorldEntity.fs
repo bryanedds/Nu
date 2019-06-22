@@ -353,9 +353,10 @@ module WorldEntityModule =
                         world removed
                 (current, world))
 
-        /// Turn an entity stream into a sequence of entities.
+        /// Turn an entity stream into a series of entities.
         static member expandEntityStream (lens : World Lens) mapper layer world =
-            Stream.make lens.ChangeEvent |>
+            Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
+            Stream.sum (Stream.make lens.ChangeEvent) |>
             Stream.mapEvent (fun _ world -> lens.Get world |> Reflection.objToObjList) |>
             World.streamEntities mapper layer |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
