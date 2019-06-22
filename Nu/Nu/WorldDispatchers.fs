@@ -28,7 +28,7 @@ module FacetModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, commands) = this.Update (message, model, entity, world)
+                                let (model, commands) = this.Message (message, model, entity, world)
                                 let world = lens.Set model world
                                 List.fold (fun world command ->
                                     let model = lens.Get world
@@ -62,10 +62,10 @@ module FacetModule =
                 world views
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
-        abstract member Update : 'message * 'model * Entity * World -> 'model * 'command list
+        abstract member Message : 'message * 'model * Entity * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Entity * World -> World
         abstract member View : 'model * Entity * World -> View list
-        default this.Update (_, model, _, _) = just model
+        default this.Message (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
 
@@ -252,14 +252,14 @@ module ScriptFacetModule =
         member this.GetOnPostUpdate world : Scripting.Expr = this.Get Property? OnPostUpdate world
         member this.SetOnPostUpdate (value : Scripting.Expr) world = this.SetFast Property? OnPostUpdate false false value world
         member this.OnPostUpdate = Lens.make Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
-        member this.GetOnMessage world : Scripting.Expr = this.Get Property? OnMessage world
-        member this.SetOnMessage (value : Scripting.Expr) world = this.SetFast Property? OnMessage false false value world
-        member this.OnMessage = Lens.make Property? OnMessage this.GetOnMessage this.SetOnMessage this
-        member this.Message message world = World.messageEntity message this world
+        member this.GetOnSignal world : Scripting.Expr = this.Get Property? OnSignal world
+        member this.SetOnSignal (value : Scripting.Expr) world = this.SetFast Property? OnSignal false false value world
+        member this.OnSignal = Lens.make Property? OnSignal this.GetOnSignal this.SetOnSignal this
+        member this.Signal signal world = World.signalEntity signal this world
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
-        member this.MessageEvent = Events.Message --> this
+        member this.MessageEvent = Events.Signal --> this
 
     type ScriptFacet () =
         inherit Facet ()
@@ -286,7 +286,7 @@ module ScriptFacetModule =
              define Entity.OnUnregister Scripting.Unit
              define Entity.OnUpdate Scripting.Unit
              define Entity.OnPostUpdate Scripting.Unit
-             define Entity.OnMessage Scripting.Unit]
+             define Entity.OnSignal Scripting.Unit]
 
         override facet.Register (entity, world) =
             let world =
@@ -312,13 +312,13 @@ module ScriptFacetModule =
             | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
             | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
 
-        override facet.Message (message, entity, world) =
-            match entity.GetOnMessage world with
+        override facet.Signal (signal, entity, world) =
+            match entity.GetOnSignal world with
             | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
             | handler ->
-                match ScriptingSystem.tryImport typeof<Symbol> message world with
-                | Some messageExpr ->
-                    ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("message", messageExpr) }) world
+                match ScriptingSystem.tryImport typeof<Symbol> signal world with
+                | Some signalExpr ->
+                    ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("signal", signalExpr) }) world
                     let world = World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
                     ScriptingSystem.removeProceduralBindings world
                     world
@@ -795,7 +795,7 @@ module EntityDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, commands) = this.Update (message, model, entity, world)
+                                let (model, commands) = this.Message (message, model, entity, world)
                                 let world = lens.Set model world
                                 List.fold (fun world command ->
                                     let model = lens.Get world
@@ -829,10 +829,10 @@ module EntityDispatcherModule =
                 world views
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
-        abstract member Update : 'message * 'model * Entity * World -> 'model * 'command list
+        abstract member Message : 'message * 'model * Entity * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Entity * World -> World
         abstract member View : 'model * Entity * World -> View list
-        default this.Update (_, model, _, _) = just model
+        default this.Message (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
 
@@ -1688,7 +1688,7 @@ module LayerDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, commands) = this.Update (message, model, layer, world)
+                                let (model, commands) = this.Message (message, model, layer, world)
                                 let world = lens.Set model world
                                 List.fold (fun world command ->
                                     let model = lens.Get world
@@ -1705,8 +1705,8 @@ module LayerDispatcherModule =
                             | None -> world)
                             layer binding.Stream world)
                     world bindings
-            let layouts = this.Layout (lens.Get world, layer, world)
-            List.fold (fun world layout -> World.expandEntity None layout layer world) world layouts
+            let contents = this.Content (lens.Get world, layer, world)
+            List.fold (fun world content -> World.expandEntity None content layer world) world contents
 
         override this.Actualize (layer, world) =
             let lens = getModelLens layer
@@ -1723,11 +1723,11 @@ module LayerDispatcherModule =
                 world views
 
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
-        abstract member Update : 'message * 'model * Layer * World -> 'model * 'command list
+        abstract member Message : 'message * 'model * Layer * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Layer * World -> World
-        abstract member Layout : 'model * Layer * World -> EntityLayout list
+        abstract member Content : 'model * Layer * World -> EntityContent list
         abstract member View : 'model * Layer * World -> View list
-        default this.Update (_, model, _, _) = just model
+        default this.Message (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
 
@@ -1749,7 +1749,7 @@ module ScreenDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, commands) = this.Update (message, model, screen, world)
+                                let (model, commands) = this.Message (message, model, screen, world)
                                 let world = lens.Set model world
                                 List.fold (fun world command ->
                                     let model = lens.Get world
@@ -1766,8 +1766,8 @@ module ScreenDispatcherModule =
                             | None -> world)
                             screen binding.Stream world)
                     world bindings
-            let layouts = this.Layout (lens.Get world, screen, world)
-            let world = List.fold (fun world layout -> World.expandLayer layout screen world) world layouts
+            let contents = this.Content (lens.Get world, screen, world)
+            let world = List.fold (fun world content -> World.expandLayer content screen world) world contents
             world
 
         override this.Actualize (screen, world) =
@@ -1785,10 +1785,10 @@ module ScreenDispatcherModule =
                 world views
 
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
-        abstract member Update : 'message * 'model * Screen * World -> 'model * 'command list
+        abstract member Message : 'message * 'model * Screen * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Screen * World -> World
-        abstract member Layout : 'model * Screen * World -> LayerLayout list
+        abstract member Content : 'model * Screen * World -> LayerContent list
         abstract member View : 'model * Screen * World -> View list
-        default this.Update (_, model, _, _) = just model
+        default this.Message (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []

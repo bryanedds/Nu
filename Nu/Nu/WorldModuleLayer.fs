@@ -150,8 +150,8 @@ module WorldModuleLayer =
         static member internal setLayerOnUpdate value layer world = World.updateLayerState (fun layerState -> { layerState with OnUpdate = value }) Property? OnUpdate layer world
         static member internal getLayerOnPostUpdate layer world = (World.getLayerState layer world).OnPostUpdate
         static member internal setLayerOnPostUpdate value layer world = World.updateLayerState (fun layerState -> { layerState with OnPostUpdate = value }) Property? OnPostUpdate layer world
-        static member internal getLayerOnMessage layer world = (World.getLayerState layer world).OnMessage
-        static member internal setLayerOnMessage value layer world = World.updateLayerState (fun layerState -> { layerState with OnMessage = value }) Property? OnMessage layer world
+        static member internal getLayerOnSignal layer world = (World.getLayerState layer world).OnSignal
+        static member internal setLayerOnSignal value layer world = World.updateLayerState (fun layerState -> { layerState with OnSignal = value }) Property? OnSignal layer world
         static member internal getLayerDepth layer world = (World.getLayerState layer world).Depth
         static member internal setLayerDepth value layer world = World.updateLayerState (fun layerState -> { layerState with Depth = value }) Property? Depth layer world
         static member internal getLayerVisible layer world = (World.getLayerState layer world).Visible
@@ -254,20 +254,20 @@ module WorldModuleLayer =
                 layer
                 world
 
-        static member internal messageLayer message layer world =
+        static member internal signalLayer signal layer world =
             World.withEventContext (fun world ->
                 let world =
-                    match ScriptingSystem.tryImport typeof<Symbol> message world with
-                    | Some messageExpr ->
-                        ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("message", messageExpr) }) world
-                        let world = eval (World.getLayerOnMessage layer world) (World.getLayerScriptFrame layer world) layer world |> snd'
+                    match ScriptingSystem.tryImport typeof<Symbol> signal world with
+                    | Some signalExpr ->
+                        ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("signal", signalExpr) }) world
+                        let world = eval (World.getLayerOnSignal layer world) (World.getLayerScriptFrame layer world) layer world |> snd'
                         ScriptingSystem.removeProceduralBindings world
                         world
                     | None -> failwithumf ()
                 let dispatcher = World.getLayerDispatcher layer world
-                let eventTrace = EventTrace.record "World" "messageLayer" EventTrace.empty
-                let world = World.publish message (ltoa<Symbol> ["Message"; "Event"] ->- layer) eventTrace layer world
-                dispatcher.Message (message, layer, world))
+                let eventTrace = EventTrace.record "World" "signalLayer" EventTrace.empty
+                let world = World.publish signal (ltoa<Symbol> ["Signal"; "Event"] ->- layer) eventTrace layer world
+                dispatcher.Signal (signal, layer, world))
                 layer
                 world
 
@@ -365,7 +365,7 @@ module WorldModuleLayer =
         Getters.Add ("OnUnregister", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUnregister layer world })
         Getters.Add ("OnUpdate", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUpdate layer world })
         Getters.Add ("OnPostUpdate", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnPostUpdate layer world })
-        Getters.Add ("OnMessage", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnMessage layer world })
+        Getters.Add ("OnSignal", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnSignal layer world })
         Getters.Add ("Depth", fun layer world -> { PropertyType = typeof<single>; PropertyValue = World.getLayerDepth layer world })
         Getters.Add ("Visible", fun layer world -> { PropertyType = typeof<single>; PropertyValue = World.getLayerVisible layer world })
 
@@ -385,7 +385,7 @@ module WorldModuleLayer =
         Setters.Add ("OnUnregister", fun property layer world -> (true, World.setLayerOnUnregister (property.PropertyValue :?> Scripting.Expr) layer world))
         Setters.Add ("OnUpdate", fun property layer world -> (true, World.setLayerOnUpdate (property.PropertyValue :?> Scripting.Expr) layer world))
         Setters.Add ("OnPostUpdate", fun property layer world -> (true, World.setLayerOnPostUpdate (property.PropertyValue :?> Scripting.Expr) layer world))
-        Setters.Add ("OnMessage", fun property layer world -> (true, World.setLayerOnMessage (property.PropertyValue :?> Scripting.Expr) layer world))
+        Setters.Add ("OnSignal", fun property layer world -> (true, World.setLayerOnSignal (property.PropertyValue :?> Scripting.Expr) layer world))
         Setters.Add ("Depth", fun property layer world -> (true, World.setLayerDepth (property.PropertyValue :?> single) layer world))
         Setters.Add ("Visible", fun property layer world -> (true, World.setLayerVisible (property.PropertyValue :?> bool) layer world))
 

@@ -42,29 +42,27 @@ module Nelmish =
              ResetButton.ClickEvent ==> Reset]
 
         // here we handle the above messages
-        override this.Update (message, model, _, _) =
+        override this.Message (message, model, _, _) =
             match message with
             | Decrement -> just (dec model)
             | Increment -> just (inc model)
             | Reset -> just 0
 
-        // here we describe the layout of the game including its one screen, one layer, three
+        // here we describe the content of the game including its one screen, one layer, three
         // button entities, and one text control.
-        override this.Layout (_, game, _) =
-            [Layout.screen Default.Screen Vanilla []
-                [Layout.layer Default.Layer []
-                    [Layout.button DecrementButton
-                        [Entity.Text == "-"
-                         Entity.Position == Vector2 (-256.0f, 64.0f)]
-                     Layout.button IncrementButton
-                        [Entity.Text == "+"
-                         Entity.Position == Vector2 (0.0f, 64.0f)]
-                     Layout.text CounterText
+        override this.Content (_, game, _) =
+            [Content.screen Default.Screen Vanilla []
+                [Content.layer Default.Layer []
+                    [Content.button DecrementButton
+                        [Entity.Text === "-"
+                         Entity.Position === Vector2 (-256.0f, 64.0f)]
+                     Content.button IncrementButton
+                        [Entity.Text === "+"
+                         Entity.Position === Vector2 (0.0f, 64.0f)]
+                     Content.text CounterText
                         [Entity.Text =|= game.Model --> scstring
-                         Entity.Position == Vector2 (-128.0f, -32.0f)]
-                     Layout.entityIf $
-                        game.Model --> isNonZero $
-                        fun () ->
-                            Layout.button ResetButton
-                                [Entity.Text == "Reset"
-                                 Entity.Position == Vector2 (-128.0f, -128.0f)]]]]
+                         Entity.Position === Vector2 (-128.0f, -32.0f)]
+                     Content.entityIf $ game.Model --> isNonZero $ fun () ->
+                        Content.button ResetButton
+                            [Entity.Text === "Reset"
+                             Entity.Position === Vector2 (-128.0f, -128.0f)]]]]

@@ -787,7 +787,7 @@ module GameDispatcherModule =
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, commands) = this.Update (message, model, game, world)
+                                let (model, commands) = this.Message (message, model, game, world)
                                 let world = lens.Set model world
                                 List.fold (fun world command ->
                                     let model = lens.Get world
@@ -804,12 +804,12 @@ module GameDispatcherModule =
                             | None -> world)
                             game binding.Stream world)
                     world bindings
-            let layouts = this.Layout (lens.Get world, game, world)
+            let contents = this.Content (lens.Get world, game, world)
             let world =
-                List.foldi (fun layoutIndex world layout ->
-                    let (screen, world) = World.expandScreen World.setScreenSplash layout game world
-                    if layoutIndex = 0 then World.selectScreen screen world else world)
-                    world layouts
+                List.foldi (fun contentIndex world content ->
+                    let (screen, world) = World.expandScreen World.setScreenSplash content game world
+                    if contentIndex = 0 then World.selectScreen screen world else world)
+                    world contents
             world
 
         override this.Actualize (game, world) =
@@ -827,10 +827,10 @@ module GameDispatcherModule =
                 world views
 
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
-        abstract member Update : 'message * 'model * Game * World -> 'model * 'command list
+        abstract member Message : 'message * 'model * Game * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Game * World -> World
-        abstract member Layout : 'model * Game * World -> ScreenLayout list
+        abstract member Content : 'model * Game * World -> ScreenContent list
         abstract member View : 'model * Game * World -> View list
-        default this.Update (_, model, _, _) = just model
+        default this.Message (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []

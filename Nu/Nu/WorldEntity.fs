@@ -327,7 +327,7 @@ module WorldEntityModule =
                     ([], world)
 
         /// Transform a stream into existing entities.
-        static member streamEntities (mapper : 'a -> EntityLayout) (layer : Layer) (stream : Stream<'a list, World>) =
+        static member streamEntities (mapper : 'a -> EntityContent) (layer : Layer) (stream : Stream<'a list, World>) =
             stream |>
             Stream.insert (makeGuid ()) |>
             Stream.map (fun (guid, list) -> List.mapi (fun i a -> PartialComparable.make (makeGuidDeterministic i guid) (mapper a)) list |> Set.ofList) |>
@@ -335,15 +335,15 @@ module WorldEntityModule =
             Stream.mapEffect (fun evt world ->
                 let (current, added, removed) = evt.Data
                 let world =
-                    Seq.fold (fun world guidAndLayout ->
-                        let (guid, layout) = PartialComparable.unmake guidAndLayout
+                    Seq.fold (fun world guidAndContent ->
+                        let (guid, content) = PartialComparable.unmake guidAndContent
                         match World.tryGetKeyedValue (scstring guid) world with
-                        | None -> World.expandEntity (Some guid) layout layer world
+                        | None -> World.expandEntity (Some guid) content layer world
                         | Some _ -> world)
                         world added
                 let world =
-                    Seq.fold (fun world guidAndLayout ->
-                        let (guid, _) = PartialComparable.unmake guidAndLayout
+                    Seq.fold (fun world guidAndContent ->
+                        let (guid, _) = PartialComparable.unmake guidAndContent
                         match World.tryGetKeyedValue (scstring guid) world with
                         | Some entityObj ->
                             let entity = entityObj :?> Entity
@@ -360,9 +360,9 @@ module WorldEntityModule =
             World.streamEntities mapper layer |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
-        /// Turn an entity layout into an entity.
-        static member expandEntity guidOpt layout layer world =
-            match EntityLayout.expand layout layer world with
+        /// Turn entity content into an entity.
+        static member expandEntity guidOpt content layer world =
+            match EntityContent.expand content layer world with
             | Choice1Of3 (lens, mapper) ->
                 World.expandEntityStream lens mapper layer world
             | Choice2Of3 (entityName, descriptor, equations) ->

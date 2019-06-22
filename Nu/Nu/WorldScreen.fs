@@ -48,9 +48,9 @@ module WorldScreenModule =
         member this.GetOnPostUpdate world = World.getScreenOnPostUpdate this world
         member this.SetOnPostUpdate value world = World.setScreenOnPostUpdate value this world
         member this.OnPostUpdate = Lens.make Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
-        member this.GetOnMessage world = World.getScreenOnMessage this world
-        member this.SetOnMessage value world = World.setScreenOnMessage value this world
-        member this.OnMessage = Lens.make Property? OnMessage this.GetOnMessage this.SetOnMessage this
+        member this.GetOnSignal world = World.getScreenOnSignal this world
+        member this.SetOnSignal value world = World.setScreenOnSignal value this world
+        member this.OnSignal = Lens.make Property? OnSignal this.GetOnSignal this.SetOnSignal this
         member internal this.GetEntityTree world = World.getScreenEntityTree this world
         member internal this.SetEntityTreeNoEvent value world = World.setScreenEntityTreeNoEvent value this world
         member internal this.EntityTree = Lens.makeReadOnly Property? EntityTree this.GetEntityTree this
@@ -71,7 +71,7 @@ module WorldScreenModule =
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
-        member this.MessageEvent = Events.Message --> this
+        member this.SignalEvent = Events.Signal --> this
         member this.SelectEvent = Events.Select --> this
         member this.DeselectEvent = Events.Deselect --> this
         member this.IncomingStartEvent = Events.IncomingStart --> this
@@ -124,8 +124,8 @@ module WorldScreenModule =
         /// Get a screen's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.ScreenAddress
 
-        /// Send a message to the screen.
-        member this.Message message world = World.messageScreen message this world
+        /// Send a signal to the screen.
+        member this.Signal signal world = World.signalScreen signal this world
 
     type World with
 
@@ -287,9 +287,9 @@ module WorldScreenModule =
                 let world = setScreenSplash (Some splashData) destination screen world
                 (screen, world)
 
-        /// Turn a screen layout into a screen.
-        static member expandScreen setScreenSplash layout game world =
-            match ScreenLayout.expand layout game world with
+        /// Turn screen content into a screen.
+        static member expandScreen setScreenSplash content game world =
+            match ScreenContent.expand content game world with
             | Left (name, descriptor, equations, behavior, entityStreams, layerFilePaths, entityFilePaths) ->
                 let (screen, world) = World.readScreen descriptor (Some name) world
                 let world =

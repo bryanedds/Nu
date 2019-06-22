@@ -182,9 +182,9 @@ module WorldTypes =
         abstract Actualize : Game * World -> World
         default dispatcher.Actualize (_, world) = world
 
-        /// Message a game when finished with the world.
-        abstract Message : Symbol * Game * World -> World
-        default dispatcher.Message (_, _, world) = world
+        /// Send a signal to a game.
+        abstract Signal : Symbol * Game * World -> World
+        default dispatcher.Signal (_, _, world) = world
 
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Game * World -> Property option
@@ -214,9 +214,9 @@ module WorldTypes =
         abstract Actualize : Screen * World -> World
         default dispatcher.Actualize (_, world) = world
     
-        /// Message a screen when removing it from the world.
-        abstract Message : Symbol * Screen * World -> World
-        default dispatcher.Message (_, _, world) = world
+        /// Send a signal to a screen.
+        abstract Signal : Symbol * Screen * World -> World
+        default dispatcher.Signal (_, _, world) = world
 
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Screen * World -> Property option
@@ -246,9 +246,9 @@ module WorldTypes =
         abstract Actualize : Layer * World -> World
         default dispatcher.Actualize (_, world) = world
     
-        /// Message a layer when removing it from a screen.
-        abstract Message : Symbol * Layer * World -> World
-        default dispatcher.Message (_, _, world) = world
+        /// Send a signal to a layer.
+        abstract Signal : Symbol * Layer * World -> World
+        default dispatcher.Signal (_, _, world) = world
 
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Layer * World -> Property option
@@ -298,9 +298,9 @@ module WorldTypes =
         abstract Actualize : Entity * World -> World
         default dispatcher.Actualize (_, world) = world
     
-        /// Message an entity when removing it from a layer.
-        abstract Message : Symbol * Entity * World -> World
-        default dispatcher.Message (_, _, world) = world
+        /// Send a signal to an entity.
+        abstract Signal : Symbol * Entity * World -> World
+        default dispatcher.Signal (_, _, world) = world
     
         /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         abstract GetQuickSize : Entity * World -> Vector2
@@ -345,9 +345,9 @@ module WorldTypes =
         abstract Actualize : Entity * World -> World
         default facet.Actualize (_, world) = world
     
-        /// Message a facet.
-        abstract Message : Symbol * Entity * World -> World
-        default facet.Message (symbol, entity, world) = facet.Message (symbol, entity, world)
+        /// Send a signal to a facet.
+        abstract Signal : Symbol * Entity * World -> World
+        default facet.Signal (symbol, entity, world) = facet.Signal (symbol, entity, world)
     
         /// Participate in getting the priority with which an entity is picked in the editor.
         abstract GetQuickSize : Entity * World -> Vector2
@@ -380,7 +380,7 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnMessage : Scripting.Expr
+          OnSignal : Scripting.Expr
           OmniScreenOpt : Screen option
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
@@ -404,7 +404,7 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnMessage = Scripting.Unit
+              OnSignal = Scripting.Unit
               OmniScreenOpt = None
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
@@ -464,7 +464,7 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnMessage : Scripting.Expr
+          OnSignal : Scripting.Expr
           EntityTree : Entity SpatialTree MutantCache
           TransitionState : TransitionState
           TransitionTicks : int64
@@ -489,7 +489,7 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnMessage = Scripting.Unit
+              OnSignal = Scripting.Unit
               EntityTree = MutantCache.make Operators.id spatialTree
               TransitionState = IdlingState
               TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
@@ -549,7 +549,7 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnMessage : Scripting.Expr
+          OnSignal : Scripting.Expr
           Depth : single
           Visible : bool }
 
@@ -570,7 +570,7 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnMessage = Scripting.Unit
+              OnSignal = Scripting.Unit
               Depth = 0.0f
               Visible = true }
 
