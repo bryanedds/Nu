@@ -464,6 +464,27 @@ module WorldModule =
         static member reloadSymbols world =
             World.updateSymbolStore SymbolStore.reloadSymbols world
 
+        static member internal getKeyValueStoreBy by world =
+            World.getAmbientStateBy (AmbientState.getKeyValueStoreBy by) world
+
+        static member internal getKeyValueStore world =
+            World.getAmbientStateBy AmbientState.getKeyValueStore world
+
+        static member internal setKeyValueStore symbolStore world =
+            World.updateAmbientState (AmbientState.setKeyValueStore symbolStore) world
+
+        static member internal updateKeyValueStore updater world =
+            World.updateAmbientState (AmbientState.updateKeyValueStore updater) world
+
+        static member tryGetKeyedValue key world =
+            World.getKeyValueStoreBy (Map.tryFind key) world
+
+        static member addKeyedValue guid value world =
+            World.updateKeyValueStore (Map.add guid value) world
+
+        static member removeKeyedValue guid world =
+            World.updateKeyValueStore (Map.remove guid) world
+
         /// Get the user-defined state value, cast to 'a.
         static member getUserValue world : 'a =
             World.getAmbientStateBy AmbientState.getUserValue world

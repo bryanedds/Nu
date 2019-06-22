@@ -24,16 +24,14 @@ type [<NoEquality; NoComparison>] EntityLayout =
     interface SimulantLayout
 
     /// Expand an entity layout to its constituent parts.
-    static member expand nameDetOpt layout layer world =
+    static member expand layout (layer : Layer) (world : World) =
         match layout with
         | EntitiesFromStream (lens, mapper) ->
             Choice1Of3 (lens, mapper)
         | EntityFromDefinitions (dispatcherName, name, definitions) ->
-            let name = if String.isGuid name then Option.getOrDefault name nameDetOpt else name
             let (descriptor, definitions) = Describe.entity2 dispatcherName definitions (layer => name) world
             Choice2Of3 (name, descriptor, definitions)
         | EntityFromFile (name, filePath) ->
-            let name = Option.getOrDefault name nameDetOpt
             Choice3Of3 (name, filePath)
 
 /// Describes the layout of a layer.
@@ -47,7 +45,7 @@ and [<NoEquality; NoComparison>] LayerLayout =
         match layout with
         | LayerFromDefinitions (dispatcherName, name, definitions, entities) ->
             let layer = screen => name
-            let expansions = List.map (fun layout -> EntityLayout.expand None layout layer world) entities
+            let expansions = List.map (fun layout -> EntityLayout.expand layout layer world) entities
             let streams = List.map (function Choice1Of3 stream -> Some (layer, fst stream, snd stream) | _ -> None) expansions |> List.definitize
             let (descriptors, equations) =
                 List.map (function Choice2Of3 dae -> Some dae | _ -> None) expansions |>

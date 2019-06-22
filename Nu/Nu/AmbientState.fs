@@ -31,6 +31,7 @@ module AmbientStateModule =
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter
               SymbolStore : SymbolStore
+              KeyValueStore : Map<string, obj>
               UserState : UserState }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -140,7 +141,7 @@ module AmbientStateModule =
         let getOverlayRouterBy by state =
             by state.OverlayRouter
 
-        /// Get a value from the symbol store.
+        /// Get the symbol store with the by map.
         let getSymbolStoreBy by state =
             by state.SymbolStore
 
@@ -154,8 +155,25 @@ module AmbientStateModule =
 
         /// Update the symbol store.
         let updateSymbolStore updater state =
-            let camera = updater (getSymbolStore state)
-            { state with SymbolStore = camera }
+            let store = updater (getSymbolStore state)
+            { state with SymbolStore = store }
+
+        /// Get the key-value store with the by map.
+        let getKeyValueStoreBy by state =
+            by state.KeyValueStore
+
+        /// Get the key-value store.
+        let getKeyValueStore state =
+            getKeyValueStoreBy id state
+    
+        /// Set the key-value store.
+        let setKeyValueStore symbolStore state =
+            { state with KeyValueStore = symbolStore }
+
+        /// Update the key-value store.
+        let updateKeyValueStore updater state =
+            let store = updater (getKeyValueStore state)
+            { state with KeyValueStore = store }
     
         /// Get the user-defined state value, cast to 'a.
         let getUserValue state : 'a =
@@ -177,6 +195,7 @@ module AmbientStateModule =
               OverlayRouter = overlayRouter
               Overlayer = overlayer
               SymbolStore = symbolStore
+              KeyValueStore = Map.empty
               UserState = UserState.make userState false }
 
 /// The ambient state of the world.
