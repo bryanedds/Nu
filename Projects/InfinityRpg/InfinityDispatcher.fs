@@ -48,15 +48,15 @@ module InfinityDispatcherModule =
             Hud.SetPersistent false world
 
         override this.Bindings (_, _, _) =
-            [Title.IncomingStartEvent ==>! PlayTitleSong
-             Title.OutgoingStartEvent ==>! FadeSong
-             TitleCredits.ClickEvent ==>! ShowCredits
-             TitleNewGame.ClickEvent ==>! ShowGameplay false
-             TitleLoadGame.ClickEvent ==>! ShowGameplay true
-             TitleExit.ClickEvent ==>! ExitGame
-             CreditsBack.ClickEvent ==>! ShowTitle
-             Gameplay.OutgoingStartEvent ==>! FadeSong
-             HudBack.ClickEvent ==>! ShowTitle]
+            [Title.IncomingStartEvent =>! PlayTitleSong
+             Title.OutgoingStartEvent =>! FadeSong
+             TitleCredits.ClickEvent =>! ShowCredits
+             TitleNewGame.ClickEvent =>! ShowGameplay false
+             TitleLoadGame.ClickEvent =>! ShowGameplay true
+             TitleExit.ClickEvent =>! ExitGame
+             CreditsBack.ClickEvent =>! ShowTitle
+             Gameplay.OutgoingStartEvent =>! FadeSong
+             HudBack.ClickEvent =>! ShowTitle]
 
         override this.Command (command, _, _, world) =
             match command with

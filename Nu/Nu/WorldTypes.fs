@@ -866,7 +866,7 @@ module WorldTypes =
         static member (-->) (address : 'a Address, screen) = Screen.acatff address screen
 
         /// Derive a layer from its screen.
-        static member (=>) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress ->- ntoa layerName)
+        static member (/) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress ->- ntoa layerName)
     
     /// Forms a logical layer of entities.
     and Layer (layerAddress) =
@@ -928,14 +928,14 @@ module WorldTypes =
         /// Concatenate two addresses, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (layer : Layer) = acatff address layer.LayerAddress
     
-        /// Derive an entity from its layer.
-        static member (=>) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress ->- ntoa entityName)
-    
         /// Concatenate two addresses, taking the type of first address.
         static member (->-) (address : 'a Address, layer) = Layer.acatf address layer
     
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, layer) = Layer.acatff address layer
+        
+        /// Derive an entity from its layer.
+        static member (/) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress ->- ntoa entityName)
     
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
