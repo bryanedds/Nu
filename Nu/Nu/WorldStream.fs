@@ -40,65 +40,9 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenTransitioning stream =
         Stream.filterEvent (fun _ -> World.isSelectedScreenTransitioning) stream
 
-    /// Filter a stream of options for actual values.
-    /// NOTE: this will be in Prime in the next version.
-    let [<DebuggerHidden; DebuggerStepThrough>] definitize (stream : Stream<'a option, World>) =
-        stream |>
-        Stream.filter Option.isSome |>
-        Stream.map Option.get
-
-    /// Filter events with unchanging data.
-    /// NOTE: this will be in Prime in the next version.
-    let [<DebuggerHidden; DebuggerStepThrough>] optimize (stream : Stream<_, World>) =
-        Stream.fold
-            (fun (_, l) a ->
-                match l with
-                | [] -> (Some a, [a])
-                | x :: _ -> if a = x then (None, [a]) else (Some a, [a]))
-            (None, [])
-            stream |>
-        Stream.map fst |>
-        definitize
-
-    /// Add a state value to the stream.
-    /// NOTE: this will be in Prime in the next version.
-    let [<DebuggerHidden; DebuggerStepThrough>] insert state stream =
-        stream |>
-        Stream.fold (fun (stateOpt, _) a -> (Some (Option.getOrDefault state stateOpt), a)) (None, Unchecked.defaultof<_>) |>
-        Stream.map (mapFst Option.get)
-
-    /// Make a Guid deterministically.
-    /// HACK: this is an ugly hack to create a deterministic sequance of guids.
-    /// Limited to creating 255 guids.
-    /// NOTE: this will be in Prime in the next version.
-    let makeGuidDeterministic offset (guid : Guid) =
-        let arr = guid.ToByteArray ()
-        arr.[15] <- arr.[15] + byte offset                    
-        Guid arr
-
     /// Transform a stream into existing entities.
-    let [<DebuggerHidden; DebuggerStepThrough>] entities (mapper : 'a -> EntityLayout) (stream : Stream<'a list, World>) (layer : Layer) =
-        stream |>
-        insert (makeGuid ()) |>
-        Stream.map (fun (guid, list) ->
-            List.mapi (fun i a -> PartialComparable.make (layer => scstring (makeGuidDeterministic i guid)) (mapper a)) list |>
-            Set.ofList) |>
-        Stream.fold (fun (p, _, _) c -> (c, Set.difference c p, Set.difference p c)) (Set.empty, Set.empty, Set.empty) |>
-        Stream.mapEffect (fun evt world ->
-            let (current, added, removed) = evt.Data
-            let world =
-                Seq.fold (fun world entityAndLayout ->
-                    let (entity : Entity, layout) = PartialComparable.unmake entityAndLayout
-                    if not (entity.GetExists world)
-                    then World.expandEntity (Some entity.EntityName) layout layer world |> snd
-                    else world)
-                    world added
-            let world =
-                Seq.fold (fun world entityAndLayout ->
-                    let (entity : Entity, _) = PartialComparable.unmake entityAndLayout
-                    World.destroyEntity entity world)
-                    world removed
-            (current, world))
+    let [<DebuggerHidden; DebuggerStepThrough>] entities lens mapper =
+        World.streamEntities lens mapper
 
 [<AutoOpen>]
 module StreamOperators =

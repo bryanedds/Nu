@@ -326,17 +326,48 @@ module WorldEntityModule =
                     layerDescriptor.Entities
                     ([], world)
 
+        /// Transform a stream into existing entities.
+        static member streamEntities (mapper : 'a -> EntityLayout) (layer : Layer) (stream : Stream<'a list, World>) =
+            stream |>
+            Stream.insert (makeGuid ()) |>
+            Stream.map (fun (guid, list) ->
+                List.mapi (fun i a -> PartialComparable.make (layer => scstring (makeGuidDeterministic i guid)) (mapper a)) list |>
+                Set.ofList) |>
+            Stream.fold (fun (p, _, _) c -> (c, Set.difference c p, Set.difference p c)) (Set.empty, Set.empty, Set.empty) |>
+            Stream.mapEffect (fun evt world ->
+                let (current, added, removed) = evt.Data
+                let world =
+                    Seq.fold (fun world entityAndLayout ->
+                        let (entity : Entity, layout) = PartialComparable.unmake entityAndLayout
+                        if not (entity.GetExists world)
+                        then World.expandEntity (Some entity.EntityName) layout layer world
+                        else world)
+                        world added
+                let world =
+                    Seq.fold (fun world entityAndLayout ->
+                        let (entity : Entity, _) = PartialComparable.unmake entityAndLayout
+                        World.destroyEntity entity world)
+                        world removed
+                (current, world))
+
+        static member expandEntityStream (lens : World Lens) mapper layer world =
+            Stream.make lens.ChangeEvent |>
+            Stream.mapEvent (fun _ world -> lens.Get world |> Reflection.objToObjList) |>
+            World.streamEntities mapper layer |>
+            Stream.subscribe (fun _ value -> value) Default.Game $ world
+
         /// Turn an entity layout into an entity.
         static member expandEntity nameOpt layout layer world =
             match EntityLayout.expand nameOpt layout layer world with
-            | Left (entityName, descriptor, equations) ->
-                let (entity, world) = World.readEntity descriptor (Some entityName) layer world
-                let world =
-                    List.fold (fun world (name, simulant, property, breaking) ->
-                        WorldModule.equate5 name simulant property breaking world)
-                        world equations
-                (entity, world)
-            | Right (entityName, filePath) -> World.readEntityFromFile filePath (Some entityName) layer world
+            | Choice1Of3 (lens, mapper) ->
+                World.expandEntityStream lens mapper layer world
+            | Choice2Of3 (entityName, descriptor, equations) ->
+                let world = World.readEntity descriptor (Some entityName) layer world |> snd
+                List.fold (fun world (name, simulant, property, breaking) ->
+                    WorldModule.equate5 name simulant property breaking world)
+                    world equations
+            | Choice3Of3 (entityName, filePath) ->
+                World.readEntityFromFile filePath (Some entityName) layer world |> snd
 
     /// Represents the property value of an entity as accessible via reflection.
     type [<ReferenceEquality>] EntityPropertyValue =

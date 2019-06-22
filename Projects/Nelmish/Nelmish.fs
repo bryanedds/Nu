@@ -12,7 +12,7 @@ module Nelmish =
 
     // this is our Elm-style model type
     type Model =
-        int
+        int * unit list
 
     // this is our Elm-style message type
     type Message =
@@ -32,7 +32,7 @@ module Nelmish =
 
         // this is our model property definition
         static member Properties =
-            [define Game.Model 0]
+            [define Game.Model (0, [])]
 
         // here we define the Bindings used to connect events to their desired messages
         override this.Bindings (_, _, _) =
@@ -43,15 +43,17 @@ module Nelmish =
         // here we handle the above messages
         override this.Update (message, model, _, _) =
             match message with
-            | Decrement -> just (dec model)
-            | Increment -> just (inc model)
-            | Reset -> just 0
+            | Decrement -> just (dec (fst model), snd model)
+            | Increment -> just (inc (fst model), () :: snd model)
+            | Reset -> just (0, [])
 
         // here we describe the layout of the game including its one screen, one layer, and three button entities
         override this.Layout (_, game, _) =
             [Layout.screen Default.Screen Vanilla []
                 [Layout.layer Default.Layer []
-                    [Layout.button DecrementButton
+                    [Layout.entities (game.Model --> snd)
+                        (fun () -> Layout.button Default.Entity [Entity.Text == "Alpha"])
+                     Layout.button DecrementButton
                         [Entity.Text == "-"
                          Entity.Position == Vector2 (-256.0f, 64.0f)]
                      Layout.button IncrementButton
