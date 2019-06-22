@@ -352,14 +352,14 @@ module WorldEntityModule =
 
         /// Turn an entity stream into a sequence of entities.
         static member expandEntityStream (lens : World Lens) mapper layer world =
-            Stream.make (atooa lens.ChangeEvent) |>
+            Stream.make lens.ChangeEvent |>
             Stream.mapEvent (fun _ world -> lens.Get world |> Reflection.objToObjList) |>
             World.streamEntities mapper layer |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
         /// Turn an entity layout into an entity.
-        static member expandEntity nameOpt layout layer world =
-            match EntityLayout.expand nameOpt layout layer world with
+        static member expandEntity nameDetOpt layout layer world =
+            match EntityLayout.expand nameDetOpt layout layer world with
             | Choice1Of3 (lens, mapper) ->
                 World.expandEntityStream lens mapper layer world
             | Choice2Of3 (entityName, descriptor, equations) ->

@@ -44,7 +44,11 @@ module Layout =
 
     /// Describe an entity to be optionally obtained from a lens.
     let entityOpt (lens : Lens<'a option, World>) (mapper : 'a -> EntityLayout) =
-        entities (lens --> function Some a -> [a] | None -> []) mapper
+        entities (lens --> function Some a -> List.singleton a | None -> []) mapper
+
+    /// Describe an entity to be optionally obtained from a lens.
+    let entityIf (lens : Lens<bool, World>) (mapper : unit -> EntityLayout) =
+        entities (lens --> function true -> [()] | false -> []) mapper
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile<'d when 'd :> EntityDispatcher> (entity : Entity) filePath =

@@ -24,16 +24,16 @@ type [<NoEquality; NoComparison>] EntityLayout =
     interface SimulantLayout
 
     /// Expand an entity layout to its constituent parts.
-    static member expand nameOpt layout layer world =
+    static member expand nameDetOpt layout layer world =
         match layout with
         | EntitiesFromStream (lens, mapper) ->
             Choice1Of3 (lens, mapper)
         | EntityFromDefinitions (dispatcherName, name, definitions) ->
-            let name = Option.getOrDefault name nameOpt
+            let name = if String.isGuid name then Option.getOrDefault name nameDetOpt else name
             let (descriptor, definitions) = Describe.entity2 dispatcherName definitions (layer => name) world
             Choice2Of3 (name, descriptor, definitions)
         | EntityFromFile (name, filePath) ->
-            let name = Option.getOrDefault name nameOpt
+            let name = Option.getOrDefault name nameDetOpt
             Choice3Of3 (name, filePath)
 
 /// Describes the layout of a layer.
