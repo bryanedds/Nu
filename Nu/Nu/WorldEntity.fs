@@ -330,23 +330,26 @@ module WorldEntityModule =
         static member streamEntities (mapper : 'a -> EntityLayout) (layer : Layer) (stream : Stream<'a list, World>) =
             stream |>
             Stream.insert (makeGuid ()) |>
-            Stream.map (fun (guid, list) ->
-                List.mapi (fun i a -> PartialComparable.make (layer => scstring (makeGuidDeterministic i guid)) (mapper a)) list |>
-                Set.ofList) |>
+            Stream.map (fun (guid, list) -> List.mapi (fun i a -> PartialComparable.make (makeGuidDeterministic i guid) (mapper a)) list |> Set.ofList) |>
             Stream.fold (fun (p, _, _) c -> (c, Set.difference c p, Set.difference p c)) (Set.empty, Set.empty, Set.empty) |>
             Stream.mapEffect (fun evt world ->
                 let (current, added, removed) = evt.Data
                 let world =
-                    Seq.fold (fun world entityAndLayout ->
-                        let (entity : Entity, layout) = PartialComparable.unmake entityAndLayout
-                        if not (entity.GetExists world)
-                        then World.expandEntity (Some entity.EntityName) layout layer world
-                        else world)
+                    Seq.fold (fun world guidAndLayout ->
+                        let (guid, layout) = PartialComparable.unmake guidAndLayout
+                        match World.tryGetKeyedValue (scstring guid) world with
+                        | None -> World.expandEntity (Some guid) layout layer world
+                        | Some _ -> world)
                         world added
                 let world =
-                    Seq.fold (fun world entityAndLayout ->
-                        let (entity : Entity, _) = PartialComparable.unmake entityAndLayout
-                        World.destroyEntity entity world)
+                    Seq.fold (fun world guidAndLayout ->
+                        let (guid, _) = PartialComparable.unmake guidAndLayout
+                        match World.tryGetKeyedValue (scstring guid) world with
+                        | Some entityObj ->
+                            let entity = entityObj :?> Entity
+                            let world = World.removeKeyedValue (scstring guid) world
+                            World.destroyEntity entity world
+                        | None -> failwithumf ())
                         world removed
                 (current, world))
 
@@ -358,17 +361,19 @@ module WorldEntityModule =
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
         /// Turn an entity layout into an entity.
-        static member expandEntity nameDetOpt layout layer world =
-            match EntityLayout.expand nameDetOpt layout layer world with
+        static member expandEntity guidOpt layout layer world =
+            match EntityLayout.expand layout layer world with
             | Choice1Of3 (lens, mapper) ->
                 World.expandEntityStream lens mapper layer world
             | Choice2Of3 (entityName, descriptor, equations) ->
-                let world = World.readEntity descriptor (Some entityName) layer world |> snd
+                let (entity, world) = World.readEntity descriptor (Some entityName) layer world
+                let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
                 List.fold (fun world (name, simulant, property, breaking) ->
                     WorldModule.equate5 name simulant property breaking world)
                     world equations
             | Choice3Of3 (entityName, filePath) ->
-                World.readEntityFromFile filePath (Some entityName) layer world |> snd
+                let (entity, world) = World.readEntityFromFile filePath (Some entityName) layer world
+                match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
 
     /// Represents the property value of an entity as accessible via reflection.
     type [<ReferenceEquality>] EntityPropertyValue =

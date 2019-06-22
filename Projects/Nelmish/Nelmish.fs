@@ -62,8 +62,9 @@ module Nelmish =
                      Layout.text CounterText
                         [Entity.Text =|= game.Model --> scstring
                          Entity.Position == Vector2 (-128.0f, -32.0f)]
-                     Layout.entityIf
-                        (game.Model --> isNonZero) $ fun () ->
+                     Layout.entityIf $
+                        game.Model --> isNonZero $
+                        fun () ->
                             Layout.button ResetButton
                                 [Entity.Text == "Reset"
                                  Entity.Position == Vector2 (-128.0f, -128.0f)]]]]
