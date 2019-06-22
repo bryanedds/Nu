@@ -290,7 +290,7 @@ module WorldScreenModule =
         /// Turn a screen layout into a screen.
         static member expandScreen setScreenSplash layout game world =
             match ScreenLayout.expand layout game world with
-            | Left (name, descriptor, equations, behavior, layerFilePaths, entityFilePaths) ->
+            | Left (name, descriptor, equations, behavior, entityStreams, layerFilePaths, entityFilePaths) ->
                 let (screen, world) = World.readScreen descriptor (Some name) world
                 let world =
                     List.fold (fun world (screenName : string, layerName, filePath) ->
@@ -304,6 +304,10 @@ module WorldScreenModule =
                     List.fold (fun world (name, simulant, property, breaking) ->
                         WorldModule.equate5 name simulant property breaking world)
                         world equations
+                let world =
+                    List.fold (fun world (layer, lens, mapper) ->
+                        World.expandEntityStream lens mapper layer world)
+                        world entityStreams
                 World.applyScreenBehavior setScreenSplash behavior screen world
             | Right (name, behavior, Some dispatcherType, layerFilePath) ->
                 let (screen, world) = World.createScreen3 dispatcherType.Name (Some name) world
