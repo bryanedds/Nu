@@ -293,12 +293,12 @@ module WorldScreenModule =
             | Left (name, descriptor, equations, behavior, entityStreams, layerFilePaths, entityFilePaths) ->
                 let (screen, world) = World.readScreen descriptor (Some name) world
                 let world =
-                    List.fold (fun world (screenName : string, layerName, filePath) ->
-                        World.readLayerFromFile filePath (Some layerName) (Screen screenName) world |> snd)
+                    List.fold (fun world (_ : string, layerName, filePath) ->
+                        World.readLayerFromFile filePath (Some layerName) screen world |> snd)
                         world layerFilePaths
                 let world =
-                    List.fold (fun world (screenName : string, layerName, entityName, filePath) ->
-                        World.readEntityFromFile filePath (Some entityName) (Screen screenName => layerName) world |> snd)
+                    List.fold (fun world (_ : string, layerName, entityName, filePath) ->
+                        World.readEntityFromFile filePath (Some entityName) (screen / layerName) world |> snd)
                         world entityFilePaths
                 let world =
                     List.fold (fun world (name, simulant, property, breaking) ->

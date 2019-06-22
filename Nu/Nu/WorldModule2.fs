@@ -260,8 +260,8 @@ module WorldModule2 =
         /// Set the splash aspects of a screen.
         [<FunctionBinding>]
         static member setScreenSplash splashDataOpt destination (screen : Screen) world =
-            let splashLayer = screen => "SplashLayer"
-            let splashLabel = splashLayer => "SplashLabel"
+            let splashLayer = screen / "SplashLayer"
+            let splashLabel = splashLayer / "SplashLabel"
             let world = World.destroyLayerImmediate splashLayer world
             match splashDataOpt with
             | Some splashData ->

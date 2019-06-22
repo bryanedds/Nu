@@ -10,8 +10,8 @@ module WorldTests =
 
     let TestFilePath = "TestFile.nugame"
     let StringEvent = stoa<string> "String/Event"
-    let Jim = Default.Layer => "Jim"
-    let Bob = Default.Layer => "Bob"
+    let Jim = Default.Layer / "Jim"
+    let Bob = Default.Layer / "Bob"
 
     let [<Fact>] runOneFrameThenCleanUp () =
         let world = World.makeEmpty ()

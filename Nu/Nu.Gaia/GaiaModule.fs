@@ -355,7 +355,7 @@ module Gaia =
             let layerDescriptorStr = File.ReadAllText filePath
             let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
             let layerName = match layerDescriptor.LayerProperties.TryFind "Name" with Some (Atom (name, _)) -> name | _ -> failwithumf ()
-            let layer = EditorScreen => layerName
+            let layer = EditorScreen / layerName
             if not (layer.GetExists world) then
                 let (layer, world) = World.readLayer layerDescriptor None EditorScreen world
                 let layerName = layer.GetName world

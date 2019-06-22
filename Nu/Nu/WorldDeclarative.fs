@@ -29,7 +29,7 @@ type [<NoEquality; NoComparison>] EntityContent =
         | EntitiesFromStream (lens, mapper) ->
             Choice1Of3 (lens, mapper)
         | EntityFromDefinitions (dispatcherName, name, definitions) ->
-            let (descriptor, definitions) = Describe.entity2 dispatcherName definitions (layer => name) world
+            let (descriptor, definitions) = Describe.entity2 dispatcherName definitions (layer / name) world
             Choice2Of3 (name, descriptor, definitions)
         | EntityFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
@@ -44,7 +44,7 @@ and [<NoEquality; NoComparison>] LayerContent =
     static member expand content screen (world : World) =
         match content with
         | LayerFromDefinitions (dispatcherName, name, definitions, entities) ->
-            let layer = screen => name
+            let layer = screen / name
             let expansions = List.map (fun content -> EntityContent.expand content layer world) entities
             let streams = List.map (function Choice1Of3 stream -> Some (layer, fst stream, snd stream) | _ -> None) expansions |> List.definitize
             let (descriptors, equations) =
@@ -121,7 +121,7 @@ type [<NoEquality; NoComparison>] View =
 [<AutoOpen>]
 module DeclarativeOperators =
 
-    /// Pair an empty list of commands with a model.
+    /// Pair a model with an empty list of commands.
     let inline just model = (model, [])
 
     /// Declare an instruction to set a property.
@@ -137,18 +137,18 @@ module DeclarativeOperators =
     let equate left right =
         equate3 left right false
 
-    /// Declare an instruction to equate two properties, breaking any potential update cycles.
+    /// Declare an instruction to equate two properties, breaking any update cycles.
     let equateBreaking left right =
         equate3 left right true
 
     /// Declare an instruction to set a property.
-    let inline (===) left right = init left right
+    let inline (==) left right = init left right
 
     /// Declare an instruction to equate two properties.
-    let inline (=|=) left right = equate3 left right false
+    let inline (==>) left right = equate3 left right false
 
-    /// Declare an instruction to equate two properties, breaking any potential update cycles.
-    let inline (=/=) left right = equate3 left right true
+    /// Declare an instruction to equate two properties, breaking any update cycles.
+    let inline (=/>) left right = equate3 left right true
 
 module Declarative =
     let Game = Game.Prop

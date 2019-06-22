@@ -11,4 +11,4 @@ open Nu.Gaia
 module Simulants =
 
     let EditorScreen = Screen Constants.Engine.DefaultScreenName
-    let DefaultEditorLayer = EditorScreen => Constants.Engine.DefaultLayerName
+    let DefaultEditorLayer = EditorScreen / Constants.Engine.DefaultLayerName

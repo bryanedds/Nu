@@ -30,9 +30,6 @@ module SimulantOperators =
     /// Derive a screen from one of its entities.
     let etos (entity : Entity) = ltos (etol entity)
 
-    /// Derive a screen from its name.
-    let (!>) (screenName : string) = Screen screenName
-
 [<RequireQualifiedAccess>]
 module Default =
 
@@ -43,7 +40,7 @@ module Default =
     let Screen = Screen Constants.Engine.DefaultScreenName
     
     /// The default layer - may or may not exist.
-    let Layer = Screen => Constants.Engine.DefaultLayerName
+    let Layer = Screen / Constants.Engine.DefaultLayerName
     
     /// The default entity - may or may not exist.
-    let Entity = Layer => Constants.Engine.DefaultEntityName
+    let Entity = Layer / Constants.Engine.DefaultEntityName

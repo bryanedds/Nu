@@ -314,7 +314,7 @@ module GameplayScreenModule =
             let scene = Scene gameplay
             let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield SectionName + scstring i]
             let layerNames = scene.LayerName :: sectionNames
-            let layers = List.map (fun layerName -> gameplay => layerName) layerNames
+            let layers = List.map (fun layerName -> gameplay / layerName) layerNames
             World.destroyLayers layers world
 
         override dispatcher.Register (screen, world) =

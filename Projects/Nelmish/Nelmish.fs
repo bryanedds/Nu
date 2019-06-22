@@ -6,10 +6,10 @@ open Nu.Declarative
 module Nelmish =
 
     // here we create references for the entities that we are going to define for our game
-    let DecrementButton = Default.Layer => "Decrement"
-    let IncrementButton = Default.Layer => "Increment"
-    let CounterText = Default.Layer => "Counter"
-    let ResetButton = Default.Layer => "Reset"
+    let DecrementButton = Default.Layer / "Decrement"
+    let IncrementButton = Default.Layer / "Increment"
+    let CounterText = Default.Layer / "Counter"
+    let ResetButton = Default.Layer / "Reset"
 
     // this is our Elm-style model type
     type Model =
@@ -37,9 +37,9 @@ module Nelmish =
 
         // here we define the Bindings used to connect events to their desired messages
         override this.Bindings (_, _, _) =
-            [DecrementButton.ClickEvent ==> Decrement
-             IncrementButton.ClickEvent ==> Increment
-             ResetButton.ClickEvent ==> Reset]
+            [DecrementButton.ClickEvent => Decrement
+             IncrementButton.ClickEvent => Increment
+             ResetButton.ClickEvent => Reset]
 
         // here we handle the above messages
         override this.Message (message, model, _, _) =
@@ -54,15 +54,15 @@ module Nelmish =
             [Content.screen Default.Screen Vanilla []
                 [Content.layer Default.Layer []
                     [Content.button DecrementButton
-                        [Entity.Text === "-"
-                         Entity.Position === Vector2 (-256.0f, 64.0f)]
+                        [Entity.Text == "-"
+                         Entity.Position == Vector2 (-256.0f, 64.0f)]
                      Content.button IncrementButton
-                        [Entity.Text === "+"
-                         Entity.Position === Vector2 (0.0f, 64.0f)]
+                        [Entity.Text == "+"
+                         Entity.Position == Vector2 (0.0f, 64.0f)]
                      Content.text CounterText
-                        [Entity.Text =|= game.Model --> scstring
-                         Entity.Position === Vector2 (-128.0f, -32.0f)]
+                        [Entity.Text ==> game.Model --> scstring
+                         Entity.Position == Vector2 (-128.0f, -32.0f)]
                      Content.entityIf (game.Model --> isNonZero) $ fun () ->
                         Content.button ResetButton
-                            [Entity.Text === "Reset"
-                             Entity.Position === Vector2 (-128.0f, -128.0f)]]]]
+                            [Entity.Text == "Reset"
+                             Entity.Position == Vector2 (-128.0f, -128.0f)]]]]
