@@ -6,8 +6,8 @@ open System
 open Prime
 open Nu
 
-/// Contains primitives for describing simulant layouts.    
-module Layout =
+/// Contains primitives for describing simulant content.    
+module Content =
 
     /// Describe a game to be loaded from a file.
     let gameFromFile<'d when 'd :> GameDispatcher> filePath =
@@ -38,16 +38,16 @@ module Layout =
         LayerFromDefinitions (typeof<'d>.Name, layer.LayerName, definitions, children)
 
     /// Describe entities to be obtained from a lens.
-    let entities (lens : Lens<'a list, World>) (mapper : 'a -> EntityLayout) =
+    let entities (lens : Lens<'a list, World>) (mapper : 'a -> EntityContent) =
         let mapper = fun (a : obj) -> mapper (a :?> 'a)
         EntitiesFromStream (lens, mapper)
 
     /// Describe an entity to be optionally obtained from a lens.
-    let entityOpt (lens : Lens<'a option, World>) (mapper : 'a -> EntityLayout) =
+    let entityOpt (lens : Lens<'a option, World>) (mapper : 'a -> EntityContent) =
         entities (lens --> function Some a -> List.singleton a | None -> []) mapper
 
     /// Describe an entity to be optionally obtained from a lens.
-    let entityIf (lens : Lens<bool, World>) (mapper : unit -> EntityLayout) =
+    let entityIf (lens : Lens<bool, World>) (mapper : unit -> EntityContent) =
         entities (lens --> function true -> [()] | false -> []) mapper
 
     /// Describe an entity to be loaded from a file.

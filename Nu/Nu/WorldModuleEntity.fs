@@ -600,14 +600,14 @@ module WorldModuleEntity =
                 entity
                 world
 
-        static member internal messageEntity message entity world =
+        static member internal signalEntity signal entity world =
             World.withEventContext (fun world ->
-                let eventTrace = EventTrace.record "World" "messageEntity" EventTrace.empty
-                let world = World.publish message (ltoa<Symbol> ["Message"; "Event"] ->- entity) eventTrace entity world
+                let eventTrace = EventTrace.record "World" "signalEntity" EventTrace.empty
+                let world = World.publish signal (ltoa<Symbol> ["Signal"; "Event"] ->- entity) eventTrace entity world
                 let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
                 let facets = World.getEntityFacets entity world
-                let world = dispatcher.Message (message, entity, world)
-                List.fold (fun world (facet : Facet) -> facet.Message (message, entity, world)) world facets)
+                let world = dispatcher.Signal (signal, entity, world)
+                List.fold (fun world (facet : Facet) -> facet.Signal (signal, entity, world)) world facets)
                 entity
                 world
 

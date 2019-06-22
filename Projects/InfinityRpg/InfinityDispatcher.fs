@@ -67,8 +67,8 @@ module InfinityDispatcherModule =
             | ShowGameplay load -> world |> Gameplay.SetShallLoadGame load |> World.transitionScreen Gameplay
             | ExitGame -> World.exit world
 
-        override this.Layout (_, _, _) =
-            [Layout.screen Splash (Nu.Splash (Constants.InfinityRpg.DissolveData, Constants.InfinityRpg.SplashData, Title)) [] []
-             Layout.screenFromLayerFile Title (Dissolve Constants.InfinityRpg.DissolveData) Assets.TitleLayerFilePath
-             Layout.screenFromLayerFile Credits (Dissolve Constants.InfinityRpg.DissolveData) Assets.CreditsLayerFilePath
-             Layout.screenFromLayerFile<GameplayDispatcher> Gameplay (Dissolve Constants.InfinityRpg.DissolveData) Assets.HudLayerFilePath]
+        override this.Content (_, _, _) =
+            [Content.screen Splash (Nu.Splash (Constants.InfinityRpg.DissolveData, Constants.InfinityRpg.SplashData, Title)) [] []
+             Content.screenFromLayerFile Title (Dissolve Constants.InfinityRpg.DissolveData) Assets.TitleLayerFilePath
+             Content.screenFromLayerFile Credits (Dissolve Constants.InfinityRpg.DissolveData) Assets.CreditsLayerFilePath
+             Content.screenFromLayerFile<GameplayDispatcher> Gameplay (Dissolve Constants.InfinityRpg.DissolveData) Assets.HudLayerFilePath]

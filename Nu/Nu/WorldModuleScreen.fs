@@ -135,8 +135,8 @@ module WorldModuleScreen =
         static member internal setScreenOnUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnUpdate = value }) Property? OnUpdate screen world
         static member internal getScreenOnPostUpdate screen world = (World.getScreenState screen world).OnPostUpdate
         static member internal setScreenOnPostUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnPostUpdate = value }) Property? OnPostUpdate screen world
-        static member internal getScreenOnMessage screen world = (World.getScreenState screen world).OnMessage
-        static member internal setScreenOnMessage value screen world = World.updateScreenState (fun screenState -> { screenState with OnMessage = value }) Property? OnMessage screen world
+        static member internal getScreenOnSignal screen world = (World.getScreenState screen world).OnSignal
+        static member internal setScreenOnSignal value screen world = World.updateScreenState (fun screenState -> { screenState with OnSignal = value }) Property? OnSignal screen world
         static member internal getScreenEntityTree screen world = (World.getScreenState screen world).EntityTree
         static member internal setScreenEntityTreeNoEvent value screen world = World.updateScreenStateWithoutEvent (fun screenState -> { screenState with EntityTree = value }) screen world
         static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
@@ -245,20 +245,20 @@ module WorldModuleScreen =
                 screen
                 world
 
-        static member internal messageScreen message screen world =
+        static member internal signalScreen signal screen world =
             World.withEventContext (fun world ->
                 let world =
-                    match ScriptingSystem.tryImport typeof<Symbol> message world with
-                    | Some messageExpr ->
-                        ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("message", messageExpr) }) world
-                        let world = eval (World.getScreenOnMessage screen world) (World.getScreenScriptFrame screen world) screen world |> snd'
+                    match ScriptingSystem.tryImport typeof<Symbol> signal world with
+                    | Some signalExpr ->
+                        ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("signal", signalExpr) }) world
+                        let world = eval (World.getScreenOnSignal screen world) (World.getScreenScriptFrame screen world) screen world |> snd'
                         ScriptingSystem.removeProceduralBindings world
                         world
                     | None -> failwithumf ()
                 let dispatcher = World.getScreenDispatcher screen world
-                let eventTrace = EventTrace.record "World" "messageScreen" EventTrace.empty
-                let world = World.publish message (ltoa<Symbol> ["Message"; "Event"] ->- screen) eventTrace screen world
-                dispatcher.Message (message, screen, world))
+                let eventTrace = EventTrace.record "World" "signalScreen" EventTrace.empty
+                let world = World.publish signal (ltoa<Symbol> ["Signal"; "Event"] ->- screen) eventTrace screen world
+                dispatcher.Signal (signal, screen, world))
                 screen
                 world
 
@@ -342,7 +342,7 @@ module WorldModuleScreen =
         Getters.Add ("OnUnregister", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUnregister screen world })
         Getters.Add ("OnUpdate", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUpdate screen world })
         Getters.Add ("OnPostUpdate", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnPostUpdate screen world })
-        Getters.Add ("OnMessage", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnMessage screen world })
+        Getters.Add ("OnSignal", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnSignal screen world })
         Getters.Add ("TransitionState", fun screen world -> { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionState screen world })
         Getters.Add ("TransitionTicks", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenTransitionTicks screen world })
         Getters.Add ("Incoming", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world })
@@ -364,7 +364,7 @@ module WorldModuleScreen =
         Setters.Add ("OnUnregister", fun property screen world -> (true, World.setScreenOnUnregister (property.PropertyValue :?> Scripting.Expr) screen world))
         Setters.Add ("OnUpdate", fun property screen world -> (true, World.setScreenOnUpdate (property.PropertyValue :?> Scripting.Expr) screen world))
         Setters.Add ("OnPostUpdate", fun property screen world -> (true, World.setScreenOnPostUpdate (property.PropertyValue :?> Scripting.Expr) screen world))
-        Setters.Add ("OnMessage", fun property screen world -> (true, World.setScreenOnMessage (property.PropertyValue :?> Scripting.Expr) screen world))
+        Setters.Add ("OnSignal", fun property screen world -> (true, World.setScreenOnSignal (property.PropertyValue :?> Scripting.Expr) screen world))
         Setters.Add ("TransitionState", fun property screen world -> (true, World.setScreenTransitionState (property.PropertyValue :?> TransitionState) screen world))
         Setters.Add ("TransitionTicks", fun property screen world -> (true, World.setScreenTransitionTicks (property.PropertyValue :?> int64) screen world))
         Setters.Add ("Incoming", fun property screen world -> (true, World.setScreenIncoming (property.PropertyValue :?> Transition) screen world))

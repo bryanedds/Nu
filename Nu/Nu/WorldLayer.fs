@@ -51,9 +51,9 @@ module WorldLayerModule =
         member this.GetOnPostUpdate world = World.getLayerOnPostUpdate this world
         member this.SetOnPostUpdate value world = World.setLayerOnPostUpdate value this world
         member this.OnPostUpdate = Lens.make Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
-        member this.GetOnMessage world = World.getLayerOnMessage this world
-        member this.SetOnMessage value world = World.setLayerOnMessage value this world
-        member this.OnMessage = Lens.make Property? OnMessage this.GetOnMessage this.SetOnMessage this
+        member this.GetOnSignal world = World.getLayerOnSignal this world
+        member this.SetOnSignal value world = World.setLayerOnSignal value this world
+        member this.OnSignal = Lens.make Property? OnSignal this.GetOnSignal this.SetOnSignal this
         member this.GetDepth world = World.getLayerDepth this world
         member this.SetDepth value world = World.setLayerDepth value this world
         member this.Depth = Lens.make Property? Depth this.GetDepth this.SetDepth this
@@ -65,7 +65,7 @@ module WorldLayerModule =
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
-        member this.MessageEvent = Events.Message --> this
+        member this.SignalEvent = Events.Signal --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetLayerProperty propertyName this world
@@ -109,8 +109,8 @@ module WorldLayerModule =
         /// Get a layer's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.LayerAddress
 
-        /// Send a message to the layer.
-        member this.Message message world = World.messageLayer message this world
+        /// Send a signal to the layer.
+        member this.Signal signal world = World.signalLayer signal this world
 
     type World with
 
@@ -247,9 +247,9 @@ module WorldLayerModule =
             let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
             World.readLayer layerDescriptor nameOpt screen world
 
-        /// Turn a layer layout into a layer.
-        static member expandLayer layout screen world =
-            match LayerLayout.expand layout screen world with
+        /// Turn layer content into a layer.
+        static member expandLayer content screen world =
+            match LayerContent.expand content screen world with
             | Left (name, descriptor, equations, streams, entityFilePaths) ->
                 let (layer, world) = World.readLayer descriptor (Some name) screen world
                 let world =

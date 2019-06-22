@@ -72,8 +72,8 @@ module WorldModuleGame =
         static member internal setGameOnUpdate value world = World.updateGameState (fun gameState -> { gameState with OnUpdate = value }) Property? OnUpdate world
         static member internal getGameOnPostUpdate world = (World.getGameState world).OnPostUpdate
         static member internal setGameOnPostUpdate value world = World.updateGameState (fun gameState -> { gameState with OnPostUpdate = value }) Property? OnPostUpdate world
-        static member internal getGameOnMessage world = (World.getGameState world).OnMessage
-        static member internal setGameOnMessage value world = World.updateGameState (fun gameState -> { gameState with OnMessage = value }) Property? OnMessage world
+        static member internal getGameOnSignal world = (World.getGameState world).OnSignal
+        static member internal setGameOnSignal value world = World.updateGameState (fun gameState -> { gameState with OnSignal = value }) Property? OnSignal world
 
         /// Get the current eye center.
         [<FunctionBinding>]
@@ -357,7 +357,7 @@ module WorldModuleGame =
         Getters.Add ("OnUnregister", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUnregister world })
         Getters.Add ("OnUpdate", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUpdate world })
         Getters.Add ("OnPostUpdate", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnPostUpdate world })
-        Getters.Add ("OnMessage", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnMessage world })
+        Getters.Add ("OnSignal", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnSignal world })
         Getters.Add ("OmniScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniScreenOpt world })
         Getters.Add ("SelectedScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
         Getters.Add ("ScreenTransitionDestinationOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world })
@@ -378,7 +378,7 @@ module WorldModuleGame =
         Setters.Add ("OnUnregister", fun property world -> (true, World.setGameOnUnregister (property.PropertyValue :?> Scripting.Expr) world))
         Setters.Add ("OnUpdate", fun property world -> (true, World.setGameOnUpdate (property.PropertyValue :?> Scripting.Expr) world))
         Setters.Add ("OnPostUpdate", fun property world -> (true, World.setGameOnPostUpdate (property.PropertyValue :?> Scripting.Expr) world))
-        Setters.Add ("OnMessage", fun property world -> (true, World.setGameOnMessage (property.PropertyValue :?> Scripting.Expr) world))
+        Setters.Add ("OnSignal", fun property world -> (true, World.setGameOnSignal (property.PropertyValue :?> Scripting.Expr) world))
         Setters.Add ("OmniScreenOpt", fun property world -> (true, World.setOmniScreenOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("SelectedScreenOpt", fun property world -> (true, World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("ScreenTransitionDestinationOpt", fun property world -> (true, World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world))
