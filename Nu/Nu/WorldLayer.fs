@@ -247,6 +247,27 @@ module WorldLayerModule =
             let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
             World.readLayer layerDescriptor nameOpt screen world
 
+        /// Turn a layer layout into a layer.
+        static member expandLayer layout screen world =
+            match LayerLayout.expand layout screen world with
+            | Left (name, descriptor, equations, streams, entityFilePaths) ->
+                let (layer, world) = World.readLayer descriptor (Some name) screen world
+                let world =
+                    List.fold (fun world (_, entityName, filePath) ->
+                        World.readEntityFromFile filePath (Some entityName) layer world |> snd)
+                        world entityFilePaths
+                let world =
+                    List.fold (fun world (name, simulant, property, breaking) ->
+                        WorldModule.equate5 name simulant property breaking world)
+                        world equations
+                let world =
+                    List.fold (fun world (lens, mapper) ->
+                        World.expandEntityStream lens mapper layer world)
+                        world streams
+                world
+            | Right (layerName, filePath) ->
+                World.readLayerFromFile filePath (Some layerName) screen world |> snd
+
     /// Represents the property value of an layer as accessible via reflection.
     type [<ReferenceEquality>] LayerPropertyValue =
         | LayerPropertyDescriptor of PropertyDescriptor

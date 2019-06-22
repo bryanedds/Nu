@@ -51,8 +51,8 @@ module Nelmish =
         override this.Layout (_, game, _) =
             [Layout.screen Default.Screen Vanilla []
                 [Layout.layer Default.Layer []
-                    [Layout.entities (game.Model --> snd)
-                        (fun () -> Layout.button Default.Entity [Entity.Text == "Alpha"])
+                    [Layout.entities
+                        (game.Model --> snd) $ fun () -> Layout.button Default.Entity [Entity.Text == "Alpha"]
                      Layout.button DecrementButton
                         [Entity.Text == "-"
                          Entity.Position == Vector2 (-256.0f, 64.0f)]

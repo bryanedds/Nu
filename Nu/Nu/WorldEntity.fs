@@ -350,6 +350,7 @@ module WorldEntityModule =
                         world removed
                 (current, world))
 
+        /// Turn an entity stream into a sequence of entities.
         static member expandEntityStream (lens : World Lens) mapper layer world =
             Stream.make lens.ChangeEvent |>
             Stream.mapEvent (fun _ world -> lens.Get world |> Reflection.objToObjList) |>

@@ -107,6 +107,7 @@
     <Compile Include="WorldRender.fs" />
     <Compile Include="WorldAudio.fs" />
     <Compile Include="WorldDispatchers.fs" />
+    <Compile Include="WorldLayout.fs" />
     <Compile Include="WorldScripting.fs" />
     <Compile Include="WorldModule2.fs" />
     <Compile Include="WorldConsole.fs" />
