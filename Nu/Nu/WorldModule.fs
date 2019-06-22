@@ -54,6 +54,7 @@ module WorldModule =
             if world :> obj <> Debug.World.Chosen then
                 Console.WriteLine "Fault"
 #endif
+            ignore world
 
         /// Make the world.
         static member internal make eventDelegate dispatchers subsystems scriptingEnv ambientState activeGameDispatcher =
