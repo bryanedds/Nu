@@ -329,6 +329,7 @@ module WorldEntityModule =
         /// Transform a stream into existing entities.
         static member streamEntities (mapper : 'a -> EntityContent) (layer : Layer) (stream : Stream<'a list, World>) =
             stream |>
+            Stream.optimize |>
             Stream.insert (makeGuid ()) |>
             Stream.map (fun (guid, list) -> List.mapi (fun i a -> PartialComparable.make (makeGuidDeterministic i guid) (mapper a)) list |> Set.ofList) |>
             Stream.fold (fun (p, _, _) c -> (c, Set.difference c p, Set.difference p c)) (Set.empty, Set.empty, Set.empty) |>
