@@ -477,13 +477,13 @@ module WorldModule =
             World.updateAmbientState (AmbientState.updateKeyValueStore updater) world
 
         static member tryGetKeyedValue key world =
-            World.getKeyValueStoreBy (Map.tryFind key) world
+            World.getKeyValueStoreBy (UMap.tryFind key) world
 
         static member addKeyedValue guid value world =
-            World.updateKeyValueStore (Map.add guid value) world
+            World.updateKeyValueStore (UMap.add guid value) world
 
         static member removeKeyedValue guid world =
-            World.updateKeyValueStore (Map.remove guid) world
+            World.updateKeyValueStore (UMap.remove guid) world
 
         /// Get the user-defined state value, cast to 'a.
         static member getUserValue world : 'a =

@@ -31,7 +31,7 @@ module AmbientStateModule =
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter
               SymbolStore : SymbolStore
-              KeyValueStore : Map<string, obj>
+              KeyValueStore : UMap<string, obj>
               UserState : UserState }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -195,7 +195,7 @@ module AmbientStateModule =
               OverlayRouter = overlayRouter
               Overlayer = overlayer
               SymbolStore = symbolStore
-              KeyValueStore = Map.empty
+              KeyValueStore = UMap.makeEmpty Constants.Engine.KeyValueMapConfig
               UserState = UserState.make userState false }
 
 /// The ambient state of the world.
