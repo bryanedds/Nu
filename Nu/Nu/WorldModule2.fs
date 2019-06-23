@@ -772,39 +772,47 @@ module WorldModule2 =
 [<AutoOpen>]
 module GameDispatcherModule =
 
-    type [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (getModelLens : Game -> Lens<'model, World>) =
+    type [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit GameDispatcher ()
 
+        member this.GetModel (_ : Game) world : 'model =
+            match World.tryGetGameProperty Property? Model world with
+            | Some property -> property.PropertyValue :?> 'model
+            | None -> initial
+
+        member this.SetModel (model : 'model) (_ : Game) world =
+            let property = { PropertyType = typeof<'model>; PropertyValue = model }
+            World.trySetGameProperty Property? Model property world |> snd
+
+        member this.Model (game : Game) =
+            Lens.make Property? Model (this.GetModel game) (flip this.SetModel game) game
+
         override this.Register (game, world) =
-            let lens = getModelLens game
-            let bindings = this.Bindings (lens.Get world, game, world)
+            let bindings = this.Bindings (this.GetModel game world, game, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
                     | Message binding ->
                         Stream.monitor (fun evt world ->
-                            let model = lens.Get world
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, commands) = this.Message (message, model, game, world)
-                                let world = lens.Set model world
+                                let (model, commands) = this.Message (message, this.GetModel game world, game, world)
+                                let world = this.SetModel model game world
                                 List.fold (fun world command ->
-                                    let model = lens.Get world
-                                    this.Command (command, model, game, world))
+                                    this.Command (command, this.GetModel game world, game, world))
                                     world commands
                             | None -> world)
                             game binding.Stream world
                     | Command binding ->
                         Stream.monitor (fun evt world ->
-                            let model = lens.Get world
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
-                            | Some message -> this.Command (message, model, game, world)
+                            | Some message -> this.Command (message, this.GetModel game world, game, world)
                             | None -> world)
                             game binding.Stream world)
                     world bindings
-            let contents = this.Content (lens.Get world, game, world)
+            let contents = this.Content (this.GetModel game world, game, world)
             let world =
                 List.foldi (fun contentIndex world content ->
                     let (screen, world) = World.expandScreen World.setScreenSplash content game world
@@ -813,9 +821,7 @@ module GameDispatcherModule =
             world
 
         override this.Actualize (game, world) =
-            let lens = getModelLens game
-            let model = lens.Get world
-            let views = this.View (model, game, world)
+            let views = this.View (this.GetModel game world, game, world)
             List.fold (fun world view ->
                 match view with
                 | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
@@ -834,3 +840,9 @@ module GameDispatcherModule =
         default this.Message (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
+
+    type Game with
+    
+        member this.GetModel (dispatcher : GameDispatcher<_, _, _>) world = dispatcher.GetModel this world
+        member this.SetModel (dispatcher : GameDispatcher<_, _, _>) value world = dispatcher.SetModel value this world
+        member this.Model (dispatcher : GameDispatcher<_, _, _>) = dispatcher.Model this

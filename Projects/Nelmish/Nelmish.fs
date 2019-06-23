@@ -21,19 +21,9 @@ module Nelmish =
         | Increment
         | Reset
 
-    // this is our model property declaration
-    type Game with
-        member this.GetModel = this.Get Property? Model
-        member this.SetModel = this.Set Property? Model
-        member this.Model = Lens.make<Model, World> Property? Model this.GetModel this.SetModel this
-
     // this is our Elm-style game dispatcher
     type NelmishDispatcher () =
-        inherit GameDispatcher<Model, Message, unit> (fun game -> game.Model)
-
-        // this is our model property definition
-        static member Properties =
-            [define Game.Model 0]
+        inherit GameDispatcher<Model, Message, unit> (0) // initial model value
 
         // here we define the Bindings used to connect events to their desired messages
         override this.Bindings (_, _, _) =
@@ -60,9 +50,9 @@ module Nelmish =
                         [Entity.Text == "+"
                          Entity.Position == Vector2 (0.0f, 64.0f)]
                      Content.text CounterText
-                        [Entity.Text ==> game.Model --> scstring
+                        [Entity.Text ==> game.Model this --> scstring
                          Entity.Position == Vector2 (-128.0f, -32.0f)]
-                     Content.entityIf (game.Model --> isNonZero) $ fun () ->
+                     Content.entityIf (game.Model this --> isNonZero) $ fun () ->
                         Content.button ResetButton
                             [Entity.Text == "Reset"
                              Entity.Position == Vector2 (-128.0f, -128.0f)]]]]
