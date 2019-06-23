@@ -1705,7 +1705,7 @@ module LayerDispatcherModule =
                             | None -> world)
                             layer binding.Stream world)
                     world bindings
-            let contents = this.Content (lens.Get world, layer, world)
+            let contents = this.Content (lens, layer, world)
             List.fold (fun world content -> World.expandEntity None content layer world) world contents
 
         override this.Actualize (layer, world) =
@@ -1725,7 +1725,7 @@ module LayerDispatcherModule =
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
         abstract member Message : 'message * 'model * Layer * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Layer * World -> World
-        abstract member Content : 'model * Layer * World -> EntityContent list
+        abstract member Content : Lens<'model, World> * Layer * World -> EntityContent list
         abstract member View : 'model * Layer * World -> View list
         default this.Message (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
@@ -1766,7 +1766,7 @@ module ScreenDispatcherModule =
                             | None -> world)
                             screen binding.Stream world)
                     world bindings
-            let contents = this.Content (lens.Get world, screen, world)
+            let contents = this.Content (lens, screen, world)
             let world = List.fold (fun world content -> World.expandLayer content screen world) world contents
             world
 
@@ -1787,7 +1787,7 @@ module ScreenDispatcherModule =
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
         abstract member Message : 'message * 'model * Screen * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Screen * World -> World
-        abstract member Content : 'model * Screen * World -> LayerContent list
+        abstract member Content : Lens<'model, World> * Screen * World -> LayerContent list
         abstract member View : 'model * Screen * World -> View list
         default this.Message (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world

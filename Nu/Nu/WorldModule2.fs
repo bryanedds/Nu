@@ -804,7 +804,7 @@ module GameDispatcherModule =
                             | None -> world)
                             game binding.Stream world)
                     world bindings
-            let contents = this.Content (lens.Get world, game, world)
+            let contents = this.Content (lens, game, world)
             let world =
                 List.foldi (fun contentIndex world content ->
                     let (screen, world) = World.expandScreen World.setScreenSplash content game world
@@ -829,8 +829,83 @@ module GameDispatcherModule =
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
         abstract member Message : 'message * 'model * Game * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Game * World -> World
-        abstract member Content : 'model * Game * World -> ScreenContent list
+        abstract member Content : Lens<'model, World> * Game * World -> ScreenContent list
         abstract member View : 'model * Game * World -> View list
         default this.Message (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
+
+    type [<AbstractClass>] MyGameDispatcher<'model, 'message, 'command> (initial : 'model) =
+        inherit GameDispatcher ()
+
+        member this.GetModel (_ : Game) world : 'model =
+            match World.tryGetGameProperty Property? Model world with
+            | Some property -> property.PropertyValue :?> 'model
+            | None -> initial
+
+        member this.SetModel (model : 'model) (_ : Game) world =
+            let property = { PropertyType = typeof<'model>; PropertyValue = model }
+            World.attachGameProperty Property? Model property world
+
+        member this.Model (game : Game) =
+            Lens.make Property? Model (this.GetModel game) (flip this.SetModel game) game
+
+        override this.Register (game, world) =
+            let bindings = this.Bindings (this.GetModel game world, game, world)
+            let world =
+                List.fold (fun world binding ->
+                    match binding with
+                    | Message binding ->
+                        Stream.monitor (fun evt world ->
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message ->
+                                let (model, commands) = this.Message (message, this.GetModel game world, game, world)
+                                let world = this.SetModel model game world
+                                List.fold (fun world command ->
+                                    this.Command (command, this.GetModel game world, game, world))
+                                    world commands
+                            | None -> world)
+                            game binding.Stream world
+                    | Command binding ->
+                        Stream.monitor (fun evt world ->
+                            let messageOpt = binding.MakeValueOpt evt
+                            match messageOpt with
+                            | Some message -> this.Command (message, this.GetModel game world, game, world)
+                            | None -> world)
+                            game binding.Stream world)
+                    world bindings
+            let contents = this.Content (this.Model game, game, world)
+            let world =
+                List.foldi (fun contentIndex world content ->
+                    let (screen, world) = World.expandScreen World.setScreenSplash content game world
+                    if contentIndex = 0 then World.selectScreen screen world else world)
+                    world contents
+            world
+
+        override this.Actualize (game, world) =
+            let views = this.View (this.GetModel game world, game, world)
+            List.fold (fun world view ->
+                match view with
+                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
+                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
+                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
+                | FadeOutSong fade -> World.fadeOutSong fade world
+                | StopSong -> World.stopSong world
+                | Effect effect -> effect world)
+                world views
+
+        abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
+        abstract member Message : 'message * 'model * Game * World -> 'model * 'command list
+        abstract member Command : 'command * 'model * Game * World -> World
+        abstract member Content : Lens<'model, World> * Game * World -> ScreenContent list
+        abstract member View : 'model * Game * World -> View list
+        default this.Message (_, model, _, _) = just model
+        default this.Command (_, _, _, world) = world
+        default this.View (_, _, _) = []
+
+    type Game with
+    
+        member this.GetModel<'model> world = (this.GetDispatcher world :?> MyGameDispatcher<'model, _, _>).GetModel this world
+        member this.SetModel<'model> value world = (this.GetDispatcher world :?> MyGameDispatcher<'model, _, _>).SetModel value this world
+        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel this.SetModel this
