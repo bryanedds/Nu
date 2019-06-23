@@ -275,6 +275,10 @@ module Vector2i =
 
     let inline v2i x y = Vector2i (x, y)
     let inline v2iDup a = v2i a a
+    let v2iOne = Vector2i.One
+    let v2iZero = Vector2i.Zero
+    let v2iUnitX = Vector2i.UnitX
+    let v2iUnitY = Vector2i.UnitY
 
 /// The Vector2i value that can be plugged into the scripting language.
 type [<Struct; CustomEquality; CustomComparison>] Vector2iPluggable =
