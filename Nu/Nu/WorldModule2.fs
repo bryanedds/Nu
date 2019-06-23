@@ -772,23 +772,33 @@ module WorldModule2 =
 [<AutoOpen>]
 module GameDispatcherModule =
 
+    type Game with
+    
+        member this.GetModel<'model> world = this.Get<'model> Property? Model world
+        member this.SetModel<'model> value world = this.Set<'model> Property? Model value world
+        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
+
     type [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit GameDispatcher ()
 
-        member this.GetModel (_ : Game) world : 'model =
-            match World.tryGetGameProperty Property? Model world with
-            | Some property -> property.PropertyValue :?> 'model
-            | None -> initial
+        member this.GetModel (game : Game) world : 'model =
+            game.GetModel<'model> world
 
-        member this.SetModel (model : 'model) (_ : Game) world =
-            let property = { PropertyType = typeof<'model>; PropertyValue = model }
-            World.attachGameProperty Property? Model property world
+        member this.SetModel (model : 'model) (game : Game) world =
+            game.SetModel<'model> model world
 
         member this.Model (game : Game) =
             Lens.make Property? Model (this.GetModel game) (flip this.SetModel game) game
 
         override this.Register (game, world) =
-            let bindings = this.Bindings (this.GetModel game world, game, world)
+            let (model, world) =
+                match World.tryGetGameProperty Property? Model world with
+                | Some model -> (model :> obj :?> 'model, world)
+                | None ->
+                    let property = { PropertyType = typeof<'model>; PropertyValue = initial }
+                    let world = World.attachGameProperty Property? Model property world
+                    (initial, world)
+            let bindings = this.Bindings (model, game, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
@@ -844,9 +854,3 @@ module GameDispatcherModule =
 
         abstract member View : 'model * Game * World -> View list
         default this.View (_, _, _) = []
-
-    type Game with
-    
-        member this.GetModel<'model> world = (this.GetDispatcher world :?> GameDispatcher<'model, _, _>).GetModel this world
-        member this.SetModel<'model> value world = (this.GetDispatcher world :?> GameDispatcher<'model, _, _>).SetModel value this world
-        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel this.SetModel this

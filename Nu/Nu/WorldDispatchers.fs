@@ -13,23 +13,33 @@ open Nu.Declarative
 [<AutoOpen>]
 module FacetModule =
 
+    type Entity with
+    
+        member this.GetModel<'model> world = this.Get<'model> Property? Model world
+        member this.SetModel<'model> value world = this.Set<'model> Property? Model value world
+        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
+
     type [<AbstractClass>] Facet<'model, 'message, 'command> (initial : 'model) =
         inherit Facet ()
 
         member this.GetModel (entity : Entity) world : 'model =
-            match World.tryGetEntityProperty Property? Model entity world with
-            | Some property -> property.PropertyValue :?> 'model
-            | None -> initial
+            entity.GetModel<'model> world
 
         member this.SetModel (model : 'model) (entity : Entity) world =
-            let property = { PropertyType = typeof<'model>; PropertyValue = model }
-            World.attachEntityProperty Property? Model true false property entity world
-            
+            entity.SetModel<'model> model world
+
         member this.Model (entity : Entity) =
             Lens.make Property? Model (this.GetModel entity) (flip this.SetModel entity) entity
 
         override this.Register (entity, world) =
-            let bindings = this.Bindings (this.GetModel entity world, entity, world)
+            let (model, world) =
+                match entity.TryGetProperty Property? Model world with
+                | Some model -> (model :> obj :?> 'model, world)
+                | None ->
+                    let property = { PropertyType = typeof<'model>; PropertyValue = initial }
+                    let world = World.attachEntityProperty Property? Model true false property entity world
+                    (initial, world)
+            let bindings = this.Bindings (model, entity, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
@@ -792,19 +802,23 @@ module EntityDispatcherModule =
         inherit EntityDispatcher ()
 
         member this.GetModel (entity : Entity) world : 'model =
-            match World.tryGetEntityProperty Property? Model entity world with
-            | Some property -> property.PropertyValue :?> 'model
-            | None -> initial
+            entity.GetModel<'model> world
 
         member this.SetModel (model : 'model) (entity : Entity) world =
-            let property = { PropertyType = typeof<'model>; PropertyValue = model }
-            World.attachEntityProperty Property? Model true false property entity world
+            entity.SetModel<'model> model world
 
         member this.Model (entity : Entity) =
             Lens.make Property? Model (this.GetModel entity) (flip this.SetModel entity) entity
 
         override this.Register (entity, world) =
-            let bindings = this.Bindings (this.GetModel entity world, entity, world)
+            let (model, world) =
+                match entity.TryGetProperty Property? Model world with
+                | Some model -> (model :> obj :?> 'model, world)
+                | None ->
+                    let property = { PropertyType = typeof<'model>; PropertyValue = initial }
+                    let world = World.attachEntityProperty Property? Model true false property entity world
+                    (initial, world)
+            let bindings = this.Bindings (model, entity, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
@@ -852,12 +866,6 @@ module EntityDispatcherModule =
         abstract member View : 'model * Entity * World -> View list
         default this.View (_, _, _) = []
 
-    type Entity with
-    
-        member this.GetModel<'model> world = (this.GetDispatcher world :?> EntityDispatcher<'model, _, _>).GetModel this world
-        member this.SetModel<'model> value world = (this.GetDispatcher world :?> EntityDispatcher<'model, _, _>).SetModel value this world
-        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel this.SetModel this
-
 [<AutoOpen>]
 module ImperativeDispatcherModule =
 
@@ -865,8 +873,8 @@ module ImperativeDispatcherModule =
         inherit EntityDispatcher ()
         interface Imperative
 
-    type [<AbstractClass>] ImperativeDispatcher<'model, 'message, 'command> (propertyFn) =
-        inherit EntityDispatcher<'model, 'message, 'command> (propertyFn)
+    type [<AbstractClass>] ImperativeDispatcher<'model, 'message, 'command> (model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (model)
         interface Imperative
 
 [<AutoOpen>]
@@ -890,8 +898,8 @@ module NodeDispatcherModule =
         static member FacetNames =
             [typeof<NodeFacet>.Name]
 
-    type [<AbstractClass>] NodeDispatcher<'model, 'message, 'command> (propertyFn) =
-        inherit EntityDispatcher<'model, 'message, 'command> (propertyFn)
+    type [<AbstractClass>] NodeDispatcher<'model, 'message, 'command> (model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (model)
 
         static member FacetNames =
             [typeof<NodeFacet>.Name]
@@ -941,8 +949,8 @@ module GuiDispatcherModule =
             let world = World.monitorPlus handleMouseLeft Events.MouseLeftUp gui world |> snd
             world
 
-    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (propertyFn) =
-        inherit EntityDispatcher<'model, 'message, 'command> (propertyFn)
+    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (model)
 
         static let handleMouseLeft evt world =
             let gui = evt.Subscriber : Entity
@@ -1695,23 +1703,33 @@ module TileMapDispatcherModule =
 [<AutoOpen>]
 module LayerDispatcherModule =
 
+    type Layer with
+    
+        member this.GetModel<'model> world = this.Get<'model> Property? Model world
+        member this.SetModel<'model> value world = this.Set<'model> Property? Model value world
+        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
+
     type [<AbstractClass>] LayerDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit LayerDispatcher ()
 
         member this.GetModel (layer : Layer) world : 'model =
-            match World.tryGetLayerProperty Property? Model layer world with
-            | Some property -> property.PropertyValue :?> 'model
-            | None -> initial
+            layer.GetModel<'model> world
 
         member this.SetModel (model : 'model) (layer : Layer) world =
-            let property = { PropertyType = typeof<'model>; PropertyValue = model }
-            World.attachLayerProperty Property? Model property layer world
+            layer.SetModel<'model> model world
 
         member this.Model (layer : Layer) =
             Lens.make Property? Model (this.GetModel layer) (flip this.SetModel layer) layer
 
         override this.Register (layer, world) =
-            let bindings = this.Bindings (this.GetModel layer world, layer, world)
+            let (model, world) =
+                match layer.TryGetProperty Property? Model world with
+                | Some model -> (model :> obj :?> 'model, world)
+                | None ->
+                    let property = { PropertyType = typeof<'model>; PropertyValue = initial }
+                    let world = World.attachLayerProperty Property? Model property layer world
+                    (initial, world)
+            let bindings = this.Bindings (model, layer, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
@@ -1763,32 +1781,36 @@ module LayerDispatcherModule =
         abstract member View : 'model * Layer * World -> View list
         default this.View (_, _, _) = []
 
-    type Layer with
-    
-        member this.GetModel<'model> world = (this.GetDispatcher world :?> LayerDispatcher<'model, _, _>).GetModel this world
-        member this.SetModel<'model> value world = (this.GetDispatcher world :?> LayerDispatcher<'model, _, _>).SetModel value this world
-        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel this.SetModel this
-
 [<AutoOpen>]
 module ScreenDispatcherModule =
+
+    type Screen with
+    
+        member this.GetModel<'model> world = this.Get<'model> Property? Model world
+        member this.SetModel<'model> value world = this.Set<'model> Property? Model value world
+        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
 
     type [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit ScreenDispatcher ()
 
         member this.GetModel (screen : Screen) world : 'model =
-            match World.tryGetScreenProperty Property? Model screen world with
-            | Some property -> property.PropertyValue :?> 'model
-            | None -> initial
+            screen.GetModel<'model> world
 
         member this.SetModel (model : 'model) (screen : Screen) world =
-            let property = { PropertyType = typeof<'model>; PropertyValue = model }
-            World.attachScreenProperty Property? Model property screen world
+            screen.SetModel<'model> model world
 
         member this.Model (screen : Screen) =
             Lens.make Property? Model (this.GetModel screen) (flip this.SetModel screen) screen
 
         override this.Register (screen, world) =
-            let bindings = this.Bindings (this.GetModel screen world, screen, world)
+            let (model, world) =
+                match screen.TryGetProperty Property? Model world with
+                | Some model -> (model :> obj :?> 'model, world)
+                | None ->
+                    let property = { PropertyType = typeof<'model>; PropertyValue = initial }
+                    let world = World.attachScreenProperty Property? Model property screen world
+                    (initial, world)
+            let bindings = this.Bindings (model, screen, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
@@ -1842,9 +1864,3 @@ module ScreenDispatcherModule =
 
         abstract member View : 'model * Screen * World -> View list
         default this.View (_, _, _) = []
-
-    type Screen with
-    
-        member this.GetModel<'model> world = (this.GetDispatcher world :?> ScreenDispatcher<'model, _, _>).GetModel this world
-        member this.SetModel<'model> value world = (this.GetDispatcher world :?> ScreenDispatcher<'model, _, _>).SetModel value this world
-        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel this.SetModel this

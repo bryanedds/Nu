@@ -19,17 +19,8 @@ module InfinityDispatcherModule =
         | ShowGameplay of bool
         | ExitGame
 
-    type Game with
-
-        member this.GetModel = this.Get Property? Model
-        member this.SetModel = this.Set Property? Model
-        member this.Model = Lens.make<unit, World> Property? Model this.GetModel this.SetModel this
-
     type InfinityDispatcher () =
-        inherit GameDispatcher<unit, unit, InfinityCommand> (fun game -> game.Model)
-
-        static member Properties =
-            [define Game.Model ()]
+        inherit GameDispatcher<unit, unit, InfinityCommand> (())
 
         override this.Register (game, world) =
 
