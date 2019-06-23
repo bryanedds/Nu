@@ -812,7 +812,7 @@ module GameDispatcherModule =
                             | None -> world)
                             game binding.Stream world)
                     world bindings
-            let contents = this.Content (this.GetModel game world, game, world)
+            let contents = this.Content (this.Model game, game, world)
             let world =
                 List.foldi (fun contentIndex world content ->
                     let (screen, world) = World.expandScreen World.setScreenSplash content game world
@@ -835,7 +835,7 @@ module GameDispatcherModule =
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
         abstract member Message : 'message * 'model * Game * World -> 'model * 'command list
         abstract member Command : 'command * 'model * Game * World -> World
-        abstract member Content : 'model * Game * World -> ScreenContent list
+        abstract member Content : Lens<'model, World> * Game * World -> ScreenContent list
         abstract member View : 'model * Game * World -> View list
         default this.Message (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
@@ -843,6 +843,6 @@ module GameDispatcherModule =
 
     type Game with
     
-        member this.GetModel (dispatcher : GameDispatcher<_, _, _>) world = dispatcher.GetModel this world
-        member this.SetModel (dispatcher : GameDispatcher<_, _, _>) value world = dispatcher.SetModel value this world
-        member this.Model (dispatcher : GameDispatcher<_, _, _>) = dispatcher.Model this
+        member this.GetModel<'model> world = (this.GetDispatcher world :?> GameDispatcher<'model, _, _>).GetModel this world
+        member this.SetModel<'model> value world = (this.GetDispatcher world :?> GameDispatcher<'model, _, _>).SetModel value this world
+        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel this.SetModel this
