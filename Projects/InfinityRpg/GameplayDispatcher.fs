@@ -374,7 +374,7 @@ module GameplayDispatcherModule =
         static let runCharacterAction newActionDescriptor (character : Entity) world =
             // NOTE: currently just implements attack
             let chain = chain {
-                do! Chain.update $ character.SetCharacterActivityState (Action newActionDescriptor)
+                do! Chain.update (character.SetCharacterActivityState (Action newActionDescriptor))
                 do! Chain.during (character.CharacterActivityState.GetBy (fun state -> state.IsActing)) $ chain {
                     do! Chain.update $ fun world ->
                         let actionDescriptor =
