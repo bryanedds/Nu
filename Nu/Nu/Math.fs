@@ -37,6 +37,10 @@ module Vector2 =
 
     let inline v2 x y = Vector2 (x, y)
     let inline v2Dup a = v2 a a
+    let v2One = Vector2.One
+    let v2Zero = Vector2.Zero
+    let v2UnitX = Vector2.UnitX
+    let v2UnitY = Vector2.UnitY
 
 /// The Vector2 value that can be plugged into the scripting language.
 type [<Struct; CustomEquality; CustomComparison>] Vector2Pluggable =
@@ -122,6 +126,11 @@ module Vector3 =
 
     let inline v3 x y z = Vector3 (x, y, z)
     let inline v3Dup a = v3 a a a
+    let v3One = Vector3.One
+    let v3Zero = Vector3.Zero
+    let v3UnitX = Vector3.UnitX
+    let v3UnitY = Vector3.UnitY
+    let v3UnitZ = Vector3.UnitZ
 
 /// Converts Vector3 types.
 type Vector3Converter () =
@@ -214,6 +223,12 @@ module Vector4 =
 
     let inline v4 x y z w = Vector4 (x, y, z, w)
     let inline v4Dup a = v4 a a a a
+    let v4One = Vector4.One
+    let v4Zero = Vector4.Zero
+    let v4UnitX = Vector4.UnitX
+    let v4UnitY = Vector4.UnitY
+    let v4UnitZ = Vector4.UnitZ
+    let v4UnitW = Vector4.UnitW
 
 /// Converts Vector4 types.
 type Vector4Converter () =
@@ -347,6 +362,8 @@ module Matrix3 =
             m
 
     let inline m3 r0 r1 r2 = Matrix3 (r0, r1, r2)
+    let m3Identity = Matrix3.Identity
+    let m3Zero = Matrix3.Zero
 
 [<RequireQualifiedAccess>]
 module Math =
