@@ -26,6 +26,18 @@ type [<Struct>] ViewType =
     | Absolute
     | Relative
 
+[<AutoOpen>]
+module Vector2 =
+
+    type Vector2 with
+        member this.MapX mapper = Vector2 (mapper this.X, this.Y)
+        member this.MapY mapper = Vector2 (this.X, mapper this.Y)
+        member this.WithX x = Vector2 (x, this.Y)
+        member this.WithY y = Vector2 (this.X, y)
+
+    let inline v2 x y = Vector2 (x, y)
+    let inline v2Dup a = v2 a a
+
 /// The Vector2 value that can be plugged into the scripting language.
 type [<Struct; CustomEquality; CustomComparison>] Vector2Pluggable =
     { Vector2 : Vector2 }
@@ -96,6 +108,20 @@ type Vector2Converter () =
             | _ -> failconv "Invalid Vector2Converter conversion from source." (Some symbol)
         | :? Vector2 -> source
         | _ -> failconv "Invalid Vector2Converter conversion from source." None
+
+[<AutoOpen>]
+module Vector3 =
+
+    type Vector3 with
+        member this.MapX mapper = Vector3 (mapper this.X, this.Y, this.Z)
+        member this.MapY mapper = Vector3 (this.X, mapper this.Y, this.Z)
+        member this.MapZ mapper = Vector3 (this.X, this.Y, mapper this.Z)
+        member this.WithX x = Vector3 (x, this.Y, this.Z)
+        member this.WithY y = Vector3 (this.X, y, this.Z)
+        member this.WithZ z = Vector3 (this.X, this.Y, z)
+
+    let inline v3 x y z = Vector3 (x, y, z)
+    let inline v3Dup a = v3 a a a
 
 /// Converts Vector3 types.
 type Vector3Converter () =
@@ -173,6 +199,22 @@ type [<Struct; CustomEquality; CustomComparison>] Vector4Pluggable =
             let w = Symbol.Number (String.singleToCodeString this.Vector4.W, None)
             Symbol.Symbols ([v4; x; y; z; w], None)
 
+[<AutoOpen>]
+module Vector4 =
+
+    type Vector4 with
+        member this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
+        member this.MapY mapper = Vector4 (this.X, mapper this.Y, this.Z, this.W)
+        member this.MapZ mapper = Vector4 (this.X, this.Y, mapper this.Z, this.W)
+        member this.MapW mapper = Vector4 (this.X, this.Y, this.Z, mapper this.W)
+        member this.WithX x = Vector4 (x, this.Y, this.Z, this.W)
+        member this.WithY y = Vector4 (this.X, y, this.Z, this.W)
+        member this.WithZ z = Vector4 (this.X, this.Y, z, this.W)
+        member this.WithW w = Vector4 (this.X, this.Y, this.Z, w)
+
+    let inline v4 x y z w = Vector4 (x, y, z, w)
+    let inline v4Dup a = v4 a a a a
+
 /// Converts Vector4 types.
 type Vector4Converter () =
     inherit TypeConverter ()
@@ -206,6 +248,18 @@ type Vector4Converter () =
                 failconv "Invalid Vector4Converter conversion from source." (Some symbol)
         | :? Vector4 -> source
         | _ -> failconv "Invalid Vector4Converter conversion from source." None
+
+[<AutoOpen>]
+module Vector2i =
+
+    type Vector2i with
+        member this.MapX mapper = Vector2i (mapper this.X, this.Y)
+        member this.MapY mapper = Vector2i (this.X, mapper this.Y)
+        member this.WithX x = Vector2i (x, this.Y)
+        member this.WithY y = Vector2i (this.X, y)
+
+    let inline v2i x y = Vector2i (x, y)
+    let inline v2iDup a = v2i a a
 
 /// The Vector2i value that can be plugged into the scripting language.
 type [<Struct; CustomEquality; CustomComparison>] Vector2iPluggable =
@@ -275,20 +329,24 @@ type Vector2iConverter () =
             | _ -> failconv "Invalid Vector2iConverter conversion from source." (Some symbol)
         | :? Vector2i -> source
         | _ -> failconv "Invalid Vector2iConverter conversion from source." None
-
-[<RequireQualifiedAccess>]
+        
+[<AutoOpen>]
 module Matrix3 =
 
-    /// Gets the invertse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
-    /// SDL_RenderCopyEx requirement that all corrdinates be arbitrarily converted to ints.
-    /// TODO: See if we can expose an SDL_RenderCopyEx from SDL2(#) that takes floats instead.
-    let InvertView (m : Matrix3) =
-        let mutable m = m
-        m.M13 <- -m.M13
-        m.M23 <- -m.M23
-        m.M11 <- 1.0f / m.M11
-        m.M22 <- 1.0f / m.M22
-        m
+    type Matrix3 with
+
+        /// Gets the invertse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
+        /// SDL_RenderCopyEx requirement that all corrdinates be arbitrarily converted to ints.
+        /// TODO: See if we can expose an SDL_RenderCopyEx from SDL2(#) that takes floats instead.
+        member this.InvertedView () =
+            let mutable m = this
+            m.M13 <- -m.M13
+            m.M23 <- -m.M23
+            m.M11 <- 1.0f / m.M11
+            m.M22 <- 1.0f / m.M22
+            m
+
+    let inline m3 r0 r1 r2 = Matrix3 (r0, r1, r2)
 
 [<RequireQualifiedAccess>]
 module Math =
