@@ -831,12 +831,18 @@ module GameDispatcherModule =
                 world views
 
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
+        default this.Bindings (_, _, _) = []
+
         abstract member Message : 'message * 'model * Game * World -> 'model * 'command list
-        abstract member Command : 'command * 'model * Game * World -> World
-        abstract member Content : Lens<'model, World> * Game * World -> ScreenContent list
-        abstract member View : 'model * Game * World -> View list
         default this.Message (_, model, _, _) = just model
+
+        abstract member Command : 'command * 'model * Game * World -> World
         default this.Command (_, _, _, world) = world
+
+        abstract member Content : Lens<'model, World> * Game * World -> ScreenContent list
+        default this.Content (_, _, _) = []
+
+        abstract member View : 'model * Game * World -> View list
         default this.View (_, _, _) = []
 
     type Game with

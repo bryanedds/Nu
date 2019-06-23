@@ -66,11 +66,15 @@ module FacetModule =
                 world views
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
+        default this.Bindings (_, _, _) = []
+
         abstract member Message : 'message * 'model * Entity * World -> 'model * 'command list
-        abstract member Command : 'command * 'model * Entity * World -> World
-        abstract member View : 'model * Entity * World -> View list
         default this.Message (_, model, _, _) = just model
+
+        abstract member Command : 'command * 'model * Entity * World -> World
         default this.Command (_, _, _, world) = world
+
+        abstract member View : 'model * Entity * World -> View list
         default this.View (_, _, _) = []
 
 [<AutoOpen>]
@@ -837,11 +841,15 @@ module EntityDispatcherModule =
                 world views
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
+        default this.Bindings (_, _, _) = []
+        
         abstract member Message : 'message * 'model * Entity * World -> 'model * 'command list
-        abstract member Command : 'command * 'model * Entity * World -> World
-        abstract member View : 'model * Entity * World -> View list
         default this.Message (_, model, _, _) = just model
+        
+        abstract member Command : 'command * 'model * Entity * World -> World
         default this.Command (_, _, _, world) = world
+        
+        abstract member View : 'model * Entity * World -> View list
         default this.View (_, _, _) = []
 
     type Entity with
@@ -1741,12 +1749,18 @@ module LayerDispatcherModule =
                 world views
 
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
+        default this.Bindings (_, _, _) = []
+        
         abstract member Message : 'message * 'model * Layer * World -> 'model * 'command list
-        abstract member Command : 'command * 'model * Layer * World -> World
-        abstract member Content : Lens<'model, World> * Layer * World -> EntityContent list
-        abstract member View : 'model * Layer * World -> View list
         default this.Message (_, model, _, _) = just model
+
+        abstract member Command : 'command * 'model * Layer * World -> World
         default this.Command (_, _, _, world) = world
+
+        abstract member Content : Lens<'model, World> * Layer * World -> EntityContent list
+        default this.Content (_, _, _) = []
+
+        abstract member View : 'model * Layer * World -> View list
         default this.View (_, _, _) = []
 
     type Layer with
@@ -1815,12 +1829,18 @@ module ScreenDispatcherModule =
                 world views
 
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
+        default this.Bindings (_, _, _) = []
+
         abstract member Message : 'message * 'model * Screen * World -> 'model * 'command list
-        abstract member Command : 'command * 'model * Screen * World -> World
-        abstract member Content : Lens<'model, World> * Screen * World -> LayerContent list
-        abstract member View : 'model * Screen * World -> View list
         default this.Message (_, model, _, _) = just model
+
+        abstract member Command : 'command * 'model * Screen * World -> World
         default this.Command (_, _, _, world) = world
+
+        abstract member Content : Lens<'model, World> * Screen * World -> LayerContent list
+        default this.Content (_, _, _) = []
+
+        abstract member View : 'model * Screen * World -> View list
         default this.View (_, _, _) = []
 
     type Screen with
