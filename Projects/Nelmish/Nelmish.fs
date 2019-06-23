@@ -1,6 +1,5 @@
 ﻿namespace Nelmish
 open Prime
-open OpenTK
 open Nu
 open Nu.Declarative
 module Nelmish =
@@ -45,14 +44,14 @@ module Nelmish =
                 [Content.layer Default.Layer []
                     [Content.button DecrementButton
                         [Entity.Text == "-"
-                         Entity.Position == Vector2 (-256.0f, 64.0f)]
+                         Entity.Position == v2 -256.0f 64.0f]
                      Content.button IncrementButton
                         [Entity.Text == "+"
-                         Entity.Position == Vector2 (0.0f, 64.0f)]
+                         Entity.Position == v2 0.0f 64.0f]
                      Content.text CounterText
                         [Entity.Text ==> model --> scstring
-                         Entity.Position == Vector2 (-128.0f, -32.0f)]
+                         Entity.Position == v2 -128.0f -32.0f]
                      Content.entityIf (model --> isNonZero) $ fun () ->
                         Content.button ResetButton
                             [Entity.Text == "Reset"
-                             Entity.Position == Vector2 (-128.0f, -128.0f)]]]]
+                             Entity.Position == v2 -128.0f -128.0f]]]]
