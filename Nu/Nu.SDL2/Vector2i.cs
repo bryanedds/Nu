@@ -113,6 +113,8 @@ namespace OpenTK
 
         public static Vector2i Zero { get { return new Vector2i(0); } }
         public static Vector2i One { get { return new Vector2i(1); } }
+        public static Vector2i UnitX { get { return new Vector2i(1, 0); } }
+        public static Vector2i UnitY { get { return new Vector2i(0, 1); } }
         public static Vector2i Up { get { return new Vector2i(0, 1); } }
         public static Vector2i Right { get { return new Vector2i(1, 0); } }
         public static Vector2i Down { get { return new Vector2i(0, -1); } }
