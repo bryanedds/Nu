@@ -6,6 +6,8 @@ open System
 open Prime
 open Nu
 
+// TODO: P1: remove some of the code duplication in here.
+
 /// A marker interface for simulant descriptors.
 type SimulantDescriptor =
     interface
