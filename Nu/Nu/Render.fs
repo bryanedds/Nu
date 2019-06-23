@@ -451,8 +451,8 @@ type [<ReferenceEquality>] SdlRenderer =
                 Array.rev |>
                 Array.sortStableWith SdlRenderer.sortDescriptors
             let layeredDescriptors = Array.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
-            let viewAbsolute = Matrix3.InvertView (Math.getViewAbsoluteI eyeCenter eyeSize)
-            let viewRelative = Matrix3.InvertView (Math.getViewRelativeI eyeCenter eyeSize)
+            let viewAbsolute = (Math.getViewAbsoluteI eyeCenter eyeSize).InvertedView ()
+            let viewRelative = (Math.getViewRelativeI eyeCenter eyeSize).InvertedView ()
             Array.fold (SdlRenderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize) renderer layeredDescriptors
         | _ ->
             Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
