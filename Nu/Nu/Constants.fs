@@ -39,6 +39,7 @@ module Constants =
         let (*Literal*) SubsystemMapConfig = Functional
         let (*Literal*) TaskletListConfig = Functional
         let (*Literal*) SimulantMapConfig = Functional
+        let (*Literal*) KeyValueMapConfig = Functional
 
     [<RequireQualifiedAccess>]
     module Associations =
