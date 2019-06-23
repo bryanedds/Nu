@@ -29,7 +29,8 @@ module Program =
     mind (TBA)      | s-expr DSL                | Gaia & Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
     interactions    | F# (chains)               | Visual Studio
     subsystems      | F#                        | Visual Studio
-    ECS             | F# (facets / dispatchers) | Visual Studio
+    components      | F# (facets / dispatchers) | Visual Studio
+    elmish          | F# (facets / dispatchers) | Visual Studio
 
     The advantages and limitations that fall out of this is as such -
 

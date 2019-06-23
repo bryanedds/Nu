@@ -28,7 +28,7 @@ module SymbolStoreModule =
             try let text = File.ReadAllText asset.FilePath
                 match Path.GetExtension asset.FilePath with
                 | ".csv" ->
-                    try let symbol = Csv.readSymbolFromCsv metadata.StripCsvHeader text (Some asset.FilePath)
+                    try let symbol = Symbol.fromStringCsv metadata.StripCsvHeader text (Some asset.FilePath)
                         Some (asset.AssetTag.AssetName, (metadata, symbol))
                     with exn ->
                         Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
@@ -38,7 +38,7 @@ module SymbolStoreModule =
                         if metadata.ImplicitDelimiters
                         then Symbol.OpenSymbolsStr + text + Symbol.CloseSymbolsStr
                         else text
-                    try let symbol = Symbol.fromString text
+                    try let symbol = Symbol.fromString text (Some asset.FilePath)
                         Some (asset.AssetTag.AssetName, (metadata, symbol))
                     with exn ->
                         Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)

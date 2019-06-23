@@ -999,7 +999,6 @@ module WorldTypes =
                 | :? Entity as that -> (this :> Entity IComparable).CompareTo that
                 | _ -> failwith "Invalid Entity comparison (comparee not of type Entity)."
 
-    
         override this.ToString () = scstring this.EntityAddress
 
         /// Get the name of an entity.
