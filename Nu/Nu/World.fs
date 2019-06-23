@@ -230,8 +230,8 @@ module Nu =
                     let property = { PropertyType = lens.Type; PropertyValue = lens.Get world }
                     World.setProperty name nonPersistent alwaysPublish property (participant :?> Simulant) world
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
-                let world = Stream.make (atooa Events.Register --> lens.This.ParticipantAddress) |> breaker |> Stream.monitor propagate participant $ world
-                Stream.make (atooa (Events.Change lens.Name) --> lens.This.ParticipantAddress) |> breaker |> Stream.monitor propagate participant $ world
+                let world = Stream.make (atooa Events.Register --> lens.This.ParticipantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate participant $ world
+                Stream.make (atooa (Events.Change lens.Name) --> lens.This.ParticipantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate participant $ world
 
             // init scripting
             World.initScripting ()
