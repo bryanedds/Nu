@@ -13,44 +13,48 @@ open Nu.Declarative
 [<AutoOpen>]
 module FacetModule =
 
-    type [<AbstractClass>] Facet<'model, 'message, 'command> (getModelLens : Entity -> Lens<'model, World>) =
+    type [<AbstractClass>] Facet<'model, 'message, 'command> (initial : 'model) =
         inherit Facet ()
-        
+
+        member this.GetModel (entity : Entity) world : 'model =
+            match World.tryGetEntityProperty Property? Model entity world with
+            | Some property -> property.PropertyValue :?> 'model
+            | None -> initial
+
+        member this.SetModel (model : 'model) (entity : Entity) world =
+            let property = { PropertyType = typeof<'model>; PropertyValue = model }
+            World.attachEntityProperty Property? Model true false property entity world
+            
+        member this.Model (entity : Entity) =
+            Lens.make Property? Model (this.GetModel entity) (flip this.SetModel entity) entity
+
         override this.Register (entity, world) =
-            let lens = getModelLens entity
-            let bindings = this.Bindings (lens.Get world, entity, world)
+            let bindings = this.Bindings (this.GetModel entity world, entity, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
                     | Message binding ->
                         Stream.monitor (fun evt world ->
-                            let model = lens.Get world
-                            let messageOpt = binding.MakeValueOpt evt
-                            match messageOpt with
+                            match binding.MakeValueOpt evt with
                             | Some message ->
-                                let (model, commands) = this.Message (message, model, entity, world)
-                                let world = lens.Set model world
+                                let (model, commands) = this.Message (message, this.GetModel entity world, entity, world)
+                                let world = this.SetModel model entity world
                                 List.fold (fun world command ->
-                                    let model = lens.Get world
-                                    this.Command (command, model, entity, world))
+                                    this.Command (command, this.GetModel entity world, entity, world))
                                     world commands
                             | None -> world)
                             entity binding.Stream world
                     | Command binding ->
                         Stream.monitor (fun evt world ->
-                            let model = lens.Get world
-                            let messageOpt = binding.MakeValueOpt evt
-                            match messageOpt with
-                            | Some message -> this.Command (message, model, entity, world)
+                            match binding.MakeValueOpt evt with
+                            | Some message -> this.Command (message, this.GetModel entity world, entity, world)
                             | None -> world)
                             entity binding.Stream world)
                     world bindings
             world
 
         override this.Actualize (entity, world) =
-            let lens = getModelLens entity
-            let model = lens.Get world
-            let views = this.View (model, entity, world)
+            let views = this.View (this.GetModel entity world, entity, world)
             List.fold (fun world view ->
                 match view with
                 | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
@@ -780,44 +784,48 @@ module AnimatedSpriteFacetModule =
 [<AutoOpen>]
 module EntityDispatcherModule =
 
-    type [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (getModelLens : Entity -> Lens<'model, World>) =
+    type [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit EntityDispatcher ()
 
+        member this.GetModel (entity : Entity) world : 'model =
+            match World.tryGetEntityProperty Property? Model entity world with
+            | Some property -> property.PropertyValue :?> 'model
+            | None -> initial
+
+        member this.SetModel (model : 'model) (entity : Entity) world =
+            let property = { PropertyType = typeof<'model>; PropertyValue = model }
+            World.attachEntityProperty Property? Model true false property entity world
+
+        member this.Model (entity : Entity) =
+            Lens.make Property? Model (this.GetModel entity) (flip this.SetModel entity) entity
+
         override this.Register (entity, world) =
-            let lens = getModelLens entity
-            let bindings = this.Bindings (lens.Get world, entity, world)
+            let bindings = this.Bindings (this.GetModel entity world, entity, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
                     | Message binding ->
                         Stream.monitor (fun evt world ->
-                            let model = lens.Get world
-                            let messageOpt = binding.MakeValueOpt evt
-                            match messageOpt with
+                            match binding.MakeValueOpt evt with
                             | Some message ->
-                                let (model, commands) = this.Message (message, model, entity, world)
-                                let world = lens.Set model world
+                                let (model, commands) = this.Message (message, this.GetModel entity world, entity, world)
+                                let world = this.SetModel model entity world
                                 List.fold (fun world command ->
-                                    let model = lens.Get world
-                                    this.Command (command, model, entity, world))
+                                    this.Command (command, this.GetModel entity world, entity, world))
                                     world commands
                             | None -> world)
                             entity binding.Stream world
                     | Command binding ->
                         Stream.monitor (fun evt world ->
-                            let model = lens.Get world
-                            let messageOpt = binding.MakeValueOpt evt
-                            match messageOpt with
-                            | Some message -> this.Command (message, model, entity, world)
+                            match binding.MakeValueOpt evt with
+                            | Some message -> this.Command (message, this.GetModel entity world, entity, world)
                             | None -> world)
                             entity binding.Stream world)
                     world bindings
             world
 
         override this.Actualize (entity, world) =
-            let lens = getModelLens entity
-            let model = lens.Get world
-            let views = this.View (model, entity, world)
+            let views = this.View (this.GetModel entity world, entity, world)
             List.fold (fun world view ->
                 match view with
                 | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
@@ -835,6 +843,12 @@ module EntityDispatcherModule =
         default this.Message (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
+
+    type Entity with
+    
+        member this.GetModel<'model> world = (this.GetDispatcher world :?> EntityDispatcher<'model, _, _>).GetModel this world
+        member this.SetModel<'model> value world = (this.GetDispatcher world :?> EntityDispatcher<'model, _, _>).SetModel value this world
+        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel this.SetModel this
 
 [<AutoOpen>]
 module ImperativeDispatcherModule =
@@ -1673,45 +1687,49 @@ module TileMapDispatcherModule =
 [<AutoOpen>]
 module LayerDispatcherModule =
 
-    type [<AbstractClass>] LayerDispatcher<'model, 'message, 'command> (getModelLens : Layer -> Lens<'model, World>) =
+    type [<AbstractClass>] LayerDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit LayerDispatcher ()
 
+        member this.GetModel (layer : Layer) world : 'model =
+            match World.tryGetLayerProperty Property? Model layer world with
+            | Some property -> property.PropertyValue :?> 'model
+            | None -> initial
+
+        member this.SetModel (model : 'model) (layer : Layer) world =
+            let property = { PropertyType = typeof<'model>; PropertyValue = model }
+            World.attachLayerProperty Property? Model property layer world
+
+        member this.Model (layer : Layer) =
+            Lens.make Property? Model (this.GetModel layer) (flip this.SetModel layer) layer
+
         override this.Register (layer, world) =
-            let lens = getModelLens layer
-            let bindings = this.Bindings (lens.Get world, layer, world)
+            let bindings = this.Bindings (this.GetModel layer world, layer, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
                     | Message binding ->
                         Stream.monitor (fun evt world ->
-                            let model = lens.Get world
-                            let messageOpt = binding.MakeValueOpt evt
-                            match messageOpt with
+                            match binding.MakeValueOpt evt with
                             | Some message ->
-                                let (model, commands) = this.Message (message, model, layer, world)
-                                let world = lens.Set model world
+                                let (model, commands) = this.Message (message, this.GetModel layer world, layer, world)
+                                let world = this.SetModel model layer world
                                 List.fold (fun world command ->
-                                    let model = lens.Get world
-                                    this.Command (command, model, layer, world))
+                                    this.Command (command, this.GetModel layer world, layer, world))
                                     world commands
                             | None -> world)
                             layer binding.Stream world
                     | Command binding ->
                         Stream.monitor (fun evt world ->
-                            let model = lens.Get world
-                            let messageOpt = binding.MakeValueOpt evt
-                            match messageOpt with
-                            | Some message -> this.Command (message, model, layer, world)
+                            match binding.MakeValueOpt evt with
+                            | Some message -> this.Command (message, this.GetModel layer world, layer, world)
                             | None -> world)
                             layer binding.Stream world)
                     world bindings
-            let contents = this.Content (lens, layer, world)
+            let contents = this.Content (this.Model layer, layer, world)
             List.fold (fun world content -> World.expandEntity None content layer world) world contents
 
         override this.Actualize (layer, world) =
-            let lens = getModelLens layer
-            let model = lens.Get world
-            let views = this.View (model, layer, world)
+            let views = this.View (this.GetModel layer world, layer, world)
             List.fold (fun world view ->
                 match view with
                 | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
@@ -1731,49 +1749,61 @@ module LayerDispatcherModule =
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
 
+    type Layer with
+    
+        member this.GetModel<'model> world = (this.GetDispatcher world :?> LayerDispatcher<'model, _, _>).GetModel this world
+        member this.SetModel<'model> value world = (this.GetDispatcher world :?> LayerDispatcher<'model, _, _>).SetModel value this world
+        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel this.SetModel this
+
 [<AutoOpen>]
 module ScreenDispatcherModule =
 
-    type [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command> (getModelLens : Screen -> Lens<'model, World>) =
+    type [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit ScreenDispatcher ()
 
+        member this.GetModel (screen : Screen) world : 'model =
+            match World.tryGetScreenProperty Property? Model screen world with
+            | Some property -> property.PropertyValue :?> 'model
+            | None -> initial
+
+        member this.SetModel (model : 'model) (screen : Screen) world =
+            let property = { PropertyType = typeof<'model>; PropertyValue = model }
+            World.attachScreenProperty Property? Model property screen world
+
+        member this.Model (screen : Screen) =
+            Lens.make Property? Model (this.GetModel screen) (flip this.SetModel screen) screen
+
         override this.Register (screen, world) =
-            let lens = getModelLens screen
-            let bindings = this.Bindings (lens.Get world, screen, world)
+            let bindings = this.Bindings (this.GetModel screen world, screen, world)
             let world =
                 List.fold (fun world binding ->
                     match binding with
                     | Message binding ->
                         Stream.monitor (fun evt world ->
-                            let model = lens.Get world
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
                             | Some message ->
-                                let (model, commands) = this.Message (message, model, screen, world)
-                                let world = lens.Set model world
+                                let (model, commands) = this.Message (message, this.GetModel screen world, screen, world)
+                                let world = this.SetModel model screen world
                                 List.fold (fun world command ->
-                                    let model = lens.Get world
-                                    this.Command (command, model, screen, world))
+                                    this.Command (command, this.GetModel screen world, screen, world))
                                     world commands
                             | None -> world)
                             screen binding.Stream world
                     | Command binding ->
                         Stream.monitor (fun evt world ->
-                            let model = lens.Get world
                             let messageOpt = binding.MakeValueOpt evt
                             match messageOpt with
-                            | Some message -> this.Command (message, model, screen, world)
+                            | Some message -> this.Command (message, this.GetModel screen world, screen, world)
                             | None -> world)
                             screen binding.Stream world)
                     world bindings
-            let contents = this.Content (lens, screen, world)
+            let contents = this.Content (this.Model screen, screen, world)
             let world = List.fold (fun world content -> World.expandLayer content screen world) world contents
             world
 
         override this.Actualize (screen, world) =
-            let lens = getModelLens screen
-            let model = lens.Get world
-            let views = this.View (model, screen, world)
+            let views = this.View (this.GetModel screen world, screen, world)
             List.fold (fun world view ->
                 match view with
                 | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
@@ -1792,3 +1822,9 @@ module ScreenDispatcherModule =
         default this.Message (_, model, _, _) = just model
         default this.Command (_, _, _, world) = world
         default this.View (_, _, _) = []
+
+    type Screen with
+    
+        member this.GetModel<'model> world = (this.GetDispatcher world :?> ScreenDispatcher<'model, _, _>).GetModel this world
+        member this.SetModel<'model> value world = (this.GetDispatcher world :?> ScreenDispatcher<'model, _, _>).SetModel value this world
+        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel this.SetModel this
