@@ -50,15 +50,8 @@ and [<NoEquality; NoComparison>] LayerContent =
             let layer = screen / name
             let expansions = List.map (fun content -> EntityContent.expand content layer world) entities
             let streams = List.map (function Choice1Of3 stream -> Some (layer, fst stream, snd stream) | _ -> None) expansions |> List.definitize
-            let (descriptors, equations) =
-                List.map (function Choice2Of3 dae -> Some dae | _ -> None) expansions |>
-                List.definitize |>
-                List.map (fun (entityName, descriptor, equation) ->
-                    let entityProperties = Map.add Property? Name (valueToSymbol entityName) descriptor.EntityProperties
-                    let descriptor = { descriptor with EntityProperties = entityProperties }
-                    (descriptor, equation)) |>
-                List.unzip |>
-                mapSnd List.concat
+            let equations = List.map (function Choice2Of3 (_, _, equation) -> Some equation | _ -> None) expansions |> List.definitize |> List.concat
+            let descriptors = List.map (function Choice2Of3 (entityName, descriptor, _) -> Some { descriptor with EntityProperties = Map.add Property? Name (valueToSymbol entityName) descriptor.EntityProperties } | _ -> None) expansions |> List.definitize
             let filePaths = List.map (function Choice3Of3 filePath -> Some filePath | _ -> None) expansions |> List.definitize |> List.map (fun (entityName, path) -> (name, entityName, path))
             let (descriptor, equationsLayer) = Describe.layer3 dispatcherName definitions descriptors layer world
             let equationsAll = equations @ equationsLayer
@@ -151,10 +144,10 @@ module DeclarativeOperators =
     let inline (==) left right = init left right
 
     /// Declare an instruction to equate two properties.
-    let inline (==>) left right = equate3 left right false
+    let inline (==>) left right = equate left right
 
     /// Declare an instruction to equate two properties, breaking any update cycles.
-    let inline (=/>) left right = equate3 left right true
+    let inline (=/>) left right = equateBreaking left right
 
 module Declarative =
     let Game = Game.Prop
