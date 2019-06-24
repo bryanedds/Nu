@@ -327,7 +327,7 @@ module WorldEntityModule =
                     ([], world)
 
         /// Transform a stream into existing entities.
-        static member streamEntities (mapper : 'a -> EntityContent) (layer : Layer) (stream : Stream<'a list, World>) =
+        static member streamEntities (mapper : 'a -> EntityContent) (ownerOpt : Entity option) (layer : Layer) (stream : Stream<'a list, World>) =
             stream |>
             Stream.optimize |>
             Stream.insert (makeGuid ()) |>
@@ -339,7 +339,7 @@ module WorldEntityModule =
                     Seq.fold (fun world guidAndContent ->
                         let (guid, content) = PartialComparable.unmake guidAndContent
                         match World.tryGetKeyedValue (scstring guid) world with
-                        | None -> World.expandEntityContent (Some guid) content layer world
+                        | None -> World.expandEntityContent (Some guid) content ownerOpt layer world
                         | Some _ -> world)
                         world added
                 let world =
@@ -355,33 +355,36 @@ module WorldEntityModule =
                 (current, world))
 
         /// Turn an entity stream into a series of entities.
-        static member expandEntityStream (lens : World Lens) mapper layer world =
+        static member expandEntityStream (lens : World Lens) mapper ownerOpt layer world =
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
             Stream.mapEvent (fun _ world -> lens.Get world |> Reflection.objToObjList) |>
-            World.streamEntities mapper layer |>
+            World.streamEntities mapper ownerOpt layer |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
         /// Turn entity content into an entity.
-        static member expandEntityContent guidOpt content layer world =
+        static member expandEntityContent guidOpt content ownerOpt layer world =
             match EntityContent.expand content layer world with
             | Choice1Of3 (lens, mapper) ->
-                World.expandEntityStream lens mapper layer world
+                World.expandEntityStream lens mapper ownerOpt layer world
             | Choice2Of3 (entityName, descriptor, equations, contents) ->
                 let (entity, world) = World.readEntity descriptor (Some entityName) layer world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
+                let world = match ownerOpt with Some owner -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> owner) entity world | None -> world
                 let world =
                     List.fold (fun world (name, simulant, property, breaking) ->
                         WorldModule.equate5 name simulant property breaking world)
                         world equations
                 let world =
                     List.fold (fun world content ->
-                        World.expandEntityContent (Some (makeGuid ())) content layer world)
+                        World.expandEntityContent (Some (makeGuid ())) content ownerOpt layer world)
                         world (snd contents)
                 world
             | Choice3Of3 (entityName, filePath) ->
                 let (entity, world) = World.readEntityFromFile filePath (Some entityName) layer world
-                match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
+                let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
+                let world = match ownerOpt with Some owner -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> owner) entity world | None -> world
+                world
 
     /// Represents the property value of an entity as accessible via reflection.
     type [<ReferenceEquality>] EntityPropertyValue =

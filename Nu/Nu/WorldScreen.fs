@@ -310,14 +310,14 @@ module WorldScreenModule =
                         world layerStreams
                 let world =
                     List.fold (fun world (layer, lens, mapper) ->
-                        World.expandEntityStream lens mapper layer world)
+                        World.expandEntityStream lens mapper None layer world)
                         world entityStreams
                 let world =
-                    List.fold (fun world entityContents ->
-                        let layer = etol (fst entityContents)
+                    List.fold (fun world (owner, entityContents) ->
+                        let layer = etol owner
                         List.fold (fun world entityContent ->
-                            World.expandEntityContent (Some (makeGuid ())) entityContent layer world)
-                            world (snd entityContents))
+                            World.expandEntityContent (Some (makeGuid ())) entityContent (Some owner) layer world)
+                            world entityContents)
                         world entityContents
                 World.applyScreenBehavior setScreenSplash behavior screen world
             | Right (name, behavior, Some dispatcherType, layerFilePath) ->
