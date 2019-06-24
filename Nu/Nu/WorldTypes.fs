@@ -735,14 +735,8 @@ module WorldTypes =
         private
             | SimulantOperators
 
-        /// Concatenate two addresses, taking the type of first address.
-        static member acatf<'a> (address : 'a Address) (simulant : Simulant) = acatf address (atooa simulant.SimulantAddress)
-
         /// Concatenate two addresses, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (simulant : Simulant) = acatff address simulant.SimulantAddress
-
-        /// Concatenate two addresses, taking the type of first address.
-        static member (->-) (address, simulant : Simulant) = SimulantOperators.acatf address simulant
 
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address, simulant : Simulant) = SimulantOperators.acatff address simulant
@@ -792,14 +786,8 @@ module WorldTypes =
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewGame Debug.World.Chosen
 
-        /// Concatenate two addresses, taking the type of first address.
-        static member acatf<'a> (address : 'a Address) (game : Game) = acatf address (atooa game.GameAddress)
-        
         /// Concatenate two addresses, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (game : Game) = acatff address game.GameAddress
-
-        /// Concatenate two addresses, taking the type of first address.
-        static member (->-) (address : 'a Address, game) = Game.acatf address game
 
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, game) = Game.acatff address game
@@ -853,20 +841,14 @@ module WorldTypes =
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
 
-        /// Concatenate two addresses, taking the type of first address.
-        static member acatf<'a> (address : 'a Address) (screen : Screen) = acatf address (atooa screen.ScreenAddress)
-
         /// Concatenate two addresses, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (screen : Screen) = acatff address screen.ScreenAddress
-
-        /// Concatenate two addresses, taking the type of first address.
-        static member (->-) (address : 'a Address, screen) = Screen.acatf address screen
 
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, screen) = Screen.acatff address screen
 
         /// Derive a layer from its screen.
-        static member (/) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress ->- ntoa layerName)
+        static member (/) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress --> ntoa layerName)
     
     /// Forms a logical layer of entities.
     and Layer (layerAddress) =
@@ -922,20 +904,14 @@ module WorldTypes =
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
 
-        /// Concatenate two addresses, taking the type of first address.
-        static member acatf<'a> (address : 'a Address) (layer : Layer) = acatf address (atooa layer.LayerAddress)
-        
         /// Concatenate two addresses, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (layer : Layer) = acatff address layer.LayerAddress
-    
-        /// Concatenate two addresses, taking the type of first address.
-        static member (->-) (address : 'a Address, layer) = Layer.acatf address layer
     
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, layer) = Layer.acatff address layer
         
         /// Derive an entity from its layer.
-        static member (/) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress ->- ntoa entityName)
+        static member (/) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress --> ntoa entityName)
     
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
@@ -1008,14 +984,8 @@ module WorldTypes =
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
 
-        /// Concatenate two addresses, taking the type of first address.
-        static member acatf<'a> (address : 'a Address) (entity : Entity) = acatf address (atooa entity.EntityAddress)
-        
         /// Concatenate two addresses, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (entity : Entity) = acatff address entity.EntityAddress
-    
-        /// Concatenate two addresses, taking the type of first address.
-        static member (->-) (address : 'a Address, entity) = Entity.acatf address entity
     
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, entity) = Entity.acatff address entity

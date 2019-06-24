@@ -584,7 +584,7 @@ module WorldModuleEntity =
                 let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
                 let world = World.updateEntityPublishFlags entity world
                 let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
-                let world = World.publish () (ltoa<unit> ["Register"; "Event"] ->- entity) eventTrace entity world
+                let world = World.publish () (ltoa<unit> ["Register"; "Event"] --> entity) eventTrace entity world
                 world)
                 entity
                 world
@@ -592,7 +592,7 @@ module WorldModuleEntity =
         static member internal unregisterEntity entity world =
             World.withEventContext (fun world ->
                 let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
-                let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] ->- entity) eventTrace entity world
+                let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] --> entity) eventTrace entity world
                 let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
                 let facets = World.getEntityFacets entity world
                 let world = dispatcher.Unregister (entity, world)
@@ -603,7 +603,7 @@ module WorldModuleEntity =
         static member internal signalEntity signal entity world =
             World.withEventContext (fun world ->
                 let eventTrace = EventTrace.record "World" "signalEntity" EventTrace.empty
-                let world = World.publish signal (ltoa<Symbol> ["Signal"; "Event"] ->- entity) eventTrace entity world
+                let world = World.publish signal (ltoa<Symbol> ["Signal"; "Event"] --> entity) eventTrace entity world
                 let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
                 let facets = World.getEntityFacets entity world
                 let world = dispatcher.Signal (signal, entity, world)
