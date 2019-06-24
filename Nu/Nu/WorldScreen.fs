@@ -288,9 +288,9 @@ module WorldScreenModule =
                 (screen, world)
 
         /// Turn screen content into a screen.
-        static member expandScreen setScreenSplash content game world =
+        static member expandScreenContent setScreenSplash content game world =
             match ScreenContent.expand content game world with
-            | Left (name, descriptor, equations, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths) ->
+            | Left (name, descriptor, equations, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths, entityContents) ->
                 let (screen, world) = World.readScreen descriptor (Some name) world
                 let world =
                     List.fold (fun world (_ : string, layerName, filePath) ->
@@ -312,6 +312,13 @@ module WorldScreenModule =
                     List.fold (fun world (layer, lens, mapper) ->
                         World.expandEntityStream lens mapper layer world)
                         world entityStreams
+                let world =
+                    List.fold (fun world entityContents ->
+                        let layer = etol (fst entityContents)
+                        List.fold (fun world entityContent ->
+                            World.expandEntityContent (Some (makeGuid ())) entityContent layer world)
+                            world (snd entityContents))
+                        world entityContents
                 World.applyScreenBehavior setScreenSplash behavior screen world
             | Right (name, behavior, Some dispatcherType, layerFilePath) ->
                 let (screen, world) = World.createScreen3 dispatcherType.Name (Some name) world

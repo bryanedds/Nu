@@ -823,7 +823,7 @@ module GameDispatcherModule =
             let contents = this.Content (this.Model game, game, world)
             let world =
                 List.foldi (fun contentIndex world content ->
-                    let (screen, world) = World.expandScreen World.setScreenSplash content game world
+                    let (screen, world) = World.expandScreenContent World.setScreenSplash content game world
                     if contentIndex = 0 then World.selectScreen screen world else world)
                     world contents
             world
