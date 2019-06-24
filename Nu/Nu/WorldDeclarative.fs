@@ -19,7 +19,7 @@ type SimulantContent = interface end
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
     | EntitiesFromStream of World Lens * (obj -> EntityContent)
-    | EntityFromDefinitions of string * string * DescriptiveDefinition list
+    | EntityFromDefinitions of string * string * DescriptiveDefinition list (** EntityContent list*)
     | EntityFromFile of string * string
     interface SimulantContent
 
@@ -28,9 +28,14 @@ type [<NoEquality; NoComparison>] EntityContent =
         match content with
         | EntitiesFromStream (lens, mapper) ->
             Choice1Of3 (lens, mapper)
-        | EntityFromDefinitions (dispatcherName, name, definitions) ->
-            let (descriptor, definitions) = Describe.entity2 dispatcherName definitions (layer / name) world
-            Choice2Of3 (name, descriptor, definitions)
+        | EntityFromDefinitions (dispatcherName, name, definitions(*, contents*)) ->
+            (*let expansions = List.map (fun content -> EntityContent.expand content layer world) contents
+            let streams = List.map (function Choice1Of3 stream -> Some (layer, fst stream, snd stream) | _ -> None) expansions |> List.definitize
+            let equations = List.map (function Choice2Of3 (_, _, equation, _, _) -> Some equation | _ -> None) expansions |> List.definitize |> List.concat
+            let descriptors = List.map (function Choice2Of3 (entityName, descriptor, _, _, _) -> Some { descriptor with EntityProperties = Map.add Property? Name (valueToSymbol entityName) descriptor.EntityProperties } | _ -> None) expansions |> List.definitize
+            let filePaths = List.map (function Choice3Of3 filePath -> Some filePath | _ -> None) expansions |> List.definitize |> List.map (fun (entityName, path) -> (name, entityName, path))*)
+            let (descriptor, equationsEntity) = Describe.entity2 dispatcherName definitions (layer / name) world
+            Choice2Of3 (name, descriptor, equationsEntity)
         | EntityFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
 
@@ -46,16 +51,15 @@ and [<NoEquality; NoComparison>] LayerContent =
         match content with
         | LayersFromStream (lens, mapper) ->
             Choice1Of3 (lens, mapper)
-        | LayerFromDefinitions (dispatcherName, name, definitions, entities) ->
+        | LayerFromDefinitions (dispatcherName, name, definitions, contents) ->
             let layer = screen / name
-            let expansions = List.map (fun content -> EntityContent.expand content layer world) entities
+            let expansions = List.map (fun content -> EntityContent.expand content layer world) contents
             let streams = List.map (function Choice1Of3 stream -> Some (layer, fst stream, snd stream) | _ -> None) expansions |> List.definitize
-            let equations = List.map (function Choice2Of3 (_, _, equation) -> Some equation | _ -> None) expansions |> List.definitize |> List.concat
+            let equations = List.map (function Choice2Of3 (_, _, equations) -> Some equations | _ -> None) expansions |> List.definitize |> List.concat
             let descriptors = List.map (function Choice2Of3 (entityName, descriptor, _) -> Some { descriptor with EntityProperties = Map.add Property? Name (valueToSymbol entityName) descriptor.EntityProperties } | _ -> None) expansions |> List.definitize
             let filePaths = List.map (function Choice3Of3 filePath -> Some filePath | _ -> None) expansions |> List.definitize |> List.map (fun (entityName, path) -> (name, entityName, path))
             let (descriptor, equationsLayer) = Describe.layer3 dispatcherName definitions descriptors layer world
-            let equationsAll = equations @ equationsLayer
-            Choice2Of3 (name, descriptor, equationsAll, streams, filePaths)
+            Choice2Of3 (name, descriptor, equations @ equationsLayer, streams, filePaths)
         | LayerFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
 
@@ -69,9 +73,9 @@ and [<NoEquality; NoComparison>] ScreenContent =
     /// Expand a screen content to its constituent parts.
     static member expand content (_ : Game) world =
         match content with
-        | ScreenFromDefinitions (dispatcherName, name, behavior, definitions, layers) ->
+        | ScreenFromDefinitions (dispatcherName, name, behavior, definitions, contents) ->
             let screen = Screen name
-            let expansions = List.map (fun content -> LayerContent.expand content screen world) layers
+            let expansions = List.map (fun content -> LayerContent.expand content screen world) contents
             let streams = List.map (function Choice1Of3 stream -> Some (screen, fst stream, snd stream) | _ -> None) expansions |> List.definitize
             let descriptors = List.map (function Choice2Of3 (layerName, descriptor, _, _, _) -> Some { descriptor with LayerProperties = Map.add (Property? Name) (valueToSymbol layerName) descriptor.LayerProperties } | _ -> None) expansions |> List.definitize
             let equations = List.map (function Choice2Of3 (_, _, equations, _, _) -> Some equations | _ -> None) expansions |> List.definitize |> List.concat
@@ -79,8 +83,7 @@ and [<NoEquality; NoComparison>] ScreenContent =
             let entityFilePaths = List.map (function Choice2Of3 (_, _, _, _, filePaths) -> Some (List.map (fun (layerName, entityName, filePath) -> (name, layerName, entityName, filePath)) filePaths) | _ -> None) expansions |> List.definitize |> List.concat
             let layerFilePaths = List.map (function Choice3Of3 (layerName, filePath) -> Some (name, layerName, filePath) | _ -> None) expansions |> List.definitize
             let (descriptor, equationsScreen) = Describe.screen3 dispatcherName definitions descriptors screen world
-            let equationsAll = equations @ equationsScreen
-            Left (name, descriptor, equationsAll, behavior, streams, entityStreams, layerFilePaths, entityFilePaths)
+            Left (name, descriptor, equations @ equationsScreen, behavior, streams, entityStreams, layerFilePaths, entityFilePaths)
         | ScreenFromLayerFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
         | ScreenFromFile (name, behavior, filePath) -> Right (name, behavior, None, filePath)
 
@@ -93,9 +96,9 @@ and [<NoEquality; NoComparison>] GameContent =
     /// Expand a game content to its constituent parts.
     static member expand content world =
         match content with
-        | GameFromDefinitions (dispatcherName, definitions, screens) ->
+        | GameFromDefinitions (dispatcherName, definitions, contents) ->
             let game = Game ()
-            let expansions = List.map (fun content -> ScreenContent.expand content game world) screens
+            let expansions = List.map (fun content -> ScreenContent.expand content game world) contents
             let descriptors = Either.getLeftValues expansions |> List.map (fun (screenName, descriptor, _, _, _, _, _, _) -> { descriptor with ScreenProperties = Map.add (Property? Name) (valueToSymbol screenName) descriptor.ScreenProperties })
             let equations = Either.getLeftValues expansions |> List.map (fun (_, _, equations, _, _, _, _, _) -> equations) |> List.concat
             let layerStreams = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, stream, _, _, _) -> stream) |> List.concat
@@ -105,8 +108,7 @@ and [<NoEquality; NoComparison>] GameContent =
             let layerFilePaths = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, layerFilePaths, _) -> layerFilePaths) |> List.concat
             let screenFilePaths = Either.getRightValues expansions
             let (descriptor, equationsGame) = Describe.game3 dispatcherName definitions descriptors game world
-            let equationsAll = equations @ equationsGame
-            Left (descriptor, equationsAll, screenBehaviors, layerStreams, entityStreams, screenFilePaths, layerFilePaths, entityFilePaths)
+            Left (descriptor, equations @ equationsGame, screenBehaviors, layerStreams, entityStreams, screenFilePaths, layerFilePaths, entityFilePaths)
         | GameFromFile filePath -> Right filePath
 
 type [<NoEquality; NoComparison>] View =
