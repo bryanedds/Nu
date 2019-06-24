@@ -247,11 +247,50 @@ module WorldLayerModule =
             let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
             World.readLayer layerDescriptor nameOpt screen world
 
+        /// Transform a stream into existing layers.
+        static member streamLayers (mapper : 'a -> LayerContent) (screen : Screen) (stream : Stream<'a list, World>) =
+            stream |>
+            Stream.optimize |>
+            Stream.insert (makeGuid ()) |>
+            Stream.map (fun (guid, list) -> List.mapi (fun i a -> PartialComparable.make (makeGuidDeterministic i guid) (mapper a)) list |> Set.ofList) |>
+            Stream.fold (fun (p, _, _) c -> (c, Set.difference c p, Set.difference p c)) (Set.empty, Set.empty, Set.empty) |>
+            Stream.mapEffect (fun evt world ->
+                let (current, added, removed) = evt.Data
+                let world =
+                    Seq.fold (fun world guidAndContent ->
+                        let (guid, content) = PartialComparable.unmake guidAndContent
+                        match World.tryGetKeyedValue (scstring guid) world with
+                        | None -> World.expandLayer (Some guid) content screen world
+                        | Some _ -> world)
+                        world added
+                let world =
+                    Seq.fold (fun world guidAndContent ->
+                        let (guid, _) = PartialComparable.unmake guidAndContent
+                        match World.tryGetKeyedValue (scstring guid) world with
+                        | Some layersObj ->
+                            let layers = layersObj :?> Layer
+                            let world = World.removeKeyedValue (scstring guid) world
+                            World.destroyLayer layers world
+                        | None -> failwithumf ())
+                        world removed
+                (current, world))
+
+        /// Turn an layers stream into a series of layers.
+        static member expandLayerStream (lens : World Lens) mapper screen world =
+            Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
+            Stream.sum (Stream.make lens.ChangeEvent) |>
+            Stream.mapEvent (fun _ world -> lens.Get world |> Reflection.objToObjList) |>
+            World.streamLayers mapper screen |>
+            Stream.subscribe (fun _ value -> value) Default.Game $ world
+
         /// Turn layer content into a layer.
-        static member expandLayer content screen world =
+        static member expandLayer guidOpt content screen world =
             match LayerContent.expand content screen world with
-            | Left (name, descriptor, equations, streams, entityFilePaths) ->
+            | Choice1Of3 (lens, mapper) ->
+                World.expandLayerStream lens mapper screen world
+            | Choice2Of3 (name, descriptor, equations, streams, entityFilePaths) ->
                 let (layer, world) = World.readLayer descriptor (Some name) screen world
+                let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) layer world | None -> world
                 let world =
                     List.fold (fun world (_, entityName, filePath) ->
                         World.readEntityFromFile filePath (Some entityName) layer world |> snd)
@@ -265,8 +304,9 @@ module WorldLayerModule =
                         World.expandEntityStream lens mapper layer world)
                         world streams
                 world
-            | Right (layerName, filePath) ->
-                World.readLayerFromFile filePath (Some layerName) screen world |> snd
+            | Choice3Of3 (layerName, filePath) ->
+                let (layer, world) = World.readLayerFromFile filePath (Some layerName) screen world
+                match guidOpt with Some guid -> World.addKeyedValue (scstring guid) layer world | None -> world
 
     /// Represents the property value of an layer as accessible via reflection.
     type [<ReferenceEquality>] LayerPropertyValue =

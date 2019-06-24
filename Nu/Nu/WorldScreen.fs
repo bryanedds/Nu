@@ -290,7 +290,7 @@ module WorldScreenModule =
         /// Turn screen content into a screen.
         static member expandScreen setScreenSplash content game world =
             match ScreenContent.expand content game world with
-            | Left (name, descriptor, equations, behavior, entityStreams, layerFilePaths, entityFilePaths) ->
+            | Left (name, descriptor, equations, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths) ->
                 let (screen, world) = World.readScreen descriptor (Some name) world
                 let world =
                     List.fold (fun world (_ : string, layerName, filePath) ->
@@ -304,6 +304,10 @@ module WorldScreenModule =
                     List.fold (fun world (name, simulant, property, breaking) ->
                         WorldModule.equate5 name simulant property breaking world)
                         world equations
+                let world =
+                    List.fold (fun world (screen, lens, mapper) ->
+                        World.expandLayerStream lens mapper screen world)
+                        world layerStreams
                 let world =
                     List.fold (fun world (layer, lens, mapper) ->
                         World.expandEntityStream lens mapper layer world)
