@@ -61,7 +61,8 @@ module FacetModule =
                             | None -> world)
                             entity binding.Stream world)
                     world bindings
-            world
+            let contents = this.Content (this.Model entity, entity, world)
+            List.fold (fun world content -> World.expandEntity None content (etol entity) world) world contents
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -83,6 +84,9 @@ module FacetModule =
 
         abstract member Command : 'command * 'model * Entity * World -> World
         default this.Command (_, _, _, world) = world
+
+        abstract member Content : Lens<'model, World> * Entity * World -> EntityContent list
+        default this.Content (_, _, _) = []
 
         abstract member View : 'model * Entity * World -> View list
         default this.View (_, _, _) = []
@@ -840,7 +844,8 @@ module EntityDispatcherModule =
                             | None -> world)
                             entity binding.Stream world)
                     world bindings
-            world
+            let contents = this.Content (this.Model entity, entity, world)
+            List.fold (fun world content -> World.expandEntity None content (etol entity) world) world contents
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -862,6 +867,9 @@ module EntityDispatcherModule =
         
         abstract member Command : 'command * 'model * Entity * World -> World
         default this.Command (_, _, _, world) = world
+
+        abstract member Content : Lens<'model, World> * Entity * World -> EntityContent list
+        default this.Content (_, _, _) = []
         
         abstract member View : 'model * Entity * World -> View list
         default this.View (_, _, _) = []
