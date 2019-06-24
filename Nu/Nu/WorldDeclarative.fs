@@ -29,11 +29,6 @@ type [<NoEquality; NoComparison>] EntityContent =
         | EntitiesFromStream (lens, mapper) ->
             Choice1Of3 (lens, mapper)
         | EntityFromDefinitions (dispatcherName, name, definitions, contents) ->
-            //let expansions = List.map (fun content -> EntityContent.expand content layer world) contents
-            //let streams = List.map (function Choice1Of3 stream -> Some (layer, fst stream, snd stream) | _ -> None) expansions |> List.definitize
-            //let equations = List.map (function Choice2Of3 (_, _, equation, _, _) -> Some equation | _ -> None) expansions |> List.definitize |> List.concat
-            //let descriptors = List.map (function Choice2Of3 (entityName, descriptor, _, _, _) -> Some { descriptor with EntityProperties = Map.add Property? Name (valueToSymbol entityName) descriptor.EntityProperties } | _ -> None) expansions |> List.definitize
-            //let filePaths = List.map (function Choice3Of3 filePath -> Some filePath | _ -> None) expansions |> List.definitize |> List.map (fun (entityName, path) -> (name, entityName, path))
             let (descriptor, equationsEntity) = Describe.entity2 dispatcherName definitions (layer / name) world
             Choice2Of3 (name, descriptor, equationsEntity, (layer / name, contents))
         | EntityFromFile (name, filePath) ->
