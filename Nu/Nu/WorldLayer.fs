@@ -301,13 +301,13 @@ module WorldLayerModule =
                         world equations
                 let world =
                     List.fold (fun world (layer, lens, mapper) ->
-                        World.expandEntityStream lens mapper layer world)
+                        World.expandEntityStream lens mapper None layer world)
                         world streams
                 let world =
-                    List.fold (fun world entityContents ->
+                    List.fold (fun world (owner, entityContents) ->
                         List.fold (fun world entityContent ->
-                            World.expandEntityContent (Some (makeGuid ())) entityContent layer world)
-                            world (snd entityContents))
+                            World.expandEntityContent (Some (makeGuid ())) entityContent (Some owner) layer world)
+                            world entityContents)
                         world entityContents
                 world
             | Choice3Of3 (layerName, filePath) ->

@@ -65,7 +65,7 @@ module FacetModule =
                             entity binding.Stream world)
                     world bindings
             let contents = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (etol entity) world) world contents
+            List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world contents
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -848,7 +848,7 @@ module EntityDispatcherModule =
                             entity binding.Stream world)
                     world bindings
             let contents = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (etol entity) world) world contents
+            List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world contents
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -1763,7 +1763,7 @@ module LayerDispatcherModule =
                             layer binding.Stream world)
                     world bindings
             let contents = this.Content (this.Model layer, layer, world)
-            List.fold (fun world content -> World.expandEntityContent None content layer world) world contents
+            List.fold (fun world content -> World.expandEntityContent None content None layer world) world contents
 
         override this.Actualize (layer, world) =
             let views = this.View (this.GetModel layer world, layer, world)
