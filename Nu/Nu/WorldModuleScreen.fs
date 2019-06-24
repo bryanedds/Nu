@@ -224,13 +224,13 @@ module WorldModuleScreen =
             | None -> world
 
         static member internal registerScreen screen world =
-            let world = World.monitor World.screenOnRegisterChanged (ltoa<World ParticipantChangeData> ["Change"; (Property? OnRegister); "Event"] ->- screen) screen world
-            let world = World.monitor World.screenScriptOptChanged (ltoa<World ParticipantChangeData> ["Change"; (Property? ScriptOpt); "Event"] ->- screen) screen world
+            let world = World.monitor World.screenOnRegisterChanged (ltoa<World ParticipantChangeData> ["Change"; (Property? OnRegister); "Event"] --> screen) screen world
+            let world = World.monitor World.screenScriptOptChanged (ltoa<World ParticipantChangeData> ["Change"; (Property? ScriptOpt); "Event"] --> screen) screen world
             World.withEventContext (fun world ->
                 let dispatcher = World.getScreenDispatcher screen world
                 let world = dispatcher.Register (screen, world)
                 let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
-                let world = World.publish () (ltoa<unit> ["Register"; "Event"] ->- screen) eventTrace screen world
+                let world = World.publish () (ltoa<unit> ["Register"; "Event"] --> screen) eventTrace screen world
                 eval (World.getScreenOnRegister screen world) (World.getScreenScriptFrame screen world) screen world |> snd')
                 screen
                 world
@@ -240,7 +240,7 @@ module WorldModuleScreen =
                 let world = eval (World.getScreenOnUnregister screen world) (World.getScreenScriptFrame screen world) screen world |> snd'
                 let dispatcher = World.getScreenDispatcher screen world
                 let eventTrace = EventTrace.record "World" "unregisteringScreen" EventTrace.empty
-                let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] ->- screen) eventTrace screen world
+                let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] --> screen) eventTrace screen world
                 dispatcher.Unregister (screen, world))
                 screen
                 world
@@ -257,7 +257,7 @@ module WorldModuleScreen =
                     | None -> failwithumf ()
                 let dispatcher = World.getScreenDispatcher screen world
                 let eventTrace = EventTrace.record "World" "signalScreen" EventTrace.empty
-                let world = World.publish signal (ltoa<Symbol> ["Signal"; "Event"] ->- screen) eventTrace screen world
+                let world = World.publish signal (ltoa<Symbol> ["Signal"; "Event"] --> screen) eventTrace screen world
                 dispatcher.Signal (signal, screen, world))
                 screen
                 world

@@ -13,10 +13,10 @@ module SimulantOperators =
     let ntos screenName = Screen (ntoa screenName)
 
     /// Derive an entity from its layer.
-    let ltoe (layer : Layer) entityName = Entity (atoa<Layer, Entity> layer.LayerAddress ->- ntoa entityName)
+    let ltoe (layer : Layer) entityName = Entity (atoa<Layer, Entity> layer.LayerAddress --> ntoa entityName)
 
     /// Derive layer from its screen.
-    let stol (screen : Screen) layerName = Layer (atoa<Screen, Layer> screen.ScreenAddress ->- ntoa layerName)
+    let stol (screen : Screen) layerName = Layer (atoa<Screen, Layer> screen.ScreenAddress --> ntoa layerName)
 
     /// Derive entity from its screen.
     let stoe (screen : Screen) layerName entityName = ltoe (stol screen layerName) entityName

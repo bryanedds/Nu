@@ -141,7 +141,7 @@ module WorldScreenModule =
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update ->- screen) eventTrace Default.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update --> screen) eventTrace Default.Game true world)
                 screen
                 world
 
@@ -157,7 +157,7 @@ module WorldScreenModule =
                 
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate ->- screen) eventTrace Default.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate --> screen) eventTrace Default.Game true world)
                 screen
                 world
 

@@ -120,12 +120,12 @@ module WorldModule2 =
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
                     let eventTrace = EventTrace.record4 "World" "selectScreen" "Deselect" EventTrace.empty
-                    World.publish () (Events.Deselect ->- selectedScreen) eventTrace selectedScreen world
+                    World.publish () (Events.Deselect --> selectedScreen) eventTrace selectedScreen world
                 | None -> world
             let world = World.setScreenTransitionStatePlus IncomingState screen world
             let world = World.setSelectedScreen screen world
             let eventTrace = EventTrace.record4 "World" "selectScreen" "Select" EventTrace.empty
-            World.publish () (Events.Select ->- screen) eventTrace screen world
+            World.publish () (Events.Select --> screen) eventTrace screen world
 
         /// Try to transition to the given screen if no other transition is in progress.
         [<FunctionBinding>]
@@ -144,7 +144,7 @@ module WorldModule2 =
                         | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
                     let world = World.setScreenTransitionDestinationOpt (Some destination) world
                     let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
-                    let world = World.subscribePlus<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish ->- selectedScreen) selectedScreen world |> snd
+                    let world = World.subscribePlus<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
                     (true, world)
                 else (false, world)
             | None -> (false, world)
@@ -202,7 +202,7 @@ module WorldModule2 =
                     let world =
                         if selectedScreen.GetTransitionTicks world = 0L then
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
-                            World.publish () (Events.IncomingStart ->- selectedScreen) eventTrace selectedScreen world
+                            World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
                         else world
                     match World.getLiveness world with
                     | Running ->
@@ -210,7 +210,7 @@ module WorldModule2 =
                         if finished then
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingFinish" EventTrace.empty
                             let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
-                            World.publish () (Events.IncomingFinish ->- selectedScreen) eventTrace selectedScreen world
+                            World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen world
                         else world
                     | Exiting -> world
                 | Exiting -> world
@@ -218,7 +218,7 @@ module WorldModule2 =
                 let world =
                     if selectedScreen.GetTransitionTicks world = 0L then
                         let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
-                        World.publish () (Events.OutgoingStart ->- selectedScreen) eventTrace selectedScreen world
+                        World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
                     else world
                 match World.getLiveness world with
                 | Running ->
@@ -228,7 +228,7 @@ module WorldModule2 =
                         match World.getLiveness world with
                         | Running ->
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingFinish" EventTrace.empty
-                            World.publish () (Events.OutgoingFinish ->- selectedScreen) eventTrace selectedScreen world
+                            World.publish () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen world
                         | Exiting -> world
                     else world
                 | Exiting -> world
@@ -254,7 +254,7 @@ module WorldModule2 =
                     (Resolve, World.exit world)
 
         static member private handleSplashScreenIdle idlingTime (splashScreen : Screen) evt world =
-            let world = World.subscribePlus SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update ->- splashScreen) evt.Subscriber world |> snd
+            let world = World.subscribePlus SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update --> splashScreen) evt.Subscriber world |> snd
             (Cascade, world)
 
         /// Set the splash aspects of a screen.
@@ -273,9 +273,9 @@ module WorldModule2 =
                 let world = splashLabel.SetSize cameraEyeSize world
                 let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
                 let world = splashLabel.SetLabelImage splashData.SplashImage world
-                let (unsub, world) = World.monitorPlus (World.handleSplashScreenIdle splashData.IdlingTime screen) (Events.IncomingFinish ->- screen) screen world
-                let (unsub2, world) = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish ->- screen) screen world
-                let world = World.monitor (fun _ -> unsub >> unsub2) (Events.Unregistering ->- splashLayer) screen world
+                let (unsub, world) = World.monitorPlus (World.handleSplashScreenIdle splashData.IdlingTime screen) (Events.IncomingFinish --> screen) screen world
+                let (unsub2, world) = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish --> screen) screen world
+                let world = World.monitor (fun _ -> unsub >> unsub2) (Events.Unregistering --> splashLayer) screen world
                 world
             | None -> world
 
