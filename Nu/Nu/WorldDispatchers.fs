@@ -1835,7 +1835,7 @@ module ScreenDispatcherModule =
                             screen binding.Stream world)
                     world bindings
             let contents = this.Content (this.Model screen, screen, world)
-            let world = List.fold (fun world content -> World.expandLayer content screen world) world contents
+            let world = List.fold (fun world content -> World.expandLayer None content screen world) world contents
             world
 
         override this.Actualize (screen, world) =
