@@ -260,7 +260,7 @@ module WorldLayerModule =
                     Seq.fold (fun world guidAndContent ->
                         let (guid, content) = PartialComparable.unmake guidAndContent
                         match World.tryGetKeyedValue (scstring guid) world with
-                        | None -> World.expandLayer (Some guid) content screen world
+                        | None -> World.expandLayerContent (Some guid) content screen world
                         | Some _ -> world)
                         world added
                 let world =
@@ -284,11 +284,11 @@ module WorldLayerModule =
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
         /// Turn layer content into a layer.
-        static member expandLayer guidOpt content screen world =
+        static member expandLayerContent guidOpt content screen world =
             match LayerContent.expand content screen world with
             | Choice1Of3 (lens, mapper) ->
                 World.expandLayerStream lens mapper screen world
-            | Choice2Of3 (name, descriptor, equations, streams, entityFilePaths) ->
+            | Choice2Of3 (name, descriptor, equations, streams, entityFilePaths, entityContents) ->
                 let (layer, world) = World.readLayer descriptor (Some name) screen world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) layer world | None -> world
                 let world =
@@ -303,6 +303,12 @@ module WorldLayerModule =
                     List.fold (fun world (layer, lens, mapper) ->
                         World.expandEntityStream lens mapper layer world)
                         world streams
+                let world =
+                    List.fold (fun world entityContents ->
+                        List.fold (fun world entityContent ->
+                            World.expandEntityContent (Some (makeGuid ())) entityContent layer world)
+                            world (snd entityContents))
+                        world entityContents
                 world
             | Choice3Of3 (layerName, filePath) ->
                 let (layer, world) = World.readLayerFromFile filePath (Some layerName) screen world
