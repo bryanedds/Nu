@@ -93,54 +93,55 @@ and [<NoComparison>] EntityDescriptor =
     interface SimulantDescriptor with
         member this.Children = []
 
-type [<NoEquality; NoComparison>] DescriptiveDefinition =
+/// Initializes a property.
+type [<NoEquality; NoComparison>] PropertyInitializer =
     | PropertyDefinition of PropertyDefinition
-    | Equate of string * World Lens * bool
+    | Equation of string * World Lens * bool
 
 /// Contains primitives for describing simulants.
 module Describe =
 
     /// Describe a game with the given definitions and contained screens.
-    let game3 dispatcherName (definitions : DescriptiveDefinition seq) (screens : ScreenDescriptor seq) (game : Game) world =
-        let properties =
-            definitions |>
-            Seq.map (fun def -> match def with PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr) | Equate _ -> None) |>
+    let game3 dispatcherName (initializers : PropertyInitializer seq) (screens : ScreenDescriptor seq) (game : Game) world =
+        let definitions =
+            initializers |>
+            Seq.map (fun def -> match def with PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr) | Equation _ -> None) |>
             Seq.definitize |>
             Seq.map (mapSnd (function DefineExpr value -> value | VariableExpr fn -> fn world)) |>
             Seq.map (mapSnd valueToSymbol) |>
             Map.ofSeq
         let equations =
-            definitions |>
-            Seq.map (fun def -> match def with Equate (leftName, right, breaking) -> Some (leftName, game :> Simulant, right, breaking) | PropertyDefinition _ -> None) |>
+            initializers |>
+            Seq.map (fun def -> match def with Equation (leftName, right, breaking) -> Some (leftName, game :> Simulant, right, breaking) | PropertyDefinition _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let descriptor =
             { GameDispatcherName = dispatcherName
-              GameProperties = properties
+              GameProperties = definitions
               Screens = List.ofSeq screens }
         (descriptor, equations)
 
     /// Describe a game with the given definitions and contained screens.
-    let game<'d when 'd :> GameDispatcher> properties screens game world =
-        game3 typeof<'d>.Name properties screens game world
+    let game<'d when 'd :> GameDispatcher> initializers screens game world =
+        game3 typeof<'d>.Name initializers screens game world
 
     /// Describe a screen with the given definitions and contained layers.
-    let screen3 dispatcherName (definitions : DescriptiveDefinition seq) (layers : LayerDescriptor seq) (screen : Screen) world =
-        let properties =
-            definitions |>
-            Seq.map (fun def -> match def with PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr) | Equate _ -> None) |>
+    let screen3 dispatcherName (initializers : PropertyInitializer seq) (layers : LayerDescriptor seq) (screen : Screen) world =
+        let definitions =
+            initializers |>
+            Seq.map (fun def -> match def with PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr) | Equation _ -> None) |>
             Seq.definitize |>
             Seq.map (mapSnd (function DefineExpr value -> value | VariableExpr fn -> fn world)) |>
             Seq.map (mapSnd valueToSymbol) |>
             Map.ofSeq
         let equations =
-            definitions |>
-            Seq.map (fun def -> match def with Equate (leftName, right, breaking) -> Some (leftName, screen :> Simulant, right, breaking) | PropertyDefinition _ -> None) |>
+            initializers |>
+            Seq.map (fun def -> match def with Equation (leftName, right, breaking) -> Some (leftName, screen :> Simulant, right, breaking) | PropertyDefinition _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let descriptor =
             { ScreenDispatcherName = dispatcherName
-              ScreenProperties = properties
+              ScreenProperties = definitions
               Layers = List.ofSeq layers }
         (descriptor, equations)
 
@@ -149,22 +150,22 @@ module Describe =
         screen3 typeof<'d>.Name definitions layers screen world
 
     /// Describe a layer with the given definitions and contained entities.
-    let layer3 dispatcherName (definitions : DescriptiveDefinition seq) (entities : EntityDescriptor seq) (layer : Layer) world =
-        let properties =
-            definitions |>
-            Seq.map (fun def -> match def with PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr) | Equate _ -> None) |>
+    let layer3 dispatcherName (initializers : PropertyInitializer seq) (entities : EntityDescriptor seq) (layer : Layer) world =
+        let definitions =
+            initializers |>
+            Seq.map (fun def -> match def with PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr) | Equation _ -> None) |>
             Seq.definitize |>
             Seq.map (mapSnd (function DefineExpr value -> value | VariableExpr fn -> fn world)) |>
             Seq.map (mapSnd valueToSymbol) |>
             Map.ofSeq
         let equations =
-            definitions |>
-            Seq.map (fun def -> match def with Equate (leftName, right, breaking) -> Some (leftName, layer :> Simulant, right, breaking) | PropertyDefinition _ -> None) |>
+            initializers |>
+            Seq.map (fun def -> match def with Equation (leftName, right, breaking) -> Some (leftName, layer :> Simulant, right, breaking) | PropertyDefinition _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let descriptor =
             { LayerDispatcherName = dispatcherName
-              LayerProperties = properties
+              LayerProperties = definitions
               Entities = List.ofSeq entities }
         (descriptor, equations)
 
@@ -173,22 +174,22 @@ module Describe =
         layer3 typeof<'d>.Name definitions entities world
 
     /// Describe an entity with the given definitions.
-    let entity2 dispatcherName (definitions : DescriptiveDefinition seq) (entity : Entity) world =
-        let properties =
-            definitions |>
-            Seq.map (fun def -> match def with PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr) | Equate _ -> None) |>
+    let entity2 dispatcherName (initializers : PropertyInitializer seq) (entity : Entity) world =
+        let definitions =
+            initializers |>
+            Seq.map (fun def -> match def with PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr) | Equation _ -> None) |>
             Seq.definitize |>
             Seq.map (mapSnd (function DefineExpr value -> value | VariableExpr fn -> fn world)) |>
             Seq.map (mapSnd valueToSymbol) |>
             Map.ofSeq
         let equations =
-            definitions |>
-            Seq.map (fun def -> match def with Equate (leftName, right, breaking) -> Some (leftName, entity :> Simulant, right, breaking) | PropertyDefinition _ -> None) |>
+            initializers |>
+            Seq.map (fun def -> match def with Equation (leftName, right, breaking) -> Some (leftName, entity :> Simulant, right, breaking) | PropertyDefinition _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let descriptor =
             { EntityDispatcherName = dispatcherName
-              EntityProperties = properties }
+              EntityProperties = definitions }
         (descriptor, equations)
 
     /// Describe an entity with the given definitions.
