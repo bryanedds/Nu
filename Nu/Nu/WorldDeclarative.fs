@@ -28,9 +28,9 @@ type [<NoEquality; NoComparison>] EntityContent =
         match content with
         | EntitiesFromStream (lens, mapper) ->
             Choice1Of3 (lens, mapper)
-        | EntityFromDefinitions (dispatcherName, name, definitions, contents) ->
+        | EntityFromDefinitions (dispatcherName, name, definitions, content) ->
             let (descriptor, equationsEntity) = Describe.entity2 dispatcherName definitions (layer / name) world
-            Choice2Of3 (name, descriptor, equationsEntity, (layer / name, contents))
+            Choice2Of3 (name, descriptor, equationsEntity, (layer / name, content))
         | EntityFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
 
@@ -46,9 +46,9 @@ and [<NoEquality; NoComparison>] LayerContent =
         match content with
         | LayersFromStream (lens, mapper) ->
             Choice1Of3 (lens, mapper)
-        | LayerFromDefinitions (dispatcherName, name, definitions, contents) ->
+        | LayerFromDefinitions (dispatcherName, name, definitions, content) ->
             let layer = screen / name
-            let expansions = List.map (fun content -> EntityContent.expand content layer world) contents
+            let expansions = List.map (fun content -> EntityContent.expand content layer world) content
             let streams = List.map (function Choice1Of3 stream -> Some (layer, fst stream, snd stream) | _ -> None) expansions |> List.definitize
             let descriptors = List.map (function Choice2Of3 (entityName, descriptor, _, _) -> Some { descriptor with EntityProperties = Map.add Property? Name (valueToSymbol entityName) descriptor.EntityProperties } | _ -> None) expansions |> List.definitize
             let equations = List.map (function Choice2Of3 (_, _, equations, _) -> Some equations | _ -> None) expansions |> List.definitize |> List.concat
@@ -69,9 +69,9 @@ and [<NoEquality; NoComparison>] ScreenContent =
     /// Expand a screen content to its constituent parts.
     static member expand content (_ : Game) world =
         match content with
-        | ScreenFromDefinitions (dispatcherName, name, behavior, definitions, contents) ->
+        | ScreenFromDefinitions (dispatcherName, name, behavior, definitions, content) ->
             let screen = Screen name
-            let expansions = List.map (fun content -> LayerContent.expand content screen world) contents
+            let expansions = List.map (fun content -> LayerContent.expand content screen world) content
             let streams = List.map (function Choice1Of3 stream -> Some (screen, fst stream, snd stream) | _ -> None) expansions |> List.definitize
             let descriptors = List.map (function Choice2Of3 (layerName, descriptor, _, _, _, _) -> Some { descriptor with LayerProperties = Map.add (Property? Name) (valueToSymbol layerName) descriptor.LayerProperties } | _ -> None) expansions |> List.definitize
             let equations = List.map (function Choice2Of3 (_, _, equations, _, _, _) -> Some equations | _ -> None) expansions |> List.definitize |> List.concat
@@ -93,9 +93,9 @@ and [<NoEquality; NoComparison>] GameContent =
     /// Expand a game content to its constituent parts.
     static member expand content world =
         match content with
-        | GameFromDefinitions (dispatcherName, definitions, contents) ->
+        | GameFromDefinitions (dispatcherName, definitions, content) ->
             let game = Game ()
-            let expansions = List.map (fun content -> ScreenContent.expand content game world) contents
+            let expansions = List.map (fun content -> ScreenContent.expand content game world) content
             let descriptors = Either.getLeftValues expansions |> List.map (fun (screenName, descriptor, _, _, _, _, _, _, _) -> { descriptor with ScreenProperties = Map.add (Property? Name) (valueToSymbol screenName) descriptor.ScreenProperties })
             let equations = Either.getLeftValues expansions |> List.map (fun (_, _, equations, _, _, _, _, _, _) -> equations) |> List.concat
             let layerStreams = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, stream, _, _, _, _) -> stream) |> List.concat

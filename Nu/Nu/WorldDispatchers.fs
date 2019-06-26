@@ -64,8 +64,8 @@ module FacetModule =
                             | None -> world)
                             entity binding.Stream world)
                     world bindings
-            let contents = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world contents
+            let content = this.Content (this.Model entity, entity, world)
+            List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world content
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -847,8 +847,8 @@ module EntityDispatcherModule =
                             | None -> world)
                             entity binding.Stream world)
                     world bindings
-            let contents = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world contents
+            let content = this.Content (this.Model entity, entity, world)
+            List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world content
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -1762,8 +1762,8 @@ module LayerDispatcherModule =
                             | None -> world)
                             layer binding.Stream world)
                     world bindings
-            let contents = this.Content (this.Model layer, layer, world)
-            List.fold (fun world content -> World.expandEntityContent None content None layer world) world contents
+            let content = this.Content (this.Model layer, layer, world)
+            List.fold (fun world content -> World.expandEntityContent None content None layer world) world content
 
         override this.Actualize (layer, world) =
             let views = this.View (this.GetModel layer world, layer, world)
@@ -1845,8 +1845,8 @@ module ScreenDispatcherModule =
                             | None -> world)
                             screen binding.Stream world)
                     world bindings
-            let contents = this.Content (this.Model screen, screen, world)
-            let world = List.fold (fun world content -> World.expandLayerContent None content screen world) world contents
+            let content = this.Content (this.Model screen, screen, world)
+            let world = List.fold (fun world content -> World.expandLayerContent None content screen world) world content
             world
 
         override this.Actualize (screen, world) =

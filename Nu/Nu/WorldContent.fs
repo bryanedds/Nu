@@ -68,8 +68,8 @@ module Content =
         EntityFromFile (entity.EntityName, filePath)
 
     /// Describe an entity with the given definitions and content.
-    let entityWithContent<'d when 'd :> EntityDispatcher> (entity : Entity) definitions contents =
-        EntityFromDefinitions (typeof<'d>.Name, entity.EntityName, definitions, contents)
+    let entityWithContent<'d when 'd :> EntityDispatcher> (entity : Entity) definitions content =
+        EntityFromDefinitions (typeof<'d>.Name, entity.EntityName, definitions, content)
 
     /// Describe an entity with the given definitions.
     let entity<'d when 'd :> EntityDispatcher> entity definitions =

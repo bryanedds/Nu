@@ -279,14 +279,14 @@ module WorldModule2 =
                 world
             | None -> world
 
-        /// Create a dissolve screen whose contents is loaded from the given layer file.
+        /// Create a dissolve screen whose content is loaded from the given layer file.
         [<FunctionBinding>]
         static member createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData layerFilePath world =
             let (dissolveScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt dissolveData world
             let world = World.readLayerFromFile layerFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
-        /// Create a dissolve screen whose contents is loaded from the given layer file.
+        /// Create a dissolve screen whose content is loaded from the given layer file.
         [<FunctionBinding>]
         static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveData layerFilePath world =
             World.createDissolveScreenFromLayerFile6 typeof<'d>.Name nameOpt dissolveData layerFilePath world
@@ -820,12 +820,12 @@ module GameDispatcherModule =
                             | None -> world)
                             game binding.Stream world)
                     world bindings
-            let contents = this.Content (this.Model game, game, world)
+            let content = this.Content (this.Model game, game, world)
             let world =
                 List.foldi (fun contentIndex world content ->
                     let (screen, world) = World.expandScreenContent World.setScreenSplash content game world
                     if contentIndex = 0 then World.selectScreen screen world else world)
-                    world contents
+                    world content
             world
 
         override this.Actualize (game, world) =
