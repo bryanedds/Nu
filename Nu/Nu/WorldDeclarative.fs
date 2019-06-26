@@ -123,30 +123,30 @@ module DeclarativeOperators =
     /// Pair a model with an empty list of commands.
     let inline just model = (model, [])
 
-    /// Declare an instruction to set a property.
+    /// Initialize a property.
     let init lens value = PropertyDefinition (define lens value)
 
-    /// Declare an instruction to equate two properties, optionally breaking any potential update cycles.
+    /// Equate two properties, optionally breaking any potential update cycles.
     let equate3 (left : Lens<'a, World>) (right : Lens<'a, World>) breaking =
         if right.This :> obj |> isNull
         then failwith "Equate expects an authentic Lens where its This is not null."
         else Equation (left.Name, right, breaking)
 
-    /// Declare an instruction to equate two properties.
+    /// Equate two properties.
     let equate left right =
         equate3 left right false
 
-    /// Declare an instruction to equate two properties, breaking any update cycles.
+    /// Equate two properties, breaking any update cycles.
     let equateBreaking left right =
         equate3 left right true
 
-    /// Declare an instruction to set a property.
+    /// Initialize a property.
     let inline (==) left right = init left right
 
-    /// Declare an instruction to equate two properties.
+    /// Equate two properties.
     let inline (==>) left right = equate left right
 
-    /// Declare an instruction to equate two properties, breaking any update cycles.
+    /// Equate two properties, breaking any update cycles.
     let inline (=/>) left right = equateBreaking left right
 
 module Declarative =
