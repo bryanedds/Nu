@@ -367,7 +367,7 @@ module WorldEntityModule =
             match EntityContent.expand content layer world with
             | Choice1Of3 (lens, mapper) ->
                 World.expandEntityStream lens mapper ownerOpt layer world
-            | Choice2Of3 (entityName, descriptor, equations, contents) ->
+            | Choice2Of3 (entityName, descriptor, equations, content) ->
                 let (entity, world) = World.readEntity descriptor (Some entityName) layer world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
                 let world = match ownerOpt with Some owner -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> owner) entity world | None -> world
@@ -378,7 +378,7 @@ module WorldEntityModule =
                 let world =
                     List.fold (fun world content ->
                         World.expandEntityContent (Some (makeGuid ())) content ownerOpt layer world)
-                        world (snd contents)
+                        world (snd content)
                 world
             | Choice3Of3 (entityName, filePath) ->
                 let (entity, world) = World.readEntityFromFile filePath (Some entityName) layer world
