@@ -19,7 +19,7 @@ type SimulantContent = interface end
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
     | EntitiesFromStream of World Lens * (obj -> EntityContent)
-    | EntityFromDefinitions of string * string * DescriptiveDefinition list * EntityContent list
+    | EntityFromDefinitions of string * string * PropertyInitializer list * EntityContent list
     | EntityFromFile of string * string
     interface SimulantContent
 
@@ -28,8 +28,8 @@ type [<NoEquality; NoComparison>] EntityContent =
         match content with
         | EntitiesFromStream (lens, mapper) ->
             Choice1Of3 (lens, mapper)
-        | EntityFromDefinitions (dispatcherName, name, definitions, content) ->
-            let (descriptor, equationsEntity) = Describe.entity2 dispatcherName definitions (layer / name) world
+        | EntityFromDefinitions (dispatcherName, name, initializers, content) ->
+            let (descriptor, equationsEntity) = Describe.entity2 dispatcherName initializers (layer / name) world
             Choice2Of3 (name, descriptor, equationsEntity, (layer / name, content))
         | EntityFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
@@ -37,7 +37,7 @@ type [<NoEquality; NoComparison>] EntityContent =
 /// Describes the content of a layer.
 and [<NoEquality; NoComparison>] LayerContent =
     | LayersFromStream of World Lens * (obj -> LayerContent)
-    | LayerFromDefinitions of string * string * DescriptiveDefinition list * EntityContent list
+    | LayerFromDefinitions of string * string * PropertyInitializer list * EntityContent list
     | LayerFromFile of string * string
     interface SimulantContent
 
@@ -46,7 +46,7 @@ and [<NoEquality; NoComparison>] LayerContent =
         match content with
         | LayersFromStream (lens, mapper) ->
             Choice1Of3 (lens, mapper)
-        | LayerFromDefinitions (dispatcherName, name, definitions, content) ->
+        | LayerFromDefinitions (dispatcherName, name, initializers, content) ->
             let layer = screen / name
             let expansions = List.map (fun content -> EntityContent.expand content layer world) content
             let streams = List.map (function Choice1Of3 stream -> Some (layer, fst stream, snd stream) | _ -> None) expansions |> List.definitize
@@ -54,14 +54,14 @@ and [<NoEquality; NoComparison>] LayerContent =
             let equations = List.map (function Choice2Of3 (_, _, equations, _) -> Some equations | _ -> None) expansions |> List.definitize |> List.concat
             let entityContents = List.map (function Choice2Of3 (_, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize
             let filePaths = List.map (function Choice3Of3 filePath -> Some filePath | _ -> None) expansions |> List.definitize |> List.map (fun (entityName, path) -> (name, entityName, path))
-            let (descriptor, equationsLayer) = Describe.layer3 dispatcherName definitions descriptors layer world
+            let (descriptor, equationsLayer) = Describe.layer3 dispatcherName initializers descriptors layer world
             Choice2Of3 (name, descriptor, equations @ equationsLayer, streams, filePaths, entityContents)
         | LayerFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
 
 /// Describes the content of a screen.
 and [<NoEquality; NoComparison>] ScreenContent =
-    | ScreenFromDefinitions of string * string * ScreenBehavior * DescriptiveDefinition list * LayerContent list
+    | ScreenFromDefinitions of string * string * ScreenBehavior * PropertyInitializer list * LayerContent list
     | ScreenFromLayerFile of string * ScreenBehavior * Type * string
     | ScreenFromFile of string * ScreenBehavior * string
     interface SimulantContent
@@ -69,7 +69,7 @@ and [<NoEquality; NoComparison>] ScreenContent =
     /// Expand a screen content to its constituent parts.
     static member expand content (_ : Game) world =
         match content with
-        | ScreenFromDefinitions (dispatcherName, name, behavior, definitions, content) ->
+        | ScreenFromDefinitions (dispatcherName, name, behavior, initializers, content) ->
             let screen = Screen name
             let expansions = List.map (fun content -> LayerContent.expand content screen world) content
             let streams = List.map (function Choice1Of3 stream -> Some (screen, fst stream, snd stream) | _ -> None) expansions |> List.definitize
@@ -79,21 +79,21 @@ and [<NoEquality; NoComparison>] ScreenContent =
             let entityFilePaths = List.map (function Choice2Of3 (_, _, _, _, filePaths, _) -> Some (List.map (fun (layerName, entityName, filePath) -> (name, layerName, entityName, filePath)) filePaths) | _ -> None) expansions |> List.definitize |> List.concat
             let entityContents = List.map (function Choice2Of3 (_, _, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize |> List.concat
             let layerFilePaths = List.map (function Choice3Of3 (layerName, filePath) -> Some (name, layerName, filePath) | _ -> None) expansions |> List.definitize
-            let (descriptor, equationsScreen) = Describe.screen3 dispatcherName definitions descriptors screen world
+            let (descriptor, equationsScreen) = Describe.screen3 dispatcherName initializers descriptors screen world
             Left (name, descriptor, equations @ equationsScreen, behavior, streams, entityStreams, layerFilePaths, entityFilePaths, entityContents)
         | ScreenFromLayerFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
         | ScreenFromFile (name, behavior, filePath) -> Right (name, behavior, None, filePath)
 
 /// Describes the content of a game.
 and [<NoEquality; NoComparison>] GameContent =
-    | GameFromDefinitions of string * DescriptiveDefinition list * ScreenContent list
+    | GameFromDefinitions of string * PropertyInitializer list * ScreenContent list
     | GameFromFile of string
     interface SimulantContent
 
     /// Expand a game content to its constituent parts.
     static member expand content world =
         match content with
-        | GameFromDefinitions (dispatcherName, definitions, content) ->
+        | GameFromDefinitions (dispatcherName, initializers, content) ->
             let game = Game ()
             let expansions = List.map (fun content -> ScreenContent.expand content game world) content
             let descriptors = Either.getLeftValues expansions |> List.map (fun (screenName, descriptor, _, _, _, _, _, _, _) -> { descriptor with ScreenProperties = Map.add (Property? Name) (valueToSymbol screenName) descriptor.ScreenProperties })
@@ -105,7 +105,7 @@ and [<NoEquality; NoComparison>] GameContent =
             let entityFilePaths = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, _, entityFilePaths, _) -> entityFilePaths) |> List.concat
             let entityContents = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, _, _, entityContents) -> entityContents) |> List.concat
             let screenFilePaths = Either.getRightValues expansions
-            let (descriptor, equationsGame) = Describe.game3 dispatcherName definitions descriptors game world
+            let (descriptor, equationsGame) = Describe.game3 dispatcherName initializers descriptors game world
             Left (descriptor, equations @ equationsGame, screenBehaviors, layerStreams, entityStreams, screenFilePaths, layerFilePaths, entityFilePaths, entityContents)
         | GameFromFile filePath -> Right filePath
 
@@ -130,7 +130,7 @@ module DeclarativeOperators =
     let equate3 (left : Lens<'a, World>) (right : Lens<'a, World>) breaking =
         if right.This :> obj |> isNull
         then failwith "Equate expects an authentic Lens where its This is not null."
-        else Equate (left.Name, right, breaking)
+        else Equation (left.Name, right, breaking)
 
     /// Declare an instruction to equate two properties.
     let equate left right =
