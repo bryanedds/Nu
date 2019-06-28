@@ -22,7 +22,7 @@ module Nelmish =
 
     // this is our Elm-style game dispatcher
     type NelmishDispatcher () =
-        inherit GameDispatcher<Model, Message, unit> (0) // initial model vlaue
+        inherit GameDispatcher<Model, Message, unit> (0) // initial model value
 
         // here we define the Bindings used to connect events to their desired messages
         override this.Bindings (_, _, _) =
