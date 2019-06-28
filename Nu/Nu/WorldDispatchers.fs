@@ -129,9 +129,9 @@ module EffectFacetModule =
         member this.GetEffectHistoryMax world : int = this.Get Property? EffectHistoryMax world
         member this.SetEffectHistoryMax (value : int) world = this.SetFast Property? EffectHistoryMax false false value world
         member this.EffectHistoryMax = Lens.make Property? EffectHistoryMax this.GetEffectHistoryMax this.SetEffectHistoryMax this
-        member this.GetEffectHistory world : Effects.Slice Deque = this.Get Property? EffectHistory world
+        // NOTE: this line of code horks autocomplete as discussed here - https://github.com/dotnet/fsharp/issues/7073 - member this.GetEffectHistory world : Effects.Slice Deque = this.Get Property? EffectHistory world
         member private this.SetEffectHistory (value : Effects.Slice Deque) world = this.SetFast Property? EffectHistory false true value world
-        member this.EffectHistory = Lens.makeReadOnly Property? EffectHistory this.GetEffectHistory this
+        member this.EffectHistory = Lens.makeReadOnly Property? EffectHistory (this.Get Property? EffectHistory) this
         
         /// The start time of the effect, or zero if none.
         member this.GetEffectStartTime world =
@@ -199,7 +199,7 @@ module EffectFacetModule =
                       Effects.Color = Vector4.One
                       Effects.Enabled = true
                       Effects.Volume = 1.0f }
-                let effectHistory = entity.GetEffectHistory world
+                let effectHistory = entity.EffectHistory.Get world
                 let effectEnv = entity.GetEffectDefinitions world
                 let effectSystem = EffectSystem.make effectViewType effectHistory effectTime effectEnv
 
@@ -895,7 +895,7 @@ module EffectDispatcherModule =
         inherit EntityDispatcher ()
 
         static member FacetNames =
-            [typeof<EffectFacet>.Name]
+            ["EffectFacet"]
 
         static member Properties =
             [define Entity.Effect (scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
