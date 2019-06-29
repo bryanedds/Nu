@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Drawing
+open System.Drawing.Imaging
 open System.IO
 open OpenTK
 open TiledSharp
@@ -17,7 +18,7 @@ exception TileSetPropertyNotFoundException of string
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the
 /// full asset loaded into memory.
 type [<StructuralEquality; NoComparison>] AssetMetadata =
-    | TextureMetadata of Vector2i
+    | TextureMetadata of Vector2i * PixelFormat
     | TileMapMetadata of string * Image AssetTag list * TmxMap
     | SoundMetadata
     | SongMetadata
@@ -50,12 +51,7 @@ module MetadataModule =
             else
                 // TODO: P1: find an efficient way to pull metadata from a bitmap file without loading its actual bitmap.
                 try use bitmap = new Bitmap (asset.FilePath)
-                    if bitmap.PixelFormat = Imaging.PixelFormat.Format32bppArgb
-                    then TextureMetadata (Vector2i (bitmap.Width, bitmap.Height))
-                    else
-                        let errorMessage = "Bitmap with invalid format (expecting 32-bit ARGB)."
-                        Log.trace errorMessage
-                        InvalidMetadata errorMessage
+                    TextureMetadata (Vector2i (bitmap.Width, bitmap.Height), bitmap.PixelFormat)
                 with _ as exn ->
                     let errorMessage = "Failed to load Bitmap '" + asset.FilePath + "' due to: " + scstring exn
                     Log.trace errorMessage
@@ -112,7 +108,14 @@ module MetadataModule =
         /// Try to get the texture metadata of the given asset.
         let tryGetTextureSize (assetTag : Image AssetTag) metadata =
             match tryGetMetadata (AssetTag.generalize assetTag) metadata with
-            | Some (TextureMetadata size) -> Some size
+            | Some (TextureMetadata (size, _)) -> Some size
+            | None -> None
+            | _ -> None
+
+        /// Try to get the texture metadata of the given asset.
+        let tryGetTextureFormat (assetTag : Image AssetTag) metadata =
+            match tryGetMetadata (AssetTag.generalize assetTag) metadata with
+            | Some (TextureMetadata (_, format)) -> Some format
             | None -> None
             | _ -> None
 
