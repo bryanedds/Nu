@@ -179,6 +179,14 @@ module GamepadState =
         | _ -> failwith "Invalid SDL hat direction."
 
     /// Check that the given gamepad button is down.
+    let getDirection index =
+        match Array.tryItem index Joysticks with
+        | Some joystick ->
+            let hat = SDL.SDL_JoystickGetHat (joystick, 0)
+            toNuDirection hat
+        | None -> DirectionCentered
+
+    /// Check that the given gamepad button is down.
     let isButtonDown index button =
         let sdlButton = toSdlButton button
         match Array.tryItem index Joysticks with
