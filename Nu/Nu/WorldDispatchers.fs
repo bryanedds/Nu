@@ -730,7 +730,7 @@ module StaticSpriteFacetModule =
             else world
 
         override facet.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (entity.GetStaticImage world) (World.getMetadata world) with
+            match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -1101,7 +1101,7 @@ module ButtonDispatcherModule =
             else world
 
         override dispatcher.GetQuickSize (button, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (button.GetUpImage world) (World.getMetadata world) with
+            match Metadata.tryGetTextureSizeF (button.GetUpImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -1143,7 +1143,7 @@ module LabelDispatcherModule =
             else world
 
         override dispatcher.GetQuickSize (label, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (label.GetLabelImage world) (World.getMetadata world) with
+            match Metadata.tryGetTextureSizeF (label.GetLabelImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -1188,7 +1188,7 @@ module TextDispatcherModule =
             else world
 
         override dispatcher.GetQuickSize (text, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (text.GetBackgroundImage world) (World.getMetadata world) with
+            match Metadata.tryGetTextureSizeF (text.GetBackgroundImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -1296,7 +1296,7 @@ module ToggleDispatcherModule =
             else world
 
         override dispatcher.GetQuickSize (toggle, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (toggle.GetOpenImage world) (World.getMetadata world) with
+            match Metadata.tryGetTextureSizeF (toggle.GetOpenImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -1439,7 +1439,7 @@ module FillBarDispatcherModule =
             else world
 
         override dispatcher.GetQuickSize (fillBar, world) =
-            match Metadata.tryGetTextureSizeAsVector2 (fillBar.GetBorderImage world) (World.getMetadata world) with
+            match Metadata.tryGetTextureSizeF (fillBar.GetBorderImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
