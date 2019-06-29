@@ -56,10 +56,10 @@ module CharacterAnimationFacetModule =
                 | CharacterAnimationDefending -> Vector2i (4, 0)
                 | CharacterAnimationSpecial -> Vector2i (6, 0)
                 | CharacterAnimationSlain -> Vector2i (4, 2)
-            let animationStutter =
+            let animationDelay =
                 match animationState.AnimationType with
-                | CharacterAnimationFacing -> Constants.InfinityRpg.CharacterAnimationFacingStutter
-                | CharacterAnimationActing -> Constants.InfinityRpg.CharacterAnimationActingStutter
+                | CharacterAnimationFacing -> Constants.InfinityRpg.CharacterAnimationFacingDelay
+                | CharacterAnimationActing -> Constants.InfinityRpg.CharacterAnimationActingDelay
                 | CharacterAnimationDefending -> 1L // doesn't matter - no animation frames
                 | CharacterAnimationSpecial -> 1L // doesn't matter - no animation frames
                 | CharacterAnimationSlain -> 1L // doesn't matter - no animation frames
@@ -71,7 +71,7 @@ module CharacterAnimationFacetModule =
                 | Leftward -> Vector2i (animationFrames, 1)
             let animatedXOffsetM =
                 Math.Abs (World.getTickTime world - animationState.StartTime) /
-                animationStutter % int64 animationFrames |>
+                animationDelay % int64 animationFrames |>
                 int
             let animatedOffsetM = Vector2i (animatedXOffsetM, 0)
             let spriteCoordsinates = animationOffsetM + directionCoordsOffset + animatedOffsetM

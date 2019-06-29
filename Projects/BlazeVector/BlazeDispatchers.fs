@@ -109,7 +109,7 @@ module EnemyModule =
              define Entity.CelCount 6
              define Entity.CelRun 4
              define Entity.CelSize (Vector2 (48.0f, 96.0f))
-             define Entity.AnimationStutter 8L
+             define Entity.AnimationDelay 8L
              define Entity.AnimationSheet Assets.EnemyImage
              define Entity.Health 7]
 
@@ -215,7 +215,7 @@ module PlayerModule =
              define Entity.CelCount 16
              define Entity.CelRun 4
              define Entity.CelSize (Vector2 (48.0f, 96.0f))
-             define Entity.AnimationStutter 3L
+             define Entity.AnimationDelay 3L
              define Entity.AnimationSheet Assets.PlayerImage
              define Entity.LastTimeOnGroundNp Int64.MinValue
              define Entity.LastTimeJumpNp Int64.MinValue]
