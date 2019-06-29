@@ -748,9 +748,9 @@ module AnimatedSpriteFacetModule =
         member this.GetCelCount world : int = this.Get Property? CelCount world
         member this.SetCelCount (value : int) world = this.SetFast Property? CelCount false false value world
         member this.CelCount = Lens.make Property? CelCount this.GetCelCount this.SetCelCount this
-        member this.GetAnimationStutter world : int64 = this.Get Property? AnimationStutter world
-        member this.SetAnimationStutter (value : int64) world = this.SetFast Property? AnimationStutter false false value world
-        member this.AnimationStutter = Lens.make Property? AnimationStutter this.GetAnimationStutter this.SetAnimationStutter this
+        member this.GetAnimationDelay world : int64 = this.Get Property? AnimationDelay world
+        member this.SetAnimationDelay (value : int64) world = this.SetFast Property? AnimationDelay false false value world
+        member this.AnimationDelay = Lens.make Property? AnimationDelay this.GetAnimationDelay this.SetAnimationDelay this
         member this.GetAnimationSheet world : Image AssetTag = this.Get Property? AnimationSheet world
         member this.SetAnimationSheet (value : Image AssetTag) world = this.SetFast Property? AnimationSheet false false value world
         member this.AnimationSheet = Lens.make Property? AnimationSheet this.GetAnimationSheet this.SetAnimationSheet this
@@ -762,7 +762,7 @@ module AnimatedSpriteFacetModule =
             let celCount = entity.GetCelCount world
             let celRun = entity.GetCelRun world
             if celCount <> 0 && celRun <> 0 then
-                let cel = int (World.getTickTime world / entity.GetAnimationStutter world) % celCount
+                let cel = int (World.getTickTime world / entity.GetAnimationDelay world) % celCount
                 let celSize = entity.GetCelSize world
                 let celI = cel % celRun
                 let celJ = cel / celRun
@@ -776,7 +776,7 @@ module AnimatedSpriteFacetModule =
             [define Entity.CelCount 16 
              define Entity.CelSize (Vector2 (16.0f, 16.0f))
              define Entity.CelRun 4
-             define Entity.AnimationStutter 4L
+             define Entity.AnimationDelay 4L
              define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackage "Image7")]
 
         override facet.Actualize (entity, world) =

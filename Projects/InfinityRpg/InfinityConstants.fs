@@ -33,6 +33,6 @@ module Constants =
 
         // general data
         let AttackName = "Attack"
-        let CharacterAnimationFacingStutter = 16L
-        let CharacterAnimationActingStutter = 24L
-        let ActionTicksMax = CharacterAnimationActingStutter * 3L
+        let CharacterAnimationFacingDelay = 16L
+        let CharacterAnimationActingDelay = 24L
+        let ActionTicksMax = CharacterAnimationActingDelay * 3L

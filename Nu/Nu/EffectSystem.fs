@@ -126,9 +126,9 @@ module EffectSystemModule =
             | Ratio -> div (value, value2)
             | Set -> value2
 
-        let private evalInsetOpt (celSize : Vector2i) celRun celCount stutter effectSystem =
-            if stutter <> 0L && celRun <> 0 then
-                let cel = int (effectSystem.EffectTime / stutter) % celCount
+        let private evalInsetOpt (celSize : Vector2i) celRun celCount delay effectSystem =
+            if delay <> 0L && celRun <> 0 then
+                let cel = int (effectSystem.EffectTime / delay) % celCount
                 let celI = cel % celRun
                 let celJ = cel / celRun
                 let celX = celI * celSize.X
@@ -308,7 +308,7 @@ module EffectSystemModule =
             // build implicitly mounted content
             evalContent content slice effectSystem
 
-        and private evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effectSystem =
+        and private evalAnimatedSprite resource celSize celRun celCount delay aspects content slice effectSystem =
 
             // pull image from resource
             let image = evalResource resource effectSystem
@@ -317,7 +317,7 @@ module EffectSystemModule =
             let slice = evalAspects aspects slice effectSystem
 
             // eval inset
-            let insetOpt = evalInsetOpt celSize celRun celCount stutter effectSystem
+            let insetOpt = evalInsetOpt celSize celRun celCount delay effectSystem
 
             // build animated sprite artifacts
             let effectSystem =
@@ -429,8 +429,8 @@ module EffectSystemModule =
                 addTagArtifact (TagArtifact (name, metadata, slice)) effectSystem
             | StaticSprite (resource, aspects, content) ->
                 evalStaticSprite resource aspects content slice effectSystem
-            | AnimatedSprite (resource, celSize, celRun, celCount, stutter, aspects, content) ->
-                evalAnimatedSprite resource celSize celRun celCount stutter aspects content slice effectSystem
+            | AnimatedSprite (resource, celSize, celRun, celCount, delay, aspects, content) ->
+                evalAnimatedSprite resource celSize celRun celCount delay aspects content slice effectSystem
             | SoundEffect (resource, aspects, content) ->
                 evalSoundEffect resource aspects content slice effectSystem
             | Mount (Shift shift, aspects, content) ->
