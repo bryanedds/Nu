@@ -82,29 +82,36 @@ module KeyboardState =
         isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LSHIFT) ||
         isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RSHIFT)
 
+/// Describes a gamepad direction.
+type [<Struct>] GamepadDirection =
+    | DirectionUp
+    | DirectionUpLeft
+    | DirectionLeft
+    | DirectionDownLeft
+    | DirectionDown
+    | DirectionDownRight
+    | DirectionRight
+    | DirectionUpRight
+    | DirectionCentered
+
 /// Describes a gamepad button.
 type [<Struct>] GamepadButton =
-    | ButtonUp
-    | ButtonLeft
-    | ButtonDown
-    | ButtonRight
-    | ButtonStart
-    | ButtonSelect
-    | ButtonL
-    | ButtonR
     | ButtonA
     | ButtonB
     | ButtonX
     | ButtonY
-    override this.ToString () = scstring this
-    static member toEventName this = ((scstring this).Substring "Gamepad".Length)
+    | ButtonL
+    | ButtonR
+    | ButtonSelect
+    | ButtonStart
 
 [<RequireQualifiedAccess>]        
 module GamepadState =
 
     let mutable private Joysticks = [||]
 
-    let SupportedButtonCount = 15
+    let isSdlButtonSupported button =
+        button < 8
 
     /// Initialize gamepad state.
     let init () =
@@ -122,45 +129,58 @@ module GamepadState =
     /// Convert a GamepadButton to SDL's representation.
     let toSdlButton gamepadButton =
         match gamepadButton with
-        | ButtonUp -> 0
-        | ButtonLeft -> 2
-        | ButtonDown -> 4
-        | ButtonRight -> 6
-        | ButtonStart -> 8
-        | ButtonSelect -> 9
-        | ButtonL -> 10
-        | ButtonR -> 11
-        | ButtonA -> 12
-        | ButtonB -> 13
-        | ButtonX -> 14
-        | ButtonY -> 15
+        | ButtonA -> 0
+        | ButtonB -> 1
+        | ButtonX -> 2
+        | ButtonY -> 3
+        | ButtonL -> 4
+        | ButtonR -> 5
+        | ButtonSelect -> 6
+        | ButtonStart -> 7
 
-    /// Convert SDL's representation of a mouse button to a GamepadButton.
+    /// Convert SDL's representation of a joystick button to a GamepadButton.
     let toNuButton gamepadButton =
         match gamepadButton with
-        | 0 -> ButtonUp
-        | 2 -> ButtonLeft
-        | 4 -> ButtonDown
-        | 6 -> ButtonRight
-        | 8 -> ButtonStart
-        | 9 -> ButtonSelect
-        | 10 -> ButtonL
-        | 11 -> ButtonR
-        | 12 -> ButtonA
-        | 13 -> ButtonB
-        | 14 -> ButtonX
-        | 15 -> ButtonY
+        | 0 -> ButtonA
+        | 1 -> ButtonB
+        | 2 -> ButtonX
+        | 3 -> ButtonY
+        | 4 -> ButtonL
+        | 5 -> ButtonR
+        | 6 -> ButtonSelect
+        | 7 -> ButtonStart
         | _ -> failwith "Invalid SDL joystick button."
 
-    /// Check that the given gamepad key is down.
+    /// Convert a GamepadDirection to SDL's representation.
+    let toSdlDirection gamepadDirection =
+        match gamepadDirection with
+        | DirectionUp -> SDL.SDL_HAT_UP
+        | DirectionUpLeft -> SDL.SDL_HAT_LEFTUP
+        | DirectionLeft -> SDL.SDL_HAT_LEFT
+        | DirectionDownLeft -> SDL.SDL_HAT_LEFTDOWN
+        | DirectionDown -> SDL.SDL_HAT_DOWN
+        | DirectionDownRight -> SDL.SDL_HAT_RIGHTDOWN
+        | DirectionRight -> SDL.SDL_HAT_RIGHT
+        | DirectionUpRight -> SDL.SDL_HAT_RIGHTUP
+        | DirectionCentered -> SDL.SDL_HAT_CENTERED
+
+    /// Convert SDL's representation of a hat direction to a GamepadDirection.
+    let toNuDirection gamepadDirection =
+        match gamepadDirection with
+        | SDL.SDL_HAT_UP -> DirectionUp
+        | SDL.SDL_HAT_LEFTUP -> DirectionUpLeft
+        | SDL.SDL_HAT_LEFT -> DirectionLeft
+        | SDL.SDL_HAT_LEFTDOWN -> DirectionDownLeft
+        | SDL.SDL_HAT_DOWN -> DirectionDown
+        | SDL.SDL_HAT_RIGHTDOWN -> DirectionDownRight
+        | SDL.SDL_HAT_RIGHT -> DirectionRight
+        | SDL.SDL_HAT_RIGHTUP -> DirectionUpRight
+        | SDL.SDL_HAT_CENTERED -> DirectionCentered
+        | _ -> failwith "Invalid SDL hat direction."
+
+    /// Check that the given gamepad button is down.
     let isButtonDown index button =
         let sdlButton = toSdlButton button
         match Array.tryItem index Joysticks with
-        | Some joystick ->
-            match sdlButton with
-            | 0 -> SDL.SDL_JoystickGetButton (joystick, 7) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 0) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 1) = byte 1
-            | 2 -> SDL.SDL_JoystickGetButton (joystick, 1) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 2) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 3) = byte 1
-            | 4 -> SDL.SDL_JoystickGetButton (joystick, 3) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 4) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 5) = byte 1
-            | 6 -> SDL.SDL_JoystickGetButton (joystick, 5) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 6) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 7) = byte 1
-            | _ -> SDL.SDL_JoystickGetButton (joystick, sdlButton) = byte 1
+        | Some joystick -> SDL.SDL_JoystickGetButton (joystick, sdlButton) = byte 1
         | None -> false

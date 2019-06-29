@@ -24,6 +24,10 @@ type [<Struct; StructuralEquality; NoComparison>] KeyboardKeyData =
       Down : bool }
 
 /// The data for a gamepad button event.
+type [<Struct; StructuralEquality; NoComparison>] GamepadDirectionData =
+    { GamepadDirection : GamepadDirection }
+
+/// The data for a gamepad button event.
 type [<Struct; StructuralEquality; NoComparison>] GamepadButtonData =
     { GamepadButton : GamepadButton
       Down : bool }
@@ -83,6 +87,7 @@ module Events =
     let KeyboardKeyChange = stoa<KeyboardKeyData> "KeyboardKey/Change/Event"
     let KeyboardKeyDown = stoa<KeyboardKeyData> "KeyboardKey/Down/Event"
     let KeyboardKeyUp = stoa<KeyboardKeyData> "KeyboardKey/Up/Event"
+    let GamepadDirectionChange index = stoa<GamepadDirectionData> $ "GamepadDirection/" + scstring index + "/Change/Event"
     let GamepadButtonChange index = stoa<GamepadButtonData> $ "GamepadButton/" + scstring index + "/Change/Event"
     let GamepadButtonDown index = stoa<GamepadButtonData> $ "GamepadButton/" + scstring index + "/Down/Event"
     let GamepadButtonUp index = stoa<GamepadButtonData> $ "GamepadButton/" + scstring index + "/Up/Event"
