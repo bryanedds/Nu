@@ -33,7 +33,7 @@ module Nu =
             // init logging
             Log.init (Some "Log.txt")
 
-            // initialize math module
+            // init math module
             Math.init ()
 
             // init simulant modules

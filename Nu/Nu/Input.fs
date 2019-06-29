@@ -81,4 +81,84 @@ module KeyboardState =
     let isShiftDown () =
         isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LSHIFT) ||
         isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RSHIFT)
-        
+
+/// Describes a gamepad button.
+type [<Struct>] GamepadButton =
+    | ButtonUp
+    | ButtonLeft
+    | ButtonDown
+    | ButtonRight
+    | ButtonStart
+    | ButtonSelect
+    | ButtonL
+    | ButtonR
+    | ButtonA
+    | ButtonB
+    | ButtonX
+    | ButtonY
+    override this.ToString () = scstring this
+    static member toEventName this = ((scstring this).Substring "Gamepad".Length)
+
+[<RequireQualifiedAccess>]        
+module GamepadState =
+
+    let mutable private sticks = [||]
+
+    /// Initialize gamepad state.
+    let init () =
+        let indices = SDL.SDL_NumJoysticks ()
+        sticks <-
+            Array.map (fun stick ->
+                // NOTE: we don't have a match call to SDL.SDL_JoystickClose, but it may not be necessary
+                SDL.SDL_JoystickOpen stick)
+                [|0 .. indices|]
+
+    /// Get the number of open gamepad.
+    let getGamepadCount () =
+        Array.length sticks
+
+    /// Convert a GamepadButton to SDL's representation.
+    let toSdlButton gamepadButton =
+        match gamepadButton with
+        | ButtonUp -> 0
+        | ButtonLeft -> 2
+        | ButtonDown -> 4
+        | ButtonRight -> 6
+        | ButtonStart -> 8
+        | ButtonSelect -> 9
+        | ButtonL -> 10
+        | ButtonR -> 11
+        | ButtonA -> 12
+        | ButtonB -> 13
+        | ButtonX -> 14
+        | ButtonY -> 15
+
+    /// Convert SDL's representation of a mouse button to a GamepadButton.
+    let toNuButton gamepadButton =
+        match gamepadButton with
+        | 0 -> ButtonUp
+        | 2 -> ButtonLeft
+        | 4 -> ButtonDown
+        | 6 -> ButtonRight
+        | 8 -> ButtonStart
+        | 9 -> ButtonSelect
+        | 10 -> ButtonL
+        | 11 -> ButtonR
+        | 12 -> ButtonA
+        | 13 -> ButtonB
+        | 14 -> ButtonX
+        | 15 -> ButtonY
+        | _ -> failwith "Invalid SDL gamepad button."
+
+    /// Check that the given gamepad key is down.
+    let isButtonDown index button =
+        let sdlButton = toSdlButton button
+        match Array.tryItem index sticks with
+        | Some stick ->
+            match sdlButton with
+            | 0 -> SDL.SDL_JoystickGetButton (stick, 7) = byte 1 || SDL.SDL_JoystickGetButton (stick, 0) = byte 1 || SDL.SDL_JoystickGetButton (stick, 1) = byte 1
+            | 2 -> SDL.SDL_JoystickGetButton (stick, 1) = byte 1 || SDL.SDL_JoystickGetButton (stick, 2) = byte 1 || SDL.SDL_JoystickGetButton (stick, 3) = byte 1
+            | 4 -> SDL.SDL_JoystickGetButton (stick, 3) = byte 1 || SDL.SDL_JoystickGetButton (stick, 4) = byte 1 || SDL.SDL_JoystickGetButton (stick, 5) = byte 1
+            | 6 -> SDL.SDL_JoystickGetButton (stick, 5) = byte 1 || SDL.SDL_JoystickGetButton (stick, 6) = byte 1 || SDL.SDL_JoystickGetButton (stick, 7) = byte 1
+            | _ -> SDL.SDL_JoystickGetButton (stick, sdlButton) = byte 1
+        | None -> false
