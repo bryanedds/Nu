@@ -35,22 +35,29 @@ module Elmario =
             match command with
             | MoveLeft ->
                 let physicsId = Elmario.GetPhysicsId world
-                World.applyBodyForce (v2 -1000.0f 0.0f) physicsId world
+                if World.isBodyOnGround physicsId world
+                then World.applyBodyForce (v2 -18000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 -6000.0f 0.0f) physicsId world
             | MoveRight ->
                 let physicsId = Elmario.GetPhysicsId world
-                World.applyBodyForce (v2 1000.0f 0.0f) physicsId world
+                if World.isBodyOnGround physicsId world
+                then World.applyBodyForce (v2 18000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 6000.0f 0.0f) physicsId world
             | Jump ->
                 let physicsId = Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 0.0f 100000.0f) physicsId world
+                then World.applyBodyForce (v2 0.0f 1000000.0f) physicsId world
                 else world
 
         // here we describe the content of the game including elmario and the ground he walks on.
         override this.Content (_, _, _) =
             [Content.screen Default.Screen Vanilla []
                 [Content.layer Default.Layer []
-                    [Content.sideViewCharacter Elmario
-                        [Entity.Position == v2 0.0f 0.0f]
+                    [Content.entity<ElmarioController> Elmario
+                        [Entity.Position == v2 0.0f 0.0f
+                         Entity.Size == v2 144.0f 144.0f]
                      Content.block Ground
-                        [Entity.Position == v2 -256.0f -64.0f
-                         Entity.Size == v2 512.0f 64.0f]]]]
+                        [Entity.Position == v2 -384.0f -256.0f
+                         Entity.Size == v2 768.0f 64.0f
+                         Entity.Friction == 0.5f
+                         Entity.StaticImage == (AssetTag.make "Gameplay" "TreeTop")]]]]

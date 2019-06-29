@@ -124,14 +124,14 @@ module MetadataModule =
             Option.get (tryGetTextureSize assetTag metadata)
 
         /// Try to get the texture size metadata of the given asset.
-        let tryGetTextureSizeAsVector2 assetTag metadata =
+        let tryGetTextureSizeF assetTag metadata =
             match tryGetTextureSize assetTag metadata with
             | Some size -> Some (Vector2 (single size.X, single size.Y))
             | None -> None
 
         /// Forcibly get the texture size metadata of the given asset (throwing on failure).
-        let getTextureSizeAsVector2 assetTag metadata =
-            Option.get (tryGetTextureSizeAsVector2 assetTag metadata)
+        let getTextureSizeF assetTag metadata =
+            Option.get (tryGetTextureSizeF assetTag metadata)
 
         /// Try to get the tile map metadata of the given asset.
         let tryGetTileMapMetadata (assetTag : TileMap AssetTag) metadata =

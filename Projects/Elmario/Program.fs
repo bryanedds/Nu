@@ -10,6 +10,10 @@ module Program =
     type ElmarioPlugin () =
         inherit NuPlugin ()
 
+        // make our game-specific entity dispatchers...
+        override this.MakeEntityDispatchers () =
+            [ElmarioController () :> EntityDispatcher]
+
         // make our game-specific game dispatcher...
         override this.MakeGameDispatchers () =
             [ElmarioDispatcher () :> GameDispatcher]

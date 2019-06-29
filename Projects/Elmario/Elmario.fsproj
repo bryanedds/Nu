@@ -70,6 +70,7 @@
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ElmarioController.fs" />
     <Compile Include="Elmario.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
