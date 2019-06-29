@@ -23,6 +23,11 @@ type [<Struct; StructuralEquality; NoComparison>] KeyboardKeyData =
       Repeated : bool
       Down : bool }
 
+/// The data for a gamepad button event.
+type [<Struct; StructuralEquality; NoComparison>] GamepadButtonData =
+    { GamepadButton : GamepadButton
+      Down : bool }
+
 /// The data for a collision event.
 type [<Struct; StructuralEquality; NoComparison>] CollisionData =
     { Normal : Vector2
@@ -78,4 +83,7 @@ module Events =
     let KeyboardKeyChange = stoa<KeyboardKeyData> "KeyboardKey/Change/Event"
     let KeyboardKeyDown = stoa<KeyboardKeyData> "KeyboardKey/Down/Event"
     let KeyboardKeyUp = stoa<KeyboardKeyData> "KeyboardKey/Up/Event"
+    let GamepadButtonChange index = stoa<GamepadButtonData> $ "GamepadButton/" + scstring index + "/Change/Event"
+    let GamepadButtonDown index = stoa<GamepadButtonData> $ "GamepadButton/" + scstring index + "/Down/Event"
+    let GamepadButtonUp index = stoa<GamepadButtonData> $ "GamepadButton/" + scstring index + "/Up/Event"
     let AssetsReload = stoa<unit> "Assets/Reload/Event"

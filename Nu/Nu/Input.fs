@@ -102,20 +102,22 @@ type [<Struct>] GamepadButton =
 [<RequireQualifiedAccess>]        
 module GamepadState =
 
-    let mutable private sticks = [||]
+    let mutable private Joysticks = [||]
+
+    let SupportedButtonCount = 15
 
     /// Initialize gamepad state.
     let init () =
         let indices = SDL.SDL_NumJoysticks ()
-        sticks <-
-            Array.map (fun stick ->
+        Joysticks <-
+            Array.map (fun joystick ->
                 // NOTE: we don't have a match call to SDL.SDL_JoystickClose, but it may not be necessary
-                SDL.SDL_JoystickOpen stick)
+                SDL.SDL_JoystickOpen joystick)
                 [|0 .. indices|]
 
     /// Get the number of open gamepad.
     let getGamepadCount () =
-        Array.length sticks
+        Array.length Joysticks
 
     /// Convert a GamepadButton to SDL's representation.
     let toSdlButton gamepadButton =
@@ -148,17 +150,17 @@ module GamepadState =
         | 13 -> ButtonB
         | 14 -> ButtonX
         | 15 -> ButtonY
-        | _ -> failwith "Invalid SDL gamepad button."
+        | _ -> failwith "Invalid SDL joystick button."
 
     /// Check that the given gamepad key is down.
     let isButtonDown index button =
         let sdlButton = toSdlButton button
-        match Array.tryItem index sticks with
-        | Some stick ->
+        match Array.tryItem index Joysticks with
+        | Some joystick ->
             match sdlButton with
-            | 0 -> SDL.SDL_JoystickGetButton (stick, 7) = byte 1 || SDL.SDL_JoystickGetButton (stick, 0) = byte 1 || SDL.SDL_JoystickGetButton (stick, 1) = byte 1
-            | 2 -> SDL.SDL_JoystickGetButton (stick, 1) = byte 1 || SDL.SDL_JoystickGetButton (stick, 2) = byte 1 || SDL.SDL_JoystickGetButton (stick, 3) = byte 1
-            | 4 -> SDL.SDL_JoystickGetButton (stick, 3) = byte 1 || SDL.SDL_JoystickGetButton (stick, 4) = byte 1 || SDL.SDL_JoystickGetButton (stick, 5) = byte 1
-            | 6 -> SDL.SDL_JoystickGetButton (stick, 5) = byte 1 || SDL.SDL_JoystickGetButton (stick, 6) = byte 1 || SDL.SDL_JoystickGetButton (stick, 7) = byte 1
-            | _ -> SDL.SDL_JoystickGetButton (stick, sdlButton) = byte 1
+            | 0 -> SDL.SDL_JoystickGetButton (joystick, 7) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 0) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 1) = byte 1
+            | 2 -> SDL.SDL_JoystickGetButton (joystick, 1) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 2) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 3) = byte 1
+            | 4 -> SDL.SDL_JoystickGetButton (joystick, 3) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 4) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 5) = byte 1
+            | 6 -> SDL.SDL_JoystickGetButton (joystick, 5) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 6) = byte 1 || SDL.SDL_JoystickGetButton (joystick, 7) = byte 1
+            | _ -> SDL.SDL_JoystickGetButton (joystick, sdlButton) = byte 1
         | None -> false
