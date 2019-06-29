@@ -142,8 +142,8 @@ module SdlDepsModule =
                                     (fun () -> SDL_mixer.Mix_CloseAudio (); destroy ()) with
                                 | Left error -> Left error
                                 | Right ((), destroy) ->
-                                    let sdlDeps = { RenderContextOpt = Some renderContext; WindowOpt = Some window; Config = sdlConfig; Destroy = destroy }
-                                    Right sdlDeps
+                                    GamepadState.init ()
+                                    Right { RenderContextOpt = Some renderContext; WindowOpt = Some window; Config = sdlConfig; Destroy = destroy }
 
 [<RequireQualifiedAccess>]
 module Sdl =
