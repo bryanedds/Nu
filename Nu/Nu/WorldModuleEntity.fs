@@ -818,7 +818,11 @@ module WorldModuleEntity =
 
             // add entity state to the world
             let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
-            let world = World.addEntity true entityState entity world
+            let world =
+                if World.getEntityExists entity world then
+                    Log.debug "Scheduling entity creation assuming existing entity at the same address is being destroyed."
+                    World.schedule2 (World.addEntity true entityState entity) world
+                else World.addEntity true entityState entity world
             (entity, world)
 
         /// Read an entity from a file.
