@@ -270,34 +270,22 @@ module WorldModule =
         /// Set the tick rate, starting at the end of the current frame.
         [<FunctionBinding>]
         static member setTickRate tickRate world =
-            World.updateAmbientState
-                (AmbientState.addTasklet
-                    { ScheduledTime = World.getTickTime world
-                      Command = { Execute = fun world -> World.updateAmbientState (AmbientState.setTickRateImmediate tickRate) world }}) world
+            World.schedule2 (World.updateAmbientState (AmbientState.setTickRateImmediate tickRate)) world
 
         /// Reset the tick time to 0 at the end of the current frame.
         [<FunctionBinding>]
         static member resetTickTime world =
-            World.updateAmbientState
-                (AmbientState.addTasklet
-                    { ScheduledTime = World.getTickTime world
-                      Command = { Execute = fun world -> World.updateAmbientState AmbientState.resetTickTimeImmediate world }}) world
+            World.schedule2 (World.updateAmbientState AmbientState.resetTickTimeImmediate) world
 
         /// Increment the tick time at the end of the current frame.
         [<FunctionBinding>]
         static member incTickTime world =
-            World.updateAmbientState
-                (AmbientState.addTasklet
-                    { ScheduledTime = World.getTickTime world
-                      Command = { Execute = fun world -> World.updateAmbientState AmbientState.incTickTimeImmediate world }}) world
+            World.schedule2 (World.updateAmbientState AmbientState.incTickTimeImmediate) world
 
         /// Increment the tick time at the end of the current frame.
         [<FunctionBinding>]
         static member decTickTime world =
-            World.updateAmbientState
-                (AmbientState.addTasklet
-                    { ScheduledTime = World.getTickTime world
-                      Command = { Execute = fun world -> World.updateAmbientState AmbientState.decTickTimeImmediate world }}) world
+            World.schedule2 (World.updateAmbientState AmbientState.decTickTimeImmediate) world
 
         /// Get the world's tick time.
         [<FunctionBinding>]

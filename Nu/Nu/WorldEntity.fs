@@ -253,10 +253,7 @@ module WorldEntityModule =
         /// Destroy an entity in the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyEntity entity world =
-            let tasklet =
-                { ScheduledTime = World.getTickTime world
-                  Command = { Execute = fun world -> World.destroyEntityImmediate entity world }}
-            World.addTasklet tasklet world
+            World.schedule2 (World.destroyEntityImmediate entity) world
 
         /// Destroy multiple entities in the world immediately. Can be dangerous if existing in-flight publishing
         /// depends on any of the entities' existences. Consider using World.destroyEntities instead.
@@ -269,10 +266,7 @@ module WorldEntityModule =
         /// Destroy multiple entities in the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyEntities entities world =
-            let tasklet =
-                { ScheduledTime = World.getTickTime world
-                  Command = { Execute = fun world -> World.destroyEntitiesImmediate entities world }}
-            World.addTasklet tasklet world
+            World.schedule2 (World.destroyEntitiesImmediate entities) world
 
         /// Sort the given entities.
         static member sortEntities entities world =

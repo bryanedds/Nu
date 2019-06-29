@@ -194,10 +194,7 @@ module WorldScreenModule =
         /// Destroy a screen in the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyScreen screen world =
-            let tasklet =
-                { ScheduledTime = World.getTickTime world
-                  Command = { Execute = fun world -> World.destroyScreenImmediate screen world }}
-            World.addTasklet tasklet world
+            World.schedule2 (World.destroyScreenImmediate screen) world
 
         /// Create a screen and add it to the world.
         [<FunctionBinding "createScreen">]

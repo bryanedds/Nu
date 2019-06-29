@@ -178,10 +178,7 @@ module WorldLayerModule =
         /// Destroy a layer in the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyLayer layer world =
-            let tasklet =
-                { ScheduledTime = World.getTickTime world
-                  Command = { Execute = fun world -> World.destroyLayerImmediate layer world }}
-            World.addTasklet tasklet world
+            World.schedule2 (World.destroyLayerImmediate layer) world
             
         /// Destroy multiple layers in the world immediately. Can be dangerous if existing in-flight publishing depends
         /// on any of the layers' existences. Consider using World.destroyLayers instead.
@@ -194,10 +191,7 @@ module WorldLayerModule =
         /// Destroy multiple layers from the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyLayers layers world =
-            let tasklet =
-                { ScheduledTime = World.getTickTime world
-                  Command = { Execute = fun world -> World.destroyLayersImmediate layers world }}
-            World.addTasklet tasklet world
+            World.schedule2 (World.destroyLayersImmediate layers) world
 
         /// Write a layer to a layer descriptor.
         static member writeLayer layer layerDescriptor world =
