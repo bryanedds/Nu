@@ -12,24 +12,24 @@ module ElmarioController =
 
     type Entity with
         
-        member this.GetIdleLeftCycle = this.Get Property? IdleLeftCycle
-        member this.SetIdleLeftCycle = this.Set Property? IdleLeftCycle
-        member this.IdleLeftCycle = Lens.make<Image AssetTag, World> Property? IdleLeftCycle this.GetIdleLeftCycle this.SetIdleLeftCycle this
-        member this.GetIdleRightCycle = this.Get Property? IdleRightCycle
-        member this.SetIdleRightCycle = this.Set Property? IdleRightCycle
-        member this.IdleRightCycle = Lens.make<Image AssetTag, World> Property? IdleRightCycle this.GetIdleRightCycle this.SetIdleRightCycle this
-        member this.GetJumpLeftCycle = this.Get Property? JumpLeftCycle
-        member this.SetJumpLeftCycle = this.Set Property? JumpLeftCycle
-        member this.JumpLeftCycle = Lens.make<Image AssetTag, World> Property? JumpLeftCycle this.GetJumpLeftCycle this.SetJumpLeftCycle this
-        member this.GetJumpRightCycle = this.Get Property? JumpRightCycle
-        member this.SetJumpRightCycle = this.Set Property? JumpRightCycle
-        member this.JumpRightCycle = Lens.make<Image AssetTag, World> Property? JumpRightCycle this.GetJumpRightCycle this.SetJumpRightCycle this
-        member this.GetWalkLeftCycle = this.Get Property? WalkLeftCycle
-        member this.SetWalkLeftCycle = this.Set Property? WalkLeftCycle
-        member this.WalkLeftCycle = Lens.make<Image AssetTag, World> Property? WalkLeftCycle this.GetWalkLeftCycle this.SetWalkLeftCycle this
-        member this.GetWalkRightCycle = this.Get Property? WalkRightCycle
-        member this.SetWalkRightCycle = this.Set Property? WalkRightCycle
-        member this.WalkRightCycle = Lens.make<Image AssetTag, World> Property? WalkRightCycle this.GetWalkRightCycle this.SetWalkRightCycle this
+        member this.GetIdleLeftImage = this.Get Property? IdleLeftImage
+        member this.SetIdleLeftImage = this.Set Property? IdleLeftImage
+        member this.IdleLeftImage = Lens.make<Image AssetTag, World> Property? IdleLeftImage this.GetIdleLeftImage this.SetIdleLeftImage this
+        member this.GetIdleRightImage = this.Get Property? IdleRightImage
+        member this.SetIdleRightImage = this.Set Property? IdleRightImage
+        member this.IdleRightImage = Lens.make<Image AssetTag, World> Property? IdleRightImage this.GetIdleRightImage this.SetIdleRightImage this
+        member this.GetJumpLeftImage = this.Get Property? JumpLeftImage
+        member this.SetJumpLeftImage = this.Set Property? JumpLeftImage
+        member this.JumpLeftImage = Lens.make<Image AssetTag, World> Property? JumpLeftImage this.GetJumpLeftImage this.SetJumpLeftImage this
+        member this.GetJumpRightImage = this.Get Property? JumpRightImage
+        member this.SetJumpRightImage = this.Set Property? JumpRightImage
+        member this.JumpRightImage = Lens.make<Image AssetTag, World> Property? JumpRightImage this.GetJumpRightImage this.SetJumpRightImage this
+        member this.GetWalkLeftSheet = this.Get Property? WalkLeftSheet
+        member this.SetWalkLeftSheet = this.Set Property? WalkLeftSheet
+        member this.WalkLeftSheet = Lens.make<Image AssetTag, World> Property? WalkLeftSheet this.GetWalkLeftSheet this.SetWalkLeftSheet this
+        member this.GetWalkRightSheet = this.Get Property? WalkRightSheet
+        member this.SetWalkRightSheet = this.Set Property? WalkRightSheet
+        member this.WalkRightSheet = Lens.make<Image AssetTag, World> Property? WalkRightSheet this.GetWalkRightSheet this.SetWalkRightSheet this
         member this.GetFacingLeft = this.Get Property? FacingLeft
         member this.SetFacingLeft = this.Set Property? FacingLeft
         member this.FacingLeft = Lens.make<bool, World> Property? FacingLeft this.GetFacingLeft this.SetFacingLeft this
@@ -53,16 +53,28 @@ module ElmarioController =
              define Entity.CelSize (v2 28.0f 28.0f)
              define Entity.CelRun 8
              define Entity.FixedRotation true
+             define Entity.GravityScale 1.0f
              define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero })
-             define Entity.IdleLeftCycle (AssetTag.make Assets.DefaultPackage "IdleLeftCycle")
-             define Entity.IdleRightCycle (AssetTag.make Assets.DefaultPackage "IdleRightCycle")
-             define Entity.JumpLeftCycle (AssetTag.make Assets.DefaultPackage "JumpLeftCycle")
-             define Entity.JumpRightCycle (AssetTag.make Assets.DefaultPackage "JumpRightCycle")
-             define Entity.WalkLeftCycle (AssetTag.make Assets.DefaultPackage "WalkLeftCycle")
-             define Entity.WalkRightCycle (AssetTag.make Assets.DefaultPackage "WalkRightCycle")
+             define Entity.IdleLeftImage (AssetTag.make "Gameplay" "IdleLeft")
+             define Entity.IdleRightImage (AssetTag.make "Gameplay" "IdleRight")
+             define Entity.JumpLeftImage (AssetTag.make "Gameplay" "JumpLeft")
+             define Entity.JumpRightImage (AssetTag.make "Gameplay" "JumpRight")
+             define Entity.WalkLeftSheet (AssetTag.make "Gameplay" "WalkLeft")
+             define Entity.WalkRightSheet (AssetTag.make "Gameplay" "WalkRight")
              define Entity.FacingLeft false]
 
         override this.Update (entity, world) =
+
+            //// default gravity gives too floaty of a feel, so we use a constant fall force
+            //let physicsId = entity.GetPhysicsId world
+            //let gravity =
+            //    if World.isBodyOnGround physicsId world
+            //    then Vector2 (0.0f, -1000.0f)
+            //    else Vector2 (0.0f, -30000.0f)
+            //let world = World.applyBodyForce gravity physicsId world
+
+            // we have to a bit of hackery to remember whether the character is facing left or right
+            // when there is no velocity
             let facingLeft = entity.GetFacingLeft world
             let velocity = World.getBodyLinearVelocity (entity.GetPhysicsId world) world
             if facingLeft && velocity.X > 1.0f then entity.SetFacingLeft false world
@@ -79,16 +91,16 @@ module ElmarioController =
             let animationDelay = entity.GetAnimationDelay world
             let (insetOpt, image) =
                 if not (World.isBodyOnGround physicsId world) then
-                    let image = if facingLeft then entity.GetJumpLeftCycle world else entity.GetJumpRightCycle world
+                    let image = if facingLeft then entity.GetJumpLeftImage world else entity.GetJumpRightImage world
                     (None, image)
                 elif velocity.X < 5.0f && velocity.X > -5.0f then
-                    let image = if facingLeft then entity.GetIdleLeftCycle world else entity.GetIdleRightCycle world
+                    let image = if facingLeft then entity.GetIdleLeftImage world else entity.GetIdleRightImage world
                     (None, image)
                 elif velocity.X < 0.0f then
-                    let image = entity.GetWalkLeftCycle world
+                    let image = entity.GetWalkLeftSheet world
                     (Some (computeWalkCelInset celSize celRun animationDelay time), image)
                 else
-                    let image = entity.GetWalkRightCycle world
+                    let image = entity.GetWalkRightSheet world
                     (Some (computeWalkCelInset celSize celRun animationDelay time), image)
             let renderMessage =
                 RenderDescriptorsMessage
