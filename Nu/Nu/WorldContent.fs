@@ -105,9 +105,6 @@ module Content =
     /// Describe a box with the given definitions.
     let box entity_ definitions = entity<BoxDispatcher> entity_ definitions
 
-    /// Describe a top-view character with the given definitions.
-    let topViewCharacter entity_ definitions = entity<TopViewCharacterDispatcher> entity_ definitions
-
     /// Describe a side-view character with the given definitions.
     let sideViewCharacter entity_ definitions = entity<SideViewCharacterDispatcher> entity_ definitions
 

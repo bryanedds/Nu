@@ -287,7 +287,6 @@ module WorldModule3 =
                  FillBarDispatcher () :> EntityDispatcher
                  BlockDispatcher () :> EntityDispatcher
                  BoxDispatcher () :> EntityDispatcher
-                 TopViewCharacterDispatcher () :> EntityDispatcher
                  SideViewCharacterDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher]
 
