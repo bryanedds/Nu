@@ -47,7 +47,7 @@ module Elmario =
             | Jump ->
                 let physicsId = Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 0.0f 1000000.0f) physicsId world
+                then World.applyBodyForce (v2 0.0f 900000.0f) physicsId world
                 else world
 
         // here we describe the content of the game including elmario and the ground he walks on.
