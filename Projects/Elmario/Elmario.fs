@@ -55,7 +55,7 @@ module Elmario =
         override this.Content (_, _, _) =
             [Content.screen Default.Screen Vanilla []
                 [Content.layer Default.Layer []
-                    [Content.entity<ElmarioController> Elmario
+                    [Content.sideViewCharacter Elmario
                         [Entity.Position == v2 0.0f 0.0f
                          Entity.Size == v2 144.0f 144.0f]
                      Content.block Ground
