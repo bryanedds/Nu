@@ -57,8 +57,7 @@ module Elmario =
                 [Content.layer Default.Layer []
                     [Content.entity<ElmarioController> Elmario
                         [Entity.Position == v2 0.0f 0.0f
-                         Entity.Size == v2 144.0f 144.0f
-                         Entity.GravityScale == 3.0f]
+                         Entity.Size == v2 144.0f 144.0f]
                      Content.block Ground
                         [Entity.Position == v2 -384.0f -256.0f
                          Entity.Size == v2 768.0f 64.0f

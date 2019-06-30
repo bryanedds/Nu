@@ -53,25 +53,17 @@ module ElmarioController =
              define Entity.CelSize (v2 28.0f 28.0f)
              define Entity.CelRun 8
              define Entity.FixedRotation true
-             define Entity.GravityScale 1.0f
+             define Entity.GravityScale 3.0f
              define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero })
-             define Entity.IdleLeftImage (AssetTag.make "Gameplay" "IdleLeft")
-             define Entity.IdleRightImage (AssetTag.make "Gameplay" "IdleRight")
-             define Entity.JumpLeftImage (AssetTag.make "Gameplay" "JumpLeft")
-             define Entity.JumpRightImage (AssetTag.make "Gameplay" "JumpRight")
-             define Entity.WalkLeftSheet (AssetTag.make "Gameplay" "WalkLeft")
-             define Entity.WalkRightSheet (AssetTag.make "Gameplay" "WalkRight")
+             define Entity.IdleLeftImage (AssetTag.make Assets.DefaultPackage "IdleLeft")
+             define Entity.IdleRightImage (AssetTag.make Assets.DefaultPackage "IdleRight")
+             define Entity.JumpLeftImage (AssetTag.make Assets.DefaultPackage "JumpLeft")
+             define Entity.JumpRightImage (AssetTag.make Assets.DefaultPackage "JumpRight")
+             define Entity.WalkLeftSheet (AssetTag.make Assets.DefaultPackage "WalkLeft")
+             define Entity.WalkRightSheet (AssetTag.make Assets.DefaultPackage "WalkRight")
              define Entity.FacingLeft false]
 
         override this.Update (entity, world) =
-
-            //// default gravity gives too floaty of a feel, so we use a constant fall force
-            //let physicsId = entity.GetPhysicsId world
-            //let gravity =
-            //    if World.isBodyOnGround physicsId world
-            //    then Vector2 (0.0f, -1000.0f)
-            //    else Vector2 (0.0f, -30000.0f)
-            //let world = World.applyBodyForce gravity physicsId world
 
             // we have to a bit of hackery to remember whether the character is facing left or right
             // when there is no velocity
