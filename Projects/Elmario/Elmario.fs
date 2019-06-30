@@ -8,6 +8,7 @@ module Elmario =
     // here we create references for the entities that we are going to define for our game
     let Elmario = Default.Layer / "Elmario"
     let Ground = Default.Layer / "Ground"
+    let Rock = Default.Layer / "Rock"
 
     // this is our Elm-style command type
     type Command =
@@ -59,5 +60,8 @@ module Elmario =
                      Content.block Ground
                         [Entity.Position == v2 -384.0f -256.0f
                          Entity.Size == v2 768.0f 64.0f
-                         Entity.Friction == 0.5f
-                         Entity.StaticImage == (AssetTag.make "Gameplay" "TreeTop")]]]]
+                         Entity.StaticImage == (AssetTag.make "Gameplay" "TreeTop")]
+                     Content.block Rock
+                        [Entity.Position == v2 320.0f -192.0f
+                         Entity.Size == v2 64.0f 64.0f
+                         Entity.StaticImage == (AssetTag.make "Gameplay" "Rock")]]]]

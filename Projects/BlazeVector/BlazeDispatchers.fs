@@ -102,6 +102,7 @@ module EnemyModule =
 
         static member Properties =
             [define Entity.Size (Vector2 (48.0f, 96.0f))
+             define Entity.Friction 0.0f
              define Entity.FixedRotation true
              define Entity.LinearDamping 3.0f
              define Entity.GravityScale 0.0f
@@ -209,6 +210,7 @@ module PlayerModule =
         static member Properties =
             [define Entity.Size (Vector2 (48.0f, 96.0f))
              define Entity.FixedRotation true
+             define Entity.Friction 0.0f
              define Entity.LinearDamping 3.0f
              define Entity.GravityScale 0.0f
              define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
