@@ -82,14 +82,14 @@
     <Content Include="Prelude.nuscript">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <None Include="Assets\Default\CharacterIdleLeft.png" />
+    <None Include="Assets\Default\CharacterJumpLeft.png" />
+    <None Include="Assets\Default\CharacterJumpRight.png" />
+    <None Include="Assets\Default\CharacterIdleRight.png" />
+    <None Include="Assets\Default\CharacterWalkLeft.psd" />
+    <None Include="Assets\Default\CharacterWalkRight.psd" />
     <None Include="Assets\Default\Effect.nueffect" />
     <None Include="Assets\Default\Effect2.nueffect" />
-    <None Include="Assets\Default\IdleLeft.png" />
-    <None Include="Assets\Default\JumpLeft.png" />
-    <None Include="Assets\Default\JumpRight.png" />
-    <None Include="Assets\Default\IdleRight.png" />
-    <None Include="Assets\Default\WalkLeft.psd" />
-    <None Include="Assets\Default\WalkRight.psd" />
     <None Include="Assets\Default\FreeMonoBold.032.ttf" />
     <None Include="Assets\Default\Song.ogg" />
     <None Include="Assets\Default\Sound.wav" />

@@ -1475,27 +1475,27 @@ module SideViewCharacterDispatcherModule =
 
     type Entity with
         
-        member this.GetIdleLeftImage = this.Get Property? IdleLeftImage
-        member this.SetIdleLeftImage = this.Set Property? IdleLeftImage
-        member this.IdleLeftImage = Lens.make<Image AssetTag, World> Property? IdleLeftImage this.GetIdleLeftImage this.SetIdleLeftImage this
-        member this.GetIdleRightImage = this.Get Property? IdleRightImage
-        member this.SetIdleRightImage = this.Set Property? IdleRightImage
-        member this.IdleRightImage = Lens.make<Image AssetTag, World> Property? IdleRightImage this.GetIdleRightImage this.SetIdleRightImage this
-        member this.GetJumpLeftImage = this.Get Property? JumpLeftImage
-        member this.SetJumpLeftImage = this.Set Property? JumpLeftImage
-        member this.JumpLeftImage = Lens.make<Image AssetTag, World> Property? JumpLeftImage this.GetJumpLeftImage this.SetJumpLeftImage this
-        member this.GetJumpRightImage = this.Get Property? JumpRightImage
-        member this.SetJumpRightImage = this.Set Property? JumpRightImage
-        member this.JumpRightImage = Lens.make<Image AssetTag, World> Property? JumpRightImage this.GetJumpRightImage this.SetJumpRightImage this
-        member this.GetWalkLeftSheet = this.Get Property? WalkLeftSheet
-        member this.SetWalkLeftSheet = this.Set Property? WalkLeftSheet
-        member this.WalkLeftSheet = Lens.make<Image AssetTag, World> Property? WalkLeftSheet this.GetWalkLeftSheet this.SetWalkLeftSheet this
-        member this.GetWalkRightSheet = this.Get Property? WalkRightSheet
-        member this.SetWalkRightSheet = this.Set Property? WalkRightSheet
-        member this.WalkRightSheet = Lens.make<Image AssetTag, World> Property? WalkRightSheet this.GetWalkRightSheet this.SetWalkRightSheet this
-        member this.GetFacingLeft = this.Get Property? FacingLeft
-        member this.SetFacingLeft = this.Set Property? FacingLeft
-        member this.FacingLeft = Lens.make<bool, World> Property? FacingLeft this.GetFacingLeft this.SetFacingLeft this
+        member this.GetCharacterIdleLeftImage = this.Get Property? CharacterIdleLeftImage
+        member this.SetCharacterIdleLeftImage = this.Set Property? CharacterIdleLeftImage
+        member this.CharacterIdleLeftImage = Lens.make<Image AssetTag, World> Property? CharacterIdleLeftImage this.GetCharacterIdleLeftImage this.SetCharacterIdleLeftImage this
+        member this.GetCharacterIdleRightImage = this.Get Property? CharacterIdleRightImage
+        member this.SetCharacterIdleRightImage = this.Set Property? CharacterIdleRightImage
+        member this.CharacterIdleRightImage = Lens.make<Image AssetTag, World> Property? CharacterIdleRightImage this.GetCharacterIdleRightImage this.SetCharacterIdleRightImage this
+        member this.GetCharacterJumpLeftImage = this.Get Property? CharacterJumpLeftImage
+        member this.SetCharacterJumpLeftImage = this.Set Property? CharacterJumpLeftImage
+        member this.CharacterJumpLeftImage = Lens.make<Image AssetTag, World> Property? CharacterJumpLeftImage this.GetCharacterJumpLeftImage this.SetCharacterJumpLeftImage this
+        member this.GetCharacterJumpRightImage = this.Get Property? CharacterJumpRightImage
+        member this.SetCharacterJumpRightImage = this.Set Property? CharacterJumpRightImage
+        member this.CharacterJumpRightImage = Lens.make<Image AssetTag, World> Property? CharacterJumpRightImage this.GetCharacterJumpRightImage this.SetCharacterJumpRightImage this
+        member this.GetCharacterWalkLeftSheet = this.Get Property? CharacterWalkLeftSheet
+        member this.SetCharacterWalkLeftSheet = this.Set Property? CharacterWalkLeftSheet
+        member this.CharacterWalkLeftSheet = Lens.make<Image AssetTag, World> Property? CharacterWalkLeftSheet this.GetCharacterWalkLeftSheet this.SetCharacterWalkLeftSheet this
+        member this.GetCharacterWalkRightSheet = this.Get Property? CharacterWalkRightSheet
+        member this.SetCharacterWalkRightSheet = this.Set Property? CharacterWalkRightSheet
+        member this.CharacterWalkRightSheet = Lens.make<Image AssetTag, World> Property? CharacterWalkRightSheet this.GetCharacterWalkRightSheet this.SetCharacterWalkRightSheet this
+        member this.GetCharacterFacingLeft = this.Get Property? CharacterFacingLeft
+        member this.SetCharacterFacingLeft = this.Set Property? CharacterFacingLeft
+        member this.CharacterFacingLeft = Lens.make<bool, World> Property? CharacterFacingLeft this.GetCharacterFacingLeft this.SetCharacterFacingLeft this
         
     type SideViewCharacterDispatcher () =
         inherit EntityDispatcher ()
@@ -1518,45 +1518,50 @@ module SideViewCharacterDispatcherModule =
              define Entity.FixedRotation true
              define Entity.GravityScale 3.0f
              define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero })
-             define Entity.IdleLeftImage (AssetTag.make Assets.DefaultPackage "IdleLeft")
-             define Entity.IdleRightImage (AssetTag.make Assets.DefaultPackage "IdleRight")
-             define Entity.JumpLeftImage (AssetTag.make Assets.DefaultPackage "JumpLeft")
-             define Entity.JumpRightImage (AssetTag.make Assets.DefaultPackage "JumpRight")
-             define Entity.WalkLeftSheet (AssetTag.make Assets.DefaultPackage "WalkLeft")
-             define Entity.WalkRightSheet (AssetTag.make Assets.DefaultPackage "WalkRight")
-             define Entity.FacingLeft false]
+             define Entity.CharacterIdleLeftImage (AssetTag.make Assets.DefaultPackage "CharacterIdleLeft")
+             define Entity.CharacterIdleRightImage (AssetTag.make Assets.DefaultPackage "CharacterIdleRight")
+             define Entity.CharacterJumpLeftImage (AssetTag.make Assets.DefaultPackage "CharacterJumpLeft")
+             define Entity.CharacterJumpRightImage (AssetTag.make Assets.DefaultPackage "CharacterJumpRight")
+             define Entity.CharacterWalkLeftSheet (AssetTag.make Assets.DefaultPackage "CharacterWalkLeft")
+             define Entity.CharacterWalkRightSheet (AssetTag.make Assets.DefaultPackage "CharacterWalkRight")
+             define Entity.CharacterFacingLeft false]
 
         override this.Update (entity, world) =
-
             // we have to a bit of hackery to remember whether the character is facing left or right
             // when there is no velocity
-            let facingLeft = entity.GetFacingLeft world
+            let facingLeft = entity.GetCharacterFacingLeft world
             let velocity = World.getBodyLinearVelocity (entity.GetPhysicsId world) world
-            if facingLeft && velocity.X > 1.0f then entity.SetFacingLeft false world
-            elif not facingLeft && velocity.X < -1.0f then entity.SetFacingLeft true world
+            if facingLeft && velocity.X > 1.0f then entity.SetCharacterFacingLeft false world
+            elif not facingLeft && velocity.X < -1.0f then entity.SetCharacterFacingLeft true world
             else world
 
         override this.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
                 let time = World.getTickTime world
                 let physicsId = entity.GetPhysicsId world
-                let facingLeft = entity.GetFacingLeft world
+                let facingLeft = entity.GetCharacterFacingLeft world
                 let velocity = World.getBodyLinearVelocity physicsId world
                 let celSize = entity.GetCelSize world
                 let celRun = entity.GetCelRun world
                 let animationDelay = entity.GetAnimationDelay world
                 let (insetOpt, image) =
                     if not (World.isBodyOnGround physicsId world) then
-                        let image = if facingLeft then entity.GetJumpLeftImage world else entity.GetJumpRightImage world
+                        let image =
+                            if facingLeft
+                            then entity.GetCharacterJumpLeftImage world
+                            else entity.GetCharacterJumpRightImage world
                         (None, image)
                     elif velocity.X < 5.0f && velocity.X > -5.0f then
-                        let image = if facingLeft then entity.GetIdleLeftImage world else entity.GetIdleRightImage world
+                        let image =
+                            if facingLeft
+                            then entity.GetCharacterIdleLeftImage world
+                            else entity.GetCharacterIdleRightImage world
                         (None, image)
                     elif velocity.X < 0.0f then
-                        let image = entity.GetWalkLeftSheet world
+                        let image = entity.GetCharacterWalkLeftSheet world
                         (Some (computeWalkCelInset celSize celRun animationDelay time), image)
                     else
-                        let image = entity.GetWalkRightSheet world
+                        let image = entity.GetCharacterWalkRightSheet world
                         (Some (computeWalkCelInset celSize celRun animationDelay time), image)
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
