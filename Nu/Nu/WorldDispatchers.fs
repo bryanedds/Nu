@@ -470,7 +470,7 @@ module RigidBodyFacetModule =
              define Entity.BodyType Dynamic
              define Entity.Awake true
              define Entity.Density Constants.Physics.NormalDensity
-             define Entity.Friction 0.5f
+             define Entity.Friction 0.25f
              define Entity.Restitution 0.0f
              define Entity.FixedRotation false
              define Entity.AngularVelocity 0.0f

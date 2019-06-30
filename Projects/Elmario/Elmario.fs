@@ -37,17 +37,18 @@ module Elmario =
             | MoveLeft ->
                 let physicsId = Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 -18000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 -6000.0f 0.0f) physicsId world
+                then World.applyBodyForce (v2 -30000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 -7500.0f 0.0f) physicsId world
             | MoveRight ->
                 let physicsId = Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 18000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 6000.0f 0.0f) physicsId world
+                then World.applyBodyForce (v2 30000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 7500.0f 0.0f) physicsId world
             | Jump ->
                 let physicsId = Elmario.GetPhysicsId world
-                if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 0.0f 900000.0f) physicsId world
+                if World.isBodyOnGround physicsId world then
+                    let world = World.applyBodyForce (v2 0.0f 2000000.0f) physicsId world
+                    World.playSound 0.5f (AssetTag.make "Gameplay" "Jump") world
                 else world
 
         // here we describe the content of the game including elmario and the ground he walks on.
@@ -56,7 +57,8 @@ module Elmario =
                 [Content.layer Default.Layer []
                     [Content.entity<ElmarioController> Elmario
                         [Entity.Position == v2 0.0f 0.0f
-                         Entity.Size == v2 144.0f 144.0f]
+                         Entity.Size == v2 144.0f 144.0f
+                         Entity.GravityScale == 3.0f]
                      Content.block Ground
                         [Entity.Position == v2 -384.0f -256.0f
                          Entity.Size == v2 768.0f 64.0f
