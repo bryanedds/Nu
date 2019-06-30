@@ -470,13 +470,13 @@ module RigidBodyFacetModule =
              define Entity.BodyType Dynamic
              define Entity.Awake true
              define Entity.Density Constants.Physics.NormalDensity
-             define Entity.Friction 0.0f
+             define Entity.Friction 0.5f
              define Entity.Restitution 0.0f
              define Entity.FixedRotation false
              define Entity.AngularVelocity 0.0f
-             define Entity.AngularDamping 1.0f
+             define Entity.AngularDamping 0.0f
              define Entity.LinearVelocity Vector2.Zero
-             define Entity.LinearDamping 1.0f
+             define Entity.LinearDamping 0.0f
              define Entity.GravityScale 1.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
@@ -1499,7 +1499,6 @@ module SideViewCharacterDispatcherModule =
 
         static member Properties =
             [define Entity.FixedRotation true
-             define Entity.LinearDamping 3.0f
              define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
              define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image6")]
 
