@@ -314,40 +314,28 @@ module ScriptFacetModule =
              define Entity.OnSignal Scripting.Unit]
 
         override facet.Register (entity, world) =
-            let world =
-                match entity.GetOnRegister world with
-                | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
-                | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
+            let world = World.evalWithLogging (entity.GetOnRegister world) (entity.GetScriptFrame world) entity world |> snd'
             let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? Script) entity world
             let world = World.monitor handleOnRegisterChanged (entity.GetChangeEvent Property? OnRegister) entity world
             world
 
         override facet.Unregister (entity, world) =
-            match entity.GetOnUnregister world with
-            | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
-            | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
+            World.evalWithLogging (entity.GetOnUnregister world) (entity.GetScriptFrame world) entity world |> snd'
 
         override facet.Update (entity, world) =
-            match entity.GetOnUpdate world with
-            | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
-            | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
+            World.evalWithLogging (entity.GetOnUpdate world) (entity.GetScriptFrame world) entity world |> snd'
 
         override facet.PostUpdate (entity, world) =
-            match entity.GetOnPostUpdate world with
-            | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
-            | handler -> World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
+            World.evalWithLogging (entity.GetOnPostUpdate world) (entity.GetScriptFrame world) entity world |> snd'
 
         override facet.Signal (signal, entity, world) =
-            match entity.GetOnSignal world with
-            | Scripting.Unit -> world // OPTIMIZATION: don't bother evaluating unit
-            | handler ->
-                match ScriptingSystem.tryImport typeof<Symbol> signal world with
-                | Some signalExpr ->
-                    ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("signal", signalExpr) }) world
-                    let world = World.evalWithLogging handler (entity.GetScriptFrame world) entity world |> snd'
-                    ScriptingSystem.removeProceduralBindings world
-                    world
-                | None -> failwithumf ()
+            match ScriptingSystem.tryImport typeof<Symbol> signal world with
+            | Some signalExpr ->
+                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("signal", signalExpr) }) world
+                let world = World.evalWithLogging (entity.GetOnSignal world) (entity.GetScriptFrame world) entity world |> snd'
+                ScriptingSystem.removeProceduralBindings world
+                world
+            | None -> failwithumf ()
 
 [<AutoOpen>]
 module TextFacetModule =
