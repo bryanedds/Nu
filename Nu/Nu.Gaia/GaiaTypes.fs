@@ -27,13 +27,19 @@ type EditorState =
       RightClickPosition : Vector2
       DragEntityState : DragEntityState
       DragCameraState : DragCameraState
-      PastWorlds : World list
-      FutureWorlds : World list
       SelectedLayer : Layer
       FilePaths : Map<Layer Address, string> }
 
+
 /// Globals needed to sync Nu with WinForms.
+[<RequireQualifiedAccess>]
 module Globals =
 
-    let WorldRef = ref Unchecked.defaultof<World>
+    let mutable World = Unchecked.defaultof<World>
+    let mutable PastWorlds : World list = []
+    let mutable FutureWorlds : World list = []
     let WorldChangers = WorldChangers ()
+
+    let pushPastWorld pastWorld =
+        PastWorlds <- pastWorld :: PastWorlds
+        FutureWorlds <- []

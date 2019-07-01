@@ -35,11 +35,6 @@ and EntityPropertyDescriptor (property, attributes) =
         | EntityPropertyDescriptor _ -> true
         | EntityPropertyInfo xfd -> xfd.CanWrite
 
-    let pushPastWorld pastWorld world =
-        World.updateUserValue
-            (fun editorState -> { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = [] })
-            world
-
     override this.Category =
         // HACK: all of this stuff is a hack until we can get user-defined attributes on simulant properties!
         // HACK: in order to put the Events as the last category, I start all the other categories with an unprinted
@@ -74,7 +69,7 @@ and EntityPropertyDescriptor (property, attributes) =
         | null -> null // WHY THE FUCK IS THIS EVER null???
         | source ->
             let entityTds = source :?> EntityTypeDescriptorSource
-            match EntityPropertyValue.tryGetValue property entityTds.DescribedEntity !Globals.WorldRef with
+            match EntityPropertyValue.tryGetValue property entityTds.DescribedEntity Globals.World with
             | Some value -> value
             | None -> null
 
@@ -91,7 +86,7 @@ and EntityPropertyDescriptor (property, attributes) =
                 | _ -> value
 
             // make property change undo-able
-            let world = pushPastWorld world world
+            Globals.pushPastWorld world
             match propertyName with
             
             // change the name property
@@ -100,7 +95,7 @@ and EntityPropertyDescriptor (property, attributes) =
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
                     let entity = entityTds.DescribedEntity
                     let world = World.reassignEntity entity (Some name) (etol entity) world
-                    Globals.WorldRef := world // must be set for property grid
+                    Globals.World <- world // must be set for property grid
                     world
                 else
                     MessageBox.Show
@@ -118,7 +113,7 @@ and EntityPropertyDescriptor (property, attributes) =
                     match World.trySetEntityFacetNames facetNames entity world with
                     | (Right (), world) -> world
                     | (Left error, world) -> Log.trace error; world
-                Globals.WorldRef := world // must be set for property grid
+                Globals.World <- world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
                 world
 
@@ -136,13 +131,13 @@ and EntityPropertyDescriptor (property, attributes) =
                         let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                         EntityPropertyValue.trySetValue alwaysPublish nonPersistent property value entity world |> snd
                 let world = entityTds.DescribedEntity.PropagatePhysics world
-                Globals.WorldRef := world // must be set for property grid
+                Globals.World <- world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
                 world)
 
         // NOTE: in order to update the view immediately, we have to apply the changer twice,
         // once immediately and once in the update function
-        Globals.WorldRef := changer !Globals.WorldRef
+        Globals.World <- changer Globals.World
         Globals.WorldChangers.Add changer |> ignore
 
 and EntityTypeDescriptor (sourceOpt : obj) =
@@ -151,7 +146,7 @@ and EntityTypeDescriptor (sourceOpt : obj) =
     override this.GetProperties () =
         let contextOpt =
             match sourceOpt with
-            | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity, !Globals.WorldRef)
+            | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity, Globals.World)
             | _ -> None
         let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
         let propertyDescriptors = EntityPropertyValue.getPropertyDescriptors makePropertyDescriptor contextOpt
