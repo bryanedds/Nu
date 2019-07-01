@@ -86,10 +86,10 @@ type [<Struct; StructuralEquality; NoComparison>] RenderDescriptor =
     | LayerableDescriptor of LayerableDescriptor
 
 /// A message to the rendering system.
-type [<StructuralEquality; NoComparison>] RenderMessage =
-    | RenderDescriptorsMessage of RenderDescriptor array
-    | HintRenderPackageUseMessage of string
-    | HintRenderPackageDisuseMessage of string
+type [<Struct; StructuralEquality; NoComparison>] RenderMessage =
+    | RenderDescriptorsMessage of renderDescriptorsMessage : RenderDescriptor array
+    | HintRenderPackageUseMessage of hintRenderPackageUseMessage : string
+    | HintRenderPackageDisuseMessage of hintRenderPackageDisuseMessage : string
     | ReloadRenderAssetsMessage
     //| ScreenFlashMessage of ...
 
