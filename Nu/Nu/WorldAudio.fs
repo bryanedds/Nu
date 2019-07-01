@@ -20,7 +20,7 @@ module WorldAudioModule =
             member this.SubsystemOrder = this.SubsystemOrder
             member this.ClearMessages () = { this with AudioPlayer = AudioPlayer.clearMessages this.AudioPlayer } :> World Subsystem
             member this.EnqueueMessage message = { this with AudioPlayer = AudioPlayer.enqueueMessage (message :?> AudioMessage) this.AudioPlayer } :> World Subsystem
-            member this.ProcessMessages world = (() :> obj, { this with AudioPlayer = AudioPlayer.play this.AudioPlayer } :> World Subsystem, world)
+            member this.ProcessMessages _ = (() :> obj, { this with AudioPlayer = AudioPlayer.play this.AudioPlayer } :> World Subsystem)
             member this.ApplyResult (_, world) = world
             member this.CleanUp world = (this :> World Subsystem, world)
 

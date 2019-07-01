@@ -32,7 +32,7 @@ type 'w Subsystem =
         /// Enqueue a message for the subsystem.
         abstract EnqueueMessage : SubsystemMessage -> 'w Subsystem
         /// Processed the queued messages with the subsystem.
-        abstract ProcessMessages : 'w -> SubsystemResult * 'w Subsystem * 'w
+        abstract ProcessMessages : 'w -> SubsystemResult * 'w Subsystem
         /// Apply the result of the message processing to the world.
         abstract ApplyResult : SubsystemResult * 'w -> 'w
         /// Clean up any resources used by the subsystem.
