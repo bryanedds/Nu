@@ -143,7 +143,7 @@
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.3.5.5\lib\net46\Prime.exe</HintPath>
+      <HintPath>..\..\packages\Prime.3.5.6\lib\net46\Prime.exe</HintPath>
     </Reference>
     <Reference Include="SDL2#">
       <HintPath>..\..\Nu\Nu.Dependencies\SDL2#\Release\SDL2#.dll</HintPath>
