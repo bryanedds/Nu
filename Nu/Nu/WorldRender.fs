@@ -22,7 +22,7 @@ module WorldRenderModule =
             member this.EnqueueMessage message = { this with Renderer = Renderer.enqueueMessage (message :?> RenderMessage) this.Renderer } :> World Subsystem
             member this.ProcessMessages world =
                 let this = { this with Renderer = Renderer.render (World.getEyeCenter world) (World.getEyeSize world) this.Renderer }
-                (() :> obj, this :> World Subsystem, world)
+                (() :> obj, this :> World Subsystem)
             member this.ApplyResult (_, world) = world
             member this.CleanUp world =
                 let this = { this with Renderer = Renderer.cleanUp this.Renderer }

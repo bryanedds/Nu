@@ -15,7 +15,7 @@ module WorldPhysicsModule =
         private
             { SubsystemOrder : single
               PhysicsEngine : PhysicsEngine }
-            
+
         static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
             let transform = entity.GetTransform world
             let transform2 =
@@ -26,7 +26,7 @@ module WorldPhysicsModule =
             if transform <> transform2
             then entity.SetTransform transform2 world
             else world
-    
+
         static member private handleIntegrationMessage world integrationMessage =
             match World.getLiveness world with
             | Running ->
@@ -48,7 +48,7 @@ module WorldPhysicsModule =
                         World.publish collisionData collisionAddress eventTrace Default.Game world
                     else world
             | Exiting -> world
-    
+
         member this.BodyExists physicsId = this.PhysicsEngine.BodyExists physicsId
         member this.GetBodyContactNormals physicsId = this.PhysicsEngine.GetBodyContactNormals physicsId
         member this.GetBodyLinearVelocity physicsId = this.PhysicsEngine.GetBodyLinearVelocity physicsId
@@ -56,24 +56,24 @@ module WorldPhysicsModule =
         member this.GetBodyToGroundContactNormalOpt physicsId = this.PhysicsEngine.GetBodyToGroundContactNormalOpt physicsId
         member this.GetBodyToGroundContactTangentOpt physicsId = this.PhysicsEngine.GetBodyToGroundContactTangentOpt physicsId
         member this.IsBodyOnGround physicsId = this.PhysicsEngine.IsBodyOnGround physicsId
-    
+
         interface World Subsystem with
             member this.SubsystemType = UpdateType
             member this.SubsystemOrder = this.SubsystemOrder
             member this.ClearMessages () = { this with PhysicsEngine = this.PhysicsEngine.ClearMessages () } :> World Subsystem
             member this.EnqueueMessage message = { this with PhysicsEngine = this.PhysicsEngine.EnqueueMessage (message :?> PhysicsMessage) } :> World Subsystem
-                
+
             member this.ProcessMessages world =
                 let tickRate = World.getTickRate world
                 let (integrationMessages, physicsEngine) = this.PhysicsEngine.Integrate tickRate
-                (integrationMessages :> obj, { this with PhysicsEngine = physicsEngine } :> World Subsystem, world)
-    
+                (integrationMessages :> obj, { this with PhysicsEngine = physicsEngine } :> World Subsystem)
+
             member this.ApplyResult (integrationMessages, world) =
                 let integrationMessages = integrationMessages :?> IntegrationMessage List
                 Seq.fold PhysicsEngineSubsystem.handleIntegrationMessage world integrationMessages
-    
+
             member this.CleanUp world = (this :> World Subsystem, world)
-    
+
         static member make subsystemOrder physicsEngine =
             { SubsystemOrder = subsystemOrder
               PhysicsEngine = physicsEngine }

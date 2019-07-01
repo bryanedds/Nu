@@ -12,6 +12,7 @@ open global.Nu
 
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =
+    open System.Threading.Tasks
 
     let private ScreenTransitionMouseLeftKey = makeGuid ()
     let private ScreenTransitionMouseCenterKey = makeGuid ()
@@ -426,15 +427,25 @@ module WorldModule2 =
             Seq.fold (fun world (entity : Entity) -> entity.PropagatePhysics world) world entities
 
         static member private processSubsystems subsystemType world =
-            World.getSubsystemMap world |>
-            UMap.toSeq |>
-            Seq.filter (fun (_, subsystem) -> Subsystem.subsystemType subsystem = subsystemType) |>
-            Seq.sortBy (fun (_, subsystem) -> Subsystem.subsystemOrder subsystem) |>
-            Seq.fold (fun world (subsystemName, subsystem) ->
-                let (subsystemResult, subsystem, world) = Subsystem.processMessages subsystem world
+            let subsystems =
+                World.getSubsystemMap world |>
+                UMap.toSeq |>
+                Seq.filter (fun (_, subsystem) -> Subsystem.subsystemType subsystem = subsystemType) |>
+                Seq.sortBy (fun (_, subsystem) -> Subsystem.subsystemOrder subsystem)
+            let tasks =
+                subsystems |>
+                Seq.map (fun (subsystemName, subsystem) ->
+                    Task.Factory.StartNew (fun () ->
+                        let (subsystemResult, subsystem) = Subsystem.processMessages subsystem world
+                        (subsystemName, subsystemResult, subsystem))) |>
+                Seq.map Async.AwaitTask
+            let results =
+                Async.Parallel tasks |>
+                Async.RunSynchronously
+            Seq.fold (fun world (subsystemName, subsystemResult, subsystem) ->
                 let world = Subsystem.applyResult subsystemResult subsystem world
                 World.addSubsystem subsystemName subsystem world)
-                world
+                world results
 
         static member private cleanUpSubsystems world =
             World.getSubsystemMap world |>
