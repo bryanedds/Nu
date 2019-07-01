@@ -145,18 +145,11 @@ module WorldTypes =
                 | :? SortPriority as that -> (this :> SortPriority IComparable).CompareTo that
                 | _ -> failwithumf ()
 
-    /// Signifies at run-time that a type has imperative semantics.
-    and Imperative = interface end
-
     /// Generalized interface tag for dispatchers.
     and Dispatcher = interface end
 
     /// Generalized interface tag for simulant dispatchers.
-    and SimulantDispatcher () =
-        interface Dispatcher
-
-        /// Determine that this dispatcher has imperative semantics.
-        member this.GetImperative () = this :> obj :? Imperative
+    and SimulantDispatcher () = interface Dispatcher
 
     /// The default dispatcher for games.
     and GameDispatcher () =
@@ -259,7 +252,8 @@ module WorldTypes =
         inherit SimulantDispatcher ()
     
         static member Properties =
-            [Define? Persistent true
+            [Define? Imperative false
+             Define? Persistent true
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
              Define? Rotation 0.0f
@@ -393,7 +387,7 @@ module WorldTypes =
             // TODO: P1: consider if eyeSize is too hard-coded
             let eyeSize = Vector2 (single Constants.Render.DefaultResolutionX, single Constants.Render.DefaultResolutionY)
             { Id = makeGuid ()
-              Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()
+              Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
               CreationTimeStamp = Core.getTimeStamp ()
               ScriptOpt = None
@@ -477,7 +471,7 @@ module WorldTypes =
             let spatialTree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             { Id = id
               Name = name
-              Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()
+              Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
               Persistent = true
               CreationTimeStamp = Core.getTimeStamp ()
@@ -558,7 +552,7 @@ module WorldTypes =
             let (id, name) = Reflection.deriveIdAndName nameOpt
             { LayerState.Id = id
               Name = name
-              Xtension = if dispatcher.GetImperative () then Xtension.makeImperative () else Xtension.makeSafe ()
+              Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
               Persistent = true
               CreationTimeStamp = Core.getTimeStamp ()
@@ -617,6 +611,7 @@ module WorldTypes =
           Name : string
           mutable Xtension : Xtension
           Dispatcher : EntityDispatcher
+          mutable Imperative : bool
           mutable Persistent : bool
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Cachable : bool
@@ -639,12 +634,12 @@ module WorldTypes =
 
         /// Make an entity state value.
         static member make nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
-            let imperative = dispatcher.GetImperative ()
             let (id, name) = Reflection.deriveIdAndName nameOpt
             { Id = id
               Name = name
-              Xtension = if imperative then Xtension.makeImperative () else Xtension.makeSafe ()
+              Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
+              Imperative = false
               Persistent = true
               CreationTimeStamp = Core.getTimeStamp ()
               Cachable = String.endsWithGuid name

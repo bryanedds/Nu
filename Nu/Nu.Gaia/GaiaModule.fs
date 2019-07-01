@@ -1276,7 +1276,7 @@ module Gaia =
                 if Keys.Control = Control.ModifierKeys && Keys.Y = key then handleFormRedo form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.E = key then handleFormCreateEntity false form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.D = key then handleFormDeleteEntity form (EventArgs ())
-                if Keys.Control = Control.ModifierKeys && Keys.U = key then handleFormCut form (EventArgs ())
+                if Keys.Control = Control.ModifierKeys && Keys.X = key then handleFormCut form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.C = key then handleFormCopy form (EventArgs ())
                 if Keys.Control = Control.ModifierKeys && Keys.V = key then handleFormPaste false form (EventArgs ())
                 if Keys.Delete = key then handleFormDeleteEntity form (EventArgs ())

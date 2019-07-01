@@ -878,17 +878,6 @@ module EntityDispatcherModule =
         default this.View (_, _, _) = []
 
 [<AutoOpen>]
-module ImperativeDispatcherModule =
-
-    type ImperativeDispatcher () =
-        inherit EntityDispatcher ()
-        interface Imperative
-
-    type [<AbstractClass>] ImperativeDispatcher<'model, 'message, 'command> (model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (model)
-        interface Imperative
-
-[<AutoOpen>]
 module EffectDispatcherModule =
 
     type EffectDispatcher () =
@@ -976,8 +965,6 @@ module GuiDispatcherModule =
                     else Cascade
                 else Cascade
             (handling, world)
-
-        interface Imperative
 
         static member FacetNames =
             [typeof<NodeFacet>.Name
@@ -1471,7 +1458,7 @@ module BoxDispatcherModule =
             [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")]
 
 [<AutoOpen>]
-module SideViewCharacterDispatcherModule =
+module CharacterDispatcherModule =
 
     type Entity with
         
@@ -1497,7 +1484,7 @@ module SideViewCharacterDispatcherModule =
         member this.SetCharacterFacingLeft = this.Set Property? CharacterFacingLeft
         member this.CharacterFacingLeft = Lens.make<bool, World> Property? CharacterFacingLeft this.GetCharacterFacingLeft this.SetCharacterFacingLeft this
         
-    type SideViewCharacterDispatcher () =
+    type CharacterDispatcher () =
         inherit EntityDispatcher ()
 
         static let computeWalkCelInset (celSize : Vector2) (celRun : int) delay time =

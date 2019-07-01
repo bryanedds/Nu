@@ -221,10 +221,11 @@ module WorldModuleEntity =
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
         static member internal getEntityDispatcher entity world = (World.getEntityState entity world).Dispatcher
+        static member internal getEntityImperative entity world = (World.getEntityState entity world).Imperative
+        static member internal setEntityImperative value entity world = World.updateEntityState (fun entityState -> { entityState with Xtension = Xtension.setImperative value entityState.Xtension; Imperative = value }) false false false Property? Imperative entity world
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if Xtension.getImperative entityState.Xtension then entityState.Persistent <- value; entityState else { entityState with Persistent = value }) false false false Property? Persistent entity world
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
-        static member internal getEntityImperative entity world = Xtension.getImperative (World.getEntityState entity world).Xtension
         static member internal getEntityCachable entity world = (World.getEntityState entity world).Cachable
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Position
@@ -1032,9 +1033,9 @@ module WorldModuleEntity =
         Getters.Add ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
         Getters.Add ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })
         Getters.Add ("Dispatcher", fun entity world -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcher entity world })
+        Getters.Add ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
         Getters.Add ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
         Getters.Add ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
-        Getters.Add ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
         Getters.Add ("Cachable", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCachable entity world })
         Getters.Add ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
         Getters.Add ("Position", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world })
@@ -1058,9 +1059,9 @@ module WorldModuleEntity =
         Setters.Add ("Id", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
+        Setters.Add ("Imperative", fun property entity world -> (true, World.setEntityImperative (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Persistent", fun property entity world -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world))
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
-        Setters.Add ("Imperative", fun _ _ world -> (false, world))
         Setters.Add ("Cachable", fun _ _ world -> (false, world))
         Setters.Add ("OverlayNameOpt", fun _ _ world -> (false, world))
         Setters.Add ("Position", fun property entity world -> (true, World.setEntityPosition (property.PropertyValue :?> Vector2) entity world))
