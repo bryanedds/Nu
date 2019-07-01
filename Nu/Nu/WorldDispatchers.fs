@@ -369,7 +369,8 @@ module TextFacetModule =
              define Entity.Color (Vector4 (0.0f, 0.0f, 0.0f, 1.0f))]
 
         override facet.Actualize (text, world) =
-            if text.GetVisibleLayered world then
+            let textStr = text.GetText world
+            if text.GetVisibleLayered world && not (String.IsNullOrWhiteSpace textStr) then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
@@ -377,7 +378,7 @@ module TextFacetModule =
                               PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
                                 TextDescriptor
-                                    { Text = text.GetText world
+                                    { Text = textStr
                                       Position = text.GetPosition world + text.GetMargins world
                                       Size = text.GetSize world - text.GetMargins world * 2.0f
                                       ViewType = Absolute
