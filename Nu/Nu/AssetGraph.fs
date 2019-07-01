@@ -113,8 +113,8 @@ module AssetGraphModule =
     /// A graph of all the assets used in a game.
     [<Syntax
         ("Asset Assets",
-         "nueffect nuscript bmp png ttf tmx wav ogg " +
-         "PsdToPng Retro Retro " +
+         "nueffect nuscript nulyr psd png bmp ttf tmx wav ogg csv " +
+         "PsdToPng Retro " +
          "Render Audio Symbol",
          "", "", "",
          Constants.PrettyPrinter.DefaultThresholdMin,
