@@ -27,11 +27,6 @@ and LayerPropertyDescriptor (property, attributes) =
     let propertyType = match property with LayerPropertyDescriptor pd -> pd.PropertyType | LayerPropertyInfo pi -> pi.PropertyType
     let propertyCanWrite = match property with LayerPropertyDescriptor _ -> true | LayerPropertyInfo xfd -> xfd.CanWrite
 
-    let pushPastWorld pastWorld world =
-        World.updateUserValue
-            (fun editorState -> { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = [] })
-            world
-
     override this.Category =
         // HACK: all of this stuff is a hack until we can get user-defined attributes on simulant properties!
         // HACK: in order to put the Events as the last category, I start all the other categories with an unprinted
@@ -61,7 +56,7 @@ and LayerPropertyDescriptor (property, attributes) =
         | null -> null // WHY THE FUCK IS THIS EVER null???
         | source ->
             let layerTds = source :?> LayerTypeDescriptorSource
-            LayerPropertyValue.getValue property layerTds.DescribedLayer !Globals.WorldRef
+            LayerPropertyValue.getValue property layerTds.DescribedLayer Globals.World
 
     override this.SetValue (source, value) =
         
@@ -76,7 +71,7 @@ and LayerPropertyDescriptor (property, attributes) =
                 | _ -> value
 
             // make property change undo-able
-            let world = pushPastWorld world world
+            Globals.pushPastWorld world
             match propertyName with
             
             // change the name property
@@ -101,13 +96,13 @@ and LayerPropertyDescriptor (property, attributes) =
                             ignore
                         world
                     | _ -> LayerPropertyValue.setValue property value layer world
-                Globals.WorldRef := world // must be set for property grid
+                Globals.World <- world // must be set for property grid
                 layerTds.Form.layerPropertyGrid.Refresh ()
                 world)
 
         // NOTE: in order to update the view immediately, we have to apply the changer twice,
         // once immediately and once in the update function
-        Globals.WorldRef := changer !Globals.WorldRef
+        Globals.World <- changer Globals.World
         Globals.WorldChangers.Add changer |> ignore
 
 and LayerTypeDescriptor (sourceOpt : obj) =
@@ -116,7 +111,7 @@ and LayerTypeDescriptor (sourceOpt : obj) =
     override this.GetProperties () =
         let contextOpt =
             match sourceOpt with
-            | :? LayerTypeDescriptorSource as source -> Some (source.DescribedLayer, !Globals.WorldRef)
+            | :? LayerTypeDescriptorSource as source -> Some (source.DescribedLayer, Globals.World)
             | _ -> None
         let makePropertyDescriptor = fun (epv, tcas) -> (LayerPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
         let propertyDescriptors = LayerPropertyValue.getPropertyDescriptors makePropertyDescriptor contextOpt
