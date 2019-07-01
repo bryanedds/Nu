@@ -147,16 +147,21 @@ module Nu =
             // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...
             WorldModule.eval <- fun expr localFrame scriptContext world ->
-                let oldLocalFrame = World.getLocalFrame world
-                let oldScriptContext = World.getScriptContext world
-                World.setLocalFrame localFrame world
-                let world = World.setScriptContext scriptContext world
-                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
-                let struct (evaled, world) = World.evalInternal expr world
-                ScriptingSystem.removeProceduralBindings world
-                let world = World.setScriptContext oldScriptContext world
-                World.setLocalFrame oldLocalFrame world
-                struct (evaled, world)
+                match expr with
+                | Scripting.Unit ->
+                    // OPTIMIZATION: don't bother evaluating unit
+                    struct (Scripting.Unit, world)
+                | _ ->
+                    let oldLocalFrame = World.getLocalFrame world
+                    let oldScriptContext = World.getScriptContext world
+                    World.setLocalFrame localFrame world
+                    let world = World.setScriptContext scriptContext world
+                    ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
+                    let struct (evaled, world) = World.evalInternal expr world
+                    ScriptingSystem.removeProceduralBindings world
+                    let world = World.setScriptContext oldScriptContext world
+                    World.setLocalFrame oldLocalFrame world
+                    struct (evaled, world)
 
             // init evalMany F# reach-around
             WorldModule.evalMany <- fun exprs localFrame scriptContext world ->
@@ -173,16 +178,21 @@ module Nu =
 
             // init evalWithLogging F# reach-around
             WorldModule.evalWithLogging <- fun expr localFrame scriptContext world ->
-                let oldLocalFrame = World.getLocalFrame world
-                let oldScriptContext = World.getScriptContext world
-                World.setLocalFrame localFrame world
-                let world = World.setScriptContext scriptContext world
-                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
-                let struct (evaled, world) = World.evalWithLoggingInternal expr world
-                ScriptingSystem.removeProceduralBindings world
-                let world = World.setScriptContext oldScriptContext world
-                World.setLocalFrame oldLocalFrame world
-                struct (evaled, world)
+                match expr with
+                | Scripting.Unit ->
+                    // OPTIMIZATION: don't bother evaluating unit
+                    struct (Scripting.Unit, world)
+                | _ ->
+                    let oldLocalFrame = World.getLocalFrame world
+                    let oldScriptContext = World.getScriptContext world
+                    World.setLocalFrame localFrame world
+                    let world = World.setScriptContext scriptContext world
+                    ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("self", Scripting.String (scstring scriptContext)) }) world
+                    let struct (evaled, world) = World.evalWithLoggingInternal expr world
+                    ScriptingSystem.removeProceduralBindings world
+                    let world = World.setScriptContext oldScriptContext world
+                    World.setLocalFrame oldLocalFrame world
+                    struct (evaled, world)
 
             // init evalMany F# reach-around
             WorldModule.evalManyWithLogging <- fun exprs localFrame scriptContext world ->
