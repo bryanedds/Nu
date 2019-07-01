@@ -275,7 +275,6 @@ module WorldModule3 =
             // TODO: consider if we shoud reflectively generate these
             Map.ofListBy World.pairWithName $
                 [EntityDispatcher ()
-                 ImperativeDispatcher () :> EntityDispatcher
                  NodeDispatcher () :> EntityDispatcher
                  EffectDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
@@ -287,7 +286,7 @@ module WorldModule3 =
                  FillBarDispatcher () :> EntityDispatcher
                  BlockDispatcher () :> EntityDispatcher
                  BoxDispatcher () :> EntityDispatcher
-                 SideViewCharacterDispatcher () :> EntityDispatcher
+                 CharacterDispatcher () :> EntityDispatcher
                  TileMapDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =

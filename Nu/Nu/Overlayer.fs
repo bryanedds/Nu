@@ -15,10 +15,11 @@ type [<Struct>] internal OverlayState =
     | Overlaid
 
 /// An overlay.
+/// TODO: P1: Update these.
 [<Syntax
     ("EntityDispatcher ImperativeDispatcher EffectDispatcher NodeDispatcher GuiDispatcher " +
      "ButtonDispatcher LabelDispatcher TextDispatcher ToggleDispatcher FeelerDispatcher FillBarDispatcher " +
-     "BlockDispatcher BoxDispatcher TopViewCharacterDispatcher SideViewCharacterDispatcher TileMapDispatcher",
+     "BlockDispatcher BoxDispatcher CharacterDispatcher TileMapDispatcher",
      "EffectFacet ScriptFacet RigidBodyFacet NodeFacet StaticSpriteFacet AnimatedSpriteFacet",
      "", "", "",
      Constants.PrettyPrinter.StructuredThresholdMin,
