@@ -58,11 +58,15 @@ module WorldPhysicsModule =
 
         interface World Subsystem with
 
-            member this.PopMessages () = (this.PhysicsEngine.PopMessages () :> obj, this :> World Subsystem)
+            member this.PopMessages () =
+                let (messages, physicsEngine) = this.PhysicsEngine.PopMessages ()
+                (messages :> obj, { this with PhysicsEngine = physicsEngine } :> World Subsystem)
 
-            member this.ClearMessages () = { this with PhysicsEngine = this.PhysicsEngine.ClearMessages () } :> World Subsystem
+            member this.ClearMessages () =
+                { this with PhysicsEngine = this.PhysicsEngine.ClearMessages () } :> World Subsystem
 
-            member this.EnqueueMessage message = { this with PhysicsEngine = this.PhysicsEngine.EnqueueMessage (message :?> PhysicsMessage) } :> World Subsystem
+            member this.EnqueueMessage message =
+                { this with PhysicsEngine = this.PhysicsEngine.EnqueueMessage (message :?> PhysicsMessage) } :> World Subsystem
 
             member this.ProcessMessages messages world =
                 let messages = messages :?> PhysicsMessage UList
@@ -73,7 +77,8 @@ module WorldPhysicsModule =
                 let integrationMessages = integrationMessages :?> IntegrationMessage List
                 Seq.fold PhysicsEngineSubsystem.handleIntegrationMessage world integrationMessages
 
-            member this.CleanUp world = (this :> World Subsystem, world)
+            member this.CleanUp world =
+                (this :> World Subsystem, world)
 
         static member make physicsEngine =
             { PhysicsEngine = physicsEngine }
