@@ -725,23 +725,16 @@ module WorldModule2 =
                 | (Some renderContext, true) ->
 
                     // grab subsystem references
-                    let physicsEngine = World.getPhysicsEngine world
                     let renderer = World.getRenderer world
                     let audioPlayer = World.getAudioPlayer world
                     
                     // pop their messages
-                    let (physicsMessages, physicsEngine) = Subsystem.popMessages physicsEngine
                     let (renderMessages, renderer) = Subsystem.popMessages renderer
                     let (audioMessages, audioPlayer) = Subsystem.popMessages audioPlayer
                     
                     // update popped subsystems
-                    let world = World.setPhysicsEngine physicsEngine world
                     let world = World.setRenderer renderer world
                     let world = World.setAudioPlayer audioPlayer world
-
-                    // start the physics thread
-                    let physicsTask = Task.Factory.StartNew (fun () ->
-                        Subsystem.processMessages physicsMessages physicsEngine world)
 
                     // start the renderer thread
                     let rendererTask = Task.Factory.StartNew (fun () ->
@@ -769,6 +762,14 @@ module WorldModule2 =
                             let world = World.updateSimulants world
                             match World.getLiveness world with
                             | Running ->
+
+                                // run physics
+                                let physicsEngine = World.getPhysicsEngine world
+                                let (physicsMessages, physicsEngine) = Subsystem.popMessages physicsEngine
+                                let world = World.setPhysicsEngine physicsEngine world
+                                let physicsResult = Subsystem.processMessages physicsMessages physicsEngine world
+                                let world = Subsystem.applyResult physicsResult (World.getPhysicsEngine world) world
+
                                 let world = World.processTasklets world
                                 match World.getLiveness world with
                                 | Running ->
@@ -779,12 +780,10 @@ module WorldModule2 =
                                         let world =
 
                                             // finish all threads
-                                            let physicsResult = physicsTask |> Async.AwaitTask |> Async.RunSynchronously
                                             let rendererResult = rendererTask |> Async.AwaitTask |> Async.RunSynchronously
                                             let audioPlayerResult = audioPlayerTask |> Async.AwaitTask |> Async.RunSynchronously
 
                                             // apply their results
-                                            let world = Subsystem.applyResult physicsResult (World.getPhysicsEngine world) world
                                             let world = Subsystem.applyResult rendererResult (World.getRenderer world) world
                                             let world = Subsystem.applyResult audioPlayerResult (World.getAudioPlayer world) world
 
