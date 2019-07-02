@@ -427,6 +427,18 @@ module WorldModule2 =
             Seq.fold (fun world (entity : Entity) -> entity.PropagatePhysics world) world entities
 
         static member private processSubsystems subsystemType world =
+#if SINGLE_THREADED
+            World.getSubsystemMap world |>
+            UMap.toSeq |>
+            Array.ofSeq |>
+            Array.filter (fun (_, subsystem) -> Subsystem.subsystemType subsystem = subsystemType) |>
+            Array.sortBy (fun (_, subsystem) -> Subsystem.subsystemOrder subsystem) |>
+            Array.fold (fun world (subsystemName, subsystem) ->
+                let (subsystemResult, subsystem) = Subsystem.processMessages subsystem world
+                let world = Subsystem.applyResult subsystemResult subsystem world
+                World.addSubsystem subsystemName subsystem world)
+                world
+#else
             World.getSubsystemMap world |>
             UMap.toSeq |>
             Array.ofSeq |>
@@ -443,6 +455,7 @@ module WorldModule2 =
                 let world = Subsystem.applyResult subsystemResult subsystem world
                 World.addSubsystem subsystemName subsystem world)
                 world
+#endif
 
         static member private cleanUpSubsystems world =
             World.getSubsystemMap world |>
