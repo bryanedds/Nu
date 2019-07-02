@@ -100,12 +100,14 @@ type [<ReferenceEquality>] RenderAsset =
 
 /// The renderer. Represents the rendering system in Nu generally.
 type Renderer =
+    /// Pop all of the physics messages that have been enqueued.
+    abstract PopMessages : unit -> RenderMessage UList * Renderer
     /// Clear all of the render messages that have been enqueued.
     abstract ClearMessages : unit -> Renderer
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : RenderMessage -> Renderer
     /// Render a frame of the game.
-    abstract Render : Vector2 -> Vector2 -> Renderer
+    abstract Render : Vector2 -> Vector2 -> RenderMessage UList -> Renderer
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> Renderer
 
@@ -115,9 +117,10 @@ type [<ReferenceEquality>] MockRenderer =
         { MockRenderer : unit }
 
     interface Renderer with
+        member renderer.PopMessages () = (UList.makeEmpty Functional, renderer :> Renderer)
         member renderer.ClearMessages () = renderer :> Renderer
         member renderer.EnqueueMessage _ = renderer :> Renderer
-        member renderer.Render _ _ = renderer :> Renderer
+        member renderer.Render _ _ _ = renderer :> Renderer
         member renderer.CleanUp () = renderer :> Renderer
 
     static member make () =
@@ -127,7 +130,7 @@ type [<ReferenceEquality>] MockRenderer =
 type [<ReferenceEquality>] SdlRenderer =
     private
         { RenderContext : nativeint
-          RenderPackageMap : RenderAsset PackageMap
+          RenderPackageDict : RenderAsset PackageDict
           RenderMessages : RenderMessage UList
           RenderDescriptors : RenderDescriptor array }
 
@@ -172,46 +175,42 @@ type [<ReferenceEquality>] SdlRenderer =
             | Right assets ->
                 let renderAssetOpts = List.map (SdlRenderer.tryLoadRenderAsset2 renderer.RenderContext) assets
                 let renderAssets = List.definitize renderAssetOpts
-                let renderAssetMapOpt = UMap.tryFindFast packageName renderer.RenderPackageMap
-                if FOption.isSome renderAssetMapOpt then
-                    let renderAssetMap = FOption.get renderAssetMapOpt
-                    let renderAssetMap = UMap.addMany renderAssets renderAssetMap
-                    { renderer with RenderPackageMap = UMap.add packageName renderAssetMap renderer.RenderPackageMap }
-                else
-                    let renderAssetMap = UMap.makeFromSeq Constants.Render.AssetMapConfig renderAssets
-                    { renderer with RenderPackageMap = UMap.add packageName renderAssetMap renderer.RenderPackageMap }
+                match Dictionary.tryFind packageName renderer.RenderPackageDict with
+                | Some renderAssetDict ->
+                    for (key, value) in renderAssets do renderAssetDict.ForceAdd (key, value)
+                    renderer.RenderPackageDict.ForceAdd (packageName, renderAssetDict)
+                | None ->
+                    let renderAssetDict = dictPlus []
+                    renderer.RenderPackageDict.ForceAdd (packageName, renderAssetDict)
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
-                renderer
         | Left error ->
             Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
-            renderer
 
     static member private tryLoadRenderAsset (assetTag : obj AssetTag) renderer =
-        let (assetMapOpt, renderer) =
-            if UMap.containsKey assetTag.PackageName renderer.RenderPackageMap
-            then (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
+        let assetDictOpt =
+            if renderer.RenderPackageDict.ContainsKey assetTag.PackageName 
+            then Dictionary.tryFind assetTag.PackageName renderer.RenderPackageDict
             else
                 Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 let renderer = SdlRenderer.tryLoadRenderPackage assetTag.PackageName renderer
-                (UMap.tryFindFast assetTag.PackageName renderer.RenderPackageMap, renderer)
-        (FOption.bind (fun assetMap -> UMap.tryFindFast assetTag.AssetName assetMap) assetMapOpt, renderer)
+                Dictionary.tryFind assetTag.PackageName renderer.RenderPackageDict
+        Option.bind (fun assetDict -> Dictionary.tryFind assetTag.AssetName assetDict) assetDictOpt
 
     static member private handleHintRenderPackageUse hintPackageName renderer =
         SdlRenderer.tryLoadRenderPackage hintPackageName renderer
 
     static member private handleHintRenderPackageDisuse hintPackageName renderer =
-        let assetsOpt = UMap.tryFindFast hintPackageName renderer.RenderPackageMap
-        if FOption.isSome assetsOpt then
-            let assets = FOption.get assetsOpt
-            for (_, asset) in assets do SdlRenderer.freeRenderAsset asset
-            { renderer with RenderPackageMap = UMap.remove hintPackageName renderer.RenderPackageMap }
-        else renderer
+        match Dictionary.tryFind hintPackageName renderer.RenderPackageDict with
+        | Some assets ->
+            for entry in assets do SdlRenderer.freeRenderAsset entry.Value
+            renderer.RenderPackageDict.Remove hintPackageName
+        | None -> ()
 
     static member private handleReloadRenderAssets renderer =
-        let oldPackageMap = renderer.RenderPackageMap
+        let oldPackageMap = renderer.RenderPackageDict
         let oldPackageNames = oldPackageMap |> UMap.toSeq |> Seq.map fst |> Array.ofSeq
-        let renderer = { renderer with RenderPackageMap = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageMap) }
+        let renderer = { renderer with RenderPackageDict = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageDict) }
         Array.fold
             (fun renderer packageName -> SdlRenderer.tryLoadRenderPackage packageName renderer)
             renderer
@@ -462,12 +461,17 @@ type [<ReferenceEquality>] SdlRenderer =
     static member make renderContext =
         let renderer =
             { RenderContext = renderContext
-              RenderPackageMap = UMap.makeEmpty Constants.Render.AssetMapConfig
+              RenderPackageDict = UMap.makeEmpty Constants.Render.AssetMapConfig
               RenderMessages = UList.makeEmpty Constants.Render.MessageListConfig
               RenderDescriptors = [||] }
         renderer
 
     interface Renderer with
+
+        member renderer.PopMessages () =
+            let messages = renderer.RenderMessages
+            let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderer.RenderMessages) }
+            (messages, renderer :> Renderer)
 
         member renderer.ClearMessages () =
             let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderer.RenderMessages) }
@@ -478,20 +482,17 @@ type [<ReferenceEquality>] SdlRenderer =
             let renderer = { renderer with RenderMessages = renderMessages }
             renderer :> Renderer
 
-        member renderer.Render eyeCenter eyeSize =
-            let renderMessages = renderer.RenderMessages
-            let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderMessages) }
+        member renderer.Render eyeCenter eyeSize renderMessages =
             let renderer = SdlRenderer.handleRenderMessages renderMessages renderer
             let renderDescriptors = renderer.RenderDescriptors
             let renderer = { renderer with RenderDescriptors = [||] }
             let renderer = SdlRenderer.renderDescriptors eyeCenter eyeSize renderDescriptors renderer
-            renderer :> Renderer
 
         member renderer.CleanUp () =
-            let renderAssetMaps = renderer.RenderPackageMap |> UMap.toSeq |> Seq.map snd
+            let renderAssetMaps = renderer.RenderPackageDict |> UMap.toSeq |> Seq.map snd
             let renderAssets = Seq.collect (UMap.toSeq >> Seq.map snd) renderAssetMaps
             for renderAsset in renderAssets do SdlRenderer.freeRenderAsset renderAsset
-            let renderer = { renderer with RenderPackageMap = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageMap) }
+            let renderer = { renderer with RenderPackageDict = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageDict) }
             renderer :> Renderer
 
 [<RequireQualifiedAccess>]

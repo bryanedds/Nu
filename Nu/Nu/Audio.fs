@@ -38,23 +38,26 @@ type [<ReferenceEquality>] AudioAsset =
     | OggAsset of nativeint
 
 /// The audio player. Represents the audio subsystem of Nu generally.
-type IAudioPlayer =
+type AudioPlayer =
+    /// Pop all of the audio messages that have been enqueued.
+    abstract PopMessages : unit -> AudioMessage UList * AudioPlayer
     /// Clear all of the audio messages that have been enqueued.
-    abstract ClearMessages : unit -> IAudioPlayer
+    abstract ClearMessages : unit -> AudioPlayer
     /// Enqueue a message from an external source.
-    abstract EnqueueMessage : AudioMessage -> IAudioPlayer
+    abstract EnqueueMessage : AudioMessage -> AudioPlayer
     /// 'Play' the audio system. Must be called once per frame.
-    abstract Play : unit -> IAudioPlayer
+    abstract Play : unit -> AudioPlayer
 
 /// The mock implementation of AudioPlayer.
 type [<ReferenceEquality>] MockAudioPlayer =
     private
         { MockAudioPlayer : unit }
     
-    interface IAudioPlayer with
-        member audioPlayer.ClearMessages () = audioPlayer :> IAudioPlayer
-        member audioPlayer.EnqueueMessage _ = audioPlayer :> IAudioPlayer
-        member audioPlayer.Play () = audioPlayer :> IAudioPlayer
+    interface AudioPlayer with
+        member audioPlayer.PopMessages () = (UList.makeEmpty Functional, audioPlayer :> AudioPlayer)
+        member audioPlayer.ClearMessages () = audioPlayer :> AudioPlayer
+        member audioPlayer.EnqueueMessage _ = audioPlayer :> AudioPlayer
+        member audioPlayer.Play () = audioPlayer :> AudioPlayer
 
     static member make () =
         { MockAudioPlayer = () }
@@ -248,35 +251,40 @@ type [<ReferenceEquality>] SdlAudioPlayer =
               NextPlaySongOpt = None }
         audioPlayer
     
-    interface IAudioPlayer with
-    
+    interface AudioPlayer with
+
+        member audioPlayer.PopMessages () =
+            let messages = audioPlayer.AudioMessages
+            let audioPlayer = { audioPlayer with AudioMessages = UList.makeEmpty (UList.getConfig audioPlayer.AudioMessages) }
+            (messages, audioPlayer :> AudioPlayer)
+
         member audioPlayer.ClearMessages () =
             let audioPlayer = { audioPlayer with AudioMessages = UList.makeEmpty (UList.getConfig audioPlayer.AudioMessages) }
-            audioPlayer :> IAudioPlayer
-    
+            audioPlayer :> AudioPlayer
+
         member audioPlayer.EnqueueMessage audioMessage =
             let audioMessages = UList.add audioMessage audioPlayer.AudioMessages
             let audioPlayer = { audioPlayer with AudioMessages = audioMessages }
-            audioPlayer :> IAudioPlayer
-    
+            audioPlayer :> AudioPlayer
+
         member audioPlayer.Play () =
             let audioMessages = audioPlayer.AudioMessages
             let audioPlayer = { audioPlayer with AudioMessages = UList.makeEmpty (UList.getConfig audioPlayer.AudioMessages) }
             let audioPlayer = SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer
             let audioPlayer = SdlAudioPlayer.updateAudioPlayer audioPlayer
-            audioPlayer :> IAudioPlayer
+            audioPlayer :> AudioPlayer
 
 [<RequireQualifiedAccess>]
 module AudioPlayer =
 
     /// Clear all of the audio messages that have been enqueued.
-    let clearMessages (audioPlayer : IAudioPlayer) =
+    let clearMessages (audioPlayer : AudioPlayer) =
         audioPlayer.ClearMessages ()
 
     /// Enqueue a message from an external source.
-    let enqueueMessage message (audioPlayer : IAudioPlayer) =
+    let enqueueMessage message (audioPlayer : AudioPlayer) =
         audioPlayer.EnqueueMessage message
 
     /// 'Play' the audio system. Must be called once per frame.
-    let play (audioPlayer : IAudioPlayer) =
+    let play (audioPlayer : AudioPlayer) =
         audioPlayer.Play ()

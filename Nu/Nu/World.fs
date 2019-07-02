@@ -342,13 +342,10 @@ module WorldModule3 =
 
             // make the world's subsystems
             let subsystems =
-                let subsystemMap =
-                    UMap.makeFromSeq
-                        Constants.Engine.SubsystemMapConfig
-                        [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make (MockPhysicsEngine.make ()) :> World Subsystem)
-                         (Constants.Engine.RendererSubsystemName, RendererSubsystem.make (MockRenderer.make ()) :> World Subsystem)
-                         (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make (MockAudioPlayer.make ()) :> World Subsystem)]
-                Subsystems.make subsystemMap
+                Subsystems.make
+                    (PhysicsEngineSubsystem.make (MockPhysicsEngine.make ()))
+                    (RendererSubsystem.make (MockRenderer.make ()))
+                    (AudioPlayerSubsystem.make (MockAudioPlayer.make ()))
 
             // make the world's scripting environment
             let scriptingEnv = Scripting.Env.Env.make ()
@@ -425,7 +422,6 @@ module WorldModule3 =
 
                 // make the world's subsystems
                 let subsystems =
-                    let userSubsystems = plugin.MakeSubsystems ()
                     let physicsEngine = FarseerPhysicsEngine.make Constants.Physics.Gravity
                     let physicsEngineSubsystem = PhysicsEngineSubsystem.make physicsEngine :> World Subsystem
                     let renderer =
@@ -436,17 +432,10 @@ module WorldModule3 =
                     let rendererSubsystem = RendererSubsystem.make renderer :> World Subsystem
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
-                        then SdlAudioPlayer.make () :> IAudioPlayer
-                        else MockAudioPlayer.make () :> IAudioPlayer
+                        then SdlAudioPlayer.make () :> AudioPlayer
+                        else MockAudioPlayer.make () :> AudioPlayer
                     let audioPlayerSubsystem = AudioPlayerSubsystem.make audioPlayer :> World Subsystem
-                    let defaultSubsystemMap =
-                        UMap.makeFromSeq
-                            Constants.Engine.SubsystemMapConfig
-                            [(Constants.Engine.PhysicsEngineSubsystemName, physicsEngineSubsystem)
-                             (Constants.Engine.RendererSubsystemName, rendererSubsystem)
-                             (Constants.Engine.AudioPlayerSubsystemName, audioPlayerSubsystem)]
-                    let subsystemMap = UMap.addMany userSubsystems defaultSubsystemMap
-                    Subsystems.make subsystemMap
+                    Subsystems.make physicsEngineSubsystem rendererSubsystem audioPlayerSubsystem
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers

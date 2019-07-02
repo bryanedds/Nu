@@ -12,7 +12,7 @@ module WorldAudioModule =
     /// The subsystem for the world's audio player.
     type [<ReferenceEquality>] AudioPlayerSubsystem =
         private
-            { AudioPlayer : IAudioPlayer }
+            { AudioPlayer : AudioPlayer }
     
         interface World Subsystem with
             member this.ClearMessages () = { this with AudioPlayer = AudioPlayer.clearMessages this.AudioPlayer } :> World Subsystem
@@ -26,9 +26,15 @@ module WorldAudioModule =
 
     type World with
 
-        /// Enqueue an audio message in the world.
+        static member internal getAudioPlayer world =
+            world.Subsystems.AudioPlayer :?> AudioPlayerSubsystem
+
+        static member internal updateAudioPlayer updater world =
+            World.updateSubsystems (fun subsystems -> { subsystems with AudioPlayer = updater (World.getAudioPlayer world :> World Subsystem) }) world
+
+        /// Enqueue an audio message to the world.
         static member enqueueAudioMessage (message : AudioMessage) world =
-            World.updateSubsystem (fun aps _ -> Subsystem.enqueueMessage message aps) Constants.Engine.AudioPlayerSubsystemName world
+            World.updateAudioPlayer (fun renderer -> Subsystem.enqueueMessage message renderer) world
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding>]

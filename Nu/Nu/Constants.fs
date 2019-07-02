@@ -35,7 +35,6 @@ module Constants =
         let (*Literal*) EntityTreeSize = Vector2 (single (Math.Pow (2.0, 16.0)))
         let (*Literal*) EntityTreeBounds = Vector4 (EntityTreeSize.X * -0.5f, EntityTreeSize.Y * -0.5f, EntityTreeSize.X * 0.5f, EntityTreeSize.Y * 0.5f)
         let (*Literal*) InvalidId = Guid.Empty
-        let (*Literal*) SubsystemMapConfig = Functional
         let (*Literal*) TaskletListConfig = Functional
         let (*Literal*) SimulantMapConfig = Functional
         let (*Literal*) KeyValueMapConfig = Functional
@@ -64,7 +63,6 @@ module Constants =
         let (*Literal*) ResolutionX = Core.getResolutionOrDefault true DefaultResolutionX
         let (*Literal*) ResolutionY = Core.getResolutionOrDefault false DefaultResolutionY
         let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy)
-        let (*Literal*) AssetMapConfig = Functional
         let (*Literal*) MessageListConfig = Functional
 
     [<RequireQualifiedAccess>]

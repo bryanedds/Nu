@@ -17,11 +17,14 @@ type SubsystemResult = obj
 /// a la - http://www.dataorienteddesign.com/dodmain/node6.html
 type 'w Subsystem =
     interface
+        /// Pop all the messages belonging to the subsystem.
+        abstract PopMessages : unit -> obj
+        /// Clear the message belonging to the subsystem.
         abstract ClearMessages : unit -> 'w Subsystem
         /// Enqueue a message for the subsystem.
         abstract EnqueueMessage : SubsystemMessage -> 'w Subsystem
         /// Processed the queued messages with the subsystem.
-        abstract ProcessMessages : 'w -> SubsystemResult * 'w Subsystem
+        abstract ProcessMessages : obj -> 'w -> SubsystemResult * 'w Subsystem
         /// Apply the result of the message processing to the world.
         abstract ApplyResult : SubsystemResult * 'w -> 'w
         /// Clean up any resources used by the subsystem.
@@ -56,49 +59,21 @@ module SubsystemsModule =
 
     /// The subsystems of a world.
     type [<ReferenceEquality>] 'w Subsystems =
-        private
-            { SubsystemMap : UMap<string, 'w Subsystem> }
+        { PhysicsEngine : 'w Subsystem
+          Renderer : 'w Subsystem
+          AudioPlayer : 'w Subsystem }
 
-    [<RequireQualifiedAccess>]
-    module Subsystems =
-    
-        let getSubsystemMap subsystems =
-            subsystems.SubsystemMap
+        static member make physicsEngine renderer audioPlayer =
+            { PhysicsEngine = physicsEngine
+              Renderer = renderer 
+              AudioPlayer = audioPlayer }
 
-        let addSubsystem<'s, 'w when 's :> 'w Subsystem> name (subsystem : 's) (subsystems : 'w Subsystems) =
-            { SubsystemMap = UMap.add name (subsystem :> 'w Subsystem) subsystems.SubsystemMap }
-    
-        let removeSubsystem<'s, 'w when 's :> 'w Subsystem> name (subsystems : 'w Subsystems) =
-            { SubsystemMap = UMap.remove name subsystems.SubsystemMap }
-
-        let containsSubsystem<'s, 'w when 's :> 'w Subsystem> name (subsystems : 'w Subsystems) =
-            UMap.containsKey name subsystems.SubsystemMap
-
-        let getSubsystem<'s, 'w when 's :> 'w Subsystem> (name : string) (subsystems : 'w Subsystems) : 's =
-            UMap.find name subsystems.SubsystemMap :?> 's
-    
-        let getSubsystemBy<'s, 't, 'w when 's :> 'w Subsystem> by name (subsystems : 'w Subsystems) : 't =
-            let subsystem = getSubsystem<'s, 'w> name subsystems
-            by subsystem
-    
-        let updateSubsystem<'s, 'w when 's :> 'w Subsystem> (updater : 's -> 'w -> 's) name subsystems world =
-            let subsystem = getSubsystem<'s, 'w> name subsystems
-            let subsystem = updater subsystem world
-            addSubsystem name subsystem subsystems
-    
-        let updateSubsystems<'s, 'w when 's :> 'w Subsystem> (updater : 'w Subsystem -> 'w -> 'w Subsystem) subsystems world =
-            UMap.fold
-                (fun subsystems name subsystem ->
-                    let subsystem = updater subsystem world
-                    addSubsystem name subsystem subsystems)
-                subsystems
-                subsystems.SubsystemMap
-    
-        let clearSubsystemsMessages<'s, 'w when 's :> 'w Subsystem> subsystems (world : 'w) =
-            updateSubsystems (fun subsystem _ -> subsystem.ClearMessages ()) subsystems world
-    
-        let make subsystems =
-            { SubsystemMap = subsystems }
+        static member cleanUp subsystems world =
+            let (physicsEngine, world) = Subsystem.cleanUp subsystems.PhysicsEngine world
+            let (renderer, world) = Subsystem.cleanUp subsystems.Renderer world
+            let (audioPlayer, world) = Subsystem.cleanUp subsystems.AudioPlayer world
+            let subsystems = Subsystems<_>.make physicsEngine renderer audioPlayer
+            (subsystems, world)
 
 /// The subsystems of a world.
 type 'w Subsystems = 'w SubsystemsModule.Subsystems

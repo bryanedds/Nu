@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.IO
 open ImageMagick
 open Prime
@@ -94,9 +95,9 @@ type [<StructuralEquality; NoComparison>] Package =
     { Name : string
       AssetNames : string list }
 
-/// A map of asset packages.
-type 'a PackageMap =
-    UMap<string, UMap<string, 'a>>
+/// A dictionary of asset packages.
+type 'a PackageDict =
+    Dictionary<string, Dictionary<string, 'a>>
 
 /// Describes assets and how to process and use them.
 type AssetDescriptor =

@@ -216,29 +216,19 @@ module WorldModule =
 
     type World with // Subsystems
 
-        static member getSubsystemMap world =
-            Subsystems.getSubsystemMap world.Subsystems
+        static member internal getSubsystems world =
+            world.Subsystems
 
-        static member getSubsystem<'s when 's :> World Subsystem> name world : 's =
-            Subsystems.getSubsystem name world.Subsystems
+        static member internal setSubsystems subsystems world =
+            World.choose { world with Subsystems = subsystems }
 
-        static member getSubsystemBy<'s, 't when 's :> World Subsystem> (by : 's -> 't) name world : 't =
-            Subsystems.getSubsystemBy by name world.Subsystems
+        static member internal updateSubsystems updater world =
+            World.setSubsystems (updater world.Subsystems) world
 
-        static member internal addSubsystem<'s when 's :> World Subsystem> name (subsystem : 's) world =
-            World.choose { world with Subsystems = Subsystems.addSubsystem name subsystem world.Subsystems }
-
-        static member internal removeSubsystem<'s when 's :> World Subsystem> name world =
-            World.choose { world with Subsystems = Subsystems.removeSubsystem name world.Subsystems }
-
-        static member updateSubsystem<'s when 's :> World Subsystem> (updater : 's -> World -> 's) name world =
-            World.choose { world with Subsystems = Subsystems.updateSubsystem updater name world.Subsystems world }
-
-        static member updateSubsystems (updater : World Subsystem -> World -> World Subsystem) world =
-            World.choose { world with Subsystems = Subsystems.updateSubsystems updater world.Subsystems world }
-
-        static member clearSubsystemsMessages world =
-            World.choose { world with Subsystems = Subsystems.clearSubsystemsMessages world.Subsystems world }
+        static member internal cleanUpSubsystems world =
+            let subsystems = World.getSubsystems world
+            let (subsystems, world) = Subsystems.cleanUp subsystems world
+            World.setSubsystems subsystems world
 
     type World with // AmbientState
 

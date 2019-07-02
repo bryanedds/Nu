@@ -30,9 +30,15 @@ module WorldRenderModule =
 
     type World with
 
+        static member internal getRenderer world =
+            world.Subsystems.Renderer :?> RendererSubsystem
+
+        static member internal updateRenderer updater world =
+            World.updateSubsystems (fun subsystems -> { subsystems with Renderer = updater (World.getRenderer world :> World Subsystem) }) world
+
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage (message : RenderMessage) world =
-            World.updateSubsystem (fun rs _ -> Subsystem.enqueueMessage message rs) Constants.Engine.RendererSubsystemName world
+            World.updateRenderer (fun renderer -> Subsystem.enqueueMessage message renderer) world
 
         /// Hint that a rendering asset package with the given name should be loaded. Should be
         /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)

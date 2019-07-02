@@ -1122,10 +1122,6 @@ module WorldTypes =
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.
     type NuPlugin () =
-
-        /// Make user-defined subsystems such that Nu can utilitze them at run-time.
-        abstract MakeSubsystems : unit -> (string * World Subsystem) list
-        default this.MakeSubsystems () = []
     
         /// Make user-defined game dispatcher such that Nu can utilize them at run-time.
         abstract MakeGameDispatchers : unit -> GameDispatcher list

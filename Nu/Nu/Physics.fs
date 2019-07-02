@@ -219,12 +219,14 @@ type PhysicsEngine =
     abstract GetBodyToGroundContactTangentOpt : PhysicsId -> Vector2 option
     /// Check that the body with the given physics id is on the ground.
     abstract IsBodyOnGround : PhysicsId -> bool
+    /// Pop all of the physics messages that have been enqueued.
+    abstract PopMessages : unit -> PhysicsMessage UList * PhysicsEngine
     /// Clear all of the physics messages that have been enqueued.
     abstract ClearMessages : unit -> PhysicsEngine
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : PhysicsMessage -> PhysicsEngine
     /// Integrate the physics system one frame.
-    abstract Integrate : int64 -> IntegrationMessage List * PhysicsEngine
+    abstract Integrate : int64 -> PhysicsMessage UList -> IntegrationMessage List
 
 /// The mock implementation of PhysicsEngine.
 type MockPhysicsEngine =
@@ -238,9 +240,10 @@ type MockPhysicsEngine =
         member physicsEngine.GetBodyToGroundContactNormalOpt _ = failwith "No bodies in MockPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in MockPhysicsEngine"
         member physicsEngine.IsBodyOnGround _ = failwith "No bodies in MockPhysicsEngine"
+        member physicsEngine.PopMessages () = (UList.makeEmpty Functional, physicsEngine :> PhysicsEngine)
         member physicsEngine.ClearMessages () = physicsEngine :> PhysicsEngine
         member physicsEngine.EnqueueMessage _ = physicsEngine :> PhysicsEngine
-        member physicsEngine.Integrate _ = (List<IntegrationMessage> (), physicsEngine :> PhysicsEngine)
+        member physicsEngine.Integrate _ _ = (List<IntegrationMessage> (), physicsEngine :> PhysicsEngine)
 
 /// The Farseer implementation of PhysicsEngine.
 type [<ReferenceEquality>] FarseerPhysicsEngine =
@@ -535,6 +538,11 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals physicsId
             List.notEmpty groundNormals
 
+        member physicsEngine.PopMessages () =
+            let messages = physicsEngine.PhysicsMessages
+            let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }
+            (messages, physicsEngine :> PhysicsEngine)
+
         member physicsEngine.ClearMessages () =
             let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }
             physicsEngine :> PhysicsEngine
@@ -544,16 +552,14 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
             let physicsEngine = { physicsEngine with PhysicsMessages = physicsMessages }
             physicsEngine :> PhysicsEngine
 
-        member physicsEngine.Integrate tickRate =
-            let physicsMessages = physicsEngine.PhysicsMessages
-            let physicsEngine = { physicsEngine with PhysicsMessages = UList.makeEmpty (UList.getConfig physicsEngine.PhysicsMessages) }
+        member physicsEngine.Integrate tickRate physicsMessages =
             FarseerPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
             let physicsStepAmount = Constants.Physics.PhysicsStepRate * single tickRate
             physicsEngine.PhysicsContext.Step physicsStepAmount
             FarseerPhysicsEngine.createTransformMessages physicsEngine
-            let messages = List<IntegrationMessage> physicsEngine.IntegrationMessages
+            let integrationMessages = List<IntegrationMessage> physicsEngine.IntegrationMessages
             physicsEngine.IntegrationMessages.Clear ()
-            (messages, physicsEngine :> PhysicsEngine)
+            integrationMessages
 
 [<RequireQualifiedAccess>]
 module PhysicsEngine =
