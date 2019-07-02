@@ -724,17 +724,26 @@ module WorldModule2 =
                 match (SdlDeps.getRenderContextOpt sdlDeps, SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u) with
                 | (Some renderContext, true) ->
 
+                    // grab subsystem references
                     let physicsEngine = World.getPhysicsEngine world
                     let renderer = World.getRenderer world
                     let audioPlayer = World.getAudioPlayer world
-
+                    
+                    // pop their messages
                     let (physicsMessages, physicsEngine) = Subsystem.popMessages physicsEngine
                     let (renderMessages, renderer) = Subsystem.popMessages renderer
                     let (audioMessages, audioPlayer) = Subsystem.popMessages audioPlayer
+                    
+                    // update popped subsystems
+                    let world = World.setPhysicsEngine physicsEngine world
+                    let world = World.setRenderer renderer world
+                    let world = World.setAudioPlayer audioPlayer world
 
+                    // start the physics thread
                     let physicsTask = Task.Factory.StartNew (fun () ->
                         Subsystem.processMessages physicsMessages physicsEngine world)
 
+                    // start the renderer thread
                     let rendererTask = Task.Factory.StartNew (fun () ->
                         match Constants.Render.ScreenClearing with
                         | NoClear -> ()
@@ -745,9 +754,11 @@ module WorldModule2 =
                         SDL.SDL_RenderPresent renderContext
                         result)
 
+                    // start the audio thread
                     let audioPlayerTask = Task.Factory.StartNew (fun () ->
                         Subsystem.processMessages audioMessages audioPlayer world)
                     
+                    // pre-process the world
                     let world = pre world
 
                     match liveness with
@@ -764,24 +775,28 @@ module WorldModule2 =
                                     let world = World.actualizeSimulants world
                                     match World.getLiveness world with
                                     | Running ->
-                        
+
                                         let world =
-                                        
+
+                                            // finish all threads
                                             let physicsResult = physicsTask |> Async.AwaitTask |> Async.RunSynchronously
-                                            let world = Subsystem.applyResult physicsResult physicsEngine world
-                                            let world = World.setPhysicsEngine physicsEngine world
-
                                             let rendererResult = rendererTask |> Async.AwaitTask |> Async.RunSynchronously
-                                            let world = Subsystem.applyResult rendererResult renderer world
-                                            let world = World.setRenderer renderer world
-
                                             let audioPlayerResult = audioPlayerTask |> Async.AwaitTask |> Async.RunSynchronously
-                                            let world = Subsystem.applyResult audioPlayerResult audioPlayer world
-                                            World.setAudioPlayer audioPlayer world
 
+                                            // apply their results
+                                            let world = Subsystem.applyResult physicsResult (World.getPhysicsEngine world) world
+                                            let world = Subsystem.applyResult rendererResult (World.getRenderer world) world
+                                            let world = Subsystem.applyResult audioPlayerResult (World.getAudioPlayer world) world
+
+                                            // fin
+                                            world
+
+                                        // post-process the world
                                         let world = post world
                                         let world = World.updateTickTime world
                                         let world = World.incrementUpdateCount world
+
+                                        // recur
                                         World.runWithoutCleanUp runWhile pre post sdlDeps liveness world
 
                                     | Exiting -> world
