@@ -129,9 +129,9 @@ module EffectFacetModule =
         member this.GetEffectHistoryMax world : int = this.Get Property? EffectHistoryMax world
         member this.SetEffectHistoryMax (value : int) world = this.SetFast Property? EffectHistoryMax false false value world
         member this.EffectHistoryMax = Lens.make Property? EffectHistoryMax this.GetEffectHistoryMax this.SetEffectHistoryMax this
-        // NOTE: this line of code horks autocomplete as discussed here - https://github.com/dotnet/fsharp/issues/7073 - member this.GetEffectHistory world : Effects.Slice Deque = this.Get Property? EffectHistory world
+        member this.GetEffectHistory world : Effects.Slice Deque = this.Get Property? EffectHistory world
         member private this.SetEffectHistory (value : Effects.Slice Deque) world = this.SetFast Property? EffectHistory false true value world
-        member this.EffectHistory = Lens.makeReadOnly Property? EffectHistory (this.Get Property? EffectHistory) this
+        member this.EffectHistory = Lens.makeReadOnly Property? EffectHistory this.GetEffectHistory this
         
         /// The start time of the effect, or zero if none.
         member this.GetEffectStartTime world =
@@ -169,7 +169,8 @@ module EffectFacetModule =
             setEffect effectsOpt entity world
 
         static member Properties =
-            [define Entity.SelfDestruct false
+            [define Entity.PublishChanges true
+             define Entity.SelfDestruct false
              define Entity.Effects []
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
@@ -199,7 +200,7 @@ module EffectFacetModule =
                       Effects.Color = Vector4.One
                       Effects.Enabled = true
                       Effects.Volume = 1.0f }
-                let effectHistory = entity.EffectHistory.Get world
+                let effectHistory = entity.GetEffectHistory world
                 let effectEnv = entity.GetEffectDefinitions world
                 let effectSystem = EffectSystem.make effectViewType effectHistory effectTime effectEnv
 
