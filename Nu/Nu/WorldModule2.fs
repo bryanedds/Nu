@@ -429,16 +429,17 @@ module WorldModule2 =
         static member private processSubsystems subsystemType world =
             World.getSubsystemMap world |>
             UMap.toSeq |>
-            Seq.filter (fun (_, subsystem) -> Subsystem.subsystemType subsystem = subsystemType) |>
-            Seq.sortBy (fun (_, subsystem) -> Subsystem.subsystemOrder subsystem) |>
-            Seq.map (fun (subsystemName, subsystem) ->
+            Array.ofSeq |>
+            Array.filter (fun (_, subsystem) -> Subsystem.subsystemType subsystem = subsystemType) |>
+            Array.sortBy (fun (_, subsystem) -> Subsystem.subsystemOrder subsystem) |>
+            Array.map (fun (subsystemName, subsystem) ->
                 Task.Run (fun () ->
                     let (subsystemResult, subsystem) = Subsystem.processMessages subsystem world
                     (subsystemName, subsystemResult, subsystem))) |>
-            Seq.map Async.AwaitTask |>
+            Array.map Async.AwaitTask |>
             Async.Parallel |>
             Async.RunSynchronously |>
-            Seq.fold (fun world (subsystemName, subsystemResult, subsystem) ->
+            Array.fold (fun world (subsystemName, subsystemResult, subsystem) ->
                 let world = Subsystem.applyResult subsystemResult subsystem world
                 World.addSubsystem subsystemName subsystem world)
                 world
