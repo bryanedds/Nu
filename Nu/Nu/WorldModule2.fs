@@ -421,18 +421,10 @@ module WorldModule2 =
             // messages), all messages are eliminated. If this poses an issue, the editor will have
             // to instead store past / future worlds only once their current frame has been
             // processed.
-            let world = World.clearSubsystemsMessages world
+            //let world = World.clearSubsystemsMessages world
             let world = World.enqueuePhysicsMessage RebuildPhysicsHackMessage world
             let entities = World.getEntities1 world
             Seq.fold (fun world (entity : Entity) -> entity.PropagatePhysics world) world entities
-
-        static member private cleanUpSubsystems world =
-            World.getSubsystemMap world |>
-            UMap.toSeq |>
-            Seq.fold (fun world (subsystemName, subsystem) ->
-                let (subsystem, world) = Subsystem.cleanUp subsystem world
-                World.addSubsystem subsystemName subsystem world)
-                world
 
         static member private processTasklet (taskletsNotRun, world) tasklet =
             let tickTime = World.getTickTime world
@@ -731,9 +723,9 @@ module WorldModule2 =
                 match (SdlDeps.getRenderContextOpt sdlDeps, SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u) with
                 | (Some renderContext, true) ->
 
-                    let physicsSubsystem = World.getSubsystem Constants.Engine.PhysicsEngineSubsystemName world
-                    let rendererSubsystem = World.getSubsystem Constants.Engine.RendererSubsystemName world
-                    let audioPlayerSubsystem = World.getSubsystem Constants.Engine.AudioPlayerSubsystemName world
+                    let physicsSubsystem = World.getPhysicsEngine world
+                    let rendererSubsystem = World.getRenderer world
+                    let audioPlayerSubsystem = World.getAudioPlayer world
 
                     let physicsTask = Task.Factory.StartNew (fun () ->
                         Subsystem.processMessages physicsSubsystem world)

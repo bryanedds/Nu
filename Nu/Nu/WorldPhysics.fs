@@ -57,7 +57,11 @@ module WorldPhysicsModule =
         member this.IsBodyOnGround physicsId = this.PhysicsEngine.IsBodyOnGround physicsId
 
         interface World Subsystem with
+
+            member this.GetMessages () = this.PhysicsEngine.GetMessages ()
+
             member this.ClearMessages () = { this with PhysicsEngine = this.PhysicsEngine.ClearMessages () } :> World Subsystem
+
             member this.EnqueueMessage message = { this with PhysicsEngine = this.PhysicsEngine.EnqueueMessage (message :?> PhysicsMessage) } :> World Subsystem
 
             member this.ProcessMessages world =
@@ -76,44 +80,50 @@ module WorldPhysicsModule =
 
     type World with
 
+        static member internal getPhysicsEngine world =
+            world.Subsystems.PhysicsEngine :?> PhysicsEngineSubsystem
+
+        static member internal updatePhysicsEngine updater world =
+            World.updateSubsystems (fun subsystems -> { subsystems with PhysicsEngine = updater (World.getPhysicsEngine world :> World Subsystem) }) world
+
         /// Enqueue a physics message in the world.
         static member enqueuePhysicsMessage (message : PhysicsMessage) world =
-            World.updateSubsystem (fun is _ -> Subsystem.enqueueMessage message is) Constants.Engine.PhysicsEngineSubsystemName world
+            World.updatePhysicsEngine (fun physicsEngine -> Subsystem.enqueueMessage message physicsEngine) world
 
         /// Check that the world contains a body with the given physics id.
         [<FunctionBinding>]
         static member bodyExists physicsId world =
-            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.BodyExists physicsId) Constants.Engine.PhysicsEngineSubsystemName world
+            (World.getPhysicsEngine world).BodyExists physicsId
 
         /// Get the contact normals of the body with the given physics id.
         [<FunctionBinding>]
         static member getBodyContactNormals physicsId world =
-            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyContactNormals physicsId) Constants.Engine.PhysicsEngineSubsystemName world
+            (World.getPhysicsEngine world).GetBodyContactNormals physicsId
 
         /// Get the linear velocity of the body with the given physics id.
         [<FunctionBinding>]
         static member getBodyLinearVelocity physicsId world =
-            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyLinearVelocity physicsId) Constants.Engine.PhysicsEngineSubsystemName world
+            (World.getPhysicsEngine world).GetBodyLinearVelocity physicsId
 
         /// Get the contact normals where the body with the given physics id is touching the ground.
         [<FunctionBinding>]
         static member getBodyToGroundContactNormals physicsId world =
-            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyToGroundContactNormals physicsId) Constants.Engine.PhysicsEngineSubsystemName world
+            (World.getPhysicsEngine world).GetBodyToGroundContactNormals physicsId
 
         /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
         [<FunctionBinding>]
         static member getBodyToGroundContactNormalOpt physicsId world =
-            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyToGroundContactNormalOpt physicsId) Constants.Engine.PhysicsEngineSubsystemName world
+            (World.getPhysicsEngine world).GetBodyToGroundContactNormalOpt physicsId
 
         /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
         [<FunctionBinding>]
         static member getBodyToGroundContactTangentOpt physicsId world =
-            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.GetBodyToGroundContactTangentOpt physicsId) Constants.Engine.PhysicsEngineSubsystemName world
+            (World.getPhysicsEngine world).GetBodyToGroundContactTangentOpt physicsId
 
         /// Check that the body with the given physics id is on the ground.
         [<FunctionBinding>]
         static member isBodyOnGround physicsId world =
-            World.getSubsystemBy (fun (physicsEngine : PhysicsEngineSubsystem) -> physicsEngine.IsBodyOnGround physicsId) Constants.Engine.PhysicsEngineSubsystemName world
+            (World.getPhysicsEngine world).IsBodyOnGround physicsId
 
         /// Send a message to the physics system to create a physics body.
         [<FunctionBinding>]
