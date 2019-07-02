@@ -58,16 +58,16 @@ module WorldPhysicsModule =
 
         interface World Subsystem with
 
-            member this.GetMessages () = this.PhysicsEngine.GetMessages ()
+            member this.PopMessages () = (this.PhysicsEngine.PopMessages () :> obj, this :> World Subsystem)
 
             member this.ClearMessages () = { this with PhysicsEngine = this.PhysicsEngine.ClearMessages () } :> World Subsystem
 
             member this.EnqueueMessage message = { this with PhysicsEngine = this.PhysicsEngine.EnqueueMessage (message :?> PhysicsMessage) } :> World Subsystem
 
-            member this.ProcessMessages world =
+            member this.ProcessMessages messages world =
+                let messages = messages :?> PhysicsMessage UList
                 let tickRate = World.getTickRate world
-                let (integrationMessages, physicsEngine) = this.PhysicsEngine.Integrate tickRate
-                (integrationMessages :> obj, { this with PhysicsEngine = physicsEngine } :> World Subsystem)
+                PhysicsEngine.integrate tickRate messages this.PhysicsEngine :> obj
 
             member this.ApplyResult (integrationMessages, world) =
                 let integrationMessages = integrationMessages :?> IntegrationMessage List
@@ -83,8 +83,11 @@ module WorldPhysicsModule =
         static member internal getPhysicsEngine world =
             world.Subsystems.PhysicsEngine :?> PhysicsEngineSubsystem
 
+        static member internal setPhysicsEngine physicsEngine world =
+            World.updateSubsystems (fun subsystems -> { subsystems with PhysicsEngine = physicsEngine }) world
+
         static member internal updatePhysicsEngine updater world =
-            World.updateSubsystems (fun subsystems -> { subsystems with PhysicsEngine = updater (World.getPhysicsEngine world :> World Subsystem) }) world
+            World.setPhysicsEngine (updater (World.getPhysicsEngine world :> World Subsystem)) world
 
         /// Enqueue a physics message in the world.
         static member enqueuePhysicsMessage (message : PhysicsMessage) world =

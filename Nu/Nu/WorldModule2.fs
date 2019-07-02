@@ -65,6 +65,7 @@ module WorldModule2 =
             let world = World.reloadRenderAssets world
             let world = World.reloadAudioAssets world
             World.reloadSymbols world
+            world
 
         /// Try to check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
@@ -401,7 +402,7 @@ module WorldModule2 =
                     let world = World.setMetadata metadata world
                     let world = World.reloadRenderAssets world
                     let world = World.reloadAudioAssets world
-                    let world = World.reloadSymbols world
+                    World.reloadSymbols world
                     let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishAssetsReload" EventTrace.empty) Default.Game world
                     (Right assetGraph, world)
         
@@ -723,12 +724,16 @@ module WorldModule2 =
                 match (SdlDeps.getRenderContextOpt sdlDeps, SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u) with
                 | (Some renderContext, true) ->
 
-                    let physicsSubsystem = World.getPhysicsEngine world
-                    let rendererSubsystem = World.getRenderer world
-                    let audioPlayerSubsystem = World.getAudioPlayer world
+                    let physicsEngine = World.getPhysicsEngine world
+                    let renderer = World.getRenderer world
+                    let audioPlayer = World.getAudioPlayer world
+
+                    let (physicsMessages, physicsEngine) = Subsystem.popMessages physicsEngine
+                    let (renderMessages, renderer) = Subsystem.popMessages renderer
+                    let (audioMessages, audioPlayer) = Subsystem.popMessages audioPlayer
 
                     let physicsTask = Task.Factory.StartNew (fun () ->
-                        Subsystem.processMessages physicsSubsystem world)
+                        Subsystem.processMessages physicsMessages physicsEngine world)
 
                     let rendererTask = Task.Factory.StartNew (fun () ->
                         match Constants.Render.ScreenClearing with
@@ -736,12 +741,12 @@ module WorldModule2 =
                         | ColorClear (r, g, b) ->
                             SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
                             SDL.SDL_RenderClear renderContext |> ignore
-                        let result = Subsystem.processMessages rendererSubsystem world
+                        let result = Subsystem.processMessages renderMessages renderer world
                         SDL.SDL_RenderPresent renderContext
                         result)
 
                     let audioPlayerTask = Task.Factory.StartNew (fun () ->
-                        Subsystem.processMessages audioPlayerSubsystem world)
+                        Subsystem.processMessages audioMessages audioPlayer world)
                     
                     let world = pre world
 
@@ -762,17 +767,17 @@ module WorldModule2 =
                         
                                         let world =
                                         
-                                            let (physicsResults, physicsSubsystem) = physicsTask |> Async.AwaitTask |> Async.RunSynchronously
-                                            let world = Subsystem.applyResult physicsResults physicsSubsystem world
-                                            let world = World.addSubsystem Constants.Engine.PhysicsEngineSubsystemName physicsSubsystem world
+                                            let physicsResult = physicsTask |> Async.AwaitTask |> Async.RunSynchronously
+                                            let world = Subsystem.applyResult physicsResult physicsEngine world
+                                            let world = World.setPhysicsEngine physicsEngine world
 
-                                            let (rendererResults, rendererSubsystem) = rendererTask |> Async.AwaitTask |> Async.RunSynchronously
-                                            let world = Subsystem.applyResult rendererResults rendererSubsystem world
-                                            let world = World.addSubsystem Constants.Engine.RendererSubsystemName rendererSubsystem world
+                                            let rendererResult = rendererTask |> Async.AwaitTask |> Async.RunSynchronously
+                                            let world = Subsystem.applyResult rendererResult renderer world
+                                            let world = World.setRenderer renderer world
 
-                                            let (audioPlayerResults, audioPlayerSubsystem) = audioPlayerTask |> Async.AwaitTask |> Async.RunSynchronously
-                                            let world = Subsystem.applyResult audioPlayerResults audioPlayerSubsystem world
-                                            World.addSubsystem Constants.Engine.AudioPlayerSubsystemName audioPlayerSubsystem world
+                                            let audioPlayerResult = audioPlayerTask |> Async.AwaitTask |> Async.RunSynchronously
+                                            let world = Subsystem.applyResult audioPlayerResult audioPlayer world
+                                            World.setAudioPlayer audioPlayer world
 
                                         let world = post world
                                         let world = World.updateTickTime world

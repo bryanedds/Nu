@@ -218,9 +218,9 @@ module WorldModuleScreen =
             match World.getScreenScriptOpt screen world with
             | Some script ->
                 let symbolLoadMetadata = { ImplicitDelimiters = true; StripCsvHeader = false }
-                match World.assetTagToValueOpt<Scripting.Expr array> symbolLoadMetadata script world with
-                | (Some script, world) -> World.setScreenScript script screen world
-                | (None, world) -> world
+                match World.assetTagToValueOpt<Scripting.Expr array> script symbolLoadMetadata world with
+                | Some script -> World.setScreenScript script screen world
+                | None -> world
             | None -> world
 
         static member internal registerScreen screen world =

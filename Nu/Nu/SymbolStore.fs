@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.IO
 open Prime
 open Nu
@@ -18,7 +19,7 @@ module SymbolStoreModule =
     /// Provides references to Symbols that are loaded from files.
     type [<ReferenceEquality>] SymbolStore =
         private
-            { SymbolPackageDict : struct (SymbolLoadMetadata * Symbol) PackageDict }
+            { SymbolPackages : struct (SymbolLoadMetadata * Symbol) Packages }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module SymbolStore =
@@ -55,35 +56,35 @@ module SymbolStoreModule =
                     let assets = List.map Asset.specialize<Symbol> assets
                     let symbolOpts = List.map (tryLoadSymbol3 metadata packageName) assets
                     let symbols = List.definitize symbolOpts
-                    match Dictionary.tryFind packageName symbolStore.SymbolPackageDict with
+                    match Dictionary.tryFind packageName symbolStore.SymbolPackages with
                     | Some symbolDict ->
                         for (key, value) in symbols do symbolDict.ForceAdd (key, value)
-                        symbolStore.SymbolPackageDict.ForceAdd (packageName, symbolDict)
+                        symbolStore.SymbolPackages.ForceAdd (packageName, symbolDict)
                     | None ->
                         let symbolDict = dictPlus []
-                        symbolStore.SymbolPackageDict.ForceAdd (packageName, symbolDict)
+                        symbolStore.SymbolPackages.ForceAdd (packageName, symbolDict)
                 | Left error ->
                     Log.info ("Symbol store package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
             | Left error ->
                 Log.info ("Symbol store package load failed due to unloadable asset graph due to: '" + error)
 
         let tryLoadSymbol (assetTag : Symbol AssetTag) metadata symbolStore =
-            let assetDictOpt =
-                if symbolStore.SymbolPackageDict.ContainsKey assetTag.PackageName then
-                    Dictionary.tryFind assetTag.PackageName symbolStore.SymbolPackageDict
+            let assetsOpt =
+                if symbolStore.SymbolPackages.ContainsKey assetTag.PackageName then
+                    Dictionary.tryFind assetTag.PackageName symbolStore.SymbolPackages
                 else
                     Log.info ("Loading symbol package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                     tryLoadSymbolPackage assetTag.PackageName metadata symbolStore
-                    Dictionary.tryFind assetTag.PackageName symbolStore.SymbolPackageDict
-            Option.bind (fun assetDict -> Dictionary.tryFind assetTag.AssetName assetDict) assetDictOpt
+                    Dictionary.tryFind assetTag.PackageName symbolStore.SymbolPackages
+            Option.bind (fun assets -> Dictionary.tryFind assetTag.AssetName assets) assetsOpt
     
         /// Unload a symbolStore package with the given name.
         let unloadSymbolPackage packageName symbolStore =
-            symbolStore.SymbolPackageDict.Remove packageName |> ignore
+            symbolStore.SymbolPackages.Remove packageName |> ignore
     
         /// Try to find a symbol with the given asset tag.
         let tryFindSymbol assetTag metadata symbolStore =
-            tryLoadSymbol assetTag metadata symbolStore
+            tryLoadSymbol assetTag metadata symbolStore |> Option.map snd'
             
         /// Try to find the symbols with the given asset tags.
         let tryFindSymbols metadata assetTags symbolStore =
@@ -96,15 +97,19 @@ module SymbolStoreModule =
                 ([], symbolStore)
     
         /// Reload all the assets in the symbol store.
-        let reloadSymbols metadata symbolStore =
-            let packageNames = symbolStore.SymbolPackageDict |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
-            symbolStore.SymbolPackageDict.Clear ()
-            for packageName in packageNames do
-                tryLoadSymbolPackage packageName metadata symbolStore
+        let reloadSymbols symbolStore =
+            let symbolPackages = Dictionary<_, _> symbolStore.SymbolPackages
+            symbolStore.SymbolPackages.Clear ()
+            for packageEntry in symbolPackages do
+                let packageName = packageEntry.Key
+                let packageValue = packageEntry.Value
+                for assetEntry in packageValue do
+                    let metadata = fst' assetEntry.Value
+                    tryLoadSymbolPackage packageName metadata symbolStore
     
         /// The empty symbol store.
         let makeEmpty () =
-            { SymbolPackageDict = dictPlus [] }
+            { SymbolPackages = dictPlus [] }
 
 /// Provides references to Symbols that are loaded from files.
 type SymbolStore = SymbolStoreModule.SymbolStore

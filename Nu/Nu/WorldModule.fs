@@ -417,30 +417,26 @@ module WorldModule =
 
         /// Try to load a symbol store package with the given name.
         static member tryLoadSymbolStorePackage implicitDelimiters packageName world =
-            World.updateSymbolStore (SymbolStore.tryLoadSymbolStorePackage implicitDelimiters packageName) world
+            World.getSymbolStoreBy (SymbolStore.tryLoadSymbolPackage implicitDelimiters packageName) world
 
         /// Unload a symbol store package with the given name.
         static member unloadSymbolStorePackage packageName world =
-            World.updateSymbolStore (SymbolStore.unloadSymbolStorePackage packageName) world
+            World.getSymbolStoreBy (SymbolStore.unloadSymbolPackage packageName) world
 
         /// Try to find a symbol with the given asset tag.
-        static member tryFindSymbol implicitDelimiters assetTag world =
+        static member tryFindSymbol assetTag metadata world =
             let symbolStore = World.getSymbolStore world
-            let (symbol, symbolStore) = SymbolStore.tryFindSymbol implicitDelimiters assetTag symbolStore
-            let world = World.setSymbolStore symbolStore world
-            (symbol, world)
+            SymbolStore.tryFindSymbol assetTag metadata symbolStore
 
         /// Try to find symbols with the given asset tags.
         static member tryFindSymbols implicitDelimiters assetTags world =
             let symbolStore = World.getSymbolStore world
-            let (symbol, symbolStore) = SymbolStore.tryFindSymbols implicitDelimiters assetTags symbolStore
-            let world = World.setSymbolStore symbolStore world
-            (symbol, world)
+            SymbolStore.tryFindSymbols implicitDelimiters assetTags symbolStore
 
         /// Reload all the symbols in the symbol store.
         [<FunctionBinding>]
         static member reloadSymbols world =
-            World.updateSymbolStore SymbolStore.reloadSymbols world
+            World.getSymbolStoreBy SymbolStore.reloadSymbols world
 
         static member internal getKeyValueStoreBy by world =
             World.getAmbientStateBy (AmbientState.getKeyValueStoreBy by) world

@@ -66,7 +66,7 @@ type [<ReferenceEquality>] MockAudioPlayer =
 type [<ReferenceEquality>] SdlAudioPlayer =
     private
         { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
-          AudioPackageDict : AudioAsset PackageDict
+          AudioPackages : AudioAsset Packages
           AudioMessages : AudioMessage UList
           mutable CurrentSongOpt : PlaySongMessage option
           mutable NextPlaySongOpt : PlaySongMessage option }
@@ -103,27 +103,27 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 let assets = List.map Asset.specialize<Audio> assets
                 let audioAssetOpts = List.map SdlAudioPlayer.tryLoadAudioAsset2 assets
                 let audioAssets = List.definitize audioAssetOpts
-                match Dictionary.tryFind packageName audioPlayer.AudioPackageDict with
+                match Dictionary.tryFind packageName audioPlayer.AudioPackages with
                 | Some audioAssetDict ->
                     for (key, value) in audioAssets do audioAssetDict.ForceAdd (key, value)
-                    audioPlayer.AudioPackageDict.ForceAdd (packageName, audioAssetDict)
+                    audioPlayer.AudioPackages.ForceAdd (packageName, audioAssetDict)
                 | None ->
                     let audioAssetDict = dictPlus []
-                    audioPlayer.AudioPackageDict.ForceAdd (packageName, audioAssetDict)
+                    audioPlayer.AudioPackages.ForceAdd (packageName, audioAssetDict)
             | Left error ->
                 Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
         | Left error ->
             Log.info ("Audio package load failed due to unloadable asset graph due to: '" + error)
 
     static member private tryLoadAudioAsset (assetTag : Audio AssetTag) audioPlayer =
-        let assetDictOpt =
-            if audioPlayer.AudioPackageDict.ContainsKey assetTag.PackageName then
-                Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackageDict
+        let assetsOpt =
+            if audioPlayer.AudioPackages.ContainsKey assetTag.PackageName then
+                Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages
             else
                 Log.info ("Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 SdlAudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
-                Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackageDict
-        Option.bind (fun assetDict -> Dictionary.tryFind assetTag.AssetName assetDict) assetDictOpt
+                Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages
+        Option.bind (fun assets -> Dictionary.tryFind assetTag.AssetName assets) assetsOpt
 
     static member private playSong playSongMessage audioPlayer =
         let song = playSongMessage.Song
@@ -143,16 +143,16 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         SdlAudioPlayer.tryLoadAudioPackage hintPackageName audioPlayer
     
     static member private handleHintAudioPackageDisuse hintPackageName audioPlayer =
-        match Dictionary.tryFind hintPackageName  audioPlayer.AudioPackageDict with
-        | Some assetDict ->
+        match Dictionary.tryFind hintPackageName  audioPlayer.AudioPackages with
+        | Some assets ->
             // all sounds / music must be halted because one of them might be playing during unload
             // (which is very bad according to the API docs).
             SdlAudioPlayer.haltSound ()
-            for asset in assetDict do
+            for asset in assets do
                 match asset.Value with
                 | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
                 | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
-            audioPlayer.AudioPackageDict.Remove hintPackageName |> ignore
+            audioPlayer.AudioPackages.Remove hintPackageName |> ignore
         | None -> ()
 
     static member private handlePlaySound playSoundMessage audioPlayer =
@@ -191,8 +191,8 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             SDL_mixer.Mix_HaltMusic () |> ignore
 
     static member private handleReloadAudioAssets audioPlayer =
-        let packageNames = audioPlayer.AudioPackageDict |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
-        audioPlayer.AudioPackageDict.Clear ()
+        let packageNames = audioPlayer.AudioPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
+        audioPlayer.AudioPackages.Clear ()
         for packageName in packageNames do
             SdlAudioPlayer.tryLoadAudioPackage packageName audioPlayer
 
@@ -233,7 +233,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             failwith "Cannot create an AudioPlayer without SDL audio initialized."
         let audioPlayer =
             { AudioContext = ()
-              AudioPackageDict = dictPlus []
+              AudioPackages = dictPlus []
               AudioMessages = UList.makeEmpty Constants.Audio.MessageListConfig
               CurrentSongOpt = None
               NextPlaySongOpt = None }
