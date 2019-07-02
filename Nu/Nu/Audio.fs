@@ -46,7 +46,7 @@ type AudioPlayer =
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : AudioMessage -> AudioPlayer
     /// 'Play' the audio system. Must be called once per frame.
-    abstract Play : unit -> AudioPlayer
+    abstract Play : AudioMessage UList -> unit
 
 /// The mock implementation of AudioPlayer.
 type [<ReferenceEquality>] MockAudioPlayer =
@@ -57,7 +57,7 @@ type [<ReferenceEquality>] MockAudioPlayer =
         member audioPlayer.PopMessages () = (UList.makeEmpty Functional, audioPlayer :> AudioPlayer)
         member audioPlayer.ClearMessages () = audioPlayer :> AudioPlayer
         member audioPlayer.EnqueueMessage _ = audioPlayer :> AudioPlayer
-        member audioPlayer.Play () = audioPlayer :> AudioPlayer
+        member audioPlayer.Play _ = ()
 
     static member make () =
         { MockAudioPlayer = () }
@@ -66,10 +66,10 @@ type [<ReferenceEquality>] MockAudioPlayer =
 type [<ReferenceEquality>] SdlAudioPlayer =
     private
         { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
-          AudioPackageMap : AudioAsset PackageMap
+          AudioPackageDict : AudioAsset PackageDict
           AudioMessages : AudioMessage UList
-          CurrentSongOpt : PlaySongMessage option
-          NextPlaySongOpt : PlaySongMessage option }
+          mutable CurrentSongOpt : PlaySongMessage option
+          mutable NextPlaySongOpt : PlaySongMessage option }
 
     static member private haltSound () =
         SDL_mixer.Mix_HaltMusic () |> ignore
@@ -103,76 +103,69 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 let assets = List.map Asset.specialize<Audio> assets
                 let audioAssetOpts = List.map SdlAudioPlayer.tryLoadAudioAsset2 assets
                 let audioAssets = List.definitize audioAssetOpts
-                let audioAssetMapOpt = UMap.tryFindFast packageName audioPlayer.AudioPackageMap
-                if FOption.isSome audioAssetMapOpt then
-                    let audioAssetMap = FOption.get audioAssetMapOpt
-                    let audioAssetMap = UMap.addMany audioAssets audioAssetMap
-                    { audioPlayer with AudioPackageMap = UMap.add packageName audioAssetMap audioPlayer.AudioPackageMap }
-                else
-                    let audioAssetMap = UMap.makeFromSeq Constants.Audio.AssetMapConfig audioAssets
-                    { audioPlayer with AudioPackageMap = UMap.add packageName audioAssetMap audioPlayer.AudioPackageMap }
+                match Dictionary.tryFind packageName audioPlayer.AudioPackageDict with
+                | Some audioAssetDict ->
+                    for (key, value) in audioAssets do audioAssetDict.ForceAdd (key, value)
+                    audioPlayer.AudioPackageDict.ForceAdd (packageName, audioAssetDict)
+                | None ->
+                    let audioAssetDict = dictPlus []
+                    audioPlayer.AudioPackageDict.ForceAdd (packageName, audioAssetDict)
             | Left error ->
                 Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
-                audioPlayer
         | Left error ->
             Log.info ("Audio package load failed due to unloadable asset graph due to: '" + error)
-            audioPlayer
-    
+
     static member private tryLoadAudioAsset (assetTag : Audio AssetTag) audioPlayer =
-        let (assetMapOpt, audioPlayer) =
-            if UMap.containsKey assetTag.PackageName audioPlayer.AudioPackageMap
-            then (UMap.tryFindFast assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
+        let assetDictOpt =
+            if audioPlayer.AudioPackageDict.ContainsKey assetTag.PackageName then
+                Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackageDict
             else
                 Log.info ("Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                let audioPlayer = SdlAudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
-                (UMap.tryFindFast assetTag.PackageName audioPlayer.AudioPackageMap, audioPlayer)
-        (FOption.bind (fun assetMap -> UMap.tryFindFast assetTag.AssetName assetMap) assetMapOpt, audioPlayer)
+                SdlAudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
+                Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackageDict
+        Option.bind (fun assetDict -> Dictionary.tryFind assetTag.AssetName assetDict) assetDictOpt
     
     static member private playSong playSongMessage audioPlayer =
         let song = playSongMessage.Song
-        let (audioAssetOpt, audioPlayer) = SdlAudioPlayer.tryLoadAudioAsset song audioPlayer
-        if FOption.isSome audioAssetOpt then
-            match FOption.get audioAssetOpt with
+        match SdlAudioPlayer.tryLoadAudioAsset song audioPlayer with
+        | Some audioAsset ->
+            match audioAsset with
             | WavAsset _ ->
                 Log.info ("Cannot play wav file as song '" + scstring song + "'.")
             | OggAsset oggAsset ->
                 SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
                 SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) |> ignore // Mix_PlayMusic seems to somtimes cause audio 'popping' when starting a song, so a fade is used instead... |> ignore
-            { audioPlayer with CurrentSongOpt = Some playSongMessage }
-        else
+            audioPlayer.CurrentSongOpt <- Some playSongMessage
+        | None ->
             Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
-            audioPlayer
     
     static member private handleHintAudioPackageUse hintPackageName audioPlayer =
         SdlAudioPlayer.tryLoadAudioPackage hintPackageName audioPlayer
     
     static member private handleHintAudioPackageDisuse hintPackageName audioPlayer =
-        let assetsOpt = UMap.tryFindFast hintPackageName audioPlayer.AudioPackageMap
-        if FOption.isSome assetsOpt then
-            let assets = FOption.get assetsOpt
+        match Dictionary.tryFind hintPackageName  audioPlayer.AudioPackageDict with
+        | Some assetDict ->
             // all sounds / music must be halted because one of them might be playing during unload
             // (which is very bad according to the API docs).
             SdlAudioPlayer.haltSound ()
-            for (_, asset) in assets do
-                match asset with
+            for asset in assetDict do
+                match asset.Value with
                 | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
                 | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
-            { audioPlayer with AudioPackageMap = UMap.remove hintPackageName audioPlayer.AudioPackageMap }
-        else audioPlayer
-    
+            audioPlayer.AudioPackageDict.Remove hintPackageName |> ignore
+        | None -> ()
+
     static member private handlePlaySound playSoundMessage audioPlayer =
         let sound = playSoundMessage.Sound
-        let (audioAssetOpt, audioPlayer) = SdlAudioPlayer.tryLoadAudioAsset sound audioPlayer
-        if FOption.isSome audioAssetOpt then
-            match FOption.get audioAssetOpt with
+        match SdlAudioPlayer.tryLoadAudioAsset sound audioPlayer with
+        | Some audioAsset ->
+            match audioAsset with
             | WavAsset wavAsset ->
                 SDL_mixer.Mix_VolumeChunk (wavAsset, int (playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
                 SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0) |> ignore
             | OggAsset _ -> Log.info ("Cannot play ogg file as sound '" + scstring sound + "'.")
-            audioPlayer
-        else
+        | None ->
             Log.info ("PlaySoundMessage failed due to unloadable assets for '" + scstring sound + "'.")
-            audioPlayer
     
     static member private handlePlaySong playSongMessage audioPlayer =
         if SDL_mixer.Mix_PlayingMusic () = 1 then
@@ -182,44 +175,40 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                     SDL_mixer.Mix_FadeOutMusic playSongMessage.TimeToFadeOutSongMs |> ignore
                 else
                     SDL_mixer.Mix_HaltMusic () |> ignore
-                { audioPlayer with NextPlaySongOpt = Some playSongMessage }
-            else audioPlayer
+                audioPlayer.NextPlaySongOpt <- Some playSongMessage
         else SdlAudioPlayer.playSong playSongMessage audioPlayer
     
-    static member private handleFadeOutSong timeToFadeOutSongMs audioPlayer =
+    static member private handleFadeOutSong timeToFadeOutSongMs =
         if SDL_mixer.Mix_PlayingMusic () = 1 then
             if  timeToFadeOutSongMs <> 0 &&
                 SDL_mixer.Mix_FadingMusic () <> SDL_mixer.Mix_Fading.MIX_FADING_OUT then
                 SDL_mixer.Mix_FadeOutMusic timeToFadeOutSongMs |> ignore
             else
                 SDL_mixer.Mix_HaltMusic () |> ignore
-        audioPlayer
     
-    static member private handleStopSong audioPlayer =
-        if SDL_mixer.Mix_PlayingMusic () = 1 then SDL_mixer.Mix_HaltMusic () |> ignore
-        audioPlayer
-    
+    static member private handleStopSong =
+        if SDL_mixer.Mix_PlayingMusic () = 1 then
+            SDL_mixer.Mix_HaltMusic () |> ignore
+
     static member private handleReloadAudioAssets audioPlayer =
-        let oldPackageMap = audioPlayer.AudioPackageMap
-        let oldPackageNames = oldPackageMap |> UMap.toSeq |> Seq.map fst
-        let audioPlayer = { audioPlayer with AudioPackageMap = UMap.makeEmpty (UMap.getConfig audioPlayer.AudioPackageMap) }
-        Seq.fold
-            (fun audioPlayer packageName -> SdlAudioPlayer.tryLoadAudioPackage packageName audioPlayer)
-            audioPlayer
-            oldPackageNames
+        let packageNames = audioPlayer.AudioPackageDict |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
+        audioPlayer.AudioPackageDict.Clear ()
+        for packageName in packageNames do
+            SdlAudioPlayer.tryLoadAudioPackage packageName audioPlayer
     
-    static member private handleAudioMessage audioPlayer audioMessage =
+    static member private handleAudioMessage audioMessage audioPlayer =
         match audioMessage with
         | HintAudioPackageUseMessage hintPackageUse -> SdlAudioPlayer.handleHintAudioPackageUse hintPackageUse audioPlayer
         | HintAudioPackageDisuseMessage hintPackageDisuse -> SdlAudioPlayer.handleHintAudioPackageDisuse hintPackageDisuse audioPlayer
         | PlaySoundMessage playSoundMessage -> SdlAudioPlayer.handlePlaySound playSoundMessage audioPlayer
         | PlaySongMessage playSongMessage -> SdlAudioPlayer.handlePlaySong playSongMessage audioPlayer
-        | FadeOutSongMessage timeToFadeSongMs -> SdlAudioPlayer.handleFadeOutSong timeToFadeSongMs audioPlayer
-        | StopSongMessage -> SdlAudioPlayer.handleStopSong audioPlayer
+        | FadeOutSongMessage timeToFadeSongMs -> SdlAudioPlayer.handleFadeOutSong timeToFadeSongMs
+        | StopSongMessage -> SdlAudioPlayer.handleStopSong
         | ReloadAudioAssetsMessage -> SdlAudioPlayer.handleReloadAudioAssets audioPlayer
     
     static member private handleAudioMessages audioMessages audioPlayer =
-        UList.fold SdlAudioPlayer.handleAudioMessage audioPlayer audioMessages
+        for audioMessage in audioMessages do
+            SdlAudioPlayer.handleAudioMessage audioMessage audioPlayer
     
     static member private tryUpdateCurrentSong audioPlayer =
         if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
@@ -229,10 +218,9 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         match audioPlayer.NextPlaySongOpt with
         | Some nextPlaySong ->
             if SDL_mixer.Mix_PlayingMusic () = 0 then
-                let audioPlayer = SdlAudioPlayer.handlePlaySong nextPlaySong audioPlayer
-                { audioPlayer with NextPlaySongOpt = None }
-            else audioPlayer
-        | None -> audioPlayer
+                SdlAudioPlayer.handlePlaySong nextPlaySong audioPlayer
+                audioPlayer.NextPlaySongOpt <- None
+        | None -> ()
     
     static member private updateAudioPlayer audioPlayer =
         audioPlayer |>
@@ -245,7 +233,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             failwith "Cannot create an AudioPlayer without SDL audio initialized."
         let audioPlayer =
             { AudioContext = ()
-              AudioPackageMap = UMap.makeEmpty Constants.Audio.AssetMapConfig
+              AudioPackageDict = dictPlus []
               AudioMessages = UList.makeEmpty Constants.Audio.MessageListConfig
               CurrentSongOpt = None
               NextPlaySongOpt = None }
@@ -267,12 +255,9 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             let audioPlayer = { audioPlayer with AudioMessages = audioMessages }
             audioPlayer :> AudioPlayer
 
-        member audioPlayer.Play () =
-            let audioMessages = audioPlayer.AudioMessages
-            let audioPlayer = { audioPlayer with AudioMessages = UList.makeEmpty (UList.getConfig audioPlayer.AudioMessages) }
-            let audioPlayer = SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer
-            let audioPlayer = SdlAudioPlayer.updateAudioPlayer audioPlayer
-            audioPlayer :> AudioPlayer
+        member audioPlayer.Play audioMessages =
+            SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer
+            SdlAudioPlayer.updateAudioPlayer audioPlayer
 
 [<RequireQualifiedAccess>]
 module AudioPlayer =
@@ -286,5 +271,5 @@ module AudioPlayer =
         audioPlayer.EnqueueMessage message
 
     /// 'Play' the audio system. Must be called once per frame.
-    let play (audioPlayer : AudioPlayer) =
-        audioPlayer.Play ()
+    let play audioMessages (audioPlayer : AudioPlayer) =
+        audioPlayer.Play audioMessages
