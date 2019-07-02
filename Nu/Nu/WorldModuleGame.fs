@@ -231,25 +231,16 @@ module WorldModuleGame =
             entityPosition - mousePositionWorld
 
         /// Fetch an asset with the given tag and convert it to a value of type 'a.
-        static member assetTagToValueOpt<'a> implicitDelimiters assetTag world =
-            let (symbolOpt, world) = World.tryFindSymbol implicitDelimiters assetTag world
-            let scriptOpt =
-                match symbolOpt with
-                | Some symbol ->
-                    try let script = symbolToValue<'a> symbol in Some script
-                    with exn -> Log.debug ("Failed to convert symbol '" + scstring symbol + "' to value due to: " + scstring exn); None
-                | None -> None
-            (scriptOpt, world)
+        static member assetTagToValueOpt<'a> assetTag metadata world =
+            match World.tryFindSymbol assetTag metadata world with
+            | Some symbol ->
+                try let script = symbolToValue<'a> symbol in Some script
+                with exn -> Log.debug ("Failed to convert symbol '" + scstring symbol + "' to value due to: " + scstring exn); None
+            | None -> None
 
         /// Fetch assets with the given tags and convert it to values of type 'a.
-        static member assetTagsToValueOpts<'a> implicitDelimiters assetTags world =
-            let (values, world) =
-                List.fold (fun (values, world) assetTag ->
-                    let (value, world) = World.assetTagToValueOpt<'a> implicitDelimiters assetTag world
-                    (value :: values, world))
-                    ([], world)
-                    assetTags
-            (List.rev values, world)
+        static member assetTagsToValueOpts<'a> assetTags metadata world =
+            List.map (fun assetTag -> World.assetTagToValueOpt<'a> assetTag metadata world) assetTags
 
         static member internal tryGetGameCalculatedProperty propertyName world =
             let game = Game ()

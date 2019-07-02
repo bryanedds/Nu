@@ -354,7 +354,8 @@ module WorldModule3 =
             let ambientState =
                 let overlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
                 let overlayRouter = OverlayRouter.make overlayRoutes
-                AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty SymbolStore.empty userState
+                let symbolStore = SymbolStore.makeEmpty ()
+                AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty symbolStore userState
 
             // make the world
             let world = World.make eventDelegate dispatchers subsystems scriptingEnv ambientState (snd defaultGameDispatcher)
@@ -452,7 +453,8 @@ module WorldModule3 =
                         let userOverlayRoutes = plugin.MakeOverlayRoutes ()
                         let overlayRoutes = intrinsicOverlayRoutes @ userOverlayRoutes
                         let overlayRouter = OverlayRouter.make overlayRoutes
-                        AmbientState.make tickRate assetMetadataMap overlayRouter overlayer SymbolStore.empty userState
+                        let symbolStore = SymbolStore.makeEmpty ()
+                        AmbientState.make tickRate assetMetadataMap overlayRouter overlayer symbolStore userState
 
                     // make the world
                     let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState activeGameDispatcher

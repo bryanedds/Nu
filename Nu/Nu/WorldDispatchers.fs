@@ -153,7 +153,7 @@ module EffectFacetModule =
             | [] -> world
             | effectAssetTags ->
                 let symbolLoadMetadata = { ImplicitDelimiters = false; StripCsvHeader = false }
-                let (effectOpts, world) = World.assetTagsToValueOpts<Effect> symbolLoadMetadata effectAssetTags world
+                let effectOpts = World.assetTagsToValueOpts<Effect> effectAssetTags symbolLoadMetadata world
                 let effects = List.definitize effectOpts
                 let effectCombined = EffectSystem.combineEffects effects
                 entity.SetEffect effectCombined world

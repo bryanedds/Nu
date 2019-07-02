@@ -227,9 +227,9 @@ module WorldModuleLayer =
             match World.getLayerScriptOpt layer world with
             | Some script ->
                 let symbolLoadMetadata = { ImplicitDelimiters = true; StripCsvHeader = false }
-                match World.assetTagToValueOpt<Scripting.Expr array> symbolLoadMetadata script world with
-                | (Some script, world) -> World.setLayerScript script layer world
-                | (None, world) -> world
+                match World.assetTagToValueOpt<Scripting.Expr array> script symbolLoadMetadata world with
+                | Some script -> World.setLayerScript script layer world
+                | None -> world
             | None -> world
 
         static member internal registerLayer layer world =

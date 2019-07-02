@@ -188,9 +188,9 @@ module WorldGameModule =
             match game.GetScriptOpt world with
             | Some script ->
                 let symbolLoadMetadata = { ImplicitDelimiters = true; StripCsvHeader = false }
-                match World.assetTagToValueOpt<Scripting.Expr array> symbolLoadMetadata script world with
-                | (Some script, world) -> game.SetScript script world
-                | (None, world) -> world
+                match World.assetTagToValueOpt<Scripting.Expr array> script symbolLoadMetadata world with
+                | Some script -> game.SetScript script world
+                | None -> world
             | None -> world
 
         static member internal registerGame world =

@@ -9,6 +9,9 @@ open Nu
 /// Represents an untyped message to a subsystem.
 type SubsystemMessage = obj
 
+/// Represents an untyped collection of messages to a subsystem.
+type SubsystemMessages = obj
+
 /// Represents an untyped result of a subsystem.
 type SubsystemResult = obj
 
@@ -18,13 +21,13 @@ type SubsystemResult = obj
 type 'w Subsystem =
     interface
         /// Pop all the messages belonging to the subsystem.
-        abstract PopMessages : unit -> obj
+        abstract PopMessages : unit -> SubsystemMessages * 'w Subsystem
         /// Clear the message belonging to the subsystem.
         abstract ClearMessages : unit -> 'w Subsystem
         /// Enqueue a message for the subsystem.
         abstract EnqueueMessage : SubsystemMessage -> 'w Subsystem
         /// Processed the queued messages with the subsystem.
-        abstract ProcessMessages : obj -> 'w -> SubsystemResult * 'w Subsystem
+        abstract ProcessMessages : SubsystemMessages -> 'w -> SubsystemResult
         /// Apply the result of the message processing to the world.
         abstract ApplyResult : SubsystemResult * 'w -> 'w
         /// Clean up any resources used by the subsystem.
@@ -33,6 +36,10 @@ type 'w Subsystem =
 
 [<RequireQualifiedAccess>]
 module Subsystem =
+
+    /// Pop the messages queued by subsystem.
+    let popMessages (subsystem : 'w Subsystem) =
+        subsystem.PopMessages ()
 
     /// Clear the messages queued by subsystem.
     let clearMessages (subsystem : 'w Subsystem) =
@@ -43,8 +50,8 @@ module Subsystem =
         subsystem.EnqueueMessage message
 
     /// Processed the queued messages with the subsystem.
-    let processMessages (subsystem : 'w Subsystem) world =
-        subsystem.ProcessMessages world
+    let processMessages messages (subsystem : 'w Subsystem) world =
+        subsystem.ProcessMessages messages world
 
     /// Apply the result of the message processing to the world.
     let applyResult subsystemResult (subsystem : 'w Subsystem) world =

@@ -96,7 +96,7 @@ type [<StructuralEquality; NoComparison>] Package =
       AssetNames : string list }
 
 /// A dictionary of asset packages.
-type 'a PackageDict =
+type 'a Packages =
     Dictionary<string, Dictionary<string, 'a>>
 
 /// Describes assets and how to process and use them.

@@ -130,7 +130,7 @@ type [<ReferenceEquality>] MockRenderer =
 type [<ReferenceEquality>] SdlRenderer =
     private
         { RenderContext : nativeint
-          RenderPackageDict : RenderAsset PackageDict
+          RenderPackages : RenderAsset Packages
           RenderMessages : RenderMessage UList
           RenderDescriptors : RenderDescriptor List }
 
@@ -175,41 +175,41 @@ type [<ReferenceEquality>] SdlRenderer =
             | Right assets ->
                 let renderAssetOpts = List.map (SdlRenderer.tryLoadRenderAsset2 renderer.RenderContext) assets
                 let renderAssets = List.definitize renderAssetOpts
-                match Dictionary.tryFind packageName renderer.RenderPackageDict with
+                match Dictionary.tryFind packageName renderer.RenderPackages with
                 | Some renderAssetDict ->
                     for (key, value) in renderAssets do renderAssetDict.ForceAdd (key, value)
-                    renderer.RenderPackageDict.ForceAdd (packageName, renderAssetDict)
+                    renderer.RenderPackages.ForceAdd (packageName, renderAssetDict)
                 | None ->
                     let renderAssetDict = dictPlus []
-                    renderer.RenderPackageDict.ForceAdd (packageName, renderAssetDict)
+                    renderer.RenderPackages.ForceAdd (packageName, renderAssetDict)
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
         | Left error ->
             Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
 
     static member private tryLoadRenderAsset (assetTag : obj AssetTag) renderer =
-        let assetDictOpt =
-            if renderer.RenderPackageDict.ContainsKey assetTag.PackageName then
-                Dictionary.tryFind assetTag.PackageName renderer.RenderPackageDict
+        let assetsOpt =
+            if renderer.RenderPackages.ContainsKey assetTag.PackageName then
+                Dictionary.tryFind assetTag.PackageName renderer.RenderPackages
             else
                 Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 SdlRenderer.tryLoadRenderPackage assetTag.PackageName renderer
-                Dictionary.tryFind assetTag.PackageName renderer.RenderPackageDict
-        Option.bind (fun assetDict -> Dictionary.tryFind assetTag.AssetName assetDict) assetDictOpt
+                Dictionary.tryFind assetTag.PackageName renderer.RenderPackages
+        Option.bind (fun assets -> Dictionary.tryFind assetTag.AssetName assets) assetsOpt
 
     static member private handleHintRenderPackageUse hintPackageName renderer =
         SdlRenderer.tryLoadRenderPackage hintPackageName renderer
 
     static member private handleHintRenderPackageDisuse hintPackageName renderer =
-        match Dictionary.tryFind hintPackageName renderer.RenderPackageDict with
-        | Some assetDict ->
-            for asset in assetDict do SdlRenderer.freeRenderAsset asset.Value
-            renderer.RenderPackageDict.Remove hintPackageName |> ignore
+        match Dictionary.tryFind hintPackageName renderer.RenderPackages with
+        | Some assets ->
+            for asset in assets do SdlRenderer.freeRenderAsset asset.Value
+            renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 
     static member private handleReloadRenderAssets renderer =
-        let packageNames = renderer.RenderPackageDict |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
-        renderer.RenderPackageDict.Clear ()
+        let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
+        renderer.RenderPackages.Clear ()
         for packageName in packageNames do
             SdlRenderer.tryLoadRenderPackage packageName renderer
 
@@ -448,7 +448,7 @@ type [<ReferenceEquality>] SdlRenderer =
     static member make renderContext =
         let renderer =
             { RenderContext = renderContext
-              RenderPackageDict = dictPlus []
+              RenderPackages = dictPlus []
               RenderMessages = UList.makeEmpty Constants.Render.MessageListConfig
               RenderDescriptors = List<RenderDescriptor> () }
         renderer
@@ -475,10 +475,10 @@ type [<ReferenceEquality>] SdlRenderer =
             renderer.RenderDescriptors.Clear ()
 
         member renderer.CleanUp () =
-            let renderAssetDicts = renderer.RenderPackageDict |> Seq.map (fun entry -> entry.Value)
-            let renderAssets = Seq.collect (Seq.map (fun (entry : KeyValuePair<_, _>) -> entry.Value)) renderAssetDicts
+            let renderAssetPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
+            let renderAssets = Seq.collect (Seq.map (fun (entry : KeyValuePair<_, _>) -> entry.Value)) renderAssetPackages
             for renderAsset in renderAssets do SdlRenderer.freeRenderAsset renderAsset
-            renderer.RenderPackageDict.Clear ()
+            renderer.RenderPackages.Clear ()
             renderer :> Renderer
 
 [<RequireQualifiedAccess>]
