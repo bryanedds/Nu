@@ -12,22 +12,11 @@ type SubsystemMessage = obj
 /// Represents an untyped result of a subsystem.
 type SubsystemResult = obj
 
-/// The type of subsystem. Dictates where subsystem's processing happens in the game loop.
-type [<Struct>] SubsystemType =
-    | UpdateType
-    | RenderType
-    | AudioType
-
 /// Represents a subsystem for additional engine-level subsystems such as AI, optimized
 /// particles, or efficient level-of-detailed subsystems like mega-swarms and Minecraft blocks,
 /// a la - http://www.dataorienteddesign.com/dodmain/node6.html
 type 'w Subsystem =
     interface
-        /// The type of subsystem. Dictates where its processing happens in the game loop.
-        abstract SubsystemType : SubsystemType
-        /// The ordering by which the subsystem will be processed relative to other subsystems of the same type.
-        abstract SubsystemOrder : single
-        /// Clear the messages queued by subsystem.
         abstract ClearMessages : unit -> 'w Subsystem
         /// Enqueue a message for the subsystem.
         abstract EnqueueMessage : SubsystemMessage -> 'w Subsystem
@@ -41,14 +30,6 @@ type 'w Subsystem =
 
 [<RequireQualifiedAccess>]
 module Subsystem =
-
-    /// The type of subsystem. Dictates where its processing happens in the game loop.
-    let subsystemType (subsystem : 'w Subsystem) =
-        subsystem.SubsystemType
-
-    /// The ordering by which the subsystem will be processed relative to other subsystems of the same type.
-    let subsystemOrder (subsystem : 'w Subsystem) =
-        subsystem.SubsystemOrder
 
     /// Clear the messages queued by subsystem.
     let clearMessages (subsystem : 'w Subsystem) =

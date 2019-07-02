@@ -345,9 +345,9 @@ module WorldModule3 =
                 let subsystemMap =
                     UMap.makeFromSeq
                         Constants.Engine.SubsystemMapConfig
-                        [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockPhysicsEngine.make ()) :> World Subsystem)
-                         (Constants.Engine.RendererSubsystemName, RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockRenderer.make ()) :> World Subsystem)
-                         (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder (MockAudioPlayer.make ()) :> World Subsystem)]
+                        [(Constants.Engine.PhysicsEngineSubsystemName, PhysicsEngineSubsystem.make (MockPhysicsEngine.make ()) :> World Subsystem)
+                         (Constants.Engine.RendererSubsystemName, RendererSubsystem.make (MockRenderer.make ()) :> World Subsystem)
+                         (Constants.Engine.AudioPlayerSubsystemName, AudioPlayerSubsystem.make (MockAudioPlayer.make ()) :> World Subsystem)]
                 Subsystems.make subsystemMap
 
             // make the world's scripting environment
@@ -427,18 +427,18 @@ module WorldModule3 =
                 let subsystems =
                     let userSubsystems = plugin.MakeSubsystems ()
                     let physicsEngine = FarseerPhysicsEngine.make Constants.Physics.Gravity
-                    let physicsEngineSubsystem = PhysicsEngineSubsystem.make Constants.Engine.DefaultSubsystemOrder physicsEngine :> World Subsystem
+                    let physicsEngineSubsystem = PhysicsEngineSubsystem.make physicsEngine :> World Subsystem
                     let renderer =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> SdlRenderer.make renderContext :> Renderer
                         | None -> MockRenderer.make () :> Renderer
                     let renderer = renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.DefaultPackage)
-                    let rendererSubsystem = RendererSubsystem.make Constants.Engine.DefaultSubsystemOrder renderer :> World Subsystem
+                    let rendererSubsystem = RendererSubsystem.make renderer :> World Subsystem
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                         then SdlAudioPlayer.make () :> IAudioPlayer
                         else MockAudioPlayer.make () :> IAudioPlayer
-                    let audioPlayerSubsystem = AudioPlayerSubsystem.make Constants.Engine.DefaultSubsystemOrder audioPlayer :> World Subsystem
+                    let audioPlayerSubsystem = AudioPlayerSubsystem.make audioPlayer :> World Subsystem
                     let defaultSubsystemMap =
                         UMap.makeFromSeq
                             Constants.Engine.SubsystemMapConfig

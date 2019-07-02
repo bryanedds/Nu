@@ -216,7 +216,7 @@ module WorldModule =
 
     type World with // Subsystems
 
-        static member internal getSubsystemMap world =
+        static member getSubsystemMap world =
             Subsystems.getSubsystemMap world.Subsystems
 
         static member getSubsystem<'s when 's :> World Subsystem> name world : 's =
@@ -225,19 +225,19 @@ module WorldModule =
         static member getSubsystemBy<'s, 't when 's :> World Subsystem> (by : 's -> 't) name world : 't =
             Subsystems.getSubsystemBy by name world.Subsystems
 
-        static member addSubsystem<'s when 's :> World Subsystem> name (subsystem : 's) world =
+        static member internal addSubsystem<'s when 's :> World Subsystem> name (subsystem : 's) world =
             World.choose { world with Subsystems = Subsystems.addSubsystem name subsystem world.Subsystems }
 
-        static member removeSubsystem<'s when 's :> World Subsystem> name world =
+        static member internal removeSubsystem<'s when 's :> World Subsystem> name world =
             World.choose { world with Subsystems = Subsystems.removeSubsystem name world.Subsystems }
 
-        static member internal updateSubsystem<'s when 's :> World Subsystem> (updater : 's -> World -> 's) name world =
+        static member updateSubsystem<'s when 's :> World Subsystem> (updater : 's -> World -> 's) name world =
             World.choose { world with Subsystems = Subsystems.updateSubsystem updater name world.Subsystems world }
 
-        static member internal updateSubsystems (updater : World Subsystem -> World -> World Subsystem) world =
+        static member updateSubsystems (updater : World Subsystem -> World -> World Subsystem) world =
             World.choose { world with Subsystems = Subsystems.updateSubsystems updater world.Subsystems world }
 
-        static member internal clearSubsystemsMessages world =
+        static member clearSubsystemsMessages world =
             World.choose { world with Subsystems = Subsystems.clearSubsystemsMessages world.Subsystems world }
 
     type World with // AmbientState

@@ -12,12 +12,9 @@ module WorldRenderModule =
     /// The subsystem for the world's renderer.
     type [<ReferenceEquality>] RendererSubsystem =
         private
-            { SubsystemOrder : single
-              Renderer : Renderer }
+            { Renderer : Renderer }
     
         interface World Subsystem with
-            member this.SubsystemType = RenderType
-            member this.SubsystemOrder = this.SubsystemOrder
             member this.ClearMessages () = { this with Renderer = Renderer.clearMessages this.Renderer } :> World Subsystem
             member this.EnqueueMessage message = { this with Renderer = Renderer.enqueueMessage (message :?> RenderMessage) this.Renderer } :> World Subsystem
             member this.ProcessMessages world =
@@ -28,9 +25,8 @@ module WorldRenderModule =
                 let this = { this with Renderer = Renderer.cleanUp this.Renderer }
                 (this :> World Subsystem, world)
 
-        static member make subsystemOrder renderer =
-            { SubsystemOrder = subsystemOrder
-              Renderer = renderer }
+        static member make renderer =
+            { Renderer = renderer }
 
     type World with
 

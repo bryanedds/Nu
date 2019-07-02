@@ -17,7 +17,6 @@ module Constants =
         let [<Literal>] DesiredFps = 60
         let [<Literal>] SuccessExitCode = 0
         let [<Literal>] FailureExitCode = 1
-        let [<Literal>] DefaultSubsystemOrder = 1.0f
         let [<Literal>] NamePropertyName = "Name"
         let [<Literal>] RendererSubsystemName = "RendererSubsystem"
         let [<Literal>] AudioPlayerSubsystemName = "AudioPlayerSubsystem"
