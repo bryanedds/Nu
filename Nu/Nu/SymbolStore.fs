@@ -18,8 +18,7 @@ module SymbolStoreModule =
     /// Provides references to Symbols that are loaded from files.
     type [<ReferenceEquality>] SymbolStore =
         private
-            // TODO: P1: consider making key a struct tuple.
-            { SymbolStorePackageMap : (SymbolLoadMetadata * Symbol) PackageMap }
+            { SymbolPackageDict : struct (SymbolLoadMetadata * Symbol) PackageDict }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module SymbolStore =
@@ -29,7 +28,7 @@ module SymbolStoreModule =
                 match Path.GetExtension asset.FilePath with
                 | ".csv" ->
                     try let symbol = Symbol.fromStringCsv metadata.StripCsvHeader text (Some asset.FilePath)
-                        Some (asset.AssetTag.AssetName, (metadata, symbol))
+                        Some (asset.AssetTag.AssetName, struct (metadata, symbol))
                     with exn ->
                         Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
                         None
@@ -39,7 +38,7 @@ module SymbolStoreModule =
                         then Symbol.OpenSymbolsStr + text + Symbol.CloseSymbolsStr
                         else text
                     try let symbol = Symbol.fromString text (Some asset.FilePath)
-                        Some (asset.AssetTag.AssetName, (metadata, symbol))
+                        Some (asset.AssetTag.AssetName, struct (metadata, symbol))
                     with exn ->
                         Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
                         None
@@ -48,7 +47,7 @@ module SymbolStoreModule =
                 None
 
         /// Try to load a symbol store package with the given name.
-        let tryLoadSymbolStorePackage metadata packageName symbolStore =
+        let tryLoadSymbolPackage packageName metadata symbolStore =
             match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
             | Right assetGraph ->
                 match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Symbol) packageName assetGraph with
@@ -56,74 +55,56 @@ module SymbolStoreModule =
                     let assets = List.map Asset.specialize<Symbol> assets
                     let symbolOpts = List.map (tryLoadSymbol3 metadata packageName) assets
                     let symbols = List.definitize symbolOpts
-                    let symbolMapOpt = UMap.tryFindFast packageName symbolStore.SymbolStorePackageMap
-                    if FOption.isSome symbolMapOpt then
-                        let symbolMap = FOption.get symbolMapOpt
-                        let symbolMap = UMap.addMany symbols symbolMap
-                        let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.add packageName symbolMap symbolStore.SymbolStorePackageMap }
-                        symbolStore
-                    else
-                        let symbolMap = UMap.makeFromSeq Constants.SymbolStore.SymbolMapConfig symbols
-                        let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.add packageName symbolMap symbolStore.SymbolStorePackageMap }
-                        symbolStore
+                    match Dictionary.tryFind packageName symbolStore.SymbolPackageDict with
+                    | Some symbolDict ->
+                        for (key, value) in symbols do symbolDict.ForceAdd (key, value)
+                        symbolStore.SymbolPackageDict.ForceAdd (packageName, symbolDict)
+                    | None ->
+                        let symbolDict = dictPlus []
+                        symbolStore.SymbolPackageDict.ForceAdd (packageName, symbolDict)
                 | Left error ->
                     Log.info ("Symbol store package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
-                    symbolStore
             | Left error ->
                 Log.info ("Symbol store package load failed due to unloadable asset graph due to: '" + error)
-                symbolStore
-    
-        let private tryLoadSymbol metadata (assetTag : Symbol AssetTag) symbolStore =
-            let (assetMapOpt, symbolStore) =
-                if UMap.containsKey assetTag.PackageName symbolStore.SymbolStorePackageMap
-                then (UMap.tryFindFast assetTag.PackageName symbolStore.SymbolStorePackageMap, symbolStore)
+
+        let tryLoadSymbol (assetTag : Symbol AssetTag) metadata symbolStore =
+            let assetDictOpt =
+                if symbolStore.SymbolPackageDict.ContainsKey assetTag.PackageName then
+                    Dictionary.tryFind assetTag.PackageName symbolStore.SymbolPackageDict
                 else
-                    Log.info ("Loading symbol store package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                    let symbolStore = tryLoadSymbolStorePackage metadata assetTag.PackageName symbolStore
-                    let symbolMap = UMap.tryFindFast assetTag.PackageName symbolStore.SymbolStorePackageMap
-                    (symbolMap, symbolStore)
-            if FOption.isSome assetMapOpt then
-                let assetOpt = UMap.tryFindFast assetTag.AssetName (FOption.get assetMapOpt)
-                (FOption.map snd assetOpt, symbolStore)
-            else (FOption.none (), symbolStore)
+                    Log.info ("Loading symbol package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
+                    tryLoadSymbolPackage assetTag.PackageName metadata symbolStore
+                    Dictionary.tryFind assetTag.PackageName symbolStore.SymbolPackageDict
+            Option.bind (fun assetDict -> Dictionary.tryFind assetTag.AssetName assetDict) assetDictOpt
     
         /// Unload a symbolStore package with the given name.
-        let unloadSymbolStorePackage packageName symbolStore =
-            { symbolStore with SymbolStorePackageMap = UMap.remove packageName symbolStore.SymbolStorePackageMap }
+        let unloadSymbolPackage packageName symbolStore =
+            symbolStore.SymbolPackageDict.Remove packageName |> ignore
     
         /// Try to find a symbol with the given asset tag.
-        let tryFindSymbol metadata assetTag symbolStore =
-            // NOTE: converting canonical option here as I've not yet decided to allow FOption to
-            // leak into the engine's public interface...
-            let (symbolOpt, symbolStore) = tryLoadSymbol metadata assetTag symbolStore
-            (FOption.ToOpt symbolOpt, symbolStore)
+        let tryFindSymbol assetTag metadata symbolStore =
+            tryLoadSymbol assetTag metadata symbolStore
             
         /// Try to find the symbols with the given asset tags.
         let tryFindSymbols metadata assetTags symbolStore =
             List.foldBack
                 (fun assetTag (symbolOpts, symbolStore) ->
-                    let (symbolOpt, symbolStore) = tryFindSymbol metadata assetTag symbolStore
-                    match symbolOpt with
+                    match tryFindSymbol metadata assetTag symbolStore with
                     | Some symbol -> (Some symbol :: symbolOpts, symbolStore)
                     | None -> (None :: symbolOpts, symbolStore))
                 assetTags
                 ([], symbolStore)
     
-        /// Reload all the assets in the symbolStore.
-        let reloadSymbols symbolStore =
-            let oldPackageMap = symbolStore.SymbolStorePackageMap
-            let symbolStore = { symbolStore with SymbolStorePackageMap = UMap.makeEmpty (UMap.getConfig symbolStore.SymbolStorePackageMap) }
-            UMap.fold (fun (symbolStore : SymbolStore) packageName package ->
-                UMap.fold (fun (symbolStore : SymbolStore) assetName (metadata, _) ->
-                    let assetTag = AssetTag.make<Symbol> packageName assetName
-                    tryLoadSymbol metadata assetTag symbolStore |> snd)
-                    symbolStore
-                    package)
-                symbolStore
-                oldPackageMap
+        /// Reload all the assets in the symbol store.
+        let reloadSymbols metadata symbolStore =
+            let packageNames = symbolStore.SymbolPackageDict |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
+            symbolStore.SymbolPackageDict.Clear ()
+            for packageName in packageNames do
+                tryLoadSymbolPackage packageName metadata symbolStore
     
-        /// The empty symbolStore.
-        let empty = { SymbolStorePackageMap = UMap.makeEmpty Constants.SymbolStore.SymbolMapConfig }
+        /// The empty symbol store.
+        let makeEmpty () =
+            { SymbolPackageDict = dictPlus [] }
 
 /// Provides references to Symbols that are loaded from files.
 type SymbolStore = SymbolStoreModule.SymbolStore

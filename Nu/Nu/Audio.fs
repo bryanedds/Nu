@@ -124,7 +124,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 SdlAudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
                 Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackageDict
         Option.bind (fun assetDict -> Dictionary.tryFind assetTag.AssetName assetDict) assetDictOpt
-    
+
     static member private playSong playSongMessage audioPlayer =
         let song = playSongMessage.Song
         match SdlAudioPlayer.tryLoadAudioAsset song audioPlayer with
@@ -195,7 +195,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         audioPlayer.AudioPackageDict.Clear ()
         for packageName in packageNames do
             SdlAudioPlayer.tryLoadAudioPackage packageName audioPlayer
-    
+
     static member private handleAudioMessage audioMessage audioPlayer =
         match audioMessage with
         | HintAudioPackageUseMessage hintPackageUse -> SdlAudioPlayer.handleHintAudioPackageUse hintPackageUse audioPlayer
