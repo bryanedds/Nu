@@ -15,14 +15,26 @@ module WorldAudioModule =
             { AudioPlayer : AudioPlayer }
     
         interface World Subsystem with
-            member this.PopMessages () = (this.AudioPlayer.PopMessages () :> obj, this :> World Subsystem)
-            member this.ClearMessages () = { this with AudioPlayer = AudioPlayer.clearMessages this.AudioPlayer } :> World Subsystem
-            member this.EnqueueMessage message = { this with AudioPlayer = AudioPlayer.enqueueMessage (message :?> AudioMessage) this.AudioPlayer } :> World Subsystem
+            
+            member this.PopMessages () =
+                let (messages, audioPlayer) = this.AudioPlayer.PopMessages ()
+                (messages :> obj, { this with AudioPlayer = audioPlayer } :> World Subsystem)
+            
+            member this.ClearMessages () =
+                { this with AudioPlayer = AudioPlayer.clearMessages this.AudioPlayer } :> World Subsystem
+            
+            member this.EnqueueMessage message =
+                { this with AudioPlayer = AudioPlayer.enqueueMessage (message :?> AudioMessage) this.AudioPlayer } :> World Subsystem
+            
             member this.ProcessMessages messages _ =
                 let messages = messages :?> AudioMessage UList
                 AudioPlayer.play messages this.AudioPlayer :> obj
-            member this.ApplyResult (_, world) = world
-            member this.CleanUp world = (this :> World Subsystem, world)
+            
+            member this.ApplyResult (_, world) =
+                world
+            
+            member this.CleanUp world =
+                (this :> World Subsystem, world)
 
         static member make audioPlayer =
             { AudioPlayer = audioPlayer }

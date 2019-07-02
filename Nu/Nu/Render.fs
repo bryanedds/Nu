@@ -180,7 +180,7 @@ type [<ReferenceEquality>] SdlRenderer =
                     for (key, value) in renderAssets do renderAssetDict.ForceAdd (key, value)
                     renderer.RenderPackages.ForceAdd (packageName, renderAssetDict)
                 | None ->
-                    let renderAssetDict = dictPlus []
+                    let renderAssetDict = dictPlus renderAssets
                     renderer.RenderPackages.ForceAdd (packageName, renderAssetDict)
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")

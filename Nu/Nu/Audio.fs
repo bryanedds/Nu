@@ -108,7 +108,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                     for (key, value) in audioAssets do audioAssetDict.ForceAdd (key, value)
                     audioPlayer.AudioPackages.ForceAdd (packageName, audioAssetDict)
                 | None ->
-                    let audioAssetDict = dictPlus []
+                    let audioAssetDict = dictPlus audioAssets
                     audioPlayer.AudioPackages.ForceAdd (packageName, audioAssetDict)
             | Left error ->
                 Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")

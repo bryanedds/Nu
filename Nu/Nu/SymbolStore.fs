@@ -61,7 +61,7 @@ module SymbolStoreModule =
                         for (key, value) in symbols do symbolDict.ForceAdd (key, value)
                         symbolStore.SymbolPackages.ForceAdd (packageName, symbolDict)
                     | None ->
-                        let symbolDict = dictPlus []
+                        let symbolDict = dictPlus symbols
                         symbolStore.SymbolPackages.ForceAdd (packageName, symbolDict)
                 | Left error ->
                     Log.info ("Symbol store package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")

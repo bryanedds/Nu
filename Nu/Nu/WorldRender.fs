@@ -15,13 +15,24 @@ module WorldRenderModule =
             { Renderer : Renderer }
     
         interface World Subsystem with
-            member this.PopMessages () = (this.Renderer.PopMessages () :> obj, this :> World Subsystem)
-            member this.ClearMessages () = { this with Renderer = Renderer.clearMessages this.Renderer } :> World Subsystem
-            member this.EnqueueMessage message = { this with Renderer = Renderer.enqueueMessage (message :?> RenderMessage) this.Renderer } :> World Subsystem
+            
+            member this.PopMessages () =
+                let (messages, renderer) = this.Renderer.PopMessages ()
+                (messages :> obj, { this with Renderer = renderer } :> World Subsystem)
+            
+            member this.ClearMessages () =
+                { this with Renderer = Renderer.clearMessages this.Renderer } :> World Subsystem
+            
+            member this.EnqueueMessage message =
+                { this with Renderer = Renderer.enqueueMessage (message :?> RenderMessage) this.Renderer } :> World Subsystem
+            
             member this.ProcessMessages messages world =
                 let messages = messages :?> RenderMessage UList
                 Renderer.render (World.getEyeCenter world) (World.getEyeSize world) messages this.Renderer :> obj
-            member this.ApplyResult (_, world) = world
+            
+            member this.ApplyResult (_, world) =
+                world
+            
             member this.CleanUp world =
                 let this = { this with Renderer = Renderer.cleanUp this.Renderer }
                 (this :> World Subsystem, world)
