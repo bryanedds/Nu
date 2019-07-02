@@ -713,63 +713,32 @@ module WorldModule2 =
                 result
             else (Exiting, world)
 
+        static member private processPhysics world =
+            let physicsEngine = World.getPhysicsEngine world
+            let (physicsMessages, physicsEngine) = Subsystem.popMessages physicsEngine
+            let world = World.setPhysicsEngine physicsEngine world
+            let physicsResult = Subsystem.processMessages physicsMessages physicsEngine world
+            Subsystem.applyResult physicsResult (World.getPhysicsEngine world) world
+
         static member private cleanUp world =
             let world = World.unregisterGame world
             World.cleanUpSubsystems world |> ignore
 
         /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile pre post sdlDeps liveness world =
+        static member runWithoutCleanUp runWhile pre post sdlDeps liveness rendererTaskOpt audioPlayerTaskOpt world =
             if runWhile world then
-
-                match (SdlDeps.getRenderContextOpt sdlDeps, SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u) with
-                | (Some renderContext, true) ->
-
-                    // grab subsystem references
-                    let renderer = World.getRenderer world
-                    let audioPlayer = World.getAudioPlayer world
-                    
-                    // pop their messages
-                    let (renderMessages, renderer) = Subsystem.popMessages renderer
-                    let (audioMessages, audioPlayer) = Subsystem.popMessages audioPlayer
-                    
-                    // update popped subsystems
-                    let world = World.setRenderer renderer world
-                    let world = World.setAudioPlayer audioPlayer world
-
-                    // start the renderer thread
-                    let rendererTask = Task.Factory.StartNew (fun () ->
-                        match Constants.Render.ScreenClearing with
-                        | NoClear -> ()
-                        | ColorClear (r, g, b) ->
-                            SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
-                            SDL.SDL_RenderClear renderContext |> ignore
-                        let result = Subsystem.processMessages renderMessages renderer world
-                        SDL.SDL_RenderPresent renderContext
-                        result)
-
-                    // start the audio thread
-                    let audioPlayerTask = Task.Factory.StartNew (fun () ->
-                        Subsystem.processMessages audioMessages audioPlayer world)
-                    
-                    // pre-process the world
-                    let world = pre world
-
+                let world = pre world
+                match liveness with
+                | Running ->
+                    let (liveness, world) = World.processInput world
                     match liveness with
                     | Running ->
-                        let (liveness, world) = World.processInput world
-                        match liveness with
+                        let world = World.processPhysics world
+                        match World.getLiveness world with
                         | Running ->
                             let world = World.updateSimulants world
                             match World.getLiveness world with
                             | Running ->
-
-                                // run physics
-                                let physicsEngine = World.getPhysicsEngine world
-                                let (physicsMessages, physicsEngine) = Subsystem.popMessages physicsEngine
-                                let world = World.setPhysicsEngine physicsEngine world
-                                let physicsResult = Subsystem.processMessages physicsMessages physicsEngine world
-                                let world = Subsystem.applyResult physicsResult (World.getPhysicsEngine world) world
-
                                 let world = World.processTasklets world
                                 match World.getLiveness world with
                                 | Running ->
@@ -777,18 +746,58 @@ module WorldModule2 =
                                     match World.getLiveness world with
                                     | Running ->
 
+                                        // attempt to finish threads
                                         let world =
+                                            match (rendererTaskOpt, audioPlayerTaskOpt) with
+                                            | ((Some rendererTask), (Some audioPlayerTask)) ->
 
-                                            // finish all threads
-                                            let rendererResult = rendererTask |> Async.AwaitTask |> Async.RunSynchronously
-                                            let audioPlayerResult = audioPlayerTask |> Async.AwaitTask |> Async.RunSynchronously
+                                                // finish all threads
+                                                let rendererResult = rendererTask |> Async.AwaitTask |> Async.RunSynchronously
+                                                let audioPlayerResult = audioPlayerTask |> Async.AwaitTask |> Async.RunSynchronously
 
-                                            // apply their results
-                                            let world = Subsystem.applyResult rendererResult (World.getRenderer world) world
-                                            let world = Subsystem.applyResult audioPlayerResult (World.getAudioPlayer world) world
+                                                // apply their results
+                                                let world = Subsystem.applyResult rendererResult (World.getRenderer world) world
+                                                let world = Subsystem.applyResult audioPlayerResult (World.getAudioPlayer world) world
 
-                                            // fin
-                                            world
+                                                // fin
+                                                world
+                                            | (_, _) -> world
+
+                                        // attempt to start threads
+                                        let (rendererTaskOpt, audioPlayerTaskOpt, world) =
+                                            match (SdlDeps.getRenderContextOpt sdlDeps, SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u) with
+                                            | (Some renderContext, true) ->
+
+                                                // grab subsystem references
+                                                let renderer = World.getRenderer world
+                                                let audioPlayer = World.getAudioPlayer world
+                                                            
+                                                // pop their messages
+                                                let (renderMessages, renderer) = Subsystem.popMessages renderer
+                                                let (audioMessages, audioPlayer) = Subsystem.popMessages audioPlayer
+                                                            
+                                                // update popped subsystems
+                                                let world = World.setRenderer renderer world
+                                                let world = World.setAudioPlayer audioPlayer world
+                                        
+                                                // start the renderer thread
+                                                let rendererTask = Task.Factory.StartNew (fun () ->
+                                                    match Constants.Render.ScreenClearing with
+                                                    | NoClear -> ()
+                                                    | ColorClear (r, g, b) ->
+                                                        SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
+                                                        SDL.SDL_RenderClear renderContext |> ignore
+                                                    let result = Subsystem.processMessages renderMessages renderer world
+                                                    SDL.SDL_RenderPresent renderContext
+                                                    result)
+                                        
+                                                // start the audio thread
+                                                let audioPlayerTask = Task.Factory.StartNew (fun () ->
+                                                    Subsystem.processMessages audioMessages audioPlayer world)
+
+                                                // fin
+                                                (Some rendererTask, Some audioPlayerTask, world)
+                                            | (_, _) -> (None, None, world)
 
                                         // post-process the world
                                         let world = post world
@@ -796,19 +805,19 @@ module WorldModule2 =
                                         let world = World.incrementUpdateCount world
 
                                         // recur
-                                        World.runWithoutCleanUp runWhile pre post sdlDeps liveness world
+                                        World.runWithoutCleanUp runWhile pre post sdlDeps liveness rendererTaskOpt audioPlayerTaskOpt world
 
                                     | Exiting -> world
                                 | Exiting -> world
                             | Exiting -> world
                         | Exiting -> world
                     | Exiting -> world
-                | _ -> world
+                | Exiting -> world
             else world
 
         /// Run the game engine with the given handlers.
         static member run4 runWhile sdlDeps liveness world =
-            try let world = World.runWithoutCleanUp runWhile id id sdlDeps liveness world
+            try let world = World.runWithoutCleanUp runWhile id id sdlDeps liveness None None world
                 World.cleanUp world
                 Constants.Engine.SuccessExitCode
             with exn ->
