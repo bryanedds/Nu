@@ -107,7 +107,7 @@ type Renderer =
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : RenderMessage -> Renderer
     /// Render a frame of the game.
-    abstract Render : Vector2 -> Vector2 -> RenderMessage UList -> Renderer
+    abstract Render : Vector2 -> Vector2 -> RenderMessage UList -> unit
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> Renderer
 
@@ -120,7 +120,7 @@ type [<ReferenceEquality>] MockRenderer =
         member renderer.PopMessages () = (UList.makeEmpty Functional, renderer :> Renderer)
         member renderer.ClearMessages () = renderer :> Renderer
         member renderer.EnqueueMessage _ = renderer :> Renderer
-        member renderer.Render _ _ _ = renderer :> Renderer
+        member renderer.Render _ _ _ = ()
         member renderer.CleanUp () = renderer :> Renderer
 
     static member make () =
@@ -132,7 +132,7 @@ type [<ReferenceEquality>] SdlRenderer =
         { RenderContext : nativeint
           RenderPackageDict : RenderAsset PackageDict
           RenderMessages : RenderMessage UList
-          RenderDescriptors : RenderDescriptor array }
+          RenderDescriptors : RenderDescriptor List }
 
     static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
         if left.Depth < right.Depth then -1
@@ -189,11 +189,11 @@ type [<ReferenceEquality>] SdlRenderer =
 
     static member private tryLoadRenderAsset (assetTag : obj AssetTag) renderer =
         let assetDictOpt =
-            if renderer.RenderPackageDict.ContainsKey assetTag.PackageName 
-            then Dictionary.tryFind assetTag.PackageName renderer.RenderPackageDict
+            if renderer.RenderPackageDict.ContainsKey assetTag.PackageName then
+                Dictionary.tryFind assetTag.PackageName renderer.RenderPackageDict
             else
                 Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                let renderer = SdlRenderer.tryLoadRenderPackage assetTag.PackageName renderer
+                SdlRenderer.tryLoadRenderPackage assetTag.PackageName renderer
                 Dictionary.tryFind assetTag.PackageName renderer.RenderPackageDict
         Option.bind (fun assetDict -> Dictionary.tryFind assetTag.AssetName assetDict) assetDictOpt
 
@@ -202,29 +202,27 @@ type [<ReferenceEquality>] SdlRenderer =
 
     static member private handleHintRenderPackageDisuse hintPackageName renderer =
         match Dictionary.tryFind hintPackageName renderer.RenderPackageDict with
-        | Some assets ->
-            for entry in assets do SdlRenderer.freeRenderAsset entry.Value
-            renderer.RenderPackageDict.Remove hintPackageName
+        | Some assetDict ->
+            for asset in assetDict do SdlRenderer.freeRenderAsset asset.Value
+            renderer.RenderPackageDict.Remove hintPackageName |> ignore
         | None -> ()
 
     static member private handleReloadRenderAssets renderer =
-        let oldPackageMap = renderer.RenderPackageDict
-        let oldPackageNames = oldPackageMap |> UMap.toSeq |> Seq.map fst |> Array.ofSeq
-        let renderer = { renderer with RenderPackageDict = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageDict) }
-        Array.fold
-            (fun renderer packageName -> SdlRenderer.tryLoadRenderPackage packageName renderer)
-            renderer
-            oldPackageNames
+        let packageNames = renderer.RenderPackageDict |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
+        renderer.RenderPackageDict.Clear ()
+        for packageName in packageNames do
+            SdlRenderer.tryLoadRenderPackage packageName renderer
 
-    static member private handleRenderMessage renderer renderMessage =
+    static member private handleRenderMessage renderMessage renderer =
         match renderMessage with
-        | RenderDescriptorsMessage renderDescriptors -> { renderer with RenderDescriptors = Array.append renderDescriptors renderer.RenderDescriptors }
+        | RenderDescriptorsMessage renderDescriptors -> renderer.RenderDescriptors.AddRange renderDescriptors
         | HintRenderPackageUseMessage hintPackageUse -> SdlRenderer.handleHintRenderPackageUse hintPackageUse renderer
         | HintRenderPackageDisuseMessage hintPackageDisuse -> SdlRenderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
         | ReloadRenderAssetsMessage -> SdlRenderer.handleReloadRenderAssets renderer
 
     static member private handleRenderMessages renderMessages renderer =
-        UList.fold SdlRenderer.handleRenderMessage renderer renderMessages
+        for renderMessage in renderMessages do
+            SdlRenderer.handleRenderMessage renderMessage renderer
 
     static member private renderSprite
         (viewAbsolute : Matrix3)
@@ -239,9 +237,8 @@ type [<ReferenceEquality>] SdlRenderer =
         let sizeView = sprite.Size * view.ExtractScaleMatrix ()
         let color = sprite.Color
         let image = AssetTag.generalize sprite.Image
-        let (renderAssetOpt, renderer) = SdlRenderer.tryLoadRenderAsset image renderer
-        if FOption.isSome renderAssetOpt then
-            let renderAsset = FOption.get renderAssetOpt
+        match SdlRenderer.tryLoadRenderAsset image renderer with
+        | Some renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
                 let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
@@ -278,15 +275,12 @@ type [<ReferenceEquality>] SdlRenderer =
                         ref rotationCenter,
                         SDL.SDL_RendererFlip.SDL_FLIP_NONE)
                 if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
-                renderer
-            | _ -> Log.trace "Cannot render sprite with a non-texture asset."; renderer
-        else Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'."); renderer
+            | _ -> Log.trace "Cannot render sprite with a non-texture asset."
+        | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
     static member private renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
-        Array.fold
-            (fun renderer sprite -> SdlRenderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer)
-            renderer
-            sprites
+        for sprite in sprites do
+            SdlRenderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
 
     static member private renderTileLayerDescriptor
         (viewAbsolute : Matrix3)
@@ -306,9 +300,8 @@ type [<ReferenceEquality>] SdlRenderer =
         let tileSet = descriptor.TileSet
         let tileSetImage = AssetTag.generalize descriptor.TileSetImage
         let tileSetWidth = let tileSetWidthOpt = tileSet.Image.Width in tileSetWidthOpt.Value
-        let (renderAssetOpt, renderer) = SdlRenderer.tryLoadRenderAsset tileSetImage renderer
-        if FOption.isSome renderAssetOpt then
-            let renderAsset = FOption.get renderAssetOpt
+        match SdlRenderer.tryLoadRenderAsset tileSetImage renderer with
+        | Some renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
                 // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
@@ -352,9 +345,8 @@ type [<ReferenceEquality>] SdlRenderer =
                             let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
                             if renderResult <> 0 then Log.info ("Render error - could not render texture for tile '" + scstring descriptor + "' due to '" + SDL.SDL_GetError () + "."))
                     tiles
-                renderer
-            | _ -> Log.debug "Cannot render tile with a non-texture asset."; renderer
-        else Log.info ("TileLayerDescriptor failed due to unloadable assets for '" + scstring tileSetImage + "'."); renderer
+            | _ -> Log.debug "Cannot render tile with a non-texture asset."
+        | _ -> Log.info ("TileLayerDescriptor failed due to unloadable assets for '" + scstring tileSetImage + "'.")
 
     static member private renderTextDescriptor
         (viewAbsolute : Matrix3)
@@ -369,9 +361,8 @@ type [<ReferenceEquality>] SdlRenderer =
         let text = String.textualize descriptor.Text
         let color = descriptor.Color
         let font = AssetTag.generalize descriptor.Font
-        let (renderAssetOpt, renderer) = SdlRenderer.tryLoadRenderAsset font renderer
-        if FOption.isSome renderAssetOpt then
-            let renderAsset = FOption.get renderAssetOpt
+        match SdlRenderer.tryLoadRenderAsset font renderer with
+        | Some renderAsset ->
             match renderAsset with
             | FontAsset (font, _) ->
                 let mutable renderColor = SDL.SDL_Color ()
@@ -421,49 +412,45 @@ type [<ReferenceEquality>] SdlRenderer =
                     if textTexture <> IntPtr.Zero then SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect) |> ignore
                     SDL.SDL_DestroyTexture textTexture
                     SDL.SDL_FreeSurface textSurface
-                renderer
-            | _ -> Log.debug "Cannot render text with a non-font asset."; renderer
-        else Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'."); renderer
+            | _ -> Log.debug "Cannot render text with a non-font asset."
+        | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
 
     static member private renderLayerableDescriptor
         (viewAbsolute : Matrix3)
         (viewRelative : Matrix3)
         (eyeCenter : Vector2)
         (eyeSize : Vector2)
-        renderer
-        layerableDescriptor =
+        layerableDescriptor
+        renderer =
         match layerableDescriptor with
         | SpriteDescriptor sprite -> SdlRenderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
         | SpritesDescriptor sprites -> SdlRenderer.renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer
         | TileLayerDescriptor descriptor -> SdlRenderer.renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
         | TextDescriptor descriptor -> SdlRenderer.renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
 
-    static member private renderDescriptors eyeCenter eyeSize renderDescriptors renderer =
+    static member private renderDescriptors eyeCenter eyeSize (renderDescriptors : RenderDescriptor List) renderer =
         let renderContext = renderer.RenderContext
         let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
         match targetResult with
         | 0 ->
             // OPTIMIZATION: uses arrays for speed
             SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-            let renderDescriptorsSorted =
-                renderDescriptors |>
-                Array.rev |>
-                Array.sortStableWith SdlRenderer.sortDescriptors
+            let renderDescriptorsSorted = renderDescriptors |> Array.ofSeq |> Array.sortStableWith SdlRenderer.sortDescriptors
             let layeredDescriptors = Array.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
             let viewAbsolute = (Math.getViewAbsoluteI eyeCenter eyeSize).InvertedView ()
             let viewRelative = (Math.getViewRelativeI eyeCenter eyeSize).InvertedView ()
-            Array.fold (SdlRenderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize) renderer layeredDescriptors
+            for layeredDescriptor in layeredDescriptors do
+                SdlRenderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize layeredDescriptor renderer
         | _ ->
             Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
-            renderer
 
     /// Make a Renderer.
     static member make renderContext =
         let renderer =
             { RenderContext = renderContext
-              RenderPackageDict = UMap.makeEmpty Constants.Render.AssetMapConfig
+              RenderPackageDict = dictPlus []
               RenderMessages = UList.makeEmpty Constants.Render.MessageListConfig
-              RenderDescriptors = [||] }
+              RenderDescriptors = List<RenderDescriptor> () }
         renderer
 
     interface Renderer with
@@ -483,16 +470,15 @@ type [<ReferenceEquality>] SdlRenderer =
             renderer :> Renderer
 
         member renderer.Render eyeCenter eyeSize renderMessages =
-            let renderer = SdlRenderer.handleRenderMessages renderMessages renderer
-            let renderDescriptors = renderer.RenderDescriptors
-            let renderer = { renderer with RenderDescriptors = [||] }
-            let renderer = SdlRenderer.renderDescriptors eyeCenter eyeSize renderDescriptors renderer
+            SdlRenderer.handleRenderMessages renderMessages renderer
+            SdlRenderer.renderDescriptors eyeCenter eyeSize renderer.RenderDescriptors renderer
+            renderer.RenderDescriptors.Clear ()
 
         member renderer.CleanUp () =
-            let renderAssetMaps = renderer.RenderPackageDict |> UMap.toSeq |> Seq.map snd
-            let renderAssets = Seq.collect (UMap.toSeq >> Seq.map snd) renderAssetMaps
+            let renderAssetDicts = renderer.RenderPackageDict |> Seq.map (fun entry -> entry.Value)
+            let renderAssets = Seq.collect (Seq.map (fun (entry : KeyValuePair<_, _>) -> entry.Value)) renderAssetDicts
             for renderAsset in renderAssets do SdlRenderer.freeRenderAsset renderAsset
-            let renderer = { renderer with RenderPackageDict = UMap.makeEmpty (UMap.getConfig renderer.RenderPackageDict) }
+            renderer.RenderPackageDict.Clear ()
             renderer :> Renderer
 
 [<RequireQualifiedAccess>]
@@ -507,8 +493,8 @@ module Renderer =
         renderer.EnqueueMessage message
 
     /// Render a frame of the game.
-    let render eyeCenter eyeSize (renderer : Renderer) =
-        renderer.Render eyeCenter eyeSize
+    let render eyeCenter eyeSize renderMessages (renderer : Renderer) =
+        renderer.Render eyeCenter eyeSize renderMessages
 
     /// Handle render clean up by freeing all loaded render assets.
     let cleanUp (renderer : Renderer) =

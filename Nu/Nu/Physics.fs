@@ -243,7 +243,7 @@ type MockPhysicsEngine =
         member physicsEngine.PopMessages () = (UList.makeEmpty Functional, physicsEngine :> PhysicsEngine)
         member physicsEngine.ClearMessages () = physicsEngine :> PhysicsEngine
         member physicsEngine.EnqueueMessage _ = physicsEngine :> PhysicsEngine
-        member physicsEngine.Integrate _ _ = (List<IntegrationMessage> (), physicsEngine :> PhysicsEngine)
+        member physicsEngine.Integrate _ _ = List<IntegrationMessage> ()
 
 /// The Farseer implementation of PhysicsEngine.
 type [<ReferenceEquality>] FarseerPhysicsEngine =
@@ -623,5 +623,5 @@ module PhysicsEngine =
         physicsEngine.EnqueueMessage physicsMessage
 
     /// Integrate the physics system one frame.
-    let integrate tickRate (physicsEngine : PhysicsEngine) =
-        physicsEngine.Integrate tickRate
+    let integrate tickRate physicsMessages (physicsEngine : PhysicsEngine) =
+        physicsEngine.Integrate tickRate physicsMessages
