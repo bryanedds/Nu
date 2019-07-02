@@ -1392,6 +1392,8 @@ module Gaia =
                 (fun world -> form.displayPanel.Invalidate (); world)
                 sdlDeps
                 Running
+                None
+                None
                 Globals.World |>
                 ignore
         with exn ->
