@@ -725,7 +725,7 @@ module WorldModule2 =
             World.cleanUpSubsystems world |> ignore
 
         /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile pre post sdlDeps liveness rendererTaskOpt audioPlayerTaskOpt world =
+        static member runWithoutCleanUp runWhile pre post sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world =
             if runWhile world then
                 let world = pre world
                 match liveness with
@@ -748,12 +748,12 @@ module WorldModule2 =
 
                                         // attempt to finish threads
                                         let world =
-                                            match (rendererTaskOpt, audioPlayerTaskOpt) with
-                                            | ((Some rendererTask), (Some audioPlayerTask)) ->
+                                            match (rendererThreadOpt, audioPlayerThreadOpt) with
+                                            | ((Some rendererThread), (Some audioPlayerThread)) ->
 
                                                 // finish all threads
-                                                let rendererResult = rendererTask |> Async.AwaitTask |> Async.RunSynchronously
-                                                let audioPlayerResult = audioPlayerTask |> Async.AwaitTask |> Async.RunSynchronously
+                                                let rendererResult = rendererThread |> Async.AwaitTask |> Async.RunSynchronously
+                                                let audioPlayerResult = audioPlayerThread |> Async.AwaitTask |> Async.RunSynchronously
 
                                                 // apply their results
                                                 let world = Subsystem.applyResult rendererResult (World.getRenderer world) world
@@ -764,7 +764,7 @@ module WorldModule2 =
                                             | (_, _) -> world
 
                                         // attempt to start threads
-                                        let (rendererTaskOpt, audioPlayerTaskOpt, world) =
+                                        let (rendererThreadOpt, audioPlayerThreadOpt, world) =
                                             match (SdlDeps.getRenderContextOpt sdlDeps, SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u) with
                                             | (Some renderContext, true) ->
 
@@ -781,7 +781,7 @@ module WorldModule2 =
                                                 let world = World.setAudioPlayer audioPlayer world
                                         
                                                 // start the renderer thread
-                                                let rendererTask = Task.Factory.StartNew (fun () ->
+                                                let rendererThread = Task.Factory.StartNew (fun () ->
                                                     match Constants.Render.ScreenClearing with
                                                     | NoClear -> ()
                                                     | ColorClear (r, g, b) ->
@@ -792,11 +792,11 @@ module WorldModule2 =
                                                     result)
                                         
                                                 // start the audio thread
-                                                let audioPlayerTask = Task.Factory.StartNew (fun () ->
+                                                let audioPlayerThread = Task.Factory.StartNew (fun () ->
                                                     Subsystem.processMessages audioMessages audioPlayer world)
 
                                                 // fin
-                                                (Some rendererTask, Some audioPlayerTask, world)
+                                                (Some rendererThread, Some audioPlayerThread, world)
                                             | (_, _) -> (None, None, world)
 
                                         // post-process the world
@@ -805,7 +805,7 @@ module WorldModule2 =
                                         let world = World.incrementUpdateCount world
 
                                         // recur
-                                        World.runWithoutCleanUp runWhile pre post sdlDeps liveness rendererTaskOpt audioPlayerTaskOpt world
+                                        World.runWithoutCleanUp runWhile pre post sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world
 
                                     | Exiting -> world
                                 | Exiting -> world
