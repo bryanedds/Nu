@@ -13,8 +13,7 @@ module WorldPhysicsModule =
     /// The subsystem for the world's physics system.
     type [<ReferenceEquality>] PhysicsEngineSubsystem =
         private
-            { SubsystemOrder : single
-              PhysicsEngine : PhysicsEngine }
+            { PhysicsEngine : PhysicsEngine }
 
         static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
             let transform = entity.GetTransform world
@@ -58,8 +57,6 @@ module WorldPhysicsModule =
         member this.IsBodyOnGround physicsId = this.PhysicsEngine.IsBodyOnGround physicsId
 
         interface World Subsystem with
-            member this.SubsystemType = UpdateType
-            member this.SubsystemOrder = this.SubsystemOrder
             member this.ClearMessages () = { this with PhysicsEngine = this.PhysicsEngine.ClearMessages () } :> World Subsystem
             member this.EnqueueMessage message = { this with PhysicsEngine = this.PhysicsEngine.EnqueueMessage (message :?> PhysicsMessage) } :> World Subsystem
 
@@ -74,9 +71,8 @@ module WorldPhysicsModule =
 
             member this.CleanUp world = (this :> World Subsystem, world)
 
-        static member make subsystemOrder physicsEngine =
-            { SubsystemOrder = subsystemOrder
-              PhysicsEngine = physicsEngine }
+        static member make physicsEngine =
+            { PhysicsEngine = physicsEngine }
 
     type World with
 

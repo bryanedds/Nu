@@ -426,41 +426,9 @@ module WorldModule2 =
             let entities = World.getEntities1 world
             Seq.fold (fun world (entity : Entity) -> entity.PropagatePhysics world) world entities
 
-        static member private processSubsystems subsystemType world =
-#if SINGLE_THREADED
-            World.getSubsystemMap world |>
-            UMap.toSeq |>
-            Array.ofSeq |>
-            Array.filter (fun (_, subsystem) -> Subsystem.subsystemType subsystem = subsystemType) |>
-            Array.sortBy (fun (_, subsystem) -> Subsystem.subsystemOrder subsystem) |>
-            Array.fold (fun world (subsystemName, subsystem) ->
-                let (subsystemResult, subsystem) = Subsystem.processMessages subsystem world
-                let world = Subsystem.applyResult subsystemResult subsystem world
-                World.addSubsystem subsystemName subsystem world)
-                world
-#else
-            World.getSubsystemMap world |>
-            UMap.toSeq |>
-            Array.ofSeq |>
-            Array.filter (fun (_, subsystem) -> Subsystem.subsystemType subsystem = subsystemType) |>
-            Array.sortBy (fun (_, subsystem) -> Subsystem.subsystemOrder subsystem) |>
-            Array.map (fun (subsystemName, subsystem) ->
-                Task.Run (fun () ->
-                    let (subsystemResult, subsystem) = Subsystem.processMessages subsystem world
-                    (subsystemName, subsystemResult, subsystem))) |>
-            Array.map Async.AwaitTask |>
-            Async.Parallel |>
-            Async.RunSynchronously |>
-            Array.fold (fun world (subsystemName, subsystemResult, subsystem) ->
-                let world = Subsystem.applyResult subsystemResult subsystem world
-                World.addSubsystem subsystemName subsystem world)
-                world
-#endif
-
         static member private cleanUpSubsystems world =
             World.getSubsystemMap world |>
             UMap.toSeq |>
-            Seq.sortBy (fun (_, subsystem) -> Subsystem.subsystemOrder subsystem) |>
             Seq.fold (fun world (subsystemName, subsystem) ->
                 let (subsystem, world) = Subsystem.cleanUp subsystem world
                 World.addSubsystem subsystemName subsystem world)
@@ -483,7 +451,7 @@ module WorldModule2 =
             World.restoreTasklets taskletsNotRun world
 
         /// Process an input event from SDL and ultimately publish any related game events.
-        static member private processInput (evt : SDL.SDL_Event) world =
+        static member private processInput2 (evt : SDL.SDL_Event) world =
             let world =
                 match evt.``type`` with
                 | SDL.SDL_EventType.SDL_QUIT ->
@@ -741,80 +709,112 @@ module WorldModule2 =
             // fin
             world
 
-        static member private processUpdate handleUpdate world =
-            let world = handleUpdate world
-            match World.getLiveness world with
-            | Running ->
-                let world = World.processSubsystems UpdateType world
-                match World.getLiveness world with
-                | Running ->
-                    let world = World.updateSimulants world
-                    match World.getLiveness world with
-                    | Running ->
-                        let world = World.processTasklets world
-                        match World.getLiveness world with
-                        | Running ->
-                            let world = World.actualizeSimulants world
-                            (World.getLiveness world, world)
-                        | Exiting -> (Exiting, world)
-                    | Exiting -> (Exiting, world)
-                | Exiting -> (Exiting, world)
-            | Exiting -> (Exiting, world)
-
-        static member private processRender handleRender world =
-            let world = World.processSubsystems RenderType world
-            handleRender world
-
-        static member private processPlay world =
-            let world = World.processSubsystems AudioType world
-            let world = World.updateTickTime world
-            World.incrementUpdateCount world
+        static member private processInput world =
+            if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
+                let mutable result = (Running, world)
+                let polledEvent = ref (SDL.SDL_Event ())
+                while
+                    SDL.SDL_PollEvent polledEvent <> 0 &&
+                    (match fst result with Running -> true | Exiting -> false) do
+                    result <- World.processInput2 !polledEvent (snd result)
+                result
+            else (Exiting, world)
 
         static member private cleanUp world =
             let world = World.unregisterGame world
             World.cleanUpSubsystems world |> ignore
 
-        /// Run the game without cleaning up the world's resources.
-        static member runWithoutCleanUp runWhile handleUpdate handleRender sdlDeps liveness world =
-            Sdl.runWithoutCleanUp 
-                runWhile
-                World.processInput
-                (World.processUpdate handleUpdate)
-                (World.processRender handleRender)
-                World.processPlay
-                sdlDeps
-                liveness
-                world
+        /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
+        static member runWithoutCleanUp runWhile pre post sdlDeps liveness world =
+            if runWhile world then
 
-        /// Run the world's game while runWhile succeeds.
-        static member run6 runWhile handleUpdate handleRender sdlDeps liveness world =
-            Sdl.run9
-                runWhile
-                World.processInput
-                (World.processUpdate handleUpdate)
-                (World.processRender handleRender)
-                World.processPlay
-                World.choose
-                World.cleanUp
-                sdlDeps
-                liveness
-                world
+                match (SdlDeps.getRenderContextOpt sdlDeps, SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u) with
+                | (Some renderContext, true) ->
 
-        /// Run the world's game while runWhile succeeds.
+                    let physicsSubsystem = World.getSubsystem Constants.Engine.PhysicsEngineSubsystemName world
+                    let rendererSubsystem = World.getSubsystem Constants.Engine.RendererSubsystemName world
+                    let audioPlayerSubsystem = World.getSubsystem Constants.Engine.AudioPlayerSubsystemName world
+
+                    let physicsTask = Task.Factory.StartNew (fun () ->
+                        Subsystem.processMessages physicsSubsystem world)
+
+                    let rendererTask = Task.Factory.StartNew (fun () ->
+                        match Constants.Render.ScreenClearing with
+                        | NoClear -> ()
+                        | ColorClear (r, g, b) ->
+                            SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
+                            SDL.SDL_RenderClear renderContext |> ignore
+                        let result = Subsystem.processMessages rendererSubsystem world
+                        SDL.SDL_RenderPresent renderContext
+                        result)
+
+                    let audioPlayerTask = Task.Factory.StartNew (fun () ->
+                        Subsystem.processMessages audioPlayerSubsystem world)
+                    
+                    let world = pre world
+
+                    match liveness with
+                    | Running ->
+                        let (liveness, world) = World.processInput world
+                        match liveness with
+                        | Running ->
+                            let world = World.updateSimulants world
+                            match World.getLiveness world with
+                            | Running ->
+                                let world = World.processTasklets world
+                                match World.getLiveness world with
+                                | Running ->
+                                    let world = World.actualizeSimulants world
+                                    match World.getLiveness world with
+                                    | Running ->
+                        
+                                        let world =
+                                        
+                                            let (physicsResults, physicsSubsystem) = physicsTask |> Async.AwaitTask |> Async.RunSynchronously
+                                            let world = Subsystem.applyResult physicsResults physicsSubsystem world
+                                            let world = World.addSubsystem Constants.Engine.PhysicsEngineSubsystemName physicsSubsystem world
+
+                                            let (rendererResults, rendererSubsystem) = rendererTask |> Async.AwaitTask |> Async.RunSynchronously
+                                            let world = Subsystem.applyResult rendererResults rendererSubsystem world
+                                            let world = World.addSubsystem Constants.Engine.RendererSubsystemName rendererSubsystem world
+
+                                            let (audioPlayerResults, audioPlayerSubsystem) = audioPlayerTask |> Async.AwaitTask |> Async.RunSynchronously
+                                            let world = Subsystem.applyResult audioPlayerResults audioPlayerSubsystem world
+                                            World.addSubsystem Constants.Engine.AudioPlayerSubsystemName audioPlayerSubsystem world
+
+                                        let world = post world
+                                        let world = World.updateTickTime world
+                                        let world = World.incrementUpdateCount world
+                                        World.runWithoutCleanUp runWhile pre post sdlDeps liveness world
+
+                                    | Exiting -> world
+                                | Exiting -> world
+                            | Exiting -> world
+                        | Exiting -> world
+                    | Exiting -> world
+                | _ -> world
+            else world
+
+        /// Run the game engine with the given handlers.
         static member run4 runWhile sdlDeps liveness world =
-            World.run6 runWhile id id sdlDeps liveness world
+            try let world = World.runWithoutCleanUp runWhile id id sdlDeps liveness world
+                World.cleanUp world
+                Constants.Engine.SuccessExitCode
+            with exn ->
+                let world = World.choose world
+                Log.trace (scstring exn)
+                World.cleanUp world
+                Constants.Engine.FailureExitCode
 
-        /// Run the world's game unto conclusion.
-        static member run attemptMakeWorld handleUpdate handleRender sdlConfig =
-            Sdl.run
-                attemptMakeWorld
-                World.processInput
-                (World.processUpdate handleUpdate)
-                (World.processRender handleRender)
-                World.processPlay
-                World.choose
-                World.cleanUp
-                sdlConfig
+        /// Run the game engine with the given handlers.
+        static member run handleAttemptMakeWorld sdlConfig =
+            match SdlDeps.attemptMake sdlConfig with
+            | Right sdlDeps ->
+                use sdlDeps = sdlDeps // bind explicitly to dispose automatically
+                match handleAttemptMakeWorld sdlDeps with
+                | Right world -> World.run4 tautology sdlDeps Running world
+                | Left error -> Log.trace error; Constants.Engine.FailureExitCode
+            | Left error -> Log.trace error; Constants.Engine.FailureExitCode
 
 [<AutoOpen>]
 module GameDispatcherModule =

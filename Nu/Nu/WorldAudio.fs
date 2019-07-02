@@ -12,21 +12,17 @@ module WorldAudioModule =
     /// The subsystem for the world's audio player.
     type [<ReferenceEquality>] AudioPlayerSubsystem =
         private
-            { SubsystemOrder : single
-              AudioPlayer : IAudioPlayer }
+            { AudioPlayer : IAudioPlayer }
     
         interface World Subsystem with
-            member this.SubsystemType = AudioType
-            member this.SubsystemOrder = this.SubsystemOrder
             member this.ClearMessages () = { this with AudioPlayer = AudioPlayer.clearMessages this.AudioPlayer } :> World Subsystem
             member this.EnqueueMessage message = { this with AudioPlayer = AudioPlayer.enqueueMessage (message :?> AudioMessage) this.AudioPlayer } :> World Subsystem
             member this.ProcessMessages _ = (() :> obj, { this with AudioPlayer = AudioPlayer.play this.AudioPlayer } :> World Subsystem)
             member this.ApplyResult (_, world) = world
             member this.CleanUp world = (this :> World Subsystem, world)
 
-        static member make subsystemOrder audioPlayer =
-            { SubsystemOrder = subsystemOrder
-              AudioPlayer = audioPlayer }
+        static member make audioPlayer =
+            { AudioPlayer = audioPlayer }
 
     type World with
 
