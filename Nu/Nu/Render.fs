@@ -137,11 +137,10 @@ type [<ReferenceEquality>] SdlRenderer =
 
     static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
         let depthCompare = left.Depth.CompareTo right.Depth
+        if depthCompare <> 0 then depthCompare else
         let packageCompare = String.CompareOrdinal (left.AssetTag.PackageName, right.AssetTag.PackageName)
-        let assetCompare = String.CompareOrdinal (left.AssetTag.AssetName, right.AssetTag.AssetName)
-        if depthCompare <> 0 then depthCompare
-        elif packageCompare <> 0 then packageCompare
-        else assetCompare
+        if packageCompare <> 0 then packageCompare else
+        String.CompareOrdinal (left.AssetTag.AssetName, right.AssetTag.AssetName)
 
     static member private freeRenderAsset renderAsset =
         match renderAsset with
