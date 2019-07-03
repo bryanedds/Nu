@@ -136,13 +136,12 @@ type [<ReferenceEquality>] SdlRenderer =
           RenderDescriptors : RenderDescriptor List }
 
     static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
-        if left.Depth < right.Depth then -1
-        elif left.Depth > right.Depth then 1
-        elif left.AssetTag.PackageName < right.AssetTag.PackageName then -1
-        elif left.AssetTag.PackageName > right.AssetTag.PackageName then 1
-        elif left.AssetTag.AssetName < right.AssetTag.AssetName then -1
-        elif left.AssetTag.AssetName > right.AssetTag.AssetName then 1
-        else 0
+        let depthCompare = left.Depth.CompareTo right.Depth
+        let packageCompare = String.CompareOrdinal (left.AssetTag.PackageName, right.AssetTag.PackageName)
+        let assetCompare = String.CompareOrdinal (left.AssetTag.AssetName, right.AssetTag.AssetName)
+        if depthCompare <> 0 then depthCompare
+        elif packageCompare <> 0 then packageCompare
+        else assetCompare
 
     static member private freeRenderAsset renderAsset =
         match renderAsset with
