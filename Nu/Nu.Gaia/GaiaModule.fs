@@ -927,9 +927,8 @@ module Gaia =
             match Globals.PastWorlds with
             | [] -> world
             | pastWorld :: pastWorlds ->
-                let futureWorld = world
-                let world = World.choose pastWorld
-                let world = World.continueHack world
+                let futureWorld = World.freeze world
+                let world = World.thaw pastWorld
                 Globals.PastWorlds <- pastWorlds
                 Globals.FutureWorlds <- futureWorld :: Globals.FutureWorlds
                 let world = World.setTickRate 0L world
@@ -941,9 +940,8 @@ module Gaia =
             match Globals.FutureWorlds with
             | [] -> world
             | futureWorld :: futureWorlds ->
-                let pastWorld = world
-                let world = World.choose futureWorld
-                let world = World.continueHack world
+                let pastWorld = World.freeze world
+                let world = World.thaw futureWorld
                 Globals.PastWorlds <- pastWorld :: Globals.PastWorlds
                 Globals.FutureWorlds <- futureWorlds
                 let world = World.setTickRate 0L world
