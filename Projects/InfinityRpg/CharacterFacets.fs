@@ -100,6 +100,7 @@ module CharacterAnimationFacetModule =
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
                             { Depth = entity.GetDepth world
+                              AssetTag = entity.GetCharacterAnimationSheet world
                               PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor

@@ -656,6 +656,7 @@ module WorldModule2 =
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
                             { Depth = Single.MaxValue
+                              AssetTag = dissolveImage
                               PositionY = position.Y
                               LayeredDescriptor =
                                 SpriteDescriptor

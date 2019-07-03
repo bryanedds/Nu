@@ -376,6 +376,7 @@ module TextFacetModule =
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
                             { Depth = text.GetDepthLayered world
+                              AssetTag = text.GetFont world
                               PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
                                 TextDescriptor
@@ -705,6 +706,7 @@ module StaticSpriteFacetModule =
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
                             { Depth = entity.GetDepthLayered world
+                              AssetTag = entity.GetStaticImage world
                               PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -775,6 +777,7 @@ module AnimatedSpriteFacetModule =
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
                             { Depth = entity.GetDepthLayered world
+                              AssetTag = entity.GetAnimationSheet world
                               PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -1059,10 +1062,12 @@ module ButtonDispatcherModule =
 
         override dispatcher.Actualize (button, world) =
             if button.GetVisibleLayered world then
+                let image = if button.GetDown world then button.GetDownImage world else button.GetUpImage world
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
                             { Depth = button.GetDepthLayered world
+                              AssetTag = image
                               PositionY = (button.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -1072,7 +1077,7 @@ module ButtonDispatcherModule =
                                       Offset = Vector2.Zero
                                       ViewType = Absolute
                                       InsetOpt = None
-                                      Image = if button.GetDown world then button.GetDownImage world else button.GetUpImage world
+                                      Image = image
                                       Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world }}|])
                     world
             else world
@@ -1105,6 +1110,7 @@ module LabelDispatcherModule =
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
                             { Depth = label.GetDepthLayered world
+                              AssetTag = label.GetLabelImage world
                               PositionY = (label.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -1150,6 +1156,7 @@ module TextDispatcherModule =
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
                             { Depth = text.GetDepthLayered world
+                              AssetTag = text.GetBackgroundImage world
                               PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -1254,10 +1261,15 @@ module ToggleDispatcherModule =
 
         override dispatcher.Actualize (toggle, world) =
             if toggle.GetVisibleLayered world then
+                let image =
+                    if toggle.GetOpen world && not (toggle.GetPressed world)
+                    then toggle.GetOpenImage world
+                    else toggle.GetClosedImage world
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
                             { Depth = toggle.GetDepthLayered world
+                              AssetTag = image
                               PositionY = (toggle.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -1267,7 +1279,7 @@ module ToggleDispatcherModule =
                                       Offset = Vector2.Zero
                                       ViewType = Absolute
                                       InsetOpt = None
-                                      Image = if toggle.GetOpen world && not (toggle.GetPressed world) then toggle.GetOpenImage world else toggle.GetClosedImage world
+                                      Image = image
                                       Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world }}|])
                     world
             else world
@@ -1388,6 +1400,7 @@ module FillBarDispatcherModule =
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
                             { Depth = fillBar.GetDepthLayered world
+                              AssetTag = fillBar.GetBorderImage world
                               PositionY = (fillBar.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -1401,6 +1414,7 @@ module FillBarDispatcherModule =
                                       Color = fillBarColor }}
                           LayerableDescriptor
                             { Depth = fillBar.GetDepthLayered world
+                              AssetTag = fillBar.GetFillImage world
                               PositionY = (fillBar.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -1544,6 +1558,7 @@ module CharacterDispatcherModule =
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
                             { Depth = entity.GetDepthLayered world
+                              AssetTag = image
                               PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
                                 SpriteDescriptor
@@ -1736,11 +1751,13 @@ module TileMapDispatcherModule =
                                 | Relative -> tileMap.GetParallax world * depth * -World.getEyeCenter world
                             let parallaxPosition = tileMap.GetPosition world + parallaxTranslation
                             let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
+                            let image = List.head images // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                             if World.isBoundsInView viewType (Math.makeBounds parallaxPosition size) world then
                                 World.enqueueRenderMessage
                                     (RenderDescriptorsMessage
                                         [|LayerableDescriptor 
                                             { Depth = depth
+                                              AssetTag = image
                                               PositionY = (tileMap.GetPosition world).Y
                                               LayeredDescriptor =
                                                 TileLayerDescriptor
@@ -1753,7 +1770,7 @@ module TileMapDispatcherModule =
                                                       TileSourceSize = tileSourceSize
                                                       TileSize = tileSize
                                                       TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                                      TileSetImage = List.head images }}|]) // MAGIC_VALUE: for same reason as above
+                                                      TileSetImage = image }}|])
                                     world
                             else world)
                         world

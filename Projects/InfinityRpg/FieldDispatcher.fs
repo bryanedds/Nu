@@ -38,15 +38,19 @@ module FieldDispatcherModule =
              define Entity.FieldMapNp DefaultFieldMap]
 
         override dispatcher.Actualize (field, world) =
+
             let viewType =
                 field.GetViewType world
+
             let bounds =
                 Math.makeBoundsOverflow
                     (field.GetPosition world)
                     (Vector2.Multiply (Constants.Layout.TileSize, Constants.Layout.TileSheetSize))
                     (field.GetOverflow world)
+
             if World.isBoundsInView viewType bounds world then
                 let fieldMap = field.GetFieldMapNp world
+                let image = fieldMap.FieldTileSheet
                 let sprites =
                     Map.foldBack
                         (fun tilePositionM tile sprites ->
@@ -59,7 +63,7 @@ module FieldDispatcherModule =
                                   Offset = Vector2.Zero
                                   ViewType = Relative // NOTE: ViewType assumed relative
                                   InsetOpt = tileInsetOpt
-                                  Image = fieldMap.FieldTileSheet
+                                  Image = image
                                   Color = Vector4.One }
                             sprite :: sprites)
                         fieldMap.FieldTiles [] |>
@@ -69,8 +73,10 @@ module FieldDispatcherModule =
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
                             { Depth = field.GetDepth world
+                              AssetTag = image
                               PositionY = (field.GetPosition world).Y
                               LayeredDescriptor = SpritesDescriptor sprites }|])
+
                     world
             else world
 
