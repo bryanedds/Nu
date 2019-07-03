@@ -41,5 +41,6 @@ module Globals =
     let WorldChangers = WorldChangers ()
 
     let pushPastWorld pastWorld =
+        let pastWorld = Nu.World.freeze pastWorld
         PastWorlds <- pastWorld :: PastWorlds
         FutureWorlds <- []

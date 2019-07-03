@@ -410,22 +410,35 @@ module WorldModule2 =
                 | Left error -> (Left error, world)
             with exn -> (Left (scstring exn), World.choose world)
 
-        /// A hack for the physics subsystem that allows an old world value to displace the current
-        /// one and have its physics values propagated to the imperative physics subsystem.
-        static member continueHack world =
-            // NOTE: because there is an optimization that makes event context mutable, operations
+        static member clearMessages world =
+             let world = World.updatePhysicsEngine Subsystem.clearMessages world
+             let world = World.updateRenderer Subsystem.clearMessages world
+             let world = World.updateAudioPlayer Subsystem.clearMessages world
+             world
+        
+        static member freeze world =
+            // not sure if we really want to also clear physics messages here - we didn't
+            // used to
+            World.clearMessages world
+
+        static member thaw world =
+
+            // because there is an optimization that makes event context mutable, operations
             // on the exist current world may affect past and future ones if the containing event
             // world incidentally isn't copied. Therefore, we restore the initial event context
             // here.
             World.continueEventSystemHack world
-            // NOTE: since messages may be invalid upon continuing a world (especially physics
-            // messages), all messages are eliminated. If this poses an issue, the editor will have
-            // to instead store past / future worlds only once their current frame has been
-            // processed.
-            //let world = World.clearSubsystemsMessages world
+
+            // clear existing physics messages
+            let world = World.updatePhysicsEngine Subsystem.clearMessages world
+
+            // rebuild physics state
             let world = World.enqueuePhysicsMessage RebuildPhysicsHackMessage world
+
+            // propagate current physics state
             let entities = World.getEntities1 world
-            Seq.fold (fun world (entity : Entity) -> entity.PropagatePhysics world) world entities
+            let world = Seq.fold (fun world (entity : Entity) -> entity.PropagatePhysics world) world entities
+            world
 
         static member private processTasklet (taskletsNotRun, world) tasklet =
             let tickTime = World.getTickTime world
