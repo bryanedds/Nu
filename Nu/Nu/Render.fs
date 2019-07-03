@@ -78,6 +78,7 @@ type [<Struct; StructuralEquality; NoComparison>] LayeredDescriptor =
 /// Describes how to render a layerable 'thing' to the rendering system.
 type [<Struct; StructuralEquality; NoComparison>] LayerableDescriptor =
     { Depth : single
+      AssetTag : AssetTag
       PositionY : single
       LayeredDescriptor : LayeredDescriptor }
 
@@ -137,6 +138,10 @@ type [<ReferenceEquality>] SdlRenderer =
     static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
         if left.Depth < right.Depth then -1
         elif left.Depth > right.Depth then 1
+        elif left.AssetTag.PackageName < right.AssetTag.PackageName then -1
+        elif left.AssetTag.PackageName > right.AssetTag.PackageName then 1
+        elif left.AssetTag.AssetName < right.AssetTag.AssetName then -1
+        elif left.AssetTag.AssetName > right.AssetTag.AssetName then 1
         else 0
 
     static member private freeRenderAsset renderAsset =
