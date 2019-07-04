@@ -375,7 +375,7 @@ module TextFacetModule =
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
-                            { Depth = text.GetDepthLayered world
+                            { Depth = text.GetDepthLayered world + 1.0f
                               AssetTag = text.GetFont world
                               PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
