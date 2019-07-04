@@ -671,7 +671,12 @@ module WorldTypes =
         /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property entityState =
             match Xtension.trySetProperty propertyName property entityState.Xtension with
-            | (true, xtension) -> (true, { entityState with Xtension = xtension })
+            | (true, xtension) ->
+                let entityState =
+                    if not (Xtension.getImperative xtension)
+                    then { entityState with Xtension = xtension }
+                    else entityState
+                (true, entityState)
             | (false, _) -> (false, entityState)
 
         /// Set an xtension property with explicit type information.

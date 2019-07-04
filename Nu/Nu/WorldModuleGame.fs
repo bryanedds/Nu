@@ -51,7 +51,6 @@ module WorldModuleGame =
         static member internal getGameId world = (World.getGameState world).Id
         static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
         static member internal getGameCreationTimeStamp world = (World.getGameState world).CreationTimeStamp
-        static member internal getGameImperative world = Xtension.getImperative (World.getGameState world).Xtension
         static member internal getGameScriptOpt world = (World.getGameState world).ScriptOpt
         static member internal setGameScriptOpt value world = World.updateGameState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt world
         static member internal getGameScript world = (World.getGameState world).Script
@@ -339,7 +338,6 @@ module WorldModuleGame =
         Getters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
         Getters.Add ("Dispatcher", fun world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher world })
         Getters.Add ("CreationTimeStamp", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStamp world })
-        Getters.Add ("Imperative", fun world -> { PropertyType = typeof<bool>; PropertyValue = World.getGameImperative world })
         Getters.Add ("ScriptOpt", fun world -> { PropertyType = typeof<Symbol AssetTag option>; PropertyValue = World.getGameScriptOpt world })
         Getters.Add ("Script", fun world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getGameScript world })
         Getters.Add ("ScriptUnsubscriptions", fun world -> { PropertyType = typeof<Unsubscription list>; PropertyValue = World.getGameScriptUnsubscriptions world })

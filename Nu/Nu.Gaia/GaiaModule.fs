@@ -276,6 +276,7 @@ module Gaia =
             match tryMousePick mousePosition form world with
             | (Some entity, world) ->
                 Globals.pushPastWorld world
+                let world = if entity.GetImperative world then World.divergeEntity entity world else world
                 let world =
                     World.updateUserValue (fun editorState ->
                         let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
@@ -1007,8 +1008,9 @@ module Gaia =
             match form.entityPropertyGrid.SelectedObject with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
-                Globals.pushPastWorld world
                 let entity = entityTds.DescribedEntity
+                Globals.pushPastWorld world
+                let world = if entity.GetImperative world then World.divergeEntity entity world else world
                 let world = entity.SetSize (entity.GetQuickSize world) world
                 let world = entity.PropagatePhysics world
                 Globals.World <- world // must be set for property grid

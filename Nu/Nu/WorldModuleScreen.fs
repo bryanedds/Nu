@@ -114,7 +114,6 @@ module WorldModuleScreen =
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent screen world
         static member internal getScreenCreationTimeStamp screen world = (World.getScreenState screen world).CreationTimeStamp
-        static member internal getScreenImperative screen world = Xtension.getImperative (World.getScreenState screen world).Xtension
         static member internal getScreenScriptOpt screen world = (World.getScreenState screen world).ScriptOpt
         static member internal setScreenScriptOpt value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptOpt = value }) Property? ScriptOpt screen world
         static member internal getScreenScript screen world = (World.getScreenState screen world).Script
@@ -333,7 +332,6 @@ module WorldModuleScreen =
         Getters.Add ("Dispatcher", fun screen world -> { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcher screen world })
         Getters.Add ("Persistent", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world })
         Getters.Add ("CreationTimeStamp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStamp screen world })
-        Getters.Add ("Imperative", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenImperative screen world })
         Getters.Add ("ScriptOpt", fun screen world -> { PropertyType = typeof<Symbol AssetTag option>; PropertyValue = World.getScreenScriptOpt screen world })
         Getters.Add ("Script", fun screen world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getScreenScript screen world })
         Getters.Add ("ScriptFrame", fun screen world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrame screen world })
