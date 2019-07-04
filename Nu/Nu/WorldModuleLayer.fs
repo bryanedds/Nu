@@ -129,7 +129,6 @@ module WorldModuleLayer =
         static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
         static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> { layerState with Persistent = value }) Property? Persistent layer world
         static member internal getLayerCreationTimeStamp layer world = (World.getLayerState layer world).CreationTimeStamp
-        static member internal getLayerImperative layer world = Xtension.getImperative (World.getLayerState layer world).Xtension
         static member internal getLayerScriptOpt layer world = (World.getLayerState layer world).ScriptOpt
         static member internal setLayerScriptOpt value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptOpt = value }) Property? ScriptOpt layer world
         static member internal getLayerScript layer world = (World.getLayerState layer world).Script
@@ -360,7 +359,6 @@ module WorldModuleLayer =
         Getters.Add ("Dispatcher", fun layer world -> { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcher layer world })
         Getters.Add ("Persistent", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world })
         Getters.Add ("CreationTimeStamp", fun layer world -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStamp layer world })
-        Getters.Add ("Imperative", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerImperative layer world })
         Getters.Add ("ScriptOpt", fun layer world -> { PropertyType = typeof<Symbol AssetTag option>; PropertyValue = World.getLayerScriptOpt layer world })
         Getters.Add ("Script", fun layer world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getLayerScript layer world })
         Getters.Add ("ScriptFrame", fun layer world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScript layer world })

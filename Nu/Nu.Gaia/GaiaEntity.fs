@@ -87,13 +87,16 @@ and EntityPropertyDescriptor (property, attributes) =
 
             // make property change undo-able
             Globals.pushPastWorld world
+            let entity = entityTds.DescribedEntity
+            let world = if entity.GetImperative world then World.divergeEntity entity world else world
+
+            // change property
             match propertyName with
             
             // change the name property
             | "Name" ->
                 let name = value :?> string
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
-                    let entity = entityTds.DescribedEntity
                     let world = World.reassignEntity entity (Some name) (etol entity) world
                     Globals.World <- world // must be set for property grid
                     world
@@ -108,7 +111,6 @@ and EntityPropertyDescriptor (property, attributes) =
             // change facet names
             | "FacetNames" ->
                 let facetNames = value :?> string Set
-                let entity = entityTds.DescribedEntity
                 let world =
                     match World.trySetEntityFacetNames facetNames entity world with
                     | (Right (), world) -> world
@@ -119,7 +121,6 @@ and EntityPropertyDescriptor (property, attributes) =
 
             // change the property dynamically
             | _ ->
-                let entity = entityTds.DescribedEntity
                 let world =
                     match propertyName with
                     | "OverlayNameOpt" ->

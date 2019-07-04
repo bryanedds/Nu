@@ -577,6 +577,11 @@ module WorldModuleEntity =
             let world = World.updateEntityPublishPostUpdateFlag entity world
             world
 
+        static member divergeEntity entity world =
+            World.getEntityState entity world |>
+            EntityState.copy |>
+            flip3 World.setEntityState entity world
+
         static member internal registerEntity entity world =
             World.withEventContext (fun world ->
                 let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
