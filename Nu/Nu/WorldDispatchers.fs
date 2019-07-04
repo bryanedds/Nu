@@ -375,7 +375,7 @@ module TextFacetModule =
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
-                            { Depth = text.GetDepthLayered world + 1.0f
+                            { Depth = text.GetDepthLayered world + 0.5f
                               AssetTag = text.GetFont world
                               PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
@@ -1245,6 +1245,9 @@ module ToggleDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
+        static member FacetNames =
+            [typeof<TextFacet>.Name]
+
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
@@ -1400,7 +1403,7 @@ module FillBarDispatcherModule =
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
-                            { Depth = fillBar.GetDepthLayered world
+                            { Depth = fillBar.GetDepthLayered world + 0.5f
                               AssetTag = fillBar.GetBorderImage world
                               PositionY = (fillBar.GetPosition world).Y
                               LayeredDescriptor =
