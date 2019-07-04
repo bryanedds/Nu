@@ -880,7 +880,8 @@ module EffectDispatcherModule =
             [typeof<EffectFacet>.Name]
 
         static member Properties =
-            [define Entity.Effect (scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
+            [define Entity.PublishChanges true
+             define Entity.Effect (scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
 [<AutoOpen>]
 module NodeDispatcherModule =

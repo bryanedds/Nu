@@ -57,9 +57,8 @@ module Constants =
         let [<Literal>] DefaultResolutionX = 960
         let [<Literal>] DefaultResolutionY = 544
         let (*Literal*) DefaultRendererFlags =
-            enum<SDL.SDL_RendererFlags>
-                (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
-                 int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
+            SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
+            SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC
         let (*Literal*) ResolutionX = Core.getResolutionOrDefault true DefaultResolutionX
         let (*Literal*) ResolutionY = Core.getResolutionOrDefault false DefaultResolutionY
         let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy)
