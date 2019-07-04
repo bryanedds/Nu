@@ -77,6 +77,7 @@ and EntityPropertyDescriptor (property, attributes) =
         
         // grab the type descriptor and assign the value
         let entityTds = source :?> EntityTypeDescriptorSource
+        let entity = entityTds.DescribedEntity
         let changer = (fun world ->
 
             // pull string quotes out of string
@@ -87,7 +88,6 @@ and EntityPropertyDescriptor (property, attributes) =
 
             // make property change undo-able
             Globals.pushPastWorld world
-            let entity = entityTds.DescribedEntity
             let world = if entity.GetImperative world then World.divergeEntity entity world else world
 
             // change property
@@ -131,7 +131,7 @@ and EntityPropertyDescriptor (property, attributes) =
                         let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
                         let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                         EntityPropertyValue.trySetValue alwaysPublish nonPersistent property value entity world |> snd
-                let world = entityTds.DescribedEntity.PropagatePhysics world
+                let world = entity.PropagatePhysics world
                 Globals.World <- world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
                 world)
