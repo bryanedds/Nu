@@ -101,8 +101,8 @@
     <Reference Include="Prime">
       <HintPath>..\..\packages\Prime.3.5.7\lib\net46\Prime.exe</HintPath>
     </Reference>
-    <Reference Include="SDL2#">
-      <HintPath>..\Nu.Dependencies\SDL2#\Release\SDL2#.dll</HintPath>
+    <Reference Include="SDL2-CS">
+      <HintPath>..\Nu.Dependencies\SDL2-CS\Release\SDL2-CS.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

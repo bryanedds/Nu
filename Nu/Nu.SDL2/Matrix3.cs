@@ -1,4 +1,4 @@
-﻿#region --- License ---
+#region --- License ---
 /*
 Copyright (c) 2006 - 2008 The Open Toolkit library.
 
@@ -226,6 +226,31 @@ namespace OpenTK
         
         #endregion
 
+        #region Indexers
+
+        /// <summary>
+        /// Gets or sets the value at a specified row and column.
+        /// </summary>
+        public float this[int rowIndex, int columnIndex]
+        {
+            get
+            {
+                if (rowIndex == 0) return Row0[columnIndex];
+                else if (rowIndex == 1) return Row1[columnIndex];
+                else if (rowIndex == 2) return Row2[columnIndex];
+                throw new IndexOutOfRangeException("You tried to access this matrix at: (" + rowIndex + ", " + columnIndex + ")");
+            }
+            set
+            {
+                if (rowIndex == 0) Row0[columnIndex] = value;
+                else if (rowIndex == 1) Row1[columnIndex] = value;
+                else if (rowIndex == 2) Row2[columnIndex] = value;
+                else throw new IndexOutOfRangeException("You tried to set this matrix at: (" + rowIndex + ", " + columnIndex + ")");
+            }
+        }
+
+        #endregion
+
         #region Instance
 
         #region public void Invert()
@@ -285,6 +310,17 @@ namespace OpenTK
         }
 
         /// <summary>
+        /// Returns a copy of this Matrix3 without scale.
+        /// </summary>
+        public Matrix3 ClearScale()
+        {
+            Matrix3 m = this;
+            m.Row0 = m.Row0.Normalized();
+            m.Row1 = m.Row1.Normalized();
+            m.Row2 = m.Row2.Normalized();
+            return m;
+        }
+        /// <summary>
         /// Returns a copy of this Matrix3 without rotation.
         /// </summary>
         public Matrix3 ClearRotation()
@@ -300,6 +336,73 @@ namespace OpenTK
         /// Returns the scale component of this instance.
         /// </summary>
         public Vector3 ExtractScale() { return new Vector3(Row0.Length, Row1.Length, Row2.Length); }
+
+        /// <summary>
+        /// Returns the rotation component of this instance. Quite slow.
+        /// </summary>
+        /// <param name="row_normalise">Whether the method should row-normalise (i.e. remove scale from) the Matrix. Pass false if you know it's already normalised.</param>
+        public Quaternion ExtractRotation(bool row_normalise = true)
+        {
+            var row0 = Row0;
+            var row1 = Row1;
+            var row2 = Row2;
+
+            if (row_normalise)
+            {
+                row0 = row0.Normalized();
+                row1 = row1.Normalized();
+                row2 = row2.Normalized();
+            }
+
+            // code below adapted from Blender
+
+            Quaternion q = new Quaternion();
+            double trace = 0.25 * (row0[0] + row1[1] + row2[2] + 1.0);
+
+            if (trace > 0)
+            {
+                double sq = Math.Sqrt(trace);
+
+                q.W = (float)sq;
+                sq = 1.0 / (4.0 * sq);
+                q.X = (float)((row1[2] - row2[1]) * sq);
+                q.Y = (float)((row2[0] - row0[2]) * sq);
+                q.Z = (float)((row0[1] - row1[0]) * sq);
+            }
+            else if (row0[0] > row1[1] && row0[0] > row2[2])
+            {
+                double sq = 2.0 * Math.Sqrt(1.0 + row0[0] - row1[1] - row2[2]);
+
+                q.X = (float)(0.25 * sq);
+                sq = 1.0 / sq;
+                q.W = (float)((row2[1] - row1[2]) * sq);
+                q.Y = (float)((row1[0] + row0[1]) * sq);
+                q.Z = (float)((row2[0] + row0[2]) * sq);
+            }
+            else if (row1[1] > row2[2])
+            {
+                double sq = 2.0 * Math.Sqrt(1.0 + row1[1] - row0[0] - row2[2]);
+
+                q.Y = (float)(0.25 * sq);
+                sq = 1.0 / sq;
+                q.W = (float)((row2[0] - row0[2]) * sq);
+                q.X = (float)((row1[0] + row0[1]) * sq);
+                q.Z = (float)((row2[1] + row1[2]) * sq);
+            }
+            else
+            {
+                double sq = 2.0 * Math.Sqrt(1.0 + row2[2] - row0[0] - row1[1]);
+
+                q.Z = (float)(0.25 * sq);
+                sq = 1.0 / sq;
+                q.W = (float)((row1[0] - row0[1]) * sq);
+                q.X = (float)((row2[0] + row0[2]) * sq);
+                q.Y = (float)((row2[1] + row1[2]) * sq);
+            }
+
+            q.Normalize();
+            return q;
+        }
 
         #endregion
         
@@ -865,7 +968,7 @@ namespace OpenTK
                     Row1 == other.Row1 &&
                     Row2 == other.Row2;
         }
-        
+
         #endregion
 
         #region Bryan's additional Matrix3 operations
@@ -878,15 +981,15 @@ namespace OpenTK
             return m;
         }
 
-        public static Vector2 operator*(Vector2 v, Matrix3 m)
+        public static Vector2 operator *(Vector2 v, Matrix3 m)
         {
             var x = v.X * m.M11 + v.Y * m.M12 + m.M13;
             var y = v.X * m.M21 + v.Y * m.M22 + m.M23;
             var z = v.X * m.M31 + v.Y * m.M32 + m.M33;
-            return new Vector2 (x / z, y / z);
+            return new Vector2(x / z, y / z);
         }
 
-        public Matrix3 ExtractScaleMatrix ()
+        public Matrix3 ExtractScaleMatrix()
         {
             var scale = new Vector3(Row0.X, Row1.Y, Row2.Z);
             return Matrix3.CreateScale(scale);

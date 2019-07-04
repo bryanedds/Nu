@@ -110,11 +110,6 @@
       <Project>{85d631a5-821a-4755-a68e-c1ffc64e469a}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\..\Nu\Nu.SDL2\Nu.SDL2.csproj">
-      <Name>Nu.SDL2</Name>
-      <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <Reference Include="FarseerPhysics">
       <HintPath>..\..\Nu\Nu.Dependencies\Farseer\FarseerPhysics.dll</HintPath>
     </Reference>
@@ -146,12 +141,17 @@
     <Reference Include="Prime">
       <HintPath>..\..\packages\Prime.3.5.7\lib\net46\Prime.exe</HintPath>
     </Reference>
-    <Reference Include="SDL2#">
-      <HintPath>..\..\Nu\Nu.Dependencies\SDL2#\Release\SDL2#.dll</HintPath>
+    <Reference Include="SDL2-CS">
+      <HintPath>..\..\Nu\Nu.Dependencies\SDL2-CS\Release\SDL2-CS.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <ProjectReference Include="..\..\Nu\Nu.SDL2\Nu.Math.csproj">
+      <Name>Nu.Math</Name>
+      <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\..\Nu\Nu\Nu.fsproj">
       <Name>Nu</Name>
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
