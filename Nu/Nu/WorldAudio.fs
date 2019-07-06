@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open Prime
 open Nu
 
@@ -17,17 +18,18 @@ module WorldAudioModule =
         interface World Subsystem with
             
             member this.PopMessages () =
-                let (messages, audioPlayer) = this.AudioPlayer.PopMessages ()
-                (messages :> obj, { this with AudioPlayer = audioPlayer } :> World Subsystem)
+                (this.AudioPlayer.PopMessages () :> obj, this :> World Subsystem)
             
             member this.ClearMessages () =
-                { this with AudioPlayer = AudioPlayer.clearMessages this.AudioPlayer } :> World Subsystem
+                AudioPlayer.clearMessages this.AudioPlayer
+                this :> World Subsystem
             
             member this.EnqueueMessage message =
-                { this with AudioPlayer = AudioPlayer.enqueueMessage (message :?> AudioMessage) this.AudioPlayer } :> World Subsystem
+                AudioPlayer.enqueueMessage (message :?> AudioMessage) this.AudioPlayer
+                this :> World Subsystem
             
             member this.ProcessMessages messages _ =
-                let messages = messages :?> AudioMessage UList
+                let messages = messages :?> AudioMessage List
                 AudioPlayer.play messages this.AudioPlayer :> obj
             
             member this.ApplyResult (_, world) =

@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.IO
 open SDL2
 open Prime
@@ -40,13 +41,13 @@ type [<ReferenceEquality>] AudioAsset =
 /// The audio player. Represents the audio subsystem of Nu generally.
 type AudioPlayer =
     /// Pop all of the audio messages that have been enqueued.
-    abstract PopMessages : unit -> AudioMessage UList * AudioPlayer
+    abstract PopMessages : unit -> AudioMessage List
     /// Clear all of the audio messages that have been enqueued.
-    abstract ClearMessages : unit -> AudioPlayer
+    abstract ClearMessages : unit -> unit
     /// Enqueue a message from an external source.
-    abstract EnqueueMessage : AudioMessage -> AudioPlayer
+    abstract EnqueueMessage : AudioMessage -> unit
     /// 'Play' the audio system. Must be called once per frame.
-    abstract Play : AudioMessage UList -> unit
+    abstract Play : AudioMessage List -> unit
 
 /// The mock implementation of AudioPlayer.
 type [<ReferenceEquality>] MockAudioPlayer =
@@ -54,9 +55,9 @@ type [<ReferenceEquality>] MockAudioPlayer =
         { MockAudioPlayer : unit }
     
     interface AudioPlayer with
-        member audioPlayer.PopMessages () = (UList.makeEmpty Functional, audioPlayer :> AudioPlayer)
-        member audioPlayer.ClearMessages () = audioPlayer :> AudioPlayer
-        member audioPlayer.EnqueueMessage _ = audioPlayer :> AudioPlayer
+        member audioPlayer.PopMessages () = List ()
+        member audioPlayer.ClearMessages () = ()
+        member audioPlayer.EnqueueMessage _ = ()
         member audioPlayer.Play _ = ()
 
     static member make () =
@@ -67,7 +68,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
     private
         { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
           AudioPackages : AudioAsset Packages
-          AudioMessages : AudioMessage UList
+          mutable AudioMessages : AudioMessage List
           mutable CurrentSongOpt : PlaySongMessage option
           mutable NextPlaySongOpt : PlaySongMessage option }
 
@@ -234,7 +235,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         let audioPlayer =
             { AudioContext = ()
               AudioPackages = dictPlus []
-              AudioMessages = UList.makeEmpty Constants.Audio.MessageListConfig
+              AudioMessages = List ()
               CurrentSongOpt = None
               NextPlaySongOpt = None }
         audioPlayer
@@ -243,17 +244,14 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
         member audioPlayer.PopMessages () =
             let messages = audioPlayer.AudioMessages
-            let audioPlayer = { audioPlayer with AudioMessages = UList.makeEmpty (UList.getConfig audioPlayer.AudioMessages) }
-            (messages, audioPlayer :> AudioPlayer)
+            audioPlayer.AudioMessages <- List ()
+            messages
 
         member audioPlayer.ClearMessages () =
-            let audioPlayer = { audioPlayer with AudioMessages = UList.makeEmpty (UList.getConfig audioPlayer.AudioMessages) }
-            audioPlayer :> AudioPlayer
+            audioPlayer.AudioMessages <- List ()
 
         member audioPlayer.EnqueueMessage audioMessage =
-            let audioMessages = UList.add audioMessage audioPlayer.AudioMessages
-            let audioPlayer = { audioPlayer with AudioMessages = audioMessages }
-            audioPlayer :> AudioPlayer
+            audioPlayer.AudioMessages.Add audioMessage 
 
         member audioPlayer.Play audioMessages =
             SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer
