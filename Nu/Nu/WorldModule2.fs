@@ -823,14 +823,17 @@ module WorldModule2 =
 
         /// Run the game engine with the given handlers.
         static member run4 runWhile sdlDeps liveness world =
-            try let world = World.runWithoutCleanUp runWhile id id sdlDeps liveness None None world
-                World.cleanUp world
-                Constants.Engine.SuccessExitCode
-            with exn ->
-                let world = World.choose world
-                Log.trace (scstring exn)
-                World.cleanUp world
-                Constants.Engine.FailureExitCode
+            let result =
+                try let world = World.runWithoutCleanUp runWhile id id sdlDeps liveness None None world
+                    World.cleanUp world
+                    Constants.Engine.SuccessExitCode
+                with exn ->
+                    let world = World.choose world
+                    Log.trace (scstring exn)
+                    World.cleanUp world
+                    Constants.Engine.FailureExitCode
+            Environment.Exit result // needed to stop background threads
+            result
 
         /// Run the game engine with the given handlers.
         static member run handleAttemptMakeWorld sdlConfig =

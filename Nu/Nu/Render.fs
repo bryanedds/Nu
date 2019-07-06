@@ -102,13 +102,13 @@ type [<ReferenceEquality>] RenderAsset =
 /// The renderer. Represents the rendering system in Nu generally.
 type Renderer =
     /// Pop all of the physics messages that have been enqueued.
-    abstract PopMessages : unit -> RenderMessage UList * Renderer
+    abstract PopMessages : unit -> RenderMessage List
     /// Clear all of the render messages that have been enqueued.
-    abstract ClearMessages : unit -> Renderer
+    abstract ClearMessages : unit -> unit
     /// Enqueue a message from an external source.
-    abstract EnqueueMessage : RenderMessage -> Renderer
+    abstract EnqueueMessage : RenderMessage -> unit
     /// Render a frame of the game.
-    abstract Render : Vector2 -> Vector2 -> RenderMessage UList -> unit
+    abstract Render : Vector2 -> Vector2 -> RenderMessage List -> unit
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> Renderer
 
@@ -118,9 +118,9 @@ type [<ReferenceEquality>] MockRenderer =
         { MockRenderer : unit }
 
     interface Renderer with
-        member renderer.PopMessages () = (UList.makeEmpty Functional, renderer :> Renderer)
-        member renderer.ClearMessages () = renderer :> Renderer
-        member renderer.EnqueueMessage _ = renderer :> Renderer
+        member renderer.PopMessages () = List ()
+        member renderer.ClearMessages () = ()
+        member renderer.EnqueueMessage _ = ()
         member renderer.Render _ _ _ = ()
         member renderer.CleanUp () = renderer :> Renderer
 
@@ -132,7 +132,7 @@ type [<ReferenceEquality>] SdlRenderer =
     private
         { RenderContext : nativeint
           RenderPackages : RenderAsset Packages
-          RenderMessages : RenderMessage UList
+          mutable RenderMessages : RenderMessage List
           RenderDescriptors : RenderDescriptor List }
 
     static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
@@ -452,7 +452,7 @@ type [<ReferenceEquality>] SdlRenderer =
         let renderer =
             { RenderContext = renderContext
               RenderPackages = dictPlus []
-              RenderMessages = UList.makeEmpty Constants.Render.MessageListConfig
+              RenderMessages = List ()
               RenderDescriptors = List<RenderDescriptor> () }
         renderer
 
@@ -460,17 +460,14 @@ type [<ReferenceEquality>] SdlRenderer =
 
         member renderer.PopMessages () =
             let messages = renderer.RenderMessages
-            let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderer.RenderMessages) }
-            (messages, renderer :> Renderer)
+            renderer.RenderMessages <- List ()
+            messages
 
         member renderer.ClearMessages () =
-            let renderer = { renderer with RenderMessages = UList.makeEmpty (UList.getConfig renderer.RenderMessages) }
-            renderer :> Renderer
+            renderer.RenderMessages <- List ()
 
         member renderer.EnqueueMessage renderMessage =
-            let renderMessages = UList.add renderMessage renderer.RenderMessages
-            let renderer = { renderer with RenderMessages = renderMessages }
-            renderer :> Renderer
+            renderer.RenderMessages.Add renderMessage
 
         member renderer.Render eyeCenter eyeSize renderMessages =
             SdlRenderer.handleRenderMessages renderMessages renderer

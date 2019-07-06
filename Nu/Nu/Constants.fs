@@ -62,7 +62,6 @@ module Constants =
         let (*Literal*) ResolutionX = Core.getResolutionOrDefault true DefaultResolutionX
         let (*Literal*) ResolutionY = Core.getResolutionOrDefault false DefaultResolutionY
         let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy)
-        let (*Literal*) MessageListConfig = Functional
 
     [<RequireQualifiedAccess>]
     module Audio =
@@ -71,7 +70,6 @@ module Constants =
         let [<Literal>] DefaultBufferSize = 1024
         let [<Literal>] DefaultTimeToFadeOutSongMs = 500
         let (*Literal*) AssetMapConfig = Functional
-        let (*Literal*) MessageListConfig = Functional
 
     [<RequireQualifiedAccess>]
     module Physics =

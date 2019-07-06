@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open Prime
 open Nu
 
@@ -17,19 +18,20 @@ module WorldRenderModule =
         interface World Subsystem with
             
             member this.PopMessages () =
-                let (messages, renderer) = this.Renderer.PopMessages ()
-                (messages :> obj, { this with Renderer = renderer } :> World Subsystem)
+                (this.Renderer.PopMessages () :> obj, this :> World Subsystem)
             
             member this.ClearMessages () =
-                { this with Renderer = Renderer.clearMessages this.Renderer } :> World Subsystem
+                Renderer.clearMessages this.Renderer
+                this :> World Subsystem
             
             member this.EnqueueMessage message =
-                { this with Renderer = Renderer.enqueueMessage (message :?> RenderMessage) this.Renderer } :> World Subsystem
+                Renderer.enqueueMessage (message :?> RenderMessage) this.Renderer
+                this :> World Subsystem
             
             member this.ProcessMessages messages world =
-                let messages = messages :?> RenderMessage UList
+                let messages = messages :?> RenderMessage List
                 Renderer.render (World.getEyeCenter world) (World.getEyeSize world) messages this.Renderer :> obj
-            
+
             member this.ApplyResult (_, world) =
                 world
             
@@ -53,7 +55,8 @@ module WorldRenderModule =
 
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage (message : RenderMessage) world =
-            World.updateRenderer (fun renderer -> Subsystem.enqueueMessage message renderer) world
+            (World.getRenderer world).Renderer.EnqueueMessage message
+            world
 
         /// Hint that a rendering asset package with the given name should be loaded. Should be
         /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)
