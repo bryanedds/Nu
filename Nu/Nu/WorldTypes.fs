@@ -673,7 +673,7 @@ module WorldTypes =
             match Xtension.trySetProperty propertyName property entityState.Xtension with
             | (true, xtension) ->
                 let entityState =
-                    if not (Xtension.getImperative xtension)
+                    if not entityState.Imperative
                     then { entityState with Xtension = xtension }
                     else entityState
                 (true, entityState)
@@ -690,7 +690,7 @@ module WorldTypes =
         /// Detach an xtension property.
         static member detachProperty name entityState =
             let xtension = Xtension.detachProperty name entityState.Xtension
-            if Xtension.getImperative entityState.Xtension then entityState.Xtension <- xtension; entityState
+            if entityState.Imperative then entityState.Xtension <- xtension; entityState
             else { entityState with EntityState.Xtension = xtension }
 
         /// Get an entity state's transform.
@@ -702,7 +702,7 @@ module WorldTypes =
 
         /// Set an entity state's transform.
         static member setTransform (value : Transform) (this : EntityState) =
-            if Xtension.getImperative this.Xtension then
+            if this.Imperative then
                 this.Position <- value.Position
                 this.Size <- value.Size
                 this.Rotation <- value.Rotation
@@ -717,8 +717,9 @@ module WorldTypes =
 
         /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
-            if Xtension.getImperative this.Xtension then this
-            else { this with EntityState.Id = this.Id }
+            if not this.Imperative
+            then { this with EntityState.Id = this.Id }
+            else this
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
