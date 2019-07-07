@@ -18,22 +18,8 @@ module WorldModuleLayer =
 
     type World with
     
-        static member private layerStateKeyEquality
-            (layerStateKey : KeyValuePair<Layer Address, UMap<Layer Address, LayerState>>)
-            (layerStateKey2 : KeyValuePair<Layer Address, UMap<Layer Address, LayerState>>) =
-            refEq layerStateKey.Key layerStateKey2.Key &&
-            refEq layerStateKey.Value layerStateKey2.Value
-
-        static member private layerGetFreshKeyAndValue (layer : Layer) world =
-            let layerStateOpt = UMap.tryFindFast layer.LayerAddress world.LayerStates
-            KeyValuePair (KeyValuePair (layer.LayerAddress, world.LayerStates), layerStateOpt)
-
         static member private layerStateFinder (layer : Layer) world =
-            KeyedCache.getValue
-                World.layerStateKeyEquality
-                (fun () -> World.layerGetFreshKeyAndValue layer world)
-                (KeyValuePair (layer.LayerAddress, world.LayerStates))
-                (World.getLayerCachedOpt world)
+            UMap.tryFindFast layer.LayerAddress world.LayerStates
 
         static member private layerStateAdder layerState (layer : Layer) world =
             let screenDirectory =

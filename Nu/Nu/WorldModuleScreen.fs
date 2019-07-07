@@ -18,22 +18,8 @@ module WorldModuleScreen =
 
     type World with
     
-        static member private screenStateKeyEquality
-            (screenStateKey : KeyValuePair<Screen Address, UMap<Screen Address, ScreenState>>)
-            (screenStateKey2 : KeyValuePair<Screen Address, UMap<Screen Address, ScreenState>>) =
-            refEq screenStateKey.Key screenStateKey2.Key &&
-            refEq screenStateKey.Value screenStateKey2.Value
-
-        static member private screenGetFreshKeyAndValue (screen : Screen) world =
-            let screenStateOpt = UMap.tryFindFast screen.ScreenAddress world.ScreenStates
-            KeyValuePair (KeyValuePair (screen.ScreenAddress, world.ScreenStates), screenStateOpt)
-
         static member private screenStateFinder (screen : Screen) world =
-            KeyedCache.getValue
-                World.screenStateKeyEquality
-                (fun () -> World.screenGetFreshKeyAndValue screen world)
-                (KeyValuePair (screen.ScreenAddress, world.ScreenStates))
-                (World.getScreenCachedOpt world)
+            UMap.tryFindFast screen.ScreenAddress world.ScreenStates
 
         static member private screenStateAdder screenState (screen : Screen) world =
             let screenDirectory =

@@ -140,9 +140,9 @@ type [<ReferenceEquality>] SdlRenderer =
         if depthCompare <> 0 then depthCompare else
         let positionYCompare = left.PositionY.CompareTo right.PositionY * -1
         if positionYCompare <> 0 then positionYCompare else
-        let packageCompare = String.CompareOrdinal (left.AssetTag.PackageName, right.AssetTag.PackageName)
+        let packageCompare = strCmp left.AssetTag.PackageName right.AssetTag.PackageName
         if packageCompare <> 0 then packageCompare else
-        String.CompareOrdinal (left.AssetTag.AssetName, right.AssetTag.AssetName)
+        strCmp left.AssetTag.AssetName right.AssetTag.AssetName
 
     static member private freeRenderAsset renderAsset =
         match renderAsset with

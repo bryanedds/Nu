@@ -27,8 +27,8 @@ type [<CustomEquality; NoComparison>] PhysicsId =
 
     /// Equate PhysicsIds.
     static member equals pid pid2 =
-        pid.SourceId = pid2.SourceId &&
-        pid.BodyId = pid2.BodyId
+        pid.SourceId.Equals pid2.SourceId &&
+        pid.BodyId.Equals pid2.BodyId
 
     /// Make a PhysicsId for an external source.
     static member make (sourceId : Guid) =

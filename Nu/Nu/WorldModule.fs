@@ -69,9 +69,6 @@ module WorldModule =
                       Subsystems = subsystems
                       ScriptingEnv = scriptingEnv
                       ScriptingContext = Game ()
-                      ScreenCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Screen>, screenStates)) (FOption.none ())
-                      LayerCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Layer>, layerStates)) (FOption.none ())
-                      EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) (FOption.none ())
                       ScreenDirectory = UMap.makeEmpty Constants.Engine.SimulantMapConfig
                       AmbientState = ambientState
                       GameState = gameState
@@ -478,18 +475,6 @@ module WorldModule =
         /// Get the screen directory.
         static member internal getScreenDirectory world =
             world.ScreenDirectory
-
-        /// Get the optional cached screen.
-        static member internal getScreenCachedOpt world =
-            world.ScreenCachedOpt
-
-        /// Get the optional cached layer.
-        static member internal getLayerCachedOpt world =
-            world.LayerCachedOpt
-
-        /// Get the optional cached entity.
-        static member internal getEntityCachedOpt world =
-            world.EntityCachedOpt
 
     type World with // Scripting
 
