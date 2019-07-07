@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.IO
+open System.Threading.Tasks
 open SDL2
 open OpenTK
 open Prime
@@ -12,7 +13,6 @@ open global.Nu
 
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =
-    open System.Threading.Tasks
 
     let private ScreenTransitionMouseLeftKey = makeGuid ()
     let private ScreenTransitionMouseCenterKey = makeGuid ()

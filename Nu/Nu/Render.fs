@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.IO
+open System.Linq
 open OpenTK
 open SDL2
 open TiledSharp
@@ -127,6 +128,15 @@ type [<ReferenceEquality>] MockRenderer =
     static member make () =
         { MockRenderer = () }
 
+    type RenderDescriptorComparer () =
+        interface IComparer<RenderDescriptor> with
+            member this.Compare (LayerableDescriptor left, LayerableDescriptor right) =
+                let depthCompare = left.Depth.CompareTo right.Depth
+                if depthCompare <> 0 then depthCompare else
+                let packageCompare = String.CompareOrdinal (left.AssetTag.PackageName, right.AssetTag.PackageName)
+                if packageCompare <> 0 then packageCompare else
+                String.CompareOrdinal (left.AssetTag.AssetName, right.AssetTag.AssetName)
+
 /// The SDL implementation of Renderer.
 type [<ReferenceEquality>] SdlRenderer =
     private
@@ -134,13 +144,6 @@ type [<ReferenceEquality>] SdlRenderer =
           RenderPackages : RenderAsset Packages
           mutable RenderMessages : RenderMessage List
           RenderDescriptors : RenderDescriptor List }
-
-    static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
-        let depthCompare = left.Depth.CompareTo right.Depth
-        if depthCompare <> 0 then depthCompare else
-        let packageCompare = String.CompareOrdinal (left.AssetTag.PackageName, right.AssetTag.PackageName)
-        if packageCompare <> 0 then packageCompare else
-        String.CompareOrdinal (left.AssetTag.AssetName, right.AssetTag.AssetName)
 
     static member private freeRenderAsset renderAsset =
         match renderAsset with
@@ -436,13 +439,12 @@ type [<ReferenceEquality>] SdlRenderer =
         let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
         match targetResult with
         | 0 ->
-            // OPTIMIZATION: uses arrays for speed
             SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-            let renderDescriptorsSorted = renderDescriptors |> Array.ofSeq |> Array.sortStableWith SdlRenderer.sortDescriptors
-            let layeredDescriptors = Array.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
             let viewAbsolute = (Math.getViewAbsoluteI eyeCenter eyeSize).InvertedView ()
             let viewRelative = (Math.getViewRelativeI eyeCenter eyeSize).InvertedView ()
-            for layeredDescriptor in layeredDescriptors do
+            let renderDescriptorsSorted = Enumerable.OrderBy (renderDescriptors, (fun a -> a), RenderDescriptorComparer ()) // we have to use Linq OrderBy to get a stable sort
+            for renderDescriptor in renderDescriptorsSorted do
+                let layeredDescriptor = match renderDescriptor with LayerableDescriptor layerableDescriptor -> layerableDescriptor.LayeredDescriptor
                 SdlRenderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize layeredDescriptor renderer
         | _ ->
             Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
