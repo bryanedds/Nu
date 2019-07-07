@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open SDL2
 open Prime
 open Nu
 
@@ -32,6 +33,7 @@ module AmbientStateModule =
               OverlayRouter : OverlayRouter
               SymbolStore : SymbolStore
               KeyValueStore : UMap<string, obj>
+              SdlDepsOpt : SdlDeps option
               UserState : UserState }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -174,7 +176,21 @@ module AmbientStateModule =
         let updateKeyValueStore updater state =
             let store = updater (getKeyValueStore state)
             { state with KeyValueStore = store }
-    
+
+        /// Attempt to get the window flags.
+        let tryGetWindowFlags state =
+            match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+            | Some window -> Some (SDL.SDL_GetWindowFlags window)
+            | None -> None
+
+        /// Attempt to check that the window is minimized.
+        let tryGetWindowMinimized state =
+            Option.map (fun flags -> flags ||| uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED = 0u) (tryGetWindowFlags state)
+
+        /// Attempt to check that the window is maximized.
+        let tryGetWindowMaximized state =
+            Option.map (fun flags -> flags ||| uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MAXIMIZED = 0u) (tryGetWindowFlags state)
+
         /// Get the user-defined state value, cast to 'a.
         let getUserValue state : 'a =
             UserState.get state.UserState
@@ -184,7 +200,7 @@ module AmbientStateModule =
             { state with UserState = UserState.update updater state.UserState }
     
         /// Make an ambient state value.
-        let make tickRate assetMetadataMap overlayRouter overlayer symbolStore userState =
+        let make tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt userState =
             { TickRate = tickRate
               TickTime = 0L
               UpdateCount = 0L
@@ -196,6 +212,7 @@ module AmbientStateModule =
               Overlayer = overlayer
               SymbolStore = symbolStore
               KeyValueStore = UMap.makeEmpty Constants.Engine.KeyValueMapConfig
+              SdlDepsOpt = sdlDepsOpt
               UserState = UserState.make userState false }
 
 /// The ambient state of the world.
