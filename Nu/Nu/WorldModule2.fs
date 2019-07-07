@@ -810,7 +810,7 @@ module WorldModule2 =
                                                 (Some audioPlayerThread, world)
                                             else (None, world)
 #else
-                                        // attempt to start renderer thread
+                                        // process rendering on main thread
                                         let world =
                                             match SdlDeps.getRenderContextOpt sdlDeps with
                                             | Some renderContext ->
@@ -821,7 +821,7 @@ module WorldModule2 =
                                                 Subsystem.applyResult rendererResult (World.getRenderer world) world
                                             | None -> world
 
-                                        // attempt to start audio player thread
+                                        // process audio on main thread
                                         let world =
                                             if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
                                                 let audioPlayer = World.getAudioPlayer world
