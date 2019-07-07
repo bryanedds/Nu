@@ -10,32 +10,40 @@ open Nu
 module SimulantOperators =
 
     /// Derive a screen from a name.
-    let ntos screenName = Screen (ntoa screenName)
+    let ntos (screenName : string) =
+        Screen screenName
 
     /// Derive an entity from its layer.
-    let ltoe (layer : Layer) entityName = Entity (atoa<Layer, Entity> layer.LayerAddress --> ntoa entityName)
+    let ltoe (layer : Layer) entityName =
+        // OPTIMIZATION: we hard-code the address transformation to save time.
+        let names = layer.LayerAddress.Names
+        Entity [names.[0]; names.[1]; entityName]
 
     /// Derive layer from its screen.
-    let stol (screen : Screen) layerName = Layer (atoa<Screen, Layer> screen.ScreenAddress --> ntoa layerName)
+    let stol (screen : Screen) layerName =
+        // OPTIMIZATION: we hard-code the address transformation to save time.
+        Layer [screen.ScreenName; layerName]
 
     /// Derive entity from its screen.
-    let stoe (screen : Screen) layerName entityName = ltoe (stol screen layerName) entityName
+    let stoe (screen : Screen) layerName entityName =
+        // OPTIMIZATION: we hard-code the address transformation to save time.
+        Entity [screen.ScreenName; layerName; entityName]
 
     /// Derive a layer from its entity.
     let etol (entity : Entity) =
-        // OPTIMIZATION: we hard code the address transformation to save time.
+        // OPTIMIZATION: we hard-code the address transformation to save time.
         let names = entity.EntityAddress.Names
         Layer [names.[0]; names.[1]]
 
     /// Derive a screen from one of its layers.
     let ltos (layer : Layer) =
-        // OPTIMIZATION: we hard code the address transformation to save time.
+        // OPTIMIZATION: we hard-code the address transformation to save time.
         let names = layer.LayerAddress.Names
         Screen names.[0]
 
     /// Derive a screen from one of its entities.
     let etos (entity : Entity) =
-        // OPTIMIZATION: we hard code the address transformation to save time.
+        // OPTIMIZATION: we hard-code the address transformation to save time.
         let names = entity.EntityAddress.Names
         Screen names.[0]
 

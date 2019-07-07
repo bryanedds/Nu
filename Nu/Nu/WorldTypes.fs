@@ -839,7 +839,7 @@ module WorldTypes =
         override this.ToString () = scstring this.ScreenAddress
 
         /// Get the name of a screen.
-        member this.ScreenName = Address.getName this.ScreenAddress
+        member this.ScreenName = this.ScreenAddress.Names.[0]
 
         /// Get the latest value of a screen's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
