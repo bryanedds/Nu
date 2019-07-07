@@ -22,13 +22,22 @@ module SimulantOperators =
     let stoe (screen : Screen) layerName entityName = ltoe (stol screen layerName) entityName
 
     /// Derive a layer from its entity.
-    let etol (entity : Entity) = Layer (Address.allButLast entity.EntityAddress)
+    let etol (entity : Entity) =
+        // OPTIMIZATION: we hard code the address transformation to save time.
+        let names = entity.EntityAddress.Names
+        Layer [names.[0]; names.[1]]
 
     /// Derive a screen from one of its layers.
-    let ltos (layer : Layer) = Screen (Address.allButLast layer.LayerAddress)
+    let ltos (layer : Layer) =
+        // OPTIMIZATION: we hard code the address transformation to save time.
+        let names = layer.LayerAddress.Names
+        Screen names.[0]
 
     /// Derive a screen from one of its entities.
-    let etos (entity : Entity) = ltos (etol entity)
+    let etos (entity : Entity) =
+        // OPTIMIZATION: we hard code the address transformation to save time.
+        let names = entity.EntityAddress.Names
+        Screen names.[0]
 
 [<RequireQualifiedAccess>]
 module Default =
