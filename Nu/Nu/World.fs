@@ -355,7 +355,7 @@ module WorldModule3 =
                 let overlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
                 let overlayRouter = OverlayRouter.make overlayRoutes
                 let symbolStore = SymbolStore.makeEmpty ()
-                AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty symbolStore userState
+                AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty symbolStore None userState
 
             // make the world
             let world = World.make eventDelegate dispatchers subsystems scriptingEnv ambientState (snd defaultGameDispatcher)
@@ -446,7 +446,7 @@ module WorldModule3 =
 
                     // make the world's scripting environment
                     let scriptingEnv = Scripting.Env.Env.make ()
-            
+
                     // make the world's ambient state
                     let ambientState =
                         let assetMetadataMap = Metadata.make assetGraph
@@ -455,7 +455,7 @@ module WorldModule3 =
                         let overlayRoutes = intrinsicOverlayRoutes @ userOverlayRoutes
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolStore = SymbolStore.makeEmpty ()
-                        AmbientState.make tickRate assetMetadataMap overlayRouter overlayer symbolStore userState
+                        AmbientState.make tickRate assetMetadataMap overlayRouter overlayer symbolStore (Some sdlDeps) userState
 
                     // make the world
                     let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState activeGameDispatcher
@@ -467,7 +467,7 @@ module WorldModule3 =
                     // try to load the prelude for the scripting language
                     match World.tryEvalPrelude world with
                     | Right struct (_, world) ->
-                        
+
                         // register the game
                         let world = World.registerGame world
 

@@ -455,6 +455,18 @@ module WorldModule =
 
         static member removeKeyedValue guid world =
             World.updateKeyValueStore (UMap.remove guid) world
+            
+        /// Attempt to get the window flags.
+        static member tryGetWindowFlags world =
+            World.getAmbientStateBy AmbientState.tryGetWindowFlags world
+
+        /// Attempt to check that the window is minimized.
+        static member tryGetWindowMinimized world =
+            World.getAmbientStateBy AmbientState.tryGetWindowMinimized world
+
+        /// Attempt to check that the window is maximized.
+        static member tryGetWindowMaximized world =
+            World.getAmbientStateBy AmbientState.tryGetWindowMaximized world
 
         /// Get the user-defined state value, cast to 'a.
         static member getUserValue world : 'a =
