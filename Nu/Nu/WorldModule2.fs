@@ -858,7 +858,10 @@ module WorldModule2 =
                     Log.trace (scstring exn)
                     World.cleanUp world
                     Constants.Engine.FailureExitCode
-            Environment.Exit result // needed to stop background threads
+#if MULTITHREADING
+            // stops background threads
+            Environment.Exit result
+#endif
             result
 
         /// Run the game engine with the given handlers.
