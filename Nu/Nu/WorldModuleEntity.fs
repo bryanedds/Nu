@@ -564,7 +564,7 @@ module WorldModuleEntity =
 
         static member internal getEntitySortingPriority entity world =
             let entityState = World.getEntityState entity world
-            { SortDepth = entityState.Depth; SortTarget = entity }
+            { SortDepth = entityState.Depth; SortPositionY = entityState.Position.Y; SortTarget = entity }
 
         static member internal updateEntityPublishUpdateFlag entity world =
             World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa entity.UpdateEvent) world

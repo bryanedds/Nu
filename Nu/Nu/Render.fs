@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.IO
-open System.Linq
 open OpenTK
 open SDL2
 open TiledSharp
@@ -128,15 +127,6 @@ type [<ReferenceEquality>] MockRenderer =
     static member make () =
         { MockRenderer = () }
 
-    type RenderDescriptorComparer () =
-        interface IComparer<RenderDescriptor> with
-            member this.Compare (LayerableDescriptor left, LayerableDescriptor right) =
-                let depthCompare = left.Depth.CompareTo right.Depth
-                if depthCompare <> 0 then depthCompare else
-                let packageCompare = String.CompareOrdinal (left.AssetTag.PackageName, right.AssetTag.PackageName)
-                if packageCompare <> 0 then packageCompare else
-                String.CompareOrdinal (left.AssetTag.AssetName, right.AssetTag.AssetName)
-
 /// The SDL implementation of Renderer.
 type [<ReferenceEquality>] SdlRenderer =
     private
@@ -144,6 +134,15 @@ type [<ReferenceEquality>] SdlRenderer =
           RenderPackages : RenderAsset Packages
           mutable RenderMessages : RenderMessage List
           RenderDescriptors : RenderDescriptor List }
+
+    static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
+        let depthCompare = left.Depth.CompareTo right.Depth
+        if depthCompare <> 0 then depthCompare else
+        let positionYCompare = left.PositionY.CompareTo right.PositionY * -1
+        if positionYCompare <> 0 then positionYCompare else
+        let packageCompare = String.CompareOrdinal (left.AssetTag.PackageName, right.AssetTag.PackageName)
+        if packageCompare <> 0 then packageCompare else
+        String.CompareOrdinal (left.AssetTag.AssetName, right.AssetTag.AssetName)
 
     static member private freeRenderAsset renderAsset =
         match renderAsset with
@@ -442,8 +441,8 @@ type [<ReferenceEquality>] SdlRenderer =
             SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
             let viewAbsolute = (Math.getViewAbsoluteI eyeCenter eyeSize).InvertedView ()
             let viewRelative = (Math.getViewRelativeI eyeCenter eyeSize).InvertedView ()
-            let renderDescriptorsSorted = Enumerable.OrderBy (renderDescriptors, (fun a -> a), RenderDescriptorComparer ()) // we have to use Linq OrderBy to get a stable sort
-            for renderDescriptor in renderDescriptorsSorted do
+            renderDescriptors.Sort SdlRenderer.sortDescriptors
+            for renderDescriptor in renderDescriptors do
                 let layeredDescriptor = match renderDescriptor with LayerableDescriptor layerableDescriptor -> layerableDescriptor.LayeredDescriptor
                 SdlRenderer.renderLayerableDescriptor viewAbsolute viewRelative eyeCenter eyeSize layeredDescriptor renderer
         | _ ->

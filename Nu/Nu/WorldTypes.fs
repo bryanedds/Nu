@@ -116,6 +116,7 @@ module WorldTypes =
     /// OPTIMIZATION: carries related simulant to avoid GC pressure.
     and [<Struct; CustomEquality; CustomComparison>] SortPriority =
         { SortDepth : single
+          SortPositionY : single
           SortTarget : Simulant }
 
         static member equals left right =
@@ -125,6 +126,8 @@ module WorldTypes =
         static member compare left right =
             if left.SortDepth < right.SortDepth then 1
             elif left.SortDepth > right.SortDepth then -1
+            elif left.SortPositionY < right.SortPositionY then -1
+            elif left.SortPositionY > right.SortPositionY then 1
             else 0
 
         override this.GetHashCode () =

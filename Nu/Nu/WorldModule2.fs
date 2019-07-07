@@ -39,10 +39,10 @@ module WorldModule2 =
                     let priority =
                         match participant with
                         | :? GlobalParticipantGeneralized
-                        | :? Game -> { SortDepth = Constants.Engine.GameSortPriority; SortTarget = Default.Game }
-                        | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortTarget = screen }
-                        | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority + layer.GetDepth world; SortTarget = layer }
-                        | :? Entity as entity -> { SortDepth = entity.GetDepthLayered world; SortTarget = entity }
+                        | :? Game -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Default.Game }
+                        | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen }
+                        | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority + layer.GetDepth world; SortPositionY = 0.0f; SortTarget = layer }
+                        | :? Entity as entity -> { SortDepth = entity.GetDepthLayered world; SortPositionY = 0.0f; SortTarget = entity }
                         | _ -> failwithumf ()
                     priority :> IComparable)
                 subscriptions
