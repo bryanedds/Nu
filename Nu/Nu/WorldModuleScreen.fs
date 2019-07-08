@@ -339,7 +339,6 @@ module WorldModuleScreen =
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("Persistent", fun property screen world -> (true, World.setScreenPersistent (property.PropertyValue :?> bool) screen world))
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
-        Setters.Add ("Imperative", fun _ _ world -> (false, world))
         Setters.Add ("ScriptOpt", fun property screen world -> (true, World.setScreenScriptOpt (property.PropertyValue :?> Symbol AssetTag option) screen world))
         Setters.Add ("Script", fun property screen world -> (true, World.setScreenScript (property.PropertyValue :?> Scripting.Expr array) screen world))
         Setters.Add ("ScriptFrame", fun _ _ world -> (false, world))

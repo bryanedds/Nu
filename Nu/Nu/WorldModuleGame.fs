@@ -358,7 +358,6 @@ module WorldModuleGame =
         Setters.Add ("Id", fun _ world -> (false, world))
         Setters.Add ("Dispatcher", fun _ world -> (false, world))
         Setters.Add ("CreationTimeStamp", fun _ world -> (false, world))
-        Setters.Add ("Imperative", fun _ world -> (false, world))
         Setters.Add ("ScriptOpt", fun property world -> (true, World.setGameScriptOpt (property.PropertyValue :?> Symbol AssetTag option) world))
         Setters.Add ("Script", fun property world -> (true, World.setGameScript (property.PropertyValue :?> Scripting.Expr array) world))
         Setters.Add ("ScriptFrame", fun _ world -> (false, world))

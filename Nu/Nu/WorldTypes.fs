@@ -257,6 +257,7 @@ module WorldTypes =
         static member Properties =
             [Define? Imperative false
              Define? Persistent true
+             Define? IgnoreLayer false
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
              Define? Rotation 0.0f
@@ -617,6 +618,7 @@ module WorldTypes =
           mutable Imperative : bool
           mutable Persistent : bool
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
+          mutable IgnoreLayer : bool
           Cachable : bool
           mutable OverlayNameOpt : string option
           mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -645,6 +647,7 @@ module WorldTypes =
               Imperative = false
               Persistent = true
               CreationTimeStamp = Core.getTimeStamp ()
+              IgnoreLayer = false
               Cachable = String.endsWithGuid name
               OverlayNameOpt = overlayNameOpt
               Position = Vector2.Zero
