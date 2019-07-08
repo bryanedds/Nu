@@ -364,7 +364,6 @@ module WorldModuleLayer =
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("Persistent", fun property layer world -> (true, World.setLayerPersistent (property.PropertyValue :?> bool) layer world))
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
-        Setters.Add ("Imperative", fun _ _ world -> (false, world))
         Setters.Add ("ScriptOpt", fun property layer world -> (true, World.setLayerScriptOpt (property.PropertyValue :?> Symbol AssetTag option) layer world))
         Setters.Add ("Script", fun property layer world -> (true, World.setLayerScript (property.PropertyValue :?> Scripting.Expr array) layer world))
         Setters.Add ("ScriptFrame", fun _ _ world -> (false, world))
