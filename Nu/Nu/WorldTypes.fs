@@ -279,11 +279,7 @@ module WorldTypes =
         /// Unregister an entity when removing it from a layer.
         abstract Unregister : Entity * World -> World
         default dispatcher.Unregister (_, world) = world
-    
-        /// Propagate an entity's physics properties from the physics subsystem.
-        abstract PropagatePhysics : Entity * World -> World
-        default dispatcher.PropagatePhysics (_, world) = world
-    
+
         /// Update an entity.
         abstract Update : Entity * World -> World
         default dispatcher.Update (_, world) = world
@@ -313,12 +309,12 @@ module WorldTypes =
     
         /// Register a facet when adding it to an entity.
         abstract Register : Entity * World -> World
-        default facet.Register (entity, world) = facet.RegisterPhysics (entity, world)
+        default facet.Register (_, world) = world
     
         /// Unregister a facet when removing it from an entity.
         abstract Unregister : Entity * World -> World
-        default facet.Unregister (entity, world) = facet.UnregisterPhysics (entity, world)
-    
+        default facet.Unregister (_, world) = world
+
         /// Participate in the registration of an entity's physics with the physics subsystem.
         abstract RegisterPhysics : Entity * World -> World
         default facet.RegisterPhysics (_, world) = world
@@ -326,10 +322,6 @@ module WorldTypes =
         /// Participate in the unregistration of an entity's physics from the physics subsystem.
         abstract UnregisterPhysics : Entity * World -> World
         default facet.UnregisterPhysics (_, world) = world
-    
-        /// Participate in the propagation an entity's physics properties from the physics subsystem.
-        abstract PropagatePhysics : Entity * World -> World
-        default facet.PropagatePhysics (_, world) = world
     
         /// Update a facet.
         abstract Update : Entity * World -> World

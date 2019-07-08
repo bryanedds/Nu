@@ -309,7 +309,13 @@ module WorldModuleEntity =
                     match entityOpt with
                     | Some entity ->
                         let world = World.setEntityState entityState entity world
-                        let world = World.withEventContext (fun world -> facet.Unregister (entity, world)) entity world
+                        let world =
+                            World.withEventContext (fun world ->
+                                let world = facet.Register (entity, world)
+                                if WorldModule.isSimulantSelected entity world
+                                then facet.UnregisterPhysics (entity, world)
+                                else world)
+                                entity world
                         let entityState = World.getEntityState entity world
                         (entityState, world)
                     | None -> (entityState, world)
@@ -359,7 +365,13 @@ module WorldModuleEntity =
                         let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
                         let world = World.setEntityState entityState entity world
                         let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
-                        let world = World.withEventContext (fun world -> facet.Register (entity, world)) entity world
+                        let world =
+                            World.withEventContext (fun world ->
+                                let world = facet.Register (entity, world)
+                                if WorldModule.isSimulantSelected entity world
+                                then facet.RegisterPhysics (entity, world)
+                                else world)
+                                entity world
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
                 else let _ = World.choose world in Left ("Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'.")
@@ -555,13 +567,16 @@ module WorldModuleEntity =
                 let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
                 let facets = World.getEntityFacets entity world
                 let world = dispatcher.Register (entity, world)
-                let world = List.fold (fun world (facet : Facet) -> facet.Register (entity, world)) world facets
+                let world =
+                    List.fold (fun world (facet : Facet) ->
+                        if WorldModule.isSimulantSelected entity world
+                        then facet.RegisterPhysics (entity, world)
+                        else world)
+                        world facets
                 let world = World.updateEntityPublishFlags entity world
                 let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
-                let world = World.publish () (ltoa<unit> ["Register"; "Event"] --> entity) eventTrace entity world
-                world)
-                entity
-                world
+                World.publish () (ltoa<unit> ["Register"; "Event"] --> entity) eventTrace entity world)
+                entity world
 
         static member internal unregisterEntity entity world =
             World.withEventContext (fun world ->
@@ -570,9 +585,24 @@ module WorldModuleEntity =
                 let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
                 let facets = World.getEntityFacets entity world
                 let world = dispatcher.Unregister (entity, world)
-                List.fold (fun world (facet : Facet) -> facet.Unregister (entity, world)) world facets)
-                entity
-                world
+                List.fold (fun world (facet : Facet) ->
+                    if WorldModule.isSimulantSelected entity world
+                    then facet.UnregisterPhysics (entity, world)
+                    else world)
+                    world facets)
+                entity world
+
+        static member internal registerEntityPhysics entity world =
+            World.withEventContext (fun world ->
+                let facets = World.getEntityFacets entity world
+                List.fold (fun world (facet : Facet) -> facet.RegisterPhysics (entity, world)) world facets)
+                entity world
+
+        static member internal unregisterEntityPhysics entity world =
+            World.withEventContext (fun world ->
+                let facets = World.getEntityFacets entity world
+                List.fold (fun world (facet : Facet) -> facet.UnregisterPhysics (entity, world)) world facets)
+                entity world
 
         static member internal signalEntity signal entity world =
             World.withEventContext (fun world ->
@@ -923,15 +953,15 @@ module WorldModuleEntity =
         /// OPTIMIZATION: attempt to avoid constructing a screen address on each call to decrease
         /// address hashing.
         static member internal makeScreenFast (entity : Entity) world =
-            match (World.getGameState world).OmniScreenOpt with
-            | Some omniScreen when Address.getName omniScreen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> omniScreen
+            match (World.getGameState world).SelectedScreenOpt with
+            | Some screen when screen.ScreenName = List.head (Address.getNames entity.EntityAddress) -> screen
             | Some _ | None ->
-                match (World.getGameState world).SelectedScreenOpt with
-                | Some screen when Address.getName screen.ScreenAddress = List.head (Address.getNames entity.EntityAddress) -> screen
-                | Some _ | None -> entity.EntityAddress |> Address.getNames |> List.head |> ntoa<Screen> |> Screen
+                match (World.getGameState world).OmniScreenOpt with
+                | Some omniScreen when omniScreen.ScreenName = List.head (Address.getNames entity.EntityAddress) -> omniScreen
+                | Some _ | None -> Screen entity.EntityAddress.Names.[0]
 
         static member internal updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax (entity : Entity) oldWorld world =
-            
+
             // OPTIMIZATION: work with the entity state directly to avoid function call overheads
             let entityState = World.getEntityState entity world
             let oldOmnipresent = oldOmnipresent || oldViewType = Absolute

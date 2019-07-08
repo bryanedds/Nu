@@ -207,6 +207,24 @@ module Nu =
                 World.setLocalFrame oldLocalFrame world
                 struct (evaleds, world)
 
+            // init isSimulantSelected F# reach-around
+            WorldModule.isSimulantSelected <- fun simulant world ->
+                World.isSimulantSelected simulant world
+
+            // init registerScreenPhysics F# reach-around
+            WorldModule.registerScreenPhysics <- fun screen world ->
+                let entities = World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
+                Array.fold (fun world (entity : Entity) ->
+                    World.registerEntityPhysics entity world)
+                    world entities
+
+            // init unregisterScreenPhysics F# reach-around
+            WorldModule.unregisterScreenPhysics <- fun screen world ->
+                let entities = World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
+                Array.fold (fun world (entity : Entity) ->
+                    World.unregisterEntityPhysics entity world)
+                    world entities
+
             // init addSimulantScriptUnsubscription F# reach-around
             WorldModule.addSimulantScriptUnsubscription <- fun unsubscription (simulant : Simulant) world ->
                 match simulant with
@@ -307,6 +325,7 @@ module WorldModule3 =
                  (typeof<ScriptFacet>.Name, ScriptFacet () :> Facet)
                  (typeof<TextFacet>.Name, TextFacet () :> Facet)
                  (typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
+                 (typeof<TileMapFacet>.Name, TileMapFacet () :> Facet)
                  (typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
                  (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
 

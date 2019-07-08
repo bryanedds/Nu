@@ -14,30 +14,42 @@ module WorldModule =
 
     /// F# reach-around for evaluating a script expression.
     let mutable internal eval : Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr * World) =
-        Unchecked.defaultof<Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr * World)>
+        Unchecked.defaultof<_>
 
     /// F# reach-around for evaluating script expressions.
     let mutable internal evalMany : Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr array * World) =
-        Unchecked.defaultof<Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr array * World)>
+        Unchecked.defaultof<_>
 
     /// F# reach-around for evaluating a script expression.
     let mutable internal evalWithLogging : Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr * World) =
-        Unchecked.defaultof<Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr * World)>
+        Unchecked.defaultof<_>
 
     /// F# reach-around for evaluating script expressions.
     let mutable internal evalManyWithLogging : Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr array * World) =
-        Unchecked.defaultof<Scripting.Expr array -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr array * World)>
+        Unchecked.defaultof<_>
+
+    /// F# reach-around for checking that a simulant is selected.
+    let mutable internal isSimulantSelected : Simulant -> World -> bool =
+        Unchecked.defaultof<_>
+
+    /// F# reach-around for registering physics entities of an entire screen.
+    let mutable internal registerScreenPhysics : Screen -> World -> World =
+        Unchecked.defaultof<_>
+
+    /// F# reach-around for unregistering physics entities of an entire screen.
+    let mutable internal unregisterScreenPhysics : Screen -> World -> World =
+        Unchecked.defaultof<_>
 
     /// F# reach-around for adding script unsubscriptions to simulants.
     let mutable internal addSimulantScriptUnsubscription : Unsubscription -> Simulant -> World -> World =
-        Unchecked.defaultof<Unsubscription -> Simulant -> World -> World>
+        Unchecked.defaultof<_>
 
     /// F# reach-around for unsubscribing script subscriptions of simulants.
     let mutable internal unsubscribeSimulantScripts : Simulant -> World -> World =
-        Unchecked.defaultof<Simulant -> World -> World>
+        Unchecked.defaultof<_>
 
     let mutable internal equate5 : string -> Participant -> World Lens -> bool -> World -> World =
-        Unchecked.defaultof<string -> Participant -> World Lens -> bool -> World -> World>
+        Unchecked.defaultof<_>
 
     type World with // Construction
 
