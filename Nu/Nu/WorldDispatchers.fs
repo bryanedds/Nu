@@ -394,10 +394,7 @@ module TextFacetModule =
 module RigidBodyFacetModule =
 
     type Entity with
-
-        member this.GetMinorId world : Guid = this.Get Property? MinorId world
-        member this.SetMinorId (value : Guid) world = this.SetFast Property? MinorId false false value world
-        member this.MinorId = Lens.make Property? MinorId this.GetMinorId this.SetMinorId this
+    
         member this.GetBodyType world : BodyType = this.Get Property? BodyType world
         member this.SetBodyType (value : BodyType) world = this.SetFast Property? BodyType false false value world
         member this.BodyType = Lens.make Property? BodyType this.GetBodyType this.SetBodyType this
@@ -446,7 +443,7 @@ module RigidBodyFacetModule =
         member this.GetIsSensor world : bool = this.Get Property? IsSensor world
         member this.SetIsSensor (value : bool) world = this.SetFast Property? IsSensor false false value world
         member this.IsSensor = Lens.make Property? IsSensor this.GetIsSensor this.SetIsSensor this
-        member this.GetPhysicsId world = { SourceId = this.GetId world; BodyId = this.GetMinorId world }
+        member this.GetPhysicsId world = { SourceId = this.GetId world; BodyId = Guid.Empty } // we hard-code the empty Guid here because we assume a singleton body
         member this.PhysicsId = Lens.makeReadOnly Property? PhysicsId this.GetPhysicsId this
         member this.CollisionEvent = Events.Collision --> this
 
@@ -457,8 +454,7 @@ module RigidBodyFacetModule =
             PhysicsEngine.localizeCollisionBody (entity.GetSize world) (entity.GetCollisionBody world)
 
         static member Properties =
-            [Variable? MinorId (fun _ -> makeGuid ())
-             define Entity.BodyType Dynamic
+            [define Entity.BodyType Dynamic
              define Entity.Awake true
              define Entity.Density Constants.Physics.NormalDensity
              define Entity.Friction 0.2f
