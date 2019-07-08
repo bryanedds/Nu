@@ -1466,26 +1466,26 @@ module CharacterDispatcherModule =
 
     type Entity with
         
-        member this.GetCharacterIdleLeftImage = this.Get Property? CharacterIdleLeftImage
-        member this.SetCharacterIdleLeftImage = this.Set Property? CharacterIdleLeftImage
+        member this.GetCharacterIdleLeftImage world = this.Get Property? CharacterIdleLeftImage world
+        member this.SetCharacterIdleLeftImage value world = this.SetFast Property? CharacterIdleLeftImage false false value world
         member this.CharacterIdleLeftImage = Lens.make<Image AssetTag, World> Property? CharacterIdleLeftImage this.GetCharacterIdleLeftImage this.SetCharacterIdleLeftImage this
-        member this.GetCharacterIdleRightImage = this.Get Property? CharacterIdleRightImage
-        member this.SetCharacterIdleRightImage = this.Set Property? CharacterIdleRightImage
+        member this.GetCharacterIdleRightImage world = this.Get Property? CharacterIdleRightImage world
+        member this.SetCharacterIdleRightImage value world = this.SetFast Property? CharacterIdleRightImage false false value world
         member this.CharacterIdleRightImage = Lens.make<Image AssetTag, World> Property? CharacterIdleRightImage this.GetCharacterIdleRightImage this.SetCharacterIdleRightImage this
-        member this.GetCharacterJumpLeftImage = this.Get Property? CharacterJumpLeftImage
-        member this.SetCharacterJumpLeftImage = this.Set Property? CharacterJumpLeftImage
+        member this.GetCharacterJumpLeftImage world = this.Get Property? CharacterJumpLeftImage world
+        member this.SetCharacterJumpLeftImage value world = this.SetFast Property? CharacterJumpLeftImage false false value world
         member this.CharacterJumpLeftImage = Lens.make<Image AssetTag, World> Property? CharacterJumpLeftImage this.GetCharacterJumpLeftImage this.SetCharacterJumpLeftImage this
-        member this.GetCharacterJumpRightImage = this.Get Property? CharacterJumpRightImage
-        member this.SetCharacterJumpRightImage = this.Set Property? CharacterJumpRightImage
+        member this.GetCharacterJumpRightImage world = this.Get Property? CharacterJumpRightImage world
+        member this.SetCharacterJumpRightImage value world = this.SetFast Property? CharacterJumpRightImage false false value world
         member this.CharacterJumpRightImage = Lens.make<Image AssetTag, World> Property? CharacterJumpRightImage this.GetCharacterJumpRightImage this.SetCharacterJumpRightImage this
-        member this.GetCharacterWalkLeftSheet = this.Get Property? CharacterWalkLeftSheet
-        member this.SetCharacterWalkLeftSheet = this.Set Property? CharacterWalkLeftSheet
+        member this.GetCharacterWalkLeftSheet world = this.Get Property? CharacterWalkLeftSheet world
+        member this.SetCharacterWalkLeftSheet value world = this.SetFast Property? CharacterWalkLeftSheet false false value world
         member this.CharacterWalkLeftSheet = Lens.make<Image AssetTag, World> Property? CharacterWalkLeftSheet this.GetCharacterWalkLeftSheet this.SetCharacterWalkLeftSheet this
-        member this.GetCharacterWalkRightSheet = this.Get Property? CharacterWalkRightSheet
-        member this.SetCharacterWalkRightSheet = this.Set Property? CharacterWalkRightSheet
+        member this.GetCharacterWalkRightSheet world = this.Get Property? CharacterWalkRightSheet world
+        member this.SetCharacterWalkRightSheet value world = this.SetFast Property? CharacterWalkRightSheet false false value world
         member this.CharacterWalkRightSheet = Lens.make<Image AssetTag, World> Property? CharacterWalkRightSheet this.GetCharacterWalkRightSheet this.SetCharacterWalkRightSheet this
-        member this.GetCharacterFacingLeft = this.Get Property? CharacterFacingLeft
-        member this.SetCharacterFacingLeft = this.Set Property? CharacterFacingLeft
+        member this.GetCharacterFacingLeft world = this.Get Property? CharacterFacingLeft world
+        member this.SetCharacterFacingLeft value world = this.SetFast Property? CharacterFacingLeft false false value world
         member this.CharacterFacingLeft = Lens.make<bool, World> Property? CharacterFacingLeft this.GetCharacterFacingLeft this.SetCharacterFacingLeft this
         
     type CharacterDispatcher () =
