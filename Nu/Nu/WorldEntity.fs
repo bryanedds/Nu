@@ -176,12 +176,14 @@ module WorldEntityModule =
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =
             World.withEventContext (fun world ->
-                let dispatcher = this.GetDispatcher world
-                let facets = this.GetFacets world
-                let world = dispatcher.PropagatePhysics (this, world)
-                List.fold (fun world (facet : Facet) -> facet.PropagatePhysics (this, world)) world facets)
-                this
-                world
+                if WorldModule.isSimulantSelected this world then
+                    let facets = this.GetFacets world
+                    List.fold (fun world (facet : Facet) ->
+                        let world = facet.UnregisterPhysics (this, world)
+                        facet.RegisterPhysics (this, world))
+                        world facets
+                else world)
+                this world
 
         /// Check that an entity uses a facet of the given type.
         member this.FacetedAs (facetType, world) = List.exists (fun facet -> getType facet = facetType) (this.GetFacets world)

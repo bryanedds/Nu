@@ -124,8 +124,23 @@ module WorldModuleGame =
         /// you may be wanting to use the higher-level World.transitionScreen function instead.
         [<FunctionBinding>]
         static member setSelectedScreenOpt value world =
+
+            // disallow omni-screen selection
             if Option.isSome value && World.getOmniScreenOpt world = value then failwith "Cannot set SelectedScreen to OmniScreen."
-            World.updateGameState (fun gameState -> { gameState with SelectedScreenOpt = value }) Property? SelectedScreenOpt world
+
+            // clear out singleton states
+            let world =
+                match (World.getGameState world).SelectedScreenOpt with
+                | Some screen -> WorldModule.unregisterScreenPhysics screen world
+                | None -> world
+
+            // clear single state messages
+            let world = World.updateGameState (fun gameState -> { gameState with SelectedScreenOpt = value }) Property? SelectedScreenOpt world
+
+            // populate singleton states
+            match value with
+            | Some screen -> WorldModule.registerScreenPhysics screen world
+            | None -> world
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
         [<FunctionBinding>]
