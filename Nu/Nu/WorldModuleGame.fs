@@ -131,15 +131,21 @@ module WorldModuleGame =
             // clear out singleton states
             let world =
                 match (World.getGameState world).SelectedScreenOpt with
-                | Some screen -> WorldModule.unregisterScreenPhysics screen world
+                | Some screen ->
+                    let world = WorldModule.unregisterScreenPhysics screen world
+                    let world = WorldModule.evictScreenElements screen world
+                    world
                 | None -> world
 
-            // clear single state messages
-            let world = World.updateGameState (fun gameState -> { gameState with SelectedScreenOpt = value }) Property? SelectedScreenOpt world
+            // actually set selected screen (no events)
+            let world = World.updateGameStateWithoutEvent (fun gameState -> { gameState with SelectedScreenOpt = value }) world
 
             // populate singleton states
             match value with
-            | Some screen -> WorldModule.registerScreenPhysics screen world
+            | Some screen ->
+                let world = WorldModule.admitScreenElements screen world
+                let world = WorldModule.registerScreenPhysics screen world
+                world
             | None -> world
 
         /// Get the currently selected screen (failing with an exception if there isn't one).

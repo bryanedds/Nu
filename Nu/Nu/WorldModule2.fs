@@ -24,9 +24,20 @@ module WorldModule2 =
 
     type World with
 
-        static member internal rebuildEntityTree screen world =
-            let tree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
-            let entities = screen |> flip World.getLayers world |> Seq.map (flip World.getEntities world) |> Seq.concat
+        static member internal makeEntityTree () =
+            SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
+
+        static member internal rebuildEntityTree world =
+            let omniEntities =
+                match World.getOmniScreenOpt world with
+                | Some screen -> World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
+                | None -> Seq.empty
+            let selectedEntities =
+                match World.getSelectedScreenOpt world with
+                | Some screen -> World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
+                | None -> Seq.empty
+            let entities = Seq.append omniEntities selectedEntities
+            let tree = World.makeEntityTree ()
             for entity in entities do
                 let boundsMax = entity.GetBoundsMax world
                 SpatialTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) boundsMax entity tree
@@ -536,81 +547,51 @@ module WorldModule2 =
                 | _ -> world
             (World.getLiveness world, world)
 
-        static member private getEntities3 getElementsFromTree (screen : Screen) world =
-            let entityTree = screen.GetEntityTree world
-            let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree screen world) entityTree
-            let world = screen.SetEntityTreeNoEvent entityTree world
+        static member private getEntities3 getElementsFromTree world =
+            let entityTree = World.getEntityTree world
+            let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree world) entityTree
+            let world = World.setEntityTree entityTree world
             let entities : Entity HashSet = getElementsFromTree spatialTree
             (entities, world)
 
         [<FunctionBinding>]
-        static member getEntitiesInView2 (screen : Screen) world =
+        static member getEntitiesInView2 world =
             let viewBounds = World.getViewBoundsRelative world
-            World.getEntities3 (SpatialTree.getElementsInBounds viewBounds) screen world
+            World.getEntities3 (SpatialTree.getElementsInBounds viewBounds) world
 
         [<FunctionBinding>]
-        static member getEntitiesInBounds3 bounds (screen : Screen) world =
-            World.getEntities3 (SpatialTree.getElementsInBounds bounds) screen world
+        static member getEntitiesInBounds3 bounds world =
+            World.getEntities3 (SpatialTree.getElementsInBounds bounds) world
 
         [<FunctionBinding>]
-        static member getEntitiesAtPoint3 point (screen : Screen) world =
-            World.getEntities3 (SpatialTree.getElementsAtPoint point) screen world
+        static member getEntitiesAtPoint3 point world =
+            World.getEntities3 (SpatialTree.getElementsAtPoint point) world
 
         [<FunctionBinding>]
         static member getEntitiesInView world =
             let entities = HashSet<Entity> HashIdentity.Structural
             let world =
-                match World.getOmniScreenOpt world with
-                | Some omniScreen ->
-                    let (entities2, world) = World.getEntitiesInView2 omniScreen world
-                    entities.UnionWith entities2
-                    world
-                | None -> world
-            let world =
-                match World.getSelectedScreenOpt world with
-                | Some screen ->
-                    let (entities2, world) = World.getEntitiesInView2 screen world
-                    entities.UnionWith entities2
-                    world
-                | None -> world
+                let (entities2, world) = World.getEntitiesInView2 world
+                entities.UnionWith entities2
+                world
             (entities, world)
 
         [<FunctionBinding>]
         static member getEntitiesInBounds bounds world =
             let entities = HashSet<Entity> HashIdentity.Structural
             let world =
-                match World.getOmniScreenOpt world with
-                | Some omniScreen ->
-                    let (entities2, world) = World.getEntitiesInBounds3 bounds omniScreen world
-                    entities.UnionWith entities2
-                    world
-                | None -> world
-            let world =
-                match World.getSelectedScreenOpt world with
-                | Some screen ->
-                    let (entities2, world) = World.getEntitiesInBounds3 bounds screen world
-                    entities.UnionWith entities2
-                    world
-                | None -> world
+                let (entities2, world) = World.getEntitiesInBounds3 bounds world
+                entities.UnionWith entities2
+                world
             (entities, world)
 
         [<FunctionBinding>]
         static member getEntitiesAtPoint point world =
             let entities = HashSet<Entity> HashIdentity.Structural
             let world =
-                match World.getOmniScreenOpt world with
-                | Some omniScreen ->
-                    let (entities2, world) = World.getEntitiesAtPoint3 point omniScreen world
-                    entities.UnionWith entities2
-                    world
-                | None -> world
-            let world =
-                match World.getSelectedScreenOpt world with
-                | Some screen ->
-                    let (entities2, world) = World.getEntitiesAtPoint3 point screen world
-                    entities.UnionWith entities2
-                    world
-                | None -> world
+                let (entities2, world) = World.getEntitiesAtPoint3 point world
+                entities.UnionWith entities2
+                world
             (entities, world)
 
         static member private updateSimulants world =
@@ -620,14 +601,7 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let layers = Seq.concat (List.map (flip World.getLayers world) screens)
-            let entities = HashSet<Entity> HashIdentity.Structural
-            let world =
-                List.fold (fun world screen ->
-                    let (entities2, world) = World.getEntitiesInView2 screen world
-                    entities.UnionWith (entities2 :> _ seq)
-                    world)
-                    world
-                    screens
+            let (entities, world) = World.getEntitiesInView2 world
 
             // update simulants breadth-first
             let world = World.updateGame world
@@ -697,14 +671,7 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let layers = Seq.concat (List.map (flip World.getLayers world) screens)
-            let entities = HashSet<Entity> HashIdentity.Structural
-            let world =
-                List.fold (fun world screen ->
-                    let (entities2, world) = World.getEntitiesInView2 screen world
-                    entities.UnionWith (entities2 :> _ seq)
-                    world)
-                    world
-                    screens
+            let (entities, world) = World.getEntitiesInView2 world
 
             // actualize simulants breadth-first
             let world = World.actualizeGame world

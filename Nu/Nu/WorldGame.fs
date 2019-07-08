@@ -48,11 +48,9 @@ module WorldGameModule =
         member this.SetOmniScreenOpt value world = World.setOmniScreenOpt value world
         member this.OmniScreenOpt = Lens.make Property? OmniScreenOpt this.GetOmniScreenOpt this.SetOmniScreenOpt this
         member this.GetSelectedScreenOpt world = World.getSelectedScreenOpt world
-        member this.SetSelectedScreenOpt value world = World.setSelectedScreenOpt value world
-        member this.SelectedScreenOpt = Lens.make Property? SelectedScreenOpt this.GetSelectedScreenOpt this.SetSelectedScreenOpt this
+        member this.SelectedScreenOpt = Lens.makeReadOnly Property? SelectedScreenOpt this.GetSelectedScreenOpt this
         member this.GetScreenTransitionDestinationOpt world = World.getScreenTransitionDestinationOpt world
-        member this.SetScreenTransitionDestinationOpt value world = World.setScreenTransitionDestinationOpt value world
-        member this.ScreenTransitionDestinationOpt = Lens.make Property? ScreenTransitionDestinationOpt this.GetScreenTransitionDestinationOpt this.SetScreenTransitionDestinationOpt this
+        member this.ScreenTransitionDestinationOpt = Lens.makeReadOnly Property? ScreenTransitionDestinationOpt this.GetScreenTransitionDestinationOpt this
         member this.GetEyeCenter world = World.getEyeCenter world
         member this.SetEyeCenter value world = World.setEyeCenter value world
         member this.EyeCenter = Lens.make Property? EyeCenter this.GetEyeCenter this.SetEyeCenter this
@@ -287,7 +285,7 @@ module WorldGameModule =
             | screenName :: _ ->
                 match World.getOmniScreenOpt world with
                 | Some omniScreen when Address.getName omniScreen.ScreenAddress = screenName -> true
-                | _ -> 
+                | _ ->
                     match World.getSelectedScreenOpt world with
                     | Some screen when Address.getName screen.ScreenAddress = screenName -> true
                     | _ -> false
