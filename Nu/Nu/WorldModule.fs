@@ -33,6 +33,14 @@ module WorldModule =
         Unchecked.defaultof<_>
 
     /// F# reach-around for registering physics entities of an entire screen.
+    let mutable internal evictScreenElements : Screen -> World -> World =
+        Unchecked.defaultof<_>
+
+    /// F# reach-around for unregistering physics entities of an entire screen.
+    let mutable internal admitScreenElements : Screen -> World -> World =
+        Unchecked.defaultof<_>
+
+    /// F# reach-around for registering physics entities of an entire screen.
     let mutable internal registerScreenPhysics : Screen -> World -> World =
         Unchecked.defaultof<_>
 
@@ -69,7 +77,7 @@ module WorldModule =
             ignore world
 
         /// Make the world.
-        static member internal make eventDelegate dispatchers subsystems scriptingEnv ambientState activeGameDispatcher =
+        static member internal make eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher =
             let gameState = GameState.make activeGameDispatcher
             let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let layerStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
@@ -83,6 +91,7 @@ module WorldModule =
                       ScriptingContext = Game ()
                       ScreenDirectory = UMap.makeEmpty Constants.Engine.SimulantMapConfig
                       AmbientState = ambientState
+                      EntityTree = MutantCache.make id spatialTree
                       GameState = gameState
                       ScreenStates = screenStates
                       LayerStates = layerStates
@@ -493,6 +502,17 @@ module WorldModule =
             entityDispatchers |>
             Map.toValueListBy getTypeName |>
             List.map (fun typeName -> (typeName, None))
+
+    type World with // EntityTree
+
+        static member internal getEntityTree world =
+            world.EntityTree
+
+        static member internal setEntityTree entityTree world =
+            World.choose { world with EntityTree = entityTree }
+
+        static member internal updateEntityTree updater world =
+            World.setEntityTree (updater (World.getEntityTree world))
 
     type World with // Caching
 

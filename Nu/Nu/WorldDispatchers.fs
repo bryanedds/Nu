@@ -657,7 +657,7 @@ module TileMapFacetModule =
             | None ->
                 Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
                 world
-            
+
         override facet.Actualize (tileMap, world) =
             if tileMap.GetVisible world then
                 match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with

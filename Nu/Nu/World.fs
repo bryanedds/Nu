@@ -210,6 +210,38 @@ module Nu =
             // init isSimulantSelected F# reach-around
             WorldModule.isSimulantSelected <- fun simulant world ->
                 World.isSimulantSelected simulant world
+                
+            // init admitScreenElements F# reach-around
+            WorldModule.admitScreenElements <- fun screen world ->
+                let entities = World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
+                let oldWorld = world
+                let entityTree =
+                    MutantCache.mutateMutant
+                        (fun () -> oldWorld.Dispatchers.RebuildEntityTree oldWorld)
+                        (fun entityTree ->
+                            for entity in entities do
+                                let entityState = World.getEntityState entity world
+                                let entityMaxBounds = World.getEntityStateBoundsMax entityState
+                                SpatialTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                            entityTree)
+                        (World.getEntityTree world)
+                World.setEntityTree entityTree world
+                
+            // init evictScreenElements F# reach-around
+            WorldModule.evictScreenElements <- fun screen world ->
+                let entities = World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
+                let oldWorld = world
+                let entityTree =
+                    MutantCache.mutateMutant
+                        (fun () -> oldWorld.Dispatchers.RebuildEntityTree oldWorld)
+                        (fun entityTree ->
+                            for entity in entities do
+                                let entityState = World.getEntityState entity world
+                                let entityMaxBounds = World.getEntityStateBoundsMax entityState
+                                SpatialTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                            entityTree)
+                        (World.getEntityTree world)
+                World.setEntityTree entityTree world
 
             // init registerScreenPhysics F# reach-around
             WorldModule.registerScreenPhysics <- fun screen world ->
@@ -376,8 +408,11 @@ module WorldModule3 =
                 let symbolStore = SymbolStore.makeEmpty ()
                 AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty symbolStore None userState
 
+            // make the world's spatial tree
+            let spatialTree = World.makeEntityTree ()
+
             // make the world
-            let world = World.make eventDelegate dispatchers subsystems scriptingEnv ambientState (snd defaultGameDispatcher)
+            let world = World.make eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree (snd defaultGameDispatcher)
             
             // subscribe to subscribe and unsubscribe events
             let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Default.Game world
@@ -476,8 +511,11 @@ module WorldModule3 =
                         let symbolStore = SymbolStore.makeEmpty ()
                         AmbientState.make tickRate assetMetadataMap overlayRouter overlayer symbolStore (Some sdlDeps) userState
 
+                    // make the world's spatial tree
+                    let spatialTree = World.makeEntityTree ()
+
                     // make the world
-                    let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState activeGameDispatcher
+                    let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher
 
                     // subscribe to subscribe and unsubscribe events
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Default.Game world

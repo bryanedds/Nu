@@ -455,7 +455,6 @@ module WorldTypes =
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
           OnSignal : Scripting.Expr
-          EntityTree : Entity SpatialTree MutantCache
           TransitionState : TransitionState
           TransitionTicks : int64
           Incoming : Transition
@@ -464,7 +463,6 @@ module WorldTypes =
         /// Make a screen state value.
         static member make nameOpt (dispatcher : ScreenDispatcher) =
             let (id, name) = Reflection.deriveIdAndName nameOpt
-            let spatialTree = SpatialTree.make Constants.Engine.EntityTreeGranularity Constants.Engine.EntityTreeDepth Constants.Engine.EntityTreeBounds
             { Id = id
               Name = name
               Xtension = Xtension.makeSafe ()
@@ -480,7 +478,6 @@ module WorldTypes =
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
               OnSignal = Scripting.Unit
-              EntityTree = MutantCache.make Operators.id spatialTree
               TransitionState = IdlingState
               TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
               Incoming = Transition.make Incoming
@@ -1001,7 +998,7 @@ module WorldTypes =
           Facets : Map<string, Facet>
           TryGetExtrinsic : string -> World ScriptingTrinsic FOption
           UpdateEntityInEntityTree : bool -> ViewType -> Vector4 -> Entity -> World -> World -> World
-          RebuildEntityTree : Screen -> World -> Entity SpatialTree }
+          RebuildEntityTree : World -> Entity SpatialTree }
     
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
     /// to implement a game, messages to by consumed by the various engine sub-systems, and general
@@ -1021,6 +1018,7 @@ module WorldTypes =
               ScriptingContext : Simulant
               ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Layer Address, UMap<string, Entity Address>>>>>
               AmbientState : World AmbientState
+              EntityTree : Entity SpatialTree MutantCache
               GameState : GameState
               ScreenStates : UMap<Screen Address, ScreenState>
               LayerStates : UMap<Layer Address, LayerState>

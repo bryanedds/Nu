@@ -164,7 +164,7 @@ module WorldModuleEntity =
         static member internal getEntityExists entity world =
             Option.isSome (World.getEntityStateOpt entity world)
 
-        static member private getEntityStateBoundsMax entityState =
+        static member internal getEntityStateBoundsMax entityState =
             // TODO: get up off yer arse and write an algorithm for tight-fitting bounds...
             match entityState.Rotation with
             | 0.0f ->
@@ -628,18 +628,19 @@ module WorldModuleEntity =
                 let world = World.addEntityState entityState entity world
 
                 // mutate entity tree
-                let screen = entity.EntityAddress |> Address.head |> ntoa<Screen> |> Screen
                 let world =
-                    let entityTree =
-                        MutantCache.mutateMutant
-                            (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
-                            (fun entityTree ->
-                                let entityState = World.getEntityState entity world
-                                let entityMaxBounds = World.getEntityStateBoundsMax entityState
-                                SpatialTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
-                                entityTree)
-                            (World.getScreenEntityTree screen world)
-                    World.setScreenEntityTreeNoEvent entityTree screen world
+                    if WorldModule.isSimulantSelected entity world then
+                        let entityTree =
+                            MutantCache.mutateMutant
+                                (fun () -> oldWorld.Dispatchers.RebuildEntityTree oldWorld)
+                                (fun entityTree ->
+                                    let entityState = World.getEntityState entity world
+                                    let entityMaxBounds = World.getEntityStateBoundsMax entityState
+                                    SpatialTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                                    entityTree)
+                                (World.getEntityTree world)
+                        World.setEntityTree entityTree world
+                    else world
 
                 // register entity if needed
                 if isNew
@@ -662,19 +663,20 @@ module WorldModuleEntity =
                 // get old world for entity tree rebuild
                 let oldWorld = world
                 
-                // mutate entity tree
-                let screen = entity.EntityAddress |> Address.head |> ntoa<Screen> |> Screen
+                // mutate entity tree if entity is selected
                 let world =
-                    let entityTree =
-                        MutantCache.mutateMutant
-                            (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
-                            (fun entityTree ->
-                                let entityState = World.getEntityState entity oldWorld
-                                let entityMaxBounds = World.getEntityStateBoundsMax entityState
-                                SpatialTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
-                                entityTree)
-                            (World.getScreenEntityTree screen world)
-                    World.setScreenEntityTreeNoEvent entityTree screen world
+                    if WorldModule.isSimulantSelected entity world then
+                        let entityTree =
+                            MutantCache.mutateMutant
+                                (fun () -> oldWorld.Dispatchers.RebuildEntityTree world)
+                                (fun entityTree ->
+                                    let entityState = World.getEntityState entity oldWorld
+                                    let entityMaxBounds = World.getEntityStateBoundsMax entityState
+                                    SpatialTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                                    entityTree)
+                                (World.getEntityTree world)
+                        World.setEntityTree entityTree world
+                    else world
 
                 // remove cached entity event addresses
                 EventSystem.cleanEventAddressCache entity.EntityAddress
@@ -962,43 +964,45 @@ module WorldModuleEntity =
 
         static member internal updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax (entity : Entity) oldWorld world =
 
-            // OPTIMIZATION: work with the entity state directly to avoid function call overheads
-            let entityState = World.getEntityState entity world
-            let oldOmnipresent = oldOmnipresent || oldViewType = Absolute
-            let newOmnipresent = entityState.Omnipresent || entityState.ViewType = Absolute
-            if newOmnipresent <> oldOmnipresent then
+            // only need to do this when entity is selected
+            if WorldModule.isSimulantSelected entity world then
 
-                // remove and add entity in entity tree
-                let screen = World.makeScreenFast entity world
-                let entityTree =
-                    MutantCache.mutateMutant
-                        (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
-                        (fun entityTree ->
-                            let newBoundsMax = World.getEntityStateBoundsMax entityState
-                            SpatialTree.removeElement oldOmnipresent oldBoundsMax entity entityTree
-                            SpatialTree.addElement newOmnipresent newBoundsMax entity entityTree
-                            let entityBoundsMax = World.getEntityStateBoundsMax entityState
-                            SpatialTree.updateElement oldBoundsMax entityBoundsMax entity entityTree
-                            entityTree)
-                        (World.getScreenEntityTree screen world)
-                World.setScreenEntityTreeNoEvent entityTree screen world
+                // OPTIMIZATION: work with the entity state directly to avoid function call overheads
+                let entityState = World.getEntityState entity world
+                let oldOmnipresent = oldOmnipresent || oldViewType = Absolute
+                let newOmnipresent = entityState.Omnipresent || entityState.ViewType = Absolute
+                if newOmnipresent <> oldOmnipresent then
 
-            // OPTIMIZATION: only update when entity is not omnipresent
-            elif not newOmnipresent then
+                    // remove and add entity in entity tree
+                    let entityTree =
+                        MutantCache.mutateMutant
+                            (fun () -> oldWorld.Dispatchers.RebuildEntityTree oldWorld)
+                            (fun entityTree ->
+                                let newBoundsMax = World.getEntityStateBoundsMax entityState
+                                SpatialTree.removeElement oldOmnipresent oldBoundsMax entity entityTree
+                                SpatialTree.addElement newOmnipresent newBoundsMax entity entityTree
+                                let entityBoundsMax = World.getEntityStateBoundsMax entityState
+                                SpatialTree.updateElement oldBoundsMax entityBoundsMax entity entityTree
+                                entityTree)
+                            (World.getEntityTree world)
+                    World.setEntityTree entityTree world
 
-                // update entity in entity tree
-                let screen = World.makeScreenFast entity world
-                let entityTree =
-                    MutantCache.mutateMutant
-                        (fun () -> oldWorld.Dispatchers.RebuildEntityTree screen oldWorld)
-                        (fun entityTree ->
-                            let entityBoundsMax = World.getEntityStateBoundsMax entityState
-                            SpatialTree.updateElement oldBoundsMax entityBoundsMax entity entityTree
-                            entityTree)
-                        (World.getScreenEntityTree screen world)
-                World.setScreenEntityTreeNoEvent entityTree screen world
+                // OPTIMIZATION: only update when entity is not omnipresent
+                elif not newOmnipresent then
 
-            // just world
+                    // update entity in entity tree
+                    let entityTree =
+                        MutantCache.mutateMutant
+                            (fun () -> oldWorld.Dispatchers.RebuildEntityTree oldWorld)
+                            (fun entityTree ->
+                                let entityBoundsMax = World.getEntityStateBoundsMax entityState
+                                SpatialTree.updateElement oldBoundsMax entityBoundsMax entity entityTree
+                                entityTree)
+                            (World.getEntityTree world)
+                    World.setEntityTree entityTree world
+
+                // just world
+                else world
             else world
 
         /// Copy an entity to the clipboard.

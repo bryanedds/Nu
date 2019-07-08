@@ -122,8 +122,6 @@ module WorldModuleScreen =
         static member internal setScreenOnPostUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnPostUpdate = value }) Property? OnPostUpdate screen world
         static member internal getScreenOnSignal screen world = (World.getScreenState screen world).OnSignal
         static member internal setScreenOnSignal value screen world = World.updateScreenState (fun screenState -> { screenState with OnSignal = value }) Property? OnSignal screen world
-        static member internal getScreenEntityTree screen world = (World.getScreenState screen world).EntityTree
-        static member internal setScreenEntityTreeNoEvent value screen world = World.updateScreenStateWithoutEvent (fun screenState -> { screenState with EntityTree = value }) screen world
         static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
         static member internal setScreenTransitionState value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionState = value }) Property? TransitionState screen world
         static member internal getScreenTransitionTicks screen world = (World.getScreenState screen world).TransitionTicks
@@ -295,10 +293,6 @@ module WorldModuleScreen =
 
             // add the screen's state to the world
             let screen = Screen (ntoa screenState.Name)
-            let screenState =
-                if World.getScreenExists screen world
-                then { screenState with EntityTree = World.getScreenEntityTree screen world }
-                else screenState
             let world = World.addScreen true screenState screen world
             
             // read the screen's layers
