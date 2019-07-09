@@ -2,6 +2,19 @@
 open System
 open Prime
 open Nu
+open Nu.Declarative
+
+type MyEntityDispatcher () =
+    inherit EntityDispatcher ()
+
+    static member FacetNames =
+        [typeof<StaticSpriteFacet>.Name]
+
+    static member Properties =
+        [define Entity.Rotation 0.0f]
+
+    override dispatcher.Update (entity, world) =
+        entity.Rotation.Update ((+) 0.01f) world
 
 // this is the game dispatcher that is customized for our game. In here, we create screens and wire
 // them up with subsciptions and transitions.
@@ -9,8 +22,16 @@ type MyGameDispatcher () =
     inherit GameDispatcher ()
     
     override dispatcher.Register (_, world) =
-        // TODO: start by creating and wiring up your game's screens in here! For an example, look
-        // at BlazeDispatcher.fs in the BlazeVector project.
+        let world = World.createScreen (Some Default.Screen.ScreenName) world |> snd
+        let world = World.createLayer (Some Default.Layer.LayerName) Default.Screen world |> snd
+        let world =
+            Array.fold2 (fun world i j ->
+                let (entity, world) = World.createEntity<MyEntityDispatcher> None DefaultOverlay Default.Layer world
+                let world = entity.SetPosition (v2 ((single i) * 5.0f) ((single j) * 5.0f)) world
+                world)
+                world
+                [|0 .. 22|]
+                [|0 .. 22|]
         world
 
 // this is a plugin for the Nu game engine by which user-defined dispatchers, facets, and other
@@ -53,4 +74,4 @@ module Program =
             World.tryMake true 1L () plugin sdlDeps
 
         // after some configuration it is time to run the game. We're off and running!
-        World.run tryMakeWorld id id sdlConfig
+        World.run tryMakeWorld sdlConfig
