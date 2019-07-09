@@ -194,12 +194,25 @@ module WorldModuleEntity =
                 let newSize = newSizeOver2 * 2.0f
                 Vector4 (newPosition.X, newPosition.Y, newPosition.X + newSize.X, newPosition.Y + newSize.Y)
 
+        static member internal getEntityImperative entity world =
+            (World.getEntityState entity world).Imperative
+
+        static member internal setEntityImperative value entity world =
+            World.updateEntityState (fun entityState ->
+                if value then
+                    let properties = UMap.makeFromSeq Imperative (Xtension.toSeq entityState.Xtension)
+                    let xtension = Xtension.make properties false true true
+                    { entityState with Xtension = xtension; Imperative = true }
+                else
+                    let properties = UMap.makeFromSeq Functional (Xtension.toSeq entityState.Xtension)
+                    let xtension = Xtension.make properties false true false
+                    { entityState with Xtension = xtension; Imperative = false })
+                false false false Property? Imperative entity world
+
         // NOTE: Wouldn't macros be nice?
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
         static member internal getEntityDispatcher entity world = (World.getEntityState entity world).Dispatcher
-        static member internal getEntityImperative entity world = (World.getEntityState entity world).Imperative
-        static member internal setEntityImperative value entity world = World.updateEntityState (fun entityState -> { entityState with Xtension = Xtension.setImperative value entityState.Xtension; Imperative = value }) false false false Property? Imperative entity world
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.Persistent <- value; entityState else { entityState with Persistent = value }) false false false Property? Persistent entity world
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp

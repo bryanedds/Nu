@@ -14,7 +14,7 @@ type MyEntityDispatcher () =
         [define Entity.Rotation 0.0f]
 
     override dispatcher.Update (entity, world) =
-        entity.SetRotation (entity.GetRotation world + 0.02f) world
+        entity.SetRotation (entity.GetRotation world + 0.03f) world
 
 type MyGameDispatcher () =
     inherit GameDispatcher ()
