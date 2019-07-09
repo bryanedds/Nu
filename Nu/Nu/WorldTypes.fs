@@ -659,6 +659,10 @@ module WorldTypes =
         static member tryGetProperty propertyName entityState =
             Xtension.tryGetProperty propertyName entityState.Xtension
 
+        /// Try to get an xtension property and its type information.
+        static member tryGetPropertyFast propertyName entityState =
+            Xtension.tryGetPropertyFast propertyName entityState.Xtension
+
         /// Get an xtension property and its type information.
         static member getProperty propertyName entityState =
             Xtension.getProperty propertyName entityState.Xtension

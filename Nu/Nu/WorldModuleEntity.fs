@@ -487,22 +487,22 @@ module WorldModuleEntity =
                 | (false, _) ->
                     let entityState = World.getEntityState entity world
                     match EntityState.tryGetProperty propertyName entityState with
-                    | None -> World.tryGetEntityCalculatedProperty propertyName entity world
                     | Some _ as propertyOpt -> propertyOpt
+                    | None -> World.tryGetEntityCalculatedProperty propertyName entity world
                 | (true, getter) -> Some (getter entity world)
             else None
 
         static member internal getEntityProperty propertyName entity world =
             let entityState = World.getEntityState entity world
-            match EntityState.tryGetProperty propertyName entityState with
-            | None ->
+            let propertyOpt = EntityState.tryGetPropertyFast propertyName entityState
+            if FOption.isNone propertyOpt then
                 match Getters.TryGetValue propertyName with
                 | (false, _) ->
                     match World.tryGetEntityCalculatedProperty propertyName entity world with
                     | None -> failwithf "Could not find property '%s'." propertyName
                     | Some property -> property
                 | (true, getter) -> getter entity world
-            | Some property -> property
+            else FOption.get propertyOpt
 
         static member internal trySetEntityProperty propertyName alwaysPublish nonPersistent property entity world =
             if World.getEntityExists entity world then
