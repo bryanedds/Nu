@@ -39,9 +39,9 @@ module Nelmish =
 
         // here we describe the content of the game including its one screen, one layer, three
         // button entities, and one text control.
-        override this.Content (_, _, _) =
+        override this.Content (model, _, _) =
             [Content.screen Default.Screen Vanilla []
-                [Content.layerFromFile Default.Layer "C:/Users/User/Desktop/MarioPit200.nulyr" (*[]
+                [Content.layer Default.Layer []
                     [Content.button DecrementButton
                         [Entity.Text == "-"
                          Entity.Position == v2 -256.0f 64.0f]
@@ -54,4 +54,4 @@ module Nelmish =
                      Content.entityIf (model --> isNonZero) $ fun () ->
                         Content.button ResetButton
                             [Entity.Text == "Reset"
-                             Entity.Position == v2 -128.0f -128.0f]]*)]]
+                             Entity.Position == v2 -128.0f -128.0f]]]]

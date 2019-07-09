@@ -143,13 +143,24 @@ module WorldModuleEntity =
             else world
 
         static member private updateEntityStatePlus updater alwaysPublish nonPersistent mutability (propertyName : string) entity world =
+
+            // cache old values
             let oldWorld = world
             let oldEntityState = World.getEntityState entity oldWorld
             let oldOmnipresent = oldEntityState.Omnipresent
-            let oldViewType = oldEntityState.ViewType
-            let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
-            let (entityState, world) = World.updateEntityStateInternal updater mutability oldEntityState entity world
-            let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
+
+            // OPTIMIZATION: don't update entity tree if entity is omnipresent
+            let (entityState, world) =
+                if oldOmnipresent
+                then World.updateEntityStateInternal updater mutability oldEntityState entity world
+                else
+                    let oldViewType = oldEntityState.ViewType
+                    let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
+                    let (entityState, world) = World.updateEntityStateInternal updater mutability oldEntityState entity world
+                    let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
+                    (entityState, world)
+
+            // publish entity change event if needed
             if World.shouldPublishEntityChange alwaysPublish nonPersistent entityState
             then World.publishEntityChange propertyName entity oldWorld world
             else world

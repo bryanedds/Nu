@@ -33,6 +33,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nelmish", "Projects\Nelmish
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Elmario", "Projects\Elmario\Elmario.fsproj", "{3E1D51B8-AF7B-4596-8B75-D68F0DE9B9D4}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Metrics", "Projects\Metrics\Metrics.fsproj", "{A1751207-AFF8-4CBB-9B7D-94B40E5B60B9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,10 @@ Global
 		{3E1D51B8-AF7B-4596-8B75-D68F0DE9B9D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E1D51B8-AF7B-4596-8B75-D68F0DE9B9D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E1D51B8-AF7B-4596-8B75-D68F0DE9B9D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1751207-AFF8-4CBB-9B7D-94B40E5B60B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1751207-AFF8-4CBB-9B7D-94B40E5B60B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1751207-AFF8-4CBB-9B7D-94B40E5B60B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1751207-AFF8-4CBB-9B7D-94B40E5B60B9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
