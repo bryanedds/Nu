@@ -89,6 +89,7 @@ module WorldModule =
                       Subsystems = subsystems
                       ScriptingEnv = scriptingEnv
                       ScriptingContext = Game ()
+                      EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) (FOption.none ())
                       ScreenDirectory = UMap.makeEmpty Constants.Engine.SimulantMapConfig
                       AmbientState = ambientState
                       EntityTree = MutantCache.make id spatialTree
@@ -515,6 +516,10 @@ module WorldModule =
             World.setEntityTree (updater (World.getEntityTree world))
 
     type World with // Caching
+
+        /// Get the optional cached entity.
+        static member internal getEntityCachedOpt world =
+            world.EntityCachedOpt
 
         /// Get the screen directory.
         static member internal getScreenDirectory world =

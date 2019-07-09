@@ -1020,6 +1020,7 @@ module WorldTypes =
               Subsystems : World Subsystems
               ScriptingEnv : Scripting.Env
               ScriptingContext : Simulant
+              EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState FOption>
               ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Layer Address, UMap<string, Entity Address>>>>>
               AmbientState : World AmbientState
               EntityTree : Entity SpatialTree MutantCache

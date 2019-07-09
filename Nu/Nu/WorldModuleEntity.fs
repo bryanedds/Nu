@@ -21,13 +21,47 @@ module WorldModuleEntity =
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
     let mutable private Clipboard : obj option = None
 
+    // avoids closure allocation in tight-loop
+    type private KeyEquality () =
+        inherit OptimizedClosures.FSharpFunc<
+            KeyValuePair<
+                Entity Address,
+                UMap<Entity Address, EntityState>>,
+            KeyValuePair<
+                Entity Address,
+                UMap<Entity Address, EntityState>>,
+            bool> ()
+        override this.Invoke _ = failwithumf ()
+        override this.Invoke
+            (entityStateKey : KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>,
+             entityStateKey2 : KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>) =
+            refEq entityStateKey.Key entityStateKey2.Key &&
+            refEq entityStateKey.Value entityStateKey2.Value
+    let private keyEquality = KeyEquality ()
+
+    // avoids closure allocation in tight-loop
+    let mutable private getFreshKeyAndValueEntity = Unchecked.defaultof<Entity>
+    let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
+    let private getFreshKeyAndValue _ =
+        let entityStateOpt = UMap.tryFindFast getFreshKeyAndValueEntity.EntityAddress getFreshKeyAndValueWorld.EntityStates
+        KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity.EntityAddress, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
+
     type World with
 
         static member private entityStateFinder (entity : Entity) world =
             // OPTIMIZATION: a ton of optimization has gone down in here...!
             let entityStateOpt = entity.EntityStateOpt
             if isNull (entityStateOpt :> obj) then
-                let entityStateOpt = UMap.tryFindFast entity.EntityAddress world.EntityStates
+                getFreshKeyAndValueEntity <- entity
+                getFreshKeyAndValueWorld <- world
+                let entityStateOpt =
+                    KeyedCache.getValueFast
+                        keyEquality
+                        getFreshKeyAndValue
+                        (KeyValuePair (entity.EntityAddress, world.EntityStates))
+                        (World.getEntityCachedOpt world)
+                getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
+                getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
                 if FOption.isSome entityStateOpt then
                     let entityState = FOption.get entityStateOpt
                     if  entityState.Cachable &&
