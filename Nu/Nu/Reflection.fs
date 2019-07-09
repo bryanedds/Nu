@@ -65,7 +65,7 @@ module Reflection =
         not
             (property.Name = Constants.Engine.NamePropertyName &&
              property.PropertyType = typeof<string> &&
-             property.GetValue target :?> string |> Guid.TryParse |> fst)
+             property.GetValue target :?> string |> String.isGuid)
 
     /// Check that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) (dispatcher : 'a) =
