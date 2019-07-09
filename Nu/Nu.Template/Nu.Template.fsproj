@@ -112,7 +112,7 @@
       <Project>{85d631a5-821a-4755-a68e-c1ffc64e469a}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\..\Nu.Math\Nu.Math.csproj">
+    <ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj">
       <Name>Nu.Math</Name>
       <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
       <Private>True</Private>
@@ -143,13 +143,13 @@
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="Nito.Collections.Deque">
-      <HintPath>..\..\Nu.Dependencies\Nito.Collections.Deque\Nito.Collections.Deque.dll</HintPath>
+      <HintPath>..\..\Nu\Nu.Dependencies\Nito.Collections.Deque\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
       <HintPath>..\..\packages\Prime.3.5.9\lib\net46\Prime.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
-      <HintPath>..\..\Nu.Dependencies\SDL2-CS\Release\SDL2-CS.dll</HintPath>
+      <HintPath>..\..\Nu\Nu.Dependencies\SDL2-CS\Release\SDL2-CS.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
