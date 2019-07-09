@@ -236,7 +236,7 @@ module SceneLayerModule =
         inherit LayerDispatcher ()
 
         static let adjustCamera scene world =
-            let player = Player scene
+            let player = Simulants.Player scene
             let playerPosition = player.GetPosition world
             let playerSize = player.GetSize world
             let eyeCenter = World.getEyeCenter world
@@ -250,11 +250,11 @@ module SceneLayerModule =
 
         static let handlePlayerFall evt world =
             let scene = evt.Subscriber : Layer
-            let player = Player scene
+            let player = Simulants.Player scene
             if player.HasFallen world && World.isSelectedScreenIdling world then
                 let world = World.playSound 1.0f Assets.DeathSound world
-                if Title.GetExists world
-                then World.transitionScreen Title world
+                if Simulants.Title.GetExists world
+                then World.transitionScreen Simulants.Title world
                 else world
             else world
 
@@ -299,7 +299,7 @@ module GameplayScreenModule =
                 [0 .. Constants.BlazeVector.SectionCount - 1]
 
         static let createScene gameplay world =
-            let scene = Scene gameplay
+            let scene = Simulants.Scene gameplay
             World.readLayerFromFile Assets.SceneLayerFilePath (Some scene.LayerName) gameplay world |> snd
 
         static let handleStartPlay evt world =
@@ -313,7 +313,7 @@ module GameplayScreenModule =
 
         static let handleStopPlay evt world =
             let gameplay = evt.Subscriber : Screen
-            let scene = Scene gameplay
+            let scene = Simulants.Scene gameplay
             let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield SectionName + scstring i]
             let layerNames = scene.LayerName :: sectionNames
             let layers = List.map (fun layerName -> gameplay / layerName) layerNames

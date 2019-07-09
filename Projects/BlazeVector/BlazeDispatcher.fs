@@ -19,39 +19,39 @@ module BlazeDispatcherModule =
         // the game
         static let handleClickTitlePlay _ world =
             let world = World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
-            World.transitionScreen Gameplay world
+            World.transitionScreen Simulants.Gameplay world
 
         // this function creates the BlazeVector title screen
         static let createTitleScreen (game : Game) world =
 
             // this creates a dissolve screen from the specified file with the given parameters
-            let world = World.createDissolveScreenFromLayerFile (Some Title.ScreenName) Constants.BlazeVector.DissolveData Assets.TitleLayerFilePath world |> snd
+            let world = World.createDissolveScreenFromLayerFile (Some Simulants.Title.ScreenName) Constants.BlazeVector.DissolveData Assets.TitleLayerFilePath world |> snd
 
             // this subscribes to the event that is raised when the Title screen is selected for
             // display and interaction, and handles the event by playing the song "Machinery".
-            let world = World.monitor handleSelectTitleScreen Title.SelectEvent game world
+            let world = World.monitor handleSelectTitleScreen Simulants.Title.SelectEvent game world
 
             // subscribes to the event that is raised when the Title screen's Play button is
             // clicked, and handles the event by transitioning to the Gameplay screen
-            let world = World.monitor handleClickTitlePlay TitlePlay.ClickEvent game world
+            let world = World.monitor handleClickTitlePlay Simulants.TitlePlay.ClickEvent game world
 
             // subscribes to the event that is raised when the Title screen's Credits button is
             // clicked, and handles the event by transitioning to the Credits screen
-            let world = World.monitor (World.handleAsScreenTransition Credits) TitleCredits.ClickEvent game world
+            let world = World.monitor (World.handleAsScreenTransition Simulants.Credits) Simulants.TitleCredits.ClickEvent game world
 
             // subscribes to the event that is raised when the Title screen's Exit button is clicked,
             // and handles the event by exiting the game
-            World.monitorPlus World.handleAsExit TitleExit.ClickEvent game world |> snd
+            World.monitorPlus World.handleAsExit Simulants.TitleExit.ClickEvent game world |> snd
 
         // pretty much the same as above, but for the Credits screen
         static let createCreditsScreen (game : Game) world =
-            let world = World.createDissolveScreenFromLayerFile (Some Credits.ScreenName) Constants.BlazeVector.DissolveData Assets.CreditsLayerFilePath world |> snd
-            World.monitor (World.handleAsScreenTransition Title) CreditsBack.ClickEvent game world
+            let world = World.createDissolveScreenFromLayerFile (Some Simulants.Credits.ScreenName) Constants.BlazeVector.DissolveData Assets.CreditsLayerFilePath world |> snd
+            World.monitor (World.handleAsScreenTransition Simulants.Title) Simulants.CreditsBack.ClickEvent game world
 
         // and so on.
         static let createGameplayScreen (game : Game) world =
-            let world = World.createDissolveScreenFromLayerFile<GameplayScreenDispatcher> (Some Gameplay.ScreenName) Constants.BlazeVector.DissolveData Assets.GameplayLayerFilePath world |> snd
-            World.monitor (World.handleAsScreenTransition Title) GameplayBack.ClickEvent game world
+            let world = World.createDissolveScreenFromLayerFile<GameplayScreenDispatcher> (Some Simulants.Gameplay.ScreenName) Constants.BlazeVector.DissolveData Assets.GameplayLayerFilePath world |> snd
+            World.monitor (World.handleAsScreenTransition Simulants.Title) Simulants.GameplayBack.ClickEvent game world
 
         // game registration is where the game's high-level logic is set up!
         override dispatcher.Register (game, world) =
@@ -66,7 +66,7 @@ module BlazeDispatcherModule =
             let world = createGameplayScreen game world
 
             // create a splash screen that automatically transitions to the Title screen
-            let (splash, world) = World.createSplashScreen (Some Splash.ScreenName) Constants.BlazeVector.SplashData Title world
+            let (splash, world) = World.createSplashScreen (Some Simulants.Splash.ScreenName) Constants.BlazeVector.SplashData Simulants.Title world
 
             // play a neat sound effect, select the splash screen, and we're off!
             let world = World.playSound 1.0f Assets.NuSplashSound world
