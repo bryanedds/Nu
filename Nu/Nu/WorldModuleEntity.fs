@@ -74,7 +74,7 @@ module WorldModuleEntity =
         static member private entityStateAdder entityState (entity : Entity) world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
-                | [screenName; layerName; entityName] ->
+                | [|screenName; layerName; entityName|] ->
                     let layerDirectory = UMap.tryFindFast screenName world.ScreenDirectory
                     if FOption.isSome layerDirectory then
                         let layerDirectory = FOption.get layerDirectory
@@ -93,7 +93,7 @@ module WorldModuleEntity =
         static member private entityStateRemover (entity : Entity) world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
-                | [screenName; layerName; entityName] ->
+                | [|screenName; layerName; entityName|] ->
                     let layerDirectoryOpt = UMap.tryFindFast screenName world.ScreenDirectory
                     if FOption.isSome layerDirectoryOpt then
                         let layerDirectory = FOption.get layerDirectoryOpt
@@ -130,7 +130,8 @@ module WorldModuleEntity =
 
         static member private publishEntityChange propertyName (entity : Entity) (oldWorld : World) world =
             let world =
-                let changeEventAddress = ltoa ["Change"; propertyName; "Event"] --> entity.EntityAddress
+                let entityNames = Address.getNames entity.EntityAddress
+                let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
                 let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
                 let allowWildcard = propertyName = "ParentNodeOpt"
                 let changeData = { PropertyName = propertyName; OldWorld = oldWorld }
@@ -632,13 +633,13 @@ module WorldModuleEntity =
                         world facets
                 let world = World.updateEntityPublishFlags entity world
                 let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
-                World.publish () (ltoa<unit> ["Register"; "Event"] --> entity) eventTrace entity world)
+                World.publish () (rtoa<unit> [|"Register"; "Event"|] --> entity) eventTrace entity world)
                 entity world
 
         static member internal unregisterEntity entity world =
             World.withEventContext (fun world ->
                 let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
-                let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] --> entity) eventTrace entity world
+                let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> entity) eventTrace entity world
                 let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
                 let facets = World.getEntityFacets entity world
                 let world = dispatcher.Unregister (entity, world)
@@ -664,7 +665,7 @@ module WorldModuleEntity =
         static member internal signalEntity signal entity world =
             World.withEventContext (fun world ->
                 let eventTrace = EventTrace.record "World" "signalEntity" EventTrace.empty
-                let world = World.publish signal (ltoa<Symbol> ["Signal"; "Event"] --> entity) eventTrace entity world
+                let world = World.publish signal (rtoa<Symbol> [|"Signal"; "Event"|] --> entity) eventTrace entity world
                 let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
                 let facets = World.getEntityFacets entity world
                 let world = dispatcher.Signal (signal, entity, world)
@@ -1013,11 +1014,11 @@ module WorldModuleEntity =
         /// address hashing.
         static member internal makeScreenFast (entity : Entity) world =
             match (World.getGameState world).SelectedScreenOpt with
-            | Some screen when screen.ScreenName = List.head (Address.getNames entity.EntityAddress) -> screen
+            | Some screen when screen.ScreenName = Array.head (Address.getNames entity.EntityAddress) -> screen
             | Some _ | None ->
                 match (World.getGameState world).OmniScreenOpt with
-                | Some omniScreen when omniScreen.ScreenName = List.head (Address.getNames entity.EntityAddress) -> omniScreen
-                | Some _ | None -> Screen entity.EntityAddress.Names.[0]
+                | Some omniScreen when omniScreen.ScreenName = Array.head (Address.getNames entity.EntityAddress) -> omniScreen
+                | Some _ | None -> Screen (Array.head (entity.EntityAddress.Names))
 
         static member internal updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax (entity : Entity) oldWorld world =
 

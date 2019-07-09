@@ -858,6 +858,9 @@ module WorldTypes =
 
         /// Create a layer reference from an address string.
         new (layerAddressStr : string) = Layer (stoa layerAddressStr)
+        
+        /// Create a layer reference from a list of names.
+        new (layerNames : string array) = Layer (rtoa layerNames)
 
         /// Create a layer reference from a list of names.
         new (layerNames : string list) = Layer (ltoa layerNames)
@@ -921,12 +924,16 @@ module WorldTypes =
 
         // check that address is of correct length for an entity
         do if Address.length entityAddress <> 3 then failwith "Entity address must be length of 3."
-        let updateEvent = ltoa<unit> ["Update"; "Event"] --> entityAddress
-        let postUpdateEvent = ltoa<unit> ["PostUpdate"; "Event"] --> entityAddress
+        let entityNames = Address.getNames entityAddress
+        let updateEvent = rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+        let postUpdateEvent = rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
         let mutable entityStateOpt = Unchecked.defaultof<EntityState>
 
         // Create an entity reference from an address string.
         new (entityAddressStr : string) = Entity (stoa entityAddressStr)
+
+        // Create an entity reference from an array of names.
+        new (entityNames : string array) = Entity (rtoa entityNames)
 
         // Create an entity reference from a list of names.
         new (entityNames : string list) = Entity (ltoa entityNames)

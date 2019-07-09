@@ -155,7 +155,7 @@ module WorldLayerModule =
         [<FunctionBinding>]
         static member getLayers (screen : Screen) world =
             match Address.getNames screen.ScreenAddress with
-            | [screenName] ->
+            | [|screenName|] ->
                 let layerDirectoryOpt = UMap.tryFindFast screenName (World.getScreenDirectory world)
                 if FOption.isSome layerDirectoryOpt then
                     let layerDirectory = FOption.get layerDirectoryOpt

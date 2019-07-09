@@ -24,7 +24,7 @@ module WorldModuleLayer =
         static member private layerStateAdder layerState (layer : Layer) world =
             let screenDirectory =
                 match Address.getNames layer.LayerAddress with
-                | [screenName; layerName] ->
+                | [|screenName; layerName|] ->
                     let layerDirectoryOpt = UMap.tryFindFast screenName world.ScreenDirectory
                     if FOption.isSome layerDirectoryOpt then
                         let layerDirectory = FOption.get layerDirectoryOpt
@@ -46,7 +46,7 @@ module WorldModuleLayer =
         static member private layerStateRemover (layer : Layer) world =
             let screenDirectory =
                 match Address.getNames layer.LayerAddress with
-                | [screenName; layerName] ->
+                | [|screenName; layerName|] ->
                     let layerDirectoryOpt = UMap.tryFindFast screenName world.ScreenDirectory
                     if FOption.isSome layerDirectoryOpt then
                         let layerDirectory = FOption.get layerDirectoryOpt
@@ -75,7 +75,8 @@ module WorldModuleLayer =
 
         static member private publishLayerChange (propertyName : string) (layer : Layer) oldWorld world =
             let world =
-                let changeEventAddress = ltoa ["Change"; propertyName; "Event"] --> layer.LayerAddress
+                let layerNames = Address.getNames layer.LayerAddress
+                let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; layerNames.[0]; layerNames.[1]|]
                 let eventTrace = EventTrace.record "World" "publishLayerChange" EventTrace.empty
                 World.publishPlus World.sortSubscriptionsByHierarchy { PropertyName = propertyName; OldWorld = oldWorld } changeEventAddress eventTrace layer false world
             world
@@ -218,13 +219,13 @@ module WorldModuleLayer =
             | None -> world
 
         static member internal registerLayer layer world =
-            let world = World.monitor World.layerOnRegisterChanged (ltoa<World ParticipantChangeData> ["Change"; (Property? OnRegister); "Event"] --> layer) layer world
-            let world = World.monitor World.layerScriptOptChanged (ltoa<World ParticipantChangeData> ["Change"; (Property? ScriptOpt); "Event"] --> layer) layer world
+            let world = World.monitor World.layerOnRegisterChanged (rtoa<World ParticipantChangeData> [|"Change"; (Property? OnRegister); "Event"|] --> layer) layer world
+            let world = World.monitor World.layerScriptOptChanged (rtoa<World ParticipantChangeData> [|"Change"; (Property? ScriptOpt); "Event"|] --> layer) layer world
             World.withEventContext (fun world ->
                 let dispatcher = World.getLayerDispatcher layer world
                 let world = dispatcher.Register (layer, world)
                 let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
-                let world = World.publish () (ltoa<unit> ["Register"; "Event"] --> layer) eventTrace layer world
+                let world = World.publish () (rtoa<unit> [|"Register"; "Event"|] --> layer) eventTrace layer world
                 eval (World.getLayerOnRegister layer world) (World.getLayerScriptFrame layer world) layer world |> snd')
                 layer
                 world
@@ -234,7 +235,7 @@ module WorldModuleLayer =
                 let world = eval (World.getLayerOnUnregister layer world) (World.getLayerScriptFrame layer world) layer world |> snd'
                 let dispatcher = World.getLayerDispatcher layer world
                 let eventTrace = EventTrace.record "World" "unregisteringLayer" EventTrace.empty
-                let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] --> layer) eventTrace layer world
+                let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> layer) eventTrace layer world
                 dispatcher.Unregister (layer, world))
                 layer
                 world
@@ -251,7 +252,7 @@ module WorldModuleLayer =
                     | None -> failwithumf ()
                 let dispatcher = World.getLayerDispatcher layer world
                 let eventTrace = EventTrace.record "World" "signalLayer" EventTrace.empty
-                let world = World.publish signal (ltoa<Symbol> ["Signal"; "Event"] --> layer) eventTrace layer world
+                let world = World.publish signal (rtoa<Symbol> [|"Signal"; "Event"|] --> layer) eventTrace layer world
                 dispatcher.Signal (signal, layer, world))
                 layer
                 world
