@@ -493,30 +493,29 @@ module WorldModuleEntity =
             else None
 
         static member internal getEntityProperty propertyName entity world =
-            match Getters.TryGetValue propertyName with
-            | (false, _) ->
-                let entityState = World.getEntityState entity world
-                match EntityState.tryGetProperty propertyName entityState with
-                | None ->
+            let entityState = World.getEntityState entity world
+            match EntityState.tryGetProperty propertyName entityState with
+            | None ->
+                match Getters.TryGetValue propertyName with
+                | (false, _) ->
                     match World.tryGetEntityCalculatedProperty propertyName entity world with
                     | None -> failwithf "Could not find property '%s'." propertyName
                     | Some property -> property
-                | Some property -> property
-            | (true, getter) -> getter entity world
+                | (true, getter) -> getter entity world
+            | Some property -> property
 
         static member internal trySetEntityProperty propertyName alwaysPublish nonPersistent property entity world =
             if World.getEntityExists entity world then
-                match Setters.TryGetValue propertyName with
-                | (false, _) ->
-                    let mutable success = false // bit of a hack to get additional state out of the lambda
-                    let world =
-                        World.updateEntityState (fun entityState ->
-                            let (successInner, entityState) = EntityState.trySetProperty propertyName property entityState
-                            success <- successInner
-                            entityState)
-                            alwaysPublish nonPersistent true propertyName entity world
-                    (success, world)
-                | (true, setter) -> setter property entity world
+                let (success, world) =
+                    let entityState = World.getEntityState entity world
+                    match EntityState.trySetProperty propertyName property entityState with
+                    | (false, _) ->
+                        match Setters.TryGetValue propertyName with
+                        | (false, _) -> (false, world)
+                        | (true, setter) -> setter property entity world
+                    | (true, entityState) -> (true, World.setEntityState entityState entity world)
+                let world = World.updateEntityState id alwaysPublish nonPersistent true propertyName entity world
+                (success, world)
             else (false, world)
 
         static member internal setEntityProperty propertyName alwaysPublish nonPersistent property entity world =
