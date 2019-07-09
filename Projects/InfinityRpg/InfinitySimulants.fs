@@ -2,7 +2,7 @@
 open System
 open Nu
 
-[<AutoOpen>]
+[<RequireQualifiedAccess>]
 module Simulants =
 
     // the game handle

@@ -36,30 +36,30 @@ module InfinityDispatcherModule =
             let world = base.Register (game, world)
 
             // do not persist the hud when saving gameplay
-            Hud.SetPersistent false world
+            Simulants.Hud.SetPersistent false world
 
         override this.Bindings (_, _, _) =
-            [Title.IncomingStartEvent =>! PlayTitleSong
-             Title.OutgoingStartEvent =>! FadeSong
-             TitleCredits.ClickEvent =>! ShowCredits
-             TitleNewGame.ClickEvent =>! ShowGameplay false
-             TitleLoadGame.ClickEvent =>! ShowGameplay true
-             TitleExit.ClickEvent =>! ExitGame
-             CreditsBack.ClickEvent =>! ShowTitle
-             Gameplay.OutgoingStartEvent =>! FadeSong
-             HudBack.ClickEvent =>! ShowTitle]
+            [Simulants.Title.IncomingStartEvent =>! PlayTitleSong
+             Simulants.Title.OutgoingStartEvent =>! FadeSong
+             Simulants.TitleCredits.ClickEvent =>! ShowCredits
+             Simulants.TitleNewGame.ClickEvent =>! ShowGameplay false
+             Simulants.TitleLoadGame.ClickEvent =>! ShowGameplay true
+             Simulants.TitleExit.ClickEvent =>! ExitGame
+             Simulants.CreditsBack.ClickEvent =>! ShowTitle
+             Simulants.Gameplay.OutgoingStartEvent =>! FadeSong
+             Simulants.HudBack.ClickEvent =>! ShowTitle]
 
         override this.Command (command, _, _, world) =
             match command with
             | PlayTitleSong -> World.playSong 0 1.0f Assets.ButterflyGirlSong world
             | FadeSong -> World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
-            | ShowTitle -> World.transitionScreen Title world
-            | ShowCredits -> World.transitionScreen Credits world
-            | ShowGameplay load -> world |> Gameplay.SetShallLoadGame load |> World.transitionScreen Gameplay
+            | ShowTitle -> World.transitionScreen Simulants.Title world
+            | ShowCredits -> World.transitionScreen Simulants.Credits world
+            | ShowGameplay load -> world |> Simulants.Gameplay.SetShallLoadGame load |> World.transitionScreen Simulants.Gameplay
             | ExitGame -> World.exit world
 
         override this.Content (_, _, _) =
-            [Content.screen Splash (Nu.Splash (Constants.InfinityRpg.DissolveData, Constants.InfinityRpg.SplashData, Title)) [] []
-             Content.screenFromLayerFile Title (Dissolve Constants.InfinityRpg.DissolveData) Assets.TitleLayerFilePath
-             Content.screenFromLayerFile Credits (Dissolve Constants.InfinityRpg.DissolveData) Assets.CreditsLayerFilePath
-             Content.screenFromLayerFile<GameplayDispatcher> Gameplay (Dissolve Constants.InfinityRpg.DissolveData) Assets.HudLayerFilePath]
+            [Content.screen Simulants.Splash (Nu.Splash (Constants.InfinityRpg.DissolveData, Constants.InfinityRpg.SplashData, Simulants.Title)) [] []
+             Content.screenFromLayerFile Simulants.Title (Dissolve Constants.InfinityRpg.DissolveData) Assets.TitleLayerFilePath
+             Content.screenFromLayerFile Simulants.Credits (Dissolve Constants.InfinityRpg.DissolveData) Assets.CreditsLayerFilePath
+             Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay (Dissolve Constants.InfinityRpg.DissolveData) Assets.HudLayerFilePath]
