@@ -627,6 +627,7 @@ module WorldModuleEntity =
                 let world = dispatcher.Register (entity, world)
                 let world =
                     List.fold (fun world (facet : Facet) ->
+                        let world = facet.Register (entity, world)
                         if WorldModule.isSimulantSelected entity world
                         then facet.RegisterPhysics (entity, world)
                         else world)
@@ -644,6 +645,7 @@ module WorldModuleEntity =
                 let facets = World.getEntityFacets entity world
                 let world = dispatcher.Unregister (entity, world)
                 List.fold (fun world (facet : Facet) ->
+                    let world = facet.Unregister (entity, world)
                     if WorldModule.isSimulantSelected entity world
                     then facet.UnregisterPhysics (entity, world)
                     else world)
