@@ -494,15 +494,15 @@ module WorldModuleEntity =
 
         static member internal getEntityProperty propertyName entity world =
             let entityState = World.getEntityState entity world
-            let propertyOpt = EntityState.tryGetPropertyFast propertyName entityState
-            if FOption.isNone propertyOpt then
+            match EntityState.tryGetProperty propertyName entityState with
+            | None ->
                 match Getters.TryGetValue propertyName with
                 | (false, _) ->
                     match World.tryGetEntityCalculatedProperty propertyName entity world with
                     | None -> failwithf "Could not find property '%s'." propertyName
                     | Some property -> property
                 | (true, getter) -> getter entity world
-            else FOption.get propertyOpt
+            | Some property -> property
 
         static member internal trySetEntityProperty propertyName alwaysPublish nonPersistent property entity world =
             if World.getEntityExists entity world then
