@@ -138,7 +138,7 @@ type [<ReferenceEquality>] SdlRenderer =
     static member private sortDescriptors (LayerableDescriptor left) (LayerableDescriptor right) =
         let depthCompare = left.Depth.CompareTo right.Depth
         if depthCompare <> 0 then depthCompare else
-        let positionYCompare = left.PositionY.CompareTo right.PositionY * -1
+        let positionYCompare = -(left.PositionY.CompareTo right.PositionY)
         if positionYCompare <> 0 then positionYCompare else
         let packageCompare = strCmp left.AssetTag.PackageName right.AssetTag.PackageName
         if packageCompare <> 0 then packageCompare else

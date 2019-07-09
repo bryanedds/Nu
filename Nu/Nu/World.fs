@@ -139,7 +139,7 @@ module Nu =
                             let data = event.Data :?> ChangeData
                             let world = handler data.OldWorld world
                             (Cascade, world))
-                        (Address.makeFromList ("Change" :: propertyName :: "Event" :: Address.getNames participant.ParticipantAddress))
+                        (rtoa (Array.append [|"Change"; propertyName; "Event"|] (Address.getNames participant.ParticipantAddress)))
                         (Default.Game :> Participant)
                         (world :?> World)
                 (box unsubscribe, box world)

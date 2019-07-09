@@ -760,7 +760,7 @@ module Gaia =
                 form.entityTreeView.SelectedNode.Level = 1 then
                 let address = Address.makeFromString form.entityTreeView.SelectedNode.Name
                 match Address.getNames address with
-                | [_; _; _] ->
+                | [|_; _; _|] ->
                     let entity = Entity address
                     selectEntity entity form world
                     world
@@ -772,7 +772,7 @@ module Gaia =
             if isNotNull form.hierarchyTreeView.SelectedNode then
                 let address = Address.makeFromString form.hierarchyTreeView.SelectedNode.Name
                 match Address.getNames address with
-                | [_; _] ->
+                | [|_; _|] ->
 
                     // select the layer of the selected entity
                     let layer = Layer (atoa address)
@@ -780,7 +780,7 @@ module Gaia =
                     form.layerTabControl.SelectTab layerTabIndex
                     world
 
-                | [_; _; _] ->
+                | [|_; _; _|] ->
 
                     // get a handle to the selected entity
                     let entity = Entity (atoa address)

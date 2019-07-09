@@ -244,7 +244,7 @@ module WorldEntityModule =
         [<FunctionBinding>]
         static member getEntities (layer : Layer) world =
             match Address.getNames layer.LayerAddress with
-            | [screenName; layerName] ->
+            | [|screenName; layerName|] ->
                 let layerDirectoryOpt = UMap.tryFindFast screenName (World.getScreenDirectory world)
                 if FOption.isSome layerDirectoryOpt then
                     let layerDirectory = FOption.get layerDirectoryOpt

@@ -198,7 +198,7 @@ module WorldGameModule =
                     let dispatcher = game.GetDispatcher world
                     let world = dispatcher.Register (game, world)
                     let eventTrace = EventTrace.record "World" "registerGame" EventTrace.empty
-                    let world = World.publish () (ltoa<unit> ["Register"; "Event"] --> game) eventTrace game world
+                    let world = World.publish () (rtoa<unit> [|"Register"; "Event"|]) eventTrace game world
                     World.eval (game.GetOnRegister world) (game.GetScriptFrame world) game world |> snd')
                     game
                     world
@@ -210,7 +210,7 @@ module WorldGameModule =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcher world
                     let eventTrace = EventTrace.record "World" "unregisteringGame" EventTrace.empty
-                    let world = World.publish () (ltoa<unit> ["Unregistering"; "Event"] --> game) eventTrace game world
+                    let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|]) eventTrace game world
                     let world = World.eval (game.GetOnUnregister world) (game.GetScriptFrame world) game world |> snd'
                     dispatcher.Unregister (game, world))
                     game
@@ -281,8 +281,9 @@ module WorldGameModule =
         [<FunctionBinding>]
         static member isSimulantSelected (simulant : Simulant) world =
             match Address.getNames simulant.SimulantAddress with
-            | [] -> true
-            | screenName :: _ ->
+            | [||] -> true
+            | names ->
+                let screenName = Array.head names
                 match World.getOmniScreenOpt world with
                 | Some omniScreen when Address.getName omniScreen.ScreenAddress = screenName -> true
                 | _ ->

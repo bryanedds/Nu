@@ -324,26 +324,28 @@ module WorldModule2 =
             let eventAddress = event.Data
             let eventNames = Address.getNames eventAddress
             match eventNames with
-            | eventFirstName :: _ :: ([_ ;_ ; _] as entityAddress) ->
-                let entity = Entity (ltoa entityAddress)
+            | [|eventFirstName; _; screenName; layerName; entityName|] ->
+                let entity = Entity [|screenName; layerName; entityName|]
                 match eventFirstName with
                 | "Update" ->
-                    if List.contains (Address.head Events.Wildcard) eventNames then
+                    if Array.contains (Address.head Events.Wildcard) eventNames then
                         Log.debug
                             ("Subscribing to entity update events with a wildcard is not supported. " +
                              "This will cause a bug where some entity update events are not published.")
                     World.updateEntityPublishUpdateFlag entity world
                 | "PostUpdate" ->
-                    if List.contains (Address.head Events.Wildcard) eventNames then
+                    if Array.contains (Address.head Events.Wildcard) eventNames then
                         Log.debug
                             ("Subscribing to entity post-update events with a wildcard is not supported. " +
                              "This will cause a bug where some entity post-update events are not published.")
                     World.updateEntityPublishPostUpdateFlag entity world
                 | _ -> world
-            | eventFirstName :: eventSecondName :: _ :: _ ->
+            | eventNames when eventNames.Length >= 3 ->
+                let eventFirstName = eventNames.[0]
+                let eventSecondName = eventNames.[1]
                 match eventFirstName with
                 | "Change" when eventSecondName <> "ParentNodeOpt" ->
-                    if List.contains (Address.head Events.Wildcard) eventNames then
+                    if Array.contains (Address.head Events.Wildcard) eventNames then
                         Log.debug "Subscribing to change events with a wildcard is not supported."
                     world
                 | _ -> world

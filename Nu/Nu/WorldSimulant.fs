@@ -139,10 +139,10 @@ module WorldSimulantModule =
 
         static member tryDerive address =
             match Address.getNames address with
-            | [] -> Some (Default.Game :> Simulant)
-            | [_] -> Some (Screen (Address.changeType<obj, Screen> address) :> Simulant)
-            | [_; _] -> Some (Layer (Address.changeType<obj, Layer> address) :> Simulant)
-            | [_; _; _] -> Some (Entity (Address.changeType<obj, Entity> address) :> Simulant)
+            | [||] -> Some (Default.Game :> Simulant)
+            | [|_|] -> Some (Screen (Address.changeType<obj, Screen> address) :> Simulant)
+            | [|_; _|] -> Some (Layer (Address.changeType<obj, Layer> address) :> Simulant)
+            | [|_; _; _|] -> Some (Entity (Address.changeType<obj, Entity> address) :> Simulant)
             | _ -> None
 
         static member derive address =
