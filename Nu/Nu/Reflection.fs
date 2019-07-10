@@ -12,19 +12,25 @@ open Nu
 [<RequireQualifiedAccess>]
 module Reflection =
 
+    //let mutable private Counter = -1L
+
     let private PropertyDefinitionsCache =
         Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
     /// Derive a simulant name from an optional name.
-    let deriveName nameOpt id =
+    let generatName nameOpt id =
         match nameOpt with
         | Some name -> name
-        | None -> scstring<Guid> id
+        | None -> scstring<Guid> id // "@" + string (Counter <- inc Counter; Counter)
+
+    /// Check that a name is generated.
+    let isNameGenerated (name : string) =
+        Guid.TryParse name |> fst // name.StartsWith "@"
 
     /// Derive a simulant id and name from an optional name.
     let deriveIdAndName nameOpt =
         let id = makeGuid ()
-        let name = deriveName nameOpt id
+        let name = generatName nameOpt id
         (id, name)
 
     /// Check if a property with the given name should always publish a change event.
@@ -65,8 +71,7 @@ module Reflection =
         not
             (property.Name = Constants.Engine.NamePropertyName &&
              property.PropertyType = typeof<string> &&
-             property.GetValue target :?> string |> String.isGuid)
-
+             isNameGenerated (property.GetValue target :?> string))
     /// Check that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) (dispatcher : 'a) =
         let dispatcherType = dispatcher.GetType ()
