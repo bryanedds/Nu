@@ -14,10 +14,10 @@ module WorldGameModule =
 
         member this.GetId world = World.getGameId world
         member this.Id = Lens.makeReadOnly Property? Id this.GetId this
-        member this.GetDispatcher world = World.getGameDispatcher world
-        member this.Dispatcher = Lens.makeReadOnly Property? Dispatcher this.GetDispatcher this
         member this.GetCreationTimeStamp world = World.getGameCreationTimeStamp world
         member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
+        member this.GetDispatcher world = World.getGameDispatcher world
+        member this.Dispatcher = Lens.makeReadOnly Property? Dispatcher this.GetDispatcher this
         member this.GetScriptOpt world = World.getGameScriptOpt world
         member this.SetScriptOpt value world = World.setGameScriptOpt value world
         member this.ScriptOpt = Lens.make Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt this

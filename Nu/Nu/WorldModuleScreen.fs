@@ -96,10 +96,10 @@ module WorldModuleScreen =
 
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
+        static member internal getScreenCreationTimeStamp screen world = (World.getScreenState screen world).CreationTimeStamp
         static member internal getScreenDispatcher screen world = (World.getScreenState screen world).Dispatcher
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent screen world
-        static member internal getScreenCreationTimeStamp screen world = (World.getScreenState screen world).CreationTimeStamp
         static member internal getScreenScriptOpt screen world = (World.getScreenState screen world).ScriptOpt
         static member internal setScreenScriptOpt value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptOpt = value }) Property? ScriptOpt screen world
         static member internal getScreenScript screen world = (World.getScreenState screen world).Script
@@ -309,9 +309,9 @@ module WorldModuleScreen =
     let private initGetters () =
         Getters.Add ("Id", fun screen world -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world })
         Getters.Add ("Name", fun screen world -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world })
+        Getters.Add ("CreationTimeStamp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStamp screen world })
         Getters.Add ("Dispatcher", fun screen world -> { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcher screen world })
         Getters.Add ("Persistent", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world })
-        Getters.Add ("CreationTimeStamp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStamp screen world })
         Getters.Add ("ScriptOpt", fun screen world -> { PropertyType = typeof<Symbol AssetTag option>; PropertyValue = World.getScreenScriptOpt screen world })
         Getters.Add ("Script", fun screen world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getScreenScript screen world })
         Getters.Add ("ScriptFrame", fun screen world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrame screen world })
@@ -330,9 +330,9 @@ module WorldModuleScreen =
     let private initSetters () =
         Setters.Add ("Id", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
+        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("Persistent", fun property screen world -> (true, World.setScreenPersistent (property.PropertyValue :?> bool) screen world))
-        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("ScriptOpt", fun property screen world -> (true, World.setScreenScriptOpt (property.PropertyValue :?> Symbol AssetTag option) screen world))
         Setters.Add ("Script", fun property screen world -> (true, World.setScreenScript (property.PropertyValue :?> Scripting.Expr array) screen world))
         Setters.Add ("ScriptFrame", fun _ _ world -> (false, world))

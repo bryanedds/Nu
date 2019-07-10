@@ -49,8 +49,8 @@ module WorldModuleGame =
             World.publishGameChange propertyName oldWorld world
 
         static member internal getGameId world = (World.getGameState world).Id
-        static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
         static member internal getGameCreationTimeStamp world = (World.getGameState world).CreationTimeStamp
+        static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
         static member internal getGameScriptOpt world = (World.getGameState world).ScriptOpt
         static member internal setGameScriptOpt value world = World.updateGameState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt world
         static member internal getGameScript world = (World.getGameState world).Script
@@ -357,8 +357,8 @@ module WorldModuleGame =
     /// Initialize property getters.
     let private initGetters () =
         Getters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
-        Getters.Add ("Dispatcher", fun world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher world })
         Getters.Add ("CreationTimeStamp", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStamp world })
+        Getters.Add ("Dispatcher", fun world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher world })
         Getters.Add ("ScriptOpt", fun world -> { PropertyType = typeof<Symbol AssetTag option>; PropertyValue = World.getGameScriptOpt world })
         Getters.Add ("Script", fun world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getGameScript world })
         Getters.Add ("ScriptUnsubscriptions", fun world -> { PropertyType = typeof<Unsubscription list>; PropertyValue = World.getGameScriptUnsubscriptions world })
@@ -377,8 +377,8 @@ module WorldModuleGame =
     /// Initialize property setters.
     let private initSetters () =
         Setters.Add ("Id", fun _ world -> (false, world))
-        Setters.Add ("Dispatcher", fun _ world -> (false, world))
         Setters.Add ("CreationTimeStamp", fun _ world -> (false, world))
+        Setters.Add ("Dispatcher", fun _ world -> (false, world))
         Setters.Add ("ScriptOpt", fun property world -> (true, World.setGameScriptOpt (property.PropertyValue :?> Symbol AssetTag option) world))
         Setters.Add ("Script", fun property world -> (true, World.setGameScript (property.PropertyValue :?> Scripting.Expr array) world))
         Setters.Add ("ScriptFrame", fun _ world -> (false, world))

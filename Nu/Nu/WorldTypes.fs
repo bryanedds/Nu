@@ -359,9 +359,9 @@ module WorldTypes =
     /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] GameState =
         { Id : Guid
+          CreationTimeStamp : int64
           Xtension : Xtension
           Dispatcher : GameDispatcher
-          CreationTimeStamp : int64
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
           ScriptFrame : Scripting.DeclarationFrame
@@ -383,9 +383,9 @@ module WorldTypes =
             // TODO: P1: consider if eyeSize is too hard-coded
             let eyeSize = Vector2 (single Constants.Render.DefaultResolutionX, single Constants.Render.DefaultResolutionY)
             { Id = makeGuid ()
+              CreationTimeStamp = Core.getTimeStamp ()
               Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
-              CreationTimeStamp = Core.getTimeStamp ()
               ScriptOpt = None
               Script = [||]
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
@@ -442,10 +442,10 @@ module WorldTypes =
     and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
         { Id : Guid
           Name : string
+          CreationTimeStamp : int64
           Xtension : Xtension
           Dispatcher : ScreenDispatcher
           Persistent : bool
-          CreationTimeStamp : int64
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
           ScriptFrame : Scripting.DeclarationFrame
@@ -465,10 +465,10 @@ module WorldTypes =
             let (id, name) = Reflection.deriveIdAndName nameOpt
             { Id = id
               Name = name
+              CreationTimeStamp = Core.getTimeStamp ()
               Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
               Persistent = true
-              CreationTimeStamp = Core.getTimeStamp ()
               ScriptOpt = None
               Script = [||]
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
@@ -524,10 +524,10 @@ module WorldTypes =
     and [<CLIMutable; NoEquality; NoComparison>] LayerState =
         { Id : Guid
           Name : string
+          CreationTimeStamp : int64
           Xtension : Xtension
           Dispatcher : LayerDispatcher
           Persistent : bool
-          CreationTimeStamp : int64
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
           ScriptFrame : Scripting.DeclarationFrame
@@ -543,12 +543,12 @@ module WorldTypes =
         /// Make a layer state value.
         static member make nameOpt (dispatcher : LayerDispatcher) =
             let (id, name) = Reflection.deriveIdAndName nameOpt
-            { LayerState.Id = id
+            { Id = id
               Name = name
+              CreationTimeStamp = Core.getTimeStamp ()
               Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
               Persistent = true
-              CreationTimeStamp = Core.getTimeStamp ()
               ScriptOpt = None
               Script = [||]
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
@@ -602,13 +602,12 @@ module WorldTypes =
     and [<CLIMutable; NoEquality; NoComparison>] EntityState =
         { Id : Guid
           Name : string
+          CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           mutable Xtension : Xtension
           Dispatcher : EntityDispatcher
           mutable Imperative : bool
           mutable Persistent : bool
           mutable IgnoreLayer : bool
-          Cachable : bool
-          CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           mutable OverlayNameOpt : string option
           mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -631,13 +630,12 @@ module WorldTypes =
             let (id, name) = Reflection.deriveIdAndName nameOpt
             { Id = id
               Name = name
+              CreationTimeStamp = Core.getTimeStamp ()
               Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
               Imperative = false
               Persistent = true
               IgnoreLayer = false
-              Cachable = String.isGuid name
-              CreationTimeStamp = Core.getTimeStamp ()
               OverlayNameOpt = overlayNameOpt
               Position = Vector2.Zero
               Size = Constants.Engine.DefaultEntitySize
