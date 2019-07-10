@@ -193,7 +193,7 @@ module Reflection =
                 | Symbols ([String (str, _); _], _) when isNotNull (Type.GetType str) ->
                     let converter = SymbolicConverter (false, None, property.PropertyType)
                     if converter.CanConvertFrom typeof<Symbol> then
-                        let propertyValue = { PropertyType = property.PropertyType; PropertyValue = converter.ConvertFrom propertySymbol }
+                        let propertyValue = converter.ConvertFrom propertySymbol
                         property.SetValue (target, propertyValue)
                     else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + property.PropertyType.Name + "'.")
                 | _ -> ()
