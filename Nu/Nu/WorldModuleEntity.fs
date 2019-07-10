@@ -243,13 +243,27 @@ module WorldModuleEntity =
                     { entityState with Xtension = xtension; Imperative = false })
                 false false false Property? Imperative entity world
 
-        // NOTE: Wouldn't macros be nice?
+        static member internal getEntityStaticData<'a> entity world =
+            (World.getEntityStaticDataInternal entity world).DesignerValue :?> 'a
+
+        static member internal setEntityStaticData<'a> (value : 'a) entity world =
+            if World.getEntityImperative entity world then
+                let entityState = World.getEntityState entity world
+                entityState.StaticData.DesignerValue <- value
+                World.setEntityState entityState entity world
+            else
+                World.updateEntityState (fun entityState ->
+                    let staticData = entityState.StaticData
+                    { entityState with StaticData = { DesignerType = staticData.DesignerType; DesignerValue = value }})
+                    false false true Property? StaticData entity world
+
+        // NOTE: wouldn't macros be nice?
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityDispatcher entity world = (World.getEntityState entity world).Dispatcher
-        static member internal getEntityStaticData entity world = (World.getEntityState entity world).StaticData
-        static member internal setEntityStaticData value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.StaticData <- value; entityState else { entityState with StaticData = value }) false false true Property? StaticData entity world
+        static member internal getEntityStaticDataInternal entity world = (World.getEntityState entity world).StaticData
+        static member internal setEntityStaticDataInternal value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.StaticData <- value; entityState else { entityState with StaticData = value }) false false true Property? StaticData entity world
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.Persistent <- value; entityState else { entityState with Persistent = value }) false false false Property? Persistent entity world
         static member internal getEntityIgnoreLayer entity world = (World.getEntityState entity world).IgnoreLayer
@@ -1102,7 +1116,7 @@ module WorldModuleEntity =
         Getters.Add ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
         Getters.Add ("Dispatcher", fun entity world -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcher entity world })
         Getters.Add ("StaticData", fun entity world -> { PropertyType = typeof<obj>; PropertyValue = World.getEntityStaticData entity world })
-        Getters.Add ("Imperative", fun entity world -> { PropertyType = typeof<DesignerProperty>; PropertyValue = World.getEntityImperative entity world })
+        Getters.Add ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
         Getters.Add ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
         Getters.Add ("IgnoreLayer", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIgnoreLayer entity world })
         Getters.Add ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
@@ -1128,7 +1142,7 @@ module WorldModuleEntity =
         Setters.Add ("Name", fun _ _ world -> (false, world))
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
-        Setters.Add ("StaticData", fun property entity world -> (true, World.setEntityStaticData (property.PropertyValue :?> DesignerProperty) entity world))
+        Setters.Add ("StaticData", fun property entity world -> (true, World.setEntityStaticData property.PropertyValue entity world))
         Setters.Add ("Imperative", fun property entity world -> (true, World.setEntityImperative (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Persistent", fun property entity world -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world))
         Setters.Add ("IgnoreLayer", fun property entity world -> (true, World.setEntityIgnoreLayer (property.PropertyValue :?> bool) entity world))
