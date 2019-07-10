@@ -183,16 +183,29 @@ module Reflection =
         let genericTypeNameStrs = Array.map (fun (ty : Type) -> ty.Name) genericTypes
         let genericTypeNamesStr = "<" + String.concat ", " genericTypeNameStrs + ">"
         typeName.Replace ("`" + scstring (Array.length genericTypeNameStrs), genericTypeNamesStr)
-        
+
     /// Try to read the target's member property from property descriptors.
     let private tryReadMemberProperty propertyDescriptors (property : PropertyInfo) target =
-        match Map.tryFind property.Name propertyDescriptors with
-        | Some (propertySymbol : Symbol) ->
-            let converter = SymbolicConverter (false, None, property.PropertyType)
-            if converter.CanConvertFrom typeof<Symbol> then
-                let propertyValue = converter.ConvertFrom propertySymbol
-                property.SetValue (target, propertyValue)
-        | None -> ()
+        if property.PropertyType = typeof<DesignerProperty> then
+            match Map.tryFind property.Name propertyDescriptors with
+            | Some propertySymbol ->
+                match propertySymbol with
+                | Symbols ([String (str, _); _], _) when isNotNull (Type.GetType str) ->
+                    let converter = SymbolicConverter (false, None, property.PropertyType)
+                    if converter.CanConvertFrom typeof<Symbol> then
+                        let propertyValue = { PropertyType = property.PropertyType; PropertyValue = converter.ConvertFrom propertySymbol }
+                        property.SetValue (target, propertyValue)
+                    else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + property.PropertyType.Name + "'.")
+                | _ -> ()
+            | None -> ()
+        else
+            match Map.tryFind property.Name propertyDescriptors with
+            | Some (propertySymbol : Symbol) ->
+                let converter = SymbolicConverter (false, None, property.PropertyType)
+                if converter.CanConvertFrom typeof<Symbol> then
+                    let propertyValue = converter.ConvertFrom propertySymbol
+                    property.SetValue (target, propertyValue)
+            | None -> ()
         
     /// Read one of a target's xtension properties.
     let private readXtensionProperty

@@ -1,5 +1,6 @@
 ﻿namespace MyGame
 open System
+open OpenTK
 open Prime
 open Nu
 open Nu.Declarative
@@ -7,14 +8,37 @@ open Nu.Declarative
 type MyEntityDispatcher () =
     inherit EntityDispatcher ()
 
-    static member FacetNames =
-        [typeof<StaticSpriteFacet>.Name]
-
+    // makes user-defined properties faster by using static data
     static member Properties =
-        [define Entity.Rotation 0.0f]
+        [define Entity.StaticData
+            { DesignerType = typeof<Image AssetTag>
+              DesignerValue = AssetTag.make<Image> Assets.DefaultPackage "Image4" }]
 
     override dispatcher.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
+
+    override dispatcher.Actualize (entity, world) =
+        if entity.GetVisibleLayered world && entity.GetInView world then
+            let position = entity.GetPosition world
+            let image = (entity.GetStaticData world).DesignerValue :?> Image AssetTag
+            World.enqueueRenderMessage
+                (RenderDescriptorsMessage
+                    [|LayerableDescriptor
+                        { Depth = entity.GetDepthLayered world
+                          AssetTag = image
+                          PositionY = position.Y
+                          LayeredDescriptor =
+                          SpriteDescriptor
+                            { Position = position
+                              Size = entity.GetSize world
+                              Rotation = entity.GetRotation world
+                              Offset = Vector2.Zero
+                              ViewType = entity.GetViewType world
+                              InsetOpt = None
+                              Image = image
+                              Color = Vector4.One }}|])
+                world
+        else world
 
 type MyGameDispatcher () =
     inherit GameDispatcher ()
@@ -22,8 +46,7 @@ type MyGameDispatcher () =
     override dispatcher.Register (_, world) =
         let world = World.createScreen (Some Default.Screen.ScreenName) world |> snd
         let world = World.createLayer (Some Default.Layer.LayerName) Default.Screen world |> snd
-        let indices =
-            // create approximately 3000 entities
+        let indices = // approximately 3000 entities
             seq {
                 for i in 0 .. 70 do
                     for j in 0 .. 43 do
@@ -39,20 +62,13 @@ type MyGameDispatcher () =
                 world)
                 world
                 indices
-        let world = World.selectScreen Default.Screen world
-        world
+        World.selectScreen Default.Screen world
 
 type MyGamePlugin () =
     inherit NuPlugin ()
-
-    override this.MakeEntityDispatchers () =
-        [MyEntityDispatcher () :> EntityDispatcher]
-
-    override this.MakeGameDispatchers () =
-        [MyGameDispatcher () :> GameDispatcher]
-
-    override this.GetStandAloneGameDispatcherName () =
-        typeof<MyGameDispatcher>.Name
+    override this.MakeEntityDispatchers () = [MyEntityDispatcher () :> EntityDispatcher]
+    override this.MakeGameDispatchers () = [MyGameDispatcher () :> GameDispatcher]
+    override this.GetStandAloneGameDispatcherName () = typeof<MyGameDispatcher>.Name
     
 module Program =
 
