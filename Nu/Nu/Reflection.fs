@@ -40,8 +40,8 @@ module Reflection =
     let isPropertyPersistentByName (propertyName : string) =
         match propertyName with
         | "Dispatcher"
-        | "CreationTimeStamp"
         | "Cachable"
+        | "CreationTimeStamp"
         | "TransitionState"
         | "TransitionTicks"
         | "EntityTree"

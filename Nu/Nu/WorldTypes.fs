@@ -606,9 +606,9 @@ module WorldTypes =
           Dispatcher : EntityDispatcher
           mutable Imperative : bool
           mutable Persistent : bool
-          CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           mutable IgnoreLayer : bool
           Cachable : bool
+          CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           mutable OverlayNameOpt : string option
           mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -635,9 +635,9 @@ module WorldTypes =
               Dispatcher = dispatcher
               Imperative = false
               Persistent = true
-              CreationTimeStamp = Core.getTimeStamp ()
               IgnoreLayer = false
               Cachable = String.isGuid name
+              CreationTimeStamp = Core.getTimeStamp ()
               OverlayNameOpt = overlayNameOpt
               Position = Vector2.Zero
               Size = Constants.Engine.DefaultEntitySize
