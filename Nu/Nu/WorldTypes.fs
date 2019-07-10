@@ -104,7 +104,7 @@ module WorldTypes =
     let mutable internal getPropertyOpt = Unchecked.defaultof<string -> Propertied -> obj -> obj option>
     let mutable internal setPropertyOpt = Unchecked.defaultof<string -> Propertied -> obj option -> Type -> obj -> obj>
     let mutable internal handlePropertyChange = Unchecked.defaultof<string -> Propertied -> obj -> obj -> obj * obj>
-        
+
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
 
@@ -751,9 +751,11 @@ module WorldTypes =
         /// The address of the game.
         member this.GameAddress = gameAddress
         
-        /// Helper for accessing strongly-type entity property tags.
+        /// Helper for accessing strongly-typed game property tags.
         static member Prop = Unchecked.defaultof<Game>
+        
         static member op_Implicit () = Game ()
+        
         static member op_Implicit (gameAddress : Game Address) = Game gameAddress
 
         interface Simulant with
@@ -803,9 +805,11 @@ module WorldTypes =
         /// The address of the screen.
         member this.ScreenAddress = screenAddress
 
-        /// Helper for accessing strongly-type entity property tags.
+        /// Helper for accessing strongly-typed screen property tags.
         static member Prop = Unchecked.defaultof<Screen>
+        
         static member op_Implicit (screenName : string) = Screen screenName
+        
         static member op_Implicit (screenAddress : Screen Address) = Screen screenAddress
 
         interface Simulant with
@@ -869,9 +873,11 @@ module WorldTypes =
         /// The address of the layer.
         member this.LayerAddress = layerAddress
 
-        /// Helper for accessing strongly-type entity property tags.
+        /// Helper for accessing strongly-typed layer property tags.
         static member Prop = Unchecked.defaultof<Layer>
+
         static member op_Implicit (layerName : string) = Layer layerName
+        
         static member op_Implicit (layerAddress : Layer Address) = Layer layerAddress
 
         interface Simulant with
@@ -921,11 +927,19 @@ module WorldTypes =
     and Entity (entityAddress) =
 
         // check that address is of correct length for an entity
-        do if Address.length entityAddress <> 3 then failwith "Entity address must be length of 3."
-        let entityNames = Address.getNames entityAddress
-        let updateEvent = rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
-        let postUpdateEvent = rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
-        let mutable entityStateOpt = Unchecked.defaultof<EntityState>
+        do if Address.length entityAddress <> 3 then
+            failwith "Entity address must be length of 3."
+        
+        let updateEvent =
+            let entityNames = Address.getNames entityAddress
+            rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+
+        let postUpdateEvent =
+            let entityNames = Address.getNames entityAddress
+            rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+
+        let mutable entityStateOpt =
+            Unchecked.defaultof<EntityState>
 
         // Create an entity reference from an address string.
         new (entityAddressStr : string) = Entity (stoa entityAddressStr)
@@ -953,9 +967,11 @@ module WorldTypes =
             with get () = entityStateOpt
             and set value = entityStateOpt <- value
 
-        /// Helper for accessing strongly-type entity property tags.
+        /// Helper for accessing strongly-typed entity property tags.
         static member Prop = Unchecked.defaultof<Entity>
+
         static member op_Implicit (entityName : string) = Entity entityName
+
         static member op_Implicit (entityAddress : Entity Address) = Entity entityAddress
         
         interface Simulant with

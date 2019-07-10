@@ -20,7 +20,7 @@ module FacetModule =
         member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
         member this.GetDescriptors world = this.Get Property? Descriptors world
         member this.SetDescriptors value world = this.Set Property? Descriptors value world
-        member this.Descriptors () = Lens.make<EntityDescriptor list, World> Property? Descriptors this.GetDescriptors this.SetDescriptors this
+        member this.Descriptors = Lens.make<EntityDescriptor list, World> Property? Descriptors this.GetDescriptors this.SetDescriptors this
 
     type [<AbstractClass>] Facet<'model, 'message, 'command> (initial : 'model) =
         inherit Facet ()
