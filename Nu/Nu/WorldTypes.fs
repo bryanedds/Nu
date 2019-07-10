@@ -258,6 +258,7 @@ module WorldTypes =
             [Define? Imperative false
              Define? Persistent true
              Define? IgnoreLayer false
+             Define? StaticData { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
              Define? Rotation 0.0f
@@ -605,6 +606,7 @@ module WorldTypes =
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           mutable Xtension : Xtension
           Dispatcher : EntityDispatcher
+          mutable StaticData : DesignerProperty
           mutable Imperative : bool
           mutable Persistent : bool
           mutable IgnoreLayer : bool
@@ -633,6 +635,7 @@ module WorldTypes =
               CreationTimeStamp = Core.getTimeStamp ()
               Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
+              StaticData = { DesignerType = typeof<unit>; DesignerValue = () }
               Imperative = false
               Persistent = true
               IgnoreLayer = false
