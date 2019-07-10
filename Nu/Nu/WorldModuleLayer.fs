@@ -112,10 +112,10 @@ module WorldModuleLayer =
 
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
         static member internal getLayerName layer world = (World.getLayerState layer world).Name
+        static member internal getLayerCreationTimeStamp layer world = (World.getLayerState layer world).CreationTimeStamp
         static member internal getLayerDispatcher layer world = (World.getLayerState layer world).Dispatcher
         static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
         static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> { layerState with Persistent = value }) Property? Persistent layer world
-        static member internal getLayerCreationTimeStamp layer world = (World.getLayerState layer world).CreationTimeStamp
         static member internal getLayerScriptOpt layer world = (World.getLayerState layer world).ScriptOpt
         static member internal setLayerScriptOpt value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptOpt = value }) Property? ScriptOpt layer world
         static member internal getLayerScript layer world = (World.getLayerState layer world).Script
@@ -343,9 +343,9 @@ module WorldModuleLayer =
     let private initGetters () =
         Getters.Add ("Id", fun layer world -> { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world })
         Getters.Add ("Name", fun layer world -> { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world })
+        Getters.Add ("CreationTimeStamp", fun layer world -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStamp layer world })
         Getters.Add ("Dispatcher", fun layer world -> { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcher layer world })
         Getters.Add ("Persistent", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world })
-        Getters.Add ("CreationTimeStamp", fun layer world -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStamp layer world })
         Getters.Add ("ScriptOpt", fun layer world -> { PropertyType = typeof<Symbol AssetTag option>; PropertyValue = World.getLayerScriptOpt layer world })
         Getters.Add ("Script", fun layer world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getLayerScript layer world })
         Getters.Add ("ScriptFrame", fun layer world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScript layer world })
@@ -362,9 +362,9 @@ module WorldModuleLayer =
     let private initSetters () =
         Setters.Add ("Id", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
+        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("Persistent", fun property layer world -> (true, World.setLayerPersistent (property.PropertyValue :?> bool) layer world))
-        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("ScriptOpt", fun property layer world -> (true, World.setLayerScriptOpt (property.PropertyValue :?> Symbol AssetTag option) layer world))
         Setters.Add ("Script", fun property layer world -> (true, World.setLayerScript (property.PropertyValue :?> Scripting.Expr array) layer world))
         Setters.Add ("ScriptFrame", fun _ _ world -> (false, world))

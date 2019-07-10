@@ -64,9 +64,8 @@ module WorldModuleEntity =
                 getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
                 if FOption.isSome entityStateOpt then
                     let entityState = FOption.get entityStateOpt
-                    if  entityState.Cachable &&
-                        entityState.Imperative then
-                        entity.EntityStateOpt <- entityState
+                    if entityState.Imperative
+                    then entity.EntityStateOpt <- entityState
                     entityState
                 else Unchecked.defaultof<EntityState>
             else entityStateOpt
@@ -247,13 +246,12 @@ module WorldModuleEntity =
         // NOTE: Wouldn't macros be nice?
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
+        static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityDispatcher entity world = (World.getEntityState entity world).Dispatcher
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.Persistent <- value; entityState else { entityState with Persistent = value }) false false false Property? Persistent entity world
         static member internal getEntityIgnoreLayer entity world = (World.getEntityState entity world).IgnoreLayer
         static member internal setEntityIgnoreLayer value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.IgnoreLayer <- value; entityState else { entityState with EntityState.IgnoreLayer = value }) false false true Property? IgnoreLayer entity world
-        static member internal getEntityCachable entity world = (World.getEntityState entity world).Cachable
-        static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Position
         static member internal setEntityPosition value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.Position <- value; entityState else { entityState with EntityState.Position = value }) false false true Property? Position entity world
@@ -1099,12 +1097,11 @@ module WorldModuleEntity =
     let private initGetters () =
         Getters.Add ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
         Getters.Add ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })
+        Getters.Add ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
         Getters.Add ("Dispatcher", fun entity world -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcher entity world })
         Getters.Add ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
         Getters.Add ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
         Getters.Add ("IgnoreLayer", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIgnoreLayer entity world })
-        Getters.Add ("Cachable", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCachable entity world })
-        Getters.Add ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
         Getters.Add ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
         Getters.Add ("Position", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world })
         Getters.Add ("Size", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world })
@@ -1126,12 +1123,11 @@ module WorldModuleEntity =
     let private initSetters () =
         Setters.Add ("Id", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
+        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("Imperative", fun property entity world -> (true, World.setEntityImperative (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Persistent", fun property entity world -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world))
         Setters.Add ("IgnoreLayer", fun property entity world -> (true, World.setEntityIgnoreLayer (property.PropertyValue :?> bool) entity world))
-        Setters.Add ("Cachable", fun _ _ world -> (false, world))
-        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("OverlayNameOpt", fun _ _ world -> (false, world))
         Setters.Add ("Position", fun property entity world -> (true, World.setEntityPosition (property.PropertyValue :?> Vector2) entity world))
         Setters.Add ("Size", fun property entity world -> (true, World.setEntitySize (property.PropertyValue :?> Vector2) entity world))
