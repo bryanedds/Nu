@@ -426,7 +426,7 @@ module Gaia =
         let entityNames =
             World.getEntities selectedLayer world |>
             Seq.filter (fun entity -> entity.FacetedAs<NodeFacet> world) |>
-            Seq.filter (fun entity -> not (String.isGuid entity.EntityName)) |>
+            Seq.filter (fun entity -> not (Reflection.isNameGenerated entity.EntityName)) |>
             Seq.map (fun entity -> entity.GetName world) |>
             flip Seq.append [NonePick] |>
             Seq.toArray
@@ -1470,8 +1470,8 @@ module Gaia =
                 member this.Compare (left, right) =
                     let leftName = ((left :?> TreeNode).Name.Split Constants.Address.Separator) |> Array.last
                     let rightName = ((right :?> TreeNode).Name.Split Constants.Address.Separator) |> Array.last
-                    let leftNameBiased = if String.isGuid leftName then "~" + leftName else leftName
-                    let rightNameBiased = if String.isGuid rightName then "~" + rightName else rightName
+                    let leftNameBiased = if Reflection.isNameGenerated leftName then "~" + leftName else leftName
+                    let rightNameBiased = if Reflection.isNameGenerated rightName then "~" + rightName else rightName
                     String.CompareOrdinal (leftNameBiased, rightNameBiased) }
 
         // sort entity tree view nodes with a bias against guids
