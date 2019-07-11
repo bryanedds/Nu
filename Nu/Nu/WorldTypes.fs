@@ -621,9 +621,9 @@ module WorldTypes =
           mutable AlwaysUpdate : bool
           mutable PublishUpdates : bool
           mutable PublishPostUpdates : bool
+          mutable Persistent : bool
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
-          mutable Persistent : bool
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Name : string
           Id : Guid }
@@ -650,9 +650,9 @@ module WorldTypes =
               AlwaysUpdate = false
               PublishUpdates = false
               PublishPostUpdates = false
+              Persistent = true
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
-              Persistent = true
               CreationTimeStamp = Core.getTimeStamp ()
               Name = name
               Id = id }
