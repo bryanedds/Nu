@@ -79,3 +79,17 @@ module CoreOperators =
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
+
+[<RequireQualifiedAccess>]
+module Array =
+
+    /// Try to find a value.
+    /// NOTE: this will be in the next version of Prime.
+    let rec tryFindPlus (pred : 'a -> 'b option) (arr : 'a array) : 'b option =
+        let mutable result = None
+        let enr = (arr :> System.Collections.Generic.IEnumerable<'a>).GetEnumerator ()
+        while Option.isNone result && enr.MoveNext () do
+            match pred enr.Current with
+            | Some _ as found -> result <- found
+            | None -> ()
+        result

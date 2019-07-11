@@ -261,8 +261,8 @@ module WorldTypes =
              Define? Size Constants.Engine.DefaultEntitySize
              Define? Rotation 0.0f
              Define? Depth 0.0f
-             Define? Overflow Vector2.Zero
              Define? ViewType Relative
+             Define? Overflow Vector2.Zero
              Define? IgnoreLayer false
              Define? Visible true
              Define? Enabled true
@@ -600,7 +600,9 @@ module WorldTypes =
     /// NOTE: The properties here have duplicated representations in WorldModuleEntity that exist
     /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] EntityState =
-        { Dispatcher : EntityDispatcher
+        { // cache line begin //
+          Dispatcher : EntityDispatcher
+          mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable StaticData : DesignerProperty
           mutable PublishChanges : bool
@@ -609,18 +611,18 @@ module WorldTypes =
           mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
-          mutable Overflow : Vector2
           mutable ViewType : ViewType
+          // cache line end //
+          mutable Overflow : Vector2
           mutable IgnoreLayer : bool
           mutable Visible : bool
           mutable Enabled : bool
           mutable Omnipresent : bool
-          mutable Facets : Facet list
-          mutable FacetNames : string Set
           mutable AlwaysUpdate : bool
           mutable PublishUpdates : bool
           mutable PublishPostUpdates : bool
           mutable OverlayNameOpt : string option
+          mutable FacetNames : string Set
           mutable Persistent : bool
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Name : string
@@ -630,6 +632,7 @@ module WorldTypes =
         static member make nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let (id, name) = Reflection.deriveIdAndName nameOpt
             { Dispatcher = dispatcher
+              Facets = [||]
               Xtension = Xtension.makeSafe ()
               StaticData = { DesignerType = typeof<unit>; DesignerValue = () }
               PublishChanges = false
@@ -644,12 +647,11 @@ module WorldTypes =
               Visible = true
               Enabled = true
               Omnipresent = false
-              Facets = []
-              FacetNames = Set.empty
               AlwaysUpdate = false
               PublishUpdates = false
               PublishPostUpdates = false
               OverlayNameOpt = overlayNameOpt
+              FacetNames = Set.empty
               Persistent = true
               CreationTimeStamp = Core.getTimeStamp ()
               Name = name

@@ -53,12 +53,12 @@ module Reflection =
     let isPropertyPersistentByName (propertyName : string) =
         match propertyName with
         | "Dispatcher"
+        | "Facets"
         | "TransitionState"
         | "TransitionTicks"
         | "EntityTree"
         | "PublishUpdates"
         | "PublishPostUpdates"
-        | "Facets"
         | "ScriptFrame"
         | "ScriptUnsubscriptions"
         | "CreationTimeStamp"
@@ -476,19 +476,20 @@ module Reflection =
                     match Map.tryFind facetName facetMap with
                     | Some facet -> facet
                     | None -> failwith ("Could not find facet '" + facetName + "' in facet map."))
-                facetNames
+                facetNames |>
+            List.toArray
         let targetType = target.GetType ()
         match targetType.GetPropertyWritable "Facets" with
         | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")
         | facetsProperty ->
-            List.iter
+            Array.iter
                 (fun facet ->
                     if not (isFacetCompatibleWithDispatcher dispatcherMap facet target)
                     then failwith ("Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'.")
                     else ())
                 facets
             facetsProperty.SetValue (target, facets)
-            List.fold (fun target facet -> attachProperties copyTarget facet target world) target facets
+            Array.fold (fun target facet -> attachProperties copyTarget facet target world) target facets
 
     /// Attach source's intrinsic facets to a target.
     let attachIntrinsicFacets (copyTarget : 'a -> 'a) dispatcherMap facetMap (source : 'b) target world =

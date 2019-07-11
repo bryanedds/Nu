@@ -17,6 +17,8 @@ module WorldEntityModule =
 
         member this.GetDispatcher world = World.getEntityDispatcher this world
         member this.Dispatcher = Lens.makeReadOnly Property? Dispatcher this.GetDispatcher this
+        member this.GetFacets world = World.getEntityFacets this world
+        member this.Facets = Lens.makeReadOnly Property? Facets this.GetFacets this
         member this.GetStaticData<'a> world = World.getEntityStaticData<'a> this world
         member this.SetStaticData<'a> value world = World.setEntityStaticData<'a> value this world
         member this.UpdateStaticData<'model> updater world = this.SetStaticData<'model> (updater this.GetStaticData<'model> world) world
@@ -41,12 +43,12 @@ module WorldEntityModule =
         member this.Depth = Lens.make Property? Depth this.GetDepth this.SetDepth this
         member this.GetDepthLayered world = World.getEntityDepth this world + if not (World.getEntityIgnoreLayer this world) then World.getLayerDepth (etol this) world else 0.0f
         member this.DepthLayered = Lens.makeReadOnly Property? DepthLayered this.GetDepthLayered this
-        member this.GetOverflow world = World.getEntityOverflow this world
-        member this.SetOverflow value world = World.setEntityOverflow value this world
-        member this.Overflow = Lens.make Property? Overflow this.GetOverflow this.SetOverflow this
         member this.GetViewType world = World.getEntityViewType this world
         member this.SetViewType value world = World.setEntityViewType value this world
         member this.ViewType = Lens.make Property? ViewType this.GetViewType this.SetViewType this
+        member this.GetOverflow world = World.getEntityOverflow this world
+        member this.SetOverflow value world = World.setEntityOverflow value this world
+        member this.Overflow = Lens.make Property? Overflow this.GetOverflow this.SetOverflow this
         member this.GetIgnoreLayer world = World.getEntityIgnoreLayer this world
         member this.SetIgnoreLayer value world = World.setEntityIgnoreLayer value this world
         member this.IgnoreLayer = Lens.make Property? IgnoreLayer this.GetIgnoreLayer this.SetIgnoreLayer this
@@ -61,15 +63,13 @@ module WorldEntityModule =
         member this.GetOmnipresent world = World.getEntityOmnipresent this world
         member this.SetOmnipresent value world = World.setEntityOmnipresent value this world
         member this.Omnipresent = Lens.make Property? Omnipresent this.GetOmnipresent this.SetOmnipresent this
-        member this.GetFacets world = World.getEntityFacets this world
-        member this.Facets = Lens.makeReadOnly Property? Facets this.GetFacets this
-        member this.GetFacetNames world = World.getEntityFacetNames this world
-        member this.FacetNames = Lens.makeReadOnly Property? FacetNames this.GetFacetNames this
         member this.GetAlwaysUpdate world = World.getEntityAlwaysUpdate this world
         member this.SetAlwaysUpdate value world = World.setEntityAlwaysUpdate value this world
         member this.AlwaysUpdate = Lens.make Property? AlwaysUpdate this.GetAlwaysUpdate this.SetAlwaysUpdate this
         member this.GetOverlayNameOpt world = World.getEntityOverlayNameOpt this world
         member this.OverlayNameOpt = Lens.makeReadOnly Property? OverlayNameOpt this.GetOverlayNameOpt this
+        member this.GetFacetNames world = World.getEntityFacetNames this world
+        member this.FacetNames = Lens.makeReadOnly Property? FacetNames this.GetFacetNames this
         member this.GetPersistent world = World.getEntityPersistent this world
         member this.SetPersistent value world = World.setEntityPersistent value this world
         member this.Persistent = Lens.make Property? Persistent this.GetPersistent this.SetPersistent this
@@ -180,7 +180,7 @@ module WorldEntityModule =
             World.withEventContext (fun world ->
                 if WorldModule.isSimulantSelected this world then
                     let facets = this.GetFacets world
-                    List.fold (fun world (facet : Facet) ->
+                    Array.fold (fun world (facet : Facet) ->
                         let world = facet.UnregisterPhysics (this, world)
                         facet.RegisterPhysics (this, world))
                         world facets
@@ -188,7 +188,7 @@ module WorldEntityModule =
                 this world
 
         /// Check that an entity uses a facet of the given type.
-        member this.FacetedAs (facetType, world) = List.exists (fun facet -> getType facet = facetType) (this.GetFacets world)
+        member this.FacetedAs (facetType, world) = Array.exists (fun facet -> getType facet = facetType) (this.GetFacets world)
 
         /// Check that an entity uses a facet of the given type.
         member this.FacetedAs<'a> world = this.FacetedAs (typeof<'a>, world)
@@ -212,7 +212,7 @@ module WorldEntityModule =
                 let dispatcher = entity.GetDispatcher world
                 let facets = entity.GetFacets world
                 let world = dispatcher.Update (entity, world)
-                let world = List.foldBack (fun (facet : Facet) world -> facet.Update (entity, world)) facets world
+                let world = Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
                 if World.getEntityPublishUpdates entity world then
                     let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
                     World.publishPlus World.sortSubscriptionsByHierarchy () entity.UpdateEvent eventTrace Default.Game false world
@@ -225,7 +225,7 @@ module WorldEntityModule =
                 let dispatcher = entity.GetDispatcher world
                 let facets = entity.GetFacets world
                 let world = dispatcher.PostUpdate (entity, world)
-                let world = List.foldBack (fun (facet : Facet) world -> facet.PostUpdate (entity, world)) facets world
+                let world = Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
                 if World.getEntityPublishPostUpdates entity world then
                     let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
                     World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateEvent eventTrace Default.Game false world
@@ -238,7 +238,7 @@ module WorldEntityModule =
                 let dispatcher = entity.GetDispatcher world
                 let facets = entity.GetFacets world
                 let world = dispatcher.Actualize (entity, world)
-                List.foldBack (fun (facet : Facet) world -> facet.Actualize (entity, world)) facets world)
+                Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets)
                 entity
                 world
 
