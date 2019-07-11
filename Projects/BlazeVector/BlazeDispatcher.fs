@@ -51,7 +51,7 @@ module BlazeDispatcherModule =
             [Content.screen Simulants.Splash (Nu.Splash (Constants.BlazeVector.DissolveData, Constants.BlazeVector.SplashData, Simulants.Title)) [] []
              Content.screenFromLayerFile Simulants.Title (Dissolve Constants.BlazeVector.DissolveData) Assets.TitleLayerFilePath
              Content.screenFromLayerFile Simulants.Credits (Dissolve Constants.BlazeVector.DissolveData) Assets.CreditsLayerFilePath
-             Content.screenFromLayerFile<GameplayScreenDispatcher> Simulants.Gameplay (Dissolve Constants.BlazeVector.DissolveData) Assets.GameplayLayerFilePath]
+             Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay (Dissolve Constants.BlazeVector.DissolveData) Assets.GameplayLayerFilePath]
 
         // here we hint to the renderer and audio system that the 'Gui' package should be loaded
         override dispatcher.Register (game, world) =
