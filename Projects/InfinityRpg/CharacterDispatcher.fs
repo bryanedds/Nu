@@ -16,5 +16,5 @@ module CharacterDispatcherModule =
              typeof<CharacterAnimationFacet>.Name]
 
         static member Properties =
-            [define Entity.Omnipresent true
-             define Entity.PublishChanges true]
+            [define Entity.PublishChanges true
+             define Entity.Omnipresent true]
