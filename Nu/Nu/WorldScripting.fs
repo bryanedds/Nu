@@ -692,7 +692,7 @@ module WorldScripting =
                         World.getProperties state |>
                         List.filter (fun (name, _, _) ->
                             match name with
-                            |"Xtension" | "Dispatcher" | "Facets" | "ScriptFrame" -> false
+                            | "Xtension" | "Dispatcher" | "Facets" | "ScriptFrame" -> false
                             | _ -> true) |>
                         List.map (fun (name, ty, value) ->
                             let ty = if isNull value then ty else getType value
