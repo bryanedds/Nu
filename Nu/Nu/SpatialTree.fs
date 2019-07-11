@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open OpenTK
 open Prime
 
 [<AutoOpen>]

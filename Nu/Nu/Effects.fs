@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open Prime
-open OpenTK
 module Effects =
 
     type [<Struct>] Algorithm =

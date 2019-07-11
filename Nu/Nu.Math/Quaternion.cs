@@ -26,7 +26,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 
-namespace OpenTK
+namespace Nu
 {
     /// <summary>
     /// Represents a Quaternion.

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace OpenTK
+namespace Nu
 {
     /// <summary>
     /// A 2d int vector.

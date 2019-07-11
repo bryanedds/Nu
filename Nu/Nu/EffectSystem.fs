@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Collections.Generic
 open Prime
-open OpenTK
 open Effects
 
 /// The artifacts produced by an effect.

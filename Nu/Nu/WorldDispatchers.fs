@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open Nito.Collections
-open OpenTK
 open TiledSharp
 open Prime
 open Nu

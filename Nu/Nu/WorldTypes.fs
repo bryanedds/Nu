@@ -16,7 +16,6 @@ namespace Nu
 open System
 open System.Diagnostics
 open System.Collections.Generic
-open OpenTK
 open TiledSharp
 open Prime
 open Nu

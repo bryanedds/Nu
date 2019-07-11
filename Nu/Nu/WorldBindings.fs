@@ -9,7 +9,6 @@
 
 namespace Nu
 open System
-open OpenTK
 open Prime
 open global.Nu
 

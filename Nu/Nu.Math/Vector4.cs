@@ -24,7 +24,7 @@ SOFTWARE.
 
 using System;
 using System.Runtime.InteropServices;
-namespace OpenTK
+namespace Nu
 {
     /// <summary>Represents a 4D vector using four single-precision floating-point numbers.</summary>
     /// <remarks>

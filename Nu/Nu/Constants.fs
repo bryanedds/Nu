@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open OpenTK
 open SDL2
 open Nu
 open Prime

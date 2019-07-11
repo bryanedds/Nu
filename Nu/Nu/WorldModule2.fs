@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.IO
 open System.Threading.Tasks
 open SDL2
-open OpenTK
 open Prime
 open global.Nu
 

@@ -12,7 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenTK
+namespace Nu
 {
     /// <summary>
     /// Represents a cubic bezier curve with two anchor and two control points.
