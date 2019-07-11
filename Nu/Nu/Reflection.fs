@@ -12,25 +12,32 @@ open Nu
 [<RequireQualifiedAccess>]
 module Reflection =
 
-    //let mutable private Counter = -1L
+    let mutable private Counter = -1L
+    let private CounterLock = obj ()
+    let private PropertyDefinitionsCache = Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
-    let private PropertyDefinitionsCache =
-        Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
+    /// Get the next global counter value.
+    let nextCounter () =
+        lock CounterLock (fun () -> Counter <- inc Counter; Counter)
+
+    /// Generate the next name.
+    let nextName () =
+        Constants.Engine.GeneratedNamePrefix + scstring (nextCounter ())
 
     /// Derive a simulant name from an optional name.
-    let generatName nameOpt id =
+    let generatName nameOpt =
         match nameOpt with
         | Some name -> name
-        | None -> scstring<Guid> id // "@" + string (Counter <- inc Counter; Counter)
+        | None -> nextName ()
 
     /// Check that a name is generated.
     let isNameGenerated (name : string) =
-        Guid.TryParse name |> fst // name.StartsWith "@"
+        name.StartsWith Constants.Engine.GeneratedNamePrefix
 
     /// Derive a simulant id and name from an optional name.
     let deriveIdAndName nameOpt =
         let id = makeGuid ()
-        let name = generatName nameOpt id
+        let name = generatName nameOpt
         (id, name)
 
     /// Check if a property with the given name should always publish a change event.

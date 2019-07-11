@@ -319,7 +319,7 @@ type [<ReferenceEquality>] SdlRenderer =
                         let tilePosition =
                             Vector2
                                 (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f,
-                                    -(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
+                                -(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
                         let tileBounds = Math.makeBounds tilePosition tileSize
                         let viewBounds = Math.makeBounds Vector2.Zero eyeSize
                         if Math.isBoundsIntersectingBounds tileBounds viewBounds then
