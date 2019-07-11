@@ -85,18 +85,18 @@ module WorldModule =
             let world =
                 World.choose
                     { EventSystemDelegate = eventDelegate
-                      Dispatchers = dispatchers
-                      Subsystems = subsystems
-                      ScriptingEnv = scriptingEnv
-                      ScriptingContext = Game ()
                       EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) (FOption.none ())
-                      ScreenDirectory = UMap.makeEmpty Constants.Engine.SimulantMapConfig
-                      AmbientState = ambientState
                       EntityTree = MutantCache.make id spatialTree
-                      GameState = gameState
-                      ScreenStates = screenStates
+                      EntityStates = entityStates
                       LayerStates = layerStates
-                      EntityStates = entityStates }
+                      ScreenStates = screenStates
+                      GameState = gameState
+                      AmbientState = ambientState
+                      Subsystems = subsystems
+                      ScreenDirectory = UMap.makeEmpty Constants.Engine.SimulantMapConfig
+                      Dispatchers = dispatchers
+                      ScriptingEnv = scriptingEnv
+                      ScriptingContext = Game () }
             let world =
                 World.choose
                     { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
@@ -211,6 +211,27 @@ module WorldModule =
             (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
             World.choose (EventSystem.monitor<'a, 's, World> subscription eventAddress subscriber world)
 
+    type World with // Caching
+
+        /// Get the optional cached entity.
+        static member internal getEntityCachedOpt world =
+            world.EntityCachedOpt
+
+        /// Get the screen directory.
+        static member internal getScreenDirectory world =
+            world.ScreenDirectory
+
+    type World with // EntityTree
+
+        static member internal getEntityTree world =
+            world.EntityTree
+
+        static member internal setEntityTree entityTree world =
+            World.choose { world with EntityTree = entityTree }
+
+        static member internal updateEntityTree updater world =
+            World.setEntityTree (updater (World.getEntityTree world))
+
     type World with // Dispatchers
 
         /// Get the game dispatchers of the world.
@@ -232,22 +253,6 @@ module WorldModule =
         /// Get the facets of the world.
         static member getFacets world =
             world.Dispatchers.Facets
-
-    type World with // Subsystems
-
-        static member internal getSubsystems world =
-            world.Subsystems
-
-        static member internal setSubsystems subsystems world =
-            World.choose { world with Subsystems = subsystems }
-
-        static member internal updateSubsystems updater world =
-            World.setSubsystems (updater world.Subsystems) world
-
-        static member internal cleanUpSubsystems world =
-            let subsystems = World.getSubsystems world
-            let (subsystems, world) = Subsystems.cleanUp subsystems world
-            World.setSubsystems subsystems world
 
     type World with // AmbientState
 
@@ -504,26 +509,21 @@ module WorldModule =
             Map.toValueListBy getTypeName |>
             List.map (fun typeName -> (typeName, None))
 
-    type World with // EntityTree
+    type World with // Subsystems
 
-        static member internal getEntityTree world =
-            world.EntityTree
+        static member internal getSubsystems world =
+            world.Subsystems
 
-        static member internal setEntityTree entityTree world =
-            World.choose { world with EntityTree = entityTree }
+        static member internal setSubsystems subsystems world =
+            World.choose { world with Subsystems = subsystems }
 
-        static member internal updateEntityTree updater world =
-            World.setEntityTree (updater (World.getEntityTree world))
+        static member internal updateSubsystems updater world =
+            World.setSubsystems (updater world.Subsystems) world
 
-    type World with // Caching
-
-        /// Get the optional cached entity.
-        static member internal getEntityCachedOpt world =
-            world.EntityCachedOpt
-
-        /// Get the screen directory.
-        static member internal getScreenDirectory world =
-            world.ScreenDirectory
+        static member internal cleanUpSubsystems world =
+            let subsystems = World.getSubsystems world
+            let (subsystems, world) = Subsystems.cleanUp subsystems world
+            World.setSubsystems subsystems world
 
     type World with // Scripting
 
