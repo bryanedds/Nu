@@ -362,6 +362,11 @@ module WorldTypes =
           CreationTimeStamp : int64
           Xtension : Xtension
           Dispatcher : GameDispatcher
+          OmniScreenOpt : Screen option
+          SelectedScreenOpt : Screen option
+          ScreenTransitionDestinationOpt : Screen option
+          EyeCenter : Vector2
+          EyeSize : Vector2
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
           ScriptFrame : Scripting.DeclarationFrame
@@ -370,12 +375,7 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnSignal : Scripting.Expr
-          OmniScreenOpt : Screen option
-          SelectedScreenOpt : Screen option
-          ScreenTransitionDestinationOpt : Screen option
-          EyeCenter : Vector2
-          EyeSize : Vector2 }
+          OnSignal : Scripting.Expr }
 
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
@@ -386,6 +386,11 @@ module WorldTypes =
               CreationTimeStamp = Core.getTimeStamp ()
               Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
+              OmniScreenOpt = None
+              SelectedScreenOpt = None
+              ScreenTransitionDestinationOpt = None
+              EyeCenter = eyeCenter
+              EyeSize = eyeSize
               ScriptOpt = None
               Script = [||]
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
@@ -394,12 +399,7 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnSignal = Scripting.Unit
-              OmniScreenOpt = None
-              SelectedScreenOpt = None
-              ScreenTransitionDestinationOpt = None
-              EyeCenter = eyeCenter
-              EyeSize = eyeSize }
+              OnSignal = Scripting.Unit }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName gameState =
