@@ -1033,14 +1033,17 @@ module WorldTypes =
     /// to implement a game, messages to by consumed by the various engine sub-systems, and general
     /// configuration data.
     ///
-    /// For efficiency, this type is kept under 64 bytes on 32-bit machines as to not exceed the size
-    /// of a typical cache line.
+    /// Unfortunately, in a 64-bit context, this is larger than a single cache line. We can decompose
+    /// this type further, but the trade-off is introducing additional pointer indrections in some
+    /// cases. Fortunately, we currently have the most accessed parts in a single cache line. Still,
+    /// it might be worth the extra decomposition.
     ///
     /// NOTE: this would be better as private, but there is just too much code to fit in this file
     /// for that.
     and [<ReferenceEquality>] World =
         internal
-            { EventSystemDelegate : World EventSystemDelegate
+            { // cache line begin
+              EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState FOption>
               EntityTree : Entity SpatialTree MutantCache
               EntityStates : UMap<Entity Address, EntityState>
@@ -1048,6 +1051,7 @@ module WorldTypes =
               ScreenStates : UMap<Screen Address, ScreenState>
               GameState : GameState
               AmbientState : World AmbientState
+              // cache line end
               Subsystems : World Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Layer Address, UMap<string, Entity Address>>>>>
               Dispatchers : Dispatchers
