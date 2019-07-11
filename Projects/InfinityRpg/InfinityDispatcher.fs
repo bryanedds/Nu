@@ -8,9 +8,6 @@ open InfinityRpg
 [<AutoOpen>]
 module InfinityDispatcherModule =
 
-    type InfinityModel =
-        unit
-
     type InfinityCommand =
         | PlayTitleSong
         | FadeSong
@@ -25,8 +22,6 @@ module InfinityDispatcherModule =
         override this.Register (game, world) =
 
             // just pre-load all assets in the application for simplicity
-            let world = World.hintRenderPackageUse Assets.DefaultPackage world
-            let world = World.hintAudioPackageUse Assets.DefaultPackage world
             let world = World.hintRenderPackageUse Assets.GuiPackage world
             let world = World.hintAudioPackageUse Assets.GuiPackage world
             let world = World.hintRenderPackageUse Assets.GameplayPackage world
