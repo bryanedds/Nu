@@ -286,14 +286,14 @@ module WorldModuleEntity =
         static member internal setEntityEnabled value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.Enabled <- value; entityState else { entityState with EntityState.Enabled = value }) false false true Property? Enabled entity world
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.Omnipresent <- value; entityState else { entityState with EntityState.Omnipresent = value }) false false true Property? Omnipresent entity world
+        static member internal getEntityFacets entity world = (World.getEntityState entity world).Facets
+        static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
         static member internal getEntityAlwaysUpdate entity world = (World.getEntityState entity world).AlwaysUpdate
         static member internal setEntityAlwaysUpdate value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.AlwaysUpdate <- value; entityState else { entityState with EntityState.AlwaysUpdate = value }) false false true Property? AlwaysUpdate entity world
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
         static member internal setEntityPublishUpdates value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.PublishUpdates <- value; entityState else { entityState with PublishUpdates = value }) false true false Property? PublishUpdates entity world
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
         static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.PublishPostUpdates <- value; entityState else { entityState with PublishPostUpdates = value }) false true false Property? PublishPostUpdates entity world
-        static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
-        static member internal getEntityFacets entity world = (World.getEntityState entity world).Facets
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.Persistent <- value; entityState else { entityState with Persistent = value }) false false false Property? Persistent entity world
 
@@ -1128,11 +1128,11 @@ module WorldModuleEntity =
         Getters.Add ("Visible", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world })
         Getters.Add ("Enabled", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world })
         Getters.Add ("Omnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world })
+        Getters.Add ("Facets", fun entity world -> { PropertyType = typeof<Facet list>; PropertyValue = World.getEntityFacets entity world })
+        Getters.Add ("FacetNames", fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world })
         Getters.Add ("AlwaysUpdate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world })
         Getters.Add ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
         Getters.Add ("PublishPostUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world })
-        Getters.Add ("FacetNames", fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world })
-        Getters.Add ("Facets", fun entity world -> { PropertyType = typeof<Facet list>; PropertyValue = World.getEntityFacets entity world })
         Getters.Add ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
 
     /// Initialize property setters.
@@ -1155,11 +1155,11 @@ module WorldModuleEntity =
         Setters.Add ("Visible", fun property entity world -> (true, World.setEntityVisible (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Enabled", fun property entity world -> (true, World.setEntityEnabled (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Omnipresent", fun property entity world -> (true, World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world))
+        Setters.Add ("Facets", fun _ _ world -> (false, world))
+        Setters.Add ("FacetNames", fun _ _ world -> (false, world))
         Setters.Add ("AlwaysUpdate", fun property entity world -> (true, World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world))
         Setters.Add ("PublishUpdates", fun _ _ world -> (false, world))
         Setters.Add ("PublishPostUpdates", fun _ _ world -> (false, world))
-        Setters.Add ("FacetNames", fun _ _ world -> (false, world))
-        Setters.Add ("Facets", fun _ _ world -> (false, world))
         Setters.Add ("Persistent", fun property entity world -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world))
 
     /// Initialize getters and setters

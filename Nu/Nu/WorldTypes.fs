@@ -619,11 +619,11 @@ module WorldTypes =
           mutable Visible : bool
           mutable Enabled : bool
           mutable Omnipresent : bool
+          mutable Facets : Facet list
+          mutable FacetNames : string Set
           mutable AlwaysUpdate : bool
           mutable PublishUpdates : bool
           mutable PublishPostUpdates : bool
-          mutable FacetNames : string Set
-          mutable Facets : Facet list
           mutable Persistent : bool }
 
         /// Make an entity state value.
@@ -648,11 +648,11 @@ module WorldTypes =
               Visible = true
               Enabled = true
               Omnipresent = false
+              Facets = []
+              FacetNames = Set.empty
               AlwaysUpdate = false
               PublishUpdates = false
               PublishPostUpdates = false
-              FacetNames = Set.empty
-              Facets = []
               Persistent = true }
 
         /// Try to get an xtension property and its type information.
