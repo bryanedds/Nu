@@ -2,7 +2,6 @@
 // Copyright (C) Bryan Edds, 2013-2018.
 
 namespace Nu.Gaia
-open OpenTK
 open System
 open System.ComponentModel
 open System.Windows.Forms

@@ -4,7 +4,6 @@
 namespace Nu.Tests
 open System
 open Xunit
-open OpenTK
 open Prime
 open Nu
 module SpatialTreeTests =

@@ -30,7 +30,6 @@ open System.Windows.Forms
 open FSharpx
 open FSharpx.Collections
 open SDL2
-open OpenTK
 open TiledSharp
 open Prime
 open Nu

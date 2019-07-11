@@ -29,7 +29,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenTK
+namespace Nu
 {
 #if NO_SYSDRAWING
     /// <summary>

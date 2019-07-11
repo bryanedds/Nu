@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.ComponentModel
-open OpenTK
 open Prime
 open Nu
 

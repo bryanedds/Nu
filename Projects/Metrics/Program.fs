@@ -1,6 +1,5 @@
 ﻿namespace MyGame
 open System
-open OpenTK
 open Prime
 open Nu
 open Nu.Declarative

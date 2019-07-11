@@ -1,5 +1,4 @@
 ﻿namespace InfinityRpg
-open OpenTK
 open Nu
 
 [<RequireQualifiedAccess>]

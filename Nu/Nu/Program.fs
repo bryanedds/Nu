@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open Prime
-open OpenTK
 open global.Nu
 module Program =
 

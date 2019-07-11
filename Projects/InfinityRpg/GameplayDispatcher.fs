@@ -1,7 +1,6 @@
 ﻿namespace InfinityRpg
 open System
 open System.IO
-open OpenTK
 open Prime
 open Nu
 open Nu.Declarative

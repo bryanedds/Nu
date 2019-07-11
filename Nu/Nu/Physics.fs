@@ -7,7 +7,6 @@ open System.Collections.Generic
 open FarseerPhysics
 open FarseerPhysics.Dynamics
 open FarseerPhysics.Dynamics.Contacts
-open OpenTK
 open Microsoft.Xna
 open Prime
 open Nu

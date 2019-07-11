@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.IO
-open OpenTK
 open SDL2
 open TiledSharp
 open Prime

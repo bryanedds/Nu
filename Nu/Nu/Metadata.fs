@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Drawing
 open System.Drawing.Imaging
 open System.IO
-open OpenTK
 open TiledSharp
 open Prime
 open Nu

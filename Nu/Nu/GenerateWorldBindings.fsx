@@ -353,7 +353,6 @@ let generateBindingsCode bindings =
         "\n" +
         "namespace Nu\n" +
         "open System\n" +
-        "open OpenTK\n" +
         "open Prime\n" +
         "open global.Nu\n" +
         "\n" +
