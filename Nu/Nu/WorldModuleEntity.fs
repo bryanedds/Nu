@@ -262,8 +262,6 @@ module WorldModuleEntity =
         static member internal setEntityStaticDataInternal value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.StaticData <- value; entityState else { entityState with StaticData = value }) false false true Property? StaticData entity world
         static member internal getEntityPublishChanges entity world = (World.getEntityState entity world).PublishChanges
         static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.PublishChanges <- value; entityState else { entityState with PublishChanges = value }) false false false Property? PublishChanges entity world
-        static member internal getEntityIgnoreLayer entity world = (World.getEntityState entity world).IgnoreLayer
-        static member internal setEntityIgnoreLayer value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.IgnoreLayer <- value; entityState else { entityState with EntityState.IgnoreLayer = value }) false false true Property? IgnoreLayer entity world
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Position
         static member internal setEntityPosition value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.Position <- value; entityState else { entityState with EntityState.Position = value }) false false true Property? Position entity world
         static member internal getEntitySize entity world = (World.getEntityState entity world).Size
@@ -276,6 +274,8 @@ module WorldModuleEntity =
         static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.Overflow <- value; entityState else { entityState with EntityState.Overflow = value }) false false true Property? Overflow entity world
         static member internal getEntityViewType entity world = (World.getEntityState entity world).ViewType
         static member internal setEntityViewType value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.ViewType <- value; entityState else { entityState with EntityState.ViewType = value }) false false true Property? ViewType entity world
+        static member internal getEntityIgnoreLayer entity world = (World.getEntityState entity world).IgnoreLayer
+        static member internal setEntityIgnoreLayer value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.IgnoreLayer <- value; entityState else { entityState with EntityState.IgnoreLayer = value }) false false true Property? IgnoreLayer entity world
         static member internal getEntityVisible entity world = (World.getEntityState entity world).Visible
         static member internal setEntityVisible value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.Visible <- value; entityState else { entityState with EntityState.Visible = value }) false false true Property? Visible entity world
         static member internal getEntityEnabled entity world = (World.getEntityState entity world).Enabled
@@ -1114,13 +1114,13 @@ module WorldModuleEntity =
         Getters.Add ("StaticData", fun entity world -> { PropertyType = typeof<obj>; PropertyValue = World.getEntityStaticData entity world })
         Getters.Add ("PublishChanges", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChanges entity world })
         Getters.Add ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
-        Getters.Add ("IgnoreLayer", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIgnoreLayer entity world })
         Getters.Add ("Position", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world })
         Getters.Add ("Size", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world })
         Getters.Add ("Rotation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world })
         Getters.Add ("Depth", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityDepth entity world })
         Getters.Add ("Overflow", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world })
         Getters.Add ("ViewType", fun entity world -> { PropertyType = typeof<ViewType>; PropertyValue = World.getEntityViewType entity world })
+        Getters.Add ("IgnoreLayer", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIgnoreLayer entity world })
         Getters.Add ("Visible", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world })
         Getters.Add ("Enabled", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world })
         Getters.Add ("Omnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world })
@@ -1141,13 +1141,13 @@ module WorldModuleEntity =
         Setters.Add ("StaticData", fun property entity world -> (true, World.setEntityStaticData property.PropertyValue entity world))
         Setters.Add ("PublishChanges", fun property entity world -> (true, World.setEntityPublishChanges (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Imperative", fun property entity world -> (true, World.setEntityImperative (property.PropertyValue :?> bool) entity world))
-        Setters.Add ("IgnoreLayer", fun property entity world -> (true, World.setEntityIgnoreLayer (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Position", fun property entity world -> (true, World.setEntityPosition (property.PropertyValue :?> Vector2) entity world))
         Setters.Add ("Size", fun property entity world -> (true, World.setEntitySize (property.PropertyValue :?> Vector2) entity world))
         Setters.Add ("Rotation", fun property entity world -> (true, World.setEntityRotation (property.PropertyValue :?> single) entity world))
         Setters.Add ("Depth", fun property entity world -> (true, World.setEntityDepth (property.PropertyValue :?> single) entity world))
         Setters.Add ("Overflow", fun property entity world -> (true, World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world))
         Setters.Add ("ViewType", fun property entity world -> (true, World.setEntityViewType (property.PropertyValue :?> ViewType) entity world))
+        Setters.Add ("IgnoreLayer", fun property entity world -> (true, World.setEntityIgnoreLayer (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Visible", fun property entity world -> (true, World.setEntityVisible (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Enabled", fun property entity world -> (true, World.setEntityEnabled (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Omnipresent", fun property entity world -> (true, World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world))

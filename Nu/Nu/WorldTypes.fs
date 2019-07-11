@@ -256,7 +256,6 @@ module WorldTypes =
         static member Properties =
             [Define? PublishChanges false
              Define? Imperative false
-             Define? IgnoreLayer false
              Define? StaticData { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
@@ -264,6 +263,7 @@ module WorldTypes =
              Define? Depth 0.0f
              Define? Overflow Vector2.Zero
              Define? ViewType Relative
+             Define? IgnoreLayer false
              Define? Visible true
              Define? Enabled true
              Define? Omnipresent false
@@ -603,15 +603,15 @@ module WorldTypes =
         { Dispatcher : EntityDispatcher
           mutable Xtension : Xtension
           mutable StaticData : DesignerProperty
-          mutable PublishChanges : bool // NOTE: these bools are a waste of cache line
+          mutable PublishChanges : bool
           mutable Imperative : bool
-          mutable IgnoreLayer : bool
           mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
           mutable Overflow : Vector2
           mutable ViewType : ViewType
+          mutable IgnoreLayer : bool
           mutable Visible : bool
           mutable Enabled : bool
           mutable Omnipresent : bool
@@ -634,13 +634,13 @@ module WorldTypes =
               StaticData = { DesignerType = typeof<unit>; DesignerValue = () }
               PublishChanges = false
               Imperative = false
-              IgnoreLayer = false
               Position = Vector2.Zero
               Size = Constants.Engine.DefaultEntitySize
               Rotation = 0.0f
               Depth = 0.0f
               Overflow = Vector2.Zero
               ViewType = Relative
+              IgnoreLayer = false
               Visible = true
               Enabled = true
               Omnipresent = false
