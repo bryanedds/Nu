@@ -1137,9 +1137,6 @@ module WorldModuleEntity =
         
     /// Initialize property setters.
     let private initSetters () =
-        Setters.Add ("Id", fun _ _ world -> (false, world))
-        Setters.Add ("Name", fun _ _ world -> (false, world))
-        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("StaticData", fun property entity world -> (true, World.setEntityStaticData property.PropertyValue entity world))
         Setters.Add ("PublishChanges", fun property entity world -> (true, World.setEntityPublishChanges (property.PropertyValue :?> bool) entity world))
@@ -1161,7 +1158,10 @@ module WorldModuleEntity =
         Setters.Add ("PublishUpdates", fun _ _ world -> (false, world))
         Setters.Add ("PublishPostUpdates", fun _ _ world -> (false, world))
         Setters.Add ("Persistent", fun property entity world -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world))
-
+        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
+        Setters.Add ("Id", fun _ _ world -> (false, world))
+        Setters.Add ("Name", fun _ _ world -> (false, world))
+        
     /// Initialize getters and setters
     let internal init () =
         initGetters ()

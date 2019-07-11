@@ -440,8 +440,8 @@ module WorldTypes =
     /// NOTE: The properties here have duplicated representations in WorldModuleScreen that exist
     /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
-        { Xtension : Xtension
-          Dispatcher : ScreenDispatcher
+        { Dispatcher : ScreenDispatcher
+          Xtension : Xtension
           TransitionState : TransitionState
           TransitionTicks : int64
           Incoming : Transition
@@ -463,8 +463,8 @@ module WorldTypes =
         /// Make a screen state value.
         static member make nameOpt (dispatcher : ScreenDispatcher) =
             let (id, name) = Reflection.deriveIdAndName nameOpt
-            { Xtension = Xtension.makeSafe ()
-              Dispatcher = dispatcher
+            { Dispatcher = dispatcher
+              Xtension = Xtension.makeSafe ()
               TransitionState = IdlingState
               TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
               Incoming = Transition.make Incoming
@@ -522,8 +522,8 @@ module WorldTypes =
     /// NOTE: The properties here have duplicated representations in WorldModuleLayer that exist
     /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] LayerState =
-        { Xtension : Xtension
-          Dispatcher : LayerDispatcher
+        { Dispatcher : LayerDispatcher
+          Xtension : Xtension
           Depth : single
           Visible : bool
           Persistent : bool
@@ -543,8 +543,8 @@ module WorldTypes =
         /// Make a layer state value.
         static member make nameOpt (dispatcher : LayerDispatcher) =
             let (id, name) = Reflection.deriveIdAndName nameOpt
-            { Xtension = Xtension.makeSafe ()
-              Dispatcher = dispatcher
+            { Dispatcher = dispatcher
+              Xtension = Xtension.makeSafe ()
               Depth = 0.0f
               Visible = true
               Persistent = true
@@ -600,8 +600,8 @@ module WorldTypes =
     /// NOTE: The properties here have duplicated representations in WorldModuleEntity that exist
     /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] EntityState =
-        { mutable Xtension : Xtension
-          Dispatcher : EntityDispatcher
+        { Dispatcher : EntityDispatcher
+          mutable Xtension : Xtension
           mutable StaticData : DesignerProperty
           mutable PublishChanges : bool
           mutable Imperative : bool
@@ -629,8 +629,8 @@ module WorldTypes =
         /// Make an entity state value.
         static member make nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let (id, name) = Reflection.deriveIdAndName nameOpt
-            { Xtension = Xtension.makeSafe ()
-              Dispatcher = dispatcher
+            { Dispatcher = dispatcher
+              Xtension = Xtension.makeSafe ()
               StaticData = { DesignerType = typeof<unit>; DesignerValue = () }
               PublishChanges = false
               Imperative = false
