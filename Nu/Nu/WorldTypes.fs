@@ -603,10 +603,9 @@ module WorldTypes =
         { Dispatcher : EntityDispatcher
           mutable Xtension : Xtension
           mutable StaticData : DesignerProperty
-          mutable PublishChanges : bool
+          mutable PublishChanges : bool // NOTE: these bools are a waste of cache line
           mutable Imperative : bool
           mutable IgnoreLayer : bool
-          mutable OverlayNameOpt : string option
           mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -621,6 +620,7 @@ module WorldTypes =
           mutable AlwaysUpdate : bool
           mutable PublishUpdates : bool
           mutable PublishPostUpdates : bool
+          mutable OverlayNameOpt : string option
           mutable Persistent : bool
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Name : string
@@ -635,7 +635,6 @@ module WorldTypes =
               PublishChanges = false
               Imperative = false
               IgnoreLayer = false
-              OverlayNameOpt = overlayNameOpt
               Position = Vector2.Zero
               Size = Constants.Engine.DefaultEntitySize
               Rotation = 0.0f
@@ -650,6 +649,7 @@ module WorldTypes =
               AlwaysUpdate = false
               PublishUpdates = false
               PublishPostUpdates = false
+              OverlayNameOpt = overlayNameOpt
               Persistent = true
               CreationTimeStamp = Core.getTimeStamp ()
               Name = name
