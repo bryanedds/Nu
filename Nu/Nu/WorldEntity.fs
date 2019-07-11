@@ -36,9 +36,6 @@ module WorldEntityModule =
         member this.GetIgnoreLayer world = World.getEntityIgnoreLayer this world
         member this.SetIgnoreLayer value world = World.setEntityIgnoreLayer value this world
         member this.IgnoreLayer = Lens.make Property? IgnoreLayer this.GetIgnoreLayer this.SetIgnoreLayer this
-        member this.GetPersistent world = World.getEntityPersistent this world
-        member this.SetPersistent value world = World.setEntityPersistent value this world
-        member this.Persistent = Lens.make Property? Persistent this.GetPersistent this.SetPersistent this
         member this.GetOverlayNameOpt world = World.getEntityOverlayNameOpt this world
         member this.OverlayNameOpt = Lens.makeReadOnly Property? OverlayNameOpt this.GetOverlayNameOpt this
         member this.GetPosition world = World.getEntityPosition this world
@@ -79,6 +76,9 @@ module WorldEntityModule =
         member this.FacetNames = Lens.makeReadOnly Property? FacetNames this.GetFacetNames this
         member this.GetFacets world = World.getEntityFacets this world
         member this.Facets = Lens.makeReadOnly Property? Facets this.GetFacets this
+        member this.GetPersistent world = World.getEntityPersistent this world
+        member this.SetPersistent value world = World.setEntityPersistent value this world
+        member this.Persistent = Lens.make Property? Persistent this.GetPersistent this.SetPersistent this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetEntityProperty propertyName this world

@@ -20,9 +20,6 @@ module WorldScreenModule =
         member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetDispatcher world = World.getScreenDispatcher this world
         member this.Dispatcher = Lens.makeReadOnly Property? Dispatcher this.GetDispatcher this
-        member this.GetPersistent world = World.getScreenPersistent this world
-        member this.SetPersistent value world = World.setScreenPersistent value this world
-        member this.Persistent = Lens.makeReadOnly Property? Persistent this.GetPersistent this
         member this.GetScriptOpt world = World.getScreenScriptOpt this world
         member this.SetScriptOpt value world = World.setScreenScriptOpt value this world
         member this.ScriptOpt = Lens.make Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt this
@@ -73,6 +70,9 @@ module WorldScreenModule =
         member this.IncomingFinishEvent = Events.IncomingFinish --> this
         member this.OutgoingStartEvent = Events.OutgoingStart --> this
         member this.OutgoingFinishEvent = Events.OutgoingFinish --> this
+        member this.GetPersistent world = World.getScreenPersistent this world
+        member this.SetPersistent value world = World.setScreenPersistent value this world
+        member this.Persistent = Lens.makeReadOnly Property? Persistent this.GetPersistent this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetScreenProperty propertyName this world

@@ -257,7 +257,6 @@ module WorldTypes =
             [Define? PublishChanges false
              Define? Imperative false
              Define? IgnoreLayer false
-             Define? Persistent true
              Define? StaticData { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
@@ -270,7 +269,8 @@ module WorldTypes =
              Define? Omnipresent false
              Define? AlwaysUpdate false
              Define? PublishUpdates false
-             Define? PublishPostUpdates false]
+             Define? PublishPostUpdates false
+             Define? Persistent true]
     
         /// Register an entity when adding it to a layer.
         abstract Register : Entity * World -> World
@@ -445,7 +445,6 @@ module WorldTypes =
           CreationTimeStamp : int64
           Xtension : Xtension
           Dispatcher : ScreenDispatcher
-          Persistent : bool
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
           ScriptFrame : Scripting.DeclarationFrame
@@ -458,7 +457,8 @@ module WorldTypes =
           TransitionState : TransitionState
           TransitionTicks : int64
           Incoming : Transition
-          Outgoing : Transition }
+          Outgoing : Transition
+          Persistent : bool }
           
         /// Make a screen state value.
         static member make nameOpt (dispatcher : ScreenDispatcher) =
@@ -468,7 +468,6 @@ module WorldTypes =
               CreationTimeStamp = Core.getTimeStamp ()
               Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
-              Persistent = true
               ScriptOpt = None
               Script = [||]
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
@@ -481,7 +480,8 @@ module WorldTypes =
               TransitionState = IdlingState
               TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
               Incoming = Transition.make Incoming
-              Outgoing = Transition.make Outgoing }
+              Outgoing = Transition.make Outgoing
+              Persistent = true }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName screenState =
@@ -527,7 +527,6 @@ module WorldTypes =
           CreationTimeStamp : int64
           Xtension : Xtension
           Dispatcher : LayerDispatcher
-          Persistent : bool
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
           ScriptFrame : Scripting.DeclarationFrame
@@ -538,7 +537,8 @@ module WorldTypes =
           OnPostUpdate : Scripting.Expr
           OnSignal : Scripting.Expr
           Depth : single
-          Visible : bool }
+          Visible : bool
+          Persistent : bool }
 
         /// Make a layer state value.
         static member make nameOpt (dispatcher : LayerDispatcher) =
@@ -548,7 +548,6 @@ module WorldTypes =
               CreationTimeStamp = Core.getTimeStamp ()
               Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
-              Persistent = true
               ScriptOpt = None
               Script = [||]
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
@@ -559,7 +558,8 @@ module WorldTypes =
               OnPostUpdate = Scripting.Unit
               OnSignal = Scripting.Unit
               Depth = 0.0f
-              Visible = true }
+              Visible = true
+              Persistent = true }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName layerState =
@@ -609,7 +609,6 @@ module WorldTypes =
           mutable PublishChanges : bool
           mutable Imperative : bool
           mutable IgnoreLayer : bool
-          mutable Persistent : bool
           mutable OverlayNameOpt : string option
           mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -624,7 +623,8 @@ module WorldTypes =
           mutable PublishUpdates : bool
           mutable PublishPostUpdates : bool
           mutable FacetNames : string Set
-          mutable Facets : Facet list }
+          mutable Facets : Facet list
+          mutable Persistent : bool }
 
         /// Make an entity state value.
         static member make nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
@@ -638,7 +638,6 @@ module WorldTypes =
               PublishChanges = false
               Imperative = false
               IgnoreLayer = false
-              Persistent = true
               OverlayNameOpt = overlayNameOpt
               Position = Vector2.Zero
               Size = Constants.Engine.DefaultEntitySize
@@ -653,7 +652,8 @@ module WorldTypes =
               PublishUpdates = false
               PublishPostUpdates = false
               FacetNames = Set.empty
-              Facets = [] }
+              Facets = []
+              Persistent = true }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName entityState =
