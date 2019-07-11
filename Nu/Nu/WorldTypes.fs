@@ -1039,21 +1039,21 @@ module WorldTypes =
     and [<ReferenceEquality>] World =
         internal
             { EventSystemDelegate : World EventSystemDelegate
-              Dispatchers : Dispatchers
-              Subsystems : World Subsystems
-              ScriptingEnv : Scripting.Env
-              ScriptingContext : Simulant
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState FOption>
-              ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Layer Address, UMap<string, Entity Address>>>>>
-              AmbientState : World AmbientState
               EntityTree : Entity SpatialTree MutantCache
-              GameState : GameState
-              ScreenStates : UMap<Screen Address, ScreenState>
+              EntityStates : UMap<Entity Address, EntityState>
               LayerStates : UMap<Layer Address, LayerState>
-              EntityStates : UMap<Entity Address, EntityState> }
+              ScreenStates : UMap<Screen Address, ScreenState>
+              GameState : GameState
+              AmbientState : World AmbientState
+              Subsystems : World Subsystems
+              ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Layer Address, UMap<string, Entity Address>>>>>
+              Dispatchers : Dispatchers
+              ScriptingEnv : Scripting.Env
+              ScriptingContext : Simulant }
 
         interface EventSystem<World> with
-            
+
             member this.GetLiveness () =
                 AmbientState.getLiveness this.AmbientState
             
