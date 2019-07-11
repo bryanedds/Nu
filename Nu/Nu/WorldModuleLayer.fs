@@ -110,9 +110,6 @@ module WorldModuleLayer =
         static member internal getLayerExists layer world =
             FOption.isSome (World.getLayerStateOpt layer world)
 
-        static member internal getLayerId layer world = (World.getLayerState layer world).Id
-        static member internal getLayerName layer world = (World.getLayerState layer world).Name
-        static member internal getLayerCreationTimeStamp layer world = (World.getLayerState layer world).CreationTimeStamp
         static member internal getLayerDispatcher layer world = (World.getLayerState layer world).Dispatcher
         static member internal getLayerDepth layer world = (World.getLayerState layer world).Depth
         static member internal setLayerDepth value layer world = World.updateLayerState (fun layerState -> { layerState with Depth = value }) Property? Depth layer world
@@ -142,7 +139,10 @@ module WorldModuleLayer =
         static member internal setLayerOnPostUpdate value layer world = World.updateLayerState (fun layerState -> { layerState with OnPostUpdate = value }) Property? OnPostUpdate layer world
         static member internal getLayerOnSignal layer world = (World.getLayerState layer world).OnSignal
         static member internal setLayerOnSignal value layer world = World.updateLayerState (fun layerState -> { layerState with OnSignal = value }) Property? OnSignal layer world
-
+        static member internal getLayerCreationTimeStamp layer world = (World.getLayerState layer world).CreationTimeStamp
+        static member internal getLayerName layer world = (World.getLayerState layer world).Name
+        static member internal getLayerId layer world = (World.getLayerState layer world).Id
+        
         static member internal tryGetLayerCalculatedProperty propertyName layer world =
             let dispatcher = World.getLayerDispatcher layer world
             dispatcher.TryGetCalculatedProperty (propertyName, layer, world)
@@ -341,8 +341,6 @@ module WorldModuleLayer =
 
     /// Initialize property getters.
     let private initGetters () =
-        Getters.Add ("Id", fun layer world -> { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world })
-        Getters.Add ("Name", fun layer world -> { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world })
         Getters.Add ("CreationTimeStamp", fun layer world -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStamp layer world })
         Getters.Add ("Dispatcher", fun layer world -> { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcher layer world })
         Getters.Add ("Depth", fun layer world -> { PropertyType = typeof<single>; PropertyValue = World.getLayerDepth layer world })
@@ -357,11 +355,11 @@ module WorldModuleLayer =
         Getters.Add ("OnUpdate", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUpdate layer world })
         Getters.Add ("OnPostUpdate", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnPostUpdate layer world })
         Getters.Add ("OnSignal", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnSignal layer world })
-
+        Getters.Add ("Name", fun layer world -> { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world })
+        Getters.Add ("Id", fun layer world -> { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world })
+        
     /// Initialize property setters.
     let private initSetters () =
-        Setters.Add ("Id", fun _ _ world -> (false, world))
-        Setters.Add ("Name", fun _ _ world -> (false, world))
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("Depth", fun property layer world -> (true, World.setLayerDepth (property.PropertyValue :?> single) layer world))
@@ -376,7 +374,9 @@ module WorldModuleLayer =
         Setters.Add ("OnUpdate", fun property layer world -> (true, World.setLayerOnUpdate (property.PropertyValue :?> Scripting.Expr) layer world))
         Setters.Add ("OnPostUpdate", fun property layer world -> (true, World.setLayerOnPostUpdate (property.PropertyValue :?> Scripting.Expr) layer world))
         Setters.Add ("OnSignal", fun property layer world -> (true, World.setLayerOnSignal (property.PropertyValue :?> Scripting.Expr) layer world))
-
+        Setters.Add ("Name", fun _ _ world -> (false, world))
+        Setters.Add ("Id", fun _ _ world -> (false, world))
+        
     /// Initialize getters and setters
     let internal init () =
         initGetters ()

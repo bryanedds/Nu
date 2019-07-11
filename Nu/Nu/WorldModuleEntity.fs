@@ -257,9 +257,6 @@ module WorldModuleEntity =
                     false false true Property? StaticData entity world
 
         // NOTE: wouldn't macros be nice?
-        static member internal getEntityId entity world = (World.getEntityState entity world).Id
-        static member internal getEntityName entity world = (World.getEntityState entity world).Name
-        static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityDispatcher entity world = (World.getEntityState entity world).Dispatcher
         static member internal getEntityStaticDataInternal entity world = (World.getEntityState entity world).StaticData
         static member internal setEntityStaticDataInternal value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.StaticData <- value; entityState else { entityState with StaticData = value }) false false true Property? StaticData entity world
@@ -296,7 +293,10 @@ module WorldModuleEntity =
         static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.PublishPostUpdates <- value; entityState else { entityState with PublishPostUpdates = value }) false true false Property? PublishPostUpdates entity world
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.Persistent <- value; entityState else { entityState with Persistent = value }) false false false Property? Persistent entity world
-
+        static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
+        static member internal getEntityName entity world = (World.getEntityState entity world).Name
+        static member internal getEntityId entity world = (World.getEntityState entity world).Id
+        
         static member internal getEntityTransform entity world =
             EntityState.getTransform (World.getEntityState entity world)
         
@@ -1110,9 +1110,6 @@ module WorldModuleEntity =
 
     /// Initialize property getters.
     let private initGetters () =
-        Getters.Add ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
-        Getters.Add ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })
-        Getters.Add ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
         Getters.Add ("Dispatcher", fun entity world -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcher entity world })
         Getters.Add ("StaticData", fun entity world -> { PropertyType = typeof<obj>; PropertyValue = World.getEntityStaticData entity world })
         Getters.Add ("PublishChanges", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChanges entity world })
@@ -1134,7 +1131,10 @@ module WorldModuleEntity =
         Getters.Add ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
         Getters.Add ("PublishPostUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world })
         Getters.Add ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
-
+        Getters.Add ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
+        Getters.Add ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })
+        Getters.Add ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
+        
     /// Initialize property setters.
     let private initSetters () =
         Setters.Add ("Id", fun _ _ world -> (false, world))

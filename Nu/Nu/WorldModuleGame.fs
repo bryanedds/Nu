@@ -355,8 +355,6 @@ module WorldModuleGame =
 
     /// Initialize property getters.
     let private initGetters () =
-        Getters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
-        Getters.Add ("CreationTimeStamp", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStamp world })
         Getters.Add ("Dispatcher", fun world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher world })
         Getters.Add ("OmniScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniScreenOpt world })
         Getters.Add ("SelectedScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
@@ -372,11 +370,11 @@ module WorldModuleGame =
         Getters.Add ("OnUpdate", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUpdate world })
         Getters.Add ("OnPostUpdate", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnPostUpdate world })
         Getters.Add ("OnSignal", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnSignal world })
+        Getters.Add ("CreationTimeStamp", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStamp world })
+        Getters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
 
     /// Initialize property setters.
     let private initSetters () =
-        Setters.Add ("Id", fun _ world -> (false, world))
-        Setters.Add ("CreationTimeStamp", fun _ world -> (false, world))
         Setters.Add ("Dispatcher", fun _ world -> (false, world))
         Setters.Add ("OmniScreenOpt", fun property world -> (true, World.setOmniScreenOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("SelectedScreenOpt", fun property world -> (true, World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world))
@@ -392,6 +390,8 @@ module WorldModuleGame =
         Setters.Add ("OnUpdate", fun property world -> (true, World.setGameOnUpdate (property.PropertyValue :?> Scripting.Expr) world))
         Setters.Add ("OnPostUpdate", fun property world -> (true, World.setGameOnPostUpdate (property.PropertyValue :?> Scripting.Expr) world))
         Setters.Add ("OnSignal", fun property world -> (true, World.setGameOnSignal (property.PropertyValue :?> Scripting.Expr) world))
+        Setters.Add ("CreationTimeStamp", fun _ world -> (false, world))
+        Setters.Add ("Id", fun _ world -> (false, world))
 
     /// Initialize getters and setters
     let internal init () =

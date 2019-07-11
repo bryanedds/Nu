@@ -15,12 +15,6 @@ module WorldLayerModule =
 
     type Layer with
     
-        member this.GetId world = World.getLayerId this world
-        member this.Id = Lens.makeReadOnly Property? Id this.GetId this
-        member this.GetName world = World.getLayerName this world
-        member this.Name = Lens.makeReadOnly Property? Name this.GetName this
-        member this.GetCreationTimeStamp world = World.getLayerCreationTimeStamp this world
-        member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetDispatcher world = World.getLayerDispatcher this world
         member this.Dispatcher = Lens.makeReadOnly Property? Dispatcher this.GetDispatcher this
         member this.GetDepth world = World.getLayerDepth this world
@@ -64,6 +58,12 @@ module WorldLayerModule =
         member this.GetOnSignal world = World.getLayerOnSignal this world
         member this.SetOnSignal value world = World.setLayerOnSignal value this world
         member this.OnSignal = Lens.make Property? OnSignal this.GetOnSignal this.SetOnSignal this
+        member this.GetCreationTimeStamp world = World.getLayerCreationTimeStamp this world
+        member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
+        member this.GetName world = World.getLayerName this world
+        member this.Name = Lens.makeReadOnly Property? Name this.GetName this
+        member this.GetId world = World.getLayerId this world
+        member this.Id = Lens.makeReadOnly Property? Id this.GetId this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetLayerProperty propertyName this world

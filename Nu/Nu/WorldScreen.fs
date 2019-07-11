@@ -12,12 +12,6 @@ module WorldScreenModule =
 
     type Screen with
     
-        member this.GetId world = World.getScreenId this world
-        member this.Id = Lens.makeReadOnly Property? Id this.GetId this
-        member this.GetName world = World.getScreenName this world
-        member this.Name = Lens.makeReadOnly Property? Name this.GetName this
-        member this.GetCreationTimeStamp world = World.getScreenCreationTimeStamp this world
-        member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetDispatcher world = World.getScreenDispatcher this world
         member this.Dispatcher = Lens.makeReadOnly Property? Dispatcher this.GetDispatcher this
         member this.GetTransitionState world = World.getScreenTransitionState this world
@@ -73,6 +67,12 @@ module WorldScreenModule =
         member this.GetOnSignal world = World.getScreenOnSignal this world
         member this.SetOnSignal value world = World.setScreenOnSignal value this world
         member this.OnSignal = Lens.make Property? OnSignal this.GetOnSignal this.SetOnSignal this
+        member this.GetCreationTimeStamp world = World.getScreenCreationTimeStamp this world
+        member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
+        member this.GetName world = World.getScreenName this world
+        member this.Name = Lens.makeReadOnly Property? Name this.GetName this
+        member this.GetId world = World.getScreenId this world
+        member this.Id = Lens.makeReadOnly Property? Id this.GetId this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetScreenProperty propertyName this world

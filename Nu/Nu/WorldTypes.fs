@@ -358,9 +358,7 @@ module WorldTypes =
     /// NOTE: The properties here have duplicated representations in WorldModuleGame that exist
     /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] GameState =
-        { Id : Guid
-          CreationTimeStamp : int64
-          Xtension : Xtension
+        { Xtension : Xtension
           Dispatcher : GameDispatcher
           OmniScreenOpt : Screen option
           SelectedScreenOpt : Screen option
@@ -375,16 +373,16 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnSignal : Scripting.Expr }
+          OnSignal : Scripting.Expr
+          CreationTimeStamp : int64
+          Id : Guid }
 
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
             let eyeCenter = Vector2.Zero
             // TODO: P1: consider if eyeSize is too hard-coded
             let eyeSize = Vector2 (single Constants.Render.DefaultResolutionX, single Constants.Render.DefaultResolutionY)
-            { Id = makeGuid ()
-              CreationTimeStamp = Core.getTimeStamp ()
-              Xtension = Xtension.makeSafe ()
+            { Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
               OmniScreenOpt = None
               SelectedScreenOpt = None
@@ -399,7 +397,9 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnSignal = Scripting.Unit }
+              OnSignal = Scripting.Unit
+              CreationTimeStamp = Core.getTimeStamp ()
+              Id = makeGuid () }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName gameState =
@@ -440,10 +440,7 @@ module WorldTypes =
     /// NOTE: The properties here have duplicated representations in WorldModuleScreen that exist
     /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
-        { Id : Guid
-          Name : string
-          CreationTimeStamp : int64
-          Xtension : Xtension
+        { Xtension : Xtension
           Dispatcher : ScreenDispatcher
           TransitionState : TransitionState
           TransitionTicks : int64
@@ -458,15 +455,15 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnSignal : Scripting.Expr }
+          OnSignal : Scripting.Expr
+          CreationTimeStamp : int64
+          Name : string
+          Id : Guid }
           
         /// Make a screen state value.
         static member make nameOpt (dispatcher : ScreenDispatcher) =
             let (id, name) = Reflection.deriveIdAndName nameOpt
-            { Id = id
-              Name = name
-              CreationTimeStamp = Core.getTimeStamp ()
-              Xtension = Xtension.makeSafe ()
+            { Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
               TransitionState = IdlingState
               TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
@@ -481,7 +478,10 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnSignal = Scripting.Unit }
+              OnSignal = Scripting.Unit
+              CreationTimeStamp = Core.getTimeStamp ()
+              Name = name
+              Id = id }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName screenState =
@@ -522,10 +522,7 @@ module WorldTypes =
     /// NOTE: The properties here have duplicated representations in WorldModuleLayer that exist
     /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] LayerState =
-        { Id : Guid
-          Name : string
-          CreationTimeStamp : int64
-          Xtension : Xtension
+        { Xtension : Xtension
           Dispatcher : LayerDispatcher
           Depth : single
           Visible : bool
@@ -538,15 +535,15 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnSignal : Scripting.Expr }
+          OnSignal : Scripting.Expr
+          CreationTimeStamp : int64
+          Name : string
+          Id : Guid }
 
         /// Make a layer state value.
         static member make nameOpt (dispatcher : LayerDispatcher) =
             let (id, name) = Reflection.deriveIdAndName nameOpt
-            { Id = id
-              Name = name
-              CreationTimeStamp = Core.getTimeStamp ()
-              Xtension = Xtension.makeSafe ()
+            { Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
               Depth = 0.0f
               Visible = true
@@ -559,7 +556,10 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnSignal = Scripting.Unit }
+              OnSignal = Scripting.Unit
+              CreationTimeStamp = Core.getTimeStamp ()
+              Name = name
+              Id = id }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName layerState =
@@ -600,10 +600,7 @@ module WorldTypes =
     /// NOTE: The properties here have duplicated representations in WorldModuleEntity that exist
     /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] EntityState =
-        { Id : Guid
-          Name : string
-          CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
-          mutable Xtension : Xtension
+        { mutable Xtension : Xtension
           Dispatcher : EntityDispatcher
           mutable StaticData : DesignerProperty
           mutable PublishChanges : bool
@@ -624,15 +621,15 @@ module WorldTypes =
           mutable AlwaysUpdate : bool
           mutable PublishUpdates : bool
           mutable PublishPostUpdates : bool
-          mutable Persistent : bool }
+          mutable Persistent : bool
+          CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
+          Name : string
+          Id : Guid }
 
         /// Make an entity state value.
         static member make nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let (id, name) = Reflection.deriveIdAndName nameOpt
-            { Id = id
-              Name = name
-              CreationTimeStamp = Core.getTimeStamp ()
-              Xtension = Xtension.makeSafe ()
+            { Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
               StaticData = { DesignerType = typeof<unit>; DesignerValue = () }
               PublishChanges = false
@@ -653,7 +650,10 @@ module WorldTypes =
               AlwaysUpdate = false
               PublishUpdates = false
               PublishPostUpdates = false
-              Persistent = true }
+              Persistent = true
+              CreationTimeStamp = Core.getTimeStamp ()
+              Name = name
+              Id = id }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName entityState =
