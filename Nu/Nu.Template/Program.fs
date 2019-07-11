@@ -4,14 +4,10 @@ open Prime
 open Nu
 
 // this is the game dispatcher that is customized for our game. In here, we create screens and wire
-// them up with subsciptions and transitions.
+// them up with subsciptions and transitions. For an example, look
+// at BlazeDispatcher.fs in the BlazeVector project.
 type MyGameDispatcher () =
-    inherit GameDispatcher ()
-    
-    override dispatcher.Register (_, world) =
-        // TODO: start by creating and wiring up your game's screens in here! For an example, look
-        // at BlazeDispatcher.fs in the BlazeVector project.
-        world
+    inherit GameDispatcher<unit, unit, unit> ()
 
 // this is a plugin for the Nu game engine by which user-defined dispatchers, facets, and other
 // sorts of types can be obtained by both your application and Gaia.

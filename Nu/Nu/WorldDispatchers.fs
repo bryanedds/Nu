@@ -17,6 +17,7 @@ module FacetModule =
     
         member this.GetModel<'model> world = this.Get<'model> Property? Model world
         member this.SetModel<'model> value world = this.Set<'model> Property? Model value world
+        member this.UpdateModel<'model> updater world = this.SetModel<'model> (updater this.GetModel<'model> world) world
         member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
         member this.GetDescriptors world = this.Get Property? Descriptors world
         member this.SetDescriptors value world = this.Set Property? Descriptors value world
