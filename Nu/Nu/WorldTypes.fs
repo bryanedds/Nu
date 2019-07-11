@@ -445,6 +445,11 @@ module WorldTypes =
           CreationTimeStamp : int64
           Xtension : Xtension
           Dispatcher : ScreenDispatcher
+          TransitionState : TransitionState
+          TransitionTicks : int64
+          Incoming : Transition
+          Outgoing : Transition
+          Persistent : bool
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
           ScriptFrame : Scripting.DeclarationFrame
@@ -453,12 +458,7 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnSignal : Scripting.Expr
-          TransitionState : TransitionState
-          TransitionTicks : int64
-          Incoming : Transition
-          Outgoing : Transition
-          Persistent : bool }
+          OnSignal : Scripting.Expr }
           
         /// Make a screen state value.
         static member make nameOpt (dispatcher : ScreenDispatcher) =
@@ -468,6 +468,11 @@ module WorldTypes =
               CreationTimeStamp = Core.getTimeStamp ()
               Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
+              TransitionState = IdlingState
+              TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
+              Incoming = Transition.make Incoming
+              Outgoing = Transition.make Outgoing
+              Persistent = true
               ScriptOpt = None
               Script = [||]
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
@@ -476,12 +481,7 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnSignal = Scripting.Unit
-              TransitionState = IdlingState
-              TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
-              Incoming = Transition.make Incoming
-              Outgoing = Transition.make Outgoing
-              Persistent = true }
+              OnSignal = Scripting.Unit }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName screenState =
@@ -527,6 +527,9 @@ module WorldTypes =
           CreationTimeStamp : int64
           Xtension : Xtension
           Dispatcher : LayerDispatcher
+          Depth : single
+          Visible : bool
+          Persistent : bool
           ScriptOpt : Symbol AssetTag option
           Script : Scripting.Expr array
           ScriptFrame : Scripting.DeclarationFrame
@@ -535,10 +538,7 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnSignal : Scripting.Expr
-          Depth : single
-          Visible : bool
-          Persistent : bool }
+          OnSignal : Scripting.Expr }
 
         /// Make a layer state value.
         static member make nameOpt (dispatcher : LayerDispatcher) =
@@ -548,6 +548,9 @@ module WorldTypes =
               CreationTimeStamp = Core.getTimeStamp ()
               Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
+              Depth = 0.0f
+              Visible = true
+              Persistent = true
               ScriptOpt = None
               Script = [||]
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
@@ -556,10 +559,7 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnSignal = Scripting.Unit
-              Depth = 0.0f
-              Visible = true
-              Persistent = true }
+              OnSignal = Scripting.Unit }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName layerState =
