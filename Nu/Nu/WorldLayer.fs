@@ -23,9 +23,6 @@ module WorldLayerModule =
         member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetDispatcher world = World.getLayerDispatcher this world
         member this.Dispatcher = Lens.makeReadOnly Property? Dispatcher this.GetDispatcher this
-        member this.GetPersistent world = World.getLayerPersistent this world
-        member this.SetPersistent value world = World.setLayerPersistent value this world
-        member this.Persistent = Lens.make Property? Persistent this.GetPersistent this.SetPersistent this
         member this.GetScriptOpt world = World.getLayerScriptOpt this world
         member this.SetScriptOpt value world = World.setLayerScriptOpt value this world
         member this.ScriptOpt = Lens.make Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt this
@@ -64,6 +61,9 @@ module WorldLayerModule =
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
         member this.SignalEvent = Events.Signal --> this
+        member this.GetPersistent world = World.getLayerPersistent this world
+        member this.SetPersistent value world = World.setLayerPersistent value this world
+        member this.Persistent = Lens.make Property? Persistent this.GetPersistent this.SetPersistent this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetLayerProperty propertyName this world
