@@ -46,7 +46,6 @@ module Reflection =
     let isPropertyPersistentByName (propertyName : string) =
         match propertyName with
         | "Dispatcher"
-        | "CreationTimeStamp"
         | "TransitionState"
         | "TransitionTicks"
         | "EntityTree"
@@ -55,6 +54,7 @@ module Reflection =
         | "Facets"
         | "ScriptFrame"
         | "ScriptUnsubscriptions"
+        | "CreationTimeStamp"
         | "NodeUnsubscribe"
         | "EffectPhysicsShapes"
         | "EffectTags"

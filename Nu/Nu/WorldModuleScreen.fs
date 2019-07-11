@@ -94,9 +94,6 @@ module WorldModuleScreen =
         static member internal getScreenExists screen world =
             FOption.isSome (World.getScreenStateOpt screen world)
 
-        static member internal getScreenId screen world = (World.getScreenState screen world).Id
-        static member internal getScreenName screen world = (World.getScreenState screen world).Name
-        static member internal getScreenCreationTimeStamp screen world = (World.getScreenState screen world).CreationTimeStamp
         static member internal getScreenDispatcher screen world = (World.getScreenState screen world).Dispatcher
         static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
         static member internal setScreenTransitionState value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionState = value }) Property? TransitionState screen world
@@ -130,7 +127,10 @@ module WorldModuleScreen =
         static member internal setScreenOnPostUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnPostUpdate = value }) Property? OnPostUpdate screen world
         static member internal getScreenOnSignal screen world = (World.getScreenState screen world).OnSignal
         static member internal setScreenOnSignal value screen world = World.updateScreenState (fun screenState -> { screenState with OnSignal = value }) Property? OnSignal screen world
-
+        static member internal getScreenCreationTimeStamp screen world = (World.getScreenState screen world).CreationTimeStamp
+        static member internal getScreenName screen world = (World.getScreenState screen world).Name
+        static member internal getScreenId screen world = (World.getScreenState screen world).Id
+        
         static member internal tryGetScreenCalculatedProperty propertyName screen world =
             let dispatcher = World.getScreenDispatcher screen world
             dispatcher.TryGetCalculatedProperty (propertyName, screen, world)

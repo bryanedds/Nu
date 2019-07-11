@@ -12,10 +12,6 @@ module WorldGameModule =
 
     type Game with
 
-        member this.GetId world = World.getGameId world
-        member this.Id = Lens.makeReadOnly Property? Id this.GetId this
-        member this.GetCreationTimeStamp world = World.getGameCreationTimeStamp world
-        member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetDispatcher world = World.getGameDispatcher world
         member this.Dispatcher = Lens.makeReadOnly Property? Dispatcher this.GetDispatcher this
         member this.GetOmniScreenOpt world = World.getOmniScreenOpt world
@@ -57,6 +53,10 @@ module WorldGameModule =
         member this.GetOnSignal world = World.getGameOnSignal world
         member this.SetOnSignal value world = World.setGameOnSignal value world
         member this.OnSignal = Lens.make Property? OnSignal this.GetOnSignal this.SetOnSignal this
+        member this.GetCreationTimeStamp world = World.getGameCreationTimeStamp world
+        member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
+        member this.GetId world = World.getGameId world
+        member this.Id = Lens.makeReadOnly Property? Id this.GetId this
 
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this

@@ -15,12 +15,6 @@ module WorldEntityModule =
 
     type Entity with
 
-        member this.GetId world = World.getEntityId this world
-        member this.Id = Lens.makeReadOnly Property? Id this.GetId this
-        member this.GetName world = World.getEntityName this world
-        member this.Name = Lens.makeReadOnly Property? Name this.GetName this
-        member this.GetCreationTimeStamp world = World.getEntityCreationTimeStamp this world
-        member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetDispatcher world = World.getEntityDispatcher this world
         member this.Dispatcher = Lens.makeReadOnly Property? Dispatcher this.GetDispatcher this
         member this.GetStaticData<'a> world = World.getEntityStaticData<'a> this world
@@ -79,6 +73,12 @@ module WorldEntityModule =
         member this.GetPersistent world = World.getEntityPersistent this world
         member this.SetPersistent value world = World.setEntityPersistent value this world
         member this.Persistent = Lens.make Property? Persistent this.GetPersistent this.SetPersistent this
+        member this.GetCreationTimeStamp world = World.getEntityCreationTimeStamp this world
+        member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
+        member this.GetName world = World.getEntityName this world
+        member this.Name = Lens.makeReadOnly Property? Name this.GetName this
+        member this.GetId world = World.getEntityId this world
+        member this.Id = Lens.makeReadOnly Property? Id this.GetId this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetEntityProperty propertyName this world
