@@ -25,6 +25,7 @@ module WorldEntityModule =
         member this.Dispatcher = Lens.makeReadOnly Property? Dispatcher this.GetDispatcher this
         member this.GetStaticData<'a> world = World.getEntityStaticData<'a> this world
         member this.SetStaticData<'a> value world = World.setEntityStaticData<'a> value this world
+        member this.UpdateStaticData<'model> updater world = this.SetStaticData<'model> (updater this.GetStaticData<'model> world) world
         member this.StaticData<'a> () = Lens.make Property? StaticData this.GetStaticData<'a> this.SetStaticData<'a> this
         member this.GetImperative world = World.getEntityImperative this world
         member this.SetImperative value world = World.setEntityImperative value this world
