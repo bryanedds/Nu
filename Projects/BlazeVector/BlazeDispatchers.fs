@@ -230,47 +230,50 @@ module PlayerModule =
             world
 
 [<AutoOpen>]
-module SceneLayerModule =
+module SceneModule =
 
-    type SceneLayerDispatcher () =
-        inherit LayerDispatcher ()
+    type SceneCommand =
+        | AdjustCamera
+        | PlayerFall
 
-        static let adjustCamera scene world =
-            let player = Simulants.Player scene
-            let playerPosition = player.GetPosition world
-            let playerSize = player.GetSize world
-            let eyeCenter = World.getEyeCenter world
-            let eyeSize = World.getEyeSize world
-            let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f, eyeCenter.Y)
-            Game.SetEyeCenter eyeCenter world
+    type SceneDispatcher () =
+        inherit LayerDispatcher<unit, unit, SceneCommand> ()
 
-        static let handleAdjustCamera evt world =
-            let scene = evt.Subscriber : Layer
-            adjustCamera scene world
+        override dispatcher.Bindings (_, scene, _) =
+            [scene.UpdateEvent =>! AdjustCamera
+             scene.UpdateEvent =>! PlayerFall]
 
-        static let handlePlayerFall evt world =
-            let scene = evt.Subscriber : Layer
-            let player = Simulants.Player scene
-            if player.HasFallen world && World.isSelectedScreenIdling world then
-                let world = World.playSound 1.0f Assets.DeathSound world
-                if Simulants.Title.GetExists world
-                then World.transitionScreen Simulants.Title world
+        override dispatcher.Command (command, _, scene, world) =
+            match command with
+            | AdjustCamera ->
+                let player = Simulants.Player scene
+                let playerPosition = player.GetPosition world
+                let playerSize = player.GetSize world
+                let eyeCenter = World.getEyeCenter world
+                let eyeSize = World.getEyeSize world
+                let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f, eyeCenter.Y)
+                Game.SetEyeCenter eyeCenter world
+            | PlayerFall ->
+                let player = Simulants.Player scene
+                if player.HasFallen world && World.isSelectedScreenIdling world then
+                    let world = World.playSound 1.0f Assets.DeathSound world
+                    if Simulants.Title.GetExists world
+                    then World.transitionScreen Simulants.Title world
+                    else world
                 else world
-            else world
-
-        override dispatcher.Register (layer, world) =
-            let world = World.monitor handleAdjustCamera layer.UpdateEvent layer world
-            let world = World.monitor handlePlayerFall layer.UpdateEvent layer world
-            world
 
 [<AutoOpen>]
-module GameplayScreenModule =
+module GameplayModule =
 
-    type GameplayScreenDispatcher () =
-        inherit ScreenDispatcher ()
+    type GameplayCommand =
+        | StartPlay
+        | StoppingPlay
+        | StopPlay
+
+    type GameplayDispatcher () =
+        inherit ScreenDispatcher<unit, unit, GameplayCommand> ()
 
         static let [<Literal>] SectionName = "Section"
-        static let [<Literal>] SectionXShift = 2048.0f
 
         static let shiftEntities xShift entities world =
             Seq.fold
@@ -293,7 +296,7 @@ module GameplayScreenModule =
                     let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
                     let sectionFilePath = sectionFilePaths.[sectionFilePathIndex]
                     let sectionName = SectionName + scstring i
-                    let sectionXShift = SectionXShift * single i
+                    let sectionXShift = 2048.0f * single i
                     createSectionFromFile sectionFilePath sectionName sectionXShift gameplay world)
                 world
                 [0 .. Constants.BlazeVector.SectionCount - 1]
@@ -302,25 +305,22 @@ module GameplayScreenModule =
             let scene = Simulants.Scene gameplay
             World.readLayerFromFile Assets.SceneLayerFilePath (Some scene.LayerName) gameplay world |> snd
 
-        static let handleStartPlay evt world =
-            let gameplay = evt.Subscriber : Screen
-            let world = createScene gameplay world
-            let world = createSectionLayers gameplay world
-            World.playSong 0 1.0f Assets.DeadBlazeSong world
+        override dispatcher.Bindings (_, gameplay, _) =
+            [gameplay.SelectEvent =>! StartPlay
+             gameplay.OutgoingStartEvent =>! StoppingPlay
+             gameplay.DeselectEvent =>! StopPlay]
 
-        static let handleStoppingPlay _ world =
-            World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
-
-        static let handleStopPlay evt world =
-            let gameplay = evt.Subscriber : Screen
-            let scene = Simulants.Scene gameplay
-            let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield SectionName + scstring i]
-            let layerNames = scene.LayerName :: sectionNames
-            let layers = List.map (fun layerName -> gameplay / layerName) layerNames
-            World.destroyLayers layers world
-
-        override dispatcher.Register (screen, world) =
-            let world = World.monitor handleStartPlay screen.SelectEvent screen world
-            let world = World.monitor handleStoppingPlay screen.OutgoingStartEvent screen world
-            let world = World.monitor handleStopPlay screen.DeselectEvent screen world
-            world
+        override dispatcher.Command (command, _, gameplay, world) =
+            match command with
+            | StartPlay ->
+                let world = createScene gameplay world
+                let world = createSectionLayers gameplay world
+                World.playSong 0 1.0f Assets.DeadBlazeSong world
+            | StoppingPlay ->
+                World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
+            | StopPlay ->
+                let scene = Simulants.Scene gameplay
+                let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield SectionName + scstring i]
+                let layerNames = scene.LayerName :: sectionNames
+                let layers = List.map (fun layerName -> gameplay / layerName) layerNames
+                World.destroyLayers layers world

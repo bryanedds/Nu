@@ -16,11 +16,11 @@ type BlazePlugin () =
 
     // make our game-specific screen dispatchers...
     override this.MakeScreenDispatchers () =
-        [GameplayScreenDispatcher () :> ScreenDispatcher]
+        [GameplayDispatcher () :> ScreenDispatcher]
 
     // make our game-specific layer dispatchers...
     override this.MakeLayerDispatchers () =
-        [SceneLayerDispatcher () :> LayerDispatcher]
+        [SceneDispatcher () :> LayerDispatcher]
 
     // make our game-specific entity dispatchers...
     override this.MakeEntityDispatchers () =
@@ -34,7 +34,7 @@ type BlazePlugin () =
             
     // specify the sceen dispatcher to use in the editor
     override this.GetEditorScreenDispatcherName () =
-        typeof<GameplayScreenDispatcher>.Name
+        typeof<GameplayDispatcher>.Name
 
 module Program =
 

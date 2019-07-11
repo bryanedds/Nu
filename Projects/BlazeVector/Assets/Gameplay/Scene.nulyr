@@ -1,5 +1,5 @@
-[SceneLayerDispatcher
- [[Name Layer]
+[SceneDispatcher
+ [[Name Scene]
   [Persistent True]]
  [[PlayerDispatcher
   [[Name Player]
