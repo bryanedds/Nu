@@ -46,7 +46,6 @@ module Reflection =
     let isPropertyPersistentByName (propertyName : string) =
         match propertyName with
         | "Dispatcher"
-        | "Cachable"
         | "CreationTimeStamp"
         | "TransitionState"
         | "TransitionTicks"

@@ -254,9 +254,10 @@ module WorldTypes =
         inherit SimulantDispatcher ()
     
         static member Properties =
-            [Define? Imperative false
-             Define? Persistent true
+            [Define? PublishChanges false
+             Define? Imperative false
              Define? IgnoreLayer false
+             Define? Persistent true
              Define? StaticData { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
@@ -268,7 +269,6 @@ module WorldTypes =
              Define? Enabled true
              Define? Omnipresent false
              Define? AlwaysUpdate false
-             Define? PublishChanges false
              Define? PublishUpdates false
              Define? PublishPostUpdates false]
     
@@ -606,9 +606,10 @@ module WorldTypes =
           mutable Xtension : Xtension
           Dispatcher : EntityDispatcher
           mutable StaticData : DesignerProperty
+          mutable PublishChanges : bool
           mutable Imperative : bool
-          mutable Persistent : bool
           mutable IgnoreLayer : bool
+          mutable Persistent : bool
           mutable OverlayNameOpt : string option
           mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -620,7 +621,6 @@ module WorldTypes =
           mutable Enabled : bool
           mutable Omnipresent : bool
           mutable AlwaysUpdate : bool
-          mutable PublishChanges : bool
           mutable PublishUpdates : bool
           mutable PublishPostUpdates : bool
           mutable FacetNames : string Set
@@ -635,9 +635,10 @@ module WorldTypes =
               Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
               StaticData = { DesignerType = typeof<unit>; DesignerValue = () }
+              PublishChanges = false
               Imperative = false
-              Persistent = true
               IgnoreLayer = false
+              Persistent = true
               OverlayNameOpt = overlayNameOpt
               Position = Vector2.Zero
               Size = Constants.Engine.DefaultEntitySize
@@ -649,7 +650,6 @@ module WorldTypes =
               Enabled = true
               Omnipresent = false
               AlwaysUpdate = false
-              PublishChanges = false
               PublishUpdates = false
               PublishPostUpdates = false
               FacetNames = Set.empty

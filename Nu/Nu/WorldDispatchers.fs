@@ -1128,9 +1128,9 @@ module GuiDispatcherModule =
              typeof<ScriptFacet>.Name]
 
         static member Properties =
-            [define Entity.ViewType Absolute
+            [define Entity.PublishChanges true
+             define Entity.ViewType Absolute
              define Entity.AlwaysUpdate true
-             define Entity.PublishChanges true
              define Entity.DisabledColor (Vector4 0.75f)
              define Entity.SwallowMouseLeft true]
 
@@ -1161,9 +1161,9 @@ module GuiDispatcherModule =
              typeof<ScriptFacet>.Name]
 
         static member Properties =
-            [define Entity.ViewType Absolute
+            [define Entity.PublishChanges true
+             define Entity.ViewType Absolute
              define Entity.AlwaysUpdate true
-             define Entity.PublishChanges true
              define Entity.DisabledColor (Vector4 0.75f)
              define Entity.SwallowMouseLeft true]
 
