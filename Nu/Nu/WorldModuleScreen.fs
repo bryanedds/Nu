@@ -307,9 +307,6 @@ module WorldModuleScreen =
 
     /// Initialize property getters.
     let private initGetters () =
-        Getters.Add ("Id", fun screen world -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world })
-        Getters.Add ("Name", fun screen world -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world })
-        Getters.Add ("CreationTimeStamp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStamp screen world })
         Getters.Add ("Dispatcher", fun screen world -> { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcher screen world })
         Getters.Add ("TransitionState", fun screen world -> { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionState screen world })
         Getters.Add ("TransitionTicks", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenTransitionTicks screen world })
@@ -325,12 +322,12 @@ module WorldModuleScreen =
         Getters.Add ("OnUpdate", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUpdate screen world })
         Getters.Add ("OnPostUpdate", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnPostUpdate screen world })
         Getters.Add ("OnSignal", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnSignal screen world })
-
+        Getters.Add ("CreationTimeStamp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStamp screen world })
+        Getters.Add ("Name", fun screen world -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world })
+        Getters.Add ("Id", fun screen world -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world })
+        
     /// Initialize property setters.
     let private initSetters () =
-        Setters.Add ("Id", fun _ _ world -> (false, world))
-        Setters.Add ("Name", fun _ _ world -> (false, world))
-        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("TransitionState", fun property screen world -> (true, World.setScreenTransitionState (property.PropertyValue :?> TransitionState) screen world))
         Setters.Add ("TransitionTicks", fun property screen world -> (true, World.setScreenTransitionTicks (property.PropertyValue :?> int64) screen world))
@@ -346,7 +343,10 @@ module WorldModuleScreen =
         Setters.Add ("OnUpdate", fun property screen world -> (true, World.setScreenOnUpdate (property.PropertyValue :?> Scripting.Expr) screen world))
         Setters.Add ("OnPostUpdate", fun property screen world -> (true, World.setScreenOnPostUpdate (property.PropertyValue :?> Scripting.Expr) screen world))
         Setters.Add ("OnSignal", fun property screen world -> (true, World.setScreenOnSignal (property.PropertyValue :?> Scripting.Expr) screen world))
-
+        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
+        Setters.Add ("Name", fun _ _ world -> (false, world))
+        Setters.Add ("Id", fun _ _ world -> (false, world))
+        
     /// Initialize getters and setters
     let internal init () =
         initGetters ()
