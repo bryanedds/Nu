@@ -6,8 +6,6 @@ open System
 open System.Collections.Generic
 open Prime
 open Nu
-open Nu.Gaia
-open Nu.Gaia.Design
 
 type WorldChanger = World -> World
 type WorldChangers = WorldChanger List
@@ -29,6 +27,9 @@ type EditorState =
       SelectedLayer : Layer
       FilePaths : Map<Layer Address, string> }
 
+type SavedState =
+    { BinaryFilePath : string
+      OpenGameplayScreen : bool }
 
 /// Globals needed to sync Nu with WinForms.
 [<RequireQualifiedAccess>]

@@ -1444,12 +1444,22 @@ module Gaia =
 
     /// Select a target directory for the desired plugin and its assets.
     let selectTargetDirAndMakeNuPlugin () =
-        use openDialog = new OpenFileDialog ()
-        openDialog.Filter <- "Executable Files (*.exe)|*.exe"
-        openDialog.Title <- "Select your game's executable file to make its assets and components available in the editor (or cancel for defaults)"
-        if openDialog.ShowDialog () = DialogResult.OK
-        then selectTargetDirAndMakeNuPluginFromFilePath openDialog.FileName
-        else (".", NuPlugin ())
+        let savedState =
+            try scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
+            with _ -> { BinaryFilePath = ""; OpenGameplayScreen = false }
+        use startForm = new StartForm ()
+        startForm.binaryFilePathText.Text <- savedState.BinaryFilePath
+        startForm.openGameplayScreenCheckBox.Checked <- savedState.OpenGameplayScreen
+        if  startForm.ShowDialog () = DialogResult.OK &&
+            not (String.IsNullOrWhiteSpace (startForm.binaryFilePathText.Text)) then
+            let savedState =
+                { BinaryFilePath = startForm.binaryFilePathText.Text
+                  OpenGameplayScreen = startForm.openGameplayScreenCheckBox.Checked }
+            try File.WriteAllText (Constants.Editor.SavedStateFilePath, (scstring savedState))
+            with _ -> Log.info "Could not save editor state."
+            let (targetDir, plugIn) = selectTargetDirAndMakeNuPluginFromFilePath startForm.binaryFilePathText.Text
+            (savedState, targetDir, plugIn)
+        else (savedState, ".", NuPlugin ())
 
     /// Create a Gaia form.
     let createForm () =
@@ -1614,19 +1624,15 @@ module Gaia =
     /// Attempt to make a world for use in the Gaia form.
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
-    let tryMakeWorld plugin sdlDeps =
+    let tryMakeWorld openGameplayScreen plugin sdlDeps =
         let worldEir = World.tryMake false 0L () plugin sdlDeps
         match worldEir with
         | Right world ->
             let world = World.setEventFilter (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])]) world
             let screenDispatcherName =
-                let defaultScreenDispatcherName = typeof<ScreenDispatcher>.Name
-                let editorScreenDispatcherName = plugin.GetEditorScreenDispatcherName ()
-                if editorScreenDispatcherName <> defaultScreenDispatcherName then
-                    match MessageBox.Show ("Load the non-default Screen?", "Non-Default Screen", MessageBoxButtons.OKCancel) with
-                    | DialogResult.Cancel -> defaultScreenDispatcherName
-                    | _ -> editorScreenDispatcherName
-                else defaultScreenDispatcherName
+                if openGameplayScreen
+                then plugin.GetGameplayScreenDispatcherName ()
+                else typeof<ScreenDispatcher>.Name
             let (screen, world) = World.createScreen3 screenDispatcherName (Some EditorScreen.ScreenName) world
             let world = World.selectScreen EditorScreen world
             let world =
@@ -1655,11 +1661,11 @@ module Gaia =
 
     /// Run Gaia in isolation.
     let run () =
-        let (targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
+        let (savedState, targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
         use form = createForm ()
         match tryMakeSdlDeps form with
         | Right sdlDeps ->
-            match tryMakeWorld plugin sdlDeps with
+            match tryMakeWorld savedState.OpenGameplayScreen plugin sdlDeps with
             | Right world ->
                 Globals.World <- world
                 let _ = run3 tautology targetDir sdlDeps form

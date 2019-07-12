@@ -20,7 +20,7 @@ type MyPlugin () =
         typeof<MyGameDispatcher>.Name
 
     // specify the sceen dispatcher to optionally use in the editor
-    override this.GetEditorScreenDispatcherName () =
+    override this.GetGameplayScreenDispatcherName () =
         typeof<MyGameplayDispatcher>.Name
 
     // specify the empty game dispatcher to use in the editor

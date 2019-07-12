@@ -17,6 +17,7 @@ module Constants =
         let [<Literal>] DefaultCreationDepth = 0.0f
         let [<Literal>] RefinementDir = "refinement"
         let [<Literal>] CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
+        let [<Literal>] SavedStateFilePath = "GaiaState.txt"
 
     [<RequireQualifiedAccess>]
     module SubscriptionKeys =

@@ -1155,43 +1155,39 @@ module WorldTypes =
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.
     type NuPlugin () =
-    
+
         /// Make user-defined game dispatcher such that Nu can utilize them at run-time.
         abstract MakeGameDispatchers : unit -> GameDispatcher list
         default this.MakeGameDispatchers () = []
-    
+
         /// Make user-defined screen dispatchers such that Nu can utilize them at run-time.
         abstract MakeScreenDispatchers : unit -> ScreenDispatcher list
         default this.MakeScreenDispatchers () = []
-    
+
         /// Make user-defined layer dispatchers such that Nu can utilize them at run-time.
         abstract MakeLayerDispatchers : unit -> LayerDispatcher list
         default this.MakeLayerDispatchers () = []
-    
+
         /// Make user-defined entity dispatchers such that Nu can utilize them at run-time.
         abstract MakeEntityDispatchers : unit -> EntityDispatcher list
         default this.MakeEntityDispatchers () = []
-    
+
         /// Make user-defined assets such that Nu can utilize them at run-time.
         abstract MakeFacets : unit -> Facet list
         default this.MakeFacets () = []
-    
+
         /// The name of the game dispatcher that Nu will utilize when running inside the editor.
         abstract GetEditorGameDispatcherName : unit -> string
         default this.GetEditorGameDispatcherName () = typeof<GameDispatcher>.Name
-    
+
         /// The name of the game dispatcher that Nu will utilize when running outside the editor.
         abstract GetStandAloneGameDispatcherName : unit -> string
         default this.GetStandAloneGameDispatcherName () = typeof<GameDispatcher>.Name
-    
-        /// The name of the screen dispatcher that Nu will utilize when running inside the editor.
-        abstract GetEditorScreenDispatcherName : unit -> string
-        default this.GetEditorScreenDispatcherName () = typeof<ScreenDispatcher>.Name
-    
-        /// The name of the screen dispatcher that Nu will utilize when running outside the editor.
-        abstract GetStandAloneScreenDispatcherName : unit -> string
-        default this.GetStandAloneScreenDispatcherName () = typeof<ScreenDispatcher>.Name
-    
+
+        /// The name of the screen dispatcher that Nu may utilize when running inside the editor.
+        abstract GetGameplayScreenDispatcherName : unit -> string
+        default this.GetGameplayScreenDispatcherName () = typeof<ScreenDispatcher>.Name
+
         /// Make the overlay routes that will allow Nu to use different overlays for the specified
         /// dispatcher name.
         abstract MakeOverlayRoutes : unit -> (string * string option) list
