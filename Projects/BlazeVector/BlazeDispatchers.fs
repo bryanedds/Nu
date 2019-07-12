@@ -273,6 +273,7 @@ module GameplayModule =
         inherit ScreenDispatcher<unit, unit, GameplayCommand> ()
 
         static let [<Literal>] SectionName = "Section"
+        static let [<Literal>] SectionCount = 16
 
         static let shiftEntities xShift entities world =
             Seq.fold
@@ -298,7 +299,7 @@ module GameplayModule =
                     let sectionXShift = 2048.0f * single i
                     createSectionFromFile sectionFilePath sectionName sectionXShift gameplay world)
                 world
-                [0 .. Constants.BlazeVector.SectionCount - 1]
+                [0 .. SectionCount - 1]
 
         static let createScene gameplay world =
             let scene = Simulants.Scene gameplay
@@ -319,7 +320,7 @@ module GameplayModule =
                 World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
             | StopPlay ->
                 let scene = Simulants.Scene gameplay
-                let sectionNames = [for i in 0 .. Constants.BlazeVector.SectionCount - 1 do yield SectionName + scstring i]
+                let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + scstring i]
                 let layerNames = scene.LayerName :: sectionNames
                 let layers = List.map (fun layerName -> gameplay / layerName) layerNames
                 World.destroyLayers layers world

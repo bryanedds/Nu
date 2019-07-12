@@ -19,7 +19,7 @@ type MyPlugin () =
     override this.GetStandAloneGameDispatcherName () =
         typeof<MyGameDispatcher>.Name
 
-    // specify the empty dispatcher to use in the editor
+    // specify the empty game dispatcher to use in the editor
     override this.GetEditorGameDispatcherName () =
         typeof<GameDispatcher>.Name
 
