@@ -125,7 +125,9 @@ module WorldModuleGame =
         static member setSelectedScreenOpt value world =
 
             // disallow omni-screen selection
-            if Option.isSome value && World.getOmniScreenOpt world = value then failwith "Cannot set SelectedScreen to OmniScreen."
+            if  Option.isSome value &&
+                World.getOmniScreenOpt world = value then
+                failwith "Cannot set SelectedScreen to OmniScreen."
 
             // clear out singleton states
             let world =
