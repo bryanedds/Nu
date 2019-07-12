@@ -19,9 +19,9 @@ type MyPlugin () =
     override this.GetStandAloneGameDispatcherName () =
         typeof<MyGameDispatcher>.Name
 
-    // specify the above game dispatcher to use in the editor
+    // specify the empty dispatcher to use in the editor
     override this.GetEditorGameDispatcherName () =
-        typeof<MyGameDispatcher>.Name
+        typeof<GameDispatcher>.Name
 
     // specify the sceen dispatcher to optionally use in the editor
     override this.GetEditorScreenDispatcherName () =
