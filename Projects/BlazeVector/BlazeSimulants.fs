@@ -5,7 +5,7 @@ open Nu
 module Simulants =
 
     // the game handle
-    let Blaze = Default.Game
+    let Game = Default.Game
 
     // same as above, but for the splash screen
     let Splash = Screen "Splash"
@@ -31,7 +31,7 @@ module Simulants =
     let CreditsBack = CreditsGui / "Back"
 
     // gameplay simulants
-    let Gameplay = Screen "Gameplay"
+    let Gameplay = Default.Screen
     let GameplayGui = Gameplay / "Gui"
     let GameplayBack = GameplayGui / "Back"
 
