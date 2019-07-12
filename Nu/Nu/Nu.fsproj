@@ -222,7 +222,7 @@
       <HintPath>..\Nu.Dependencies\Nito.Collections.Deque\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.3.6.2\lib\net46\Prime.exe</HintPath>
+      <HintPath>..\..\packages\Prime.3.6.3\lib\net46\Prime.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
       <HintPath>..\Nu.Dependencies\SDL2-CS\Release\SDL2-CS.dll</HintPath>
