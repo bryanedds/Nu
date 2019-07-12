@@ -33,7 +33,7 @@ type BlazePlugin () =
         typeof<BlazeDispatcher>.Name
             
     // specify the sceen dispatcher to use in the editor
-    override this.GetEditorScreenDispatcherName () =
+    override this.GetGameplayScreenDispatcherName () =
         typeof<GameplayDispatcher>.Name
 
 module Program =
