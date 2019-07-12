@@ -1,9 +1,9 @@
 [LayerDispatcher
  [[Depth 0]
   [Name Gui]
-  [OnMessage []]
   [OnPostUpdate []]
   [OnRegister []]
+  [OnSignal []]
   [OnUnregister []]
   [OnUpdate []]
   [Persistent True]
@@ -25,9 +25,4 @@
   [TextDispatcher
    [[Position [-320.0f 96.0f]]
     [Size [640.0f 128.0f]]
-    [Text BlazeVector]]]
-  [LabelDispatcher
-   [[Depth -1]
-    [LabelImage [Default Image8]]
-    [Position [-480.0f -272.0f]]
-    [Size [960.0f 544.0f]]]]]]
+    [Text MyGame]]]]]

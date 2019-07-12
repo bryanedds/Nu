@@ -20,8 +20,7 @@ type MyGameDispatcher () =
         [Simulants.TitleCredits.ClickEvent =>! ShowCredits
          Simulants.TitlePlay.ClickEvent =>! ShowGameplay
          Simulants.TitleExit.ClickEvent =>! ExitGame
-         Simulants.CreditsBack.ClickEvent =>! ShowTitle
-         Simulants.Back.ClickEvent =>! ShowTitle]
+         Simulants.CreditsBack.ClickEvent =>! ShowTitle]
 
     // here we handle the above commands
     override dispatcher.Command (command, _, _, world) =
@@ -33,7 +32,7 @@ type MyGameDispatcher () =
 
     // here we describe the content of the game including all of its screens.
     override dispatcher.Content (_, _, _) =
-        [Content.screen Simulants.Splash (Nu.Splash (Default.DissolveData, Default.SplashData, Simulants.Title)) [] []
+        [Content.screen Simulants.Splash (Splash (Default.DissolveData, Default.SplashData, Simulants.Title)) [] []
          Content.screenFromLayerFile Simulants.Title (Dissolve Default.DissolveData) "Assets/Gui/Title.nulyr"
          Content.screenFromLayerFile Simulants.Credits (Dissolve Default.DissolveData) "Assets/Gui/Credits.nulyr"
          Content.screen<MyGameplayDispatcher> Simulants.Gameplay (Dissolve Default.DissolveData) [] []]

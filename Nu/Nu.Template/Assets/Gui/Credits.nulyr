@@ -1,21 +1,16 @@
 [LayerDispatcher
  [[Depth 0]
   [Name Gui]
-  [OnMessage []]
   [OnPostUpdate []]
   [OnRegister []]
+  [OnSignal []]
   [OnUnregister []]
   [OnUpdate []]
   [Persistent True]
   [Script []]
   [ScriptOpt None]
   [Visible True]]
- [[LabelDispatcher
-   [[Depth -1]
-    [LabelImage [Default Image8]]
-    [Position [-480.0f -272.0f]]
-    [Size [960.0f 544.0f]]]]
-  [ButtonDispatcher
+ [[ButtonDispatcher
    [[Name Back]
     [Position [-128.0f -224.0f]]
     [Text Back]]]
@@ -24,10 +19,6 @@
     [Size [640.0f 128.0f]]
     [Text Credits]]]
   [TextDispatcher
-   [[Position [-320.0f 0.0f]]
+   [[Position [-320.0f -56.0f]]
     [Size [640.0f 64.0f]]
-    [Text "Code + Music + SFX: Bryan Edds"]]]
-  [TextDispatcher
-   [[Position [-320.0f -96.0f]]
-    [Size [640.0f 64.0f]]
-    [Text "Art: MindChamber"]]]]]
+    [Text "Your Name Here!"]]]]]
