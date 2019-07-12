@@ -1,13 +1,28 @@
 [LayerDispatcher
  [[Depth 0]
-  [Name Gui]
-  [OnMessage []]
+  [Name Level]
   [OnPostUpdate []]
   [OnRegister []]
+  [OnSignal []]
   [OnUnregister []]
   [OnUpdate []]
   [Persistent True]
   [Script []]
   [ScriptOpt None]
   [Visible True]]
- []]
+ [[BlockDispatcher
+   [[Name c3623843-4420-4d3a-9157-3ae80bad96b4]
+    [Position [-320.0f -184.0f]]
+    [Size [200.0f 200.0f]]]]
+  [BlockDispatcher
+   [[Name 1c9c4d4c-7c09-40fe-99c8-14e444cf455b]
+    [Position [-320.0f -824.0f]]
+    [Size [640.0f 640.0f]]]]
+  [BlockDispatcher
+   [[Name 58b1e565-8c1d-46c9-92c2-9d50b3499308]
+    [Position [240.0f -184.0f]]
+    [Size [200.0f 200.0f]]]]
+  [BlockDispatcher
+   [[Name e7471aee-9241-44fd-a94f-c2eae33107a1]
+    [Position [-120.0f 16.0f]]
+    [Size [200.0f 200.0f]]]]]]
