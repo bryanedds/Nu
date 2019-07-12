@@ -242,19 +242,19 @@ module SceneModule =
             [scene.UpdateEvent =>! AdjustCamera
              scene.UpdateEvent =>! PlayerFall]
 
-        override dispatcher.Command (command, _, scene, world) =
+        override dispatcher.Command (command, _, _, world) =
             match command with
             | AdjustCamera ->
-                let player = Simulants.Player scene
-                let playerPosition = player.GetPosition world
-                let playerSize = player.GetSize world
-                let eyeCenter = World.getEyeCenter world
-                let eyeSize = World.getEyeSize world
-                let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f, eyeCenter.Y)
-                Game.SetEyeCenter eyeCenter world
+                if World.getTickRate world <> 0L then
+                    let playerPosition = Simulants.Player.GetPosition world
+                    let playerSize = Simulants.Player.GetSize world
+                    let eyeCenter = World.getEyeCenter world
+                    let eyeSize = World.getEyeSize world
+                    let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f, eyeCenter.Y)
+                    Game.SetEyeCenter eyeCenter world
+                else world
             | PlayerFall ->
-                let player = Simulants.Player scene
-                if player.HasFallen world && World.isSelectedScreenIdling world then
+                if Simulants.Player.HasFallen world && World.isSelectedScreenIdling world then
                     let world = World.playSound 1.0f Assets.DeathSound world
                     if Simulants.Title.GetExists world
                     then World.transitionScreen Simulants.Title world
@@ -302,8 +302,7 @@ module GameplayModule =
                 [0 .. SectionCount - 1]
 
         static let createScene gameplay world =
-            let scene = Simulants.Scene gameplay
-            World.readLayerFromFile Assets.SceneLayerFilePath (Some scene.LayerName) gameplay world |> snd
+            World.readLayerFromFile Assets.SceneLayerFilePath (Some Simulants.Scene.LayerName) gameplay world |> snd
 
         override dispatcher.Bindings (_, gameplay, _) =
             [gameplay.SelectEvent =>! StartPlay
@@ -319,8 +318,7 @@ module GameplayModule =
             | StoppingPlay ->
                 World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
             | StopPlay ->
-                let scene = Simulants.Scene gameplay
                 let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + scstring i]
-                let layerNames = scene.LayerName :: sectionNames
+                let layerNames = Simulants.Scene.LayerName :: sectionNames
                 let layers = List.map (fun layerName -> gameplay / layerName) layerNames
                 World.destroyLayers layers world

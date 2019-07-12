@@ -34,9 +34,5 @@ module Simulants =
     let Gameplay = Default.Screen
     let GameplayGui = Gameplay / "Gui"
     let GameplayBack = GameplayGui / "Back"
-
-    // these are more gameplay simulants, but they are functions. We've made them functions in
-    // order to make them instantiable relative to the simulants they're used in, ultimately
-    // making them usable in the editor
-    let Scene (gameplay : Screen) = gameplay / "Scene"
-    let Player (scene : Layer) = scene / "Player"
+    let Scene = Gameplay / "Scene"
+    let Player = Scene / "Player"
