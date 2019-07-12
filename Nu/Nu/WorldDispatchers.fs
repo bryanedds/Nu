@@ -48,20 +48,17 @@ module FacetModule =
                     match binding with
                     | Message binding ->
                         Stream.monitor (fun evt world ->
-                            match binding.MakeValueOpt evt with
-                            | Some message ->
-                                let (model, commands) = this.Message (message, this.GetModel entity world, entity, world)
-                                let world = this.SetModel model entity world
-                                List.fold (fun world command ->
-                                    this.Command (command, this.GetModel entity world, entity, world))
-                                    world commands
-                            | None -> world)
+                            let message = binding.MakeValue evt
+                            let (model, commands) = this.Message (message, this.GetModel entity world, entity, world)
+                            let world = this.SetModel model entity world
+                            List.fold (fun world command ->
+                                this.Command (command, this.GetModel entity world, entity, world))
+                                world commands)
                             entity binding.Stream world
                     | Command binding ->
                         Stream.monitor (fun evt world ->
-                            match binding.MakeValueOpt evt with
-                            | Some message -> this.Command (message, this.GetModel entity world, entity, world)
-                            | None -> world)
+                            let command = binding.MakeValue evt
+                            this.Command (command, this.GetModel entity world, entity, world))
                             entity binding.Stream world)
                     world bindings
             let content = this.Content (this.Model entity, entity, world)
@@ -1020,20 +1017,17 @@ module EntityDispatcherModule =
                     match binding with
                     | Message binding ->
                         Stream.monitor (fun evt world ->
-                            match binding.MakeValueOpt evt with
-                            | Some message ->
-                                let (model, commands) = this.Message (message, this.GetModel entity world, entity, world)
-                                let world = this.SetModel model entity world
-                                List.fold (fun world command ->
-                                    this.Command (command, this.GetModel entity world, entity, world))
-                                    world commands
-                            | None -> world)
+                            let message = binding.MakeValue evt
+                            let (model, commands) = this.Message (message, this.GetModel entity world, entity, world)
+                            let world = this.SetModel model entity world
+                            List.fold (fun world command ->
+                                this.Command (command, this.GetModel entity world, entity, world))
+                                world commands)
                             entity binding.Stream world
                     | Command binding ->
                         Stream.monitor (fun evt world ->
-                            match binding.MakeValueOpt evt with
-                            | Some message -> this.Command (message, this.GetModel entity world, entity, world)
-                            | None -> world)
+                            let command = binding.MakeValue evt
+                            this.Command (command, this.GetModel entity world, entity, world))
                             entity binding.Stream world)
                     world bindings
             let content = this.Content (this.Model entity, entity, world)
@@ -1826,20 +1820,17 @@ module LayerDispatcherModule =
                     match binding with
                     | Message binding ->
                         Stream.monitor (fun evt world ->
-                            match binding.MakeValueOpt evt with
-                            | Some message ->
-                                let (model, commands) = this.Message (message, this.GetModel layer world, layer, world)
-                                let world = this.SetModel model layer world
-                                List.fold (fun world command ->
-                                    this.Command (command, this.GetModel layer world, layer, world))
-                                    world commands
-                            | None -> world)
+                            let message = binding.MakeValue evt
+                            let (model, commands) = this.Message (message, this.GetModel layer world, layer, world)
+                            let world = this.SetModel model layer world
+                            List.fold (fun world command ->
+                                this.Command (command, this.GetModel layer world, layer, world))
+                                world commands)
                             layer binding.Stream world
                     | Command binding ->
                         Stream.monitor (fun evt world ->
-                            match binding.MakeValueOpt evt with
-                            | Some message -> this.Command (message, this.GetModel layer world, layer, world)
-                            | None -> world)
+                            let command = binding.MakeValue evt
+                            this.Command (command, this.GetModel layer world, layer, world))
                             layer binding.Stream world)
                     world bindings
             let content = this.Content (this.Model layer, layer, world)
@@ -1907,22 +1898,17 @@ module ScreenDispatcherModule =
                     match binding with
                     | Message binding ->
                         Stream.monitor (fun evt world ->
-                            let messageOpt = binding.MakeValueOpt evt
-                            match messageOpt with
-                            | Some message ->
-                                let (model, commands) = this.Message (message, this.GetModel screen world, screen, world)
-                                let world = this.SetModel model screen world
-                                List.fold (fun world command ->
-                                    this.Command (command, this.GetModel screen world, screen, world))
-                                    world commands
-                            | None -> world)
+                            let message = binding.MakeValue evt
+                            let (model, commands) = this.Message (message, this.GetModel screen world, screen, world)
+                            let world = this.SetModel model screen world
+                            List.fold (fun world command ->
+                                this.Command (command, this.GetModel screen world, screen, world))
+                                world commands)
                             screen binding.Stream world
                     | Command binding ->
                         Stream.monitor (fun evt world ->
-                            let messageOpt = binding.MakeValueOpt evt
-                            match messageOpt with
-                            | Some message -> this.Command (message, this.GetModel screen world, screen, world)
-                            | None -> world)
+                            let command = binding.MakeValue evt
+                            this.Command (command, this.GetModel screen world, screen, world))
                             screen binding.Stream world)
                     world bindings
             let content = this.Content (this.Model screen, screen, world)

@@ -10,7 +10,7 @@
     <ProjectGuid>4dbbaa23-56ba-43cb-ab63-c45d5fc1016f</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>$safeprojectname$</RootNamespace>
-    <AssemblyName>$safeprojectname$</AssemblyName>
+    <AssemblyName>MyGame</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Name>$safeprojectname$</Name>
@@ -41,7 +41,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>bin\Release\$safeprojectname$.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\MyGame.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
@@ -70,6 +70,9 @@
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="MySimulants.fs" />
+    <Compile Include="MyGameplay.fs" />
+    <Compile Include="MyGame.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="Packages.config" />
@@ -105,6 +108,10 @@
     <None Include="Assets\Default\Image10.png" />
     <None Include="Assets\Default\TileSet.png" />
     <None Include="Assets\Default\TileMap.tmx" />
+    <None Include="Assets\Gui\Title.nulyr" />
+    <None Include="Assets\Gui\Credits.nulyr" />
+    <None Include="Assets\Gui\Gameplay.nulyr" />
+    <None Include="Assets\Gui\Level.nulyr" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj">
@@ -146,7 +153,7 @@
       <HintPath>..\..\Nu\Nu.Dependencies\Nito.Collections.Deque\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.3.6.2\lib\net46\Prime.exe</HintPath>
+      <HintPath>..\..\packages\Prime.3.6.3\lib\net46\Prime.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
       <HintPath>..\..\Nu\Nu.Dependencies\SDL2-CS\Release\SDL2-CS.dll</HintPath>

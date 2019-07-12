@@ -885,20 +885,17 @@ module GameDispatcherModule =
                     match binding with
                     | Message binding ->
                         Stream.monitor (fun evt world ->
-                            match binding.MakeValueOpt evt with
-                            | Some message ->
-                                let (model, commands) = this.Message (message, this.GetModel game world, game, world)
-                                let world = this.SetModel model game world
-                                List.fold (fun world command ->
-                                    this.Command (command, this.GetModel game world, game, world))
-                                    world commands
-                            | None -> world)
+                            let message = binding.MakeValue evt
+                            let (model, commands) = this.Message (message, this.GetModel game world, game, world)
+                            let world = this.SetModel model game world
+                            List.fold (fun world command ->
+                                this.Command (command, this.GetModel game world, game, world))
+                                world commands)
                             game binding.Stream world
                     | Command binding ->
                         Stream.monitor (fun evt world ->
-                            match binding.MakeValueOpt evt with
-                            | Some message -> this.Command (message, this.GetModel game world, game, world)
-                            | None -> world)
+                            let command = binding.MakeValue evt
+                            this.Command (command, this.GetModel game world, game, world))
                             game binding.Stream world)
                     world bindings
             let content = this.Content (this.Model game, game, world)

@@ -1,27 +1,32 @@
 ﻿namespace MyGame
 open System
-open Prime
 open Nu
-
-// this is the game dispatcher that is customized for our game. In here, we create screens and wire
-// them up with subsciptions and transitions. For an example, look
-// at BlazeDispatcher.fs in the BlazeVector project.
-type MyGameDispatcher () =
-    inherit GameDispatcher<unit, unit, unit> ()
 
 // this is a plugin for the Nu game engine by which user-defined dispatchers, facets, and other
 // sorts of types can be obtained by both your application and Gaia.
-type MyGamePlugin () =
+type MyPlugin () =
     inherit NuPlugin ()
 
-    // make our game-specific game dispatcher...
+    // make our game-specific screen dispatchers...
+    override this.MakeScreenDispatchers () =
+        [MyGameplayDispatcher () :> ScreenDispatcher]
+
+    // make our game-specific game dispatchers...
     override this.MakeGameDispatchers () =
         [MyGameDispatcher () :> GameDispatcher]
 
-    // specify the above game dispatcher to use
+    // specify the above game dispatcher to use at run-time
     override this.GetStandAloneGameDispatcherName () =
         typeof<MyGameDispatcher>.Name
-    
+
+    // specify the above game dispatcher to use in the editor
+    override this.GetEditorGameDispatcherName () =
+        typeof<MyGameDispatcher>.Name
+
+    // specify the sceen dispatcher to optionally use in the editor
+    override this.GetEditorScreenDispatcherName () =
+        typeof<MyGameplayDispatcher>.Name
+
 // this is the main module for our program.
 module Program =
 
@@ -42,7 +47,7 @@ module Program =
         let tryMakeWorld sdlDeps =
 
             // an instance of the above plugin
-            let plugin = MyGamePlugin ()
+            let plugin = MyPlugin ()
 
             // here is an attempt to make the world with the various initial states, the engine
             // plugin, and SDL dependencies.
