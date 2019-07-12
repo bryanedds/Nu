@@ -65,7 +65,6 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="BlazeAssets.fs" />
-    <Compile Include="BlazeConstants.fs" />
     <Compile Include="BlazeSimulants.fs" />
     <Compile Include="BlazeDispatchers.fs" />
     <Compile Include="BlazeDispatcher.fs" />

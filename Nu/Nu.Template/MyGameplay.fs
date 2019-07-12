@@ -31,6 +31,11 @@ type MyGameplayDispatcher () =
     // here we handle the above commands
     override this.Command (command, _, _, world) =
         match command with
+        | Jump ->
+            let physicsId = Simulants.Player.GetPhysicsId world
+            if World.isBodyOnGround physicsId world
+            then World.applyBodyForce (v2 0.0f 2000000.0f) physicsId world
+            else world
         | MoveLeft ->
             let physicsId = Simulants.Player.GetPhysicsId world
             if World.isBodyOnGround physicsId world
@@ -41,11 +46,6 @@ type MyGameplayDispatcher () =
             if World.isBodyOnGround physicsId world
             then World.applyBodyForce (v2 30000.0f 0.0f) physicsId world
             else World.applyBodyForce (v2 7500.0f 0.0f) physicsId world
-        | Jump ->
-            let physicsId = Simulants.Player.GetPhysicsId world
-            if World.isBodyOnGround physicsId world
-            then World.applyBodyForce (v2 0.0f 2000000.0f) physicsId world
-            else world
         | Back ->
             World.transitionScreen Simulants.Title world
         | Nil -> world
@@ -59,4 +59,5 @@ type MyGameplayDispatcher () =
              Content.button Simulants.Back
                 [Entity.Text == "Back"
                  Entity.Position == v2 220.0f -260.0f]]
-         Content.layerFromFile Simulants.Level "Assets/Gui/Level.nulyr"]
+         Content.layerFromFile Simulants.Level
+            "Assets/Gui/Level.nulyr"]

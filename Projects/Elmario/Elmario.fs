@@ -12,9 +12,9 @@ module Elmario =
 
     // this is our Elm-style command type
     type Command =
+        | Jump
         | MoveLeft
         | MoveRight
-        | Jump
         | Nil
 
     // this is our Elm-style game dispatcher
@@ -23,13 +23,13 @@ module Elmario =
 
         // here we define the Bindings used to connect events to their desired commands
         override this.Bindings (_, game, _) =
-            [game.UpdateEvent =|>! fun _ ->
-                if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then MoveLeft
-                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then MoveRight
-                else Nil
-             game.KeyboardKeyDownEvent =|>! fun evt ->
+            [game.KeyboardKeyDownEvent =|>! fun evt ->
                 if evt.Data.ScanCode = int SDL.SDL_Scancode.SDL_SCANCODE_UP && not evt.Data.Repeated
                 then Jump
+                else Nil
+             game.UpdateEvent =|>! fun _ ->
+                if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then MoveLeft
+                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then MoveRight
                 else Nil]
 
         // here we handle the above commands

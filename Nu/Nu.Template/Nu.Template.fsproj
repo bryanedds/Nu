@@ -110,7 +110,6 @@
     <None Include="Assets\Default\TileMap.tmx" />
     <None Include="Assets\Gui\Title.nulyr" />
     <None Include="Assets\Gui\Credits.nulyr" />
-    <None Include="Assets\Gui\Gameplay.nulyr" />
     <None Include="Assets\Gui\Level.nulyr" />
   </ItemGroup>
   <ItemGroup>
