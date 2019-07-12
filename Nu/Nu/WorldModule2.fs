@@ -729,11 +729,11 @@ module WorldModule2 =
                 let world = preProcess world
                 match liveness with
                 | Running ->
-                    let (liveness, world) = World.processInput world
-                    match liveness with
+                    let world = World.updateScreenTransition world
+                    match World.getLiveness world with
                     | Running ->
-                        let world = World.updateScreenTransition world
-                        match World.getLiveness world with
+                        let (liveness, world) = World.processInput world
+                        match liveness with
                         | Running ->
                             let world = World.processPhysics world
                             match World.getLiveness world with
