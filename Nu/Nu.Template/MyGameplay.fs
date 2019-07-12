@@ -47,7 +47,9 @@ type MyGameplayDispatcher () =
             then World.applyBodyForce (v2 30000.0f 0.0f) physicsId world
             else World.applyBodyForce (v2 7500.0f 0.0f) physicsId world
         | EyeTrack ->
-            Simulants.Game.SetEyeCenter (Simulants.Player.GetCenter world) world
+            if World.getTickRate world <> 0L
+            then Simulants.Game.SetEyeCenter (Simulants.Player.GetCenter world) world
+            else world
         | Nil -> world
 
     // here we describe the content of the game including the player and the level
