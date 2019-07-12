@@ -6,7 +6,7 @@ open Nu
 module Simulants =
 
     // the game handle
-    let Infinity = Default.Game
+    let Game = Default.Game
 
     // same as above, but for the splash screen
     let Splash = Screen "Splash"
@@ -33,7 +33,7 @@ module Simulants =
     let CreditsBack = CreditsGui / "Back"
 
     // these are more gameplay simulants
-    let Gameplay = Screen "Gameplay"
+    let Gameplay = Default.Screen
     let Hud = Gameplay / "Hud"
     let HudBack = Hud / "Back"
     let HudSaveGame = Hud / "SaveGame"
