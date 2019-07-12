@@ -20,7 +20,8 @@ type MyGameDispatcher () =
         [Simulants.TitleCredits.ClickEvent =>! ShowCredits
          Simulants.TitlePlay.ClickEvent =>! ShowGameplay
          Simulants.TitleExit.ClickEvent =>! ExitGame
-         Simulants.CreditsBack.ClickEvent =>! ShowTitle]
+         Simulants.CreditsBack.ClickEvent =>! ShowTitle
+         Simulants.Back.ClickEvent =>! ShowTitle]
 
     // here we handle the above commands
     override dispatcher.Command (command, _, _, world) =
