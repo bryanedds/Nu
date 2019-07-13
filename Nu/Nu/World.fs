@@ -131,13 +131,13 @@ module Nu =
             // init handlePropertyChange F# reach-around
             WorldTypes.handlePropertyChange <- fun propertyName propertied handler world ->
                 let participant = propertied :?> Participant
-                let handler = handler :?> PropertyChangeHandler<World>
+                let handler = handler :?> World PropertyChangeHandler
                 let (unsubscribe, world) =
                     World.subscribePlus
                         (makeGuid ())
                         (fun (event : Event<obj, _>) world ->
                             let data = event.Data :?> ChangeData
-                            let world = handler data.OldWorld world
+                            let world = handler data.Value world
                             (Cascade, world))
                         (rtoa (Array.append [|"Change"; propertyName; "Event"|] (Address.getNames participant.ParticipantAddress)))
                         (Default.Game :> Participant)

@@ -5,7 +5,9 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.IO
+#if MULTITHREADING
 open System.Threading.Tasks
+#endif
 open SDL2
 open Prime
 open global.Nu

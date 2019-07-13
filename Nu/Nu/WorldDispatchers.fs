@@ -819,15 +819,15 @@ module NodeFacetModule =
             | Some relation ->
                 let node = entity.Resolve relation
                 if World.getEntityExists node world
-                then (Cascade, updatePropertyFromLocal data.PropertyName node entity world)
-                else (Cascade, updatePropertyFromLocal3 data.PropertyName entity world)
-            | None -> (Cascade, updatePropertyFromLocal3 data.PropertyName entity world)
+                then (Cascade, updatePropertyFromLocal data.Name node entity world)
+                else (Cascade, updatePropertyFromLocal3 data.Name entity world)
+            | None -> (Cascade, updatePropertyFromLocal3 data.Name entity world)
 
         static let handleNodePropertyChange evt world =
             let entity = evt.Subscriber : Entity
             let node = evt.Publisher :?> Entity
             let data = evt.Data : ChangeData
-            (Cascade, updatePropertyFromNode data.PropertyName node entity world)
+            (Cascade, updatePropertyFromNode data.Name node entity world)
 
         static let subscribeToNodePropertyChanges (entity : Entity) world =
             let oldWorld = world
