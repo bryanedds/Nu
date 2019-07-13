@@ -128,6 +128,9 @@ module WorldModuleGame =
                 World.getOmniScreenOpt world = value then
                 failwith "Cannot set SelectedScreen to OmniScreen."
 
+            // raise change event for none selection
+            let world = World.updateGameState id Property? SelectedScreenOpt None world
+
             // clear out singleton states
             let world =
                 match (World.getGameState world).SelectedScreenOpt with
@@ -136,24 +139,23 @@ module WorldModuleGame =
                     let world = WorldModule.evictScreenElements screen world
                     world
                 | None -> world
+                
+            // actually set selected screen (no events)
+            let world = World.updateGameStateWithoutEvent (fun gameState -> { gameState with SelectedScreenOpt = value }) world
 
-            // actually set selected screen
-            let world =
-                World.updateGameState
-                    (fun gameState -> { gameState with SelectedScreenOpt = value })
-                    Property? SelectedScreenOpt value world
+            // handle some case
+            match value with
+            | Some screen ->
 
-            // populate singleton states
-            let world =
-                match value with
-                | Some screen ->
-                    let world = WorldModule.admitScreenElements screen world
-                    let world = WorldModule.registerScreenPhysics screen world
-                    world
-                | None -> world
+                // populate singleton states
+                let world = WorldModule.admitScreenElements screen world
+                let world = WorldModule.registerScreenPhysics screen world
+
+                // raise change event for some selection
+                World.updateGameState id Property? SelectedScreenOpt (Some screen) world
 
             // fin
-            world
+            | None -> world
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
         [<FunctionBinding>]

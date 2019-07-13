@@ -1089,7 +1089,7 @@ module WorldModuleEntity =
             | Some entityStateObj ->
                 let entityState = entityStateObj :?> EntityState
                 let id = makeGuid ()
-                let name = (scstring id)
+                let name = Reflection.generatName None
                 let entityState = { entityState with Id = id; Name = name }
                 let position =
                     if atMouse
