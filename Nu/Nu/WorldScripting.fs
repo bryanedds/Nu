@@ -137,7 +137,7 @@ module WorldScripting =
                 let stream =
                     Stream.make (Events.Change propertyName --> simulant.SimulantAddress) |>
                     Stream.mapEvent (fun (evt : Event<ChangeData, _>) world ->
-                        match World.tryGetProperty evt.Data.PropertyName simulant world with
+                        match World.tryGetProperty evt.Data.Name simulant world with
                         | Some property ->
                             match property.PropertyValue with
                             | :? DesignerProperty as dp -> ScriptingSystem.tryImport dp.DesignerType dp.DesignerValue world |> box

@@ -37,9 +37,6 @@ type [<Struct; StructuralEquality; NoComparison>] CollisionData =
       Speed : single
       Collidee : Entity }
 
-/// The data for a change in a simulant.
-type ChangeData = World ParticipantChangeData
-
 module Events =
 
     let Wildcard = Prime.Events.Wildcard
