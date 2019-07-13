@@ -17,18 +17,18 @@ module Reflection =
     let private PropertyDefinitionsCache = Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
     /// Get the next global counter value.
-    let nextCounter () =
+    let generateCounter () =
         lock CounterLock (fun () -> Counter <- inc Counter; Counter)
 
-    /// Generate the next name.
-    let nextName () =
-        Constants.Engine.GeneratedNamePrefix + scstring (nextCounter ())
+    /// Generate the next global name.
+    let generateName () =
+        Constants.Engine.GeneratedNamePrefix + scstring (generateCounter ())
 
-    /// Derive a simulant name from an optional name.
-    let generatName nameOpt =
+    /// Generate a simulant name from an optional name.
+    let generateNameIf nameOpt =
         match nameOpt with
         | Some name -> name
-        | None -> nextName ()
+        | None -> generateName ()
 
     /// Check that a name is generated.
     let isNameGenerated (name : string) =
@@ -37,7 +37,7 @@ module Reflection =
     /// Derive a simulant id and name from an optional name.
     let deriveIdAndName nameOpt =
         let id = makeGuid ()
-        let name = generatName nameOpt
+        let name = generateNameIf nameOpt
         (id, name)
 
     /// Check if a property with the given name should always publish a change event.
