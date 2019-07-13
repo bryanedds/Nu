@@ -24,7 +24,8 @@ module Simulants =
 
     // gameplay screen handles
     let Gameplay = Default.Screen
-    let Level = Gameplay / "Level"
+    let Hud = Gameplay / "Hud"
+    let Back = Hud / "Back"
     let Scene = Gameplay / "Scene"
     let Player = Scene / "Player"
-    let Back = Scene / "Back"
+    let Level = Gameplay / "Level"

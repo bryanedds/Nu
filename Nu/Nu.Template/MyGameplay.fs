@@ -6,7 +6,6 @@ open Nu.Declarative
 
 // this is our Elm-style command type
 type GameplayCommand =
-    | Reset
     | EyeTrack
     | Jump
     | MoveLeft
@@ -19,8 +18,8 @@ type MyGameplayDispatcher () =
 
     // here we define the Bindings used to connect events to their desired commands
     override this.Bindings (_, _, _) =
-        [Simulants.Gameplay.SelectEvent =>! Reset
-         Simulants.Gameplay.UpdateEvent =>! EyeTrack
+        [Simulants.Gameplay.UpdateEvent =>!
+            EyeTrack
          Simulants.Game.KeyboardKeyDownEvent =|>! fun evt ->
             if evt.Data.ScanCode = int SDL.SDL_Scancode.SDL_SCANCODE_UP && not evt.Data.Repeated
             then Jump
@@ -33,9 +32,6 @@ type MyGameplayDispatcher () =
     // here we handle the above commands
     override this.Command (command, _, _, world) =
         match command with
-        | Reset ->
-            let world = Simulants.Player.SetPosition v2Zero world
-            Simulants.Player.PropagatePhysics world
         | Jump ->
             let physicsId = Simulants.Player.GetPhysicsId world
             if World.isBodyOnGround physicsId world
@@ -59,13 +55,15 @@ type MyGameplayDispatcher () =
 
     // here we describe the content of the game including the player and the level
     override this.Content (_, _, _) =
-        [Content.layer Simulants.Scene []
-            [Content.character Simulants.Player
-                [Entity.Position == v2 0.0f 0.0f
-                 Entity.Size == v2 144.0f 144.0f]
-             Content.button Simulants.Back
+        [Content.layer Simulants.Hud []
+            [Content.button Simulants.Back
                 [Entity.Text == "Back"
                  Entity.Position == v2 220.0f -260.0f
                  Entity.Depth == 10.0f]]
-         Content.layerFromFile Simulants.Level
-            "Assets/Gui/Level.nulyr"]
+         Content.layerIfScreenSelected Simulants.Gameplay $ fun () ->
+            Content.layer Simulants.Scene []
+                [Content.character Simulants.Player
+                    [Entity.Position == v2 0.0f 0.0f
+                     Entity.Size == v2 144.0f 144.0f]]
+         Content.layerIfScreenSelected Simulants.Gameplay $ fun () ->
+            Content.layerFromFile Simulants.Level "Assets/Gui/Level.nulyr"]
