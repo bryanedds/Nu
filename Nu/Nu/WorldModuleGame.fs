@@ -117,7 +117,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getSelectedScreenOpt world =
             (World.getGameState world).SelectedScreenOpt
-        
+
         /// Set the currently selected screen or None. Be careful using this function directly as
         /// you may be wanting to use the higher-level World.transitionScreen function instead.
         [<FunctionBinding>]
@@ -137,16 +137,23 @@ module WorldModuleGame =
                     world
                 | None -> world
 
-            // actually set selected screen (no events)
-            let world = World.updateGameStateWithoutEvent (fun gameState -> { gameState with SelectedScreenOpt = value }) world
+            // actually set selected screen
+            let world =
+                World.updateGameState
+                    (fun gameState -> { gameState with SelectedScreenOpt = value })
+                    Property? SelectedScreenOpt value world
 
             // populate singleton states
-            match value with
-            | Some screen ->
-                let world = WorldModule.admitScreenElements screen world
-                let world = WorldModule.registerScreenPhysics screen world
-                world
-            | None -> world
+            let world =
+                match value with
+                | Some screen ->
+                    let world = WorldModule.admitScreenElements screen world
+                    let world = WorldModule.registerScreenPhysics screen world
+                    world
+                | None -> world
+
+            // fin
+            world
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
         [<FunctionBinding>]
