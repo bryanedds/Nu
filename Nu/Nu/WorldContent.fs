@@ -29,18 +29,22 @@ module Content =
     let screen<'d when 'd :> ScreenDispatcher> (screen : Screen) behavior definitions children =
         ScreenFromDefinitions (typeof<'d>.Name, screen.ScreenName, behavior, definitions, children)
 
-    /// Describe layers to be obtained from a lens.
+    /// Describe layers to be streamed from a lens.
     let layers (lens : Lens<'a list, World>) (mapper : 'a -> LayerContent) =
         let mapper = fun (a : obj) -> mapper (a :?> 'a)
         LayersFromStream (lens, mapper)
 
-    /// Describe a layer to be optionally obtained from a lens.
+    /// Describe a layer to be optionally streamed from a lens.
     let layerOpt (lens : Lens<'a option, World>) (mapper : 'a -> LayerContent) =
         layers (lens --> function Some a -> List.singleton a | None -> []) mapper
 
-    /// Describe a layer to be optionally obtained from a lens.
+    /// Describe a layer to be optionally streamed from a lens.
     let layerIf (lens : Lens<bool, World>) (mapper : unit -> LayerContent) =
         layers (lens --> function true -> [()] | false -> []) mapper
+
+    /// Describe a layer to be streamed when a screen is selected.
+    let layerIfScreenSelected (screen : Screen) (mapper : unit -> LayerContent) =
+        layerIf (Default.Game.SelectedScreenOpt --> fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe a layer to be loaded from a file.
     let layerFromFile<'d when 'd :> LayerDispatcher> (layer : Layer) filePath =
@@ -50,18 +54,22 @@ module Content =
     let layer<'d when 'd :> LayerDispatcher> (layer : Layer) definitions children =
         LayerFromDefinitions (typeof<'d>.Name, layer.LayerName, definitions, children)
 
-    /// Describe entities to be obtained from a lens.
+    /// Describe entities to be streamed from a lens.
     let entities (lens : Lens<'a list, World>) (mapper : 'a -> EntityContent) =
         let mapper = fun (a : obj) -> mapper (a :?> 'a)
         EntitiesFromStream (lens, mapper)
 
-    /// Describe an entity to be optionally obtained from a lens.
+    /// Describe an entity to be optionally streamed from a lens.
     let entityOpt (lens : Lens<'a option, World>) (mapper : 'a -> EntityContent) =
         entities (lens --> function Some a -> List.singleton a | None -> []) mapper
 
-    /// Describe an entity to be optionally obtained from a lens.
+    /// Describe an entity to be optionally streamed from a lens.
     let entityIf (lens : Lens<bool, World>) (mapper : unit -> EntityContent) =
         entities (lens --> function true -> [()] | false -> []) mapper
+
+    /// Describe an entity to be streamed when a screen is selected.
+    let entityIfScreenSelected (screen : Screen) (mapper : unit -> EntityContent) =
+        entityIf (Default.Game.SelectedScreenOpt --> fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile<'d when 'd :> EntityDispatcher> (entity : Entity) filePath =

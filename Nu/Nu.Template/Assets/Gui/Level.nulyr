@@ -11,34 +11,26 @@
   [ScriptOpt None]
   [Visible True]]
  [[BlockDispatcher
-   [[Name c3623843-4420-4d3a-9157-3ae80bad96b4]
-    [Position [-320.0f -184.0f]]
+   [[Position [-320.0f -184.0f]]
     [Size [200.0f 200.0f]]]]
   [BlockDispatcher
-   [[Name 58b1e565-8c1d-46c9-92c2-9d50b3499308]
-    [Position [256.0f -392.0f]]
+   [[Position [256.0f -392.0f]]
     [Size [200.0f 200.0f]]]]
   [BlockDispatcher
-   [[Name 8c8f2e1f-263c-4fe4-9a68-97e3d61a6a43]
-    [Position [456.0f -392.0f]]
+   [[Position [456.0f -392.0f]]
     [Size [200.0f 200.0f]]]]
   [BlockDispatcher
-   [[Name e7471aee-9241-44fd-a94f-c2eae33107a1]
-    [Position [-384.0f 16.0f]]
+   [[Position [-384.0f 16.0f]]
     [Size [200.0f 200.0f]]]]
   [BlockDispatcher
-   [[Name 38b27199-f0e5-4d9c-bbd0-a8a1ecf2ca7f]
-    [Position [-432.0f -384.0f]]
+   [[Position [-432.0f -384.0f]]
     [Size [200.0f 200.0f]]]]
   [BlockDispatcher
-   [[Name c79dcdad-cd45-4d4c-b249-df24d65a0644]
-    [Position [-144.0f -384.0f]]
+   [[Position [-144.0f -384.0f]]
     [Size [200.0f 200.0f]]]]
   [BlockDispatcher
-   [[Name fff34df9-4b12-495d-8d3b-630ab2f4abc6]
-    [Position [56.0f -360.0f]]
+   [[Position [56.0f -360.0f]]
     [Size [200.0f 200.0f]]]]
   [BlockDispatcher
-   [[Name 8834afa7-e2f5-449b-a1c2-dc21b93d5a8a]
-    [Position [376.0f -192.0f]]
+   [[Position [376.0f -192.0f]]
     [Size [200.0f 200.0f]]]]]]
