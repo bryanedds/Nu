@@ -22,12 +22,12 @@ module SimulantOperators =
     /// Derive layer from its screen.
     let stol (screen : Screen) layerName =
         // OPTIMIZATION: we hard-code the address transformation to save time.
-        Layer [screen.ScreenName; layerName]
+        Layer [screen.Name; layerName]
 
     /// Derive entity from its screen.
     let stoe (screen : Screen) layerName entityName =
         // OPTIMIZATION: we hard-code the address transformation to save time.
-        Entity [screen.ScreenName; layerName; entityName]
+        Entity [screen.Name; layerName; entityName]
 
     /// Derive a layer from its entity.
     let etol (entity : Entity) =

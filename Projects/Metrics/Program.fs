@@ -45,8 +45,8 @@ type MyGameDispatcher () =
     inherit GameDispatcher ()
     
     override dispatcher.Register (_, world) =
-        let world = World.createScreen (Some Default.Screen.ScreenName) world |> snd
-        let world = World.createLayer (Some Default.Layer.LayerName) Default.Screen world |> snd
+        let world = World.createScreen (Some Default.Screen.Name) world |> snd
+        let world = World.createLayer (Some Default.Layer.Name) Default.Screen world |> snd
         let indices = // approximately 3000 entities
             seq {
                 for i in 0 .. 70 do

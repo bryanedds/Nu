@@ -24,19 +24,10 @@ module WorldTests =
         let world = World.publish String.Empty StringEvent EventTrace.empty Default.Game world
         Assert.Equal<Simulant> (Default.Entity :> Simulant, World.getUserValue world)
 
-    let [<Fact>] gameSerializationWorks () =
-        let world = World.makeDefault ()
-        let oldWorld = world
-        World.writeGameToFile TestFilePath world
-        let world = World.readGameFromFile TestFilePath world
-        Assert.Equal<string> (Default.Screen.GetName oldWorld, Default.Screen.GetName world)
-        Assert.Equal<string> (Default.Layer.GetName oldWorld, Default.Layer.GetName world)
-        Assert.Equal<string> (Default.Entity.GetName oldWorld, Default.Entity.GetName world)
-
     let [<Fact>] iterativeFrpWorks () =
         let world = World.makeDefault ()
-        let world = World.createEntity (Some Jim.EntityName) DefaultOverlay Default.Layer world |> snd
-        let world = World.createEntity (Some Bob.EntityName) DefaultOverlay Default.Layer world |> snd
+        let world = World.createEntity (Some Jim.Name) DefaultOverlay Default.Layer world |> snd
+        let world = World.createEntity (Some Bob.Name) DefaultOverlay Default.Layer world |> snd
         let world = !-- Bob.Visible --- Stream.map not -|> Jim.Visible $ world
         let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
@@ -44,8 +35,8 @@ module WorldTests =
 
     let [<Fact>] iterativeFrpCyclicWorks () =
         let world = World.makeDefault ()
-        let world = World.createEntity (Some Jim.EntityName) DefaultOverlay Default.Layer world |> snd
-        let world = World.createEntity (Some Bob.EntityName) DefaultOverlay Default.Layer world |> snd
+        let world = World.createEntity (Some Jim.Name) DefaultOverlay Default.Layer world |> snd
+        let world = World.createEntity (Some Bob.Name) DefaultOverlay Default.Layer world |> snd
         let world = !-- Bob.Visible -/> Jim.Visible $ world
         let world = !-- Jim.Visible -|> Bob.Visible $ world
         let world = Bob.SetVisible false world

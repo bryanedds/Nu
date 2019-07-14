@@ -280,9 +280,9 @@ module WorldModule2 =
             match splashDataOpt with
             | Some splashData ->
                 let cameraEyeSize = World.getEyeSize world
-                let world = World.createLayer<LayerDispatcher> (Some splashLayer.LayerName) screen world |> snd
+                let world = World.createLayer<LayerDispatcher> (Some splashLayer.Name) screen world |> snd
                 let world = splashLayer.SetPersistent false world
-                let world = World.createEntity<LabelDispatcher> (Some splashLabel.EntityName) DefaultOverlay splashLayer world |> snd
+                let world = World.createEntity<LabelDispatcher> (Some splashLabel.Name) DefaultOverlay splashLayer world |> snd
                 let world = splashLabel.SetPersistent false world
                 let world = splashLabel.SetSize cameraEyeSize world
                 let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world

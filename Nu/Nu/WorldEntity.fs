@@ -75,8 +75,6 @@ module WorldEntityModule =
         member this.FacetNames = Lens.makeReadOnly Property? FacetNames this.GetFacetNames this
         member this.GetCreationTimeStamp world = World.getEntityCreationTimeStamp this world
         member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
-        member this.GetName world = World.getEntityName this world
-        member this.Name = Lens.makeReadOnly Property? Name this.GetName this
         member this.GetId world = World.getEntityId this world
         member this.Id = Lens.makeReadOnly Property? Id this.GetId this
 

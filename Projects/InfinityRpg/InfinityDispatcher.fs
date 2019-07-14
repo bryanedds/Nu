@@ -54,7 +54,7 @@ module InfinityDispatcherModule =
             | ExitGame -> World.exit world
 
         override this.Content (_, _, _) =
-            [Content.screen Simulants.Splash.ScreenName (Splash (Constants.InfinityRpg.DissolveData, Constants.InfinityRpg.SplashData, Simulants.Title)) [] []
-             Content.screenFromLayerFile Simulants.Title.ScreenName (Dissolve Constants.InfinityRpg.DissolveData) Assets.TitleLayerFilePath
-             Content.screenFromLayerFile Simulants.Credits.ScreenName (Dissolve Constants.InfinityRpg.DissolveData) Assets.CreditsLayerFilePath
-             Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay.ScreenName (Dissolve Constants.InfinityRpg.DissolveData) Assets.HudLayerFilePath]
+            [Content.screen Simulants.Splash.Name (Splash (Constants.InfinityRpg.DissolveData, Constants.InfinityRpg.SplashData, Simulants.Title)) [] []
+             Content.screenFromLayerFile Simulants.Title.Name (Dissolve Constants.InfinityRpg.DissolveData) Assets.TitleLayerFilePath
+             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve Constants.InfinityRpg.DissolveData) Assets.CreditsLayerFilePath
+             Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve Constants.InfinityRpg.DissolveData) Assets.HudLayerFilePath]

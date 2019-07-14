@@ -841,7 +841,7 @@ module WorldTypes =
         override this.ToString () = scstring this.ScreenAddress
 
         /// Get the name of a screen.
-        member this.ScreenName = this.ScreenAddress.Names.[0]
+        member this.Name = this.ScreenAddress.Names.[0]
 
         /// Get the latest value of a screen's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
@@ -909,7 +909,7 @@ module WorldTypes =
         override this.ToString () = scstring this.LayerAddress
     
         /// Get the name of a layer.
-        member this.LayerName = Address.getName this.LayerAddress
+        member this.Name = Address.getName this.LayerAddress
     
         /// Get the latest value of a layer's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
@@ -1003,7 +1003,7 @@ module WorldTypes =
         override this.ToString () = scstring this.EntityAddress
 
         /// Get the name of an entity.
-        member this.EntityName = Address.getName this.EntityAddress
+        member this.Name = Address.getName this.EntityAddress
     
         /// Get the latest value of an entity's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
