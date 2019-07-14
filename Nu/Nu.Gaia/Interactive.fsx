@@ -11,7 +11,7 @@
 //#r "../../packages/xunit.assert.2.3.1/xunit.assert.2.3.1.nupkg"
 #r "../../packages/FsCheck.2.11.0/lib/net452/FsCheck.dll"
 #r "../../packages/FsCheck.Xunit.2.11.0/lib/net452/FsCheck.Xunit.dll"
-#r "../../packages/Prime.3.6.2/lib/net46/Prime.exe"
+#r "../../packages/Prime.3.6.5/lib/net46/Prime.exe"
 #r "../../Nu/Nu.Dependencies/FSharpx.Core/FSharpx.Core.dll"
 #r "../../Nu/Nu.Dependencies/FSharpx.Collections/FSharpx.Collections.dll"
 #r "../../Nu/Nu.Dependencies/Farseer/FarseerPhysics.dll"
@@ -39,11 +39,11 @@ open Nu.Gaia
 // set current directly to local for execution in VS F# interactive
 Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "../bin/Debug")
 
-// initialize Nu
-Nu.init false
+// initialize Gaia
+Gaia.init ()
 
 // decide on a target directory and plugin
-let (targetDir, plugin) = Gaia.selectTargetDirAndMakeNuPlugin ()
+let (_, targetDir, plugin) = Gaia.selectTargetDirAndMakeNuPlugin ()
 
 // initialize Gaia's form
 let form = Gaia.createForm ()
@@ -56,7 +56,7 @@ form.Closing.Add (fun args ->
 let sdlDeps = Gaia.tryMakeSdlDeps form |> Either.getRightValue
 
 // make world ready for use in Gaia
-let world = Gaia.tryMakeWorld plugin sdlDeps |> Either.getRightValue
+let world = Gaia.tryMakeWorld false plugin sdlDeps |> Either.getRightValue
 
 // example of running Nu in Gaia for 60 frames from repl
 Gaia.runFromRepl (fun world -> World.getTickTime world < 60L) targetDir sdlDeps form world

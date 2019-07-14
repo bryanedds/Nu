@@ -1662,6 +1662,7 @@ module Gaia =
     let run () =
         let (savedState, targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
         use form = createForm ()
+        Globals.Form <- form
         match tryMakeSdlDeps form with
         | Right sdlDeps ->
             match tryMakeWorld savedState.OpenGameplayScreen plugin sdlDeps with
@@ -1671,3 +1672,7 @@ module Gaia =
                 Constants.Engine.SuccessExitCode
             | Left error -> failwith error
         | Left error -> failwith error
+
+    let init () =
+        Nu.init false
+        Globals.SelectEntity <- selectEntity

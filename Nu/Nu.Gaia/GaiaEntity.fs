@@ -73,11 +73,11 @@ and EntityPropertyDescriptor (property, attributes) =
             | None -> null
 
     override this.SetValue (source, value) =
-        
-        // grab the type descriptor and assign the value
-        let entityTds = source :?> EntityTypeDescriptorSource
-        let entity = entityTds.DescribedEntity
-        let changer = (fun world ->
+        Globals.WorldChangers.Add $ fun world ->
+
+            // grab the type descriptor and entity
+            let entityTds = source :?> EntityTypeDescriptorSource
+            let entity = entityTds.DescribedEntity
 
             // pull string quotes out of string
             let value =
@@ -96,14 +96,15 @@ and EntityPropertyDescriptor (property, attributes) =
             | "Name" ->
                 let name = value :?> string
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
-                    let world = World.reassignEntity entity (Some name) (etol entity) world
+                    let (entity, world) = World.reassignEntityImmediate entity (Some name) (etol entity) world
                     Globals.World <- world // must be set for property grid
+                    Globals.SelectEntity entity Globals.Form world
                     world
                 else
                     MessageBox.Show
                         ("Invalid name '" + name + "'; must have no whitespace and none of the following characters: '" + (String.escape Symbol.IllegalNameChars) + "'.",
-                         "Invalid Name",
-                         MessageBoxButtons.OK) |>
+                            "Invalid Name",
+                            MessageBoxButtons.OK) |>
                         ignore
                     world
 
@@ -133,12 +134,7 @@ and EntityPropertyDescriptor (property, attributes) =
                 let world = entity.PropagatePhysics world
                 Globals.World <- world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
-                world)
-
-        // NOTE: in order to update the view immediately, we have to apply the changer twice,
-        // once immediately and once in the update function
-        Globals.World <- changer Globals.World
-        Globals.WorldChangers.Add changer |> ignore
+                world
 
 and EntityTypeDescriptor (sourceOpt : obj) =
     inherit CustomTypeDescriptor ()
