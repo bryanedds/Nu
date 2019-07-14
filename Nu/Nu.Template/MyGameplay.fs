@@ -10,7 +10,7 @@ type GameplayCommand =
     | MoveLeft
     | MoveRight
     | EyeTrack
-    | Nil
+    | Nop
 
 // this is the screen dispatcher that defines the screen where gameplay takes place.
 type MyGameplayDispatcher () =
@@ -23,11 +23,11 @@ type MyGameplayDispatcher () =
          Simulants.Game.KeyboardKeyDownEvent =|>! fun evt ->
             if evt.Data.ScanCode = int SDL.SDL_Scancode.SDL_SCANCODE_UP && not evt.Data.Repeated
             then Jump
-            else Nil
+            else Nop
          Simulants.Gameplay.UpdateEvent =|>! fun _ ->
             if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then MoveLeft
             elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then MoveRight
-            else Nil]
+            else Nop]
 
     // here we handle the above commands
     override this.Command (command, _, _, world) =
@@ -51,7 +51,7 @@ type MyGameplayDispatcher () =
             if World.getTickRate world <> 0L
             then Simulants.Game.SetEyeCenter (Simulants.Player.GetCenter world) world
             else world
-        | Nil -> world
+        | Nop -> world
 
     // here we describe the content of the game including the player and the level
     override this.Content (_, _, _) =

@@ -15,7 +15,7 @@ module Elmario =
         | Jump
         | MoveLeft
         | MoveRight
-        | Nil
+        | Nop
 
     // this is our Elm-style game dispatcher
     type ElmarioDispatcher () =
@@ -26,11 +26,11 @@ module Elmario =
             [game.KeyboardKeyDownEvent =|>! fun evt ->
                 if evt.Data.ScanCode = int SDL.SDL_Scancode.SDL_SCANCODE_UP && not evt.Data.Repeated
                 then Jump
-                else Nil
+                else Nop
              game.UpdateEvent =|>! fun _ ->
                 if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then MoveLeft
                 elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then MoveRight
-                else Nil]
+                else Nop]
 
         // here we handle the above commands
         override this.Command (command, _, _, world) =
@@ -51,7 +51,7 @@ module Elmario =
                     let world = World.applyBodyForce (v2 0.0f 2000000.0f) physicsId world
                     World.playSound 0.5f (AssetTag.make "Gameplay" "Jump") world
                 else world
-            | Nil -> world
+            | Nop -> world
 
         // here we describe the content of the game including elmario and the ground he walks on.
         override this.Content (_, _, _) =
