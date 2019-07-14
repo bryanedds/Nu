@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open Prime
 open Nu
+open Nu.Gaia.Design
 
 type WorldChanger = World -> World
 type WorldChangers = WorldChanger List
@@ -35,10 +36,12 @@ type SavedState =
 [<RequireQualifiedAccess>]
 module Globals =
 
+    let mutable Form = Unchecked.defaultof<GaiaForm>
     let mutable World = Unchecked.defaultof<World>
     let mutable PastWorlds : World list = []
     let mutable FutureWorlds : World list = []
-    let WorldChangers = WorldChangers ()
+    let mutable WorldChangers = WorldChangers ()
+    let mutable SelectEntity : Entity -> GaiaForm -> World -> unit = Unchecked.defaultof<_>
 
     let pushPastWorld pastWorld =
         let pastWorld = Nu.World.freeze pastWorld

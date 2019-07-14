@@ -58,10 +58,11 @@ and LayerPropertyDescriptor (property, attributes) =
             LayerPropertyValue.getValue property layerTds.DescribedLayer Globals.World
 
     override this.SetValue (source, value) =
+        Globals.WorldChangers.Add $ fun world ->
         
-        // grab the type descriptor and assign the value
-        let layerTds = source :?> LayerTypeDescriptorSource
-        let changer = (fun world ->
+            // grab the type descriptor and layer
+            let layerTds = source :?> LayerTypeDescriptorSource
+            let layer = layerTds.DescribedLayer
 
             // pull string quotes out of string
             let value =
@@ -84,7 +85,6 @@ and LayerPropertyDescriptor (property, attributes) =
 
             // change the property dynamically
             | _ ->
-                let layer = layerTds.DescribedLayer
                 let world =
                     match propertyName with
                     | "OverlayNameOpt" ->
@@ -97,12 +97,7 @@ and LayerPropertyDescriptor (property, attributes) =
                     | _ -> LayerPropertyValue.setValue property value layer world
                 Globals.World <- world // must be set for property grid
                 layerTds.Form.layerPropertyGrid.Refresh ()
-                world)
-
-        // NOTE: in order to update the view immediately, we have to apply the changer twice,
-        // once immediately and once in the update function
-        Globals.World <- changer Globals.World
-        Globals.WorldChangers.Add changer |> ignore
+                world
 
 and LayerTypeDescriptor (sourceOpt : obj) =
     inherit CustomTypeDescriptor ()
