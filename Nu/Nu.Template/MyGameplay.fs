@@ -6,10 +6,10 @@ open Nu.Declarative
 
 // this is our Elm-style command type
 type GameplayCommand =
-    | EyeTrack
     | Jump
     | MoveLeft
     | MoveRight
+    | EyeTrack
     | Nil
 
 // this is the screen dispatcher that defines the screen where gameplay takes place.

@@ -56,10 +56,8 @@ type MyGameDispatcher () =
             Seq.fold (fun world position ->
                 let (entity, world) = World.createEntity<OptimizedEntityDispatcher> None DefaultOverlay Default.Layer world
                 let world = entity.SetPosition (position + v2 -420.0f -265.0f) world
-                let world = entity.SetSize (v2One * 8.0f) world
-                world)
-                world
-                indices
+                entity.SetSize (v2One * 8.0f) world)
+                world indices
         World.selectScreen Default.Screen world
 
 type MyGamePlugin () =
