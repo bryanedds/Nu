@@ -579,12 +579,12 @@ module WorldModuleEntity =
         static member internal attachEntityProperty propertyName alwaysPublish nonPersistent property entity world =
             if World.getEntityExists entity world
             then World.updateEntityState (EntityState.attachProperty propertyName property) alwaysPublish nonPersistent true propertyName property.PropertyValue entity world
-            else failwith ("Cannot attach entity property '" + propertyName + "'; entity '" + entity.EntityName + "' is not found.")
+            else failwith ("Cannot attach entity property '" + propertyName + "'; entity '" + entity.Name + "' is not found.")
 
         static member internal detachEntityProperty propertyName entity world =
             if World.getEntityExists entity world
             then World.updateEntityStateWithoutEvent (EntityState.detachProperty propertyName) true entity world
-            else failwith ("Cannot detach entity property '" + propertyName + "'; entity '" + entity.EntityName + "' is not found.")
+            else failwith ("Cannot detach entity property '" + propertyName + "'; entity '" + entity.Name + "' is not found.")
 
         static member internal getEntityDefaultOverlayName dispatcherName world =
             match Option.flatten (World.tryFindRoutedOverlayNameOpt dispatcherName world) with
@@ -1024,10 +1024,10 @@ module WorldModuleEntity =
         /// address hashing.
         static member internal makeScreenFast (entity : Entity) world =
             match (World.getGameState world).SelectedScreenOpt with
-            | Some screen when screen.ScreenName = Array.head (Address.getNames entity.EntityAddress) -> screen
+            | Some screen when screen.Name = Array.head (Address.getNames entity.EntityAddress) -> screen
             | Some _ | None ->
                 match (World.getGameState world).OmniScreenOpt with
-                | Some omniScreen when omniScreen.ScreenName = Array.head (Address.getNames entity.EntityAddress) -> omniScreen
+                | Some omniScreen when omniScreen.Name = Array.head (Address.getNames entity.EntityAddress) -> omniScreen
                 | Some _ | None -> Screen (Array.head (entity.EntityAddress.Names))
 
         static member internal updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax (entity : Entity) oldWorld world =

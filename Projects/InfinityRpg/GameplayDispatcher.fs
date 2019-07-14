@@ -56,7 +56,7 @@ module GameplayDispatcherModule =
         static let createField scene rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
             let (fieldMap, rand) = FieldMap.make Assets.FieldTileSheetImage (Vector2i 22) pathEdgesM rand
-            let (field, world) = World.createEntity<FieldDispatcher> (Some Simulants.Field.EntityName) DefaultOverlay scene world
+            let (field, world) = World.createEntity<FieldDispatcher> (Some Simulants.Field.Name) DefaultOverlay scene world
             let world = field.SetFieldMapNp fieldMap world
             let world = field.SetSize (field.GetQuickSize world) world
             let world = field.SetPersistent false world
@@ -343,7 +343,7 @@ module GameplayDispatcherModule =
                 let reactorDamage = 4 // NOTE: just hard-coding damage for now
                 let world = reactor.CharacterState.Update (fun state -> { state with HitPoints = state.HitPoints - reactorDamage }) world
                 if reactor.CharacterState.GetBy (fun state -> state.HitPoints <= 0) world then
-                    if reactor.GetName world = Simulants.Player.EntityName
+                    if reactor.Name = Simulants.Player.Name
                     then World.transitionScreen (!! "Title") world
                     else World.destroyEntity reactor world
                 else world
@@ -516,7 +516,7 @@ module GameplayDispatcherModule =
             let world = Simulants.Gameplay.SetOngoingRandState ongoingSeedState world
 
             // make scene layer
-            let (scene, world) = World.createLayer (Some Simulants.Scene.LayerName) Simulants.Gameplay world
+            let (scene, world) = World.createLayer (Some Simulants.Scene.Name) Simulants.Gameplay world
 
             // make rand from gameplay
             let rand = Rand.makeFromSeedState (Simulants.Gameplay.GetContentRandState world)
@@ -525,7 +525,7 @@ module GameplayDispatcherModule =
             let (rand, world) = _bc (createField scene rand world)
 
             // make player
-            let (player, world) = World.createEntity<PlayerDispatcher> (Some Simulants.Player.EntityName) DefaultOverlay scene world
+            let (player, world) = World.createEntity<PlayerDispatcher> (Some Simulants.Player.Name) DefaultOverlay scene world
             let world = player.SetDepth Constants.Layout.CharacterDepth world
 
             // make enemies
@@ -534,7 +534,7 @@ module GameplayDispatcherModule =
         static let handleLoadGame world =
 
             // get and initialize gameplay screen from read
-            let world = World.readScreenFromFile Assets.SaveFilePath (Some Simulants.Gameplay.ScreenName) world |> snd
+            let world = World.readScreenFromFile Assets.SaveFilePath (Some Simulants.Gameplay.Name) world |> snd
             let world = Simulants.Gameplay.SetTransitionState IncomingState world
 
             // make rand from gameplay

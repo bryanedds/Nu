@@ -40,18 +40,18 @@ module Nelmish =
         // here we describe the content of the game including its one screen, one layer, three
         // button entities, and one text control.
         override this.Content (model, _, _) =
-            [Content.screen Default.Screen.ScreenName Vanilla []
-                [Content.layer Default.Layer.LayerName []
-                    [Content.button DecrementButton.EntityName
+            [Content.screen Default.Screen.Name Vanilla []
+                [Content.layer Default.Layer.Name []
+                    [Content.button DecrementButton.Name
                         [Entity.Text == "-"
                          Entity.Position == v2 -256.0f 64.0f]
-                     Content.button IncrementButton.EntityName
+                     Content.button IncrementButton.Name
                         [Entity.Text == "+"
                          Entity.Position == v2 0.0f 64.0f]
-                     Content.text CounterText.EntityName
+                     Content.text CounterText.Name
                         [Entity.Text ==> model --> scstring
                          Entity.Position == v2 -128.0f -32.0f]
                      Content.entityIf (model --> isNonZero) $ fun () ->
-                        Content.button ResetButton.EntityName
+                        Content.button ResetButton.Name
                             [Entity.Text == "Reset"
                              Entity.Position == v2 -128.0f -128.0f]]]]

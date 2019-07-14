@@ -60,8 +60,6 @@ module WorldLayerModule =
         member this.OnSignal = Lens.make Property? OnSignal this.GetOnSignal this.SetOnSignal this
         member this.GetCreationTimeStamp world = World.getLayerCreationTimeStamp this world
         member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
-        member this.GetName world = World.getLayerName this world
-        member this.Name = Lens.makeReadOnly Property? Name this.GetName this
         member this.GetId world = World.getLayerId this world
         member this.Id = Lens.makeReadOnly Property? Id this.GetId this
 

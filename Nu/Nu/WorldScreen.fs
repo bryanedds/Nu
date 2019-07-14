@@ -69,8 +69,6 @@ module WorldScreenModule =
         member this.OnSignal = Lens.make Property? OnSignal this.GetOnSignal this.SetOnSignal this
         member this.GetCreationTimeStamp world = World.getScreenCreationTimeStamp this world
         member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
-        member this.GetName world = World.getScreenName this world
-        member this.Name = Lens.makeReadOnly Property? Name this.GetName this
         member this.GetId world = World.getScreenId this world
         member this.Id = Lens.makeReadOnly Property? Id this.GetId this
 

@@ -198,12 +198,12 @@ module WorldModuleLayer =
         static member internal attachLayerProperty propertyName property layer world =
             if World.getLayerExists layer world
             then World.updateLayerState (LayerState.attachProperty propertyName property) propertyName property.PropertyValue layer world
-            else failwith ("Cannot attach layer property '" + propertyName + "'; layer '" + layer.LayerName + "' is not found.")
+            else failwith ("Cannot attach layer property '" + propertyName + "'; layer '" + layer.Name + "' is not found.")
 
         static member internal detachLayerProperty propertyName layer world =
             if World.getLayerExists layer world
             then World.updateLayerStateWithoutEvent (LayerState.detachProperty propertyName) layer world
-            else failwith ("Cannot detach layer property '" + propertyName + "'; layer '" + layer.LayerName + "' is not found.")
+            else failwith ("Cannot detach layer property '" + propertyName + "'; layer '" + layer.Name + "' is not found.")
 
         static member private layerOnRegisterChanged evt world =
             let layer = evt.Subscriber : Layer

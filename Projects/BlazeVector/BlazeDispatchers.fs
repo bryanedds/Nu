@@ -302,7 +302,7 @@ module GameplayModule =
                 [0 .. SectionCount - 1]
 
         static let createScene gameplay world =
-            World.readLayerFromFile Assets.SceneLayerFilePath (Some Simulants.Scene.LayerName) gameplay world |> snd
+            World.readLayerFromFile Assets.SceneLayerFilePath (Some Simulants.Scene.Name) gameplay world |> snd
 
         override dispatcher.Bindings (_, gameplay, _) =
             [gameplay.SelectEvent =>! StartPlay
@@ -319,6 +319,6 @@ module GameplayModule =
                 World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
             | StopPlay ->
                 let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + scstring i]
-                let layerNames = Simulants.Scene.LayerName :: sectionNames
+                let layerNames = Simulants.Scene.Name :: sectionNames
                 let layers = List.map (fun layerName -> gameplay / layerName) layerNames
                 World.destroyLayers layers world

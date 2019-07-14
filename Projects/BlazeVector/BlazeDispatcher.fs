@@ -48,10 +48,10 @@ module BlazeDispatcherModule =
 
         // here we describe the content of the game including all of its screens.
         override this.Content (_, _, _) =
-            [Content.screen Simulants.Splash.ScreenName (Splash (Default.DissolveData, Default.SplashData, Simulants.Title)) [] []
-             Content.screenFromLayerFile Simulants.Title.ScreenName (Dissolve Default.DissolveData) Assets.TitleLayerFilePath
-             Content.screenFromLayerFile Simulants.Credits.ScreenName (Dissolve Default.DissolveData) Assets.CreditsLayerFilePath
-             Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay.ScreenName (Dissolve Default.DissolveData) Assets.GameplayLayerFilePath]
+            [Content.screen Simulants.Splash.Name (Splash (Default.DissolveData, Default.SplashData, Simulants.Title)) [] []
+             Content.screenFromLayerFile Simulants.Title.Name (Dissolve Default.DissolveData) Assets.TitleLayerFilePath
+             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve Default.DissolveData) Assets.CreditsLayerFilePath
+             Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve Default.DissolveData) Assets.GameplayLayerFilePath]
 
         // here we hint to the renderer and audio system that the 'Gui' package should be loaded
         override dispatcher.Register (game, world) =

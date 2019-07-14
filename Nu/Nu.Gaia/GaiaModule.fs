@@ -66,7 +66,7 @@ module Gaia =
         if treeGroup.Nodes.ContainsKey treeGroupNodeName
         then () // when changing an entity name, entity will be added twice - once from win forms, once from world
         else
-            let treeGroupNode = TreeNode (entity.GetName world)
+            let treeGroupNode = TreeNode entity.Name
             treeGroupNode.Name <- treeGroupNodeName
             treeGroup.Nodes.Add treeGroupNode |> ignore
 
@@ -131,7 +131,7 @@ module Gaia =
         form.hierarchyTreeView.Nodes.Clear ()
         let layers = World.getLayers EditorScreen world
         for layer in layers do
-            let layerNode = TreeNode layer.LayerName
+            let layerNode = TreeNode layer.Name
             layerNode.Name <- scstring layer
             form.hierarchyTreeView.Nodes.Add layerNode |> ignore
             let entities = World.getEntities layer world
@@ -140,7 +140,7 @@ module Gaia =
                 for entity in entity.GetChildNodes world @ [entity] do
                     let entityNodeKey = scstring entity
                     if not (parentNode.Nodes.ContainsKey entityNodeKey) then
-                        let entityNode = TreeNode entity.EntityName
+                        let entityNode = TreeNode entity.Name
                         entityNode.Name <- entityNodeKey
                         parentNode.Nodes.Add entityNode |> ignore
                         parentNode <- entityNode
@@ -155,13 +155,13 @@ module Gaia =
         let layers = World.getLayers EditorScreen world
         let layerTabPages = form.layerTabControl.TabPages
         for layer in Seq.rev layers do
-            let layerName = layer.LayerName
+            let layerName = layer.Name
             if not (layerTabPages.ContainsKey layerName) then
                 layerTabPages.Add (layerName, layerName)
     
         // remove layers imperatively to preserve existing layer tabs 
         for layerTabPage in layerTabPages do
-            if Seq.notExists (fun (layer : Layer) -> layer.LayerName = layerTabPage.Name) layers then
+            if Seq.notExists (fun (layer : Layer) -> layer.Name = layerTabPage.Name) layers then
                 layerTabPages.RemoveByKey layerTabPage.Name
 
     let private selectEntity entity (form : GaiaForm) world =
@@ -353,9 +353,8 @@ module Gaia =
             let layer = EditorScreen / layerName
             if not (layer.GetExists world) then
                 let (layer, world) = World.readLayer layerDescriptor None EditorScreen world
-                let layerName = layer.GetName world
-                form.layerTabControl.SelectedTab.Text <- layerName
-                form.layerTabControl.SelectedTab.Name <- layerName
+                form.layerTabControl.SelectedTab.Text <- layer.Name
+                form.layerTabControl.SelectedTab.Name <- layer.Name
                 let world = World.updateUserValue (fun editorState -> { editorState with SelectedLayer = layer }) world
                 let world = subscribeToEntityEvents form world
 
@@ -425,8 +424,8 @@ module Gaia =
         let entityNames =
             World.getEntities selectedLayer world |>
             Seq.filter (fun entity -> entity.FacetedAs<NodeFacet> world) |>
-            Seq.filter (fun entity -> not (Reflection.isNameGenerated entity.EntityName)) |>
-            Seq.map (fun entity -> entity.GetName world) |>
+            Seq.filter (fun entity -> not (Reflection.isNameGenerated entity.Name)) |>
+            Seq.map (fun entity -> entity.Name) |>
             flip Seq.append [NonePick] |>
             Seq.toArray
         entityPicker.entityListBox.Items.AddRange (Array.map box entityNames)
@@ -775,7 +774,7 @@ module Gaia =
 
                     // select the layer of the selected entity
                     let layer = Layer (atoa address)
-                    let layerTabIndex = form.layerTabControl.TabPages.IndexOfKey layer.LayerName
+                    let layerTabIndex = form.layerTabControl.TabPages.IndexOfKey layer.Name
                     form.layerTabControl.SelectTab layerTabIndex
                     world
 
@@ -786,7 +785,7 @@ module Gaia =
 
                     // select the layer of the selected entity
                     let layer = etol entity
-                    let layerTabIndex = form.layerTabControl.TabPages.IndexOfKey layer.LayerName
+                    let layerTabIndex = form.layerTabControl.TabPages.IndexOfKey layer.Name
                     form.layerTabControl.SelectTab layerTabIndex
 
                     // select the entity in the property grid
@@ -867,7 +866,7 @@ module Gaia =
     let private handleFormSave saveAs (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             let layer = (World.getUserValue world).SelectedLayer
-            form.saveFileDialog.Title <- "Save '" + layer.LayerName + "' As"
+            form.saveFileDialog.Title <- "Save '" + layer.Name + "' As"
             match Map.tryFind layer.LayerAddress (World.getUserValue world).FilePaths with
             | Some filePath -> form.saveFileDialog.FileName <- filePath
             | None -> form.saveFileDialog.FileName <- String.Empty
@@ -913,7 +912,7 @@ module Gaia =
                 let layer = (World.getUserValue world).SelectedLayer
                 let world = World.destroyLayerImmediate layer world
                 deselectEntity form world
-                form.layerTabControl.TabPages.RemoveByKey layer.LayerName
+                form.layerTabControl.TabPages.RemoveByKey layer.Name
                 World.updateUserValue (fun editorState ->
                     let layerTabControl = form.layerTabControl
                     let layerTab = layerTabControl.SelectedTab
@@ -1633,11 +1632,11 @@ module Gaia =
                 if openGameplayScreen
                 then plugin.GetGameplayScreenDispatcherName ()
                 else typeof<ScreenDispatcher>.Name
-            let (screen, world) = World.createScreen3 screenDispatcherName (Some EditorScreen.ScreenName) world
+            let (screen, world) = World.createScreen3 screenDispatcherName (Some EditorScreen.Name) world
             let world = World.selectScreen EditorScreen world
             let world =
                 if Seq.isEmpty (World.getLayers screen world)
-                then World.createLayer (Some DefaultEditorLayer.LayerName) EditorScreen world |> snd
+                then World.createLayer (Some DefaultEditorLayer.Name) EditorScreen world |> snd
                 else world
             Right world
         | Left error -> Left error

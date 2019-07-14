@@ -424,9 +424,9 @@ module WorldModule3 =
         /// Make a default world with a default screen, layer, and entity, such as for testing.
         static member makeDefault () =
             let world = World.makeEmpty ()
-            let world = World.createScreen (Some Default.Screen.ScreenName) world |> snd
-            let world = World.createLayer (Some Default.Layer.LayerName) Default.Screen world |> snd
-            let world = World.createEntity (Some Default.Entity.EntityName) DefaultOverlay Default.Layer world |> snd
+            let world = World.createScreen (Some Default.Screen.Name) world |> snd
+            let world = World.createLayer (Some Default.Layer.Name) Default.Screen world |> snd
+            let world = World.createEntity (Some Default.Entity.Name) DefaultOverlay Default.Layer world |> snd
             world
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string

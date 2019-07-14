@@ -55,16 +55,16 @@ module Elmario =
 
         // here we describe the content of the game including elmario and the ground he walks on.
         override this.Content (_, _, _) =
-            [Content.screen Default.Screen.ScreenName Vanilla []
-                [Content.layer Default.Layer.LayerName []
-                    [Content.character Elmario.EntityName
+            [Content.screen Default.Screen.Name Vanilla []
+                [Content.layer Default.Layer.Name []
+                    [Content.character Elmario.Name
                         [Entity.Position == v2 0.0f 0.0f
                          Entity.Size == v2 144.0f 144.0f]
-                     Content.block Ground.EntityName
+                     Content.block Ground.Name
                         [Entity.Position == v2 -384.0f -256.0f
                          Entity.Size == v2 768.0f 64.0f
                          Entity.StaticImage == (AssetTag.make "Gameplay" "TreeTop")]
-                     Content.block Rock.EntityName
+                     Content.block Rock.Name
                         [Entity.Position == v2 320.0f -192.0f
                          Entity.Size == v2 64.0f 64.0f
                          Entity.StaticImage == (AssetTag.make "Gameplay" "Rock")]]]]
