@@ -33,10 +33,10 @@ type MyGameDispatcher () =
 
     // here we describe the content of the game including all of its screens.
     override dispatcher.Content (_, _, _) =
-        [Content.screen Simulants.Splash (Splash (Default.DissolveData, Default.SplashData, Simulants.Title)) [] []
-         Content.screenFromLayerFile Simulants.Title (Dissolve Default.DissolveData) "Assets/Gui/Title.nulyr"
-         Content.screenFromLayerFile Simulants.Credits (Dissolve Default.DissolveData) "Assets/Gui/Credits.nulyr"
-         Content.screen<MyGameplayDispatcher> Simulants.Gameplay (Dissolve Default.DissolveData) [] []]
+        [Content.screen Simulants.Splash.ScreenName (Splash (Default.DissolveData, Default.SplashData, Simulants.Title)) [] []
+         Content.screenFromLayerFile Simulants.Title.ScreenName (Dissolve Default.DissolveData) "Assets/Gui/Title.nulyr"
+         Content.screenFromLayerFile Simulants.Credits.ScreenName (Dissolve Default.DissolveData) "Assets/Gui/Credits.nulyr"
+         Content.screen<MyGameplayDispatcher> Simulants.Gameplay.ScreenName (Dissolve Default.DissolveData) [] []]
 
     // here we hint to the renderer and audio system that the 'Gui' package should be loaded ahead of time
     override dispatcher.Register (game, world) =
