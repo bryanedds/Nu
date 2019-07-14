@@ -55,15 +55,15 @@ type MyGameplayDispatcher () =
 
     // here we describe the content of the game including the player and the level
     override this.Content (_, _, _) =
-        [Content.layer Simulants.Hud []
-            [Content.button Simulants.Back
+        [Content.layer Simulants.Hud.LayerName []
+            [Content.button Simulants.Back.EntityName
                 [Entity.Text == "Back"
                  Entity.Position == v2 220.0f -260.0f
                  Entity.Depth == 10.0f]]
          Content.layerIfScreenSelected Simulants.Gameplay $ fun () ->
-            Content.layer Simulants.Scene []
-                [Content.character Simulants.Player
+            Content.layer Simulants.Scene.LayerName []
+                [Content.character Simulants.Player.EntityName
                     [Entity.Position == v2 0.0f 0.0f
                      Entity.Size == v2 144.0f 144.0f]]
          Content.layerIfScreenSelected Simulants.Gameplay $ fun () ->
-            Content.layerFromFile Simulants.Level "Assets/Gui/Level.nulyr"]
+            Content.layerFromFile Simulants.Level.LayerName "Assets/Gui/Level.nulyr"]

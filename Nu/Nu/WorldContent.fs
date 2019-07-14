@@ -18,16 +18,16 @@ module Content =
         GameFromDefinitions (typeof<'d>.Name, definitions, children)
 
     /// Describe a screen to be loaded from a file.
-    let screenFromFile<'d when 'd :> ScreenDispatcher> (screen : Screen) behavior filePath =
-        ScreenFromFile (screen.ScreenName, behavior, filePath)
+    let screenFromFile<'d when 'd :> ScreenDispatcher> screenName behavior filePath =
+        ScreenFromFile (screenName, behavior, filePath)
 
     /// Describe a screen to be loaded from a file.
-    let screenFromLayerFile<'d when 'd :> ScreenDispatcher> (screen : Screen) behavior filePath =
-        ScreenFromLayerFile (screen.ScreenName, behavior, typeof<'d>, filePath)
+    let screenFromLayerFile<'d when 'd :> ScreenDispatcher> screenName behavior filePath =
+        ScreenFromLayerFile (screenName, behavior, typeof<'d>, filePath)
 
     /// Describe a screen with the given definitions and contained layers.
-    let screen<'d when 'd :> ScreenDispatcher> (screen : Screen) behavior definitions children =
-        ScreenFromDefinitions (typeof<'d>.Name, screen.ScreenName, behavior, definitions, children)
+    let screen<'d when 'd :> ScreenDispatcher> screenName behavior definitions children =
+        ScreenFromDefinitions (typeof<'d>.Name, screenName, behavior, definitions, children)
 
     /// Describe layers to be streamed from a lens.
     let layers (lens : Lens<'a list, World>) (mapper : 'a -> LayerContent) =
@@ -47,12 +47,12 @@ module Content =
         layerIf (Default.Game.SelectedScreenOpt --> fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe a layer to be loaded from a file.
-    let layerFromFile<'d when 'd :> LayerDispatcher> (layer : Layer) filePath =
-        LayerFromFile (layer.LayerName, filePath)
+    let layerFromFile<'d when 'd :> LayerDispatcher> layerName filePath =
+        LayerFromFile (layerName, filePath)
 
     /// Describe a layer with the given definitions and contained entities.
-    let layer<'d when 'd :> LayerDispatcher> (layer : Layer) definitions children =
-        LayerFromDefinitions (typeof<'d>.Name, layer.LayerName, definitions, children)
+    let layer<'d when 'd :> LayerDispatcher> layerName definitions children =
+        LayerFromDefinitions (typeof<'d>.Name, layerName, definitions, children)
 
     /// Describe entities to be streamed from a lens.
     let entities (lens : Lens<'a list, World>) (mapper : 'a -> EntityContent) =
@@ -72,49 +72,49 @@ module Content =
         entityIf (Default.Game.SelectedScreenOpt --> fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe an entity to be loaded from a file.
-    let entityFromFile<'d when 'd :> EntityDispatcher> (entity : Entity) filePath =
-        EntityFromFile (entity.EntityName, filePath)
+    let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =
+        EntityFromFile (entityName, filePath)
 
     /// Describe an entity with the given definitions and content.
-    let entityWithContent<'d when 'd :> EntityDispatcher> (entity : Entity) definitions content =
-        EntityFromDefinitions (typeof<'d>.Name, entity.EntityName, definitions, content)
+    let entityWithContent<'d when 'd :> EntityDispatcher> entityName definitions content =
+        EntityFromDefinitions (typeof<'d>.Name, entityName, definitions, content)
 
     /// Describe an entity with the given definitions.
-    let entity<'d when 'd :> EntityDispatcher> entity definitions =
-        entityWithContent<'d> entity definitions []
+    let entity<'d when 'd :> EntityDispatcher> entityName definitions =
+        entityWithContent<'d> entityName definitions []
 
     /// Describe an effect with the given definitions.
-    let effect entity_ definitions = entity<EffectDispatcher> entity_ definitions
+    let effect entityName definitions = entity<EffectDispatcher> entityName definitions
 
     /// Describe a node with the given definitions.
-    let node entity_ definitions = entity<NodeDispatcher> entity_ definitions
+    let node entityName definitions = entity<NodeDispatcher> entityName definitions
 
     /// Describe a button with the given definitions.
-    let button entity_ definitions = entity<ButtonDispatcher> entity_ definitions
+    let button entityName definitions = entity<ButtonDispatcher> entityName definitions
 
     /// Describe a label with the given definitions.
-    let label entity_ definitions = entity<LabelDispatcher> entity_ definitions
+    let label entityName definitions = entity<LabelDispatcher> entityName definitions
 
     /// Describe a text with the given definitions.
-    let text entity_ definitions = entity<TextDispatcher> entity_ definitions
+    let text entityName definitions = entity<TextDispatcher> entityName definitions
 
     /// Describe a toggle with the given definitions.
-    let toggle entity_ definitions = entity<ToggleDispatcher> entity_ definitions
+    let toggle entityName definitions = entity<ToggleDispatcher> entityName definitions
 
     /// Describe a feeler with the given definitions.
-    let feeler entity_ definitions = entity<FeelerDispatcher> entity_ definitions
+    let feeler entityName definitions = entity<FeelerDispatcher> entityName definitions
 
     /// Describe a fill bar with the given definitions.
-    let fillBar entity_ definitions = entity<FillBarDispatcher> entity_ definitions
+    let fillBar entityName definitions = entity<FillBarDispatcher> entityName definitions
 
     /// Describe a block with the given definitions.
-    let block entity_ definitions = entity<BlockDispatcher> entity_ definitions
+    let block entityName definitions = entity<BlockDispatcher> entityName definitions
 
     /// Describe a box with the given definitions.
-    let box entity_ definitions = entity<BoxDispatcher> entity_ definitions
+    let box entityName definitions = entity<BoxDispatcher> entityName definitions
 
     /// Describe a character with the given definitions.
-    let character entity_ definitions = entity<CharacterDispatcher> entity_ definitions
+    let character entityName definitions = entity<CharacterDispatcher> entityName definitions
 
     /// Describe a tile map with the given definitions.
-    let tileMap entity_ definitions = entity<TileMapDispatcher> entity_ definitions
+    let tileMap entityName definitions = entity<TileMapDispatcher> entityName definitions
