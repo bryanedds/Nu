@@ -80,16 +80,10 @@ module CoreOperators =
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
 
-[<RequireQualifiedAccess>]
-module Array =
+[<AutoOpen>]
+module Lens =
 
-    /// Try to find a value.
+    /// Map over a lens in the given world context (read-only).
     /// NOTE: this will be in the next version of Prime.
-    let rec tryFindPlus (pred : 'a -> 'b option) (arr : 'a array) : 'b option =
-        let mutable result = None
-        let enr = (arr :> System.Collections.Generic.IEnumerable<'a>).GetEnumerator ()
-        while Option.isNone result && enr.MoveNext () do
-            match pred enr.Current with
-            | Some _ as found -> result <- found
-            | None -> ()
-        result
+    let inline (->>) (lens : Lens<_, 'w>) mapper =
+        Lens.makeReadOnly lens.Name (fun world -> mapper (lens.Get world) world) lens.This
