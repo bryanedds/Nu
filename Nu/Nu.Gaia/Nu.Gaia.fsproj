@@ -114,6 +114,9 @@
     <Reference Include="Prime">
       <HintPath>..\..\packages\Prime.3.6.5\lib\net46\Prime.exe</HintPath>
     </Reference>
+    <Reference Include="PropertyGridEx">
+      <HintPath>..\..\packages\PropertyGridEx.1.0.0\lib\net20\PropertyGridEx.dll</HintPath>
+    </Reference>
     <Reference Include="ScintillaNET">
       <HintPath>..\Nu.Dependencies\ScintillaNET\ScintillaNET.dll</HintPath>
     </Reference>

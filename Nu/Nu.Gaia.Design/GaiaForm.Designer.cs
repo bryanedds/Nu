@@ -85,9 +85,9 @@
             this.entityDesignerPropertyDefaultButton = new System.Windows.Forms.Button();
             this.entityDesignerPropertyAddButton = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.entityPropertyGrid = new System.Windows.Forms.PropertyGrid();
+            this.entityPropertyGrid = new PropertyGridEx.PropertyGridEx();
             this.layerTabPage = new System.Windows.Forms.TabPage();
-            this.layerPropertyGrid = new System.Windows.Forms.PropertyGrid();
+            this.layerPropertyGrid = new PropertyGridEx.PropertyGridEx();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage4 = new System.Windows.Forms.TabPage();
             this.entityTreeView = new System.Windows.Forms.TreeView();
