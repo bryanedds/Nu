@@ -154,7 +154,7 @@ module WorldSimulantModule =
             WorldModule.equate5 left.Name (left.This :?> Simulant) right breaking world
 
 [<AutoOpen>]
-module SimulantOperators =
+module SimulantOperators2 =
 
     /// Equate two properties, not breaking potential cycles.
     let (===) left right = World.equate left right false
