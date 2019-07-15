@@ -22,11 +22,12 @@ module FacetModule =
     type [<AbstractClass>] Facet<'model, 'message, 'command> (initial : 'model) =
         inherit Facet ()
 
-        let mutable modelName = Unchecked.defaultof<string>
+        let mutable modelNameOpt =
+            Unchecked.defaultof<string>
 
         member this.ModelName =
-            if isNull modelName then modelName <- getTypeName this + "Model"
-            modelName
+            if isNull modelNameOpt then modelNameOpt <- getTypeName this + "Model"
+            modelNameOpt
 
         member this.GetModel (entity : Entity) world : 'model =
             entity.GetFacetModel<'model> this.ModelName world
