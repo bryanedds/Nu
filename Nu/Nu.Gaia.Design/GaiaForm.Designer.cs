@@ -1705,7 +1705,7 @@
         public System.Windows.Forms.ToolStripMenuItem createContextMenuItem;
         public System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
         public System.Windows.Forms.SplitContainer splitContainer1;
-        public System.Windows.Forms.PropertyGrid entityPropertyGrid;
+        public PropertyGridEx.PropertyGridEx entityPropertyGrid;
         public System.Windows.Forms.TreeView entityTreeView;
         private System.Windows.Forms.SplitContainer splitContainer3;
         private System.Windows.Forms.TabPage tabPage;
@@ -1749,7 +1749,7 @@
         public System.Windows.Forms.Button applyPreludeButton;
         public SymbolicTextBox preludeTextBox;
         public System.Windows.Forms.TabControl propertyTabControl;
-        public System.Windows.Forms.PropertyGrid layerPropertyGrid;
+        public PropertyGridEx.PropertyGridEx layerPropertyGrid;
         private System.Windows.Forms.TabControl tabControl1;
         private System.Windows.Forms.TabPage tabPage4;
         private System.Windows.Forms.TabPage tabPage3;
