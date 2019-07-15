@@ -42,7 +42,7 @@ type OptimizedEntityDispatcher () =
         else world
 
 type MyGameDispatcher () =
-    inherit GameDispatcher<DateTime, unit, unit> (DateTime ())
+    inherit GameDispatcher<DateTime, unit, unit> (DateTime.UtcNow)
 
     let Fps = Default.Layer / "Fps"
 
@@ -50,7 +50,6 @@ type MyGameDispatcher () =
         let world = base.Register (game, world)
         let world = World.createScreen (Some Default.Screen.Name) world |> snd
         let world = World.createLayer (Some Default.Layer.Name) Default.Screen world |> snd
-        let world = game.SetModel DateTime.UtcNow world
         let world = World.createEntity<TextDispatcher> (Some Fps.Name) DefaultOverlay Default.Layer world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
         let indices = // approximately 3000 entities

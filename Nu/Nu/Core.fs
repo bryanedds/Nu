@@ -79,11 +79,3 @@ module CoreOperators =
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
-
-[<AutoOpen>]
-module Lens =
-
-    /// Map over a lens in the given world context (read-only).
-    /// NOTE: this will be in the next version of Prime.
-    let inline (->>) (lens : Lens<_, 'w>) mapper =
-        Lens.makeReadOnly lens.Name (fun world -> mapper (lens.Get world) world) lens.This
