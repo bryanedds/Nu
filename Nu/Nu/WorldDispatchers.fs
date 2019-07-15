@@ -52,7 +52,9 @@ module FacetModule =
         override this.Register (entity, world) =
             let (model, world) =
                 match entity.TryGetProperty this.ModelName world with
-                | Some model -> (model :> obj :?> 'model, world)
+                | Some property ->
+                    let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
+                    (model, world)
                 | None ->
                     let property = { DesignerType = typeof<'model>; DesignerValue = initial }
                     let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
@@ -1043,7 +1045,9 @@ module EntityDispatcherModule =
         override this.Register (entity, world) =
             let (model, world) =
                 match entity.TryGetProperty Property? Model world with
-                | Some model -> (model :> obj :?> 'model, world)
+                | Some property ->
+                    let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
+                    (model, world)
                 | None ->
                     let property = { DesignerType = typeof<'model>; DesignerValue = initial }
                     let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
@@ -1880,7 +1884,9 @@ module LayerDispatcherModule =
         override this.Register (layer, world) =
             let (model, world) =
                 match layer.TryGetProperty Property? Model world with
-                | Some model -> (model :> obj :?> 'model, world)
+                | Some property ->
+                    let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
+                    (model, world)
                 | None ->
                     let property = { DesignerType = typeof<'model>; DesignerValue = initial }
                     let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
@@ -1969,7 +1975,9 @@ module ScreenDispatcherModule =
         override this.Register (screen, world) =
             let (model, world) =
                 match screen.TryGetProperty Property? Model world with
-                | Some model -> (model :> obj :?> 'model, world)
+                | Some property ->
+                    let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
+                    (model, world)
                 | None ->
                     let property = { DesignerType = typeof<'model>; DesignerValue = initial }
                     let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
