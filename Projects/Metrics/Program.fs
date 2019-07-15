@@ -42,7 +42,7 @@ type OptimizedEntityDispatcher () =
         else world
 
 type MyGameDispatcher () =
-    inherit GameDispatcher<DateTime, unit, unit> (DateTime.UtcNow)
+    inherit GameDispatcher<unit, unit, unit> (())
 
     let Fps = Default.Layer / "Fps"
 
@@ -50,7 +50,7 @@ type MyGameDispatcher () =
         let world = base.Register (game, world)
         let world = World.createScreen (Some Default.Screen.Name) world |> snd
         let world = World.createLayer (Some Default.Layer.Name) Default.Screen world |> snd
-        let world = World.createEntity<TextDispatcher> (Some Fps.Name) DefaultOverlay Default.Layer world |> snd
+        let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Default.Layer world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
         let indices = // approximately 3000 entities
             seq {
@@ -64,15 +64,6 @@ type MyGameDispatcher () =
                 entity.SetSize (v2One * 8.0f) world)
                 world indices
         World.selectScreen Default.Screen world
-
-    override dispatcher.Update (game, world) =
-        let startTime = game.GetModel<DateTime> world
-        let currentTime = DateTime.UtcNow
-        let elapsedTime = currentTime - startTime
-        let tickTime = double (World.getTickTime world)
-        let frames = tickTime / elapsedTime.TotalSeconds
-        let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
-        Fps.SetText framesStr world
 
 type MyGamePlugin () =
     inherit NuPlugin ()

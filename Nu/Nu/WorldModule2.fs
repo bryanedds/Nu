@@ -857,9 +857,19 @@ module GameDispatcherModule =
 
     type Game with
     
-        member this.GetModel<'model> world = this.Get<'model> Property? Model world
-        member this.SetModel<'model> value world = this.Set<'model> Property? Model value world
-        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
+        member this.GetModel<'model> world =
+            let property = this.Get<DesignerProperty> Property? Model world
+            property.DesignerValue :?> 'model
+
+        member this.SetModel<'model> (value : 'model) world =
+            let model = this.GetModel<DesignerProperty> world
+            this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
+
+        member this.UpdateModel<'model> updater world =
+            this.SetModel<'model> (updater this.GetModel<'model> world) world
+
+        member this.Model<'model> () =
+            Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
 
     type [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit GameDispatcher ()
