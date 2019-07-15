@@ -101,6 +101,9 @@ module Content =
     /// Describe a toggle with the given definitions.
     let toggle entityName definitions = entity<ToggleDispatcher> entityName definitions
 
+    /// Describe an fps gui with the given definitions.
+    let fps entityName definitions = entity<FpsDispatcher> entityName definitions
+
     /// Describe a feeler with the given definitions.
     let feeler entityName definitions = entity<FeelerDispatcher> entityName definitions
 

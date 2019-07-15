@@ -14,10 +14,21 @@ module FacetModule =
 
     type Entity with
     
-        member this.GetFacetModel<'model> modelName world = this.Get<'model> modelName world
-        member this.SetFacetModel<'model> modelName value world = this.Set<'model> modelName value world
-        member this.UpdateFacetModel<'model> modelName updater world = this.SetFacetModel<'model> modelName (updater this.GetFacetModel<'model> modelName world) world
-        member this.FacetModel<'model> modelName = Lens.make<'model, World> modelName (this.GetFacetModel<'model> modelName) (this.SetFacetModel<'model> modelName) this
+        member this.GetFacetModel<'model> modelName world =
+            let property = this.Get<DesignerProperty> modelName world
+            property.DesignerValue :?> 'model
+
+        member this.SetFacetModel<'model> modelName (value : 'model) world =
+            let model = this.GetFacetModel<DesignerProperty> modelName world
+            match this.GetImperative world with
+            | true -> model.DesignerValue <- value; world
+            | false -> this.Set<DesignerProperty> modelName { model with DesignerValue = value } world
+
+        member this.UpdateFacetModel<'model> modelName updater world =
+            this.SetFacetModel<'model> modelName (updater this.GetFacetModel<'model> modelName world) world
+
+        member this.FacetModel<'model> modelName =
+            Lens.make<'model, World> modelName (this.GetFacetModel<'model> modelName) (this.SetFacetModel<'model> modelName) this
 
     type [<AbstractClass>] Facet<'model, 'message, 'command> (initial : 'model) =
         inherit Facet ()
@@ -998,10 +1009,21 @@ module EntityDispatcherModule =
 
     type Entity with
     
-        member this.GetModel<'model> world = this.Get<'model> Property? Model world
-        member this.SetModel<'model> value world = this.Set<'model> Property? Model value world
-        member this.UpdateModel<'model> updater world = this.SetModel<'model> (updater this.GetModel<'model> world) world
-        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
+        member this.GetModel<'model> world =
+            let property = this.Get<DesignerProperty> Property? Model world
+            property.DesignerValue :?> 'model
+
+        member this.SetModel<'model> (value : 'model) world =
+            let model = this.GetModel<DesignerProperty> world
+            match this.GetImperative world with
+            | true -> model.DesignerValue <- value; world
+            | false -> this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
+
+        member this.UpdateModel<'model> updater world =
+            this.SetModel<'model> (updater this.GetModel<'model> world) world
+
+        member this.Model<'model> () =
+            Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
 
     type [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit EntityDispatcher ()
@@ -1495,6 +1517,30 @@ module ToggleDispatcherModule =
             match Metadata.tryGetTextureSizeF (toggle.GetOpenImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
+            
+[<AutoOpen>]
+module FpsDispatcherModule =
+
+    type Entity with
+
+        member this.GetStartTime world : DateTime = this.Get Property? StartTime world
+        member this.SetStartTime (value : DateTime) world = this.SetFast Property? StartTime false false value world
+        member this.StartTime = Lens.make Property? StartTime this.GetStartTime this.SetStartTime this
+
+    type FpsDispatcher () =
+        inherit TextDispatcher ()
+
+        static member Properties =
+            [define Entity.StartTime DateTime.UtcNow]
+
+        override dispatcher.Update (entity, world) =
+            let startTime = entity.GetStartTime world
+            let currentTime = DateTime.UtcNow
+            let elapsedTime = currentTime - startTime
+            let tickTime = double (World.getTickTime world)
+            let frames = tickTime / elapsedTime.TotalSeconds
+            let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
+            entity.SetText framesStr world
 
 [<AutoOpen>]
 module FeelerDispatcherModule =
@@ -1512,7 +1558,6 @@ module FeelerDispatcherModule =
         member this.OnUntouch = Lens.make Property? OnUntouch this.GetOnUntouch this.SetOnUntouch this
         member this.TouchEvent = Events.Touch --> this
         member this.UntouchEvent = Events.Untouch --> this
-
 
     type FeelerDispatcher () =
         inherit GuiDispatcher ()
@@ -1803,9 +1848,19 @@ module LayerDispatcherModule =
 
     type Layer with
     
-        member this.GetModel<'model> world = this.Get<'model> Property? Model world
-        member this.SetModel<'model> value world = this.Set<'model> Property? Model value world
-        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
+        member this.GetModel<'model> world =
+            let property = this.Get<DesignerProperty> Property? Model world
+            property.DesignerValue :?> 'model
+
+        member this.SetModel<'model> (value : 'model) world =
+            let model = this.GetModel<DesignerProperty> world
+            this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
+
+        member this.UpdateModel<'model> updater world =
+            this.SetModel<'model> (updater this.GetModel<'model> world) world
+
+        member this.Model<'model> () =
+            Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
 
     type [<AbstractClass>] LayerDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit LayerDispatcher ()
@@ -1882,9 +1937,20 @@ module ScreenDispatcherModule =
 
     type Screen with
     
-        member this.GetModel<'model> world = this.Get<'model> Property? Model world
-        member this.SetModel<'model> value world = this.Set<'model> Property? Model value world
-        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
+    
+        member this.GetModel<'model> world =
+            let property = this.Get<DesignerProperty> Property? Model world
+            property.DesignerValue :?> 'model
+
+        member this.SetModel<'model> (value : 'model) world =
+            let model = this.GetModel<DesignerProperty> world
+            this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
+
+        member this.UpdateModel<'model> updater world =
+            this.SetModel<'model> (updater this.GetModel<'model> world) world
+
+        member this.Model<'model> () =
+            Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
 
     type [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit ScreenDispatcher ()
