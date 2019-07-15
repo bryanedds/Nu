@@ -353,7 +353,8 @@ module WorldModule3 =
         static member private makeDefaultFacets () =
             // TODO: consider if we shoud reflectively generate these
             Map.ofList
-                [(typeof<NodeFacet>.Name, NodeFacet () :> Facet)
+                [(typeof<TestFacet>.Name, TestFacet () :> Facet)
+                 (typeof<NodeFacet>.Name, NodeFacet () :> Facet)
                  (typeof<EffectFacet>.Name, EffectFacet () :> Facet)
                  (typeof<ScriptFacet>.Name, ScriptFacet () :> Facet)
                  (typeof<TextFacet>.Name, TextFacet () :> Facet)
