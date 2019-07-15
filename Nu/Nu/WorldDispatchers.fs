@@ -10,88 +10,6 @@ open Nu
 open Nu.Declarative
 
 [<AutoOpen>]
-module FacetModule =
-
-    type Entity with
-    
-        member this.GetModel<'model> world = this.Get<'model> Property? Model world
-        member this.SetModel<'model> value world = this.Set<'model> Property? Model value world
-        member this.UpdateModel<'model> updater world = this.SetModel<'model> (updater this.GetModel<'model> world) world
-        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
-        member this.GetDescriptors world = this.Get Property? Descriptors world
-        member this.SetDescriptors value world = this.Set Property? Descriptors value world
-        member this.Descriptors = Lens.make<EntityDescriptor list, World> Property? Descriptors this.GetDescriptors this.SetDescriptors this
-
-    type [<AbstractClass>] Facet<'model, 'message, 'command> (initial : 'model) =
-        inherit Facet ()
-
-        member this.GetModel (entity : Entity) world : 'model =
-            entity.GetModel<'model> world
-
-        member this.SetModel (model : 'model) (entity : Entity) world =
-            entity.SetModel<'model> model world
-
-        member this.Model (entity : Entity) =
-            Lens.make Property? Model (this.GetModel entity) (flip this.SetModel entity) entity
-
-        override this.Register (entity, world) =
-            let (model, world) =
-                match entity.TryGetProperty Property? Model world with
-                | Some model -> (model :> obj :?> 'model, world)
-                | None ->
-                    let property = { PropertyType = typeof<'model>; PropertyValue = initial }
-                    let world = World.attachEntityProperty Property? Model true false property entity world
-                    (initial, world)
-            let bindings = this.Bindings (model, entity, world)
-            let world =
-                List.fold (fun world binding ->
-                    match binding with
-                    | Message binding ->
-                        Stream.monitor (fun evt world ->
-                            let message = binding.MakeValue evt
-                            let (model, commands) = this.Message (message, this.GetModel entity world, entity, world)
-                            let world = this.SetModel model entity world
-                            List.fold (fun world command ->
-                                this.Command (command, this.GetModel entity world, entity, world))
-                                world commands)
-                            entity binding.Stream world
-                    | Command binding ->
-                        Stream.monitor (fun evt world ->
-                            let command = binding.MakeValue evt
-                            this.Command (command, this.GetModel entity world, entity, world))
-                            entity binding.Stream world)
-                    world bindings
-            let content = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world content
-
-        override this.Actualize (entity, world) =
-            let views = this.View (this.GetModel entity world, entity, world)
-            List.fold (fun world view ->
-                match view with
-                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
-                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
-                | FadeOutSong fade -> World.fadeOutSong fade world
-                | StopSong -> World.stopSong world
-                | Effect effect -> effect world)
-                world views
-
-        abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
-        default this.Bindings (_, _, _) = []
-
-        abstract member Message : 'message * 'model * Entity * World -> 'model * 'command list
-        default this.Message (_, model, _, _) = just model
-
-        abstract member Command : 'command * 'model * Entity * World -> World
-        default this.Command (_, _, _, world) = world
-
-        abstract member Content : Lens<'model, World> * Entity * World -> EntityContent list
-        default this.Content (_, _, _) = []
-
-        abstract member View : 'model * Entity * World -> View list
-        default this.View (_, _, _) = []
-
-[<AutoOpen>]
 module EffectFacetModule =
 
     type EffectTags =
@@ -990,6 +908,16 @@ module AnimatedSpriteFacetModule =
 
 [<AutoOpen>]
 module EntityDispatcherModule =
+
+    type Entity with
+    
+        member this.GetModel<'model> world = this.Get<'model> Property? Model world
+        member this.SetModel<'model> value world = this.Set<'model> Property? Model value world
+        member this.UpdateModel<'model> updater world = this.SetModel<'model> (updater this.GetModel<'model> world) world
+        member this.Model<'model> () = Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
+        member this.GetDescriptors world = this.Get Property? Descriptors world
+        member this.SetDescriptors value world = this.Set Property? Descriptors value world
+        member this.Descriptors = Lens.make<EntityDescriptor list, World> Property? Descriptors this.GetDescriptors this.SetDescriptors this
 
     type [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit EntityDispatcher ()
