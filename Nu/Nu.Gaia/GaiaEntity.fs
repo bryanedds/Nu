@@ -35,14 +35,14 @@ and EntityPropertyDescriptor (property, attributes) =
         | EntityPropertyInfo xfd -> xfd.CanWrite
 
     override this.Category =
-        // HACK: all of this stuff is a hack until we can get user-defined attributes on simulant properties!
         // HACK: in order to put the Events as the last category, I start all the other categories with an unprinted
         // \r character as here - https://bytes.com/topic/c-sharp/answers/214456-q-ordering-sorting-category-text-propertygrid
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
         let nodeProperties = Reflection.getPropertyDefinitions typeof<NodeFacet>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if propertyName.Length > 2 && propertyName.StartsWith "On" && Char.IsUpper propertyName.[2] then "Events"
-        elif propertyName = "Name" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" || propertyName = "PublishChanges" || propertyName.EndsWith "Model" then "\rAmbient Properties"
+        elif propertyName = "Name" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" || propertyName = "PublishChanges" then "\rAmbient Properties"
+        elif propertyName.EndsWith "Model" then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) nodeProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "\rPhysics Properties"
