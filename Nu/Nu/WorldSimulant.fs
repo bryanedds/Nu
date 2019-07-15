@@ -152,3 +152,12 @@ module WorldSimulantModule =
 
         static member equate (left : Lens<'a, World>) (right : Lens<'a, World>) breaking world =
             WorldModule.equate5 left.Name (left.This :?> Simulant) right breaking world
+
+[<AutoOpen>]
+module SimulantOperators =
+
+    /// Equate two properties, not breaking potential cycles.
+    let (===) left right = World.equate left right false
+
+    /// Equate two properties, breaking potential cycles.
+    let (=/=) left right = World.equate left right true
