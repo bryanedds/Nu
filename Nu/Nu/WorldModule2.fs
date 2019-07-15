@@ -886,7 +886,9 @@ module GameDispatcherModule =
         override this.Register (game, world) =
             let (model, world) =
                 match World.tryGetGameProperty Property? Model world with
-                | Some model -> (model :> obj :?> 'model, world)
+                | Some property ->
+                    let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
+                    (model, world)
                 | None ->
                     let property = { DesignerType = typeof<'model>; DesignerValue = initial }
                     let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
