@@ -878,7 +878,8 @@ module GameDispatcherModule =
                 match World.tryGetGameProperty Property? Model world with
                 | Some model -> (model :> obj :?> 'model, world)
                 | None ->
-                    let property = { PropertyType = typeof<'model>; PropertyValue = initial }
+                    let property = { DesignerType = typeof<'model>; DesignerValue = initial }
+                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
                     let world = World.attachGameProperty Property? Model property world
                     (initial, world)
             let bindings = this.Bindings (model, game, world)

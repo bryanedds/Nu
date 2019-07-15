@@ -43,7 +43,8 @@ module FacetModule =
                 match entity.TryGetProperty Property? Model world with
                 | Some model -> (model :> obj :?> 'model, world)
                 | None ->
-                    let property = { PropertyType = typeof<'model>; PropertyValue = initial }
+                    let property = { DesignerType = typeof<'model>; DesignerValue = initial }
+                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
                     let world = World.attachEntityProperty Property? Model true false property entity world
                     (initial, world)
             let bindings = this.Bindings (model, entity, world)
@@ -1019,7 +1020,8 @@ module EntityDispatcherModule =
                 match entity.TryGetProperty Property? Model world with
                 | Some model -> (model :> obj :?> 'model, world)
                 | None ->
-                    let property = { PropertyType = typeof<'model>; PropertyValue = initial }
+                    let property = { DesignerType = typeof<'model>; DesignerValue = initial }
+                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
                     let world = World.attachEntityProperty Property? Model true false property entity world
                     (initial, world)
             let bindings = this.Bindings (model, entity, world)
@@ -1822,7 +1824,8 @@ module LayerDispatcherModule =
                 match layer.TryGetProperty Property? Model world with
                 | Some model -> (model :> obj :?> 'model, world)
                 | None ->
-                    let property = { PropertyType = typeof<'model>; PropertyValue = initial }
+                    let property = { DesignerType = typeof<'model>; DesignerValue = initial }
+                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
                     let world = World.attachLayerProperty Property? Model property layer world
                     (initial, world)
             let bindings = this.Bindings (model, layer, world)
@@ -1900,7 +1903,8 @@ module ScreenDispatcherModule =
                 match screen.TryGetProperty Property? Model world with
                 | Some model -> (model :> obj :?> 'model, world)
                 | None ->
-                    let property = { PropertyType = typeof<'model>; PropertyValue = initial }
+                    let property = { DesignerType = typeof<'model>; DesignerValue = initial }
+                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
                     let world = World.attachScreenProperty Property? Model property screen world
                     (initial, world)
             let bindings = this.Bindings (model, screen, world)
