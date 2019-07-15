@@ -51,12 +51,12 @@ module FacetModule =
 
         override this.Register (entity, world) =
             let (model, world) =
-                match entity.TryGetProperty Property? Model world with
+                match entity.TryGetProperty this.ModelName world with
                 | Some model -> (model :> obj :?> 'model, world)
                 | None ->
                     let property = { DesignerType = typeof<'model>; DesignerValue = initial }
                     let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
-                    let world = World.attachEntityProperty Property? Model true false property entity world
+                    let world = World.attachEntityProperty this.ModelName true false property entity world
                     (initial, world)
             let bindings = this.Bindings (model, entity, world)
             let world =
@@ -109,6 +109,9 @@ module FacetModule =
 
 [<AutoOpen>]
 module EffectFacetModule =
+
+    type TestFacet () =
+        inherit Facet<int, unit, unit> (10)
 
     type EffectTags =
         Map<string, Symbol * Effects.Slice list>
@@ -1936,7 +1939,6 @@ module LayerDispatcherModule =
 module ScreenDispatcherModule =
 
     type Screen with
-    
     
         member this.GetModel<'model> world =
             let property = this.Get<DesignerProperty> Property? Model world
