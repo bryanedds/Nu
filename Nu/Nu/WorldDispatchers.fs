@@ -112,9 +112,6 @@ module FacetModule =
 [<AutoOpen>]
 module EffectFacetModule =
 
-    type TestFacet () =
-        inherit Facet<int, unit, unit> (10)
-
     type EffectTags =
         Map<string, Symbol * Effects.Slice list>
 
@@ -1433,6 +1430,9 @@ module ToggleDispatcherModule =
         member this.SetOnToggle (value : Scripting.Expr) world = this.SetFast Property? OnToggle false false value world
         member this.OnToggle = Lens.make Property? OnToggle this.GetOnToggle this.SetOnToggle this
         member this.ToggleEvent = Events.Toggle --> this
+
+    type TestDispatcher () =
+        inherit EntityDispatcher<int, unit, unit> (9)
 
     type ToggleDispatcher () =
         inherit GuiDispatcher ()

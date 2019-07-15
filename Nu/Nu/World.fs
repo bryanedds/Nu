@@ -341,6 +341,7 @@ module WorldModule3 =
                  ButtonDispatcher () :> EntityDispatcher
                  LabelDispatcher () :> EntityDispatcher
                  TextDispatcher () :> EntityDispatcher
+                 TestDispatcher () :> EntityDispatcher
                  ToggleDispatcher () :> EntityDispatcher
                  FpsDispatcher () :> EntityDispatcher
                  FeelerDispatcher () :> EntityDispatcher
@@ -353,8 +354,7 @@ module WorldModule3 =
         static member private makeDefaultFacets () =
             // TODO: consider if we shoud reflectively generate these
             Map.ofList
-                [(typeof<TestFacet>.Name, TestFacet () :> Facet)
-                 (typeof<NodeFacet>.Name, NodeFacet () :> Facet)
+                [(typeof<NodeFacet>.Name, NodeFacet () :> Facet)
                  (typeof<EffectFacet>.Name, EffectFacet () :> Facet)
                  (typeof<ScriptFacet>.Name, ScriptFacet () :> Facet)
                  (typeof<TextFacet>.Name, TextFacet () :> Facet)
