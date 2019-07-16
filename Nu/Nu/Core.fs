@@ -79,3 +79,7 @@ module CoreOperators =
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
+    
+    /// TODO: Remove - this is added in the next version of Prime.
+    let withMsgs value messages = (value, List.map Message messages)
+    let withCmds value commands = (value, List.map Command commands)
