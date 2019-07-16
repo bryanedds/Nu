@@ -81,5 +81,5 @@ module CoreOperators =
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
     
     /// TODO: Remove - this is added in the next version of Prime.
-    let withMsgs value messages = (value, List.map Message messages)
-    let withCmds value commands = (value, List.map Command commands)
+    let withMsgs value messages = (value, Signals (List.map Message messages))
+    let withCmds value commands = (value, Signals (List.map Command commands))
