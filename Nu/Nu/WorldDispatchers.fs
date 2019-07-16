@@ -46,7 +46,7 @@ module FacetModule =
             property.DesignerValue :?> 'model
 
         member this.SetFacetModel<'model> modelName (value : 'model) world =
-            let model = this.GetFacetModel<DesignerProperty> modelName world
+            let model = this.Get<DesignerProperty> modelName world
             match this.GetImperative world with
             | true -> model.DesignerValue <- value; world
             | false -> this.Set<DesignerProperty> modelName { model with DesignerValue = value } world
@@ -994,7 +994,7 @@ module EntityDispatcherModule =
             property.DesignerValue :?> 'model
 
         member this.SetModel<'model> (value : 'model) world =
-            let model = this.GetModel<DesignerProperty> world
+            let model = this.Get<DesignerProperty> Property? Model world
             match this.GetImperative world with
             | true -> model.DesignerValue <- value; world
             | false -> this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
@@ -1801,7 +1801,7 @@ module LayerDispatcherModule =
             property.DesignerValue :?> 'model
 
         member this.SetModel<'model> (value : 'model) world =
-            let model = this.GetModel<DesignerProperty> world
+            let model = this.Get<DesignerProperty> Property? Model world
             this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
 
         member this.UpdateModel<'model> updater world =
@@ -1858,7 +1858,7 @@ module ScreenDispatcherModule =
             property.DesignerValue :?> 'model
 
         member this.SetModel<'model> (value : 'model) world =
-            let model = this.GetModel<DesignerProperty> world
+            let model = this.Get<DesignerProperty> Property? Model world
             this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
 
         member this.UpdateModel<'model> updater world =

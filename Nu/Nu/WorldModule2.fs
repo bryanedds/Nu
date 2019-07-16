@@ -862,7 +862,7 @@ module GameDispatcherModule =
             property.DesignerValue :?> 'model
 
         member this.SetModel<'model> (value : 'model) world =
-            let model = this.GetModel<DesignerProperty> world
+            let model = this.Get<DesignerProperty> Property? Model world
             this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
 
         member this.UpdateModel<'model> updater world =
