@@ -69,8 +69,6 @@ module WorldModuleGame =
         static member internal setGameOnUpdate value world = World.updateGameState (fun gameState -> { gameState with OnUpdate = value }) Property? OnUpdate value world
         static member internal getGameOnPostUpdate world = (World.getGameState world).OnPostUpdate
         static member internal setGameOnPostUpdate value world = World.updateGameState (fun gameState -> { gameState with OnPostUpdate = value }) Property? OnPostUpdate value world
-        static member internal getGameOnSignal world = (World.getGameState world).OnSignal
-        static member internal setGameOnSignal value world = World.updateGameState (fun gameState -> { gameState with OnSignal = value }) Property? OnSignal value world
 
         /// Get the current eye center.
         [<FunctionBinding>]
@@ -382,7 +380,6 @@ module WorldModuleGame =
         Getters.Add ("OnUnregister", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUnregister world })
         Getters.Add ("OnUpdate", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUpdate world })
         Getters.Add ("OnPostUpdate", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnPostUpdate world })
-        Getters.Add ("OnSignal", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnSignal world })
         Getters.Add ("CreationTimeStamp", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStamp world })
         Getters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
 
@@ -402,7 +399,6 @@ module WorldModuleGame =
         Setters.Add ("OnUnregister", fun property world -> (true, World.setGameOnUnregister (property.PropertyValue :?> Scripting.Expr) world))
         Setters.Add ("OnUpdate", fun property world -> (true, World.setGameOnUpdate (property.PropertyValue :?> Scripting.Expr) world))
         Setters.Add ("OnPostUpdate", fun property world -> (true, World.setGameOnPostUpdate (property.PropertyValue :?> Scripting.Expr) world))
-        Setters.Add ("OnSignal", fun property world -> (true, World.setGameOnSignal (property.PropertyValue :?> Scripting.Expr) world))
         Setters.Add ("CreationTimeStamp", fun _ world -> (false, world))
         Setters.Add ("Id", fun _ world -> (false, world))
 

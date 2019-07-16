@@ -672,17 +672,6 @@ module WorldModuleEntity =
                 Array.fold (fun world (facet : Facet) -> facet.UnregisterPhysics (entity, world)) world facets)
                 entity world
 
-        static member internal signalEntity signal entity world =
-            World.withEventContext (fun world ->
-                let eventTrace = EventTrace.record "World" "signalEntity" EventTrace.empty
-                let world = World.publish signal (rtoa<Symbol> [|"Signal"; "Event"|] --> entity) eventTrace entity world
-                let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
-                let facets = World.getEntityFacets entity world
-                let world = dispatcher.Signal (signal, entity, world)
-                Array.fold (fun world (facet : Facet) -> facet.Signal (signal, entity, world)) world facets)
-                entity
-                world
-
         static member internal addEntity mayReplace entityState entity world =
 
             // add entity only if it is new or is explicitly able to be replaced

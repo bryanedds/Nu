@@ -3,7 +3,6 @@
   [Name Level]
   [OnPostUpdate []]
   [OnRegister []]
-  [OnSignal []]
   [OnUnregister []]
   [OnUpdate []]
   [Persistent True]

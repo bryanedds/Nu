@@ -177,10 +177,6 @@ module WorldTypes =
         abstract Actualize : Game * World -> World
         default dispatcher.Actualize (_, world) = world
 
-        /// Send a signal to a game.
-        abstract Signal : Symbol * Game * World -> World
-        default dispatcher.Signal (_, _, world) = world
-
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Game * World -> Property option
         default dispatcher.TryGetCalculatedProperty (_, _, _) = None
@@ -209,10 +205,6 @@ module WorldTypes =
         abstract Actualize : Screen * World -> World
         default dispatcher.Actualize (_, world) = world
     
-        /// Send a signal to a screen.
-        abstract Signal : Symbol * Screen * World -> World
-        default dispatcher.Signal (_, _, world) = world
-
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Screen * World -> Property option
         default dispatcher.TryGetCalculatedProperty (_, _, _) = None
@@ -241,10 +233,6 @@ module WorldTypes =
         abstract Actualize : Layer * World -> World
         default dispatcher.Actualize (_, world) = world
     
-        /// Send a signal to a layer.
-        abstract Signal : Symbol * Layer * World -> World
-        default dispatcher.Signal (_, _, world) = world
-
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Layer * World -> Property option
         default dispatcher.TryGetCalculatedProperty (_, _, _) = None
@@ -292,10 +280,6 @@ module WorldTypes =
         abstract Actualize : Entity * World -> World
         default dispatcher.Actualize (_, world) = world
     
-        /// Send a signal to an entity.
-        abstract Signal : Symbol * Entity * World -> World
-        default dispatcher.Signal (_, _, world) = world
-    
         /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         abstract GetQuickSize : Entity * World -> Vector2
         default dispatcher.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
@@ -335,10 +319,6 @@ module WorldTypes =
         abstract Actualize : Entity * World -> World
         default facet.Actualize (_, world) = world
     
-        /// Send a signal to a facet.
-        abstract Signal : Symbol * Entity * World -> World
-        default facet.Signal (symbol, entity, world) = facet.Signal (symbol, entity, world)
-    
         /// Participate in getting the priority with which an entity is picked in the editor.
         abstract GetQuickSize : Entity * World -> Vector2
         default facet.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
@@ -373,7 +353,6 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnSignal : Scripting.Expr
           CreationTimeStamp : int64
           Id : Guid }
 
@@ -397,7 +376,6 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnSignal = Scripting.Unit
               CreationTimeStamp = Core.getTimeStamp ()
               Id = makeGuid () }
 
@@ -455,7 +433,6 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnSignal : Scripting.Expr
           CreationTimeStamp : int64
           Name : string
           Id : Guid }
@@ -478,7 +455,6 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnSignal = Scripting.Unit
               CreationTimeStamp = Core.getTimeStamp ()
               Name = name
               Id = id }
@@ -535,7 +511,6 @@ module WorldTypes =
           OnUnregister : Scripting.Expr
           OnUpdate : Scripting.Expr
           OnPostUpdate : Scripting.Expr
-          OnSignal : Scripting.Expr
           CreationTimeStamp : int64
           Name : string
           Id : Guid }
@@ -556,7 +531,6 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              OnSignal = Scripting.Unit
               CreationTimeStamp = Core.getTimeStamp ()
               Name = name
               Id = id }

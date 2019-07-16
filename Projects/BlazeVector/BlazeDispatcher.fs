@@ -37,14 +37,16 @@ module BlazeDispatcherModule =
 
         // here we handle the above commands
         override this.Command (command, _, _, world) =
-            match command with
-            | PlaySplashSound -> World.playSound 1.0f Assets.NuSplashSound world
-            | PlayTitleSong -> World.playSong 0 1.0f Assets.MachinerySong world
-            | FadeSong -> World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
-            | ShowTitle -> World.transitionScreen Simulants.Title world
-            | ShowCredits -> World.transitionScreen Simulants.Credits world
-            | ShowGameplay -> World.transitionScreen Simulants.Gameplay world
-            | ExitGame -> World.exit world
+            let world =
+                match command with
+                | PlaySplashSound -> World.playSound 1.0f Assets.NuSplashSound world
+                | PlayTitleSong -> World.playSong 0 1.0f Assets.MachinerySong world
+                | FadeSong -> World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
+                | ShowTitle -> World.transitionScreen Simulants.Title world
+                | ShowCredits -> World.transitionScreen Simulants.Credits world
+                | ShowGameplay -> World.transitionScreen Simulants.Gameplay world
+                | ExitGame -> World.exit world
+            just world
 
         // here we describe the content of the game including all of its screens.
         override this.Content (_, _, _) =

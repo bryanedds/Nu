@@ -243,23 +243,25 @@ module SceneModule =
              scene.UpdateEvent =>! PlayerFall]
 
         override dispatcher.Command (command, _, _, world) =
-            match command with
-            | AdjustCamera ->
-                if World.getTickRate world <> 0L then
-                    let playerPosition = Simulants.Player.GetPosition world
-                    let playerSize = Simulants.Player.GetSize world
-                    let eyeCenter = World.getEyeCenter world
-                    let eyeSize = World.getEyeSize world
-                    let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f, eyeCenter.Y)
-                    Game.SetEyeCenter eyeCenter world
-                else world
-            | PlayerFall ->
-                if Simulants.Player.HasFallen world && World.isSelectedScreenIdling world then
-                    let world = World.playSound 1.0f Assets.DeathSound world
-                    if Simulants.Title.GetExists world
-                    then World.transitionScreen Simulants.Title world
+            let world =
+                match command with
+                | AdjustCamera ->
+                    if World.getTickRate world <> 0L then
+                        let playerPosition = Simulants.Player.GetPosition world
+                        let playerSize = Simulants.Player.GetSize world
+                        let eyeCenter = World.getEyeCenter world
+                        let eyeSize = World.getEyeSize world
+                        let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f, eyeCenter.Y)
+                        Game.SetEyeCenter eyeCenter world
                     else world
-                else world
+                | PlayerFall ->
+                    if Simulants.Player.HasFallen world && World.isSelectedScreenIdling world then
+                        let world = World.playSound 1.0f Assets.DeathSound world
+                        if Simulants.Title.GetExists world
+                        then World.transitionScreen Simulants.Title world
+                        else world
+                    else world
+            just world
 
 [<AutoOpen>]
 module GameplayModule =
@@ -310,15 +312,17 @@ module GameplayModule =
              gameplay.DeselectEvent =>! StopPlay]
 
         override dispatcher.Command (command, _, gameplay, world) =
-            match command with
-            | StartPlay ->
-                let world = createScene gameplay world
-                let world = createSectionLayers gameplay world
-                World.playSong 0 1.0f Assets.DeadBlazeSong world
-            | StoppingPlay ->
-                World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
-            | StopPlay ->
-                let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + scstring i]
-                let layerNames = Simulants.Scene.Name :: sectionNames
-                let layers = List.map (fun layerName -> gameplay / layerName) layerNames
-                World.destroyLayers layers world
+            let world =
+                match command with
+                | StartPlay ->
+                    let world = createScene gameplay world
+                    let world = createSectionLayers gameplay world
+                    World.playSong 0 1.0f Assets.DeadBlazeSong world
+                | StoppingPlay ->
+                    World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
+                | StopPlay ->
+                    let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + scstring i]
+                    let layerNames = Simulants.Scene.Name :: sectionNames
+                    let layers = List.map (fun layerName -> gameplay / layerName) layerNames
+                    World.destroyLayers layers world
+            just world

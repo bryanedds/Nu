@@ -124,8 +124,6 @@ module WorldModuleScreen =
         static member internal setScreenOnUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnUpdate = value }) Property? OnUpdate value screen world
         static member internal getScreenOnPostUpdate screen world = (World.getScreenState screen world).OnPostUpdate
         static member internal setScreenOnPostUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnPostUpdate = value }) Property? OnPostUpdate value screen world
-        static member internal getScreenOnSignal screen world = (World.getScreenState screen world).OnSignal
-        static member internal setScreenOnSignal value screen world = World.updateScreenState (fun screenState -> { screenState with OnSignal = value }) Property? OnSignal value screen world
         static member internal getScreenCreationTimeStamp screen world = (World.getScreenState screen world).CreationTimeStamp
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
@@ -230,23 +228,6 @@ module WorldModuleScreen =
                 screen
                 world
 
-        static member internal signalScreen signal screen world =
-            World.withEventContext (fun world ->
-                let world =
-                    match ScriptingSystem.tryImport typeof<Symbol> signal world with
-                    | Some signalExpr ->
-                        ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("signal", signalExpr) }) world
-                        let world = eval (World.getScreenOnSignal screen world) (World.getScreenScriptFrame screen world) screen world |> snd'
-                        ScriptingSystem.removeProceduralBindings world
-                        world
-                    | None -> failwithumf ()
-                let dispatcher = World.getScreenDispatcher screen world
-                let eventTrace = EventTrace.record "World" "signalScreen" EventTrace.empty
-                let world = World.publish signal (rtoa<Symbol> [|"Signal"; "Event"; screen.Name|]) eventTrace screen world
-                dispatcher.Signal (signal, screen, world))
-                screen
-                world
-
         static member internal addScreen mayReplace screenState screen world =
             let isNew = not (World.getScreenExists screen world)
             if isNew || mayReplace then
@@ -323,7 +304,6 @@ module WorldModuleScreen =
         Getters.Add ("OnUnregister", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUnregister screen world })
         Getters.Add ("OnUpdate", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUpdate screen world })
         Getters.Add ("OnPostUpdate", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnPostUpdate screen world })
-        Getters.Add ("OnSignal", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnSignal screen world })
         Getters.Add ("CreationTimeStamp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStamp screen world })
         Getters.Add ("Name", fun screen world -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world })
         Getters.Add ("Id", fun screen world -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world })
@@ -344,7 +324,6 @@ module WorldModuleScreen =
         Setters.Add ("OnUnregister", fun property screen world -> (true, World.setScreenOnUnregister (property.PropertyValue :?> Scripting.Expr) screen world))
         Setters.Add ("OnUpdate", fun property screen world -> (true, World.setScreenOnUpdate (property.PropertyValue :?> Scripting.Expr) screen world))
         Setters.Add ("OnPostUpdate", fun property screen world -> (true, World.setScreenOnPostUpdate (property.PropertyValue :?> Scripting.Expr) screen world))
-        Setters.Add ("OnSignal", fun property screen world -> (true, World.setScreenOnSignal (property.PropertyValue :?> Scripting.Expr) screen world))
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
         Setters.Add ("Id", fun _ _ world -> (false, world))

@@ -884,63 +884,27 @@ module GameDispatcherModule =
             Lens.make Property? Model (this.GetModel game) (flip this.SetModel game) game
 
         override this.Register (game, world) =
-            let (model, world) =
-                match World.tryGetGameProperty Property? Model world with
-                | Some property ->
-                    let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
-                    (model, world)
-                | None ->
-                    let property = { DesignerType = typeof<'model>; DesignerValue = initial }
-                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
-                    let world = World.attachGameProperty Property? Model property world
-                    (initial, world)
+            let (model, world) = World.attachModel initial Property? Model game world
             let bindings = this.Bindings (model, game, world)
-            let world =
-                List.fold (fun world binding ->
-                    match binding with
-                    | Message binding ->
-                        Stream.monitor (fun evt world ->
-                            let message = binding.MakeValue evt
-                            let (model, commands) = this.Message (message, this.GetModel game world, game, world)
-                            let world = this.SetModel model game world
-                            List.fold (fun world command ->
-                                this.Command (command, this.GetModel game world, game, world))
-                                world commands)
-                            game binding.Stream world
-                    | Command binding ->
-                        Stream.monitor (fun evt world ->
-                            let command = binding.MakeValue evt
-                            this.Command (command, this.GetModel game world, game, world))
-                            game binding.Stream world)
-                    world bindings
+            let world = Signal.processModel this.Message this.Command (this.Model game) game bindings world
             let content = this.Content (this.Model game, game, world)
-            let world =
-                List.foldi (fun contentIndex world content ->
-                    let (screen, world) = World.expandScreenContent World.setScreenSplash content game world
-                    if contentIndex = 0 then World.selectScreen screen world else world)
-                    world content
-            world
+            List.foldi (fun contentIndex world content ->
+                let (screen, world) = World.expandScreenContent World.setScreenSplash content game world
+                if contentIndex = 0 then World.selectScreen screen world else world)
+                world content
 
         override this.Actualize (game, world) =
             let views = this.View (this.GetModel game world, game, world)
-            List.fold (fun world view ->
-                match view with
-                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
-                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
-                | FadeOutSong fade -> World.fadeOutSong fade world
-                | StopSong -> World.stopSong world
-                | Effect effect -> effect world)
-                world views
+            World.actualizeViews views world
 
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
         default this.Bindings (_, _, _) = []
 
-        abstract member Message : 'message * 'model * Game * World -> 'model * 'command list
+        abstract member Message : 'message * 'model * Game * World -> 'model * Signal<'message, 'command>
         default this.Message (_, model, _, _) = just model
 
-        abstract member Command : 'command * 'model * Game * World -> World
-        default this.Command (_, _, _, world) = world
+        abstract member Command : 'command * 'model * Game * World -> World * Signal<'message, 'command>
+        default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Game * World -> ScreenContent list
         default this.Content (_, _, _) = []

@@ -31,7 +31,6 @@ module WorldScreenModule =
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
-        member this.SignalEvent = Events.Signal --> this
         member this.SelectEvent = Events.Select --> this
         member this.DeselectEvent = Events.Deselect --> this
         member this.IncomingStartEvent = Events.IncomingStart --> this
@@ -64,9 +63,6 @@ module WorldScreenModule =
         member this.GetOnPostUpdate world = World.getScreenOnPostUpdate this world
         member this.SetOnPostUpdate value world = World.setScreenOnPostUpdate value this world
         member this.OnPostUpdate = Lens.make Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
-        member this.GetOnSignal world = World.getScreenOnSignal this world
-        member this.SetOnSignal value world = World.setScreenOnSignal value this world
-        member this.OnSignal = Lens.make Property? OnSignal this.GetOnSignal this.SetOnSignal this
         member this.GetCreationTimeStamp world = World.getScreenCreationTimeStamp this world
         member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetId world = World.getScreenId this world
@@ -116,9 +112,6 @@ module WorldScreenModule =
 
         /// Get a screen's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.ScreenAddress
-
-        /// Send a signal to the screen.
-        member this.Signal signal world = World.signalScreen signal this world
 
     type World with
 
