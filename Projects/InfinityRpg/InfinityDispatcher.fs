@@ -45,13 +45,15 @@ module InfinityDispatcherModule =
              Simulants.HudBack.ClickEvent =>! ShowTitle]
 
         override this.Command (command, _, _, world) =
-            match command with
-            | PlayTitleSong -> World.playSong 0 1.0f Assets.ButterflyGirlSong world
-            | FadeSong -> World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
-            | ShowTitle -> World.transitionScreen Simulants.Title world
-            | ShowCredits -> World.transitionScreen Simulants.Credits world
-            | ShowGameplay load -> world |> Simulants.Gameplay.SetShallLoadGame load |> World.transitionScreen Simulants.Gameplay
-            | ExitGame -> World.exit world
+            let world =
+                match command with
+                | PlayTitleSong -> World.playSong 0 1.0f Assets.ButterflyGirlSong world
+                | FadeSong -> World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
+                | ShowTitle -> World.transitionScreen Simulants.Title world
+                | ShowCredits -> World.transitionScreen Simulants.Credits world
+                | ShowGameplay load -> world |> Simulants.Gameplay.SetShallLoadGame load |> World.transitionScreen Simulants.Gameplay
+                | ExitGame -> World.exit world
+            just world
 
         override this.Content (_, _, _) =
             [Content.screen Simulants.Splash.Name (Splash (Constants.InfinityRpg.DissolveData, Constants.InfinityRpg.SplashData, Simulants.Title)) [] []

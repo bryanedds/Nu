@@ -10,6 +10,33 @@ open Nu
 open Nu.Declarative
 
 [<AutoOpen>]
+module DeclarativeOperators2 =
+
+    type World with
+
+        static member attachModel modelValue modelName (simulant : Simulant) world =
+            match World.tryGetProperty modelName simulant world with
+            | Some property ->
+                let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
+                (model, world)
+            | None ->
+                let property = { DesignerType = typeof<'model>; DesignerValue = modelValue }
+                let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
+                let world = World.attachProperty modelName true false property simulant world
+                (modelValue, world)
+
+        static member actualizeViews views world =
+            List.fold (fun world view ->
+                match view with
+                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
+                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
+                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
+                | FadeOutSong fade -> World.fadeOutSong fade world
+                | StopSong -> World.stopSong world
+                | Effect effect -> effect world)
+                world views
+
+[<AutoOpen>]
 module FacetModule =
 
     type Entity with
@@ -50,58 +77,24 @@ module FacetModule =
             Lens.make this.ModelName (this.GetModel entity) (flip this.SetModel entity) entity
 
         override this.Register (entity, world) =
-            let (model, world) =
-                match entity.TryGetProperty this.ModelName world with
-                | Some property ->
-                    let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
-                    (model, world)
-                | None ->
-                    let property = { DesignerType = typeof<'model>; DesignerValue = initial }
-                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
-                    let world = World.attachEntityProperty this.ModelName true false property entity world
-                    (initial, world)
+            let (model, world) = World.attachModel initial this.ModelName entity world
             let bindings = this.Bindings (model, entity, world)
-            let world =
-                List.fold (fun world binding ->
-                    match binding with
-                    | Message binding ->
-                        Stream.monitor (fun evt world ->
-                            let message = binding.MakeValue evt
-                            let (model, commands) = this.Message (message, this.GetModel entity world, entity, world)
-                            let world = this.SetModel model entity world
-                            List.fold (fun world command ->
-                                this.Command (command, this.GetModel entity world, entity, world))
-                                world commands)
-                            entity binding.Stream world
-                    | Command binding ->
-                        Stream.monitor (fun evt world ->
-                            let command = binding.MakeValue evt
-                            this.Command (command, this.GetModel entity world, entity, world))
-                            entity binding.Stream world)
-                    world bindings
+            let world = Signal.processModel this.Message this.Command (this.Model entity) entity bindings world
             let content = this.Content (this.Model entity, entity, world)
             List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world content
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
-            List.fold (fun world view ->
-                match view with
-                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
-                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
-                | FadeOutSong fade -> World.fadeOutSong fade world
-                | StopSong -> World.stopSong world
-                | Effect effect -> effect world)
-                world views
+            World.actualizeViews views world
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         default this.Bindings (_, _, _) = []
 
-        abstract member Message : 'message * 'model * Entity * World -> 'model * 'command list
+        abstract member Message : 'message * 'model * Entity * World -> 'model * Signal<'message, 'command>
         default this.Message (_, model, _, _) = just model
 
-        abstract member Command : 'command * 'model * Entity * World -> World
-        default this.Command (_, _, _, world) = world
+        abstract member Command : 'command * 'model * Entity * World -> World * Signal<'message, 'command>
+        default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Entity * World -> EntityContent list
         default this.Content (_, _, _) = []
@@ -293,14 +286,9 @@ module ScriptFacetModule =
         member this.GetOnPostUpdate world : Scripting.Expr = this.Get Property? OnPostUpdate world
         member this.SetOnPostUpdate (value : Scripting.Expr) world = this.SetFast Property? OnPostUpdate false false value world
         member this.OnPostUpdate = Lens.make Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
-        member this.GetOnSignal world : Scripting.Expr = this.Get Property? OnSignal world
-        member this.SetOnSignal (value : Scripting.Expr) world = this.SetFast Property? OnSignal false false value world
-        member this.OnSignal = Lens.make Property? OnSignal this.GetOnSignal this.SetOnSignal this
-        member this.Signal signal world = World.signalEntity signal this world
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
-        member this.MessageEvent = Events.Signal --> this
 
     type ScriptFacet () =
         inherit Facet ()
@@ -326,8 +314,7 @@ module ScriptFacetModule =
              define Entity.OnRegister Scripting.Unit
              define Entity.OnUnregister Scripting.Unit
              define Entity.OnUpdate Scripting.Unit
-             define Entity.OnPostUpdate Scripting.Unit
-             define Entity.OnSignal Scripting.Unit]
+             define Entity.OnPostUpdate Scripting.Unit]
 
         override facet.Register (entity, world) =
             let world = World.evalWithLogging (entity.GetOnRegister world) (entity.GetScriptFrame world) entity world |> snd'
@@ -343,15 +330,6 @@ module ScriptFacetModule =
 
         override facet.PostUpdate (entity, world) =
             World.evalWithLogging (entity.GetOnPostUpdate world) (entity.GetScriptFrame world) entity world |> snd'
-
-        override facet.Signal (signal, entity, world) =
-            match ScriptingSystem.tryImport typeof<Symbol> signal world with
-            | Some signalExpr ->
-                ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("signal", signalExpr) }) world
-                let world = World.evalWithLogging (entity.GetOnSignal world) (entity.GetScriptFrame world) entity world |> snd'
-                ScriptingSystem.removeProceduralBindings world
-                world
-            | None -> failwithumf ()
 
 [<AutoOpen>]
 module TextFacetModule =
@@ -1040,58 +1018,24 @@ module EntityDispatcherModule =
             Lens.make Property? Model (this.GetModel entity) (flip this.SetModel entity) entity
 
         override this.Register (entity, world) =
-            let (model, world) =
-                match entity.TryGetProperty Property? Model world with
-                | Some property ->
-                    let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
-                    (model, world)
-                | None ->
-                    let property = { DesignerType = typeof<'model>; DesignerValue = initial }
-                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
-                    let world = World.attachEntityProperty Property? Model true false property entity world
-                    (initial, world)
+            let (model, world) = World.attachModel initial Property? Model entity world
             let bindings = this.Bindings (model, entity, world)
-            let world =
-                List.fold (fun world binding ->
-                    match binding with
-                    | Message binding ->
-                        Stream.monitor (fun evt world ->
-                            let message = binding.MakeValue evt
-                            let (model, commands) = this.Message (message, this.GetModel entity world, entity, world)
-                            let world = this.SetModel model entity world
-                            List.fold (fun world command ->
-                                this.Command (command, this.GetModel entity world, entity, world))
-                                world commands)
-                            entity binding.Stream world
-                    | Command binding ->
-                        Stream.monitor (fun evt world ->
-                            let command = binding.MakeValue evt
-                            this.Command (command, this.GetModel entity world, entity, world))
-                            entity binding.Stream world)
-                    world bindings
+            let world = Signal.processModel this.Message this.Command (this.Model entity) entity bindings world
             let content = this.Content (this.Model entity, entity, world)
             List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world content
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
-            List.fold (fun world view ->
-                match view with
-                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
-                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
-                | FadeOutSong fade -> World.fadeOutSong fade world
-                | StopSong -> World.stopSong world
-                | Effect effect -> effect world)
-                world views
+            World.actualizeViews views world
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         default this.Bindings (_, _, _) = []
-        
-        abstract member Message : 'message * 'model * Entity * World -> 'model * 'command list
+
+        abstract member Message : 'message * 'model * Entity * World -> 'model * Signal<'message, 'command>
         default this.Message (_, model, _, _) = just model
-        
-        abstract member Command : 'command * 'model * Entity * World -> World
-        default this.Command (_, _, _, world) = world
+
+        abstract member Command : 'command * 'model * Entity * World -> World * Signal<'message, 'command>
+        default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Entity * World -> EntityContent list
         default this.Content (_, _, _) = []
@@ -1879,58 +1823,24 @@ module LayerDispatcherModule =
             Lens.make Property? Model (this.GetModel layer) (flip this.SetModel layer) layer
 
         override this.Register (layer, world) =
-            let (model, world) =
-                match layer.TryGetProperty Property? Model world with
-                | Some property ->
-                    let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
-                    (model, world)
-                | None ->
-                    let property = { DesignerType = typeof<'model>; DesignerValue = initial }
-                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
-                    let world = World.attachLayerProperty Property? Model property layer world
-                    (initial, world)
+            let (model, world) = World.attachModel initial Property? Model layer world
             let bindings = this.Bindings (model, layer, world)
-            let world =
-                List.fold (fun world binding ->
-                    match binding with
-                    | Message binding ->
-                        Stream.monitor (fun evt world ->
-                            let message = binding.MakeValue evt
-                            let (model, commands) = this.Message (message, this.GetModel layer world, layer, world)
-                            let world = this.SetModel model layer world
-                            List.fold (fun world command ->
-                                this.Command (command, this.GetModel layer world, layer, world))
-                                world commands)
-                            layer binding.Stream world
-                    | Command binding ->
-                        Stream.monitor (fun evt world ->
-                            let command = binding.MakeValue evt
-                            this.Command (command, this.GetModel layer world, layer, world))
-                            layer binding.Stream world)
-                    world bindings
+            let world = Signal.processModel this.Message this.Command (this.Model layer) layer bindings world
             let content = this.Content (this.Model layer, layer, world)
             List.fold (fun world content -> World.expandEntityContent None content None layer world) world content
 
         override this.Actualize (layer, world) =
             let views = this.View (this.GetModel layer world, layer, world)
-            List.fold (fun world view ->
-                match view with
-                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
-                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
-                | FadeOutSong fade -> World.fadeOutSong fade world
-                | StopSong -> World.stopSong world
-                | Effect effect -> effect world)
-                world views
+            World.actualizeViews views world
 
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
         default this.Bindings (_, _, _) = []
-        
-        abstract member Message : 'message * 'model * Layer * World -> 'model * 'command list
+
+        abstract member Message : 'message * 'model * Layer * World -> 'model * Signal<'message, 'command>
         default this.Message (_, model, _, _) = just model
 
-        abstract member Command : 'command * 'model * Layer * World -> World
-        default this.Command (_, _, _, world) = world
+        abstract member Command : 'command * 'model * Layer * World -> World * Signal<'message, 'command>
+        default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Layer * World -> EntityContent list
         default this.Content (_, _, _) = []
@@ -1970,59 +1880,25 @@ module ScreenDispatcherModule =
             Lens.make Property? Model (this.GetModel screen) (flip this.SetModel screen) screen
 
         override this.Register (screen, world) =
-            let (model, world) =
-                match screen.TryGetProperty Property? Model world with
-                | Some property ->
-                    let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
-                    (model, world)
-                | None ->
-                    let property = { DesignerType = typeof<'model>; DesignerValue = initial }
-                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
-                    let world = World.attachScreenProperty Property? Model property screen world
-                    (initial, world)
+            let (model, world) = World.attachModel initial Property? Model screen world
             let bindings = this.Bindings (model, screen, world)
-            let world =
-                List.fold (fun world binding ->
-                    match binding with
-                    | Message binding ->
-                        Stream.monitor (fun evt world ->
-                            let message = binding.MakeValue evt
-                            let (model, commands) = this.Message (message, this.GetModel screen world, screen, world)
-                            let world = this.SetModel model screen world
-                            List.fold (fun world command ->
-                                this.Command (command, this.GetModel screen world, screen, world))
-                                world commands)
-                            screen binding.Stream world
-                    | Command binding ->
-                        Stream.monitor (fun evt world ->
-                            let command = binding.MakeValue evt
-                            this.Command (command, this.GetModel screen world, screen, world))
-                            screen binding.Stream world)
-                    world bindings
+            let world = Signal.processModel this.Message this.Command (this.Model screen) screen bindings world
             let content = this.Content (this.Model screen, screen, world)
             let world = List.fold (fun world content -> World.expandLayerContent None content screen world) world content
             world
 
         override this.Actualize (screen, world) =
             let views = this.View (this.GetModel screen world, screen, world)
-            List.fold (fun world view ->
-                match view with
-                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
-                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
-                | FadeOutSong fade -> World.fadeOutSong fade world
-                | StopSong -> World.stopSong world
-                | Effect effect -> effect world)
-                world views
+            World.actualizeViews views world
 
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
         default this.Bindings (_, _, _) = []
 
-        abstract member Message : 'message * 'model * Screen * World -> 'model * 'command list
+        abstract member Message : 'message * 'model * Screen * World -> 'model * Signal<'message, 'command>
         default this.Message (_, model, _, _) = just model
 
-        abstract member Command : 'command * 'model * Screen * World -> World
-        default this.Command (_, _, _, world) = world
+        abstract member Command : 'command * 'model * Screen * World -> World * Signal<'message, 'command>
+        default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Screen * World -> LayerContent list
         default this.Content (_, _, _) = []

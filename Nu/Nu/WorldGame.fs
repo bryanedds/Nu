@@ -50,9 +50,6 @@ module WorldGameModule =
         member this.GetOnPostUpdate world = World.getGameOnPostUpdate world
         member this.SetOnPostUpdate value world = World.setGameOnPostUpdate value world
         member this.OnPostUpdate = Lens.make Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
-        member this.GetOnSignal world = World.getGameOnSignal world
-        member this.SetOnSignal value world = World.setGameOnSignal value world
-        member this.OnSignal = Lens.make Property? OnSignal this.GetOnSignal this.SetOnSignal this
         member this.GetCreationTimeStamp world = World.getGameCreationTimeStamp world
         member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetId world = World.getGameId world
@@ -63,7 +60,6 @@ module WorldGameModule =
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
-        member this.SignalEvent = Events.Signal --> this
         member this.SubscribeEvent = Events.Subscribe --> this
         member this.UnsubscribeEvent = Events.Unsubscribe --> this
         member this.MouseMoveEvent = Events.MouseMove --> this
@@ -157,22 +153,6 @@ module WorldGameModule =
 
         /// Get a game's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.GameAddress
-
-        /// Send a signal to the game.
-        member this.Signal signal world =
-            World.withEventContext (fun world ->
-                let world =
-                    match ScriptingSystem.tryImport typeof<Symbol> signal world with
-                    | Some signalExpr ->
-                        ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("signal", signalExpr) }) world
-                        let world = World.eval (this.GetOnSignal world) (this.GetScriptFrame world) this world |> snd'
-                        ScriptingSystem.removeProceduralBindings world
-                        world
-                    | None -> failwithumf ()
-                let dispatcher = this.GetDispatcher world
-                dispatcher.Signal (signal, this, world))
-                this
-                world
 
     type World with
 

@@ -65,6 +65,22 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.setEntityProperty name alwaysPublish nonPersistent property entity world
             | _ -> failwithumf ()
 
+        static member attachProperty name alwaysPublish nonPersistent property (simulant : Simulant) world =
+            match simulant with
+            | :? Game -> World.attachGameProperty name property world
+            | :? Screen as screen -> World.attachScreenProperty name property screen world
+            | :? Layer as layer -> World.attachLayerProperty name property layer world
+            | :? Entity as entity -> World.attachEntityProperty name alwaysPublish nonPersistent property entity world
+            | _ -> failwithumf ()
+
+        static member detachProperty name (simulant : Simulant) world =
+            match simulant with
+            | :? Game -> World.detachGameProperty name world
+            | :? Screen as screen -> World.detachScreenProperty name screen world
+            | :? Layer as layer -> World.detachLayerProperty name layer world
+            | :? Entity as entity -> World.detachEntityProperty name entity world
+            | _ -> failwithumf ()
+
         static member getDispatcher (simulant : Simulant) (world : World) =
             match simulant with
             | :? Game -> Default.Game.GetDispatcher world :> Dispatcher

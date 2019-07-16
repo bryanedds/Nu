@@ -25,11 +25,13 @@ type MyGameDispatcher () =
 
     // here we handle the above commands
     override dispatcher.Command (command, _, _, world) =
-        match command with
-        | ShowTitle -> World.transitionScreen Simulants.Title world
-        | ShowCredits -> World.transitionScreen Simulants.Credits world
-        | ShowGameplay -> World.transitionScreen Simulants.Gameplay world
-        | ExitGame -> World.exit world
+        let world =
+            match command with
+            | ShowTitle -> World.transitionScreen Simulants.Title world
+            | ShowCredits -> World.transitionScreen Simulants.Credits world
+            | ShowGameplay -> World.transitionScreen Simulants.Gameplay world
+            | ExitGame -> World.exit world
+        just world
 
     // here we describe the content of the game including all of its screens.
     override dispatcher.Content (_, _, _) =

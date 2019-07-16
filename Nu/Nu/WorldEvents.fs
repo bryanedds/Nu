@@ -62,7 +62,6 @@ module Events =
     let Register = stoa<unit> "Register/Event"
     let Unregistering = stoa<unit> "Unregistering/Event"
     let Change propertyName = stoa<ChangeData> ("Change/" + propertyName + "/Event")
-    let Signal = stoa<Symbol> "Signal/Event"
     let MouseMove = stoa<MouseMoveData> "Mouse/Move/Event"
     let MouseDrag = stoa<MouseMoveData> "Mouse/Drag/Event"
     let MouseLeftChange = stoa<MouseButtonData> "Mouse/Left/Change/Event"

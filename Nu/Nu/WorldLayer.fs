@@ -28,7 +28,6 @@ module WorldLayerModule =
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
-        member this.SignalEvent = Events.Signal --> this
         member this.GetPersistent world = World.getLayerPersistent this world
         member this.SetPersistent value world = World.setLayerPersistent value this world
         member this.Persistent = Lens.make Property? Persistent this.GetPersistent this.SetPersistent this
@@ -55,9 +54,6 @@ module WorldLayerModule =
         member this.GetOnPostUpdate world = World.getLayerOnPostUpdate this world
         member this.SetOnPostUpdate value world = World.setLayerOnPostUpdate value this world
         member this.OnPostUpdate = Lens.make Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
-        member this.GetOnSignal world = World.getLayerOnSignal this world
-        member this.SetOnSignal value world = World.setLayerOnSignal value this world
-        member this.OnSignal = Lens.make Property? OnSignal this.GetOnSignal this.SetOnSignal this
         member this.GetCreationTimeStamp world = World.getLayerCreationTimeStamp this world
         member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetId world = World.getLayerId this world
@@ -104,9 +100,6 @@ module WorldLayerModule =
 
         /// Get a layer's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.LayerAddress
-
-        /// Send a signal to the layer.
-        member this.Signal signal world = World.signalLayer signal this world
 
     type World with
 

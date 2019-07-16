@@ -136,8 +136,6 @@ module WorldModuleLayer =
         static member internal setLayerOnUpdate value layer world = World.updateLayerState (fun layerState -> { layerState with OnUpdate = value }) Property? OnUpdate value layer world
         static member internal getLayerOnPostUpdate layer world = (World.getLayerState layer world).OnPostUpdate
         static member internal setLayerOnPostUpdate value layer world = World.updateLayerState (fun layerState -> { layerState with OnPostUpdate = value }) Property? OnPostUpdate value layer world
-        static member internal getLayerOnSignal layer world = (World.getLayerState layer world).OnSignal
-        static member internal setLayerOnSignal value layer world = World.updateLayerState (fun layerState -> { layerState with OnSignal = value }) Property? OnSignal value layer world
         static member internal getLayerCreationTimeStamp layer world = (World.getLayerState layer world).CreationTimeStamp
         static member internal getLayerName layer world = (World.getLayerState layer world).Name
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
@@ -242,23 +240,6 @@ module WorldModuleLayer =
                 layer
                 world
 
-        static member internal signalLayer signal layer world =
-            World.withEventContext (fun world ->
-                let world =
-                    match ScriptingSystem.tryImport typeof<Symbol> signal world with
-                    | Some signalExpr ->
-                        ScriptingSystem.addProceduralBindings (Scripting.AddToNewFrame 1) (seq { yield struct ("signal", signalExpr) }) world
-                        let world = eval (World.getLayerOnSignal layer world) (World.getLayerScriptFrame layer world) layer world |> snd'
-                        ScriptingSystem.removeProceduralBindings world
-                        world
-                    | None -> failwithumf ()
-                let dispatcher = World.getLayerDispatcher layer world
-                let eventTrace = EventTrace.record "World" "signalLayer" EventTrace.empty
-                let world = World.publish signal (rtoa<Symbol> [|"Signal"; "Event"|] --> layer) eventTrace layer world
-                dispatcher.Signal (signal, layer, world))
-                layer
-                world
-
         static member private addLayer mayReplace layerState layer world =
             let isNew = not (World.getLayerExists layer world)
             if isNew || mayReplace then
@@ -355,7 +336,6 @@ module WorldModuleLayer =
         Getters.Add ("OnUnregister", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUnregister layer world })
         Getters.Add ("OnUpdate", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUpdate layer world })
         Getters.Add ("OnPostUpdate", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnPostUpdate layer world })
-        Getters.Add ("OnSignal", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnSignal layer world })
         Getters.Add ("CreationTimeStamp", fun layer world -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStamp layer world })
         Getters.Add ("Name", fun layer world -> { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world })
         Getters.Add ("Id", fun layer world -> { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world })
@@ -374,7 +354,6 @@ module WorldModuleLayer =
         Setters.Add ("OnUnregister", fun property layer world -> (true, World.setLayerOnUnregister (property.PropertyValue :?> Scripting.Expr) layer world))
         Setters.Add ("OnUpdate", fun property layer world -> (true, World.setLayerOnUpdate (property.PropertyValue :?> Scripting.Expr) layer world))
         Setters.Add ("OnPostUpdate", fun property layer world -> (true, World.setLayerOnPostUpdate (property.PropertyValue :?> Scripting.Expr) layer world))
-        Setters.Add ("OnSignal", fun property layer world -> (true, World.setLayerOnSignal (property.PropertyValue :?> Scripting.Expr) layer world))
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
         Setters.Add ("Id", fun _ _ world -> (false, world))

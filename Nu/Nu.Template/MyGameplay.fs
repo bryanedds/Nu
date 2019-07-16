@@ -31,28 +31,30 @@ type MyGameplayDispatcher () =
 
     // here we handle the above commands
     override this.Command (command, _, _, world) =
-        match command with
-        | Jump ->
-            let physicsId = Simulants.Player.GetPhysicsId world
-            if World.isBodyOnGround physicsId world then
-                let world = World.applyBodyForce (v2 0.0f 2000000.0f) physicsId world
-                World.playSound 1.0f (AssetTag.make "Default" "Sound") world
-            else world
-        | MoveLeft ->
-            let physicsId = Simulants.Player.GetPhysicsId world
-            if World.isBodyOnGround physicsId world
-            then World.applyBodyForce (v2 -30000.0f 0.0f) physicsId world
-            else World.applyBodyForce (v2 -7500.0f 0.0f) physicsId world
-        | MoveRight ->
-            let physicsId = Simulants.Player.GetPhysicsId world
-            if World.isBodyOnGround physicsId world
-            then World.applyBodyForce (v2 30000.0f 0.0f) physicsId world
-            else World.applyBodyForce (v2 7500.0f 0.0f) physicsId world
-        | EyeTrack ->
-            if World.getTickRate world <> 0L
-            then Simulants.Game.SetEyeCenter (Simulants.Player.GetCenter world) world
-            else world
-        | Nop -> world
+        let world =
+            match command with
+            | Jump ->
+                let physicsId = Simulants.Player.GetPhysicsId world
+                if World.isBodyOnGround physicsId world then
+                    let world = World.applyBodyForce (v2 0.0f 2000000.0f) physicsId world
+                    World.playSound 1.0f (AssetTag.make "Default" "Sound") world
+                else world
+            | MoveLeft ->
+                let physicsId = Simulants.Player.GetPhysicsId world
+                if World.isBodyOnGround physicsId world
+                then World.applyBodyForce (v2 -30000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 -7500.0f 0.0f) physicsId world
+            | MoveRight ->
+                let physicsId = Simulants.Player.GetPhysicsId world
+                if World.isBodyOnGround physicsId world
+                then World.applyBodyForce (v2 30000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 7500.0f 0.0f) physicsId world
+            | EyeTrack ->
+                if World.getTickRate world <> 0L
+                then Simulants.Game.SetEyeCenter (Simulants.Player.GetCenter world) world
+                else world
+            | Nop -> world
+        just world
 
     // here we describe the content of the game including the player and the level
     override this.Content (_, _, _) =

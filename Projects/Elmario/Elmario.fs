@@ -34,24 +34,26 @@ module Elmario =
 
         // here we handle the above commands
         override this.Command (command, _, _, world) =
-            match command with
-            | MoveLeft ->
-                let physicsId = Elmario.GetPhysicsId world
-                if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 -30000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 -7500.0f 0.0f) physicsId world
-            | MoveRight ->
-                let physicsId = Elmario.GetPhysicsId world
-                if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 30000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 7500.0f 0.0f) physicsId world
-            | Jump ->
-                let physicsId = Elmario.GetPhysicsId world
-                if World.isBodyOnGround physicsId world then
-                    let world = World.applyBodyForce (v2 0.0f 2000000.0f) physicsId world
-                    World.playSound 0.5f (AssetTag.make "Gameplay" "Jump") world
-                else world
-            | Nop -> world
+            let world =
+                match command with
+                | MoveLeft ->
+                    let physicsId = Elmario.GetPhysicsId world
+                    if World.isBodyOnGround physicsId world
+                    then World.applyBodyForce (v2 -30000.0f 0.0f) physicsId world
+                    else World.applyBodyForce (v2 -7500.0f 0.0f) physicsId world
+                | MoveRight ->
+                    let physicsId = Elmario.GetPhysicsId world
+                    if World.isBodyOnGround physicsId world
+                    then World.applyBodyForce (v2 30000.0f 0.0f) physicsId world
+                    else World.applyBodyForce (v2 7500.0f 0.0f) physicsId world
+                | Jump ->
+                    let physicsId = Elmario.GetPhysicsId world
+                    if World.isBodyOnGround physicsId world then
+                        let world = World.applyBodyForce (v2 0.0f 2000000.0f) physicsId world
+                        World.playSound 0.5f (AssetTag.make "Gameplay" "Jump") world
+                    else world
+                | Nop -> world
+            just world
 
         // here we describe the content of the game including elmario and the ground he walks on.
         override this.Content (_, _, _) =

@@ -120,9 +120,6 @@ type [<NoEquality; NoComparison>] View =
 [<AutoOpen>]
 module DeclarativeOperators =
 
-    /// Pair a model with an empty list of commands.
-    let inline just model = (model, [])
-
     /// Initialize a property.
     let init lens value = PropertyDefinition (define lens value)
 
