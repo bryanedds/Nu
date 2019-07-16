@@ -1431,9 +1431,6 @@ module ToggleDispatcherModule =
         member this.OnToggle = Lens.make Property? OnToggle this.GetOnToggle this.SetOnToggle this
         member this.ToggleEvent = Events.Toggle --> this
 
-    type TestDispatcher () =
-        inherit EntityDispatcher<int, unit, unit> (9)
-
     type ToggleDispatcher () =
         inherit GuiDispatcher ()
         
