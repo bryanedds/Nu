@@ -301,7 +301,8 @@ module EffectSystemModule =
                                           InsetOpt = None
                                           Image = AssetTag.specialize<Image> image
                                           ViewType = effectSystem.ViewType
-                                          Color = slice.Color }})
+                                          Color = slice.Color
+                                          Flip = FlipNone }})
                     addRenderArtifact spriteArtifact effectSystem
                 else effectSystem
 
@@ -337,7 +338,8 @@ module EffectSystemModule =
                                       InsetOpt = insetOpt
                                       Image = AssetTag.specialize<Image> image
                                       ViewType = effectSystem.ViewType
-                                      Color = slice.Color }})
+                                      Color = slice.Color
+                                      Flip = FlipNone }})
                     addRenderArtifact animatedSpriteArtifact effectSystem
                 else effectSystem
 

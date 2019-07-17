@@ -661,7 +661,8 @@ module WorldModule2 =
                                       ViewType = Absolute
                                       InsetOpt = None
                                       Image = dissolveImage
-                                      Color = color }}|])
+                                      Color = color
+                                      Flip = FlipNone }}|])
                     world
             | None -> world
 

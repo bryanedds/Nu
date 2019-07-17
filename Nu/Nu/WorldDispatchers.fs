@@ -882,12 +882,16 @@ module StaticSpriteFacetModule =
         member this.GetStaticImage world : Image AssetTag = this.Get Property? StaticImage world
         member this.SetStaticImage (value : Image AssetTag) world = this.SetFast Property? StaticImage false false value world
         member this.StaticImage = Lens.make Property? StaticImage this.GetStaticImage this.SetStaticImage this
+        member this.GetFlip world : Flip = this.Get Property? Flip world
+        member this.SetFlip (value : Flip) world = this.SetFast Property? Flip false false value world
+        member this.Flip = Lens.make Property? Flip this.GetFlip this.SetFlip this
 
     type StaticSpriteFacet () =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")]
+            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")
+             define Entity.Flip FlipNone]
 
         override facet.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
@@ -906,7 +910,8 @@ module StaticSpriteFacetModule =
                                       ViewType = entity.GetViewType world
                                       InsetOpt = None
                                       Image = entity.GetStaticImage world
-                                      Color = Vector4.One }}|])
+                                      Color = Vector4.One
+                                      Flip = entity.GetFlip world }}|])
                     world
             else world
 
@@ -958,7 +963,8 @@ module AnimatedSpriteFacetModule =
              define Entity.CelSize (Vector2 (16.0f, 16.0f))
              define Entity.CelRun 4
              define Entity.AnimationDelay 4L
-             define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackage "Image7")]
+             define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackage "Image7")
+             define Entity.Flip FlipNone]
 
         override facet.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
@@ -977,7 +983,8 @@ module AnimatedSpriteFacetModule =
                                       ViewType = entity.GetViewType world
                                       InsetOpt = getSpriteInsetOpt entity world
                                       Image = entity.GetAnimationSheet world
-                                      Color = Vector4.One }}|])
+                                      Color = Vector4.One
+                                      Flip = entity.GetFlip world }}|])
                     world
             else world
 
@@ -1252,7 +1259,8 @@ module ButtonDispatcherModule =
                                       ViewType = Absolute
                                       InsetOpt = None
                                       Image = image
-                                      Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world }}|])
+                                      Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world
+                                      Flip = FlipNone }}|])
                     world
             else world
 
@@ -1295,7 +1303,8 @@ module LabelDispatcherModule =
                                       ViewType = Absolute
                                       InsetOpt = None
                                       Image = label.GetLabelImage world
-                                      Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world }}|])
+                                      Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world
+                                      Flip = FlipNone }}|])
                     world
             else world
 
@@ -1341,7 +1350,8 @@ module TextDispatcherModule =
                                       ViewType = Absolute
                                       InsetOpt = None
                                       Image = text.GetBackgroundImage world
-                                      Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world }}|])
+                                      Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world
+                                      Flip = FlipNone }}|])
                     world
             else world
 
@@ -1457,7 +1467,8 @@ module ToggleDispatcherModule =
                                       ViewType = Absolute
                                       InsetOpt = None
                                       Image = image
-                                      Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world }}|])
+                                      Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world
+                                      Flip = FlipNone }}|])
                     world
             else world
 
@@ -1627,7 +1638,8 @@ module FillBarDispatcherModule =
                                       ViewType = Absolute
                                       InsetOpt = None
                                       Image = fillBar.GetBorderImage world
-                                      Color = fillBarColor }}
+                                      Color = fillBarColor
+                                      Flip = FlipNone }}
                           LayerableDescriptor
                             { Depth = fillBar.GetDepthLayered world
                               AssetTag = fillBar.GetFillImage world
@@ -1641,7 +1653,8 @@ module FillBarDispatcherModule =
                                       ViewType = Absolute
                                       InsetOpt = None
                                       Image = fillBar.GetFillImage world
-                                      Color = fillBarColor }}|])
+                                      Color = fillBarColor
+                                      Flip = FlipNone }}|])
                     world
             else world
 
@@ -1682,24 +1695,15 @@ module CharacterDispatcherModule =
 
     type Entity with
         
-        member this.GetCharacterIdleLeftImage world = this.Get Property? CharacterIdleLeftImage world
-        member this.SetCharacterIdleLeftImage value world = this.SetFast Property? CharacterIdleLeftImage false false value world
-        member this.CharacterIdleLeftImage = Lens.make<Image AssetTag, World> Property? CharacterIdleLeftImage this.GetCharacterIdleLeftImage this.SetCharacterIdleLeftImage this
-        member this.GetCharacterIdleRightImage world = this.Get Property? CharacterIdleRightImage world
-        member this.SetCharacterIdleRightImage value world = this.SetFast Property? CharacterIdleRightImage false false value world
-        member this.CharacterIdleRightImage = Lens.make<Image AssetTag, World> Property? CharacterIdleRightImage this.GetCharacterIdleRightImage this.SetCharacterIdleRightImage this
-        member this.GetCharacterJumpLeftImage world = this.Get Property? CharacterJumpLeftImage world
-        member this.SetCharacterJumpLeftImage value world = this.SetFast Property? CharacterJumpLeftImage false false value world
-        member this.CharacterJumpLeftImage = Lens.make<Image AssetTag, World> Property? CharacterJumpLeftImage this.GetCharacterJumpLeftImage this.SetCharacterJumpLeftImage this
-        member this.GetCharacterJumpRightImage world = this.Get Property? CharacterJumpRightImage world
-        member this.SetCharacterJumpRightImage value world = this.SetFast Property? CharacterJumpRightImage false false value world
-        member this.CharacterJumpRightImage = Lens.make<Image AssetTag, World> Property? CharacterJumpRightImage this.GetCharacterJumpRightImage this.SetCharacterJumpRightImage this
-        member this.GetCharacterWalkLeftSheet world = this.Get Property? CharacterWalkLeftSheet world
-        member this.SetCharacterWalkLeftSheet value world = this.SetFast Property? CharacterWalkLeftSheet false false value world
-        member this.CharacterWalkLeftSheet = Lens.make<Image AssetTag, World> Property? CharacterWalkLeftSheet this.GetCharacterWalkLeftSheet this.SetCharacterWalkLeftSheet this
-        member this.GetCharacterWalkRightSheet world = this.Get Property? CharacterWalkRightSheet world
-        member this.SetCharacterWalkRightSheet value world = this.SetFast Property? CharacterWalkRightSheet false false value world
-        member this.CharacterWalkRightSheet = Lens.make<Image AssetTag, World> Property? CharacterWalkRightSheet this.GetCharacterWalkRightSheet this.SetCharacterWalkRightSheet this
+        member this.GetCharacterIdleImage world = this.Get Property? CharacterIdleImage world
+        member this.SetCharacterIdleImage value world = this.SetFast Property? CharacterIdleImage false false value world
+        member this.CharacterIdleImage = Lens.make<Image AssetTag, World> Property? CharacterIdleImage this.GetCharacterIdleImage this.SetCharacterIdleImage this
+        member this.GetCharacterJumpImage world = this.Get Property? CharacterJumpImage world
+        member this.SetCharacterJumpImage value world = this.SetFast Property? CharacterJumpImage false false value world
+        member this.CharacterJumpImage = Lens.make<Image AssetTag, World> Property? CharacterJumpImage this.GetCharacterJumpImage this.SetCharacterJumpImage this
+        member this.GetCharacterWalkSheet world = this.Get Property? CharacterWalkSheet world
+        member this.SetCharacterWalkSheet value world = this.SetFast Property? CharacterWalkSheet false false value world
+        member this.CharacterWalkSheet = Lens.make<Image AssetTag, World> Property? CharacterWalkSheet this.GetCharacterWalkSheet this.SetCharacterWalkSheet this
         member this.GetCharacterFacingLeft world = this.Get Property? CharacterFacingLeft world
         member this.SetCharacterFacingLeft value world = this.SetFast Property? CharacterFacingLeft false false value world
         member this.CharacterFacingLeft = Lens.make<bool, World> Property? CharacterFacingLeft this.GetCharacterFacingLeft this.SetCharacterFacingLeft this
@@ -1725,12 +1729,9 @@ module CharacterDispatcherModule =
              define Entity.FixedRotation true
              define Entity.GravityScale 3.0f
              define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero })
-             define Entity.CharacterIdleLeftImage (AssetTag.make Assets.DefaultPackage "CharacterIdleLeft")
-             define Entity.CharacterIdleRightImage (AssetTag.make Assets.DefaultPackage "CharacterIdleRight")
-             define Entity.CharacterJumpLeftImage (AssetTag.make Assets.DefaultPackage "CharacterJumpLeft")
-             define Entity.CharacterJumpRightImage (AssetTag.make Assets.DefaultPackage "CharacterJumpRight")
-             define Entity.CharacterWalkLeftSheet (AssetTag.make Assets.DefaultPackage "CharacterWalkLeft")
-             define Entity.CharacterWalkRightSheet (AssetTag.make Assets.DefaultPackage "CharacterWalkRight")
+             define Entity.CharacterIdleImage (AssetTag.make Assets.DefaultPackage "CharacterIdle")
+             define Entity.CharacterJumpImage (AssetTag.make Assets.DefaultPackage "CharacterJump")
+             define Entity.CharacterWalkSheet (AssetTag.make Assets.DefaultPackage "CharacterWalk")
              define Entity.CharacterFacingLeft false]
 
         override this.Update (entity, world) =
@@ -1753,22 +1754,13 @@ module CharacterDispatcherModule =
                 let animationDelay = entity.GetAnimationDelay world
                 let (insetOpt, image) =
                     if not (World.isBodyOnGround physicsId world) then
-                        let image =
-                            if facingLeft
-                            then entity.GetCharacterJumpLeftImage world
-                            else entity.GetCharacterJumpRightImage world
+                        let image = entity.GetCharacterJumpImage world
                         (None, image)
                     elif velocity.X < 5.0f && velocity.X > -5.0f then
-                        let image =
-                            if facingLeft
-                            then entity.GetCharacterIdleLeftImage world
-                            else entity.GetCharacterIdleRightImage world
+                        let image = entity.GetCharacterIdleImage world
                         (None, image)
-                    elif velocity.X < 0.0f then
-                        let image = entity.GetCharacterWalkLeftSheet world
-                        (Some (computeWalkCelInset celSize celRun animationDelay time), image)
                     else
-                        let image = entity.GetCharacterWalkRightSheet world
+                        let image = entity.GetCharacterWalkSheet world
                         (Some (computeWalkCelInset celSize celRun animationDelay time), image)
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
@@ -1785,7 +1777,8 @@ module CharacterDispatcherModule =
                                       ViewType = entity.GetViewType world
                                       InsetOpt = insetOpt
                                       Image = image
-                                      Color = v4One }}|])
+                                      Color = v4One
+                                      Flip = if facingLeft then FlipH else FlipNone }}|])
                     world
             else world
 
