@@ -37,7 +37,8 @@ type OptimizedEntityDispatcher () =
                               ViewType = entity.GetViewType world
                               InsetOpt = None
                               Image = image
-                              Color = Vector4.One }}|])
+                              Color = Vector4.One
+                              Flip = FlipNone }}|])
                 world
         else world
 

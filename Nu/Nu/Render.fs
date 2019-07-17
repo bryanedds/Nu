@@ -33,6 +33,18 @@ type Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
 
+type [<Struct>] Flip =
+    | FlipNone
+    | FlipH
+    | FlipV
+    | FlipHV
+    static member toSdlFlip flip =
+        match flip with
+        | FlipNone -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
+        | FlipH -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
+        | FlipV -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+        | FlipHV -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+
 /// Describes how to render a sprite to the rendering system.
 type [<Struct; StructuralEquality; NoComparison>] SpriteDescriptor =
     { Position : Vector2
@@ -42,7 +54,8 @@ type [<Struct; StructuralEquality; NoComparison>] SpriteDescriptor =
       ViewType : ViewType
       InsetOpt : Vector4 option
       Image : Image AssetTag
-      Color : Vector4 }
+      Color : Vector4
+      Flip : Flip }
 
 /// Describes how to render a tile map to the rendering system.
 type [<Struct; StructuralEquality; NoComparison>] TileLayerDescriptor =
@@ -241,6 +254,7 @@ type [<ReferenceEquality>] SdlRenderer =
         let sizeView = sprite.Size * view.ExtractScaleMatrix ()
         let color = sprite.Color
         let image = AssetTag.generalize sprite.Image
+        let flip = Flip.toSdlFlip sprite.Flip
         match SdlRenderer.tryLoadRenderAsset image renderer with
         | Some renderAsset ->
             match renderAsset with
@@ -277,7 +291,7 @@ type [<ReferenceEquality>] SdlRenderer =
                         ref destRect,
                         rotation,
                         ref rotationCenter,
-                        SDL.SDL_RendererFlip.SDL_FLIP_NONE)
+                        flip)
                 if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
