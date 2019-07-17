@@ -1470,25 +1470,41 @@ module ToggleDispatcherModule =
 module FpsDispatcherModule =
 
     type Entity with
-
-        member this.GetStartTime world : DateTime = this.Get Property? StartTime world
-        member this.SetStartTime (value : DateTime) world = this.SetFast Property? StartTime false false value world
-        member this.StartTime = Lens.make Property? StartTime this.GetStartTime this.SetStartTime this
+    
+        member this.GetStartTickTime world : int64 = this.Get Property? StartTickTime world
+        member this.SetStartTickTime (value : int64) world = this.SetFast Property? StartTickTime false false value world
+        member this.StartTickTime = Lens.make Property? StartTickTime this.GetStartTickTime this.SetStartTickTime this
+        member this.GetStartDateTime world : DateTime = this.Get Property? StartDateTime world
+        member this.SetStartDateTime (value : DateTime) world = this.SetFast Property? StartDateTime false false value world
+        member this.StartDateTime = Lens.make Property? StartDateTime this.GetStartDateTime this.SetStartDateTime this
 
     type FpsDispatcher () =
         inherit TextDispatcher ()
 
+        static let resetIntermittent (entity : Entity) world =
+            let startDateTime = entity.GetStartDateTime world
+            let currentDateTime = DateTime.UtcNow
+            let elapsedDateTime = currentDateTime - startDateTime
+            if elapsedDateTime.TotalSeconds >= 8.0 then
+                let world = entity.SetStartTickTime (World.getTickTime world) world
+                entity.SetStartDateTime currentDateTime world
+            else world
+
         static member Properties =
-            [define Entity.StartTime DateTime.UtcNow]
+            [define Entity.StartTickTime 0L
+             define Entity.StartDateTime DateTime.UtcNow]
 
         override dispatcher.Update (entity, world) =
-            let startTime = entity.GetStartTime world
-            let currentTime = DateTime.UtcNow
-            let elapsedTime = currentTime - startTime
-            let tickTime = double (World.getTickTime world)
-            let frames = tickTime / elapsedTime.TotalSeconds
-            let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
-            entity.SetText framesStr world
+            let world = resetIntermittent entity world
+            let startDateTime = entity.GetStartDateTime world
+            let currentDateTime = DateTime.UtcNow
+            let elapsedDateTime = currentDateTime - startDateTime
+            let tickTime = double (World.getTickTime world - entity.GetStartTickTime world)
+            let frames = tickTime / elapsedDateTime.TotalSeconds
+            if not (Double.IsNaN frames) then 
+                let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
+                entity.SetText framesStr world
+            else world
 
 [<AutoOpen>]
 module FeelerDispatcherModule =
