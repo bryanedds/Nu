@@ -8,8 +8,8 @@ type OptimizedEntityDispatcher () =
     inherit EntityDispatcher ()
 
     static member Properties =
-        [define Entity.Imperative true // makes updates faster by using mutation
-         define Entity.IgnoreLayer true // makes actualization faster by not touching the containing layer
+        [define Entity.IgnoreLayer true // makes actualization faster by not touching the containing layer
+         define Entity.Imperative true // makes updates faster by using mutation
          define Entity.Omnipresent true // makes updates faster by not touching the entity tree
          define (Entity.StaticData ()) // makes user-defined properties faster by using local data
             { DesignerType = typeof<Image AssetTag>
@@ -19,28 +19,26 @@ type OptimizedEntityDispatcher () =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
 
     override dispatcher.Actualize (entity, world) =
-        if entity.GetVisibleLayered world && entity.GetInView world then
-            let position = entity.GetPosition world
-            let image = entity.GetStaticData world
-            World.enqueueRenderMessage
-                (RenderDescriptorsMessage
-                    [|LayerableDescriptor
-                        { Depth = entity.GetDepthLayered world
-                          AssetTag = image
-                          PositionY = position.Y
-                          LayeredDescriptor =
-                          SpriteDescriptor
-                            { Position = position
-                              Size = entity.GetSize world
-                              Rotation = entity.GetRotation world
-                              Offset = Vector2.Zero
-                              ViewType = entity.GetViewType world
-                              InsetOpt = None
-                              Image = image
-                              Color = Vector4.One
-                              Flip = FlipNone }}|])
-                world
-        else world
+        let position = entity.GetPosition world
+        let image = entity.GetStaticData world
+        World.enqueueRenderMessage
+            (RenderDescriptorsMessage
+                [|LayerableDescriptor
+                    { Depth = entity.GetDepthLayered world
+                      AssetTag = image
+                      PositionY = position.Y
+                      LayeredDescriptor =
+                      SpriteDescriptor
+                        { Position = position
+                          Size = entity.GetSize world
+                          Rotation = entity.GetRotation world
+                          Offset = Vector2.Zero
+                          ViewType = entity.GetViewType world
+                          InsetOpt = None
+                          Image = image
+                          Color = Vector4.One
+                          Flip = FlipNone }}|])
+            world
 
 type MyGameDispatcher () =
     inherit GameDispatcher<unit, unit, unit> (())
