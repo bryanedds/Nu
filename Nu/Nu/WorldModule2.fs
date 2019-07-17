@@ -5,7 +5,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.IO
-#if MULTITHREADING
+#if MULTITHREAD
 open System.Threading.Tasks
 #endif
 open SDL2
@@ -749,7 +749,7 @@ module WorldModule2 =
                                         let world = World.actualizeSimulants world
                                         match World.getLiveness world with
                                         | Running ->
-#if MULTITHREADED
+#if MULTITHREAD
                                             // attempt to finish renderer thread
                                             let world =
                                                 match rendererThreadOpt with
@@ -836,7 +836,7 @@ module WorldModule2 =
                     Log.trace (scstring exn)
                     World.cleanUp world
                     Constants.Engine.FailureExitCode
-#if MULTITHREADING
+#if MULTITHREAD
             // stops background threads
             Environment.Exit result
 #endif
