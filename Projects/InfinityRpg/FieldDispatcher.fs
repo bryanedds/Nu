@@ -63,7 +63,8 @@ module FieldDispatcherModule =
                                   ViewType = Relative // NOTE: ViewType assumed relative
                                   InsetOpt = tileInsetOpt
                                   Image = image
-                                  Color = Vector4.One }
+                                  Color = Vector4.One
+                                  Flip = FlipNone }
                             sprite :: sprites)
                         fieldMap.FieldTiles [] |>
                     Array.ofList

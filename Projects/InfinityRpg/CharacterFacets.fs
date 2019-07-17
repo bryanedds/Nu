@@ -110,7 +110,8 @@ module CharacterAnimationFacetModule =
                                       ViewType = entity.GetViewType world
                                       InsetOpt = getSpriteInsetOpt entity world
                                       Image = entity.GetCharacterAnimationSheet world
-                                      Color = Vector4.One }}|])
+                                      Color = Vector4.One
+                                      Flip = FlipNone }}|])
                     world
             else world
 
