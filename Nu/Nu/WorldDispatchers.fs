@@ -1485,7 +1485,7 @@ module FpsDispatcherModule =
             let startDateTime = entity.GetStartDateTime world
             let currentDateTime = DateTime.UtcNow
             let elapsedDateTime = currentDateTime - startDateTime
-            if elapsedDateTime.TotalSeconds >= 8.0 then
+            if elapsedDateTime.TotalSeconds >= 4.0 then
                 let world = entity.SetStartTickTime (World.getTickTime world) world
                 entity.SetStartDateTime currentDateTime world
             else world
