@@ -27,9 +27,17 @@ type [<Struct; StructuralEquality; NoComparison>] Transform =
       mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
       mutable Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
       mutable ViewType : ViewType
-      mutable Omnipresent : bool
+      mutable Omnipresent : bool }
       // cache line end
-    }
+
+    /// Assign a transform in-place.
+    member this.Assign that =
+        this.Position <- that.Position
+        this.Size <- that.Size
+        this.Rotation <- that.Rotation
+        this.Depth <- that.Depth
+        this.ViewType <- that.ViewType
+        this.Omnipresent <- that.Omnipresent
 
 [<AutoOpen>]
 module Vector2 =
