@@ -681,6 +681,7 @@ module WorldTypes =
               Depth = transform.Depth }
 
         /// Set an entity state's transform.
+        /// TODO: P1: should we just share TransformState?
         static member setTransform (value : Transform) (entityState : EntityState) =
             if entityState.Imperative then
                 entityState.Transform.Position <- value.Position
