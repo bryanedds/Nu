@@ -209,6 +209,10 @@ module Reflection =
                     else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + property.PropertyType.Name + "'.")
                 | _ -> ()
             | None -> ()
+        elif property.Name = "Transform" &&
+             property.PropertyType = typeof<Transform> then
+            // nothing to do here since the custom .NET properties will take care of this...
+            ()
         else
             match Map.tryFind property.Name propertyDescriptors with
             | Some (propertySymbol : Symbol) ->
@@ -328,7 +332,7 @@ module Reflection =
     let readPropertiesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
         let target = readMemberPropertiesToTarget copyTarget propertyDescriptors target
         readXtension copyTarget propertyDescriptors target
-        
+
     /// Write an Xtension to property descriptors.
     let private writeXtension shouldWriteProperty propertyDescriptors xtension =
         Seq.fold (fun propertyDescriptors (propertyName, (property : Property)) ->
@@ -342,14 +346,19 @@ module Reflection =
             else propertyDescriptors)
             propertyDescriptors
             (Xtension.toSeq xtension)
-            
+
     /// Write a member property value to a property descriptors.
     let private writeMemberProperty (propertyValue : obj) (property : PropertyInfo) shouldWriteProperty propertyDescriptors (target : 'a) =
         if  isPropertyPersistent property target &&
             shouldWriteProperty property.Name property.PropertyType propertyValue then
-            let converter = SymbolicConverter (false, None, property.PropertyType)
-            let valueSymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
-            Map.add property.Name valueSymbol propertyDescriptors
+            if  property.Name = "Transform" &&
+                property.PropertyType = typeof<Transform> then
+                // nothing to do here since the custom .NET properties will take care of this...
+                propertyDescriptors
+            else
+                let converter = SymbolicConverter (false, None, property.PropertyType)
+                let valueSymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
+                Map.add property.Name valueSymbol propertyDescriptors
         else propertyDescriptors
 
     /// Write all of a target's property values to property descriptors.

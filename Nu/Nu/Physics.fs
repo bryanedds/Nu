@@ -48,18 +48,18 @@ type [<CustomEquality; NoComparison>] PhysicsId =
 /// The shape of a physics body box.
 type [<StructuralEquality; NoComparison>] BodyBox =
     { Extent : Vector2
-      Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
+      Center : Vector2 }
 
 /// The shape of a physics body circle.
 type [<StructuralEquality; NoComparison>] BodyCircle =
     { Radius : single
-      Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
+      Center : Vector2 }
 
 /// The shape of a physics body capsule.
 type [<StructuralEquality; NoComparison>] BodyCapsule =
     { Height : single
       Radius : single
-      Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
+      Center : Vector2 }
 
 /// The shape of a physics body polygon.
 type [<StructuralEquality; NoComparison>] BodyPolygon =

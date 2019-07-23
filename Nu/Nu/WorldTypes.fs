@@ -78,14 +78,6 @@ type [<StructuralEquality; NoComparison>] TileData =
       TileSetTileOpt : TmxTilesetTile option
       TilePosition : Vector2i }
 
-type [<Struct; StructuralEquality; NoComparison>] TransformState =
-    { mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-      mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-      mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
-      mutable Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
-      mutable ViewType : ViewType
-      mutable Omnipresent : bool }
-
 /// Describes the shape of a desired overlay.
 type OverlayNameDescriptor =
     | NoOverlay
@@ -586,7 +578,7 @@ module WorldTypes =
           Dispatcher : EntityDispatcher
           mutable Facets : Facet array
           mutable Xtension : Xtension
-          mutable Transform : TransformState
+          mutable Transform : Transform
           mutable StaticData : DesignerProperty
           mutable Imperative : bool // TODO: be nice to pack these bools
           mutable PublishChanges : bool
@@ -616,8 +608,8 @@ module WorldTypes =
                   Size = Constants.Engine.DefaultEntitySize
                   Rotation = 0.0f
                   Depth = 0.0f
-                  Omnipresent = false
-                  ViewType = Relative }
+                  ViewType = Relative
+                  Omnipresent = false }
               StaticData = { DesignerType = typeof<unit>; DesignerValue = () }
               Imperative = false
               PublishChanges = false
@@ -674,36 +666,31 @@ module WorldTypes =
 
         /// Get an entity state's transform.
         static member getTransform entityState =
-            let transform = entityState.Transform
-            { Position = transform.Position
-              Size = transform.Size
-              Rotation = transform.Rotation
-              Depth = transform.Depth }
+            entityState.Transform
 
         /// Set an entity state's transform.
-        /// TODO: P1: should we just share TransformState?
         static member setTransform (value : Transform) (entityState : EntityState) =
             if entityState.Imperative then
-                entityState.Transform.Position <- value.Position
-                entityState.Transform.Size <- value.Size
-                entityState.Transform.Rotation <- value.Rotation
-                entityState.Transform.Depth <- value.Depth
+                entityState.Transform <- value
                 entityState
             else
-                { entityState with
-                    Transform =
-                        { Position = value.Position
-                          Size = value.Size
-                          Rotation = value.Rotation
-                          Depth = value.Depth
-                          ViewType = entityState.Transform.ViewType
-                          Omnipresent = entityState.Transform.Omnipresent }}
+                // make a copy of transform for additional safety, tho this may just end up being wasteful...
+                let transformCopy = { value with Position = value.Position }
+                { entityState with Transform = transformCopy }
 
         /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy entityState =
             if not entityState.Imperative
             then { entityState with EntityState.Id = entityState.Id }
             else entityState
+
+        (* Member properties; only for use by internal reflection facilities. *)
+        member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
+        member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
+        member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
+        member this.Depth with get () = this.Transform.Depth and set value = this.Transform.Depth <- value
+        member this.ViewType with get () = this.Transform.ViewType and set value = this.Transform.ViewType <- value
+        member this.Omnipresent with get () = this.Transform.Omnipresent and set value = this.Transform.Omnipresent <- value
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
