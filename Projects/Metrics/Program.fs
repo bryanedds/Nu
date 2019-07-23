@@ -8,9 +8,9 @@ type OptimizedEntityDispatcher () =
     inherit EntityDispatcher ()
 
     static member Properties =
-        [define Entity.IgnoreLayer true // makes actualization faster by not touching the containing layer
-         define Entity.Imperative true // makes updates faster by using mutation
+        [define Entity.Imperative true // makes updates faster by using mutation
          define Entity.Omnipresent true // makes updates faster by not touching the entity tree
+         define Entity.IgnoreLayer true // makes actualization faster by not touching the containing layer
          define (Entity.StaticData ()) // makes user-defined properties faster by using local data
             { DesignerType = typeof<Image AssetTag>
               DesignerValue = AssetTag.make<Image> Assets.DefaultPackage "Image4" }]
@@ -24,7 +24,7 @@ type OptimizedEntityDispatcher () =
         World.enqueueRenderMessage
             (RenderDescriptorsMessage
                 [|LayerableDescriptor
-                    { Depth = entity.GetDepthLayered world
+                    { Depth = entity.GetDepth world
                       AssetTag = image
                       PositionY = position.Y
                       LayeredDescriptor =

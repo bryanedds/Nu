@@ -78,6 +78,14 @@ type [<StructuralEquality; NoComparison>] TileData =
       TileSetTileOpt : TmxTilesetTile option
       TilePosition : Vector2i }
 
+type [<Struct; NoEquality; NoComparison>] TransformState =
+    { mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+      mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+      mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
+      mutable Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
+      mutable ViewType : ViewType
+      mutable Omnipresent : bool }
+
 /// Describes the shape of a desired overlay.
 type OverlayNameDescriptor =
     | NoOverlay
@@ -242,23 +250,23 @@ module WorldTypes =
         inherit SimulantDispatcher ()
     
         static member Properties =
-            [Define? PublishChanges false
-             Define? Imperative false
-             Define? StaticData { DesignerType = typeof<unit>; DesignerValue = () }
-             Define? Position Vector2.Zero
+            [Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
              Define? Rotation 0.0f
              Define? Depth 0.0f
              Define? ViewType Relative
-             Define? Overflow Vector2.Zero
+             Define? Omnipresent false
+             Define? StaticData { DesignerType = typeof<unit>; DesignerValue = () }
+             Define? Imperative false
+             Define? PublishChanges false
              Define? IgnoreLayer false
              Define? Visible true
              Define? Enabled true
-             Define? Omnipresent false
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
-             Define? Persistent true]
+             Define? Persistent true
+             Define? Overflow Vector2.Zero]
     
         /// Register an entity when adding it to a layer.
         abstract Register : Entity * World -> World
@@ -578,24 +586,19 @@ module WorldTypes =
           Dispatcher : EntityDispatcher
           mutable Facets : Facet array
           mutable Xtension : Xtension
+          mutable Transform : TransformState
           mutable StaticData : DesignerProperty
+          mutable Imperative : bool // TODO: be nice to pack these bools
           mutable PublishChanges : bool
-          mutable Imperative : bool
-          mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-          mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-          mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
-          mutable Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
-          mutable ViewType : ViewType
-          // cache line end //
-          mutable Overflow : Vector2
           mutable IgnoreLayer : bool
+          // cache line end //
           mutable Visible : bool
           mutable Enabled : bool
-          mutable Omnipresent : bool
           mutable AlwaysUpdate : bool
           mutable PublishUpdates : bool
           mutable PublishPostUpdates : bool
           mutable Persistent : bool
+          mutable Overflow : Vector2
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
@@ -608,23 +611,24 @@ module WorldTypes =
             { Dispatcher = dispatcher
               Facets = [||]
               Xtension = Xtension.makeSafe ()
+              Transform =
+                { Position = Vector2.Zero
+                  Size = Constants.Engine.DefaultEntitySize
+                  Rotation = 0.0f
+                  Depth = 0.0f
+                  Omnipresent = false
+                  ViewType = Relative }
               StaticData = { DesignerType = typeof<unit>; DesignerValue = () }
-              PublishChanges = false
               Imperative = false
-              Position = Vector2.Zero
-              Size = Constants.Engine.DefaultEntitySize
-              Rotation = 0.0f
-              Depth = 0.0f
-              Overflow = Vector2.Zero
-              ViewType = Relative
+              PublishChanges = false
               IgnoreLayer = false
               Visible = true
               Enabled = true
-              Omnipresent = false
               AlwaysUpdate = false
               PublishUpdates = false
               PublishPostUpdates = false
               Persistent = true
+              Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
               CreationTimeStamp = Core.getTimeStamp ()
@@ -669,32 +673,36 @@ module WorldTypes =
             else { entityState with EntityState.Xtension = xtension }
 
         /// Get an entity state's transform.
-        static member getTransform this =
-            { Transform.Position = this.Position
-              Size = this.Size
-              Rotation = this.Rotation
-              Depth = this.Depth }
+        static member getTransform entityState =
+            let transform = entityState.Transform
+            { Position = transform.Position
+              Size = transform.Size
+              Rotation = transform.Rotation
+              Depth = transform.Depth }
 
         /// Set an entity state's transform.
-        static member setTransform (value : Transform) (this : EntityState) =
-            if this.Imperative then
-                this.Position <- value.Position
-                this.Size <- value.Size
-                this.Rotation <- value.Rotation
-                this.Depth <- value.Depth
-                this
+        static member setTransform (value : Transform) (entityState : EntityState) =
+            if entityState.Imperative then
+                entityState.Transform.Position <- value.Position
+                entityState.Transform.Size <- value.Size
+                entityState.Transform.Rotation <- value.Rotation
+                entityState.Transform.Depth <- value.Depth
+                entityState
             else
-                { this with
-                    Position = value.Position
-                    Size = value.Size
-                    Rotation = value.Rotation
-                    Depth = value.Depth }
+                { entityState with
+                    Transform =
+                        { Position = value.Position
+                          Size = value.Size
+                          Rotation = value.Rotation
+                          Depth = value.Depth
+                          ViewType = entityState.Transform.ViewType
+                          Omnipresent = entityState.Transform.Omnipresent }}
 
         /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
-        static member copy this =
-            if not this.Imperative
-            then { this with EntityState.Id = this.Id }
-            else this
+        static member copy entityState =
+            if not entityState.Imperative
+            then { entityState with EntityState.Id = entityState.Id }
+            else entityState
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension

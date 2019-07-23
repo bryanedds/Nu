@@ -203,7 +203,7 @@ module EffectFacetModule =
                     { Effects.Position = entity.GetPosition world + Vector2.Multiply (entity.GetSize world, entity.GetEffectOffset world)
                       Effects.Size = entity.GetSize world
                       Effects.Rotation = entity.GetRotation world
-                      Effects.Depth = entity.GetDepthLayered world
+                      Effects.Depth = entity.GetDepth world
                       Effects.Offset = Vector2 0.5f
                       Effects.Color = Vector4.One
                       Effects.Enabled = true
@@ -368,7 +368,7 @@ module TextFacetModule =
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
-                            { Depth = text.GetDepthLayered world + 0.5f
+                            { Depth = text.GetDepth world + 0.5f
                               AssetTag = text.GetFont world
                               PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
@@ -661,7 +661,7 @@ module TileMapFacetModule =
                     let viewType = tileMap.GetViewType world
                     List.foldi
                         (fun i world (layer : TmxLayer) ->
-                            let depth = tileMap.GetDepthLayered world + single i * 2.0f // MAGIC_VALUE: assumption
+                            let depth = tileMap.GetDepth world + single i * 2.0f // MAGIC_VALUE: assumption
                             let parallaxTranslation =
                                 match viewType with
                                 | Absolute -> Vector2.Zero
@@ -898,7 +898,7 @@ module StaticSpriteFacetModule =
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
-                            { Depth = entity.GetDepthLayered world
+                            { Depth = entity.GetDepth world
                               AssetTag = entity.GetStaticImage world
                               PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
@@ -971,7 +971,7 @@ module AnimatedSpriteFacetModule =
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
-                            { Depth = entity.GetDepthLayered world
+                            { Depth = entity.GetDepth world
                               AssetTag = entity.GetAnimationSheet world
                               PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
@@ -1247,7 +1247,7 @@ module ButtonDispatcherModule =
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
-                            { Depth = button.GetDepthLayered world
+                            { Depth = button.GetDepth world
                               AssetTag = image
                               PositionY = (button.GetPosition world).Y
                               LayeredDescriptor =
@@ -1291,7 +1291,7 @@ module LabelDispatcherModule =
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
-                            { Depth = label.GetDepthLayered world
+                            { Depth = label.GetDepth world
                               AssetTag = label.GetLabelImage world
                               PositionY = (label.GetPosition world).Y
                               LayeredDescriptor =
@@ -1338,7 +1338,7 @@ module TextDispatcherModule =
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
-                            { Depth = text.GetDepthLayered world
+                            { Depth = text.GetDepth world
                               AssetTag = text.GetBackgroundImage world
                               PositionY = (text.GetPosition world).Y
                               LayeredDescriptor =
@@ -1455,7 +1455,7 @@ module ToggleDispatcherModule =
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
-                            { Depth = toggle.GetDepthLayered world
+                            { Depth = toggle.GetDepth world
                               AssetTag = image
                               PositionY = (toggle.GetPosition world).Y
                               LayeredDescriptor =
@@ -1626,7 +1626,7 @@ module FillBarDispatcherModule =
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
-                            { Depth = fillBar.GetDepthLayered world + 0.5f
+                            { Depth = fillBar.GetDepth world + 0.5f
                               AssetTag = fillBar.GetBorderImage world
                               PositionY = (fillBar.GetPosition world).Y
                               LayeredDescriptor =
@@ -1641,7 +1641,7 @@ module FillBarDispatcherModule =
                                       Color = fillBarColor
                                       Flip = FlipNone }}
                           LayerableDescriptor
-                            { Depth = fillBar.GetDepthLayered world
+                            { Depth = fillBar.GetDepth world
                               AssetTag = fillBar.GetFillImage world
                               PositionY = (fillBar.GetPosition world).Y
                               LayeredDescriptor =
@@ -1765,7 +1765,7 @@ module CharacterDispatcherModule =
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
                         [|LayerableDescriptor
-                            { Depth = entity.GetDepthLayered world
+                            { Depth = entity.GetDepth world
                               AssetTag = image
                               PositionY = (entity.GetPosition world).Y
                               LayeredDescriptor =
