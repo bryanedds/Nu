@@ -7,13 +7,6 @@ open System.ComponentModel
 open Prime
 open Nu
 
-/// Describes all the elements of a 2d transformation.
-type [<Struct; StructuralEquality; NoComparison>] Transform =
-    { Position : Vector2
-      Size : Vector2
-      Rotation : single
-      Depth : single }
-
 /// Depicts whether a view is purposed to render in relative or absolute space. For
 /// example, Gui entities are rendered in absolute space since they remain still no matter
 /// where the camera moves, and vice versa for non-Gui entities.
@@ -24,6 +17,14 @@ type [<Struct; StructuralEquality; NoComparison>] Transform =
 type [<Struct>] ViewType =
     | Absolute
     | Relative
+
+type [<Struct; StructuralEquality; NoComparison>] Transform =
+    { mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+      mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+      mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
+      mutable Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
+      mutable ViewType : ViewType
+      mutable Omnipresent : bool }
 
 [<AutoOpen>]
 module Vector2 =
@@ -381,13 +382,6 @@ module Math =
             assignTypeConverter<Vector4, Vector4Converter> ()
             assignTypeConverter<Vector2i, Vector2iConverter> ()
             Initialized <- true
-
-    /// The identity transform.
-    let transformIdentity =
-        { Position = Vector2.Zero
-          Size = Vector2.One
-          Rotation = 0.0f
-          Depth = 0.0f }
 
     /// Snap an int value to an offset.
     let snap offset value =
