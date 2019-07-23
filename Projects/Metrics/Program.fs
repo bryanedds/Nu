@@ -24,7 +24,7 @@ type OptimizedEntityDispatcher () =
         World.enqueueRenderMessage
             (RenderDescriptorsMessage
                 [|LayerableDescriptor
-                    { Depth = entity.GetDepth world
+                    { Depth = entity.GetDepthLayered world
                       AssetTag = image
                       PositionY = position.Y
                       LayeredDescriptor =

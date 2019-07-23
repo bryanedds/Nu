@@ -54,7 +54,7 @@ module WorldModule2 =
                         | :? Game -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Default.Game }
                         | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen }
                         | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority + layer.GetDepth world; SortPositionY = 0.0f; SortTarget = layer }
-                        | :? Entity as entity -> { SortDepth = entity.GetDepth world; SortPositionY = 0.0f; SortTarget = entity }
+                        | :? Entity as entity -> { SortDepth = entity.GetDepthLayered world; SortPositionY = 0.0f; SortTarget = entity }
                         | _ -> failwithumf ()
                     priority :> IComparable)
                 subscriptions
