@@ -611,7 +611,7 @@ module WorldModuleEntity =
 
         static member internal getEntitySortingPriority entity world =
             let entityState = World.getEntityState entity world
-            { SortDepth = entityState.Transform.Depth
+            { SortDepth = entityState.Transform.Depth // TODO: P1: see if this should be DepthLayered
               SortPositionY = entityState.Transform.Position.Y
               SortTarget = entity }
 
