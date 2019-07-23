@@ -78,7 +78,7 @@ type [<StructuralEquality; NoComparison>] TileData =
       TileSetTileOpt : TmxTilesetTile option
       TilePosition : Vector2i }
 
-type [<Struct; NoEquality; NoComparison>] TransformState =
+type [<Struct; StructuralEquality; NoComparison>] TransformState =
     { mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
       mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
       mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
