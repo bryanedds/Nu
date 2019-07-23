@@ -574,7 +574,7 @@ module WorldTypes =
     /// NOTE: The properties here have duplicated representations in WorldModuleEntity that exist
     /// for performance that must be kept in sync.
     and [<CLIMutable; NoEquality; NoComparison>] EntityState =
-        { // cache line begin //
+        { // cache line begin
           Dispatcher : EntityDispatcher
           mutable Facets : Facet array
           mutable Xtension : Xtension
@@ -583,7 +583,7 @@ module WorldTypes =
           mutable Imperative : bool // TODO: be nice to pack these bools
           mutable PublishChanges : bool
           mutable IgnoreLayer : bool
-          // cache line end //
+          // cache line end
           mutable Visible : bool
           mutable Enabled : bool
           mutable AlwaysUpdate : bool

@@ -18,13 +18,18 @@ type [<Struct>] ViewType =
     | Absolute
     | Relative
 
+/// Carries transformation data specific to an Entity.
+/// NOTE: This type is exactly the size of a 64-bit cache line.
 type [<Struct; StructuralEquality; NoComparison>] Transform =
-    { mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+    { // cache line begin
+      mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
       mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
       mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
       mutable Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
       mutable ViewType : ViewType
-      mutable Omnipresent : bool }
+      mutable Omnipresent : bool
+      // cache line end
+    }
 
 [<AutoOpen>]
 module Vector2 =
