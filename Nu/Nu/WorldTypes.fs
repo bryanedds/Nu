@@ -671,12 +671,9 @@ module WorldTypes =
         /// Set an entity state's transform.
         static member setTransform (value : Transform) (entityState : EntityState) =
             if entityState.Imperative then
-                entityState.Transform <- value
+                entityState.Transform.Assign value // in-place assignment
                 entityState
-            else
-                // make a copy of transform for additional safety, tho this may just end up being wasteful...
-                let transformCopy = { value with Position = value.Position }
-                { entityState with Transform = transformCopy }
+            else { entityState with Transform = value } // copy assignment
 
         /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy entityState =
