@@ -118,7 +118,23 @@ module SpatialTreeModule =
                 else SpatialNode.removeElement bounds element tree.Node
     
         let updateElement oldBounds newBounds element tree =
-            SpatialNode.updateElement oldBounds newBounds element tree.Node
+            let oldInBounds = SpatialNode.intersectingBounds oldBounds tree.Node
+            let newInBounds = SpatialNode.intersectingBounds newBounds tree.Node
+            if oldInBounds && not newInBounds then
+                // going out of bounds
+                Log.info "Element is outside spatial tree's containment area."
+                if not newInBounds then tree.OmnipresentElements.Add element |> ignore
+                SpatialNode.updateElement oldBounds newBounds element tree.Node
+            elif not oldInBounds && newInBounds then
+                // going back in bounds
+                if not oldInBounds then tree.OmnipresentElements.Remove element |> ignore
+                SpatialNode.updateElement oldBounds newBounds element tree.Node
+            elif oldInBounds && newInBounds then
+                // staying in bounds
+                SpatialNode.updateElement oldBounds newBounds element tree.Node
+            else
+                // staying out of bounds
+                () 
 
         let getElementsAtPoint point tree =
             let set = HashSet tree.OmnipresentElements
