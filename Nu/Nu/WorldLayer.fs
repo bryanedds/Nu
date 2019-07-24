@@ -337,7 +337,7 @@ module WorldLayerModule =
             // OPTIMIZATION: seqs used for speed.
             let properties = typeof<LayerState>.GetProperties ()
             let typeConverterAttribute = TypeConverterAttribute typeof<SymbolicConverter>
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Xtension) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty (property.GetCustomAttributes<ExtensionAttribute> ())) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
             let propertyDescriptors = Seq.map (fun property -> makePropertyDescriptor (LayerPropertyInfo property, [|typeConverterAttribute|])) properties
