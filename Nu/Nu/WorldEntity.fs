@@ -422,6 +422,7 @@ module WorldEntityModule =
             let typeConverterAttribute = TypeConverterAttribute typeof<SymbolicConverter>
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name = Property? Xtension) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name = Property? Transform) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name = Property? Flags) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty (property.GetCustomAttributes<ExtensionAttribute> ())) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
             let propertyDescriptors = Seq.map (fun property -> makePropertyDescriptor (EntityPropertyInfo property, [|typeConverterAttribute|])) properties
