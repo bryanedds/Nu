@@ -617,7 +617,7 @@ module WorldTypes =
                   Omnipresent = false }
               StaticData = { DesignerType = typeof<unit>; DesignerValue = () }
               Overflow = Vector2.Zero
-              Flags = 280 (* equal to 100011000 *)
+              Flags = 0b0100011000
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
               CreationTimeStamp = Core.getTimeStamp ()
