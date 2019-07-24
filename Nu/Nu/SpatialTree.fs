@@ -134,7 +134,7 @@ module SpatialTreeModule =
                 SpatialNode.updateElement oldBounds newBounds element tree.Node
             else
                 // staying out of bounds
-                () 
+                ()
 
         let getElementsAtPoint point tree =
             let set = HashSet tree.OmnipresentElements
