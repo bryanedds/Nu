@@ -8,7 +8,7 @@ open Prime
 open Nu
 
 /// Describes a mouse button.
-type [<Struct>] MouseButton =
+type MouseButton =
     | MouseLeft
     | MouseCenter
     | MouseRight
@@ -82,7 +82,7 @@ module KeyboardState =
         isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RSHIFT)
 
 /// Describes a gamepad direction.
-type [<Struct>] GamepadDirection =
+type GamepadDirection =
     | DirectionUp
     | DirectionUpLeft
     | DirectionLeft
@@ -94,7 +94,7 @@ type [<Struct>] GamepadDirection =
     | DirectionCentered
 
 /// Describes a gamepad button.
-type [<Struct>] GamepadButton =
+type GamepadButton =
     | ButtonA
     | ButtonB
     | ButtonX

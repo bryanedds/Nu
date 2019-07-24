@@ -14,13 +14,13 @@ open Nu
     ("Absolute Relative", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
-type [<Struct>] ViewType =
+type ViewType =
     | Absolute
     | Relative
 
 /// Carries transformation data specific to an Entity.
 /// NOTE: This type is exactly the size of a 64-bit cache line.
-type [<Struct; StructuralEquality; NoComparison>] Transform =
+type [<StructuralEquality; NoComparison>] Transform =
     { // cache line begin
       mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
       mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
@@ -56,7 +56,7 @@ module Vector2 =
     let v2UnitY = Vector2.UnitY
 
 /// The Vector2 value that can be plugged into the scripting language.
-type [<Struct; CustomEquality; CustomComparison>] Vector2Pluggable =
+type [<CustomEquality; CustomComparison>] Vector2Pluggable =
     { Vector2 : Vector2 }
 
     static member equals left right =
@@ -179,7 +179,7 @@ type Vector3Converter () =
         | _ -> failconv "Invalid Vector3Converter conversion from source." None
 
 /// The Vector4 value that can be plugged into the scripting language.
-type [<Struct; CustomEquality; CustomComparison>] Vector4Pluggable =
+type [<CustomEquality; CustomComparison>] Vector4Pluggable =
     { Vector4 : Vector4 }
 
     static member equals left right =
@@ -294,7 +294,7 @@ module Vector2i =
     let v2iUnitY = Vector2i.UnitY
 
 /// The Vector2i value that can be plugged into the scripting language.
-type [<Struct; CustomEquality; CustomComparison>] Vector2iPluggable =
+type [<CustomEquality; CustomComparison>] Vector2iPluggable =
     { Vector2i : Vector2i }
 
     static member equals left right =

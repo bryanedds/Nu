@@ -6,7 +6,7 @@ open System
 open Prime
 module Effects =
 
-    type [<Struct>] Algorithm =
+    type Algorithm =
         | Const
         | Linear
         | Random
@@ -17,7 +17,7 @@ module Effects =
         | Sin
         | Cos
 
-    type [<Struct>] LogicApplicator =
+    type LogicApplicator =
         | Or
         | Nor
         | Xor
@@ -25,14 +25,14 @@ module Effects =
         | Nand
         | Equal
 
-    type [<Struct>] TweenApplicator =
+    type TweenApplicator =
         | Sum
         | Delta
         | Scale
         | Ratio
         | Set
 
-    type [<Struct; NoComparison>] Slice =
+    type [<NoComparison>] Slice =
         { Position : Vector2
           Size : Vector2
           Rotation : single
@@ -45,61 +45,61 @@ module Effects =
     type KeyFrame =
         abstract KeyFrameLength : int64
 
-    type [<Struct>] LogicKeyFrame =
+    type LogicKeyFrame =
         { LogicValue : bool
           LogicLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.LogicLength
 
-    type [<Struct>] TweenKeyFrame =
+    type TweenKeyFrame =
         { TweenValue : single
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<Struct; NoComparison>] Tween2KeyFrame =
+    type [<NoComparison>] Tween2KeyFrame =
         { TweenValue : Vector2
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<Struct; NoComparison>] Tween3KeyFrame =
+    type [<NoComparison>] Tween3KeyFrame =
         { TweenValue : Vector3
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<Struct; NoComparison>] Tween4KeyFrame =
+    type [<NoComparison>] Tween4KeyFrame =
         { TweenValue : Vector4
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<Struct>] TweenIKeyFrame =
+    type TweenIKeyFrame =
         { TweenValue : int
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<Struct>] Tween2IKeyFrame =
+    type Tween2IKeyFrame =
         { TweenValue : Vector2i
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
             
-    type [<Struct>] Playback =
+    type Playback =
         | Once
         | Loop
         | Bounce
         
-    type [<Struct>] Repetition =
+    type Repetition =
         | Cycle of Cycles : int
         | Iterate of Iterations : int
 
-    type [<Struct>] Rate =
+    type Rate =
         Rate of single
 
-    type [<Struct>] Shift =
+    type Shift =
         Shift of single
 
     type [<NoComparison>] Resource =
@@ -138,13 +138,13 @@ module Effects =
         { DefinitionParams : string array
           DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
 
-    type [<Struct; NoComparison>] RenderArtifact =
+    type [<NoComparison>] RenderArtifact =
         RenderArtifact of RenderDescriptor
 
-    type [<Struct; NoComparison>] SoundArtifact =
+    type [<NoComparison>] SoundArtifact =
         SoundArtifact of single * Audio AssetTag
 
-    type [<Struct; NoComparison>] TagArtifact =
+    type [<NoComparison>] TagArtifact =
         TagArtifact of string * Symbol * Slice
 
     type Definitions =

@@ -7,32 +7,32 @@ open Prime
 open Nu
 
 /// The data for a mouse move event.
-type [<Struct; StructuralEquality; NoComparison>] MouseMoveData =
+type [<StructuralEquality; NoComparison>] MouseMoveData =
     { Position : Vector2 }
 
 /// The data for a mouse button event.
-type [<Struct; StructuralEquality; NoComparison>] MouseButtonData =
+type [<StructuralEquality; NoComparison>] MouseButtonData =
     { Position : Vector2
       Button : MouseButton
       Down : bool }
 
 /// The data for a keyboard key event.
-type [<Struct; StructuralEquality; NoComparison>] KeyboardKeyData =
+type [<StructuralEquality; NoComparison>] KeyboardKeyData =
     { ScanCode : int
       Repeated : bool
       Down : bool }
 
 /// The data for a gamepad button event.
-type [<Struct; StructuralEquality; NoComparison>] GamepadDirectionData =
+type [<StructuralEquality; NoComparison>] GamepadDirectionData =
     { GamepadDirection : GamepadDirection }
 
 /// The data for a gamepad button event.
-type [<Struct; StructuralEquality; NoComparison>] GamepadButtonData =
+type [<StructuralEquality; NoComparison>] GamepadButtonData =
     { GamepadButton : GamepadButton
       Down : bool }
 
 /// The data for a collision event.
-type [<Struct; StructuralEquality; NoComparison>] CollisionData =
+type [<StructuralEquality; NoComparison>] CollisionData =
     { Normal : Vector2
       Speed : single
       Collidee : Entity }

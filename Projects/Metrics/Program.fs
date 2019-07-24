@@ -22,8 +22,8 @@ type OptimizedEntityDispatcher () =
         let position = entity.GetPosition world
         let image = entity.GetStaticData world
         World.enqueueRenderMessage
-            (RenderDescriptorsMessage
-                [|LayerableDescriptor
+            (RenderDescriptorMessage
+                (LayerableDescriptor
                     { Depth = entity.GetDepthLayered world
                       AssetTag = image
                       PositionY = position.Y
@@ -37,7 +37,7 @@ type OptimizedEntityDispatcher () =
                           InsetOpt = None
                           Image = image
                           Color = Vector4.One
-                          Flip = FlipNone }}|])
+                          Flip = FlipNone }}))
             world
 
 type MyGameDispatcher () =

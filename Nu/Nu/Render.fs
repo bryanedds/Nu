@@ -33,7 +33,7 @@ type Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
 
-type [<Struct>] Flip =
+type Flip =
     | FlipNone
     | FlipH
     | FlipV
@@ -46,7 +46,7 @@ type [<Struct>] Flip =
         | FlipHV -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
 
 /// Describes how to render a sprite to the rendering system.
-type [<Struct; StructuralEquality; NoComparison>] SpriteDescriptor =
+type [<StructuralEquality; NoComparison>] SpriteDescriptor =
     { Position : Vector2
       Size : Vector2
       Rotation : single
@@ -58,7 +58,7 @@ type [<Struct; StructuralEquality; NoComparison>] SpriteDescriptor =
       Flip : Flip }
 
 /// Describes how to render a tile map to the rendering system.
-type [<Struct; StructuralEquality; NoComparison>] TileLayerDescriptor =
+type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
     { Position : Vector2
       Size : Vector2
       Rotation : single
@@ -71,7 +71,7 @@ type [<Struct; StructuralEquality; NoComparison>] TileLayerDescriptor =
       TileSetImage : Image AssetTag }
 
 /// Describes how to render text to the rendering system.
-type [<Struct; StructuralEquality; NoComparison>] TextDescriptor =
+type [<StructuralEquality; NoComparison>] TextDescriptor =
     { Position : Vector2
       Size : Vector2
       ViewType : ViewType
@@ -81,25 +81,26 @@ type [<Struct; StructuralEquality; NoComparison>] TextDescriptor =
       Justification : Justification }
 
 /// Describes how to render a layered 'thing' to the rendering system.
-type [<Struct; StructuralEquality; NoComparison>] LayeredDescriptor =
+type [<StructuralEquality; NoComparison>] LayeredDescriptor =
     | SpriteDescriptor of SpriteDescriptor : SpriteDescriptor
     | SpritesDescriptor of SpriteDescriptors : SpriteDescriptor array
     | TileLayerDescriptor of TileLayerDescriptor : TileLayerDescriptor
     | TextDescriptor of TextDescriptor : TextDescriptor
 
 /// Describes how to render a layerable 'thing' to the rendering system.
-type [<Struct; StructuralEquality; NoComparison>] LayerableDescriptor =
+type [<StructuralEquality; NoComparison>] LayerableDescriptor =
     { Depth : single
       AssetTag : AssetTag
       PositionY : single
       LayeredDescriptor : LayeredDescriptor }
 
 /// Describes how to render something to the rendering system.
-type [<Struct; StructuralEquality; NoComparison>] RenderDescriptor =
+type [<StructuralEquality; NoComparison>] RenderDescriptor =
     | LayerableDescriptor of LayerableDescriptor
 
 /// A message to the rendering system.
-type [<Struct; StructuralEquality; NoComparison>] RenderMessage =
+type [<StructuralEquality; NoComparison>] RenderMessage =
+    | RenderDescriptorMessage of renderDescriptorMessage : RenderDescriptor
     | RenderDescriptorsMessage of renderDescriptorsMessage : RenderDescriptor array
     | HintRenderPackageUseMessage of hintRenderPackageUseMessage : string
     | HintRenderPackageDisuseMessage of hintRenderPackageDisuseMessage : string
@@ -232,6 +233,7 @@ type [<ReferenceEquality>] SdlRenderer =
 
     static member private handleRenderMessage renderMessage renderer =
         match renderMessage with
+        | RenderDescriptorMessage renderDescriptor -> renderer.RenderDescriptors.Add renderDescriptor
         | RenderDescriptorsMessage renderDescriptors -> renderer.RenderDescriptors.AddRange renderDescriptors
         | HintRenderPackageUseMessage hintPackageUse -> SdlRenderer.handleHintRenderPackageUse hintPackageUse renderer
         | HintRenderPackageDisuseMessage hintPackageDisuse -> SdlRenderer.handleHintRenderPackageDisuse hintPackageDisuse renderer

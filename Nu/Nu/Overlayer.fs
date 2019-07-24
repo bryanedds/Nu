@@ -9,7 +9,7 @@ open Prime
 open Nu
 
 /// Describes the overlay state of a property.
-type [<Struct>] internal OverlayState =
+type internal OverlayState =
     | Bare
     | Altered
     | Overlaid

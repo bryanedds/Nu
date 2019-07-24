@@ -121,12 +121,12 @@ module WorldTypes =
     type Unsubscription = World -> World
 
     /// The data for a change in the world's ambient state.
-    and [<Struct; StructuralEquality; NoComparison>] AmbientChangeData = 
+    and [<StructuralEquality; NoComparison>] AmbientChangeData = 
         { OldWorldWithOldState : World }
 
     /// Describes the information needed to sort simulants.
     /// OPTIMIZATION: carries related simulant to avoid GC pressure.
-    and [<Struct; CustomEquality; CustomComparison>] SortPriority =
+    and [<CustomEquality; CustomComparison>] SortPriority =
         { SortDepth : single
           SortPositionY : single
           SortTarget : Simulant }
