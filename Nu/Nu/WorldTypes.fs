@@ -106,16 +106,16 @@ module WorldTypes =
     let mutable internal handlePropertyChange = Unchecked.defaultof<string -> Propertied -> obj -> obj -> obj * obj>
 
     // Entity flag bit-masks; only for use by internal reflection facilities.
-    let internal ImperativeMask =            0b0000000001
-    let internal PublishChangesMask =        0b0000000010
-    let internal IgnoreLayerMask =           0b0000000100
-    let internal EnabledMask =               0b0000001000
-    let internal VisibleMask =               0b0000010000
-    let internal AlwaysUpdateMask =          0b0000100000
-    let internal PublishUpdatesMask =        0b0001000000
-    let internal PublishPostUpdatesMask =    0b0010000000
-    let internal PersistentMask =            0b0100000000
-    let internal UnusedMask =                0b1000000000
+    let [<Literal>] internal ImperativeMask =            0b0000000001
+    let [<Literal>] internal PublishChangesMask =        0b0000000010
+    let [<Literal>] internal IgnoreLayerMask =           0b0000000100
+    let [<Literal>] internal EnabledMask =               0b0000001000
+    let [<Literal>] internal VisibleMask =               0b0000010000
+    let [<Literal>] internal AlwaysUpdateMask =          0b0000100000
+    let [<Literal>] internal PublishUpdatesMask =        0b0001000000
+    let [<Literal>] internal PublishPostUpdatesMask =    0b0010000000
+    let [<Literal>] internal PersistentMask =            0b0100000000
+    let [<Literal>] internal UnusedMask =                0b1000000000
 
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
