@@ -29,7 +29,7 @@ type AssetTag =
         end
 
 /// Describes a means for looking up an asset.
-type [<Struct>] 'a AssetTag =
+type 'a AssetTag =
     { PackageName : string
       AssetName : string }
 
@@ -54,7 +54,7 @@ module AssetTag =
         convert<obj, 'a> assetTag
 
 /// Describes a game asset, such as a texture, sound, or model in detail.
-type [<Struct; StructuralEquality; NoComparison>] 'a Asset =
+type [<StructuralEquality; NoComparison>] 'a Asset =
     { AssetTag : 'a AssetTag
       FilePath : string
       Refinements : Refinement list

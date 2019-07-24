@@ -11,7 +11,7 @@ open Nu
 #nowarn "40"
 
 /// The Stream value that can be plugged into the scripting language.
-type [<Struct; CustomEquality; CustomComparison>] StreamPluggable =
+type [<CustomEquality; CustomComparison>] StreamPluggable =
     { Stream : Stream<obj, World> }
 
     static member equals _ _ = false
