@@ -100,9 +100,22 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
 [<AutoOpen>]
 module WorldTypes =
 
+    // Property category reach-arounds.
     let mutable internal getPropertyOpt = Unchecked.defaultof<string -> Propertied -> obj -> obj option>
     let mutable internal setPropertyOpt = Unchecked.defaultof<string -> Propertied -> obj option -> Type -> obj -> obj>
     let mutable internal handlePropertyChange = Unchecked.defaultof<string -> Propertied -> obj -> obj -> obj * obj>
+
+    // Entity flag bit-masks; only for use by internal reflection facilities.
+    let internal ImperativeMask =            0b0000000001
+    let internal PublishChangesMask =        0b0000000010
+    let internal IgnoreLayerMask =           0b0000000100
+    let internal EnabledMask =               0b0000001000
+    let internal VisibleMask =               0b0000010000
+    let internal AlwaysUpdateMask =          0b0000100000
+    let internal PublishUpdatesMask =        0b0001000000
+    let internal PublishPostUpdatesMask =    0b0010000000
+    let internal PersistentMask =            0b0100000000
+    let internal UnusedMask =                0b1000000000
 
     /// Represents an unsubscription operation for an event.
     type Unsubscription = World -> World
@@ -249,6 +262,7 @@ module WorldTypes =
              Define? ViewType Relative
              Define? Omnipresent false
              Define? StaticData { DesignerType = typeof<unit>; DesignerValue = () }
+             Define? Overflow Vector2.Zero
              Define? Imperative false
              Define? PublishChanges false
              Define? IgnoreLayer false
@@ -257,8 +271,7 @@ module WorldTypes =
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
-             Define? Persistent true
-             Define? Overflow Vector2.Zero]
+             Define? Persistent true]
     
         /// Register an entity when adding it to a layer.
         abstract Register : Entity * World -> World
@@ -580,17 +593,9 @@ module WorldTypes =
           mutable Xtension : Xtension
           mutable Transform : Transform
           mutable StaticData : DesignerProperty
-          mutable Imperative : bool // TODO: be nice to pack these bools
-          mutable PublishChanges : bool
-          mutable IgnoreLayer : bool
-          // cache line end
-          mutable Visible : bool
-          mutable Enabled : bool
-          mutable AlwaysUpdate : bool
-          mutable PublishUpdates : bool
-          mutable PublishPostUpdates : bool
-          mutable Persistent : bool
           mutable Overflow : Vector2
+          mutable Flags : int
+          // cache line end
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
@@ -611,16 +616,8 @@ module WorldTypes =
                   ViewType = Relative
                   Omnipresent = false }
               StaticData = { DesignerType = typeof<unit>; DesignerValue = () }
-              Imperative = false
-              PublishChanges = false
-              IgnoreLayer = false
-              Visible = true
-              Enabled = true
-              AlwaysUpdate = false
-              PublishUpdates = false
-              PublishPostUpdates = false
-              Persistent = true
               Overflow = Vector2.Zero
+              Flags = 280 (* equal to 100011000 *)
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
               CreationTimeStamp = Core.getTimeStamp ()
@@ -676,18 +673,27 @@ module WorldTypes =
             else { entityState with Transform = value } // copy assignment
 
         /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
-        static member copy entityState =
+        static member copy (entityState : EntityState) =
             if not entityState.Imperative
             then { entityState with EntityState.Id = entityState.Id }
             else entityState
 
-        (* Member properties; only for use by internal reflection facilities. *)
+        // Member properties; only for use by internal reflection facilities.
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
         member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
         member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
         member this.Depth with get () = this.Transform.Depth and set value = this.Transform.Depth <- value
         member this.ViewType with get () = this.Transform.ViewType and set value = this.Transform.ViewType <- value
         member this.Omnipresent with get () = this.Transform.Omnipresent and set value = this.Transform.Omnipresent <- value
+        member this.Imperative with get () = this.Flags &&& ImperativeMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ImperativeMask else this.Flags &&& ~~~ImperativeMask
+        member this.PublishChanges with get () = this.Flags &&& PublishChangesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishChangesMask else this.Flags &&& ~~~PublishChangesMask
+        member this.IgnoreLayer with get () = this.Flags &&& IgnoreLayerMask <> 0 and set value = this.Flags <- if value then this.Flags ||| IgnoreLayerMask else this.Flags &&& ~~~IgnoreLayerMask
+        member this.Enabled with get () = this.Flags &&& EnabledMask <> 0 and set value = this.Flags <- if value then this.Flags ||| EnabledMask else this.Flags &&& ~~~EnabledMask
+        member this.Visible with get () = this.Flags &&& VisibleMask <> 0 and set value = this.Flags <- if value then this.Flags ||| VisibleMask else this.Flags &&& ~~~VisibleMask
+        member this.AlwaysUpdate with get () = this.Flags &&& AlwaysUpdateMask <> 0 and set value = this.Flags <- if value then this.Flags ||| AlwaysUpdateMask else this.Flags &&& ~~~AlwaysUpdateMask
+        member this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
+        member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
+        member this.Persistent with get () = this.Flags &&& PersistentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
