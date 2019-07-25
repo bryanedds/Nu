@@ -961,7 +961,8 @@ module WorldTypes =
             | :? Entity as that -> this.EntityAddress.Equals that.EntityAddress
             | _ -> false
 
-        override this.GetHashCode () = this.EntityAddress.GetHashCode ()
+        override this.GetHashCode () =
+            this.EntityAddress.GetHashCode ()
 
         interface Entity IComparable with
             member this.CompareTo that =
