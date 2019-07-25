@@ -210,7 +210,10 @@ module WorldEntityModule =
                 let dispatcher = entity.GetDispatcher world
                 let facets = entity.GetFacets world
                 let world = dispatcher.Update (entity, world)
-                let world = Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
+                let world =
+                    // OPTIMIZATION: elide Array.fold overhead for empty arrays
+                    if Array.isEmpty facets then world
+                    else Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
                 if World.getEntityPublishUpdates entity world then
                     let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
                     World.publishPlus World.sortSubscriptionsByHierarchy () entity.UpdateEvent eventTrace Default.Game false world
@@ -223,7 +226,10 @@ module WorldEntityModule =
                 let dispatcher = entity.GetDispatcher world
                 let facets = entity.GetFacets world
                 let world = dispatcher.PostUpdate (entity, world)
-                let world = Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
+                let world =
+                    // OPTIMIZATION: elide Array.fold overhead for empty arrays
+                    if Array.isEmpty facets then world
+                    else Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
                 if World.getEntityPublishPostUpdates entity world then
                     let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
                     World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateEvent eventTrace Default.Game false world
@@ -236,7 +242,11 @@ module WorldEntityModule =
                 let dispatcher = entity.GetDispatcher world
                 let facets = entity.GetFacets world
                 let world = dispatcher.Actualize (entity, world)
-                Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets)
+                let world =
+                    // OPTIMIZATION: elide Array.fold overhead for empty arrays
+                    if Array.isEmpty facets then world
+                    else Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
+                world)
                 entity
                 world
 
