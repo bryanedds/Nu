@@ -26,17 +26,6 @@ module WorldScreenModule =
         member this.GetOutgoing world = World.getScreenOutgoing this world
         member this.SetOutgoing value world = World.setScreenOutgoing value this world
         member this.Outgoing = Lens.make Property? Outgoing this.GetOutgoing this.SetOutgoing this
-        member this.ChangeEvent propertyName = Events.Change propertyName --> this
-        member this.RegisterEvent = Events.Register --> this
-        member this.UnregisteringEvent = Events.Unregistering --> this
-        member this.UpdateEvent = Events.Update --> this
-        member this.PostUpdateEvent = Events.PostUpdate --> this
-        member this.SelectEvent = Events.Select --> this
-        member this.DeselectEvent = Events.Deselect --> this
-        member this.IncomingStartEvent = Events.IncomingStart --> this
-        member this.IncomingFinishEvent = Events.IncomingFinish --> this
-        member this.OutgoingStartEvent = Events.OutgoingStart --> this
-        member this.OutgoingFinishEvent = Events.OutgoingFinish --> this
         member this.GetPersistent world = World.getScreenPersistent this world
         member this.SetPersistent value world = World.setScreenPersistent value this world
         member this.Persistent = Lens.makeReadOnly Property? Persistent this.GetPersistent this
@@ -67,6 +56,18 @@ module WorldScreenModule =
         member this.CreationTimeStamp = Lens.makeReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetId world = World.getScreenId this world
         member this.Id = Lens.makeReadOnly Property? Id this.GetId this
+
+        member this.ChangeEvent propertyName = Events.Change propertyName --> this
+        member this.RegisterEvent = Events.Register --> this
+        member this.UnregisteringEvent = Events.Unregistering --> this
+        member this.UpdateEvent = Events.Update --> this
+        member this.PostUpdateEvent = Events.PostUpdate --> this
+        member this.SelectEvent = Events.Select --> this
+        member this.DeselectEvent = Events.Deselect --> this
+        member this.IncomingStartEvent = Events.IncomingStart --> this
+        member this.IncomingFinishEvent = Events.IncomingFinish --> this
+        member this.OutgoingStartEvent = Events.OutgoingStart --> this
+        member this.OutgoingFinishEvent = Events.OutgoingFinish --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetScreenProperty propertyName this world
