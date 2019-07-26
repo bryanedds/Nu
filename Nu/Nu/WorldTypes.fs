@@ -372,7 +372,6 @@ module WorldTypes =
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
             let eyeCenter = Vector2.Zero
-            // TODO: P1: consider if eyeSize is too hard-coded
             let eyeSize = Vector2 (single Constants.Render.DefaultResolutionX, single Constants.Render.DefaultResolutionY)
             { Xtension = Xtension.makeSafe ()
               Dispatcher = dispatcher
@@ -1030,7 +1029,8 @@ module WorldTypes =
               ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Layer Address, UMap<string, Entity Address>>>>>
               Dispatchers : Dispatchers
               ScriptingEnv : Scripting.Env
-              ScriptingContext : Simulant }
+              ScriptingContext : Simulant
+              Plugin : NuPlugin }
 
         interface EventSystem<World> with
 
@@ -1128,7 +1128,7 @@ module WorldTypes =
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
     /// specific values.
-    type NuPlugin () =
+    and NuPlugin () =
 
         /// Make user-defined game dispatcher such that Nu can utilize them at run-time.
         abstract MakeGameDispatchers : unit -> GameDispatcher list
@@ -1166,6 +1166,22 @@ module WorldTypes =
         /// dispatcher name.
         abstract MakeOverlayRoutes : unit -> (string * string option) list
         default this.MakeOverlayRoutes () = []
+
+        /// Make a list of keyed values to hook into the engine.
+        abstract MakeKeyedValues : World -> ((string * obj) list) * World
+        default this.MakeKeyedValues world = ([], world)
+
+        /// A call-back at the beginning of each frame.
+        abstract PreFrame : World -> World
+        default this.PreFrame world = world
+
+        /// A call-back during each frame.
+        abstract PerFrame : World -> World
+        default this.PerFrame world = world
+
+        /// A call-back at the end of each frame.
+        abstract PostFrame : World -> World
+        default this.PostFrame world = world
 
 /// Represents an unsubscription operation for an event.
 type Unsubscription = WorldTypes.Unsubscription

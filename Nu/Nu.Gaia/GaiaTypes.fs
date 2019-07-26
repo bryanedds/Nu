@@ -36,6 +36,7 @@ type SavedState =
 [<RequireQualifiedAccess>]
 module Globals =
 
+    let EditorGuid = scstring (makeGuid ())
     let mutable Form = Unchecked.defaultof<GaiaForm>
     let mutable World = Unchecked.defaultof<World>
     let mutable PastWorlds : World list = []
