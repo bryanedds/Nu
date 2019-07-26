@@ -85,7 +85,7 @@ module WorldModule =
             let world =
                 World.choose
                     { EventSystemDelegate = eventDelegate
-                      EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) (FOption.none ())
+                      EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) None
                       EntityTree = MutantCache.make id spatialTree
                       EntityStates = entityStates
                       LayerStates = layerStates
