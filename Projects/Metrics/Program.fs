@@ -2,11 +2,14 @@
 open System
 open Prime
 open Nu
-open Nu.Declarative
 
-type OptimizedEntityDispatcher () =
+type MyEntityDispatcher () =
     inherit EntityDispatcher ()
 
+#if !OPTIMIZE
+    static member FacetNames =
+        [typeof<StaticSpriteFacet>.Name]
+#else
     static member Properties =
         [define Entity.Imperative true // makes updates faster by using mutation
          define Entity.Omnipresent true // makes updates faster by not touching the entity tree
@@ -14,10 +17,12 @@ type OptimizedEntityDispatcher () =
          define (Entity.StaticData ()) // makes user-defined properties faster by using local data
             { DesignerType = typeof<Image AssetTag>
               DesignerValue = AssetTag.make<Image> Assets.DefaultPackage "Image4" }]
+#endif
 
     override dispatcher.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
 
+#if OPTIMIZE
     override dispatcher.Actualize (entity, world) =
         let position = entity.GetPosition world
         let image = entity.GetStaticData world
@@ -39,6 +44,7 @@ type OptimizedEntityDispatcher () =
                           Color = Vector4.One
                           Flip = FlipNone }}))
             world
+#endif
 
 type MyGameDispatcher () =
     inherit GameDispatcher<unit, unit, unit> (())
@@ -58,7 +64,7 @@ type MyGameDispatcher () =
                     yield v2 (single i * 12.0f) (single j * 12.0f) }
         let world =
             Seq.fold (fun world position ->
-                let (entity, world) = World.createEntity<OptimizedEntityDispatcher> None DefaultOverlay Default.Layer world
+                let (entity, world) = World.createEntity<MyEntityDispatcher> None DefaultOverlay Default.Layer world
                 let world = entity.SetPosition (position + v2 -420.0f -265.0f) world
                 entity.SetSize (v2One * 8.0f) world)
                 world indices
@@ -66,7 +72,7 @@ type MyGameDispatcher () =
 
 type MyGamePlugin () =
     inherit NuPlugin ()
-    override this.MakeEntityDispatchers () = [OptimizedEntityDispatcher () :> EntityDispatcher]
+    override this.MakeEntityDispatchers () = [MyEntityDispatcher () :> EntityDispatcher]
     override this.MakeGameDispatchers () = [MyGameDispatcher () :> GameDispatcher]
     override this.GetStandAloneGameDispatcherName () = typeof<MyGameDispatcher>.Name
     
