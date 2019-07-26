@@ -2,6 +2,7 @@
 open System
 open Prime
 open Nu
+open Nu.Declarative
 
 type MyEntityDispatcher () =
     inherit EntityDispatcher ()
@@ -9,7 +10,14 @@ type MyEntityDispatcher () =
 #if !OPTIMIZE
     static member FacetNames =
         [typeof<StaticSpriteFacet>.Name]
-#else
+#endif
+
+#if REACTIVE
+    static member Properties =
+        [define Entity.PublishChanges true]
+#endif
+
+#if OPTIMIZE
     static member Properties =
         [define Entity.Imperative true // makes updates faster by using mutation
          define Entity.Omnipresent true // makes updates faster by not touching the entity tree
@@ -57,11 +65,12 @@ type MyGameDispatcher () =
         let world = World.createLayer (Some Default.Layer.Name) Default.Screen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Default.Layer world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
-        let indices = // approximately 3000 entities
+        let indices = // approximately 9,000 entities
             seq {
                 for i in 0 .. 70 do
                     for j in 0 .. 43 do
-                    yield v2 (single i * 12.0f) (single j * 12.0f) }
+                        for k in 0 .. 2 do
+                            yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
             Seq.fold (fun world position ->
                 let (entity, world) = World.createEntity<MyEntityDispatcher> None DefaultOverlay Default.Layer world

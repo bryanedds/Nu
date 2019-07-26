@@ -78,6 +78,12 @@ module WorldEntityModule =
         member this.GetId world = World.getEntityId this world
         member this.Id = Lens.makeReadOnly Property? Id this.GetId this
 
+        member this.ChangeEvent propertyName = Events.Change propertyName --> this
+        member this.RegisterEvent = Events.Register --> this
+        member this.UnregisteringEvent = Events.Unregistering --> this
+        member this.UpdateEvent = this.UpdateEvent
+        member this.PostUpdateEvent = this.PostUpdateEvent
+
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetEntityProperty propertyName this world
 
