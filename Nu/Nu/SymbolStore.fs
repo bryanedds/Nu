@@ -19,7 +19,7 @@ module SymbolStoreModule =
     /// Provides references to Symbols that are loaded from files.
     type [<ReferenceEquality>] SymbolStore =
         private
-            { SymbolPackages : struct (SymbolLoadMetadata * Symbol) Packages }
+            { SymbolPackages : (SymbolLoadMetadata * Symbol) Packages }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module SymbolStore =
@@ -29,7 +29,7 @@ module SymbolStoreModule =
                 match Path.GetExtension asset.FilePath with
                 | ".csv" ->
                     try let symbol = Symbol.fromStringCsv metadata.StripCsvHeader text (Some asset.FilePath)
-                        Some (asset.AssetTag.AssetName, struct (metadata, symbol))
+                        Some (asset.AssetTag.AssetName, (metadata, symbol))
                     with exn ->
                         Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
                         None
@@ -39,7 +39,7 @@ module SymbolStoreModule =
                         then Symbol.OpenSymbolsStr + text + Symbol.CloseSymbolsStr
                         else text
                     try let symbol = Symbol.fromString text (Some asset.FilePath)
-                        Some (asset.AssetTag.AssetName, struct (metadata, symbol))
+                        Some (asset.AssetTag.AssetName, (metadata, symbol))
                     with exn ->
                         Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
                         None
@@ -84,7 +84,7 @@ module SymbolStoreModule =
     
         /// Try to find a symbol with the given asset tag.
         let tryFindSymbol assetTag metadata symbolStore =
-            tryLoadSymbol assetTag metadata symbolStore |> Option.map snd'
+            tryLoadSymbol assetTag metadata symbolStore |> Option.map snd
             
         /// Try to find the symbols with the given asset tags.
         let tryFindSymbols metadata assetTags symbolStore =
@@ -104,7 +104,7 @@ module SymbolStoreModule =
                 let packageName = packageEntry.Key
                 let packageValue = packageEntry.Value
                 for assetEntry in packageValue do
-                    let metadata = fst' assetEntry.Value
+                    let metadata = fst assetEntry.Value
                     tryLoadSymbolPackage packageName metadata symbolStore
     
         /// The empty symbol store.
