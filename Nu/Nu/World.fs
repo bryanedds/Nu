@@ -365,11 +365,15 @@ module WorldModule3 =
                  (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
 
         /// Make an empty world.
-        static member makeEmpty userState =
+        static member makeEmpty (config : unit) =
 
             // ensure game engine is initialized
-            // TODO: P1: parameterize hard-coded boolean
+            // TODO: P1: parameterize this in config
+            ignore config
             Nu.init false
+
+            // make the default plug-in
+            let plugin = NuPlugin ()
 
             // make the world's event delegate
             let eventDelegate =
@@ -409,13 +413,13 @@ module WorldModule3 =
                 let overlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
                 let overlayRouter = OverlayRouter.make overlayRoutes
                 let symbolStore = SymbolStore.makeEmpty ()
-                AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty symbolStore None userState
+                AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty symbolStore None
 
             // make the world's spatial tree
             let spatialTree = World.makeEntityTree ()
 
             // make the world
-            let world = World.make eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree (snd defaultGameDispatcher)
+            let world = World.make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree (snd defaultGameDispatcher)
             
             // subscribe to subscribe and unsubscribe events
             let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Default.Game world
@@ -434,10 +438,11 @@ module WorldModule3 =
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member tryMake standAlone tickRate userState (plugin : NuPlugin) sdlDeps =
+        static member tryMake standAlone tickRate (config : unit) (plugin : NuPlugin) sdlDeps =
 
             // ensure game engine is initialized
-            // TODO: P1: parameterize hard-coded boolean
+            // TODO: P1: parameterize this in config
+            ignore config
             Nu.init false
 
             // attempt to create asset graph
@@ -512,13 +517,17 @@ module WorldModule3 =
                         let overlayRoutes = intrinsicOverlayRoutes @ userOverlayRoutes
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolStore = SymbolStore.makeEmpty ()
-                        AmbientState.make tickRate assetMetadataMap overlayRouter overlayer symbolStore (Some sdlDeps) userState
+                        AmbientState.make tickRate assetMetadataMap overlayRouter overlayer symbolStore (Some sdlDeps)
 
                     // make the world's spatial tree
                     let spatialTree = World.makeEntityTree ()
 
                     // make the world
-                    let world = World.make eventSystem dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher
+                    let world = World.make plugin eventSystem dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher
+
+                    // add the keyed values
+                    let (kvps, world) = plugin.MakeKeyedValues world
+                    let world = List.fold (fun world (key, value) -> World.addKeyedValue key value world) world kvps
 
                     // subscribe to subscribe and unsubscribe events
                     let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Default.Game world

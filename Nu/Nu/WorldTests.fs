@@ -8,6 +8,7 @@ open Prime
 open Nu
 module WorldTests =
 
+    let TestValueKey = scstring (makeGuid ())
     let TestFilePath = "TestFile.nugame"
     let StringEvent = stoa<string> "String/Event"
     let Jim = Default.Layer / "Jim"
@@ -19,10 +20,10 @@ module WorldTests =
 
     let [<Fact>] entitySubscribeWorks () =
         let world = World.makeDefault ()
-        let handleEvent = fun evt world -> World.updateUserValue (fun _ -> evt.Subscriber) world
+        let handleEvent = fun evt world -> World.updateKeyedValue (fun _ -> evt.Subscriber) TestValueKey world
         let world = World.subscribe handleEvent StringEvent Default.Entity world
         let world = World.publish String.Empty StringEvent EventTrace.empty Default.Game world
-        Assert.Equal<Simulant> (Default.Entity :> Simulant, World.getUserValue world)
+        Assert.Equal<Simulant> (Default.Entity :> Simulant, World.getKeyedValue TestValueKey world)
 
     let [<Fact>] iterativeFrpWorks () =
         let world = World.makeDefault ()

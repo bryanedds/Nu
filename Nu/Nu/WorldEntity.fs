@@ -356,8 +356,7 @@ module WorldEntityModule =
                     Seq.fold (fun world guidAndContent ->
                         let (guid, _) = PartialComparable.unmake guidAndContent
                         match World.tryGetKeyedValue (scstring guid) world with
-                        | Some entityObj ->
-                            let entity = entityObj :?> Entity
+                        | Some entity ->
                             let world = World.removeKeyedValue (scstring guid) world
                             World.destroyEntity entity world
                         | None -> failwithumf ())

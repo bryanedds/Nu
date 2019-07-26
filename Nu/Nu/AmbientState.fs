@@ -33,8 +33,7 @@ module AmbientStateModule =
               OverlayRouter : OverlayRouter
               SymbolStore : SymbolStore
               KeyValueStore : UMap<string, obj>
-              SdlDepsOpt : SdlDeps option
-              UserState : UserState }
+              SdlDepsOpt : SdlDeps option }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module AmbientState =
@@ -190,17 +189,9 @@ module AmbientStateModule =
         /// Attempt to check that the window is maximized.
         let tryGetWindowMaximized state =
             Option.map (fun flags -> flags ||| uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MAXIMIZED = 0u) (tryGetWindowFlags state)
-
-        /// Get the user-defined state value, cast to 'a.
-        let getUserValue state : 'a =
-            UserState.get state.UserState
-    
-        /// Update the user-defined state value.
-        let updateUserValue (updater : 'a -> 'b) state =
-            { state with UserState = UserState.update updater state.UserState }
     
         /// Make an ambient state value.
-        let make tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt userState =
+        let make tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
             { TickRate = tickRate
               TickTime = 0L
               UpdateCount = 0L
@@ -212,8 +203,7 @@ module AmbientStateModule =
               Overlayer = overlayer
               SymbolStore = symbolStore
               KeyValueStore = UMap.makeEmpty Constants.Engine.KeyValueMapConfig
-              SdlDepsOpt = sdlDepsOpt
-              UserState = UserState.make userState false }
+              SdlDepsOpt = sdlDepsOpt }
 
 /// The ambient state of the world.
 type 'w AmbientState = 'w AmbientStateModule.AmbientState

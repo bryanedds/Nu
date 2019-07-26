@@ -24,8 +24,14 @@ module Gaia =
     let addWorldChanger worldChanger =
         Globals.WorldChangers.Add worldChanger |> ignore
 
+    let private getEditorState world =
+        World.getKeyedValue<EditorState> Globals.EditorGuid world
+
+    let private updateEditorState updater world =
+        World.updateKeyedValue<EditorState> updater Globals.EditorGuid world
+
     let private getPickableEntities world =
-        let selectedLayer = (World.getUserValue world).SelectedLayer
+        let selectedLayer = (getEditorState world).SelectedLayer
         let (entities, world) = World.getEntitiesInView2 world
         let entitiesInLayer = Enumerable.ToList (Enumerable.Where (entities, fun entity -> etol entity = selectedLayer))
         (entitiesInLayer, world)
@@ -120,7 +126,7 @@ module Gaia =
             let treeNode = TreeNode dispatcherKvp.Key
             treeNode.Name <- treeNode.Text
             form.entityTreeView.Nodes.Add treeNode |> ignore
-        let selectedLayer = (World.getUserValue world).SelectedLayer
+        let selectedLayer = (getEditorState world).SelectedLayer
         for entity in World.getEntities selectedLayer world do
             addEntityTreeViewNode entity form world
         restoreExpansionState form.entityTreeView treeState
@@ -255,7 +261,7 @@ module Gaia =
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
             if atoa evt.Publisher.ParticipantAddress = entityTds.DescribedEntity.EntityAddress then
-                let world = World.updateUserValue (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
+                let world = updateEditorState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
                 deselectEntity form world
                 (Cascade, world)
             else (Cascade, world)
@@ -265,7 +271,7 @@ module Gaia =
         let handled = if World.isTicking world then Cascade else Resolve
         let mousePosition = World.getMousePositionF world
         let (_, world) = tryMousePick mousePosition form world
-        let world = World.updateUserValue (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
+        let world = updateEditorState (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
         (handled, world)
 
     let private handleNuEntityDragBegin (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
@@ -277,7 +283,7 @@ module Gaia =
                 Globals.pushPastWorld world
                 let world = if entity.GetImperative world then World.divergeEntity entity world else world
                 let world =
-                    World.updateUserValue (fun editorState ->
+                    updateEditorState (fun editorState ->
                         let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
                         let entityPosition =
                             if entity.FacetedAs<NodeFacet> world && entity.ParentNodeExists world
@@ -293,10 +299,10 @@ module Gaia =
         if canEditWithMouse form world then (Cascade, world)
         else
             let handled = if World.isTicking world then Cascade else Resolve
-            match (World.getUserValue world).DragEntityState with
+            match (getEditorState world).DragEntityState with
             | DragEntityPosition _
             | DragEntityRotation _ ->
-                let world = World.updateUserValue (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
+                let world = updateEditorState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
                 form.entityPropertyGrid.Refresh ()
                 (handled, world)
             | DragEntityNone -> (Resolve, world)
@@ -305,18 +311,18 @@ module Gaia =
         let mousePosition = World.getMousePositionF world
         let mousePositionScreen = World.mouseToScreen mousePosition world
         let dragState = DragCameraPosition (World.getEyeCenter world + mousePositionScreen, mousePositionScreen)
-        let world = World.updateUserValue (fun editorState -> { editorState with DragCameraState = dragState }) world
+        let world = updateEditorState (fun editorState -> { editorState with DragCameraState = dragState }) world
         (Resolve, world)
 
     let private handleNuCameraDragEnd (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        match (World.getUserValue world).DragCameraState with
+        match (getEditorState world).DragCameraState with
         | DragCameraPosition _ ->
-            let world = World.updateUserValue (fun editorState -> { editorState with DragCameraState = DragCameraNone }) world
+            let world = updateEditorState (fun editorState -> { editorState with DragCameraState = DragCameraNone }) world
             (Resolve, world)
         | DragCameraNone -> (Resolve, world)
 
     let private subscribeToEntityEvents form world =
-        let selectedLayer = (World.getUserValue world).SelectedLayer
+        let selectedLayer = (getEditorState world).SelectedLayer
         let world = World.subscribePlus Constants.SubscriptionKeys.ChangeParentNodeOpt (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt --> selectedLayer --> Events.Wildcard) Default.Game world |> snd
         let world = World.subscribePlus Constants.SubscriptionKeys.RegisterEntity (handleNuEntityRegister form) (Events.Register --> selectedLayer --> Events.Wildcard) Default.Game world |> snd
         let world = World.subscribePlus Constants.SubscriptionKeys.UnregisteringEntity (handleNuEntityUnregistering form) (Events.Unregistering --> selectedLayer --> Events.Wildcard) Default.Game world |> snd
@@ -330,7 +336,7 @@ module Gaia =
 
     let private trySaveSelectedLayer filePath world =
         let oldWorld = world
-        let selectedLayer = (World.getUserValue world).SelectedLayer
+        let selectedLayer = (getEditorState world).SelectedLayer
         try World.writeLayerToFile filePath selectedLayer world
         with exn ->
             World.choose oldWorld |> ignore
@@ -342,7 +348,7 @@ module Gaia =
         let oldWorld = world
 
         try // destroy current layer
-            let selectedLayer = (World.getUserValue world).SelectedLayer
+            let selectedLayer = (getEditorState world).SelectedLayer
             let world = unsubscribeFromEntityEvents world
             let world = World.destroyLayerImmediate selectedLayer world
 
@@ -355,7 +361,7 @@ module Gaia =
                 let (layer, world) = World.readLayer layerDescriptor None EditorScreen world
                 form.layerTabControl.SelectedTab.Text <- layer.Name
                 form.layerTabControl.SelectedTab.Name <- layer.Name
-                let world = World.updateUserValue (fun editorState -> { editorState with SelectedLayer = layer }) world
+                let world = updateEditorState (fun editorState -> { editorState with SelectedLayer = layer }) world
                 let world = subscribeToEntityEvents form world
 
                 // refresh tree views
@@ -420,7 +426,7 @@ module Gaia =
 
     let private handlePropertyPickParentNode (propertyDescriptor : System.ComponentModel.PropertyDescriptor) (entityTds : EntityTypeDescriptorSource) (form : GaiaForm) world =
         use entityPicker = new EntityPicker ()
-        let selectedLayer = (World.getUserValue world).SelectedLayer
+        let selectedLayer = (getEditorState world).SelectedLayer
         let entityNames =
             World.getEntities selectedLayer world |>
             Seq.filter (fun entity -> entity.FacetedAs<NodeFacet> world) |>
@@ -631,7 +637,7 @@ module Gaia =
         | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
 
     let private tryReloadPrelude (_ : GaiaForm) world =
-        let editorState = World.getUserValue world
+        let editorState = getEditorState world
         let targetDir = editorState.TargetDir
         let assetSourceDir = Path.Combine (targetDir, "..\\..")
         World.tryReloadPrelude assetSourceDir targetDir world
@@ -647,7 +653,7 @@ module Gaia =
 
     let private trySavePrelude (form : GaiaForm) world =
         let oldWorld = world
-        let editorState = World.getUserValue world
+        let editorState = getEditorState world
         let preludeSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let preludeFilePath = Path.Combine (preludeSourceDir, Assets.PreludeFilePath)
         try let preludeStr = form.preludeTextBox.Text.TrimEnd ()
@@ -658,7 +664,7 @@ module Gaia =
             (false, World.choose oldWorld)
 
     let private tryReloadAssetGraph (_ : GaiaForm) world =
-        let editorState = World.getUserValue world
+        let editorState = getEditorState world
         let targetDir = editorState.TargetDir
         let assetSourceDir = Path.Combine (targetDir, "..\\..")
         World.tryReloadAssetGraph assetSourceDir targetDir Constants.Editor.RefinementDir world
@@ -679,7 +685,7 @@ module Gaia =
 
     let private trySaveAssetGraph (form : GaiaForm) world =
         let oldWorld = world
-        let editorState = World.getUserValue world
+        let editorState = getEditorState world
         let assetSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let assetGraphFilePath = Path.Combine (assetSourceDir, Assets.AssetGraphFilePath)
         try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
@@ -691,7 +697,7 @@ module Gaia =
             (false, World.choose oldWorld)
 
     let private tryReloadOverlays form world =
-        let targetDir = (World.getUserValue world).TargetDir
+        let targetDir = (getEditorState world).TargetDir
         let overlayDir = Path.Combine (targetDir, "..\\..")
         match World.tryReloadOverlays overlayDir targetDir world with
         | (Right overlayer, world) ->
@@ -715,7 +721,7 @@ module Gaia =
 
     let private trySaveOverlayer (form : GaiaForm) world =
         let oldWorld = world
-        let editorState = World.getUserValue world
+        let editorState = getEditorState world
         let overlayerSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
         let overlayerFilePath = Path.Combine (overlayerSourceDir, Assets.OverlayerFilePath)
         try let overlays = scvalue<Overlay list> (form.overlayerTextBox.Text.TrimEnd ())
@@ -799,7 +805,7 @@ module Gaia =
         addWorldChanger $ fun world ->
             let oldWorld = world
             try Globals.pushPastWorld world
-                let selectedLayer = (World.getUserValue world).SelectedLayer
+                let selectedLayer = (getEditorState world).SelectedLayer
                 let dispatcherName = form.createEntityComboBox.Text
                 let overlayNameDescriptor =
                     match form.overlayComboBox.Text with
@@ -867,9 +873,9 @@ module Gaia =
 
     let private handleFormSave saveAs (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            let layer = (World.getUserValue world).SelectedLayer
+            let layer = (getEditorState world).SelectedLayer
             form.saveFileDialog.Title <- "Save '" + layer.Name + "' As"
-            match Map.tryFind layer.LayerAddress (World.getUserValue world).FilePaths with
+            match Map.tryFind layer.LayerAddress (getEditorState world).FilePaths with
             | Some filePath -> form.saveFileDialog.FileName <- filePath
             | None -> form.saveFileDialog.FileName <- String.Empty
             if saveAs || String.IsNullOrWhiteSpace form.saveFileDialog.FileName then
@@ -877,7 +883,7 @@ module Gaia =
                 | DialogResult.OK ->
                     let filePath = form.saveFileDialog.FileName
                     trySaveSelectedLayer filePath world
-                    World.updateUserValue (fun value ->
+                    updateEditorState (fun value ->
                         let filePaths = Map.add layer.LayerAddress filePath value.FilePaths
                         { value with FilePaths = filePaths })
                         world
@@ -894,7 +900,7 @@ module Gaia =
                 match tryLoadSelectedLayer form filePath world with
                 | (Some layer, world) ->
                     let world =
-                        World.updateUserValue (fun value ->
+                        updateEditorState (fun value ->
                             let filePaths = Map.add layer.LayerAddress filePath value.FilePaths
                             { value with FilePaths = filePaths })
                             world
@@ -911,11 +917,11 @@ module Gaia =
                 world
             | _ ->
                 Globals.pushPastWorld world
-                let layer = (World.getUserValue world).SelectedLayer
+                let layer = (getEditorState world).SelectedLayer
                 let world = World.destroyLayerImmediate layer world
                 deselectEntity form world
                 form.layerTabControl.TabPages.RemoveByKey layer.Name
-                World.updateUserValue (fun editorState ->
+                updateEditorState (fun editorState ->
                     let layerTabControl = form.layerTabControl
                     let layerTab = layerTabControl.SelectedTab
                     { editorState with
@@ -995,9 +1001,9 @@ module Gaia =
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             Globals.pushPastWorld world
-            let selectedLayer = (World.getUserValue world).SelectedLayer
+            let selectedLayer = (getEditorState world).SelectedLayer
             let (positionSnap, rotationSnap) = getSnaps form
-            let editorState = World.getUserValue world
+            let editorState = getEditorState world
             let (entityOpt, world) = World.pasteEntityFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap selectedLayer world
             match entityOpt with
             | Some entity -> selectEntity entity form world; world
@@ -1048,7 +1054,7 @@ module Gaia =
                 let layerTabControl = form.layerTabControl
                 let layerTab = layerTabControl.SelectedTab
                 stol EditorScreen layerTab.Text
-            let world = World.updateUserValue (fun editorState -> { editorState with SelectedLayer = selectedLayer}) world
+            let world = updateEditorState (fun editorState -> { editorState with SelectedLayer = selectedLayer}) world
             let world = subscribeToEntityEvents form world
             refreshEntityTreeView form world
             refreshEntityPropertyGrid form world
@@ -1134,7 +1140,7 @@ module Gaia =
                 else form.evalInputTextBox.Text
             let exprsStr = Symbol.OpenSymbolsStr + "\n" + exprsStr + "\n" + Symbol.CloseSymbolsStr
             try let exprs = scvalue<Scripting.Expr array> exprsStr
-                let layer = (World.getUserValue world).SelectedLayer
+                let layer = (getEditorState world).SelectedLayer
                 let (selectedSimulant, localFrame) =
                     match form.entityPropertyGrid.SelectedObject with
                     | :?
@@ -1181,7 +1187,7 @@ module Gaia =
                     world
                 | exprStr :: _ ->
                     try let expr = scvalue<Scripting.Expr> exprStr
-                        let selectedLayer = (World.getUserValue world).SelectedLayer
+                        let selectedLayer = (getEditorState world).SelectedLayer
                         let localFrame = selectedLayer.GetScriptFrame world
                         let struct (evaled, world) = World.evalWithLogging expr localFrame selectedLayer world
                         match Scripting.Expr.toFSharpTypeOpt evaled with
@@ -1289,7 +1295,7 @@ module Gaia =
 
     let private updateEntityDrag (form : GaiaForm) world =
         if not (canEditWithMouse form world) then
-            match (World.getUserValue world).DragEntityState with
+            match (getEditorState world).DragEntityState with
             | DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) ->
                 let (positionSnap, _) = getSnaps form
                 let mousePosition = World.getMousePositionF world
@@ -1302,7 +1308,7 @@ module Gaia =
                     else entity.SetPosition entityPositionSnapped world
                 let world = entity.PropagatePhysics world
                 let world =
-                    World.updateUserValue (fun editorState ->
+                    updateEditorState (fun editorState ->
                         { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) })
                         world
                 // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
@@ -1313,13 +1319,13 @@ module Gaia =
         else world
 
     let private updateCameraDrag (_ : GaiaForm) world =
-        match (World.getUserValue world).DragCameraState with
+        match (getEditorState world).DragCameraState with
         | DragCameraPosition (pickOffset, mousePositionScreenOrig) ->
             let mousePosition = World.getMousePositionF world
             let mousePositionScreen = World.mouseToScreen mousePosition world
             let eyeCenter = (pickOffset - mousePositionScreenOrig) + -Constants.Editor.CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
             let world = World.setEyeCenter eyeCenter world
-            World.updateUserValue (fun editorState ->
+            updateEditorState (fun editorState ->
                 { editorState with DragCameraState = DragCameraPosition (pickOffset, mousePositionScreenOrig) })
                 world
         | DragCameraNone -> world
@@ -1364,15 +1370,16 @@ module Gaia =
         if World.getSelectedScreen world = EditorScreen then
             match World.getLayers EditorScreen world |> Seq.toList with
             | defaultLayer :: _ ->
-                match World.getUserValue world : obj with
-                | :? unit ->
-                    let world = flip World.updateUserValue world (fun _ ->
+                match World.tryGetKeyedValue<EditorState> Globals.EditorGuid world with
+                | None ->
+                    let editorState =
                         { TargetDir = targetDir
                           RightClickPosition = Vector2.Zero
                           DragEntityState = DragEntityNone
                           DragCameraState = DragCameraNone
                           SelectedLayer = defaultLayer
-                          FilePaths = Map.empty })
+                          FilePaths = Map.empty }
+                    let world = World.addKeyedValue Globals.EditorGuid editorState world
                     let world = World.subscribePlus (makeGuid ()) (handleNuMouseRightDown form) Events.MouseRightDown Default.Game world |> snd
                     let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragBegin form) Events.MouseLeftDown Default.Game world |> snd
                     let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragEnd form) Events.MouseLeftUp Default.Game world |> snd
@@ -1380,8 +1387,7 @@ module Gaia =
                     let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragEnd form) Events.MouseCenterUp Default.Game world |> snd
                     let world = subscribeToEntityEvents form world
                     (defaultLayer, world)
-                | :? EditorState -> (defaultLayer, world) // NOTE: conclude world is already attached
-                | _ -> failwith "Cannot attach Gaia to a world that has a user state of a type other than unit or EditorState."
+                | Some _ -> (defaultLayer, world) // NOTE: conclude world is already attached
             | [] -> failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring EditorScreen + "' screen.")
         else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring EditorScreen + "'.")
 

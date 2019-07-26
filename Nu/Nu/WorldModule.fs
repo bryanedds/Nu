@@ -77,7 +77,7 @@ module WorldModule =
             ignore world
 
         /// Make the world.
-        static member internal make eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher =
+        static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher =
             let gameState = GameState.make activeGameDispatcher
             let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let layerStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
@@ -96,7 +96,8 @@ module WorldModule =
                       ScreenDirectory = UMap.makeEmpty Constants.Engine.SimulantMapConfig
                       Dispatchers = dispatchers
                       ScriptingEnv = scriptingEnv
-                      ScriptingContext = Game () }
+                      ScriptingContext = Game ()
+                      Plugin = plugin }
             let world =
                 World.choose
                     { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
@@ -474,15 +475,23 @@ module WorldModule =
         static member internal updateKeyValueStore updater world =
             World.updateAmbientState (AmbientState.updateKeyValueStore updater) world
 
-        static member tryGetKeyedValue key world =
-            World.getKeyValueStoreBy (UMap.tryFind key) world
+        static member tryGetKeyedValue<'a> key world =
+            match World.getKeyValueStoreBy (UMap.tryFind key) world with
+            | Some value -> Some (value :?> 'a)
+            | None -> None
 
-        static member addKeyedValue guid value world =
-            World.updateKeyValueStore (UMap.add guid value) world
+        static member getKeyedValue<'a> key world =
+            World.getKeyValueStoreBy (UMap.find key) world :?> 'a
 
-        static member removeKeyedValue guid world =
-            World.updateKeyValueStore (UMap.remove guid) world
-            
+        static member addKeyedValue<'a> key (value : 'a) world =
+            World.updateKeyValueStore (UMap.add key (value :> obj)) world
+
+        static member removeKeyedValue key world =
+            World.updateKeyValueStore (UMap.remove key) world
+
+        static member updateKeyedValue<'a> (updater : 'a -> 'a) key world =
+            World.addKeyedValue key (updater (World.getKeyedValue<'a> key world)) world
+
         /// Attempt to get the window flags.
         static member tryGetWindowFlags world =
             World.getAmbientStateBy AmbientState.tryGetWindowFlags world
@@ -494,14 +503,6 @@ module WorldModule =
         /// Attempt to check that the window is maximized.
         static member tryGetWindowMaximized world =
             World.getAmbientStateBy AmbientState.tryGetWindowMaximized world
-
-        /// Get the user-defined state value, cast to 'a.
-        static member getUserValue world : 'a =
-            World.getAmbientStateBy AmbientState.getUserValue world
-
-        /// Update the user-defined state value of the world.
-        static member updateUserValue (updater : 'a -> 'b) world =
-            World.updateAmbientState (AmbientState.updateUserValue updater) world
 
         /// Make vanilla overlay routes from dispatchers.
         static member internal dispatchersToOverlayRoutes entityDispatchers =
@@ -563,6 +564,17 @@ module WorldModule =
         /// Attempt to evaluate a script.
         static member tryEvalScript scriptFilePath world =
             ScriptingSystem.tryEvalScript World.choose scriptFilePath world
+
+    type World with // Plugin
+
+        static member preFrame world =
+            world.Plugin.PreFrame world
+
+        static member perFrame world =
+            world.Plugin.PerFrame world
+
+        static member postFrame world =
+            world.Plugin.PostFrame world
 
     type World with // Debugging
 

@@ -250,10 +250,9 @@ module WorldLayerModule =
                     Seq.fold (fun world guidAndContent ->
                         let (guid, _) = PartialComparable.unmake guidAndContent
                         match World.tryGetKeyedValue (scstring guid) world with
-                        | Some layersObj ->
-                            let layers = layersObj :?> Layer
+                        | Some layer ->
                             let world = World.removeKeyedValue (scstring guid) world
-                            World.destroyLayer layers world
+                            World.destroyLayer layer world
                         | None -> failwithumf ())
                         world removed
                 (current, world))
