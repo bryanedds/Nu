@@ -42,7 +42,7 @@ module WorldModuleEntity =
     let mutable private getFreshKeyAndValueEntity = Unchecked.defaultof<Entity>
     let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
     let private getFreshKeyAndValue _ =
-        let entityStateOpt = UMap.tryFindFast getFreshKeyAndValueEntity.EntityAddress getFreshKeyAndValueWorld.EntityStates
+        let entityStateOpt = UMap.tryFind getFreshKeyAndValueEntity.EntityAddress getFreshKeyAndValueWorld.EntityStates
         KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity.EntityAddress, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
 
     type World with
@@ -61,29 +61,27 @@ module WorldModuleEntity =
                         (World.getEntityCachedOpt world)
                 getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
                 getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
-                if FOption.isSome entityStateOpt then
-                    let entityState = FOption.get entityStateOpt
+                match entityStateOpt with
+                | Some entityState ->
                     if entityState.Imperative
                     then entity.EntityStateOpt <- entityState
                     entityState
-                else Unchecked.defaultof<EntityState>
+                | None -> Unchecked.defaultof<EntityState>
             else entityStateOpt
 
         static member private entityStateAdder entityState (entity : Entity) world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
                 | [|screenName; layerName; entityName|] ->
-                    let layerDirectory = UMap.tryFindFast screenName world.ScreenDirectory
-                    if FOption.isSome layerDirectory then
-                        let layerDirectory = FOption.get layerDirectory
-                        let entityDirectoryOpt = UMap.tryFindFast layerName layerDirectory.Value
-                        if FOption.isSome entityDirectoryOpt then
-                            let entityDirectory = FOption.get entityDirectoryOpt
+                    match UMap.tryFind screenName world.ScreenDirectory with
+                    | Some layerDirectory ->
+                        match UMap.tryFind layerName layerDirectory.Value with
+                        | Some entityDirectory ->
                             let entityDirectory' = UMap.add entityName entity.EntityAddress entityDirectory.Value
                             let layerDirectory' = UMap.add layerName (KeyValuePair (entityDirectory.Key, entityDirectory')) layerDirectory.Value
                             UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
-                        else failwith ("Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent layer.")
-                    else failwith ("Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent screen.")
+                        | None -> failwith ("Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent layer.")
+                    | None -> failwith ("Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent screen.")
                 | _ -> failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
             let entityStates = UMap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
@@ -92,17 +90,15 @@ module WorldModuleEntity =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
                 | [|screenName; layerName; entityName|] ->
-                    let layerDirectoryOpt = UMap.tryFindFast screenName world.ScreenDirectory
-                    if FOption.isSome layerDirectoryOpt then
-                        let layerDirectory = FOption.get layerDirectoryOpt
-                        let entityDirectoryOpt = UMap.tryFindFast layerName layerDirectory.Value
-                        if FOption.isSome entityDirectoryOpt then
-                            let entityDirectory = FOption.get entityDirectoryOpt
+                    match UMap.tryFind screenName world.ScreenDirectory with
+                    | Some layerDirectory ->
+                        match UMap.tryFind layerName layerDirectory.Value with
+                        | Some entityDirectory ->
                             let entityDirectory' = UMap.remove entityName entityDirectory.Value
                             let layerDirectory' = UMap.add layerName (KeyValuePair (entityDirectory.Key, entityDirectory')) layerDirectory.Value
                             UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
-                        else failwith ("Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent layer.")
-                    else failwith ("Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent screen.")
+                        | None -> failwith ("Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent layer.")
+                    | None -> failwith ("Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent screen.")
                 | _ -> failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
             let entityStates = UMap.remove entity.EntityAddress world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
@@ -471,12 +467,12 @@ module WorldModuleEntity =
 
         static member private updateEntityPublishEventFlag setFlag entity eventAddress world =
             let publishUpdates =
-                let subscriptionsOpt = UMap.tryFindFast eventAddress (World.getSubscriptions world)
-                if FOption.isSome subscriptionsOpt then
-                    match FOption.get subscriptionsOpt with
+                match UMap.tryFind eventAddress (World.getSubscriptions world) with
+                | Some subscriptions ->
+                    match subscriptions with
                     | [||] -> failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
                     | _ -> true
-                else false
+                | None -> false
             if World.getEntityExists entity world
             then setFlag publishUpdates entity world
             else world

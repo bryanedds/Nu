@@ -19,26 +19,24 @@ module WorldModuleLayer =
     type World with
     
         static member private layerStateFinder (layer : Layer) world =
-            UMap.tryFindFast layer.LayerAddress world.LayerStates
+            UMap.tryFind layer.LayerAddress world.LayerStates
 
         static member private layerStateAdder layerState (layer : Layer) world =
             let screenDirectory =
                 match Address.getNames layer.LayerAddress with
                 | [|screenName; layerName|] ->
-                    let layerDirectoryOpt = UMap.tryFindFast screenName world.ScreenDirectory
-                    if FOption.isSome layerDirectoryOpt then
-                        let layerDirectory = FOption.get layerDirectoryOpt
-                        let entityDirectoryOpt = UMap.tryFindFast layerName layerDirectory.Value
-                        if FOption.isSome entityDirectoryOpt then
-                            let entityDirectory = FOption.get entityDirectoryOpt
+                    match UMap.tryFind screenName world.ScreenDirectory with
+                    | Some layerDirectory ->
+                        match UMap.tryFind layerName layerDirectory.Value with
+                        | Some entityDirectory ->
                             let layerDirectory' = UMap.add layerName (KeyValuePair (entityDirectory.Key, entityDirectory.Value)) layerDirectory.Value
                             let entityDirectory' = KeyValuePair (layerDirectory.Key, layerDirectory')
                             UMap.add screenName entityDirectory' world.ScreenDirectory
-                        else
+                        | None ->
                             let entityDirectory' = (KeyValuePair (layer.LayerAddress, UMap.makeEmpty Constants.Engine.SimulantMapConfig))
                             let layerDirectory' = UMap.add layerName entityDirectory' layerDirectory.Value
                             UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
-                    else failwith ("Cannot add layer '" + scstring layer.LayerAddress + "' to non-existent screen.")
+                    | None -> failwith ("Cannot add layer '" + scstring layer.LayerAddress + "' to non-existent screen.")
                 | _ -> failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
             let layerStates = UMap.add layer.LayerAddress layerState world.LayerStates
             World.choose { world with ScreenDirectory = screenDirectory; LayerStates = layerStates }
@@ -47,12 +45,11 @@ module WorldModuleLayer =
             let screenDirectory =
                 match Address.getNames layer.LayerAddress with
                 | [|screenName; layerName|] ->
-                    let layerDirectoryOpt = UMap.tryFindFast screenName world.ScreenDirectory
-                    if FOption.isSome layerDirectoryOpt then
-                        let layerDirectory = FOption.get layerDirectoryOpt
+                    match UMap.tryFind screenName world.ScreenDirectory with
+                    | Some layerDirectory ->
                         let layerDirectory' = UMap.remove layerName layerDirectory.Value
                         UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
-                    else failwith ("Cannot remove layer '" + scstring layer.LayerAddress + "' from non-existent screen.")
+                    | None -> failwith ("Cannot remove layer '" + scstring layer.LayerAddress + "' from non-existent screen.")
                 | _ -> failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
             let layerStates = UMap.remove layer.LayerAddress world.LayerStates
             World.choose { world with ScreenDirectory = screenDirectory; LayerStates = layerStates }
@@ -85,9 +82,9 @@ module WorldModuleLayer =
             World.layerStateFinder layer world
 
         static member internal getLayerState layer world =
-            let layerStateOpt = World.getLayerStateOpt layer world
-            if FOption.isSome layerStateOpt then FOption.get layerStateOpt
-            else failwith ("Could not find layer with address '" + scstring layer.LayerAddress + "'.")
+            match World.getLayerStateOpt layer world with
+            | Some layerState -> layerState
+            | None -> failwith ("Could not find layer with address '" + scstring layer.LayerAddress + "'.")
 
         static member internal getLayerXtensionProperties layer world =
             let layerState = World.getLayerState layer world
@@ -107,7 +104,7 @@ module WorldModuleLayer =
 
         /// Check that a layer exists in the world.
         static member internal getLayerExists layer world =
-            FOption.isSome (World.getLayerStateOpt layer world)
+            Option.isSome (World.getLayerStateOpt layer world)
 
         static member internal getLayerDispatcher layer world = (World.getLayerState layer world).Dispatcher
         static member internal getLayerDepth layer world = (World.getLayerState layer world).Depth

@@ -1017,7 +1017,7 @@ module WorldTypes =
         internal
             { // cache line begin
               EventSystemDelegate : World EventSystemDelegate
-              EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState FOption>
+              EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState option>
               EntityTree : Entity SpatialTree MutantCache
               EntityStates : UMap<Entity Address, EntityState>
               LayerStates : UMap<Layer Address, LayerState>

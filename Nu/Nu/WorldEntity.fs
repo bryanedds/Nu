@@ -261,15 +261,13 @@ module WorldEntityModule =
         static member getEntities (layer : Layer) world =
             match Address.getNames layer.LayerAddress with
             | [|screenName; layerName|] ->
-                let layerDirectoryOpt = UMap.tryFindFast screenName (World.getScreenDirectory world)
-                if FOption.isSome layerDirectoryOpt then
-                    let layerDirectory = FOption.get layerDirectoryOpt
-                    let entityDirectoryOpt = UMap.tryFindFast layerName layerDirectory.Value
-                    if FOption.isSome entityDirectoryOpt then
-                        let entityDirectory = FOption.get entityDirectoryOpt
+                match UMap.tryFind screenName (World.getScreenDirectory world) with
+                | Some layerDirectory ->
+                    match UMap.tryFind layerName layerDirectory.Value with
+                    | Some entityDirectory ->
                         UMap.fold (fun state _ (entityAddress : _ Address) -> Entity entityAddress :: state) [] entityDirectory.Value :> _ seq
-                    else failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
-                else failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
+                    | None -> failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
+                | None -> failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
             | _ -> failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
 
         /// Destroy an entity in the world at the end of the current update.

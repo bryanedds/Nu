@@ -19,19 +19,18 @@ module WorldModuleScreen =
     type World with
     
         static member private screenStateFinder (screen : Screen) world =
-            UMap.tryFindFast screen.ScreenAddress world.ScreenStates
+            UMap.tryFind screen.ScreenAddress world.ScreenStates
 
         static member private screenStateAdder screenState (screen : Screen) world =
             let screenDirectory =
                 match Address.getNames screen.ScreenAddress with
                 | [|screenName|] ->
-                    let layerDirectoryOpt = UMap.tryFindFast screenName world.ScreenDirectory
-                    if FOption.isSome layerDirectoryOpt then
-                        let layerDirectory = FOption.get layerDirectoryOpt
+                    match UMap.tryFind screenName world.ScreenDirectory with
+                    | Some layerDirectory ->
                         // NOTE: this is logically a redundant operation...
                         let layerDirectory = KeyValuePair (screen.ScreenAddress, layerDirectory.Value)
                         UMap.add screenName layerDirectory world.ScreenDirectory
-                    else
+                    | None ->
                         let layerDirectory = KeyValuePair (screen.ScreenAddress, UMap.makeEmpty Constants.Engine.SimulantMapConfig)
                         UMap.add screenName layerDirectory world.ScreenDirectory
                 | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
@@ -73,9 +72,9 @@ module WorldModuleScreen =
              World.screenStateFinder screen world
 
         static member internal getScreenState screen world =
-            let screenStateOpt = World.getScreenStateOpt screen world
-            if FOption.isSome screenStateOpt then FOption.get screenStateOpt
-            else failwith ("Could not find screen with address '" + scstring screen.ScreenAddress + "'.")
+            match World.getScreenStateOpt screen world with
+            | Some screenState -> screenState
+            | None -> failwith ("Could not find screen with address '" + scstring screen.ScreenAddress + "'.")
 
         static member internal setScreenState screenState screen world =
             World.screenStateSetter screenState screen world
@@ -91,7 +90,7 @@ module WorldModuleScreen =
 
         /// Check that a screen exists in the world.
         static member internal getScreenExists screen world =
-            FOption.isSome (World.getScreenStateOpt screen world)
+            Option.isSome (World.getScreenStateOpt screen world)
 
         static member internal getScreenDispatcher screen world = (World.getScreenState screen world).Dispatcher
         static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
