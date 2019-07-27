@@ -65,16 +65,16 @@ type MyGameDispatcher () =
         let world = World.createLayer (Some Default.Layer.Name) Default.Screen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Default.Layer world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
-        let indices = // approximately 9,000 entities
+        let indices = // approximately 10,000 entities
             seq {
-                for i in 0 .. 70 do
+                for i in 0 .. 74 do
                     for j in 0 .. 43 do
                         for k in 0 .. 2 do
                             yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
             Seq.fold (fun world position ->
                 let (entity, world) = World.createEntity<MyEntityDispatcher> None DefaultOverlay Default.Layer world
-                let world = entity.SetPosition (position + v2 -420.0f -265.0f) world
+                let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 entity.SetSize (v2One * 8.0f) world)
                 world indices
         World.selectScreen Default.Screen world
