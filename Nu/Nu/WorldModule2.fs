@@ -870,7 +870,7 @@ module GameDispatcherModule =
         static member internal signalGame<'model, 'message, 'command> signal (game : Game) world =
             match game.GetDispatcher world with
             | :? GameDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (game.Model<'model> ()) game signal world
+                Signal.processSignal signal dispatcher.Message dispatcher.Command (game.Model<'model> ()) game world
             | _ ->
                 Log.info "Failed to send signal to game."
                 world
@@ -917,7 +917,7 @@ module GameDispatcherModule =
         override this.Register (game, world) =
             let (model, world) = World.attachModel initial Property? Model game world
             let bindings = this.Bindings (model, game, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model game) game bindings world
+            let world = Signal.processBindings bindings this.Message this.Command (this.Model game) game world
             let content = this.Content (this.Model game, game, world)
             List.foldi (fun contentIndex world content ->
                 let (screen, world) = World.expandScreenContent World.setScreenSplash content game world

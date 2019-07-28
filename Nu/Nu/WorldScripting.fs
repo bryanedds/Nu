@@ -640,11 +640,11 @@ module WorldScripting =
 
         static member internal tryGetExtrinsic fnName =
             match Extrinsics.TryGetValue fnName with
-            | (true, extrinsic) -> FOption.some extrinsic
+            | (true, extrinsic) -> Some extrinsic
             | (false, _) ->
                 match Bindings.TryGetValue fnName with
-                | (true, binding) -> FOption.some binding
-                | (false, _) -> FOption.none ()
+                | (true, binding) -> Some binding
+                | (false, _) -> None
 
         static member internal evalSchedule fnName exprs originOpt world =
             match exprs with

@@ -105,7 +105,7 @@ module WorldTypes =
     let mutable internal setPropertyOpt = Unchecked.defaultof<string -> Propertied -> obj option -> Type -> obj -> obj>
     let mutable internal handlePropertyChange = Unchecked.defaultof<string -> Propertied -> obj -> obj -> obj * obj>
 
-    // Entity flag bit-masks; only for use by internal reflection facilities.
+    // OPTIMIZATION: Entity flag bit-masks; only for use by internal reflection facilities.
     let [<Literal>] internal ImperativeMask =            0b0000000001
     let [<Literal>] internal PublishChangesMask =        0b0000000010
     let [<Literal>] internal IgnoreLayerMask =           0b0000000100
@@ -583,8 +583,7 @@ module WorldTypes =
 
     /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
-    /// NOTE: The properties here have duplicated representations in WorldModuleEntity that exist
-    /// for performance that must be kept in sync.
+    /// OPTIMIZATION: Booleans are packed into the Flags field.
     and [<CLIMutable; NoEquality; NoComparison>] EntityState =
         { // cache line begin
           Dispatcher : EntityDispatcher
@@ -594,6 +593,7 @@ module WorldTypes =
           mutable StaticData : DesignerProperty
           mutable Overflow : Vector2
           mutable Flags : int
+          // 2 free cache line bytes here
           // cache line end
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
@@ -626,10 +626,6 @@ module WorldTypes =
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName entityState =
             Xtension.tryGetProperty propertyName entityState.Xtension
-
-        /// Try to get an xtension property and its type information.
-        static member tryGetPropertyFast propertyName entityState =
-            Xtension.tryGetPropertyFast propertyName entityState.Xtension
 
         /// Get an xtension property and its type information.
         static member getProperty propertyName entityState =
@@ -998,7 +994,7 @@ module WorldTypes =
           LayerDispatchers : Map<string, LayerDispatcher>
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
-          TryGetExtrinsic : string -> World ScriptingTrinsic FOption
+          TryGetExtrinsic : string -> World ScriptingTrinsic option
           UpdateEntityInEntityTree : bool -> ViewType -> Vector4 -> Entity -> World -> World -> World
           RebuildEntityTree : World -> Entity SpatialTree }
     
