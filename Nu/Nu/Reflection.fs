@@ -51,6 +51,7 @@ module Reflection =
 
     /// Is a property with the given name persistent?
     let isPropertyPersistentByName (propertyName : string) =
+        /// NOTE: we hard-code these property names to avoid as many Np suffixes as we can.
         match propertyName with
         | "Dispatcher"
         | "Facets"

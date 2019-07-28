@@ -865,7 +865,25 @@ module WorldModule2 =
 [<AutoOpen>]
 module GameDispatcherModule =
 
-    type Game with
+    type World with
+
+        static member internal signalGame<'model, 'message, 'command> signal (game : Game) world =
+            match game.GetDispatcher world with
+            | :? GameDispatcher<'model, 'message, 'command> as dispatcher ->
+                Signal.processSignal dispatcher.Message dispatcher.Command (game.Model<'model> ()) game signal world
+            | _ ->
+                Log.info "Failed to send signal to game."
+                world
+
+        static member signal<'model, 'message, 'command> signal (simulant : Simulant) world =
+            match simulant with
+            | :? Game as game -> World.signalGame<'model, 'message, 'command> signal game world
+            | :? Screen as screen -> World.signalScreen<'model, 'message, 'command> signal screen world
+            | :? Layer as layer -> World.signalLayer<'model, 'message, 'command> signal layer world
+            | :? Entity as entity -> World.signalEntity<'model, 'message, 'command> signal entity world
+            | _ -> failwithumf ()
+
+    and Game with
     
         member this.GetModel<'model> world =
             let property = this.Get<DesignerProperty> Property? Model world
@@ -881,7 +899,10 @@ module GameDispatcherModule =
         member this.Model<'model> () =
             Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
 
-    type [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (initial : 'model) =
+        member this.Signal<'model, 'message, 'command> signal world =
+            World.signalGame<'model, 'message, 'command> signal this world
+
+    and [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit GameDispatcher ()
 
         member this.GetModel (game : Game) world : 'model =
@@ -896,7 +917,7 @@ module GameDispatcherModule =
         override this.Register (game, world) =
             let (model, world) = World.attachModel initial Property? Model game world
             let bindings = this.Bindings (model, game, world)
-            let world = Signal.processModel this.Message this.Command (this.Model game) game bindings world
+            let world = Signal.processBindings this.Message this.Command (this.Model game) game bindings world
             let content = this.Content (this.Model game, game, world)
             List.foldi (fun contentIndex world content ->
                 let (screen, world) = World.expandScreenContent World.setScreenSplash content game world

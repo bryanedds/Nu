@@ -14,7 +14,7 @@ module State =
     let state = FSharpx.State.state
 
     // Here I'm sampling the state monad syntax for Nu.
-    // I'm not completely happy with it as its somewhat noisy compared to Haskell.
+    // I'm not completely happy with it as its rather noisy compared to Haskell.
     let private stateTest layer =
         state {
             let! entity = World.createEntity None NoOverlay layer
