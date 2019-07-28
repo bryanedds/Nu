@@ -79,7 +79,7 @@ module FacetModule =
         override this.Register (entity, world) =
             let (model, world) = World.attachModel initial this.ModelName entity world
             let bindings = this.Bindings (model, entity, world)
-            let world = Signal.processModel this.Message this.Command (this.Model entity) entity bindings world
+            let world = Signal.processBindings this.Message this.Command (this.Model entity) entity bindings world
             let content = this.Content (this.Model entity, entity, world)
             List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world content
 
@@ -109,7 +109,7 @@ module EffectFacetModule =
         Map<string, Symbol * Effects.Slice list>
 
     type Entity with
-    
+
         member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
         member this.SetSelfDestruct (value : bool) world = this.SetFast Property? SelfDestruct false false value world
         member this.SelfDestruct = Lens.make Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct this
@@ -994,7 +994,17 @@ module AnimatedSpriteFacetModule =
 [<AutoOpen>]
 module EntityDispatcherModule =
 
-    type Entity with
+    type World with
+
+        static member internal signalEntity<'model, 'message, 'command> signal (entity : Entity) world =
+            match entity.GetDispatcher world with
+            | :? EntityDispatcher<'model, 'message, 'command> as dispatcher ->
+                Signal.processSignal dispatcher.Message dispatcher.Command (entity.Model<'model> ()) entity signal world
+            | _ ->
+                Log.info "Failed to send signal to entity."
+                world
+
+    and Entity with
     
         member this.GetModel<'model> world =
             let property = this.Get<DesignerProperty> Property? Model world
@@ -1012,7 +1022,10 @@ module EntityDispatcherModule =
         member this.Model<'model> () =
             Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
 
-    type [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (initial : 'model) =
+        member this.Signal<'model, 'message, 'command> signal world =
+            World.signalEntity<'model, 'message, 'command> signal this world
+
+    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit EntityDispatcher ()
 
         member this.GetModel (entity : Entity) world : 'model =
@@ -1027,7 +1040,7 @@ module EntityDispatcherModule =
         override this.Register (entity, world) =
             let (model, world) = World.attachModel initial Property? Model entity world
             let bindings = this.Bindings (model, entity, world)
-            let world = Signal.processModel this.Message this.Command (this.Model entity) entity bindings world
+            let world = Signal.processBindings this.Message this.Command (this.Model entity) entity bindings world
             let content = this.Content (this.Model entity, entity, world)
             List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world content
 
@@ -1803,7 +1816,17 @@ module TileMapDispatcherModule =
 [<AutoOpen>]
 module LayerDispatcherModule =
 
-    type Layer with
+    type World with
+
+        static member internal signalLayer<'model, 'message, 'command> signal (layer : Layer) world =
+            match layer.GetDispatcher world with
+            | :? LayerDispatcher<'model, 'message, 'command> as dispatcher ->
+                Signal.processSignal dispatcher.Message dispatcher.Command (layer.Model<'model> ()) layer signal world
+            | _ ->
+                Log.info "Failed to send signal to layer."
+                world
+
+    and Layer with
     
         member this.GetModel<'model> world =
             let property = this.Get<DesignerProperty> Property? Model world
@@ -1819,7 +1842,10 @@ module LayerDispatcherModule =
         member this.Model<'model> () =
             Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
 
-    type [<AbstractClass>] LayerDispatcher<'model, 'message, 'command> (initial : 'model) =
+        member this.Signal<'model, 'message, 'command> signal world =
+            World.signalLayer<'model, 'message, 'command> signal this world
+
+    and [<AbstractClass>] LayerDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit LayerDispatcher ()
 
         member this.GetModel (layer : Layer) world : 'model =
@@ -1834,7 +1860,7 @@ module LayerDispatcherModule =
         override this.Register (layer, world) =
             let (model, world) = World.attachModel initial Property? Model layer world
             let bindings = this.Bindings (model, layer, world)
-            let world = Signal.processModel this.Message this.Command (this.Model layer) layer bindings world
+            let world = Signal.processBindings this.Message this.Command (this.Model layer) layer bindings world
             let content = this.Content (this.Model layer, layer, world)
             List.fold (fun world content -> World.expandEntityContent None content None layer world) world content
 
@@ -1860,7 +1886,17 @@ module LayerDispatcherModule =
 [<AutoOpen>]
 module ScreenDispatcherModule =
 
-    type Screen with
+    type World with
+
+        static member internal signalScreen<'model, 'message, 'command> signal (screen : Screen) world =
+            match screen.GetDispatcher world with
+            | :? ScreenDispatcher<'model, 'message, 'command> as dispatcher ->
+                Signal.processSignal dispatcher.Message dispatcher.Command (screen.Model<'model> ()) screen signal world
+            | _ ->
+                Log.info "Failed to send signal to screen."
+                world
+
+    and Screen with
     
         member this.GetModel<'model> world =
             let property = this.Get<DesignerProperty> Property? Model world
@@ -1876,7 +1912,10 @@ module ScreenDispatcherModule =
         member this.Model<'model> () =
             Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
 
-    type [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command> (initial : 'model) =
+        member this.Signal<'model, 'message, 'command> signal world =
+            World.signalScreen<'model, 'message, 'command> signal this world
+
+    and [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit ScreenDispatcher ()
 
         member this.GetModel (screen : Screen) world : 'model =
@@ -1891,7 +1930,7 @@ module ScreenDispatcherModule =
         override this.Register (screen, world) =
             let (model, world) = World.attachModel initial Property? Model screen world
             let bindings = this.Bindings (model, screen, world)
-            let world = Signal.processModel this.Message this.Command (this.Model screen) screen bindings world
+            let world = Signal.processBindings this.Message this.Command (this.Model screen) screen bindings world
             let content = this.Content (this.Model screen, screen, world)
             let world = List.fold (fun world content -> World.expandLayerContent None content screen world) world content
             world
