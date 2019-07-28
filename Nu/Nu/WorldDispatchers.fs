@@ -79,7 +79,7 @@ module FacetModule =
         override this.Register (entity, world) =
             let (model, world) = World.attachModel initial this.ModelName entity world
             let bindings = this.Bindings (model, entity, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model entity) entity bindings world
+            let world = Signal.processBindings bindings this.Message this.Command (this.Model entity) entity world
             let content = this.Content (this.Model entity, entity, world)
             List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world content
 
@@ -999,7 +999,7 @@ module EntityDispatcherModule =
         static member internal signalEntity<'model, 'message, 'command> signal (entity : Entity) world =
             match entity.GetDispatcher world with
             | :? EntityDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (entity.Model<'model> ()) entity signal world
+                Signal.processSignal signal dispatcher.Message dispatcher.Command (entity.Model<'model> ()) entity world
             | _ ->
                 Log.info "Failed to send signal to entity."
                 world
@@ -1040,7 +1040,7 @@ module EntityDispatcherModule =
         override this.Register (entity, world) =
             let (model, world) = World.attachModel initial Property? Model entity world
             let bindings = this.Bindings (model, entity, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model entity) entity bindings world
+            let world = Signal.processBindings bindings this.Message this.Command (this.Model entity) entity world
             let content = this.Content (this.Model entity, entity, world)
             List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world content
 
@@ -1821,7 +1821,7 @@ module LayerDispatcherModule =
         static member internal signalLayer<'model, 'message, 'command> signal (layer : Layer) world =
             match layer.GetDispatcher world with
             | :? LayerDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (layer.Model<'model> ()) layer signal world
+                Signal.processSignal signal dispatcher.Message dispatcher.Command (layer.Model<'model> ()) layer world
             | _ ->
                 Log.info "Failed to send signal to layer."
                 world
@@ -1860,7 +1860,7 @@ module LayerDispatcherModule =
         override this.Register (layer, world) =
             let (model, world) = World.attachModel initial Property? Model layer world
             let bindings = this.Bindings (model, layer, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model layer) layer bindings world
+            let world = Signal.processBindings bindings this.Message this.Command (this.Model layer) layer world
             let content = this.Content (this.Model layer, layer, world)
             List.fold (fun world content -> World.expandEntityContent None content None layer world) world content
 
@@ -1891,7 +1891,7 @@ module ScreenDispatcherModule =
         static member internal signalScreen<'model, 'message, 'command> signal (screen : Screen) world =
             match screen.GetDispatcher world with
             | :? ScreenDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (screen.Model<'model> ()) screen signal world
+                Signal.processSignal signal dispatcher.Message dispatcher.Command (screen.Model<'model> ()) screen world
             | _ ->
                 Log.info "Failed to send signal to screen."
                 world
@@ -1930,7 +1930,7 @@ module ScreenDispatcherModule =
         override this.Register (screen, world) =
             let (model, world) = World.attachModel initial Property? Model screen world
             let bindings = this.Bindings (model, screen, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model screen) screen bindings world
+            let world = Signal.processBindings bindings this.Message this.Command (this.Model screen) screen world
             let content = this.Content (this.Model screen, screen, world)
             let world = List.fold (fun world content -> World.expandLayerContent None content screen world) world content
             world

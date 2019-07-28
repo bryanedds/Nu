@@ -3566,8 +3566,8 @@ module WorldBindings =
 
     let tryGetBinding fnName =
         match WorldScripting.Bindings.TryGetValue fnName with
-        | (true, binding) -> FOption.some binding
-        | (false, _) -> FOption.none ()
+        | (true, binding) -> Some binding
+        | (false, _) -> None
 
     let initBindings () =
         let bindings =
