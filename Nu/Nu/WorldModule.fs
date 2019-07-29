@@ -566,13 +566,13 @@ module WorldModule =
 
     type World with // Plugin
 
-        static member preFrame world =
+        static member internal preFrame world =
             world.Plugin.PreFrame world
 
-        static member perFrame world =
+        static member internal perFrame world =
             world.Plugin.PerFrame world
 
-        static member postFrame world =
+        static member internal postFrame world =
             world.Plugin.PostFrame world
 
     type World with // Debugging
