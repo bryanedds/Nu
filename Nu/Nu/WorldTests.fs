@@ -15,7 +15,8 @@ module WorldTests =
     let Bob = Default.Layer / "Bob"
 
     let [<Fact>] runOneFrameThenCleanUp () =
-        let world = World.makeEmpty ()
+        let worldConfig = WorldConfig.defaultConfig
+        let world = World.makeEmpty worldConfig
         World.run4 (fun world -> World.getTickTime world < 1L) SdlDeps.empty Running world
 
     let [<Fact>] entitySubscribeWorks () =

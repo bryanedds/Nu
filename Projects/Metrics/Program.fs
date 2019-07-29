@@ -89,10 +89,11 @@ module Program =
 
     // this program exists to take metrics on Nu's performance
     let [<EntryPoint; STAThread>] main _ =
-        Nu.init false
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "MyGame" }
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
-        let tryMakeWorld sdlDeps =
+        let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
+        Nu.init worldConfig.NuConfig
+        let tryMakeWorld sdlDeps worldConfig =
             let plugin = MyGamePlugin ()
-            World.tryMake WorldConfig.defaultConfig plugin sdlDeps
-        World.run tryMakeWorld sdlConfig
+            World.tryMake plugin sdlDeps worldConfig
+        World.run tryMakeWorld worldConfig
