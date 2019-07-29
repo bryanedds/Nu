@@ -105,9 +105,9 @@
     <None Include="Assets\Default\Image10.png" />
     <None Include="Assets\Default\TileSet.png" />
     <None Include="Assets\Default\TileMap.tmx" />
+    <None Include="Assets\Gameplay\Level.nulyr" />
     <None Include="Assets\Gui\Title.nulyr" />
     <None Include="Assets\Gui\Credits.nulyr" />
-    <None Include="Assets\Gui\Level.nulyr" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj">
