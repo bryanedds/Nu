@@ -18,16 +18,15 @@ type MyGameplayDispatcher () =
 
     // here we define the Bindings used to connect events to their desired commands
     override this.Bindings (_, _, _) =
-        [Simulants.Gameplay.UpdateEvent =>!
-            EyeTrack
-         Simulants.Game.KeyboardKeyDownEvent =|>! fun evt ->
+        [Simulants.Game.KeyboardKeyDownEvent =|>! fun evt ->
             if evt.Data.ScanCode = int SDL.SDL_Scancode.SDL_SCANCODE_UP && not evt.Data.Repeated
             then Jump
             else Nop
          Simulants.Gameplay.UpdateEvent =|>! fun _ ->
             if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then MoveLeft
             elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then MoveRight
-            else Nop]
+            else Nop
+         Simulants.Gameplay.UpdateEvent =>! EyeTrack]
 
     // here we handle the above commands
     override this.Command (command, _, _, world) =
@@ -69,4 +68,4 @@ type MyGameplayDispatcher () =
                     [Entity.Position == v2 0.0f 0.0f
                      Entity.Size == v2 144.0f 144.0f]]
          Content.layerIfScreenSelected Simulants.Gameplay $ fun () ->
-            Content.layerFromFile Simulants.Level.Name "Assets/Gui/Level.nulyr"]
+            Content.layerFromFile Simulants.Level.Name "Assets/Gameplay/Level.nulyr"]
