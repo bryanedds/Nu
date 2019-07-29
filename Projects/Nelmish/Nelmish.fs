@@ -1,6 +1,7 @@
 ﻿namespace Nelmish
 open Prime
 open Nu
+open Nu.Declarative
 module Nelmish =
 
     // here we create references for the entities that we are going to define for our game
@@ -42,15 +43,15 @@ module Nelmish =
             [Content.screen Default.Screen.Name Vanilla []
                 [Content.layer Default.Layer.Name []
                     [Content.button DecrementButton.Name
-                        [DecrementButton.Text == "-"
-                         DecrementButton.Position == v2 -256.0f 64.0f]
+                        [Entity.Text == "-"
+                         Entity.Position == v2 -256.0f 64.0f]
                      Content.button IncrementButton.Name
-                        [IncrementButton.Text == "+"
-                         IncrementButton.Position == v2 0.0f 64.0f]
+                        [Entity.Text == "+"
+                         Entity.Position == v2 0.0f 64.0f]
                      Content.text CounterText.Name
-                        [CounterText.Text ==> model --> scstring
-                         CounterText.Position == v2 -128.0f -32.0f]
+                        [Entity.Text ==> model --> scstring
+                         Entity.Position == v2 -128.0f -32.0f]
                      Content.entityIf (model --> isNonZero) $ fun () ->
                         Content.button ResetButton.Name
-                            [ResetButton.Text == "Reset"
-                             ResetButton.Position == v2 -128.0f -128.0f]]]]
+                            [Entity.Text == "Reset"
+                             Entity.Position == v2 -128.0f -128.0f]]]]
