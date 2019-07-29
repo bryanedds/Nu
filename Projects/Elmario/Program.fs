@@ -21,25 +21,28 @@ module Program =
     // this the entry point for your Nu application
     let [<EntryPoint; STAThread>] main _ =
 
-        // initialize Nu
-        Nu.init false
-
         // this specifies the window configuration used to display the game.
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Elmario" }
         
         // this specifies the configuration of the game engine's use of SDL.
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
 
+        // use the default config
+        let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
+
+        // initialize Nu
+        Nu.init worldConfig.NuConfig
+
         // this is a callback that attempts to make 'the world' in a functional programming
         // sense. In a Nu game, the world is represented as an abstract data type named World.
-        let tryMakeWorld sdlDeps =
+        let tryMakeWorld sdlDeps worldConfig =
 
             // an instance of the above plugin
             let plugin = ElmarioPlugin ()
 
             // here is an attempt to make the world with the various initial states, the engine
             // plugin, and SDL dependencies.
-            World.tryMake WorldConfig.defaultConfig plugin sdlDeps
+            World.tryMake plugin sdlDeps worldConfig
 
         // after some configuration it is time to run the game. We're off and running!
-        World.run tryMakeWorld sdlConfig
+        World.run tryMakeWorld worldConfig

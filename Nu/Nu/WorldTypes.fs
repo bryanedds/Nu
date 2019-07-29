@@ -97,17 +97,27 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
     member this.BindingName = bindingName
     new () = FunctionBindingAttribute ""
 
+/// Configuration parameters for Nu.
+type NuConfig =
+    { RunSynchronously : bool }
+
+    /// The default configuration for Nu.
+    static member defaultConfig =
+        { RunSynchronously = false }
+
 /// Configuration parameters for the world.
 type WorldConfig =
-    { TickRate : int64
-      StandAlone : bool
-      RunSynchronously : bool }
+    { NuConfig : NuConfig
+      SdlConfig : SdlConfig
+      TickRate : int64
+      StandAlone : bool }
 
     /// The default configuration of the world.
     static member defaultConfig =
-        { TickRate = 1L
-          StandAlone = true
-          RunSynchronously = false }
+        { NuConfig = NuConfig.defaultConfig
+          SdlConfig = SdlConfig.defaultConfig
+          TickRate = 1L
+          StandAlone = true }
 
 [<AutoOpen>]
 module WorldTypes =

@@ -11,5 +11,6 @@ open Nu
 module Program =
 
     let [<EntryPoint; STAThread>] main _ =
-        Gaia.init ()
-        Gaia.run ()
+        let worldConfig = { WorldConfig.defaultConfig with TickRate = 0L; StandAlone = false }
+        Gaia.init worldConfig.NuConfig
+        Gaia.run worldConfig

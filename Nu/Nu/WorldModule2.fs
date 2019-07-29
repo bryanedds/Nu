@@ -856,11 +856,11 @@ module WorldModule2 =
             result
 
         /// Run the game engine with the given handlers.
-        static member run handleAttemptMakeWorld sdlConfig =
-            match SdlDeps.attemptMake sdlConfig with
+        static member run handleAttemptMakeWorld worldConfig =
+            match SdlDeps.attemptMake worldConfig.SdlConfig with
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
-                match handleAttemptMakeWorld sdlDeps with
+                match handleAttemptMakeWorld sdlDeps worldConfig with
                 | Right world -> World.run4 tautology sdlDeps Running world
                 | Left error -> Log.trace error; Constants.Engine.FailureExitCode
             | Left error -> Log.trace error; Constants.Engine.FailureExitCode

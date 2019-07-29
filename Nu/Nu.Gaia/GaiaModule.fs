@@ -1631,8 +1631,8 @@ module Gaia =
     /// Attempt to make a world for use in the Gaia form.
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
-    let tryMakeWorld openGameplayScreen worldConfig plugin sdlDeps =
-        let worldEir = World.tryMake worldConfig plugin sdlDeps
+    let tryMakeWorld openGameplayScreen plugin sdlDeps worldConfig =
+        let worldEir = World.tryMake plugin sdlDeps worldConfig
         match worldEir with
         | Right world ->
             let world = World.setEventFilter (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])]) world
@@ -1667,14 +1667,13 @@ module Gaia =
         Globals.World
 
     /// Run Gaia in isolation.
-    let run () =
+    let run worldConfig =
         let (savedState, targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
         use form = createForm ()
         Globals.Form <- form
         match tryMakeSdlDeps form with
         | Right sdlDeps ->
-            let worldConfig = { WorldConfig.defaultConfig with TickRate = 0L; StandAlone = false }
-            match tryMakeWorld savedState.OpenGameplayScreen worldConfig plugin sdlDeps with
+            match tryMakeWorld savedState.OpenGameplayScreen plugin sdlDeps worldConfig with
             | Right world ->
                 Globals.World <- world
                 let _ = run3 tautology targetDir sdlDeps form
@@ -1682,6 +1681,6 @@ module Gaia =
             | Left error -> failwith error
         | Left error -> failwith error
 
-    let init () =
-        Nu.init false
+    let init nuConfig =
+        Nu.init nuConfig
         Globals.SelectEntity <- selectEntity

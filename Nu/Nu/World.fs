@@ -16,7 +16,7 @@ module Nu =
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
     /// Initialize the Nu game engine.
-    let init runSynchronously =
+    let init nuConfig =
 
         // init only if needed
         if not Initialized then
@@ -308,7 +308,7 @@ module Nu =
 #endif
 
             // init Vsync with incoming parameter
-            Vsync.init runSynchronously
+            Vsync.init nuConfig.RunSynchronously
 
             // init event world caching
             EventSystem.setEventAddressCaching true
@@ -365,12 +365,10 @@ module WorldModule3 =
                  (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
 
         /// Make an empty world.
-        static member makeEmpty (config : unit) =
+        static member makeEmpty (config : WorldConfig) =
 
             // ensure game engine is initialized
-            // TODO: P1: parameterize this in config
-            ignore config
-            Nu.init false
+            Nu.init config.NuConfig
 
             // make the default plug-in
             let plugin = NuPlugin ()
@@ -430,7 +428,8 @@ module WorldModule3 =
 
         /// Make a default world with a default screen, layer, and entity, such as for testing.
         static member makeDefault () =
-            let world = World.makeEmpty ()
+            let worldConfig = WorldConfig.defaultConfig
+            let world = World.makeEmpty worldConfig
             let world = World.createScreen (Some Default.Screen.Name) world |> snd
             let world = World.createLayer (Some Default.Layer.Name) Default.Screen world |> snd
             let world = World.createEntity (Some Default.Entity.Name) DefaultOverlay Default.Layer world |> snd
@@ -438,10 +437,10 @@ module WorldModule3 =
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member tryMake (config : WorldConfig) (plugin : NuPlugin) sdlDeps =
+        static member tryMake (plugin : NuPlugin) sdlDeps config =
 
             // ensure game engine is initialized
-            Nu.init config.RunSynchronously
+            Nu.init config.NuConfig
 
             // attempt to create asset graph
             match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
