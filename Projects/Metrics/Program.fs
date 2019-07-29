@@ -94,5 +94,5 @@ module Program =
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
         let tryMakeWorld sdlDeps =
             let plugin = MyGamePlugin ()
-            World.tryMake true 1L () plugin sdlDeps
+            World.tryMake WorldConfig.defaultConfig plugin sdlDeps
         World.run tryMakeWorld sdlConfig

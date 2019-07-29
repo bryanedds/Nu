@@ -57,9 +57,9 @@ module Program =
             // an instance of the above plugin
             let plugin = BlazePlugin ()
 
-            // here is an attempt to make the world with the various initial states, the engine
+            // here is an attempt to make the world with the world configuration, the engine
             // plugin, and SDL dependencies.
-            World.tryMake true 1L () plugin sdlDeps
+            World.tryMake WorldConfig.defaultConfig plugin sdlDeps
 
         // after some configuration it is time to run the game. We're off and running!
         World.run tryMakeWorld sdlConfig
