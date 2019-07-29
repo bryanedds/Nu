@@ -97,6 +97,18 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
     member this.BindingName = bindingName
     new () = FunctionBindingAttribute ""
 
+/// Configuration parameters for the world.
+type WorldConfig =
+    { TickRate : int64
+      StandAlone : bool
+      RunSynchronously : bool }
+
+    /// The default configuration of the world.
+    static member defaultConfig =
+        { TickRate = 1L
+          StandAlone = true
+          RunSynchronously = false }
+
 [<AutoOpen>]
 module WorldTypes =
 

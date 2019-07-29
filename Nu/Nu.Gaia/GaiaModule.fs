@@ -1631,8 +1631,8 @@ module Gaia =
     /// Attempt to make a world for use in the Gaia form.
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
-    let tryMakeWorld openGameplayScreen plugin sdlDeps =
-        let worldEir = World.tryMake false 0L () plugin sdlDeps
+    let tryMakeWorld openGameplayScreen worldConfig plugin sdlDeps =
+        let worldEir = World.tryMake worldConfig plugin sdlDeps
         match worldEir with
         | Right world ->
             let world = World.setEventFilter (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])]) world
@@ -1673,7 +1673,8 @@ module Gaia =
         Globals.Form <- form
         match tryMakeSdlDeps form with
         | Right sdlDeps ->
-            match tryMakeWorld savedState.OpenGameplayScreen plugin sdlDeps with
+            let worldConfig = { WorldConfig.defaultConfig with TickRate = 0L; StandAlone = false }
+            match tryMakeWorld savedState.OpenGameplayScreen worldConfig plugin sdlDeps with
             | Right world ->
                 Globals.World <- world
                 let _ = run3 tautology targetDir sdlDeps form

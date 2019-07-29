@@ -438,12 +438,10 @@ module WorldModule3 =
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member tryMake standAlone tickRate (config : unit) (plugin : NuPlugin) sdlDeps =
+        static member tryMake (config : WorldConfig) (plugin : NuPlugin) sdlDeps =
 
             // ensure game engine is initialized
-            // TODO: P1: parameterize this in config
-            ignore config
-            Nu.init false
+            Nu.init config.RunSynchronously
 
             // attempt to create asset graph
             match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
@@ -480,7 +478,7 @@ module WorldModule3 =
                       RebuildEntityTree = World.rebuildEntityTree }
 
                 // look up the active game dispather
-                let activeGameDispatcherName = if standAlone then plugin.GetStandAloneGameDispatcherName () else plugin.GetEditorGameDispatcherName ()
+                let activeGameDispatcherName = if config.StandAlone then plugin.GetStandAloneGameDispatcherName () else plugin.GetEditorGameDispatcherName ()
                 let activeGameDispatcher = Map.find activeGameDispatcherName dispatchers.GameDispatchers
 
                 // make the world's subsystems
@@ -517,7 +515,7 @@ module WorldModule3 =
                         let overlayRoutes = intrinsicOverlayRoutes @ userOverlayRoutes
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolStore = SymbolStore.makeEmpty ()
-                        AmbientState.make tickRate assetMetadataMap overlayRouter overlayer symbolStore (Some sdlDeps)
+                        AmbientState.make config.TickRate assetMetadataMap overlayRouter overlayer symbolStore (Some sdlDeps)
 
                     // make the world's spatial tree
                     let spatialTree = World.makeEntityTree ()

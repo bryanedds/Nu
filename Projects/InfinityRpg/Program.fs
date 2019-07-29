@@ -1,6 +1,5 @@
 ﻿namespace InfinityRpg
 open System
-open SDL2
 open Nu
 module Program =
 
@@ -17,4 +16,4 @@ module Program =
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
 
         // after some configuration it is time to run the game. We're off and running!
-        World.run (fun sdlDeps -> World.tryMake true 1L () (InfinityRpgPlugin ()) sdlDeps) sdlConfig
+        World.run (fun sdlDeps -> World.tryMake WorldConfig.defaultConfig (InfinityRpgPlugin ()) sdlDeps) sdlConfig
