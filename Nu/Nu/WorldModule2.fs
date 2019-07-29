@@ -878,6 +878,7 @@ module GameDispatcherModule =
                 Log.info "Failed to send signal to game."
                 world
 
+        /// Send a signal to a simulant.
         static member signal<'model, 'message, 'command> signal (simulant : Simulant) world =
             match simulant with
             | :? Game as game -> World.signalGame<'model, 'message, 'command> signal game world
