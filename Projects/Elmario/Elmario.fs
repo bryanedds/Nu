@@ -2,6 +2,7 @@
 open Prime
 open SDL2
 open Nu
+open Nu.Declarative
 module Elmario =
 
     // here we create references for the entities that we are going to define for our game
@@ -59,13 +60,13 @@ module Elmario =
             [Content.screen Default.Screen.Name Vanilla []
                 [Content.layer Default.Layer.Name []
                     [Content.character Elmario.Name
-                        [Elmario.Position == v2 0.0f 0.0f
-                         Elmario.Size == v2 144.0f 144.0f]
+                        [Entity.Position == v2 0.0f 0.0f
+                         Entity.Size == v2 144.0f 144.0f]
                      Content.block Ground.Name
-                        [Ground.Position == v2 -384.0f -256.0f
-                         Ground.Size == v2 768.0f 64.0f
-                         Ground.StaticImage == (AssetTag.make "Gameplay" "TreeTop")]
+                        [Entity.Position == v2 -384.0f -256.0f
+                         Entity.Size == v2 768.0f 64.0f
+                         Entity.StaticImage == (AssetTag.make "Gameplay" "TreeTop")]
                      Content.block Rock.Name
-                        [Rock.Position == v2 320.0f -192.0f
-                         Rock.Size == v2 64.0f 64.0f
-                         Rock.StaticImage == (AssetTag.make "Gameplay" "Rock")]]]]
+                        [Entity.Position == v2 320.0f -192.0f
+                         Entity.Size == v2 64.0f 64.0f
+                         Entity.StaticImage == (AssetTag.make "Gameplay" "Rock")]]]]
