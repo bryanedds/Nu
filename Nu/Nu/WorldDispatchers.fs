@@ -14,7 +14,7 @@ module DeclarativeOperators2 =
 
     type World with
 
-        static member attachModel modelValue modelName (simulant : Simulant) world =
+        static member internal attachModel modelValue modelName (simulant : Simulant) world =
             match World.tryGetProperty modelName simulant world with
             | Some property ->
                 let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
@@ -25,7 +25,7 @@ module DeclarativeOperators2 =
                 let world = World.attachProperty modelName true false property simulant world
                 (modelValue, world)
 
-        static member actualizeViews views world =
+        static member internal actualizeViews views world =
             List.fold (fun world view ->
                 match view with
                 | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world

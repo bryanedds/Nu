@@ -265,7 +265,7 @@ module WorldScreenModule =
             World.readScreen screenDescriptor nameOpt world
 
         /// Apply a screen behavior to a screen.
-        static member applyScreenBehavior setScreenSplash behavior screen world =
+        static member applyScreenBehavior setScreenSplash behavior (screen : Screen) world =
             match behavior with
             | Vanilla -> (screen, world)
             | OmniScreen -> (screen, World.setOmniScreen screen world)
@@ -275,7 +275,7 @@ module WorldScreenModule =
                 let world = setScreenSplash (Some splashData) destination screen world
                 (screen, world)
 
-        /// Turn screen content into a screen.
+        /// Turn screen content into a live screen.
         static member expandScreenContent setScreenSplash content game world =
             match ScreenContent.expand content game world with
             | Left (name, descriptor, equations, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths, entityContents) ->

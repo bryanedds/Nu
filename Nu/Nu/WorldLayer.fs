@@ -257,7 +257,7 @@ module WorldLayerModule =
                         world removed
                 (current, world))
 
-        /// Turn an layers stream into a series of layers.
+        /// Turn a layers stream into a series of live layers.
         static member expandLayerStream (lens : World Lens) mapper screen world =
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
@@ -265,7 +265,7 @@ module WorldLayerModule =
             World.streamLayers mapper screen |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
-        /// Turn layer content into a layer.
+        /// Turn layer content into a live layer.
         static member expandLayerContent guidOpt content screen world =
             match LayerContent.expand content screen world with
             | Choice1Of3 (lens, mapper) ->
