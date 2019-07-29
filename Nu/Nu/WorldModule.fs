@@ -106,11 +106,11 @@ module WorldModule =
     type World with // EventSystem
 
         /// Get event subscriptions.
-        static member getSubscriptions world =
+        static member internal getSubscriptions world =
             EventSystem.getSubscriptions<World> world
 
         /// Get event unsubscriptions.
-        static member getUnsubscriptions world =
+        static member internal getUnsubscriptions world =
             EventSystem.getUnsubscriptions<World> world
 
         /// Get whether events are being traced.
@@ -297,7 +297,7 @@ module WorldModule =
         static member incTickTime world =
             World.schedule2 (World.updateAmbientState AmbientState.incTickTimeImmediate) world
 
-        /// Increment the tick time at the end of the current frame.
+        /// Decrement the tick time at the end of the current frame.
         [<FunctionBinding>]
         static member decTickTime world =
             World.schedule2 (World.updateAmbientState AmbientState.decTickTimeImmediate) world
@@ -322,7 +322,7 @@ module WorldModule =
         static member getLiveness world =
             World.getAmbientStateBy AmbientState.getLiveness world
 
-        /// Place the engine into a state such that the app will exit at the end of the current phase.
+        /// Place the engine into a state such that the app will exit at the end of the current frame.
         [<FunctionBinding>]
         static member exit world =
             World.updateAmbientState AmbientState.exit world
@@ -424,8 +424,7 @@ module WorldModule =
             let overlayRouter = World.getOverlayRouter world
             by overlayRouter
 
-        /// Try to get the routed optional overlay name.
-        static member tryFindRoutedOverlayNameOpt dispatcherName state =
+        static member internal tryFindRoutedOverlayNameOpt dispatcherName state =
             World.getOverlayRouterBy (OverlayRouter.tryFindOverlayNameOpt dispatcherName) state
 
         static member internal getSymbolStoreBy by world =

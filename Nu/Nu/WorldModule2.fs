@@ -424,17 +424,20 @@ module WorldModule2 =
                 | Left error -> (Left error, world)
             with exn -> (Left (scstring exn), World.choose world)
 
+        /// Clear all messages in all subsystems.
         static member clearMessages world =
              let world = World.updatePhysicsEngine Subsystem.clearMessages world
              let world = World.updateRenderer Subsystem.clearMessages world
              let world = World.updateAudioPlayer Subsystem.clearMessages world
              world
         
+        /// Freeze the state of a world.
         static member freeze world =
             // not sure if we really want to also clear physics messages here - we didn't
             // used to
             World.clearMessages world
 
+        /// Thaw the state of a world.
         static member thaw world =
 
             // because there is an optimization that makes event context mutable, operations

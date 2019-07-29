@@ -367,7 +367,7 @@ module WorldEntityModule =
                         world removed
                 (current, world))
 
-        /// Turn an entity stream into a series of entities.
+        /// Turn an entity stream into a series of live entities.
         static member expandEntityStream (lens : World Lens) mapper ownerOpt layer world =
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
@@ -375,7 +375,7 @@ module WorldEntityModule =
             World.streamEntities mapper ownerOpt layer |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
-        /// Turn entity content into an entity.
+        /// Turn entity content into a live entity.
         static member expandEntityContent guidOpt content ownerOpt layer world =
             match EntityContent.expand content layer world with
             | Choice1Of3 (lens, mapper) ->
