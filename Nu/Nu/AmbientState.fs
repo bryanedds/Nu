@@ -20,19 +20,22 @@ type [<NoEquality; NoComparison>] 'w Tasklet =
 module AmbientStateModule =
 
     /// The ambient state of the world.
+    /// TODO: let's try to get this inside a cache line
     type [<ReferenceEquality>] 'w AmbientState =
         private
-            { TickRate : int64
+            { // cache line begin
+              TickRate : int64 // NOTE: might be better to make this accessible from World to avoid the cache misses
               TickTime : int64
               UpdateCount : int64
               Liveness : Liveness
               Tasklets : 'w Tasklet UList
-              TaskletsProcessing : bool
+              TaskletsProcessing : bool // NOTE: can probably make this global to reduce record size
               Metadata : Metadata
               Overlayer : Overlayer
+              // cache line end
               OverlayRouter : OverlayRouter
               SymbolStore : SymbolStore
-              KeyValueStore : UMap<string, obj>
+              KeyValueStore : UMap<string, obj> // NOTE: might want to put this inside the cache line
               SdlDepsOpt : SdlDeps option }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
