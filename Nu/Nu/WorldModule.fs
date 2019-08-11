@@ -327,36 +327,6 @@ module WorldModule =
         static member exit world =
             World.updateAmbientState AmbientState.exit world
 
-        static member internal getTasklets world =
-            World.getAmbientStateBy AmbientState.getTasklets world
-
-        static member internal clearTasklets world =
-            World.updateAmbientState AmbientState.clearTasklets world
-
-        static member internal restoreTasklets tasklets world =
-            World.updateAmbientState (AmbientState.restoreTasklets tasklets) world
-
-        static member internal getTaskletsProcessing world =
-            World.getAmbientStateBy AmbientState.getTaskletsProcessing world
-
-        /// Add a tasklet to be executed by the engine at the scheduled time.
-        static member addTasklet tasklet world =
-            World.updateAmbientState (AmbientState.addTasklet tasklet) world
-
-        /// Add multiple tasklets to be executed by the engine at the scheduled times.
-        static member addTasklets tasklets world =
-            World.updateAmbientState (AmbientState.addTasklets tasklets) world
-
-        /// Schedule an operation to be executed by the engine at the given time.
-        static member schedule fn time world =
-            let tasklet = { ScheduledTime = time; Command = { Execute = fn }}
-            World.addTasklet tasklet world
-
-        /// Schedule an operation to be executed by the engine at the end of the current frame.
-        static member schedule2 fn world =
-            let taskletsProcessing = World.getTaskletsProcessing world
-            World.schedule fn (World.getTickTime world + if taskletsProcessing then 1L else 0L) world
-
         static member internal getMetadata world =
             AmbientState.getMetadata (World.getAmbientState world)
 
@@ -399,33 +369,76 @@ module WorldModule =
         static member getAssetMap world =
             Metadata.getAssetMap (World.getMetadata world)
 
-        static member internal getOverlayerBy by world =
-            let overlayer = World.getAmbientStateBy AmbientState.getOverlayer world
-            by overlayer
+        static member internal getKeyValueStoreBy by world =
+            World.getAmbientStateBy (AmbientState.getKeyValueStoreBy by) world
 
-        static member internal getOverlayer world =
-            World.getOverlayerBy id world
+        static member internal getKeyValueStore world =
+            World.getAmbientStateBy AmbientState.getKeyValueStore world
 
-        static member internal setOverlayer overlayer world =
-            World.updateAmbientState (AmbientState.setOverlayer overlayer) world
+        static member internal setKeyValueStore symbolStore world =
+            World.updateAmbientState (AmbientState.setKeyValueStore symbolStore) world
 
-        /// Get intrinsic overlays.
-        static member getIntrinsicOverlays world =
-            World.getOverlayerBy Overlayer.getIntrinsicOverlays world
+        static member internal updateKeyValueStore updater world =
+            World.updateAmbientState (AmbientState.updateKeyValueStore updater) world
 
-        /// Get extrinsic overlays.
-        static member getExtrinsicOverlays world =
-            World.getOverlayerBy Overlayer.getExtrinsicOverlays world
+        static member tryGetKeyedValue<'a> key world =
+            match World.getKeyValueStoreBy (UMap.tryFind key) world with
+            | Some value -> Some (value :?> 'a)
+            | None -> None
 
-        static member internal getOverlayRouter world =
-            World.getAmbientStateBy AmbientState.getOverlayRouter world
+        static member getKeyedValue<'a> key world =
+            World.getKeyValueStoreBy (UMap.find key) world :?> 'a
 
-        static member internal getOverlayRouterBy by world =
-            let overlayRouter = World.getOverlayRouter world
-            by overlayRouter
+        static member addKeyedValue<'a> key (value : 'a) world =
+            World.updateKeyValueStore (UMap.add key (value :> obj)) world
 
-        static member internal tryFindRoutedOverlayNameOpt dispatcherName state =
-            World.getOverlayRouterBy (OverlayRouter.tryFindOverlayNameOpt dispatcherName) state
+        static member removeKeyedValue key world =
+            World.updateKeyValueStore (UMap.remove key) world
+
+        static member updateKeyedValue<'a> (updater : 'a -> 'a) key world =
+            World.addKeyedValue key (updater (World.getKeyedValue<'a> key world)) world
+
+        static member internal getTasklets world =
+            World.getAmbientStateBy AmbientState.getTasklets world
+
+        static member internal clearTasklets world =
+            World.updateAmbientState AmbientState.clearTasklets world
+
+        static member internal restoreTasklets tasklets world =
+            World.updateAmbientState (AmbientState.restoreTasklets tasklets) world
+
+        static member internal getTaskletsProcessing world =
+            World.getAmbientStateBy AmbientState.getTaskletsProcessing world
+
+        /// Add a tasklet to be executed by the engine at the scheduled time.
+        static member addTasklet tasklet world =
+            World.updateAmbientState (AmbientState.addTasklet tasklet) world
+
+        /// Add multiple tasklets to be executed by the engine at the scheduled times.
+        static member addTasklets tasklets world =
+            World.updateAmbientState (AmbientState.addTasklets tasklets) world
+
+        /// Schedule an operation to be executed by the engine at the given time.
+        static member schedule fn time world =
+            let tasklet = { ScheduledTime = time; Command = { Execute = fn }}
+            World.addTasklet tasklet world
+
+        /// Schedule an operation to be executed by the engine at the end of the current frame.
+        static member schedule2 fn world =
+            let taskletsProcessing = World.getTaskletsProcessing world
+            World.schedule fn (World.getTickTime world + if taskletsProcessing then 1L else 0L) world
+
+        /// Attempt to get the window flags.
+        static member tryGetWindowFlags world =
+            World.getAmbientStateBy AmbientState.tryGetWindowFlags world
+
+        /// Attempt to check that the window is minimized.
+        static member tryGetWindowMinimized world =
+            World.getAmbientStateBy AmbientState.tryGetWindowMinimized world
+
+        /// Attempt to check that the window is maximized.
+        static member tryGetWindowMaximized world =
+            World.getAmbientStateBy AmbientState.tryGetWindowMaximized world
 
         static member internal getSymbolStoreBy by world =
             World.getAmbientStateBy (AmbientState.getSymbolStoreBy by) world
@@ -462,46 +475,33 @@ module WorldModule =
         static member reloadSymbols world =
             World.getSymbolStoreBy SymbolStore.reloadSymbols world
 
-        static member internal getKeyValueStoreBy by world =
-            World.getAmbientStateBy (AmbientState.getKeyValueStoreBy by) world
+        static member internal getOverlayerBy by world =
+            let overlayer = World.getAmbientStateBy AmbientState.getOverlayer world
+            by overlayer
 
-        static member internal getKeyValueStore world =
-            World.getAmbientStateBy AmbientState.getKeyValueStore world
+        static member internal getOverlayer world =
+            World.getOverlayerBy id world
 
-        static member internal setKeyValueStore symbolStore world =
-            World.updateAmbientState (AmbientState.setKeyValueStore symbolStore) world
+        static member internal setOverlayer overlayer world =
+            World.updateAmbientState (AmbientState.setOverlayer overlayer) world
 
-        static member internal updateKeyValueStore updater world =
-            World.updateAmbientState (AmbientState.updateKeyValueStore updater) world
+        /// Get intrinsic overlays.
+        static member getIntrinsicOverlays world =
+            World.getOverlayerBy Overlayer.getIntrinsicOverlays world
 
-        static member tryGetKeyedValue<'a> key world =
-            match World.getKeyValueStoreBy (UMap.tryFind key) world with
-            | Some value -> Some (value :?> 'a)
-            | None -> None
+        /// Get extrinsic overlays.
+        static member getExtrinsicOverlays world =
+            World.getOverlayerBy Overlayer.getExtrinsicOverlays world
 
-        static member getKeyedValue<'a> key world =
-            World.getKeyValueStoreBy (UMap.find key) world :?> 'a
+        static member internal getOverlayRouter world =
+            World.getAmbientStateBy AmbientState.getOverlayRouter world
 
-        static member addKeyedValue<'a> key (value : 'a) world =
-            World.updateKeyValueStore (UMap.add key (value :> obj)) world
+        static member internal getOverlayRouterBy by world =
+            let overlayRouter = World.getOverlayRouter world
+            by overlayRouter
 
-        static member removeKeyedValue key world =
-            World.updateKeyValueStore (UMap.remove key) world
-
-        static member updateKeyedValue<'a> (updater : 'a -> 'a) key world =
-            World.addKeyedValue key (updater (World.getKeyedValue<'a> key world)) world
-
-        /// Attempt to get the window flags.
-        static member tryGetWindowFlags world =
-            World.getAmbientStateBy AmbientState.tryGetWindowFlags world
-
-        /// Attempt to check that the window is minimized.
-        static member tryGetWindowMinimized world =
-            World.getAmbientStateBy AmbientState.tryGetWindowMinimized world
-
-        /// Attempt to check that the window is maximized.
-        static member tryGetWindowMaximized world =
-            World.getAmbientStateBy AmbientState.tryGetWindowMaximized world
+        static member internal tryFindRoutedOverlayNameOpt dispatcherName state =
+            World.getOverlayRouterBy (OverlayRouter.tryFindOverlayNameOpt dispatcherName) state
 
         /// Make vanilla overlay routes from dispatchers.
         static member internal dispatchersToOverlayRoutes entityDispatchers =
