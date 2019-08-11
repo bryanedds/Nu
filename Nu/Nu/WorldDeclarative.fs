@@ -109,6 +109,8 @@ and [<NoEquality; NoComparison>] GameContent =
             Left (descriptor, equations @ equationsGame, screenBehaviors, layerStreams, entityStreams, screenFilePaths, layerFilePaths, entityFilePaths, entityContents)
         | GameFromFile filePath -> Right filePath
 
+/// The output of a simulant.
+/// NOTE: I almost wonder if this should be called something more abstract, like Output or something.
 type [<NoEquality; NoComparison>] View =
     | Render of RenderDescriptor
     | PlaySound of single * Audio AssetTag

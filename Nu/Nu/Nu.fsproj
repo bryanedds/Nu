@@ -82,8 +82,6 @@
     <Compile Include="SymbolStore.fs" />
     <Compile Include="Metadata.fs" />
     <Compile Include="Input.fs" />
-    <Compile Include="Effects.fs" />
-    <Compile Include="EffectSystem.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="Subsystems.fs" />
     <Compile Include="AmbientState.fs" />
@@ -106,6 +104,7 @@
     <Compile Include="WorldPhysics.fs" />
     <Compile Include="WorldRender.fs" />
     <Compile Include="WorldAudio.fs" />
+    <Compile Include="WorldEffects.fs" />
     <Compile Include="WorldDispatchers.fs" />
     <Compile Include="WorldContent.fs" />
     <Compile Include="WorldScripting.fs" />
