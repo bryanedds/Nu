@@ -19,8 +19,10 @@ type [<NoEquality; NoComparison>] 'w Tasklet =
 [<AutoOpen>]
 module AmbientStateModule =
 
+    /// Tracks the state of tasklet processing.
+    let mutable private TaskletsProcessing = false
+
     /// The ambient state of the world.
-    /// TODO: let's try to get this inside a cache line
     type [<ReferenceEquality>] 'w AmbientState =
         private
             { // cache line begin
@@ -28,15 +30,14 @@ module AmbientStateModule =
               TickTime : int64
               UpdateCount : int64
               Liveness : Liveness
-              Tasklets : 'w Tasklet UList
-              TaskletsProcessing : bool // NOTE: can probably make this global to reduce record size
               Metadata : Metadata
-              Overlayer : Overlayer
+              KeyValueStore : UMap<string, obj>
+              Tasklets : 'w Tasklet UList
+              SdlDepsOpt : SdlDeps option
               // cache line end
-              OverlayRouter : OverlayRouter
               SymbolStore : SymbolStore
-              KeyValueStore : UMap<string, obj> // NOTE: might want to put this inside the cache line
-              SdlDepsOpt : SdlDeps option }
+              Overlayer : Overlayer
+              OverlayRouter : OverlayRouter }
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module AmbientState =
@@ -93,34 +94,6 @@ module AmbientStateModule =
         let exit state =
             { state with Liveness = Exiting }
 
-        /// Get the tasklets scheduled for future processing.
-        let getTasklets state =
-            state.Tasklets
-
-        /// Clear the tasklets from future processing.
-        let clearTasklets state =
-            { state with
-                Tasklets = UList.makeEmpty (UList.getConfig state.Tasklets)
-                TaskletsProcessing = true }
-
-        /// Restore the given tasklets from future processing.
-        let restoreTasklets tasklets state =
-            { state with
-                Tasklets = UList.makeFromSeq (UList.getConfig state.Tasklets) (Seq.append (state.Tasklets :> _ seq) (tasklets :> _ seq))
-                TaskletsProcessing = false }
-
-        /// Get the tasklets processing state.
-        let getTaskletsProcessing state =
-            state.TaskletsProcessing
-
-        /// Add a tasklet to be executed at the scheduled time.
-        let addTasklet tasklet state =
-            { state with Tasklets = UList.add tasklet state.Tasklets }
-
-        /// Add multiple tasklets to be executed at the scheduled times.
-        let addTasklets tasklets state =
-            { state with Tasklets = UList.makeFromSeq (UList.getConfig state.Tasklets) (Seq.append (tasklets :> _ seq) (state.Tasklets :> _ seq)) }
-
         /// Get the metadata.
         let getMetadata state =
             state.Metadata
@@ -128,39 +101,6 @@ module AmbientStateModule =
         /// Set the metadata.
         let setMetadata metadata state =
             { state with Metadata = metadata }
-    
-        /// Get the overlayer.
-        let getOverlayer state =
-            state.Overlayer
-    
-        /// Set the overlayer.
-        let setOverlayer overlayer state =
-            { state with Overlayer = overlayer }
-    
-        /// Get the overlay router.
-        let getOverlayRouter state =
-            state.OverlayRouter
-    
-        /// Get the overlay router.
-        let getOverlayRouterBy by state =
-            by state.OverlayRouter
-
-        /// Get the symbol store with the by map.
-        let getSymbolStoreBy by state =
-            by state.SymbolStore
-
-        /// Get the symbol store.
-        let getSymbolStore state =
-            getSymbolStoreBy id state
-    
-        /// Set the symbol store.
-        let setSymbolStore symbolStore state =
-            { state with SymbolStore = symbolStore }
-
-        /// Update the symbol store.
-        let updateSymbolStore updater state =
-            let store = updater (getSymbolStore state)
-            { state with SymbolStore = store }
 
         /// Get the key-value store with the by map.
         let getKeyValueStoreBy by state =
@@ -179,6 +119,33 @@ module AmbientStateModule =
             let store = updater (getKeyValueStore state)
             { state with KeyValueStore = store }
 
+        /// Get the tasklets scheduled for future processing.
+        let getTasklets state =
+            state.Tasklets
+
+        /// Clear the tasklets from future processing.
+        let clearTasklets state =
+            TaskletsProcessing <- true
+            { state with Tasklets = UList.makeEmpty (UList.getConfig state.Tasklets) }
+
+        /// Restore the given tasklets from future processing.
+        let restoreTasklets tasklets state =
+            let state = { state with Tasklets = UList.makeFromSeq (UList.getConfig state.Tasklets) (Seq.append (state.Tasklets :> _ seq) (tasklets :> _ seq)) }
+            TaskletsProcessing <- false
+            state
+
+        /// Get the tasklets processing state.
+        let getTaskletsProcessing (_ : 'w AmbientState) =
+            TaskletsProcessing
+
+        /// Add a tasklet to be executed at the scheduled time.
+        let addTasklet tasklet state =
+            { state with Tasklets = UList.add tasklet state.Tasklets }
+
+        /// Add multiple tasklets to be executed at the scheduled times.
+        let addTasklets tasklets state =
+            { state with Tasklets = UList.makeFromSeq (UList.getConfig state.Tasklets) (Seq.append (tasklets :> _ seq) (state.Tasklets :> _ seq)) }
+
         /// Attempt to get the window flags.
         let tryGetWindowFlags state =
             match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
@@ -192,6 +159,39 @@ module AmbientStateModule =
         /// Attempt to check that the window is maximized.
         let tryGetWindowMaximized state =
             Option.map (fun flags -> flags ||| uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MAXIMIZED = 0u) (tryGetWindowFlags state)
+
+        /// Get the symbol store with the by map.
+        let getSymbolStoreBy by state =
+            by state.SymbolStore
+
+        /// Get the symbol store.
+        let getSymbolStore state =
+            getSymbolStoreBy id state
+    
+        /// Set the symbol store.
+        let setSymbolStore symbolStore state =
+            { state with SymbolStore = symbolStore }
+
+        /// Update the symbol store.
+        let updateSymbolStore updater state =
+            let store = updater (getSymbolStore state)
+            { state with SymbolStore = store }
+    
+        /// Get the overlayer.
+        let getOverlayer state =
+            state.Overlayer
+    
+        /// Set the overlayer.
+        let setOverlayer overlayer state =
+            { state with Overlayer = overlayer }
+    
+        /// Get the overlay router.
+        let getOverlayRouter state =
+            state.OverlayRouter
+    
+        /// Get the overlay router.
+        let getOverlayRouterBy by state =
+            by state.OverlayRouter
     
         /// Make an ambient state value.
         let make tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
@@ -200,7 +200,6 @@ module AmbientStateModule =
               UpdateCount = 0L
               Liveness = Running
               Tasklets = UList.makeEmpty Constants.Engine.TaskletListConfig
-              TaskletsProcessing = false
               Metadata = assetMetadataMap
               OverlayRouter = overlayRouter
               Overlayer = overlayer
