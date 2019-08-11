@@ -26,7 +26,7 @@ module DeclarativeOperators2 =
                 (modelValue, world)
 
         static member internal actualizeViews views world =
-            List.fold (fun world view ->
+            Seq.fold (fun world view ->
                 match view with
                 | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
                 | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
@@ -217,25 +217,7 @@ module EffectFacetModule =
                     
                     // evaluate effect with effect system
                     let (artifacts, _) = EffectSystem.eval effect effectSlice effectSystem
-
-                    // pass a single render message for efficiency
-                    let renderMessage = artifacts.RenderArtifacts |> Seq.toArray |> Array.map (function Effects.RenderArtifact descriptor -> descriptor) |> RenderDescriptorsMessage 
-                    let world = World.enqueueRenderMessage renderMessage world
-
-                    // pass sound messages
-                    let world = Seq.fold (fun world (Effects.SoundArtifact (volume, sound)) -> World.playSound volume sound world) world artifacts.SoundArtifacts
-                    
-                    // set effects tags all in one pass for efficiency
-                    // TODO: also raise event for all new effect tags so they can be handled in scripts?
-                    let effectTags = entity.GetEffectTags world
-                    let (effectTags, world) =
-                        Seq.fold (fun (effectTags, world) (Effects.TagArtifact (name, metadata, slice)) ->
-                            match Map.tryFind name effectTags with
-                            | Some (metadata, slices) -> (Map.add name (metadata, slice :: slices) effectTags, world)
-                            | None -> (Map.add name (metadata, [slice]) effectTags, world))
-                            (effectTags, world)
-                            artifacts.TagArtifacts
-                    entity.SetEffectTags effectTags world
+                    World.actualizeViews artifacts world
 
                 // update effect history in-place
                 effectHistory.AddToFront effectSlice

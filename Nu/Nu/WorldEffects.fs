@@ -5,22 +5,181 @@ namespace Nu
 open System
 open System.Collections.Generic
 open Prime
-open Effects
+module Effects =
 
-/// The artifacts produced by an effect.
-type [<NoEquality; NoComparison>] EffectArtifacts =
-    { RenderArtifacts : RenderArtifact List
-      SoundArtifacts : SoundArtifact List
-      TagArtifacts : TagArtifact List }
+    type Algorithm =
+        | Const
+        | Linear
+        | Random
+        | Chaos
+        | Ease
+        | EaseIn
+        | EaseOut
+        | Sin
+        | Cos
+
+    type LogicApplicator =
+        | Or
+        | Nor
+        | Xor
+        | And
+        | Nand
+        | Equal
+
+    type TweenApplicator =
+        | Sum
+        | Delta
+        | Scale
+        | Ratio
+        | Set
+
+    type [<NoComparison>] Slice =
+        { Position : Vector2
+          Size : Vector2
+          Rotation : single
+          Depth : single
+          Offset : Vector2
+          Color : Vector4
+          Volume : single
+          Enabled : bool }
+
+    type KeyFrame =
+        abstract KeyFrameLength : int64
+
+    type LogicKeyFrame =
+        { LogicValue : bool
+          LogicLength : int64 }
+        interface KeyFrame with
+            member this.KeyFrameLength = this.LogicLength
+
+    type TweenKeyFrame =
+        { TweenValue : single
+          TweenLength : int64 }
+        interface KeyFrame with
+            member this.KeyFrameLength = this.TweenLength
+
+    type [<NoComparison>] Tween2KeyFrame =
+        { TweenValue : Vector2
+          TweenLength : int64 }
+        interface KeyFrame with
+            member this.KeyFrameLength = this.TweenLength
+
+    type [<NoComparison>] Tween3KeyFrame =
+        { TweenValue : Vector3
+          TweenLength : int64 }
+        interface KeyFrame with
+            member this.KeyFrameLength = this.TweenLength
+
+    type [<NoComparison>] Tween4KeyFrame =
+        { TweenValue : Vector4
+          TweenLength : int64 }
+        interface KeyFrame with
+            member this.KeyFrameLength = this.TweenLength
+
+    type TweenIKeyFrame =
+        { TweenValue : int
+          TweenLength : int64 }
+        interface KeyFrame with
+            member this.KeyFrameLength = this.TweenLength
+
+    type Tween2IKeyFrame =
+        { TweenValue : Vector2i
+          TweenLength : int64 }
+        interface KeyFrame with
+            member this.KeyFrameLength = this.TweenLength
+            
+    type Playback =
+        | Once
+        | Loop
+        | Bounce
+        
+    type Repetition =
+        | Cycle of Cycles : int
+        | Iterate of Iterations : int
+
+    type Rate =
+        Rate of single
+
+    type Shift =
+        Shift of single
+
+    type [<NoComparison>] Resource =
+        | Resource of string * string
+        | Expand of string * Argument array
+
+    and [<NoComparison>] Aspect =
+        | Enabled of LogicApplicator * Playback * LogicKeyFrame array
+        | Position of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
+        | Translation of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
+        | Offset of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
+        | Size of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
+        | Rotation of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
+        | Depth of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
+        | Color of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
+        | Volume of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
+        | Bone // TODO: implement bone aspect
+        | Expand of string * Argument array
+
+    and [<NoComparison>] Content =
+        | Nil // first to make default value when missing
+        | StaticSprite of Resource * Aspect array * Content
+        | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect array * Content
+        | SoundEffect of Resource * Aspect array * Content
+        | Mount of Shift * Aspect array * Content
+        | Repeat of Shift * Repetition * Aspect array * Content
+        | Emit of Shift * Rate * Aspect array * Aspect array * Content
+        | Composite of Shift * Content array
+        | Expand of string * Argument array
+
+    and Argument =
+        SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
+
+    type [<NoComparison>] Definition =
+        { DefinitionParams : string array
+          DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
+
+    type Definitions =
+        Map<string, Definition>
+
+/// Describes an effect in a compositional manner.
+[<Syntax   ("Const Linear Random Chaos Ease EaseIn EaseOut Sin Cos " +
+            "Or Nor Xor And Nand Equal " +
+            "Sum Delta Scale Ratio Set " +
+            "Position Size Rotation Depth Offset Color Volume Enabled " +
+            "Once Loop Bounce " +
+            "Cycle Iterate " +
+            "Rate " +
+            "Shift " +
+            "Expand Resource " +
+            "Expand Enabled Position Translation Offset Size Rotation Depth Color Volume Bone " +
+            "Expand StaticSprite AnimatedSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
+            "View",
+            "", "", "", "",
+            Constants.PrettyPrinter.DefaultThresholdMin,
+            Constants.PrettyPrinter.CompositionalThresholdMax)>]
+type [<NoEquality; NoComparison>] Effect =
+    { EffectName : string
+      LifetimeOpt : int64 option
+      Definitions : Effects.Definitions
+      Content : Effects.Content }
+
+    static member empty =
+        { EffectName = Constants.Engine.DefaultEffectName
+          LifetimeOpt = None
+          Definitions = Map.empty
+          Content = Effects.Composite (Effects.Shift 0.0f, [||]) }
 
 [<AutoOpen>]
 module EffectSystemModule =
+
+    // effects
+    open Effects
 
     /// An abstract data type for executing effects.
     type [<NoEquality; NoComparison>] EffectSystem =
         private
             { ViewType : ViewType
-              Artifacts : EffectArtifacts
+              Views : View List
               History : Slice seq
               ProgressOffset : single
               EffectTime : int64
@@ -30,16 +189,8 @@ module EffectSystemModule =
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module EffectSystem =
 
-        let rec private addRenderArtifact artifact effectSystem =
-            effectSystem.Artifacts.RenderArtifacts.Add artifact
-            effectSystem
-
-        let rec private addSoundArtifact artifact effectSystem =
-            effectSystem.Artifacts.SoundArtifacts.Add artifact
-            effectSystem
-
-        let rec private addTagArtifact artifact effectSystem =
-            effectSystem.Artifacts.TagArtifacts.Add artifact
+        let rec private addView view effectSystem =
+            effectSystem.Views.Add view
             effectSystem
 
         let rec private selectKeyFrames2<'kf when 'kf :> KeyFrame> localTime playback (keyFrames : 'kf array) =
@@ -161,12 +312,12 @@ module EffectSystemModule =
                     Log.info ("Could not find definition with name '" + definitionName + "'.")
                     scvalue<obj AssetTag> Assets.DefaultImageString
 
-        let rec private iterateArtifacts incrementAspects content slice effectSystem =
+        let rec private iterateViews incrementAspects content slice effectSystem =
             let effectSystem = { effectSystem with ProgressOffset = 0.0f }
             let slice = evalAspects incrementAspects slice effectSystem
             (slice, evalContent content slice effectSystem)
 
-        and private cycleArtifacts incrementAspects content slice effectSystem =
+        and private cycleViews incrementAspects content slice effectSystem =
             let slice = evalAspects incrementAspects slice effectSystem
             evalContent content slice effectSystem
 
@@ -283,11 +434,11 @@ module EffectSystemModule =
             // eval aspects
             let slice = evalAspects aspects slice effectSystem
 
-            // build sprite artifacts
+            // build sprite views
             let effectSystem =
                 if slice.Enabled then
-                    let spriteArtifact =
-                        RenderArtifact
+                    let spriteView =
+                        Render
                             (LayerableDescriptor
                                 { Depth = slice.Depth
                                   AssetTag = image
@@ -303,7 +454,7 @@ module EffectSystemModule =
                                           ViewType = effectSystem.ViewType
                                           Color = slice.Color
                                           Flip = FlipNone }})
-                    addRenderArtifact spriteArtifact effectSystem
+                    addView spriteView effectSystem
                 else effectSystem
 
             // build implicitly mounted content
@@ -320,11 +471,11 @@ module EffectSystemModule =
             // eval inset
             let insetOpt = evalInsetOpt celSize celRun celCount delay effectSystem
 
-            // build animated sprite artifacts
+            // build animated sprite views
             let effectSystem =
                 if slice.Enabled then
-                    let animatedSpriteArtifact =
-                        RenderArtifact
+                    let animatedSpriteView =
+                        Render
                             (LayerableDescriptor
                                 { Depth = slice.Depth
                                   AssetTag = image
@@ -340,7 +491,7 @@ module EffectSystemModule =
                                       ViewType = effectSystem.ViewType
                                       Color = slice.Color
                                       Flip = FlipNone }})
-                    addRenderArtifact animatedSpriteArtifact effectSystem
+                    addView animatedSpriteView effectSystem
                 else effectSystem
 
             // build implicitly mounted content
@@ -354,10 +505,10 @@ module EffectSystemModule =
             // eval aspects
             let slice = evalAspects aspects slice effectSystem
 
-            // build sprite artifacts
+            // build sprite views
             let effectSystem =
                 if slice.Enabled
-                then addSoundArtifact (SoundArtifact (slice.Volume, AssetTag.specialize<Audio> sound)) effectSystem
+                then addView (PlaySound (slice.Volume, AssetTag.specialize<Audio> sound)) effectSystem
                 else effectSystem
 
             // build implicitly mounted content
@@ -378,7 +529,7 @@ module EffectSystemModule =
             | Iterate count ->
                 Array.fold
                     (fun (slice, effectSystem) _ ->
-                        let (slice, effectSystem) = iterateArtifacts incrementAspects content slice effectSystem
+                        let (slice, effectSystem) = iterateViews incrementAspects content slice effectSystem
                         (slice, effectSystem))
                     (slice, effectSystem)
                     [|0 .. count - 1|] |>
@@ -389,7 +540,7 @@ module EffectSystemModule =
                 Array.fold
                     (fun effectSystem i ->
                         let effectSystem = { effectSystem with ProgressOffset = 1.0f / single count * single i }
-                        cycleArtifacts incrementAspects content slice effectSystem)
+                        cycleViews incrementAspects content slice effectSystem)
                     effectSystem
                     [|0 .. count - 1|]
 
@@ -428,8 +579,6 @@ module EffectSystemModule =
             match content with
             | Nil ->
                 effectSystem
-            | Tag (name, metadata) ->
-                addTagArtifact (TagArtifact (name, metadata, slice)) effectSystem
             | StaticSprite (resource, aspects, content) ->
                 evalStaticSprite resource aspects content slice effectSystem
             | AnimatedSprite (resource, celSize, celRun, celCount, delay, aspects, content) ->
@@ -454,14 +603,9 @@ module EffectSystemModule =
                 contents
 
         let private release effectSystem =
-            let artifacts = effectSystem.Artifacts
-            let effectSystem =
-                { effectSystem with
-                    Artifacts =
-                        { RenderArtifacts = List<RenderArtifact> ()
-                          SoundArtifacts = List<SoundArtifact> ()
-                          TagArtifacts = List<TagArtifact> () }}
-            (artifacts, effectSystem)
+            let views = effectSystem.Views
+            let effectSystem = { effectSystem with Views = List<View> () }
+            (views, effectSystem)
 
         let eval effect slice effectSystem =
             let alive =
@@ -488,12 +632,8 @@ module EffectSystemModule =
             effectCombined
 
         let make viewType history effectTime globalEnv = 
-            let artifacts =
-                { RenderArtifacts = List<RenderArtifact> ()
-                  SoundArtifacts = List<SoundArtifact> ()
-                  TagArtifacts = List<TagArtifact> () }
             { ViewType = viewType
-              Artifacts = artifacts
+              Views = List<View> ()
               History = history
               ProgressOffset = 0.0f
               EffectTime = effectTime
