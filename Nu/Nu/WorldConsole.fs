@@ -69,7 +69,7 @@ module WorldConsole =
                     Events.KeyboardKeyDown
                     Default.Game
                     world
-            Log.info "Console hooked up (press ` (backtick) button in game to open console)."
+            Log.info "Console hooked up (press ` (backtick) in game to open console)."
             (true, world)
         | _ ->
             Log.info "Console not hooked up (console is unsupported on non-Windows platforms)."

@@ -18,8 +18,8 @@ open Nu.Gaia.Design
 [<RequireQualifiedAccess>]
 module Gaia =
 
-    // literals... TODO: move to Constants
-    let [<Literal>] private NonePick = "\"None\""
+    let mutable private propertyPickButtonClickHandler =
+        Unchecked.defaultof<EventHandler>
 
     let addWorldChanger worldChanger =
         Globals.WorldChangers.Add worldChanger |> ignore
@@ -432,7 +432,7 @@ module Gaia =
             Seq.filter (fun entity -> entity.FacetedAs<NodeFacet> world) |>
             Seq.filter (fun entity -> not (Reflection.isNameGenerated entity.Name)) |>
             Seq.map (fun entity -> entity.Name) |>
-            flip Seq.append [NonePick] |>
+            flip Seq.append [Constants.Editor.NonePick] |>
             Seq.toArray
         entityPicker.entityListBox.Items.AddRange (Array.map box entityNames)
         entityPicker.entityListBox.DoubleClick.Add (fun _ -> entityPicker.DialogResult <- DialogResult.OK)
@@ -441,14 +441,14 @@ module Gaia =
         entityPicker.searchTextBox.TextChanged.Add(fun _ ->
             entityPicker.entityListBox.Items.Clear ()
             for name in entityNames do
-                if name.Contains entityPicker.searchTextBox.Text || name = NonePick then
+                if name.Contains entityPicker.searchTextBox.Text || name = Constants.Editor.NonePick then
                     entityPicker.entityListBox.Items.Add name |> ignore)
         match entityPicker.ShowDialog () with
         | DialogResult.OK ->
             match entityPicker.entityListBox.SelectedItem with
             | :? string as parentEntityName ->
                 match parentEntityName with
-                | NonePick -> entityTds.DescribedEntity.SetParentNodeOptWithAdjustment None world
+                | Constants.Editor.NonePick -> entityTds.DescribedEntity.SetParentNodeOptWithAdjustment None world
                 | _ ->
                     let parentRelation = Relation.makeFromString ("?/?/" + parentEntityName)
                     form.propertyValueTextBoxText <- scstring parentRelation
@@ -464,7 +464,6 @@ module Gaia =
         else world
 
     // TODO: factor away some of the code duplication in this function!
-    let mutable private propertyPickButtonClickHandler = Unchecked.defaultof<EventHandler>
     let private refreshPropertyEditor (form : GaiaForm) =
         if form.propertyTabControl.SelectedIndex = 0 then
             match (form.entityPropertyGrid.SelectedObject, form.entityPropertyGrid.SelectedGridItem) with
