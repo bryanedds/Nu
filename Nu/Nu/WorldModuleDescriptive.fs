@@ -97,6 +97,7 @@ type [<NoEquality; NoComparison>] PropertyInitializer =
     | Equation of string * World Lens * bool
 
 /// Contains primitives for describing simulants.
+/// TODO: get rid of code duplication in here.
 module Describe =
 
     /// Describe a game with the given definitions and contained screens.
