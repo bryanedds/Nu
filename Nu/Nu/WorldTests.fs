@@ -21,7 +21,7 @@ module WorldTests =
 
     let [<Fact>] entitySubscribeWorks () =
         let world = World.makeDefault ()
-        let handleEvent = fun evt world -> World.updateKeyedValue (fun _ -> evt.Subscriber) TestValueKey world
+        let handleEvent = fun evt world -> World.addKeyedValue TestValueKey evt.Subscriber world
         let world = World.subscribe handleEvent StringEvent Default.Entity world
         let world = World.publish String.Empty StringEvent EventTrace.empty Default.Game world
         Assert.Equal<Simulant> (Default.Entity :> Simulant, World.getKeyedValue TestValueKey world)
