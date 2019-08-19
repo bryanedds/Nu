@@ -48,8 +48,8 @@ module WorldConsole =
         | input ->
             let context = Default.Game
             let frame = context.GetScriptFrame world
-            let expr = scvalue<Scripting.Expr> input
-            try let struct (result, world) = World.eval expr frame context world
+            try let expr = scvalue<Scripting.Expr> input
+                let struct (result, world) = World.eval expr frame context world
                 Console.Write ": "
                 Console.WriteLine (scstring result)
                 run gameTitle world
@@ -69,5 +69,8 @@ module WorldConsole =
                     Events.KeyboardKeyDown
                     Default.Game
                     world
+            Log.info "Console hooked up (press ` (backtick) button in game to open console)."
             (true, world)
-        | _ -> (false, world) // non-Windows platforms are not currently supported
+        | _ ->
+            Log.info "Console not hooked up (console is unsupported on non-Windows platforms)."
+            (false, world)
