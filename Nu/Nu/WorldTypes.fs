@@ -603,6 +603,12 @@ module WorldTypes =
         interface SimulantState with
             member this.GetXtension () = this.Xtension
 
+    and [<Struct; CLIMutable; NoEquality; NoComparison>] EntityCore =
+        { mutable Transform : Transform
+          mutable StaticData : DesignerProperty
+          mutable Overflow : Vector2
+          mutable Flags : int }
+
     /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     /// OPTIMIZATION: Booleans are packed into the Flags field.
