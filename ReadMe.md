@@ -34,7 +34,7 @@ The best way to get started is to pull down the repository with a git client, an
 The current documentation for the **Nu Game Engine** is found here - https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Nu%20Game%20Engine.pdf
 
 There is additional documentation on **advanced Nu game programming techniques** in an 'experience report' found here -
-https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Iterative%20Functional%20Reactive%20Programming%20with%20the%20Nu%20Game%20Engine.pdf?raw=true
+https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Iterative%20Functional%20Reactive%20Programming%20with%20the%20Nu%20Game%20Engine.pdf
 
 Finally, please check out the license for this repository below!
 
