@@ -11,7 +11,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>InfinityRpg</RootNamespace>
     <AssemblyName>InfinityRpg</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Name>InfinityRpg</Name>
     <TargetFrameworkProfile />
@@ -88,7 +88,6 @@
     <Compile Include="InfinityPlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
-    <Content Include="Packages.config" />
     <Content Include="AssetGraph.nuag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -98,6 +97,7 @@
     <Content Include="Prelude.nuscript">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Nu\Nu.AStar\Nu.AStar.csproj">
@@ -139,7 +139,7 @@
       <HintPath>..\..\Nu\Nu.Dependencies\Nito.Collections.Deque\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.3.7.1\lib\net46\Prime.exe</HintPath>
+      <HintPath>..\..\packages\Prime.3.8.1\lib\net472\Prime.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
       <HintPath>..\..\Nu\Nu.Dependencies\SDL2-CS\Release\SDL2-CS.dll</HintPath>
@@ -157,9 +157,6 @@
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <Reference Include="System.ValueTuple">
-      <HintPath>..\..\packages\System.ValueTuple.4.5.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
     <Reference Include="TiledSharp">
       <HintPath>..\..\Nu\Nu.Dependencies\TiledSharp\Release\TiledSharp.dll</HintPath>
     </Reference>
@@ -167,7 +164,7 @@
       <HintPath>..\..\packages\xunit.abstractions.2.0.3\lib\net35\xunit.abstractions.dll</HintPath>
     </Reference>
     <Reference Include="xunit.assert">
-      <HintPath>..\..\packages\xunit.assert.2.4.0\lib\netstandard1.1\xunit.assert.dll</HintPath>
+      <HintPath>..\..\packages\xunit.assert.2.4.0\lib\netstandard2.0\xunit.assert.dll</HintPath>
     </Reference>
     <Reference Include="xunit.core">
       <HintPath>..\..\packages\xunit.extensibility.core.2.4.0\lib\net452\xunit.core.dll</HintPath>
