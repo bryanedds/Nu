@@ -35,4 +35,4 @@ open Nu.Declarative
 Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/bin/Debug")
 
 // initialize Nu
-Nu.init false
+Nu.init NuConfig.defaultConfig
