@@ -84,6 +84,7 @@
     <Content Include="Prelude.nuscript">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="packages.config" />
     <None Include="Assets\Default\CharacterJump.png" />
     <None Include="Assets\Default\CharacterIdle.png" />
     <None Include="Assets\Default\CharacterWalk.psd" />
@@ -108,7 +109,6 @@
     <None Include="Assets\Gameplay\Level.nulyr" />
     <None Include="Assets\Gui\Title.nulyr" />
     <None Include="Assets\Gui\Credits.nulyr" />
-    <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj">
