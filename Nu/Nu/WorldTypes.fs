@@ -410,7 +410,7 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              CreationTimeStamp = Core.getTimeStamp ()
+              CreationTimeStamp = Core.getUniqueTimeStamp ()
               Id = makeGuid () }
 
         /// Try to get an xtension property and its type information.
@@ -489,7 +489,7 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              CreationTimeStamp = Core.getTimeStamp ()
+              CreationTimeStamp = Core.getUniqueTimeStamp ()
               Name = name
               Id = id }
 
@@ -565,7 +565,7 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              CreationTimeStamp = Core.getTimeStamp ()
+              CreationTimeStamp = Core.getUniqueTimeStamp ()
               Name = name
               Id = id }
 
@@ -647,7 +647,7 @@ module WorldTypes =
               Flags = 0b0100011000
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
-              CreationTimeStamp = Core.getTimeStamp ()
+              CreationTimeStamp = Core.getUniqueTimeStamp ()
               Name = name
               Id = id }
 
