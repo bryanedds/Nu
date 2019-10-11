@@ -13,9 +13,7 @@ This repository hosts several projects, including -
 - the sample game **BlazeVector**.
 - the work-in-progress game **InfinityRpg**.
 
-Here's an article explaining why functional programming works for games, and what motivated me to create this game engine - https://medium.com/@bryanedds/functional-game-programming-can-work-95ed0df14f77
-
-And here is some media on the Nu Game Engine -
+Here is some media on the Nu Game Engine -
 
 ![Screenshot](Projects/BlazeVector/Promotional/BlastingAwayInBlazeVector.png?raw=true)
 Nu's tutorial game, BlazeVector!
