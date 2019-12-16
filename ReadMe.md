@@ -13,9 +13,7 @@ This repository hosts several projects, including -
 - the sample game **BlazeVector**.
 - the work-in-progress game **InfinityRpg**.
 
-Here's an article explaining why functional programming works for games, and what motivated me to create this game engine - https://medium.com/@bryanedds/functional-game-programming-can-work-95ed0df14f77
-
-And here is some media on the Nu Game Engine -
+Here is some media on the Nu Game Engine -
 
 ![Screenshot](Projects/BlazeVector/Promotional/BlastingAwayInBlazeVector.png?raw=true)
 Nu's tutorial game, BlazeVector!
@@ -31,10 +29,10 @@ Getting Started
 
 The best way to get started is to pull down the repository with a git client, and to take a look at the following documents -
 
-The current documentation for the **Nu Game Engine** is found here - https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Nu%20Game%20Engine.pdf?raw=true
+The current documentation for the **Nu Game Engine** is found here - https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Nu%20Game%20Engine.pdf
 
 There is additional documentation on **advanced Nu game programming techniques** in an 'experience report' found here -
-https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Iterative%20Functional%20Reactive%20Programming%20with%20the%20Nu%20Game%20Engine.pdf?raw=true
+https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Iterative%20Functional%20Reactive%20Programming%20with%20the%20Nu%20Game%20Engine.pdf
 
 Finally, please check out the license for this repository below!
 

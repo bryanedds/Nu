@@ -3,7 +3,6 @@
 
 #I __SOURCE_DIRECTORY__
 #r "System.Configuration"
-#r "../../packages/System.ValueTuple.4.5.0/lib/portable-net40+sl4+win8+wp8/System.ValueTuple.dll"
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsec.dll"
 //#r "../../packages/xunit.core.2.3.1/xunit.core.2.3.1.nupkg"
@@ -11,7 +10,7 @@
 //#r "../../packages/xunit.assert.2.3.1/xunit.assert.2.3.1.nupkg"
 #r "../../packages/FsCheck.2.11.0/lib/net452/FsCheck.dll"
 #r "../../packages/FsCheck.Xunit.2.11.0/lib/net452/FsCheck.Xunit.dll"
-#r "../../packages/Prime.3.7.1/lib/net46/Prime.exe"
+#r "../../packages/Prime.3.8.1/lib/net472/Prime.exe"
 #r "../../Nu/Nu.Dependencies/FSharpx.Core/FSharpx.Core.dll"
 #r "../../Nu/Nu.Dependencies/FSharpx.Collections/FSharpx.Collections.dll"
 #r "../../Nu/Nu.Dependencies/Farseer/FarseerPhysics.dll"
@@ -36,4 +35,4 @@ open Nu.Declarative
 Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/bin/Debug")
 
 // initialize Nu
-Nu.init false
+Nu.init NuConfig.defaultConfig

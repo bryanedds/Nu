@@ -34,16 +34,19 @@ module internal CoreInternal =
 [<RequireQualifiedAccess>]
 module Core =
 
+    let mutable private lastStamp =
+        CoreInternal.getTimeStampInternal ()
+
     /// Get a time stamp at the highest-available resolution.
     let getTimeStamp () =
         CoreInternal.getTimeStampInternal ()
 
-    /// Spin until the time stamp advances, taking the next time stamp.
-    let getNextTimeStamp () =
-        let currentStamp = getTimeStamp ()
+    /// Get a unique time stamp, spin until the time stamp advances if need be.
+    let getUniqueTimeStamp () =
         let mutable nextStamp = getTimeStamp ()
-        while currentStamp = nextStamp do
+        while nextStamp = lastStamp do
             nextStamp <- getTimeStamp ()
+        lastStamp <- nextStamp
         nextStamp
 
     /// Get a resolution along either an X or Y dimension.
