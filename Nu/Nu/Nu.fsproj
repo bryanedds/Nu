@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\packages\xunit.runner.visualstudio.2.4.0\build\net20\xunit.runner.visualstudio.props" Condition="Exists('..\..\packages\xunit.runner.visualstudio.2.4.0\build\net20\xunit.runner.visualstudio.props')" />
   <Import Project="..\..\packages\xunit.core.2.4.0\build\xunit.core.props" Condition="Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.props')" />
-  <Import Project="..\..\packages\xunit.core.2.4.0\build\xunit.core.targets" Condition="Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.targets')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -11,7 +10,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Nu</RootNamespace>
     <AssemblyName>Nu</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Name>Nu</Name>
     <TargetFrameworkProfile />
@@ -24,7 +23,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;PLATFORM_AGNOSTIC_TIMESTAMPING</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Debug\Nu.XML</DocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -39,7 +38,7 @@
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Release\Nu.XML</DocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -122,7 +121,6 @@
     <None Include="Interactive.fsx" />
     <None Include="GenerateWorldBindings.fsx" />
     <None Include="App.config" />
-    <Content Include="Packages.config" />
     <Content Include="AssetGraph.nuag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -133,6 +131,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <None Include="Nu.snippet" />
+    <Content Include="packages.config" />
     <None Include="SDL2.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -221,7 +220,7 @@
       <HintPath>..\Nu.Dependencies\Nito.Collections.Deque\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.3.7.1\lib\net46\Prime.exe</HintPath>
+      <HintPath>..\..\packages\Prime.3.8.1\lib\net472\Prime.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
       <HintPath>..\Nu.Dependencies\SDL2-CS\Release\SDL2-CS.dll</HintPath>
@@ -231,9 +230,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
-    <Reference Include="System.ValueTuple">
-      <HintPath>..\..\packages\System.ValueTuple.4.5.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
     <Reference Include="TiledSharp">
       <HintPath>..\Nu.Dependencies\TiledSharp\Release\TiledSharp.dll</HintPath>
     </Reference>
@@ -241,7 +237,7 @@
       <HintPath>..\..\packages\xunit.abstractions.2.0.3\lib\net35\xunit.abstractions.dll</HintPath>
     </Reference>
     <Reference Include="xunit.assert">
-      <HintPath>..\..\packages\xunit.assert.2.4.0\lib\netstandard1.1\xunit.assert.dll</HintPath>
+      <HintPath>..\..\packages\xunit.assert.2.4.0\lib\netstandard2.0\xunit.assert.dll</HintPath>
     </Reference>
     <Reference Include="xunit.core">
       <HintPath>..\..\packages\xunit.extensibility.core.2.4.0\lib\net452\xunit.core.dll</HintPath>
@@ -265,6 +261,7 @@
     <Error Condition="!Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.core.2.4.0\build\xunit.core.targets'))" />
     <Error Condition="!Exists('..\..\packages\xunit.runner.visualstudio.2.4.0\build\net20\xunit.runner.visualstudio.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.runner.visualstudio.2.4.0\build\net20\xunit.runner.visualstudio.props'))" />
   </Target>
+  <Import Project="..\..\packages\xunit.core.2.4.0\build\xunit.core.targets" Condition="Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

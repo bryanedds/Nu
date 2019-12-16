@@ -410,7 +410,7 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              CreationTimeStamp = Core.getTimeStamp ()
+              CreationTimeStamp = Core.getUniqueTimeStamp ()
               Id = makeGuid () }
 
         /// Try to get an xtension property and its type information.
@@ -489,7 +489,7 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              CreationTimeStamp = Core.getTimeStamp ()
+              CreationTimeStamp = Core.getUniqueTimeStamp ()
               Name = name
               Id = id }
 
@@ -565,7 +565,7 @@ module WorldTypes =
               OnUnregister = Scripting.Unit
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
-              CreationTimeStamp = Core.getTimeStamp ()
+              CreationTimeStamp = Core.getUniqueTimeStamp ()
               Name = name
               Id = id }
 
@@ -602,6 +602,12 @@ module WorldTypes =
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
+
+    and [<Struct; CLIMutable; NoEquality; NoComparison>] EntityCore =
+        { mutable Transform : Transform
+          mutable StaticData : DesignerProperty
+          mutable Overflow : Vector2
+          mutable Flags : int }
 
     /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
@@ -641,7 +647,7 @@ module WorldTypes =
               Flags = 0b0100011000
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
-              CreationTimeStamp = Core.getTimeStamp ()
+              CreationTimeStamp = Core.getUniqueTimeStamp ()
               Name = name
               Id = id }
 
