@@ -18,6 +18,14 @@ module Program =
         override this.GetStandAloneGameDispatcherName () =
             typeof<ElmarioDispatcher>.Name
 
+        // specify the above game dispatcher to use
+        override this.GetEditorGameDispatcherName () =
+            typeof<ElmarioDispatcher>.Name
+            
+        // specify no gameplay screen dispatcher to be created by the editor
+        override this.GetEditorGameplayScreenDispatcherNameOpt () =
+            None
+
     // this the entry point for your Nu application
     let [<EntryPoint; STAThread>] main _ =
 
