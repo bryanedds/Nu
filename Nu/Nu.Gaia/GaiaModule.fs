@@ -1452,15 +1452,15 @@ module Gaia =
     let selectTargetDirAndMakeNuPlugin () =
         let savedState =
             try scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
-            with _ -> { BinaryFilePath = ""; OpenGameplayScreen = false }
+            with _ -> { BinaryFilePath = ""; UseGameplayScreen = false }
         use startForm = new StartForm ()
         startForm.binaryFilePathText.Text <- savedState.BinaryFilePath
-        startForm.openGameplayScreenCheckBox.Checked <- savedState.OpenGameplayScreen
+        startForm.useGameplayScreenCheckBox.Checked <- savedState.UseGameplayScreen
         if  startForm.ShowDialog () = DialogResult.OK &&
             not (String.IsNullOrWhiteSpace (startForm.binaryFilePathText.Text)) then
             let savedState =
                 { BinaryFilePath = startForm.binaryFilePathText.Text
-                  OpenGameplayScreen = startForm.openGameplayScreenCheckBox.Checked }
+                  UseGameplayScreen = startForm.useGameplayScreenCheckBox.Checked }
             try File.WriteAllText (Constants.Editor.SavedStateFilePath, (scstring savedState))
             with _ -> Log.info "Could not save editor state."
             let (targetDir, plugIn) = selectTargetDirAndMakeNuPluginFromFilePath startForm.binaryFilePathText.Text
@@ -1630,25 +1630,25 @@ module Gaia =
     /// Attempt to make a world for use in the Gaia form.
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
-    let tryMakeWorld openGameplayScreen plugin sdlDeps worldConfig =
+    let tryMakeWorld useGameplayScreen plugin sdlDeps worldConfig =
         let worldEir = World.tryMake plugin sdlDeps worldConfig
         match worldEir with
         | Right world ->
             let world = World.setEventFilter (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])]) world
             let screenDispatcherNameOpt =
-                if openGameplayScreen
+                if useGameplayScreen
                 then plugin.GetEditorGameplayScreenDispatcherNameOpt ()
                 else Some typeof<ScreenDispatcher>.Name
             let world =
                 match screenDispatcherNameOpt with
                 | Some screenDispatcherName ->
                     let (screen, world) = World.createScreen3 screenDispatcherName (Some EditorScreen.Name) world
-                    let world =
-                        if Seq.isEmpty (World.getLayers screen world)
-                        then World.createLayer (Some DefaultEditorLayer.Name) EditorScreen world |> snd
-                        else world
                     World.selectScreen screen world
                 | None -> world
+            let world =
+                if Seq.isEmpty (World.getLayers EditorScreen world)
+                then World.createLayer (Some DefaultEditorLayer.Name) EditorScreen world |> snd
+                else world
             Right world
         | Left error -> Left error
 
@@ -1676,7 +1676,7 @@ module Gaia =
         Globals.Form <- form
         match tryMakeSdlDeps form with
         | Right sdlDeps ->
-            match tryMakeWorld savedState.OpenGameplayScreen plugin sdlDeps worldConfig with
+            match tryMakeWorld savedState.UseGameplayScreen plugin sdlDeps worldConfig with
             | Right world ->
                 Globals.World <- world
                 let _ = run3 tautology targetDir sdlDeps form

@@ -30,7 +30,7 @@ type EditorState =
 
 type SavedState =
     { BinaryFilePath : string
-      OpenGameplayScreen : bool }
+      UseGameplayScreen : bool }
 
 /// Globals needed to sync Nu with WinForms.
 [<RequireQualifiedAccess>]
