@@ -19,13 +19,13 @@ type MyPlugin () =
     override this.GetStandAloneGameDispatcherName () =
         typeof<MyGameDispatcher>.Name
 
-    // specify the sceen dispatcher to optionally use in the editor
-    override this.GetGameplayScreenDispatcherName () =
-        typeof<MyGameplayDispatcher>.Name
-
     // specify the empty game dispatcher to use in the editor
     override this.GetEditorGameDispatcherName () =
         typeof<GameDispatcher>.Name
+
+    // specify the sceen dispatcher to optionally use in the editor
+    override this.GetEditorGameplayScreenDispatcherNameOpt () =
+        Some typeof<MyGameplayDispatcher>.Name
 
 // this is the main module for our program.
 module Program =

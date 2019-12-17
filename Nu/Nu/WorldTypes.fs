@@ -1183,8 +1183,8 @@ module WorldTypes =
         default this.GetStandAloneGameDispatcherName () = typeof<GameDispatcher>.Name
 
         /// The name of the screen dispatcher that Nu may utilize when running inside the editor.
-        abstract GetGameplayScreenDispatcherName : unit -> string
-        default this.GetGameplayScreenDispatcherName () = typeof<ScreenDispatcher>.Name
+        abstract GetEditorGameplayScreenDispatcherNameOpt : unit -> string option
+        default this.GetEditorGameplayScreenDispatcherNameOpt () = Some typeof<ScreenDispatcher>.Name
 
         /// Make the overlay routes that will allow Nu to use different overlays for the specified
         /// dispatcher name.

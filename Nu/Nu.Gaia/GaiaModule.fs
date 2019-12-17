@@ -1635,16 +1635,20 @@ module Gaia =
         match worldEir with
         | Right world ->
             let world = World.setEventFilter (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])]) world
-            let screenDispatcherName =
+            let screenDispatcherNameOpt =
                 if openGameplayScreen
-                then plugin.GetGameplayScreenDispatcherName ()
-                else typeof<ScreenDispatcher>.Name
-            let (screen, world) = World.createScreen3 screenDispatcherName (Some EditorScreen.Name) world
-            let world = World.selectScreen EditorScreen world
+                then plugin.GetEditorGameplayScreenDispatcherNameOpt ()
+                else Some typeof<ScreenDispatcher>.Name
             let world =
-                if Seq.isEmpty (World.getLayers screen world)
-                then World.createLayer (Some DefaultEditorLayer.Name) EditorScreen world |> snd
-                else world
+                match screenDispatcherNameOpt with
+                | Some screenDispatcherName ->
+                    let (screen, world) = World.createScreen3 screenDispatcherName (Some EditorScreen.Name) world
+                    let world =
+                        if Seq.isEmpty (World.getLayers screen world)
+                        then World.createLayer (Some DefaultEditorLayer.Name) EditorScreen world |> snd
+                        else world
+                    World.selectScreen screen world
+                | None -> world
             Right world
         | Left error -> Left error
 

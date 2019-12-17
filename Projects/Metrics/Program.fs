@@ -84,7 +84,9 @@ type MyGamePlugin () =
     override this.MakeEntityDispatchers () = [MyEntityDispatcher () :> EntityDispatcher]
     override this.MakeGameDispatchers () = [MyGameDispatcher () :> GameDispatcher]
     override this.GetStandAloneGameDispatcherName () = typeof<MyGameDispatcher>.Name
-    
+    override this.GetEditorGameDispatcherName () = typeof<MyGameDispatcher>.Name
+    override this.GetEditorGameplayScreenDispatcherNameOpt () = None
+
 module Program =
 
     // this program exists to take metrics on Nu's performance
