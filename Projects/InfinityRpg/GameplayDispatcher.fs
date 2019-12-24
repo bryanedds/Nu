@@ -552,14 +552,14 @@ module GameplayDispatcherModule =
              define Screen.OngoingRandState Rand.DefaultSeedState
              define Screen.ShallLoadGame false]
 
-        override this.Bindings (_, gameplay, _) =
+        override this.Bindings (_, _, _) =
             [Simulants.Player.CharacterActivityState.ChangeEvent =>! ToggleHaltButton
              Stream.make Simulants.HudFeeler.TouchEvent |> Stream.isSimulantSelected Simulants.HudFeeler =|>! fun evt -> HandlePlayerInput (TouchInput evt.Data)
              Stream.make Simulants.HudDetailUp.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailUp =>! HandlePlayerInput (DetailInput Upward)
              Stream.make Simulants.HudDetailRight.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailRight =>! HandlePlayerInput (DetailInput Rightward)
              Stream.make Simulants.HudDetailDown.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailDown =>! HandlePlayerInput (DetailInput Downward)
              Stream.make Simulants.HudDetailLeft.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailLeft =>! HandlePlayerInput (DetailInput Leftward)
-             gameplay.UpdateEvent =|>! fun _ ->
+             Simulants.Gameplay.UpdateEvent =|>! fun _ ->
                 if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) then HandlePlayerInput (DetailInput Upward)
                 elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then HandlePlayerInput (DetailInput Rightward)
                 elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) then HandlePlayerInput (DetailInput Downward)
