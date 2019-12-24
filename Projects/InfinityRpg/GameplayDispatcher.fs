@@ -2,6 +2,7 @@
 open System
 open System.IO
 open Prime
+open SDL2
 open Nu
 open Nu.Declarative
 open InfinityRpg
@@ -13,6 +14,15 @@ module GameplayDispatcherModule =
         | TouchInput of Vector2
         | DetailInput of Direction
         | NoInput
+
+    type [<NoEquality; NoComparison>] GameplayCommand =
+        | ToggleHaltButton
+        | HandleInput of PlayerInput
+        | QuittingGameplay
+        | SaveGame of Screen
+        | QuitGameplay
+        | RunGameplay
+        | Nop
 
     type Screen with
 
@@ -27,7 +37,7 @@ module GameplayDispatcherModule =
         member this.ShallLoadGame = Lens.make<bool, World> Property? ShallLoadGame this.GetShallLoadGame this.SetShallLoadGame this
 
     type GameplayDispatcher () =
-        inherit ScreenDispatcher ()
+        inherit ScreenDispatcher<unit, unit, GameplayCommand> (())
 
         static let getCharacters world =
             let entities = World.getEntities Simulants.Scene world
@@ -66,10 +76,15 @@ module GameplayDispatcherModule =
             let (randResult, rand) = Rand.nextIntUnder 5 rand
             let enemyCount = randResult + 1
             List.fold
-                (fun (enemies, rand, world) i ->
-                    let enemyPosition = single i * Constants.Layout.TileSize * 2.0f
+                (fun (enemies, rand, world) _ ->
+                    let fieldMap = Simulants.Field.GetFieldMapNp world
+                    let characters = getCharacters world
+                    let characterPositions = Seq.map (fun (character : Entity) -> character.GetPosition world) characters
+                    let availableCoordinates = OccupationMap.makeFromFieldTilesAndCharacters fieldMap.FieldTiles characterPositions |> Map.filter (fun _ occupied -> occupied = false) |> Map.toKeyList |> List.toArray
+                    let (randResult, rand) = Rand.nextIntUnder availableCoordinates.Length rand
+                    let enemyCoordinates = availableCoordinates.[randResult]
                     let (enemy, world) = World.createEntity<EnemyDispatcher> None DefaultOverlay scene world
-                    let world = enemy.SetPosition enemyPosition world
+                    let world = enemy.SetPosition (vmtovf enemyCoordinates) world
                     let world = enemy.SetDepth Constants.Layout.CharacterDepth world
                     let world = enemy.SetCharacterAnimationSheet Assets.GoopyImage world
                     (enemy :: enemies, rand, world))
@@ -344,7 +359,7 @@ module GameplayDispatcherModule =
                 let world = reactor.CharacterState.Update (fun state -> { state with HitPoints = state.HitPoints - reactorDamage }) world
                 if reactor.CharacterState.GetBy (fun state -> state.HitPoints <= 0) world then
                     if reactor.Name = Simulants.Player.Name
-                    then World.transitionScreen (!! "Title") world
+                    then World.transitionScreen Simulants.Title world
                     else World.destroyEntity reactor world
                 else world
             else world
@@ -492,19 +507,7 @@ module GameplayDispatcherModule =
                 Chain.runAssumingCascade chain stream world |> snd
             else world
 
-        static let handlePlayerActivityChange _ world =
-            let playerNavigatingPath = isPlayerNavigatingPath world
-            Simulants.HudHalt.SetEnabled playerNavigatingPath world
-
-        static let handleTouchFeeler evt world =
-            let playerInput = TouchInput evt.Data
-            tryRunPlayerTurn playerInput world
-
-        static let handleDownDetail direction _ world =
-            let playerInput = DetailInput direction
-            tryRunPlayerTurn playerInput world
-
-        static let handleNewGame world =
+        static let runNewGameplay world =
 
             // generate non-deterministic random numbers
             let sysrandom = System.Random ()
@@ -526,12 +529,13 @@ module GameplayDispatcherModule =
 
             // make player
             let (player, world) = World.createEntity<PlayerDispatcher> (Some Simulants.Player.Name) DefaultOverlay scene world
+            let world = player.SetPosition (vmtovf (v2i 1 10)) world
             let world = player.SetDepth Constants.Layout.CharacterDepth world
 
             // make enemies
             __c (createEnemies scene rand world)
 
-        static let handleLoadGame world =
+        static let runLoadGameplay world =
 
             // get and initialize gameplay screen from read
             let world = World.readScreenFromFile Assets.SaveFilePath (Some Simulants.Gameplay.Name) world |> snd
@@ -543,40 +547,42 @@ module GameplayDispatcherModule =
             // make field from rand (field is not serialized, but generated deterministically with ContentRandState)
             __c (createField Simulants.Scene rand world)
 
-        static let handleSelectTitle _ world =
-            World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Assets.ButterflyGirlSong world
-
-        static let handleSelectGameplay _ world =
-            let world =
-                // NOTE: doing a File.Exists then loading the file is dangerous since the file can
-                // always be deleted / moved between the two operations!
-                if Simulants.Gameplay.GetShallLoadGame world && File.Exists Assets.SaveFilePath
-                then handleLoadGame world
-                else handleNewGame world
-            World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Assets.HerosVengeanceSong world
-
-        static let handleClickSaveGame evt world =
-            let gameplay = evt.Subscriber
-            World.writeScreenToFile Assets.SaveFilePath gameplay world
-            world
-
-        static let handleDeselectGameplay _ world =
-            World.destroyLayer Simulants.Scene world
-
         static member Properties =
             [define Screen.ContentRandState Rand.DefaultSeedState
              define Screen.OngoingRandState Rand.DefaultSeedState
              define Screen.ShallLoadGame false]
 
-        override dispatcher.Register (gameplay, world) =
-            let world = Stream.make Simulants.Player.CharacterActivityState.ChangeEvent |> Stream.subscribe handlePlayerActivityChange gameplay $ world
-            let world = Stream.make Simulants.HudFeeler.TouchEvent |> Stream.isSimulantSelected Simulants.HudFeeler |> Stream.monitor handleTouchFeeler gameplay $ world
-            let world = Stream.make Simulants.HudDetailUp.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailUp |> Stream.monitor (handleDownDetail Upward) gameplay $ world
-            let world = Stream.make Simulants.HudDetailRight.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailRight |> Stream.monitor (handleDownDetail Rightward) gameplay $ world
-            let world = Stream.make Simulants.HudDetailDown.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailDown |> Stream.monitor (handleDownDetail Downward) gameplay $ world
-            let world = Stream.make Simulants.HudDetailLeft.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailLeft |> Stream.monitor (handleDownDetail Leftward) gameplay $ world
-            let world = World.monitor handleSelectTitle (!! "Title" : Screen).SelectEvent gameplay world
-            let world = World.monitor handleSelectGameplay gameplay.SelectEvent gameplay world
-            let world = World.monitor handleClickSaveGame Simulants.HudSaveGame.ClickEvent gameplay world
-            let world = World.monitor handleDeselectGameplay gameplay.DeselectEvent gameplay world
-            world
+        override this.Bindings (_, gameplay, _) =
+            [Simulants.Player.CharacterActivityState.ChangeEvent =>! ToggleHaltButton
+             Stream.make Simulants.HudFeeler.TouchEvent |> Stream.isSimulantSelected Simulants.HudFeeler =|>! fun evt -> HandleInput (TouchInput evt.Data)
+             Stream.make Simulants.HudDetailUp.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailUp =>! HandleInput (DetailInput Upward)
+             Stream.make Simulants.HudDetailRight.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailRight =>! HandleInput (DetailInput Rightward)
+             Stream.make Simulants.HudDetailDown.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailDown =>! HandleInput (DetailInput Downward)
+             Stream.make Simulants.HudDetailLeft.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailLeft =>! HandleInput (DetailInput Leftward)
+             gameplay.UpdateEvent =|>! fun _ ->
+                if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) then HandleInput (DetailInput Upward)
+                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then HandleInput (DetailInput Rightward)
+                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) then HandleInput (DetailInput Downward)
+                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then HandleInput (DetailInput Leftward)
+                else Nop
+             Simulants.Gameplay.SelectEvent =>! RunGameplay
+             Simulants.HudSaveGame.ClickEvent =|>! fun evt -> SaveGame evt.Subscriber
+             Simulants.Title.SelectEvent =>! QuittingGameplay
+             Simulants.Gameplay.DeselectEvent =>! QuitGameplay]
+
+        override this.Command (command, _, _, world) =
+            let world =
+                match command with
+                | ToggleHaltButton -> Simulants.HudHalt.SetEnabled (isPlayerNavigatingPath world) world
+                | HandleInput input -> tryRunPlayerTurn input world
+                | SaveGame gameplay -> World.writeScreenToFile Assets.SaveFilePath gameplay world; world
+                | QuittingGameplay -> World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Assets.ButterflyGirlSong world
+                | QuitGameplay -> World.destroyLayer Simulants.Scene world
+                | RunGameplay ->
+                    let world =
+                        if Simulants.Gameplay.GetShallLoadGame world && File.Exists Assets.SaveFilePath
+                        then runLoadGameplay world
+                        else runNewGameplay world
+                    World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Assets.HerosVengeanceSong world
+                | Nop -> world
+            just world
