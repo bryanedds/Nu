@@ -17,9 +17,9 @@ module GameplayDispatcherModule =
 
     type [<NoEquality; NoComparison>] GameplayCommand =
         | ToggleHaltButton
-        | HandleInput of PlayerInput
-        | QuittingGameplay
+        | HandlePlayerInput of PlayerInput
         | SaveGame of Screen
+        | QuittingGameplay
         | QuitGameplay
         | RunGameplay
         | Nop
@@ -554,16 +554,16 @@ module GameplayDispatcherModule =
 
         override this.Bindings (_, gameplay, _) =
             [Simulants.Player.CharacterActivityState.ChangeEvent =>! ToggleHaltButton
-             Stream.make Simulants.HudFeeler.TouchEvent |> Stream.isSimulantSelected Simulants.HudFeeler =|>! fun evt -> HandleInput (TouchInput evt.Data)
-             Stream.make Simulants.HudDetailUp.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailUp =>! HandleInput (DetailInput Upward)
-             Stream.make Simulants.HudDetailRight.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailRight =>! HandleInput (DetailInput Rightward)
-             Stream.make Simulants.HudDetailDown.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailDown =>! HandleInput (DetailInput Downward)
-             Stream.make Simulants.HudDetailLeft.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailLeft =>! HandleInput (DetailInput Leftward)
+             Stream.make Simulants.HudFeeler.TouchEvent |> Stream.isSimulantSelected Simulants.HudFeeler =|>! fun evt -> HandlePlayerInput (TouchInput evt.Data)
+             Stream.make Simulants.HudDetailUp.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailUp =>! HandlePlayerInput (DetailInput Upward)
+             Stream.make Simulants.HudDetailRight.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailRight =>! HandlePlayerInput (DetailInput Rightward)
+             Stream.make Simulants.HudDetailDown.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailDown =>! HandlePlayerInput (DetailInput Downward)
+             Stream.make Simulants.HudDetailLeft.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailLeft =>! HandlePlayerInput (DetailInput Leftward)
              gameplay.UpdateEvent =|>! fun _ ->
-                if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) then HandleInput (DetailInput Upward)
-                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then HandleInput (DetailInput Rightward)
-                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) then HandleInput (DetailInput Downward)
-                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then HandleInput (DetailInput Leftward)
+                if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) then HandlePlayerInput (DetailInput Upward)
+                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then HandlePlayerInput (DetailInput Rightward)
+                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) then HandlePlayerInput (DetailInput Downward)
+                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then HandlePlayerInput (DetailInput Leftward)
                 else Nop
              Simulants.Gameplay.SelectEvent =>! RunGameplay
              Simulants.HudSaveGame.ClickEvent =|>! fun evt -> SaveGame evt.Subscriber
@@ -574,7 +574,7 @@ module GameplayDispatcherModule =
             let world =
                 match command with
                 | ToggleHaltButton -> Simulants.HudHalt.SetEnabled (isPlayerNavigatingPath world) world
-                | HandleInput input -> tryRunPlayerTurn input world
+                | HandlePlayerInput input -> tryRunPlayerTurn input world
                 | SaveGame gameplay -> World.writeScreenToFile Assets.SaveFilePath gameplay world; world
                 | QuittingGameplay -> World.playSong Constants.Audio.DefaultTimeToFadeOutSongMs 1.0f Assets.ButterflyGirlSong world
                 | QuitGameplay -> World.destroyLayer Simulants.Scene world
