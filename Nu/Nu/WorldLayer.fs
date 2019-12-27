@@ -231,11 +231,20 @@ module WorldLayerModule =
             World.readLayer layerDescriptor nameOpt screen world
 
         /// Transform a stream into existing layers.
-        static member streamLayers (mapper : 'a -> LayerContent) (screen : Screen) (stream : Stream<'a list, World>) =
+        static member streamLayers (mapper : Lens<'a, World> -> LayerContent) (screen : Screen) (stream : Stream<Lens<'a option, World> seq, World>) =
             stream |>
             Stream.optimize |>
             Stream.insert (makeGuid ()) |>
-            Stream.map (fun (guid, list) -> List.mapi (fun i a -> PartialComparable.make (makeGuidDeterministic i guid) (mapper a)) list |> Set.ofList) |>
+            Stream.mapWorld (fun (guid, seq) world ->
+                seq |>
+                Seq.takeWhile (fun lens ->
+                    Option.isSome (lens.Get world)) |>
+                Seq.mapi (fun i lens ->
+                    let lens = Lens.dereferenceOut lens
+                    let guid = makeGuidDeterministic i guid
+                    let entityContent = mapper lens
+                    PartialComparable.make guid entityContent) |>
+                Set.ofSeq) |>
             Stream.fold (fun (p, _, _) c -> (c, Set.difference c p, Set.difference p c)) (Set.empty, Set.empty, Set.empty) |>
             Stream.mapEffect (fun evt world ->
                 let (current, added, removed) = evt.Data
@@ -258,10 +267,10 @@ module WorldLayerModule =
                 (current, world))
 
         /// Turn a layers stream into a series of live layers.
-        static member expandLayerStream (lens : World Lens) mapper screen world =
+        static member expandLayerStream (lens : Lens<obj, World>) mapper screen world =
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
-            Stream.mapEvent (fun _ world -> lens.Get world |> Reflection.objToObjList) |>
+            Stream.map (fun _ -> lens |> Lens.mapOut (Reflection.objToObjArray >> seq) |> Lens.explodeOut) |>
             World.streamLayers mapper screen |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 

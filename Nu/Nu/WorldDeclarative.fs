@@ -18,7 +18,7 @@ type SimulantContent = interface end
 
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
-    | EntitiesFromStream of World Lens * (obj -> EntityContent)
+    | EntitiesFromStream of Lens<obj, World> * (Lens<obj, World> -> EntityContent)
     | EntityFromDefinitions of string * string * PropertyInitializer list * EntityContent list
     | EntityFromFile of string * string
     interface SimulantContent
@@ -36,7 +36,7 @@ type [<NoEquality; NoComparison>] EntityContent =
 
 /// Describes the content of a layer.
 and [<NoEquality; NoComparison>] LayerContent =
-    | LayersFromStream of World Lens * (obj -> LayerContent)
+    | LayersFromStream of Lens<obj, World> * (Lens<obj, World> -> LayerContent)
     | LayerFromDefinitions of string * string * PropertyInitializer list * EntityContent list
     | LayerFromFile of string * string
     interface SimulantContent

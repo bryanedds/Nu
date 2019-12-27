@@ -341,12 +341,23 @@ module WorldEntityModule =
                     ([], world)
 
         /// Transform a stream into existing entities.
-        static member streamEntities (mapper : 'a -> EntityContent) (ownerOpt : Entity option) (layer : Layer) (stream : Stream<'a list, World>) =
+        static member streamEntities (mapper : Lens<'a, World> -> EntityContent) (ownerOpt : Entity option) (layer : Layer) (stream : Stream<Lens<'a option, World> seq, World>) =
             stream |>
             Stream.optimize |>
             Stream.insert (makeGuid ()) |>
-            Stream.map (fun (guid, list) -> List.mapi (fun i a -> PartialComparable.make (makeGuidDeterministic i guid) (mapper a)) list |> Set.ofList) |>
-            Stream.fold (fun (p, _, _) c -> (c, Set.difference c p, Set.difference p c)) (Set.empty, Set.empty, Set.empty) |>
+            Stream.mapWorld (fun (guid, seq) world ->
+                seq |>
+                Seq.takeWhile (fun lens ->
+                    Option.isSome (lens.Get world)) |>
+                Seq.mapi (fun i lens ->
+                    let lens = Lens.dereferenceOut lens
+                    let guid = makeGuidDeterministic i guid
+                    let entityContent = mapper lens
+                    PartialComparable.make guid entityContent) |>
+                Set.ofSeq) |>
+            Stream.fold (fun (p, _, _) c ->
+                (c, Set.difference c p, Set.difference p c))
+                (Set.empty, Set.empty, Set.empty) |>
             Stream.mapEffect (fun evt world ->
                 let (current, added, removed) = evt.Data
                 let world =
@@ -368,10 +379,10 @@ module WorldEntityModule =
                 (current, world))
 
         /// Turn an entity stream into a series of live entities.
-        static member expandEntityStream (lens : World Lens) mapper ownerOpt layer world =
+        static member expandEntityStream (lens : Lens<obj, World>) mapper ownerOpt layer world =
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
-            Stream.mapEvent (fun _ world -> lens.Get world |> Reflection.objToObjList) |>
+            Stream.map (fun _ -> lens |> Lens.mapOut (Reflection.objToObjArray >> seq) |> Lens.explodeOut) |>
             World.streamEntities mapper ownerOpt layer |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 

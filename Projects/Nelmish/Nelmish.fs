@@ -51,7 +51,7 @@ module Nelmish =
                      Content.text CounterText.Name
                         [Entity.Text ==> model --> scstring
                          Entity.Position == v2 -128.0f -32.0f]
-                     Content.entityIf (model --> isNonZero) $ fun () ->
+                     Content.entityIf (model --> isNonZero) $ fun _ ->
                         Content.button ResetButton.Name
                             [Entity.Text == "Reset"
                              Entity.Position == v2 -128.0f -128.0f]]]]
