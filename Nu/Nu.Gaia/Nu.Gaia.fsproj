@@ -111,7 +111,7 @@
       <HintPath>..\Nu.Dependencies\Nito.Collections.Deque\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.3.8.4\lib\net472\Prime.exe</HintPath>
+      <HintPath>..\..\packages\Prime.3.8.5\lib\net472\Prime.exe</HintPath>
     </Reference>
     <Reference Include="ScintillaNET">
       <HintPath>..\Nu.Dependencies\ScintillaNET\ScintillaNET.dll</HintPath>

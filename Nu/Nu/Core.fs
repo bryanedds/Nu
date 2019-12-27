@@ -78,6 +78,25 @@ module CoreOperators =
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
 
+// TODO: move this into prime.
+module Lens =
+
+    let name<'a, 'w> (lens : Lens<'a, 'w>) =
+        lens.Name
+
+    let get<'a, 'w> world (lens : Lens<'a, 'w>) =
+        lens.Get world
+
+    let indexOut i (lens : Lens<'a seq, 'w>) : Lens<'a option, 'w> =
+        lens.MapOut (Seq.tryItem i)
+
+    let explodeOut (lens : Lens<'a seq, 'w>) : Lens<'a option, 'w> seq =
+        Seq.initInfinite id |>
+        Seq.map (flip indexOut lens)
+
+    let dereferenceOut (lens : Lens<'a option, 'w>) : Lens<'a, 'w> =
+        lens.MapOut (Option.get)
+
 /// Specifies the screen-clearing routine.
 type ScreenClear =
     | NoClear
