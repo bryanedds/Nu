@@ -382,7 +382,7 @@ module WorldEntityModule =
         static member expandEntityStream (lens : Lens<obj, World>) mapper ownerOpt layer world =
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
-            Stream.map (fun _ -> lens |> Lens.mapOut (Reflection.objToObjArray >> seq) |> Lens.explodeOut) |>
+            Stream.map (fun _ -> lens |> Lens.mapOut Reflection.objToObjSeq |> Lens.explode) |>
             World.streamEntities mapper ownerOpt layer |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
