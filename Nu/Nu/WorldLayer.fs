@@ -270,7 +270,7 @@ module WorldLayerModule =
         static member expandLayerStream (lens : Lens<obj, World>) mapper screen world =
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
-            Stream.map (fun _ -> lens |> Lens.mapOut (Reflection.objToObjArray >> seq) |> Lens.explodeOut) |>
+            Stream.map (fun _ -> lens |> Lens.mapOut (Reflection.objToObjSeq) |> Lens.explode) |>
             World.streamLayers mapper screen |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
