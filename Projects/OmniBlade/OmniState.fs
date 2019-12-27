@@ -1,0 +1,371 @@
+﻿namespace OmniBlade
+open System.IO
+open Prime
+open Nu
+
+type Direction =
+    | Downward
+    | Leftward
+    | Upward
+    | Rightward
+
+type ElementType =
+    | Fire // beats nothing; strongest
+    | Lightning // beats water
+    | Water // beats fire, lightning; weakest
+
+type StatusType =
+    | DefendStatus // also implies countering
+    | PoisonStatus
+    | MuteStatus
+    | SleepStatus
+
+type EquipmentType =
+    | Weapon
+    | Armor
+    | Relic
+
+type ConsumableType =
+    | Herb
+
+type KeyItemType =
+    | BrassKey
+
+type ItemType =
+    | Equipment of EquipmentType
+    | Consumable of ConsumableType
+    | KeyItem of KeyItemType
+
+type AimType =
+    | EnemyAim
+    | AllyAim of bool
+    | AnyAim
+    | NoAim
+
+type TargetType =
+    | SingleTarget of AimType
+    | RadialTarget of AimType
+    | LineTarget of AimType
+    | AllTarget of AimType
+
+type EffectType =
+    | Physical
+    | Magical
+
+type SpecialType = string
+
+type ActionType =
+    | Attack
+    | Defend // auto counters at rate of counter stat
+    | Consume of ConsumableType
+    | Special of SpecialType
+    | Wound
+
+type WeaponType = string
+
+type WeaponSubtype =
+    | Melee
+    | Sword
+    | Axe
+    | Bow
+    | Staff
+    | Rod
+
+type WeaponData =
+    { WeaponType : WeaponType // key
+      WeaponSubtype : WeaponSubtype
+      PowerBase : int
+      MagicBase : int }
+
+type ArmorType = string
+
+type ArmorSubtype =
+    | Robe
+    | Vest
+    | Mail
+
+type ArmorData =
+    { ArmorType : ArmorType // key
+      ArmorSubtype : ArmorSubtype
+      HitPointsBase : int
+      SpecialPointsBase : int }
+
+type RelicType = string
+
+type RelicData =
+    { RelicType : RelicType // key
+      ShieldBase : int
+      CounterBase : int }
+
+type AllyType =
+    | Jinn
+
+type EnemyType =
+    | Goblin
+
+type CharacterType =
+    | Ally of AllyType
+    | Enemy of EnemyType
+
+type DrainData =
+    { EffectType : EffectType
+      Percentage : single }
+
+type ActionData =
+    { ActionType : ActionType // key
+      ActionName : string
+      EffectType : EffectType
+      MagicPointCost : int
+      SuccessRate : single
+      Curative : bool
+      DrainData : DrainData
+      ElementType : ElementType
+      StatusesAdded : StatusType Set
+      StatusesRemoved : StatusType Set
+      TargetType : TargetType }
+
+type ConsumableData =
+    { ConsumableData : unit }
+
+type KeyItemData =
+    { KeyItemData : unit }
+
+type ItemData =
+    { ItemType : ItemType // key
+      Description : string }
+
+type RewardData =
+    { Gold : int }
+
+type CharacterData =
+    { CharacterType : CharacterType // key
+      CharacterName : string
+      BaseActions : ActionData list // base actions for all instances of character
+      Reward : RewardData }
+
+type [<NoComparison>] Rom =
+    { Weapons : Map<WeaponType, WeaponData>
+      Armors : Map<ArmorType, ArmorData>
+      Relics : Map<RelicType, RelicData>
+      Actions : Map<ActionType, ActionData>
+      Items : Map<ItemType, ItemData>
+      Characters : Map<CharacterType, CharacterData> }
+
+    static member readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
+        File.ReadAllText filePath |>
+        flip (Symbol.fromStringCsv true) (Some filePath) |>
+        symbolToValue<'d list> |>
+        Map.ofListBy (fun data -> getKey data, data)
+
+    static member readFromFiles () =
+        { Weapons = Rom.readSheet Assets.WeaponDataFilePath (fun data -> data.WeaponType)
+          Armors = Rom.readSheet Assets.ArmorDataFilePath (fun data -> data.ArmorType)
+          Relics = Rom.readSheet Assets.RelicDataFilePath (fun data -> data.RelicType)
+          Actions = Map.empty
+          Items = Map.empty
+          Characters = Map.empty }
+
+type PartyMember =
+    { PartyIndex : int // key
+      ActivePartyIndexOpt : int option
+      CharacterType : CharacterType }
+
+type [<NoComparison>] Party =
+    { PartyMembers : Map<int, PartyMember> }
+
+type CharacterAnimationCycle =
+    | WalkCycle
+    | CelebrateCycle
+    | ReadyCycle
+    | PoiseCycle
+    | AttackCycle
+    | CastCycle
+    | SpinCycle
+    | DamageCycle
+    | IdleCycle
+    | WoundCycle
+
+type CharacterAnimationState =
+    { TimeStart : int64
+      CharacterAnimationCycle : CharacterAnimationCycle
+      Direction : Direction
+      Stutter : int }
+
+    static member setCycle timeOpt cycle state =
+        match timeOpt with
+        | Some time -> { state with TimeStart = time; CharacterAnimationCycle = cycle }
+        | None -> { state with CharacterAnimationCycle = cycle }
+
+    static member directionToInt direction =
+        match direction with
+        | Downward -> 0
+        | Leftward -> 1
+        | Upward -> 2
+        | Rightward -> 3
+
+    static member timeLocal time state =
+        time - state.TimeStart
+
+    static member indexCel time state =
+        let timeLocal = CharacterAnimationState.timeLocal time state
+        int timeLocal / state.Stutter
+
+    static member indexLooped run time state =
+        CharacterAnimationState.indexCel time state % run
+
+    static member indexSaturated run time state =
+        let cel = CharacterAnimationState.indexCel time state
+        if cel < dec run then cel else dec run
+
+    static member indexLoopedWithDirection row run time state =
+        let offset = CharacterAnimationState.directionToInt state.Direction * run
+        Vector2i (CharacterAnimationState.indexLooped run time state + offset, row)
+
+    static member indexSaturatedWithDirection row run time state =
+        let offset = CharacterAnimationState.directionToInt state.Direction * run
+        Vector2i (CharacterAnimationState.indexSaturated run time state + offset, row)
+
+    static member index time state =
+        match state.CharacterAnimationCycle with
+        | WalkCycle -> CharacterAnimationState.indexLoopedWithDirection 0 6 time state
+        | CelebrateCycle -> CharacterAnimationState.indexLoopedWithDirection 1 2 time state
+        | ReadyCycle -> CharacterAnimationState.indexSaturatedWithDirection 2 3 time state
+        | PoiseCycle -> CharacterAnimationState.indexLoopedWithDirection 3 3 time state
+        | AttackCycle -> CharacterAnimationState.indexSaturatedWithDirection 4 3 time state
+        | CastCycle -> CharacterAnimationState.indexLoopedWithDirection 5 2 time state
+        | SpinCycle -> CharacterAnimationState.indexLoopedWithDirection 7 4 time state
+        | DamageCycle -> CharacterAnimationState.indexSaturatedWithDirection 6 1 time state
+        | IdleCycle -> CharacterAnimationState.indexSaturatedWithDirection 7 1 time state
+        | WoundCycle -> Vector2i (0, 8)
+
+    static member cycleLengthOpt state =
+        match state.CharacterAnimationCycle with
+        | WalkCycle -> None
+        | CelebrateCycle -> None
+        | ReadyCycle -> Some (int64 (5 * state.Stutter))
+        | PoiseCycle -> None
+        | AttackCycle -> Some (int64 (4 * state.Stutter))
+        | CastCycle -> None
+        | SpinCycle -> Some (int64 (4 * state.Stutter))
+        | DamageCycle -> Some (int64 (3 * state.Stutter))
+        | IdleCycle -> None
+        | WoundCycle -> Some (int64 (5 * state.Stutter))
+
+    static member progressOpt time state =
+        let timeLocal = CharacterAnimationState.timeLocal time state
+        match CharacterAnimationState.cycleLengthOpt state with
+        | Some length -> Some (min 1.0f (single timeLocal / single length))
+        | None -> None
+
+    static member finished time state =
+        match CharacterAnimationState.progressOpt time state with
+        | Some progress -> progress = 1.0f
+        | None -> false
+
+type CharacterState =
+    { CharacterType : CharacterType
+      PartyIndex : int
+      ExpPoints : int
+      HitPoints : int
+      SpecialPoints : int
+      PowerBuff : single
+      ShieldBuff : single
+      MagicBuff : single
+      CounterBuff : single
+      Statuses : StatusType Set
+      WeaponOpt : WeaponType option
+      ArmorOpt : ArmorType option
+      Relics : RelicType list }
+
+    static member empty =
+        { CharacterType = Ally Jinn
+          PartyIndex = 0
+          ExpPoints = 0
+          HitPoints = 10 // note this is an arbitrary number as hp max is calculated
+          SpecialPoints = 1 // sp max is calculated
+          PowerBuff = 1.0f // rate at which power is buffed / debuffed
+          MagicBuff = 1.0f // rate at which magic is buffed / debuffed
+          ShieldBuff = 1.0f // rate at which shield is buffed / debuffed
+          CounterBuff = 1.0f // rate at which counter is buffed / debuffed
+          Statuses = Set.empty<StatusType>
+          WeaponOpt = Option<WeaponType>.None
+          ArmorOpt = Option<ArmorType>.None
+          Relics = [] } // level is calculated from base experience + added experience
+
+    member this.Name = match this.CharacterType with Ally ally -> scstring ally | Enemy enemy -> scstring enemy
+    member this.IsAlly = match this.CharacterType with Ally _ -> true | Enemy _ -> false
+    member this.IsEnemy = not this.IsAlly
+    member this.IsHealthy = this.HitPoints > 0
+    member this.IsWounded = this.HitPoints <= 0
+
+    member this.Level =
+        if this.ExpPoints < 8 then 1
+        elif this.ExpPoints < 16 then 2
+        elif this.ExpPoints < 24 then 3
+        elif this.ExpPoints < 36 then 4
+        elif this.ExpPoints < 50 then 5
+        elif this.ExpPoints < 75 then 6
+        elif this.ExpPoints < 100 then 6
+        elif this.ExpPoints < 150 then 8
+        elif this.ExpPoints < 225 then 9
+        elif this.ExpPoints < 350 then 10
+        elif this.ExpPoints < 500 then 11
+        elif this.ExpPoints < 750 then 12
+        elif this.ExpPoints < 1000 then 13
+        elif this.ExpPoints < 1500 then 14
+        elif this.ExpPoints < 2250 then 15
+        elif this.ExpPoints < 3500 then 16
+        elif this.ExpPoints < 5000 then 17
+        elif this.ExpPoints < 7500 then 18
+        elif this.ExpPoints < 10000 then 19
+        else 20
+
+    member this.ComputeHitPointsMax rom =
+        let intermediate =
+            match this.ArmorOpt with
+            | Some armor ->
+                match Map.tryFind armor rom.Armors with
+                | Some armorData -> single armorData.HitPointsBase |> max 5.0f
+                | None -> 5.0f
+            | None -> 5.0f
+        intermediate * single this.Level |> int |> max 1
+
+    member this.ComputeSpecialPointsMax rom =
+        let intermediate =
+            match this.ArmorOpt with
+            | Some armor ->
+                match Map.tryFind armor rom.Armors with
+                | Some armorData -> single armorData.SpecialPointsBase |> max 2.0f
+                | None -> 2.0f
+            | None -> 2.0f
+        intermediate * single this.Level |> int |> max 1
+
+    member this.ComputePower rom =
+        let intermediate =
+            match this.WeaponOpt with
+            | Some weapon ->
+                match Map.tryFind weapon rom.Weapons with
+                | Some weaponData -> single weaponData.PowerBase * this.PowerBuff |> max 5.0f
+                | None -> 5.0f
+            | None -> 5.0f
+        intermediate * single this.Level / 5.0f |> int |> max 1
+
+    member this.ComputeMagic rom =
+        let intermediate =
+            match this.WeaponOpt with
+            | Some weapon ->
+                match Map.tryFind weapon rom.Weapons with
+                | Some weaponData -> single weaponData.MagicBase * this.MagicBuff |> max 5.0f
+                | None -> 5.0f
+            | None -> 5.0f
+        intermediate * single this.Level / 5.0f |> int |> max 1
+
+    member this.ComputeShield (rom : Rom) =
+        let intermediate =
+            match this.Relics with
+            | relic :: _ -> // just the first relic for now
+                match Map.tryFind relic rom.Relics with
+                | Some weaponData -> single weaponData.ShieldBase * this.ShieldBuff |> max 0.0f
+                | None -> 0.0f
+            | _ -> 0.0f
+        intermediate * single this.Level / 5.0f |> int |> max 0

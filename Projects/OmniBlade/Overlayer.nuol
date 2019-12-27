@@ -1,0 +1,9 @@
+[[SampleOverlay
+  [BlockDispatcher]
+  [[BodyType Dynamic]
+   [Friction 0.5]
+   [IsSensor True]]]
+ [ButtonDispatcherRouted
+  [ButtonDispatcher]
+  [[ClickSoundOpt
+    [Some [Gui Affirm]]]]]]
