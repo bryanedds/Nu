@@ -79,8 +79,7 @@ module OmniBattle =
                    CharacterAnimationSheet = asset "Battle" "Jinn"
                    CharacterAnimationState = { TimeStart = 0L; CharacterAnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
                    CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 20; SpecialPoints = 1; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
-                   ActionTime = 0 }] |>
-                List.mapi (fun i ally -> (AllyIndex i, ally))
+                   ActionTime = 0 }]
              let enemies =
                 [{ CharacterPosition = v2 0.0f 64.0f
                    CharacterSize = v2 160.0f 160.0f
@@ -93,16 +92,15 @@ module OmniBattle =
                    CharacterAnimationSheet = asset "Battle" "Goblin"
                    CharacterAnimationState = { TimeStart = 0L; CharacterAnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
                    CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 1; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
-                   ActionTime = 0 }] |>
-                List.mapi (fun i enemy -> (EnemyIndex i, enemy))
+                   ActionTime = 0 }]
              let characters =
-                Map.ofList (allies @ enemies)
-             let model =
-                { BattleState = BattleReady 0L
-                  BattleCharacters = characters
-                  CurrentCommandOpt = None
-                  ActionQueue = Queue.empty }
-             model)
+                Map.ofList
+                    (List.mapi (fun i ally -> (AllyIndex i, ally)) allies @
+                     List.mapi (fun i enemy -> (EnemyIndex i, enemy)) enemies)
+             { BattleState = BattleReady 0L
+               BattleCharacters = characters
+               CurrentCommandOpt = None
+               ActionQueue = Queue.empty })
 
         static let getAllies model =
             model.BattleCharacters |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
@@ -139,9 +137,9 @@ module OmniBattle =
                 let character = updater character
                 { model with BattleCharacters = Map.add characterIndex character model.BattleCharacters }
             | None -> model
-        do ignore tryUpdateCharacter
 
         static let updateCharacter updater characterIndex model =
+            do ignore tryUpdateCharacter // temporarily quiet error about tryUpdateCharacter being unused
             let character = getCharacter characterIndex model
             let character = updater character
             { model with BattleCharacters = Map.add characterIndex character model.BattleCharacters }
@@ -217,16 +215,14 @@ module OmniBattle =
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
                 tickAttack source targetOpt time timeLocal model
-            | Defend -> just model
+            | Defend -> just model // TODO: make the act of defending grant a significant counter buff
             | Consume _ -> just model
             | Special _ -> just model
             | Wound ->
                 let source = currentCommand.ActionCommand.Source
                 let (model, signal) = tickWound source time timeLocal model
                 match model.CurrentCommandOpt with
-                | Some _ ->
-                    // keep ticking wound
-                    withSig model signal
+                | Some _ -> withSig model signal // keep ticking wound
                 | None ->
                     let (model, signal2) =
                         let allies = getAllies model
