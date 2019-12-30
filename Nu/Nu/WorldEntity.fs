@@ -341,7 +341,7 @@ module WorldEntityModule =
                     ([], world)
 
         /// Transform a stream into existing entities.
-        static member streamEntities (mapper : int -> Lens<'a, World> -> EntityContent) (ownerOpt : Entity option) (layer : Layer) (stream : Stream<Lens<'a option, World> seq, World>) =
+        static member streamEntities (mapper : int -> Lens<'a, World> -> Layer -> World -> EntityContent) (ownerOpt : Entity option) (layer : Layer) (stream : Stream<Lens<'a option, World> seq, World>) =
             stream |>
             Stream.optimize |>
             Stream.insert (makeGuid ()) |>
@@ -352,7 +352,7 @@ module WorldEntityModule =
                 Seq.mapi (fun i lens ->
                     let lens = Lens.dereferenceOut lens
                     let guid = makeGuidDeterministic i guid
-                    let entityContent = mapper i lens
+                    let entityContent = mapper i lens layer world
                     PartialComparable.make guid entityContent) |>
                 Set.ofSeq) |>
             Stream.fold (fun (p, _, _) c ->
