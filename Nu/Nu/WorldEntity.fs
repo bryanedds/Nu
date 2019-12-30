@@ -341,6 +341,7 @@ module WorldEntityModule =
                     ([], world)
 
         /// Transform a stream into existing entities.
+        /// TODO: P1: see if we can fuse the various streams used here and in expandEntityStream to decrease time and space overhead.
         static member streamEntities (mapper : int -> Lens<'a, World> -> Layer -> World -> EntityContent) (ownerOpt : Entity option) (layer : Layer) (stream : Stream<Lens<'a option, World> seq, World>) =
             stream |>
             Stream.optimize |>
