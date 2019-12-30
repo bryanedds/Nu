@@ -475,14 +475,17 @@ module OmniBattle =
                          Entity.CharacterAnimationState ==> model.MapOut (fun model -> model.CharacterAnimationState)
                          Entity.CharacterState ==> model.MapOut (fun model -> model.CharacterState)]]
              Content.layersi (model.MapOut (fun model -> seq (getAllies model))) $ fun i _ _ _ ->
-                Content.layer (Simulants.Input i).Name [Layer.Depth == 10.0f]
+                Content.layer (Simulants.Input i).Name []
                     [Content.entity<RingMenuDispatcher> (Simulants.RegularMenu i).Name
-                        [Entity.Items == ["Attack"; "Defend"; "Special"; "Item"]]
+                        [Entity.Items == ["Attack"; "Defend"; "Special"; "Item"]
+                         Entity.Depth == 10.0f]
                      Content.entity<RingMenuDispatcher> (Simulants.SpecialMenu i).Name
                         [Entity.Items == ["Attack"]
-                         Entity.ItemCancelOpt == Some "Cancel"]
+                         Entity.ItemCancelOpt == Some "Cancel"
+                         Entity.Depth == 10.0f]
                      Content.entity<RingMenuDispatcher> (Simulants.ItemMenu i).Name
                         [Entity.Items == ["Attack"]
-                         Entity.ItemCancelOpt == Some "Cancel"]
+                         Entity.ItemCancelOpt == Some "Cancel"
+                         Entity.Depth == 10.0f]
                      Content.entity<ReticlesDispatcher> (Simulants.Reticles i).Name
-                        []]]
+                        [Entity.Depth == 10.0f]]]
