@@ -47,8 +47,8 @@ module OmniRingMenu =
 
         static let createButton item (menu : Entity) world =
             let (button, world) = World.createEntity5 typeof<ButtonDispatcher>.Name (Some (menu.Name + "+" + item)) DefaultOverlay (etol menu) world
-            let world = button.SetUpImage (AssetTag.make Assets.BattlePackage (item + "Up")) world
-            let world = button.SetDownImage (AssetTag.make Assets.BattlePackage (item + "Down")) world
+            let world = button.SetUpImage (asset Assets.BattlePackage (item + "Up")) world
+            let world = button.SetDownImage (asset Assets.BattlePackage (item + "Down")) world
             let world = button.QuickSize world
             let world = button.SetPersistent false world
             let world = button.SetParentNodeOptWithAdjustment (Some (Relation.unresolve button.EntityAddress menu.EntityAddress)) world
