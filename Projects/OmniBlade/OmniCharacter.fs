@@ -9,10 +9,6 @@ open OmniBlade
 [<AutoOpen>]
 module OmniCharacter =
 
-    type CharacterIndex =
-        | AllyIndex of int
-        | EnemyIndex of int
-
     type [<NoComparison>] CharacterModel =
         { CharacterPosition : Vector2
           CharacterSize : Vector2
