@@ -78,6 +78,19 @@ module CoreOperators =
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
 
+[<RequireQualifiedAccess>]
+module List =
+
+    let replace index item list =
+        let rec replaceInner index indexCurrent item left right =
+            match right with
+            | head :: tail ->
+                if indexCurrent = index
+                then (true, List.rev left @ item :: tail)
+                else replaceInner index (inc index) item (head :: left) tail
+            | [] -> (false, list)
+        replaceInner index 0 item [] list
+
 /// Specifies the screen-clearing routine.
 type ScreenClear =
     | NoClear

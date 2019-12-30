@@ -9,11 +9,6 @@ open OmniBlade
 [<AutoOpen>]
 module OmniBattle =
 
-    type CharacterModel =
-        { CharacterState : CharacterState
-          CharacterAnimationSheet : Image AssetTag
-          CharacterAnimationState : CharacterAnimationState }
-
     type [<NoEquality; NoComparison>] ActionCommand =
         { Action : ActionType
           Source : Entity
@@ -45,13 +40,21 @@ module OmniBattle =
         | BattleCease of bool * int64
 
     type [<NoEquality; NoComparison>] BattleModel =
-        { AllyCharacterModels : CharacterModel list
-          EnemyCharacterModels : CharacterModel list
+        { Allies : CharacterModel list
+          Enemies : CharacterModel list
           BattleState : BattleState }
 
     and [<NoComparison>] BattleMessage =
+        | ReadyCharactersM
+        | PoiseCharactersM
+        | CelebrateCharactersM of bool
+        | AttackCharacterM of CharacterIndex * CharacterIndex
+        | ResetCharacterM of CharacterIndex
+        | DamageCharacterM of CharacterIndex
+        | PoiseCharacterM of CharacterIndex
+        | WoundCharacterM of CharacterIndex
         | Tick
-        | ReticlesSelect of Entity * int
+        | ReticlesSelect of CharacterIndex * int
 
     and [<NoComparison>] IndexedCommand =
         | RegularMenuShow
@@ -71,8 +74,8 @@ module OmniBattle =
         | DamageCharacter of Entity
         | PoiseCharacter of Entity
         | WoundCharacter of Entity
-        | DestroyCharacter of Entity
-        | ResetCharacter of Entity
+        | DestroyCharacter of CharacterIndex
+        | ResetCharacter of CharacterIndex
         | FadeSong
         | IndexedCommand of IndexedCommand * int
 
@@ -84,23 +87,62 @@ module OmniBattle =
 
     and BattleDispatcher () =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand> (
-            { AllyCharacterModels =
-                [{ CharacterAnimationSheet = asset "Battle" "Jinn"
+            { Allies =
+                [{ CharacterPosition = v2 -224.0f -168.0f
+                   CharacterSize = v2 160.0f 160.0f
+                   CharacterAnimationSheet = asset "Battle" "Jinn"
                    CharacterAnimationState = { TimeStart = 0L; CharacterAnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
                    CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 12; SpecialPoints = 1; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
-                   //Name = "Enemy+0"
-                   //Position = v2 -224.0f -168.0f
-                   //Size = v2 160.0f 160.0f
-                   }]
-              EnemyCharacterModels =
-                [{ CharacterAnimationSheet = asset "Battle" "Goblin"
+                   ActionTime = 0 }]
+              Enemies =
+                [{ CharacterPosition = v2 0.0f 64.0f
+                   CharacterSize = v2 160.0f 160.0f
+                   CharacterAnimationSheet = asset "Battle" "Goblin"
                    CharacterAnimationState = { TimeStart = 0L; CharacterAnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
                    CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
-                   //Name = "Ally+0"
-                   //Position = v2 -224.0f -168.0f
-                   //Size = v2 160.0f 160.0f
-                   }]
+                   ActionTime = 0 }
+                 { CharacterPosition = v2 176.0f -152.0f
+                   CharacterSize = v2 160.0f 160.0f
+                   CharacterAnimationSheet = asset "Battle" "Goblin"
+                   CharacterAnimationState = { TimeStart = 0L; CharacterAnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
+                   CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
+                   ActionTime = 0 }]
               BattleState = BattleReady 0L })
+
+        static member updateAllies updater model =
+            let allies = List.map updater model.Allies
+            { model with Allies = allies }
+
+        static member updateEnemies updater model =
+            let enemies = List.map updater model.Enemies
+            { model with Enemies = enemies }
+
+        static member getCharacter characterIndex battleModel =
+            match characterIndex with
+            | AllyIndex i -> List.tryFindAt i battleModel.Allies |> Option.get
+            | EnemyIndex i -> List.tryFindAt i battleModel.Enemies |> Option.get
+
+        static member updateCharacter updater characterIndex model =
+            match characterIndex with
+            | AllyIndex i ->
+                match List.tryFindAt i model.Allies with
+                | Some ally ->
+                    let ally = updater ally
+                    let (_, allies) = List.replace i ally model.Allies
+                    { model with Allies = allies }
+                | None -> model
+            | EnemyIndex i ->
+                match List.tryFindAt i model.Enemies with
+                | Some enemy ->
+                    let enemy = updater enemy
+                    let (_, enemies) = List.replace i enemy model.Enemies
+                    { model with Enemies = enemies }
+                | None -> model
+
+        static member updateCharacters updater model =
+            let allies = List.map updater model.Allies
+            let enemies = List.map updater model.Allies
+            { model with Allies = allies; Enemies = enemies }
 
         static member tickAttack (source : Entity) (targetOpt : Entity option) time timeLocal battleRunning world =
 
@@ -191,9 +233,9 @@ module OmniBattle =
                     let enemies = World.getEnemies Simulants.Scene world
                     let (state, signal2) =
                         if Seq.forall (fun (character : Entity) -> (character.GetCharacterState world).IsWounded) allies
-                        then BattleDispatcher.tick (BattleCease (false, time)) world // tick for frame 0
+                        then BattleDispatcher.tickState (BattleCease (false, time)) world // tick for frame 0
                         elif Seq.forall (fun (character : Entity) -> (character.GetCharacterState world).IsWounded) enemies
-                        then BattleDispatcher.tick (BattleCease (true, time)) world // tick for frame 0
+                        then BattleDispatcher.tickState (BattleCease (true, time)) world // tick for frame 0
                         else just (BattleRunning battleRunning)
                     withSig state (signal + signal2)
 
@@ -203,7 +245,7 @@ module OmniBattle =
                 let time = World.getTickTime world
                 let command = CurrentCommand.make time currentCommand
                 let battleRunning = { battleRunning with CurrentCommandOpt = Some command; ActionQueue = nextCommands }
-                BattleDispatcher.tick (BattleRunning battleRunning) world // tick for frame 0
+                BattleDispatcher.tickState (BattleRunning battleRunning) world // tick for frame 0
             | Queue.Nil ->
                 let allies = World.getAllies Simulants.Scene world
                 let (battleRunning, allyCommands) =
@@ -241,11 +283,18 @@ module OmniBattle =
             | 0L -> withCmd state (CelebrateCharacters outcome)
             | _ -> just state
 
-        static member tick state world =
-            match state with
-            | BattleReady timeStart -> BattleDispatcher.tickReady state timeStart world
-            | BattleRunning battleRunning -> BattleDispatcher.tickRunning battleRunning world
-            | BattleCease (outcome, timeStart) -> BattleDispatcher.tickCease state outcome timeStart world
+        static member tickState state world =
+            let (state, sigs) =
+                match state with
+                | BattleReady timeStart -> BattleDispatcher.tickReady state timeStart world
+                | BattleRunning battleRunning -> BattleDispatcher.tickRunning battleRunning world
+                | BattleCease (outcome, timeStart) -> BattleDispatcher.tickCease state outcome timeStart world
+            (state, sigs)
+
+        static member tick (model : BattleModel) world =
+            let state = model.BattleState
+            let (state, sigs) = BattleDispatcher.tickState state world
+            ({ model with BattleState = state }, sigs)
 
         static member inputBindings index =
             let regularMenu = Simulants.RegularMenu index
@@ -291,20 +340,70 @@ module OmniBattle =
              BattleDispatcher.inputBindings 1 @
              BattleDispatcher.inputBindings 2
 
-        override this.Message (message, state, _, world) =
+        override this.Message (message, model, _, world) =
             match message with
+            | ReadyCharactersM ->
+                let time = World.getTickTime world
+                let model = BattleDispatcher.updateCharacters (fun character -> { character with CharacterAnimationState = (CharacterAnimationState.setCycle (Some time) ReadyCycle) character.CharacterAnimationState }) model
+                just model
+            | PoiseCharactersM ->
+                let time = World.getTickTime world
+                let model = BattleDispatcher.updateCharacters (fun character -> { character with CharacterAnimationState = (CharacterAnimationState.setCycle (Some time) PoiseCycle) character.CharacterAnimationState }) model
+                just model
+            | CelebrateCharactersM outcome ->
+                let time = World.getTickTime world
+                let model =
+                    if outcome
+                    then BattleDispatcher.updateAllies (fun character -> { character with CharacterAnimationState = (CharacterAnimationState.setCycle (Some time) CelebrateCycle) character.CharacterAnimationState }) model
+                    else BattleDispatcher.updateAllies (fun character -> { character with CharacterAnimationState = (CharacterAnimationState.setCycle (Some time) CelebrateCycle) character.CharacterAnimationState }) model
+                just model
+            | AttackCharacterM (sourceIndex, targetIndex) ->
+                let time = World.getTickTime world
+                let source = BattleDispatcher.getCharacter sourceIndex model
+                let target = BattleDispatcher.getCharacter targetIndex model
+                let model = BattleDispatcher.updateCharacter (fun character -> { character with CharacterAnimationState = (CharacterAnimationState.setCycle (Some time) AttackCycle) character.CharacterAnimationState }) sourceIndex model
+                let model =
+                    BattleDispatcher.updateCharacter (fun character ->
+                        let state = character.CharacterState
+                        let rom = Simulants.Game.GetModel world
+                        let power = source.CharacterState.ComputePower rom
+                        let shield = state.ComputeShield rom
+                        let damage = max 0 (int (Math.Ceiling (double (power - shield))))
+                        let hitPoints = state.HitPoints
+                        let hitPoints =  max 0 (hitPoints - damage)
+                        { character with CharacterState = { state with HitPoints = hitPoints })
+                        targetIndex
+                        model
+                if target.CharacterState.HitPoints = 0 && target.CharacterState.IsAlly
+                then withSigs model [Message (ResetCharacterM targetIndex); Command (ResetCharacter targetIndex)]
+                else just model
+            | ResetCharacterM characterIndex ->
+                let model = BattleDispatcher.updateCharacter (fun character -> { character with ActionTime = 0 }) characterIndex model
+                just model
+            | DamageCharacterM characterIndex ->
+                let time = World.getTickTime world
+                let model = BattleDispatcher.updateCharacter (fun character -> { character with CharacterAnimationState = (CharacterAnimationState.setCycle (Some time) DamageCycle) character.CharacterAnimationState }) characterIndex model
+                just model
+            | PoiseCharacterM characterIndex ->
+                let time = World.getTickTime world
+                let model = BattleDispatcher.updateCharacter (fun character -> { character with CharacterAnimationState = (CharacterAnimationState.setCycle (Some time) PoiseCycle) character.CharacterAnimationState }) characterIndex model
+                just model
+            | WoundCharacterM characterIndex ->
+                let time = World.getTickTime world
+                let model = BattleDispatcher.updateCharacter (fun character -> { character with CharacterAnimationState = (CharacterAnimationState.setCycle (Some time) WoundCycle) character.CharacterAnimationState }) characterIndex model
+                just model
             | Tick ->
                 if World.isTicking world
-                then BattleDispatcher.tick state world
-                else just state
+                then BattleDispatcher.tick model world
+                else just model
             | ReticlesSelect (enemy, index) ->
                 let ally = Simulants.Ally index
-                match state with
+                match model.BattleState with
                 | BattleRunning battleRunning ->
                     let command = ActionCommand.make Attack ally (Some enemy)
-                    let state = BattleRunning { battleRunning with ActionQueue = Queue.conj command battleRunning.ActionQueue }
-                    withCmd state (ResetCharacter ally)
-                | _ -> just state
+                    let model = BattleRunning { battleRunning with ActionQueue = Queue.conj command battleRunning.ActionQueue }
+                    withCmd model (ResetCharacter ally)
+                | _ -> just model
 
         override this.Command (command, _, battle, world) =
             match command with
@@ -435,18 +534,19 @@ module OmniBattle =
                 just (previousMenu.SetCenter (ally.GetCenter world) world)
 
         override this.Content (model, _, _) =
-            [Content.layerFromFile Simulants.Scene.Name Assets.BattleSceneLayerFilePath
-             BattleDispatcher.inputContent 0
+            [BattleDispatcher.inputContent 0
              BattleDispatcher.inputContent 1
              BattleDispatcher.inputContent 2
              Content.layer Simulants.Scene.Name []
                 [Content.label "Background"
-                    [Entity.Depth == -10.0f
-                     Entity.LabelImage == asset "Battle" "Background"
-                     Entity.Position == v2 -480.0f -512.0f
-                     Entity.Size == v2 1024.0f 1024.0f]
-                 Content.entitiesi (model.MapOut $ fun model -> seq model.AllyCharacterModels) $ fun i characterModel ->
+                    [Entity.Position == v2 -480.0f -512.0f
+                     Entity.Size == v2 1024.0f 1024.0f
+                     Entity.Depth == -10.0f
+                     Entity.LabelImage == asset "Battle" "Background"]
+                 Content.entitiesi (model.MapOut $ fun model -> seq model.Allies) $ fun i model _ _ ->
                     Content.entity<CharacterDispatcher> ("Ally+" + scstring i)
-                        [Entity.CharacterAnimationSheet ==> characterModel.MapOut (fun model -> model.CharacterAnimationSheet)
-                         Entity.CharacterAnimationState ==> characterModel.MapOut (fun model -> model.CharacterAnimationState)
-                         Entity.CharacterState ==> characterModel.MapOut (fun model -> model.CharacterState)]]]
+                        [Entity.Position ==> model.MapOut (fun model -> model.CharacterPosition)
+                         Entity.Size ==> model.MapOut (fun model -> model.CharacterSize)
+                         Entity.CharacterAnimationSheet ==> model.MapOut (fun model -> model.CharacterAnimationSheet)
+                         Entity.CharacterAnimationState ==> model.MapOut (fun model -> model.CharacterAnimationState)
+                         Entity.CharacterState ==> model.MapOut (fun model -> model.CharacterState)]]]
