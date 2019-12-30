@@ -62,10 +62,10 @@ type MyGameplayDispatcher () =
                 [Entity.Text == "Back"
                  Entity.Position == v2 220.0f -260.0f
                  Entity.Depth == 10.0f]]
-         Content.layerIfScreenSelected Simulants.Gameplay $ fun _ ->
+         Content.layerIfScreenSelected Simulants.Gameplay $ fun _ _ _ ->
             Content.layer Simulants.Scene.Name []
                 [Content.character Simulants.Player.Name
                     [Entity.Position == v2 0.0f 0.0f
                      Entity.Size == v2 144.0f 144.0f]]
-         Content.layerIfScreenSelected Simulants.Gameplay $ fun _ ->
+         Content.layerIfScreenSelected Simulants.Gameplay $ fun _ _ _ ->
             Content.layerFromFile Simulants.Level.Name "Assets/Gameplay/Level.nulyr"]
