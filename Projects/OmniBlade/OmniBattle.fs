@@ -113,7 +113,7 @@ module OmniBattle =
             model.BattleCharacters |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
 
         let getEnemies model =
-            model.BattleCharacters |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
+            model.BattleCharacters |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
 
         let updateCharacters3 predicate updater model =
             { model with BattleCharacters = Map.map (fun index character -> if predicate index then updater character else character) model.BattleCharacters }
