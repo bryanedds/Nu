@@ -15,9 +15,9 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Battle =
 
+        let AllyMax = 3
         let ActionTime = 999
         let ActionTimeInc = 3
-        let AllyMax = 3
 
     [<RequireQualifiedAccess>]
     module OmniBlade =
