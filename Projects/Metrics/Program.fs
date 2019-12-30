@@ -24,7 +24,7 @@ type MyEntityDispatcher () =
          define Entity.IgnoreLayer true // makes actualization faster by not touching the containing layer
          define (Entity.StaticData ()) // makes user-defined properties faster by using local data
             { DesignerType = typeof<Image AssetTag>
-              DesignerValue = AssetTag.make<Image> Assets.DefaultPackage "Image4" }]
+              DesignerValue = asset<Image> Assets.DefaultPackage "Image4" }]
 #endif
 
     override dispatcher.Update (entity, world) =

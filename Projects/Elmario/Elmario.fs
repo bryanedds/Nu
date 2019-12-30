@@ -50,7 +50,7 @@ module Elmario =
                     let physicsId = Elmario.GetPhysicsId world
                     if World.isBodyOnGround physicsId world then
                         let world = World.applyBodyForce (v2 0.0f 2000000.0f) physicsId world
-                        World.playSound 0.5f (AssetTag.make "Gameplay" "Jump") world
+                        World.playSound 0.5f (asset "Gameplay" "Jump") world
                     else world
                 | Nop -> world
             just world
@@ -65,8 +65,8 @@ module Elmario =
                      Content.block Ground.Name
                         [Entity.Position == v2 -384.0f -256.0f
                          Entity.Size == v2 768.0f 64.0f
-                         Entity.StaticImage == AssetTag.make "Gameplay" "TreeTop"]
+                         Entity.StaticImage == asset "Gameplay" "TreeTop"]
                      Content.block Rock.Name
                         [Entity.Position == v2 320.0f -192.0f
                          Entity.Size == v2 64.0f 64.0f
-                         Entity.StaticImage == AssetTag.make "Gameplay" "Rock"]]]]
+                         Entity.StaticImage == asset "Gameplay" "Rock"]]]]
