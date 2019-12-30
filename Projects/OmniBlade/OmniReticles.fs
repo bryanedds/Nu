@@ -41,18 +41,18 @@ module OmniReticles =
             getCharacters scene world |>
             List.filter (fun entity -> (entity.GetCharacterState world).IsEnemy)
 
-        static let getHealthyAllies scene world =
+        static let getAlliesHealthy scene world =
             getAllies scene world |>
             List.filter (fun entity -> (entity.GetCharacterState world).IsHealthy)
 
-        static let getWoundedAllies scene world =
+        static let getAlliesWounded scene world =
             getAllies scene world |>
             List.filter (fun entity -> (entity.GetCharacterState world).IsWounded)
 
         static let getTargets (rets : Entity) world =
             match rets.GetAimType world with
             | EnemyAim -> getEnemies Simulants.Scene world
-            | AllyAim healthy -> (if healthy then getHealthyAllies else getWoundedAllies) Simulants.Scene world
+            | AllyAim healthy -> (if healthy then getAlliesHealthy else getAlliesWounded) Simulants.Scene world
             | AnyAim -> getCharacters Simulants.Scene world
             | NoAim -> []
 
