@@ -11,6 +11,7 @@ module OmniBattle =
 
     type CharacterModel =
         { CharacterState : CharacterState
+          CharacterAnimationSheet : Image AssetTag
           CharacterAnimationState : CharacterAnimationState }
 
     type [<NoEquality; NoComparison>] ActionCommand =
@@ -44,7 +45,8 @@ module OmniBattle =
         | BattleCease of bool * int64
 
     type [<NoEquality; NoComparison>] BattleModel =
-        { CharacterModels : CharacterModel list
+        { AllyCharacterModels : CharacterModel list
+          EnemyCharacterModels : CharacterModel list
           BattleState : BattleState }
 
     and [<NoComparison>] BattleMessage =
@@ -81,7 +83,24 @@ module OmniBattle =
         member this.BattleState = this.Model<BattleState>
 
     and BattleDispatcher () =
-        inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand> ({ CharacterModels = []; BattleState = BattleReady 0L })
+        inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand> (
+            { AllyCharacterModels =
+                [{ CharacterAnimationSheet = asset "Battle" "Jinn"
+                   CharacterAnimationState = { TimeStart = 0L; CharacterAnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
+                   CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 12; SpecialPoints = 1; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
+                   //Name = "Enemy+0"
+                   //Position = v2 -224.0f -168.0f
+                   //Size = v2 160.0f 160.0f
+                   }]
+              EnemyCharacterModels =
+                [{ CharacterAnimationSheet = asset "Battle" "Goblin"
+                   CharacterAnimationState = { TimeStart = 0L; CharacterAnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
+                   CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
+                   //Name = "Ally+0"
+                   //Position = v2 -224.0f -168.0f
+                   //Size = v2 160.0f 160.0f
+                   }]
+              BattleState = BattleReady 0L })
 
         static member tickAttack (source : Entity) (targetOpt : Entity option) time timeLocal battleRunning world =
 
@@ -420,8 +439,14 @@ module OmniBattle =
              BattleDispatcher.inputContent 0
              BattleDispatcher.inputContent 1
              BattleDispatcher.inputContent 2
-             Content.layer "" []
-                [Content.entities (model.MapOut $ fun model -> seq model.CharacterModels) $ fun characterModel ->
-                    Content.entity<CharacterDispatcher> (Address.getName characterModel.This.ParticipantAddress)
-                        [Entity.CharacterState ==> characterModel.MapOut (fun model -> model.CharacterState)
-                         Entity.CharacterAnimationState ==> characterModel.MapOut (fun model -> model.CharacterAnimationState)]]]
+             Content.layer Simulants.Scene.Name []
+                [Content.label "Background"
+                    [Entity.Depth == -10.0f
+                     Entity.LabelImage == asset "Battle" "Background"
+                     Entity.Position == v2 -480.0f -512.0f
+                     Entity.Size == v2 1024.0f 1024.0f]
+                 Content.entitiesi (model.MapOut $ fun model -> seq model.AllyCharacterModels) $ fun i characterModel ->
+                    Content.entity<CharacterDispatcher> ("Ally+" + scstring i)
+                        [Entity.CharacterAnimationSheet ==> characterModel.MapOut (fun model -> model.CharacterAnimationSheet)
+                         Entity.CharacterAnimationState ==> characterModel.MapOut (fun model -> model.CharacterAnimationState)
+                         Entity.CharacterState ==> characterModel.MapOut (fun model -> model.CharacterState)]]]

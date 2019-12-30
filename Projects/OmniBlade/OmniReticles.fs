@@ -47,8 +47,8 @@ module OmniReticles =
 
         static let createReticleButton index (target : Entity) (rets : Entity) world =
             let (button, world) = createButton ("Reticle" + "+" + scstring index) rets world
-            let world = button.SetUpImage (AssetTag.make Assets.BattlePackage "ReticleUp") world
-            let world = button.SetDownImage (AssetTag.make Assets.BattlePackage "ReticleDown") world
+            let world = button.SetUpImage (asset Assets.BattlePackage "ReticleUp") world
+            let world = button.SetDownImage (asset Assets.BattlePackage "ReticleDown") world
             let world = button.QuickSize world
             let world = button.SetCenter (target.GetCenter world) world
             let world = button.AttachProperty Property? Target false true { PropertyType = typeof<Entity>; PropertyValue = target } world
@@ -57,8 +57,8 @@ module OmniReticles =
 
         static let createCancelButton cancelStr  (menu : Entity) world =
             let (button, world) = createButton cancelStr menu world
-            let world = button.SetUpImage (AssetTag.make Assets.BattlePackage (cancelStr + "Up")) world
-            let world = button.SetDownImage (AssetTag.make Assets.BattlePackage (cancelStr + "Down")) world
+            let world = button.SetUpImage (asset Assets.BattlePackage (cancelStr + "Up")) world
+            let world = button.SetDownImage (asset Assets.BattlePackage (cancelStr + "Down")) world
             let world = button.SetPositionLocal CancelButtonOffset world
             let world = World.monitor (fun _ world -> World.publish () menu.CancelEvent [] menu world) button.ClickEvent button world
             (button, world)

@@ -24,9 +24,9 @@ module Constants =
         let DissolveData =
             { IncomingTime = 20L
               OutgoingTime = 30L
-              DissolveImage = AssetTag.make<Image> Assets.GuiPackage "Dissolve" }
+              DissolveImage = asset<Image> Assets.GuiPackage "Dissolve" }
     
         let SplashData =
             { DissolveData = DissolveData
               IdlingTime = 60L
-              SplashImage = AssetTag.make<Image> Assets.GuiPackage "Nu" }
+              SplashImage = asset<Image> Assets.GuiPackage "Nu" }

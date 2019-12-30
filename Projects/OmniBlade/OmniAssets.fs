@@ -7,15 +7,15 @@ module Assets =
     let BattlePackage = "Battle"
 
     // the various assets described by the project's 'AssetGraph.nuag' file
-    let NuSplashSound = AssetTag.make<Audio> GuiPackage "Nu"
-    let TitleSong = AssetTag.make<Audio> GuiPackage "Guitar in the Sand"
-    let BattleSong = AssetTag.make<Audio> BattlePackage "FightingBlue"
-    let HitSound = AssetTag.make<Audio> BattlePackage "Hit"
-    let ExplosionSound = AssetTag.make<Audio> BattlePackage "Explosion"
-    let ShotSound = AssetTag.make<Audio> BattlePackage "Shot"
-    let JumpSound = AssetTag.make<Audio> BattlePackage "Jump"
-    let DeathSound = AssetTag.make<Audio> BattlePackage "Death"
-    let JinnAnimationSheet = AssetTag.make<Image> BattlePackage "Jinn"
+    let NuSplashSound = asset<Audio> GuiPackage "Nu"
+    let TitleSong = asset<Audio> GuiPackage "Guitar in the Sand"
+    let BattleSong = asset<Audio> BattlePackage "FightingBlue"
+    let HitSound = asset<Audio> BattlePackage "Hit"
+    let ExplosionSound = asset<Audio> BattlePackage "Explosion"
+    let ShotSound = asset<Audio> BattlePackage "Shot"
+    let JumpSound = asset<Audio> BattlePackage "Jump"
+    let DeathSound = asset<Audio> BattlePackage "Death"
+    let JinnAnimationSheet = asset<Image> BattlePackage "Jinn"
 
     // the file paths from which various simulants are loaded
     let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
