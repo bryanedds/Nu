@@ -74,9 +74,9 @@ module OmniBattle =
 
     and Screen with
 
-        member this.GetBattleState = this.GetModel<BattleState>
-        member this.SetBattleState = this.SetModel<BattleState>
-        member this.BattleState = this.Model<BattleState>
+        member this.GetBattleModel = this.GetModel<BattleModel>
+        member this.SetBattleModel = this.SetModel<BattleModel>
+        member this.BattleModel = this.Model<BattleModel>
 
     and BattleDispatcher () =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
@@ -413,7 +413,8 @@ module OmniBattle =
                 let world = World.hintRenderPackageUse Assets.BattlePackage world
                 let world = World.hintAudioPackageUse Assets.BattlePackage world
                 let world = World.playSong 0 (1.0f * Constants.Audio.MasterSongVolume) Assets.BattleSong world
-                just (battle.SetBattleState (BattleReady (World.getTickTime world)) world)
+                let world = battle.SetBattleModel { model with BattleState = BattleReady (World.getTickTime world) } world
+                just world
             | FinalizeBattle ->
                 let world = World.hintRenderPackageDisuse Assets.BattlePackage world
                 just (World.hintAudioPackageDisuse Assets.BattlePackage world)
@@ -428,11 +429,13 @@ module OmniBattle =
                 just world
             | DestroyCharacter characterIndex ->
                 let character = Simulants.Character characterIndex
-                just (World.destroyEntity character world)
+                let world = World.destroyEntity character world
+                just world
             | IndexedCommand (command, index) ->
                 this.IndexedCommand (command, index, battle, world)
             | FadeSong ->
-                just (World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world)
+                let world = World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
+                just world
 
         member this.IndexedCommand (command, index, _, world) =
             let ally = Simulants.Ally index
@@ -479,10 +482,7 @@ module OmniBattle =
                 just (previousMenu.SetCenter (ally.GetCenter world) world)
 
         override this.Content (model, _, _) =
-            [inputContent 0
-             inputContent 1
-             inputContent 2
-             Content.layer Simulants.Scene.Name []
+            [Content.layer Simulants.Scene.Name []
                 [Content.label "Background"
                     [Entity.Position == v2 -480.0f -512.0f
                      Entity.Size == v2 1024.0f 1024.0f
@@ -494,4 +494,14 @@ module OmniBattle =
                          Entity.Size ==> model.MapOut (fun model -> model.CharacterSize)
                          Entity.CharacterAnimationSheet ==> model.MapOut (fun model -> model.CharacterAnimationSheet)
                          Entity.CharacterAnimationState ==> model.MapOut (fun model -> model.CharacterAnimationState)
-                         Entity.CharacterState ==> model.MapOut (fun model -> model.CharacterState)]]]
+                         Entity.CharacterState ==> model.MapOut (fun model -> model.CharacterState)]
+                 Content.entitiesi (model.MapOut (fun model -> seq (getEnemies model))) $ fun i model _ _ ->
+                    Content.entity<CharacterDispatcher> ("Enemy+" + scstring i)
+                        [Entity.Position ==> model.MapOut (fun model -> model.CharacterPosition)
+                         Entity.Size ==> model.MapOut (fun model -> model.CharacterSize)
+                         Entity.CharacterAnimationSheet ==> model.MapOut (fun model -> model.CharacterAnimationSheet)
+                         Entity.CharacterAnimationState ==> model.MapOut (fun model -> model.CharacterAnimationState)
+                         Entity.CharacterState ==> model.MapOut (fun model -> model.CharacterState)]]
+             inputContent 0
+             inputContent 1
+             inputContent 2]
