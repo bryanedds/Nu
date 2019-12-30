@@ -105,8 +105,6 @@ module OmniBattle =
                   ActionQueue = Queue.empty }
              model)
 
-        let [<Literal>] AllyMax = 3
-
         let getAllies model =
             model.BattleCharacters |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
 
@@ -315,7 +313,7 @@ module OmniBattle =
 
         override this.Bindings (_, battle, _) =
             battleBindings battle @
-            allyPartyBindings AllyMax
+            allyPartyBindings Constants.Battle.AllyMax
 
         override this.Message (message, model, _, world) =
             match message with
