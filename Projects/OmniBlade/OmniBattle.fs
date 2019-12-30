@@ -98,8 +98,8 @@ module OmniBattle =
              let characters =
                 Map.ofList (allies @ enemies)
              let model =
-                { BattleCharacters = characters
-                  BattleState = BattleReady 0L
+                { BattleState = BattleReady 0L
+                  BattleCharacters = characters
                   CurrentCommandOpt = None
                   ActionQueue = Queue.empty }
              model)
