@@ -30,8 +30,13 @@ module Content =
         ScreenFromDefinitions (typeof<'d>.Name, screenName, behavior, definitions, children)
 
     /// Describe layers to be streamed from a lens.
+    let layersi (lens : Lens<'a seq, World>) (mapper : int -> Lens<'a, World> -> LayerContent) =
+        let mapper = fun i (a : obj) -> mapper i (a :?> Lens<obj, World> |> Lens.mapOut (cast<'a>))
+        LayersFromStream (lens.MapOut box, mapper)
+
+    /// Describe layers to be streamed from a lens.
     let layers (lens : Lens<'a seq, World>) (mapper : Lens<'a, World> -> LayerContent) =
-        let mapper = fun (a : obj) -> mapper (a :?> Lens<obj, World> |> Lens.mapOut (cast<'a>))
+        let mapper = fun _ (a : obj) -> mapper (a :?> Lens<obj, World> |> Lens.mapOut (cast<'a>))
         LayersFromStream (lens.MapOut box, mapper)
 
     /// Describe a layer to be optionally streamed from a lens.
@@ -55,9 +60,13 @@ module Content =
         LayerFromDefinitions (typeof<'d>.Name, layerName, definitions, children)
 
     /// Describe entities to be streamed from a lens.
-    let entities (lens : Lens<'a seq, World>) (mapper : Lens<'a, World> -> EntityContent) =
-        let mapper = fun (a : obj) -> mapper (a :?> Lens<obj, World> |> Lens.mapOut (cast<'a>))
+    let entitiesi (lens : Lens<'a seq, World>) (mapper : int -> Lens<'a, World> -> EntityContent) =
+        let mapper = fun i (a : obj) -> mapper i (a :?> Lens<obj, World> |> Lens.mapOut (cast<'a>))
         EntitiesFromStream (lens.MapOut box, mapper)
+
+    /// Describe entities to be streamed from a lens.
+    let entities (lens : Lens<'a seq, World>) (mapper : Lens<'a, World> -> EntityContent) =
+        entitiesi lens (fun _ -> mapper)
 
     /// Describe an entity to be optionally streamed from a lens.
     let entityOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> EntityContent) =
