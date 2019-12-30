@@ -231,7 +231,7 @@ module WorldLayerModule =
             World.readLayer layerDescriptor nameOpt screen world
 
         /// Transform a stream into existing layers.
-        /// TODO: P1: see if we can fuse the various streams used here and in expandEntityStream to decrease time and space overhead.
+        /// TODO: P1: see if we can fuse the various streams used here and in expandLayerStream to decrease time and space overhead.
         static member streamLayers (mapper : int -> Lens<'a, World> -> Screen -> World -> LayerContent) (screen : Screen) (stream : Stream<Lens<'a option, World> seq, World>) =
             stream |>
             Stream.optimize |>
