@@ -300,28 +300,6 @@ module OmniBattle =
              reticles.TargetSelectEvent =|> fun evt -> ReticlesSelect (evt.Data, AllyIndex index)
              reticles.CancelEvent =>! IndexedCommandCmd (ReticlesCancel, index)]
 
-        let inputContent index =
-            let input = Simulants.Input index
-            let regularMenu = Simulants.RegularMenu index
-            let specialMenu = Simulants.SpecialMenu index
-            let itemMenu = Simulants.ItemMenu index
-            let reticles = Simulants.Reticles index
-            Content.layer input.Name
-                [Entity.Depth == 10.0f]
-                [Content.entity<RingMenuDispatcher> regularMenu.Name
-                    [Entity.Visible == false
-                     Entity.Items == ["Attack"; "Defend"; "Special"; "Item"]]
-                 Content.entity<RingMenuDispatcher> specialMenu.Name
-                    [Entity.Visible == false
-                     Entity.Items == ["Attack"]
-                     Entity.ItemCancelOpt == Some "Cancel"]
-                 Content.entity<RingMenuDispatcher> itemMenu.Name
-                    [Entity.Visible == false
-                     Entity.Items == ["Attack"]
-                     Entity.ItemCancelOpt == Some "Cancel"]
-                 Content.entity<ReticlesDispatcher> reticles.Name
-                    [reticles.Visible == false]]
-
         override this.Bindings (_, battle, _) =
             [battle.SelectEvent =>! InitializeBattleCmd
              battle.DeselectEvent =>! FinalizeBattleCmd
@@ -496,6 +474,15 @@ module OmniBattle =
                          Entity.CharacterAnimationSheet ==> model.MapOut (fun model -> model.CharacterAnimationSheet)
                          Entity.CharacterAnimationState ==> model.MapOut (fun model -> model.CharacterAnimationState)
                          Entity.CharacterState ==> model.MapOut (fun model -> model.CharacterState)]]
-             inputContent 0
-             inputContent 1
-             inputContent 2]
+             Content.layersi (model.MapOut (fun model -> seq (getAllies model))) $ fun i _ _ _ ->
+                Content.layer (Simulants.Input i).Name [Layer.Depth == 10.0f]
+                    [Content.entity<RingMenuDispatcher> (Simulants.RegularMenu i).Name
+                        [Entity.Items == ["Attack"; "Defend"; "Special"; "Item"]]
+                     Content.entity<RingMenuDispatcher> (Simulants.SpecialMenu i).Name
+                        [Entity.Items == ["Attack"]
+                         Entity.ItemCancelOpt == Some "Cancel"]
+                     Content.entity<RingMenuDispatcher> (Simulants.ItemMenu i).Name
+                        [Entity.Items == ["Attack"]
+                         Entity.ItemCancelOpt == Some "Cancel"]
+                     Content.entity<ReticlesDispatcher> (Simulants.Reticles i).Name
+                        []]]

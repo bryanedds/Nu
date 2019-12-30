@@ -10,7 +10,7 @@ open OmniBlade
 module OmniReticles =
 
     type Entity with
-        
+
         member this.GetAimType world : AimType = this.Get Property? AimType world
         member this.SetAimType (value : AimType) world = this.Set Property? AimType value world
         member this.AimType = Lens.make Property? AimType this.GetAimType this.SetAimType this
@@ -35,7 +35,7 @@ module OmniReticles =
             | NoAim -> []
 
         static let destroyButton button world =
-            World.destroyEntityImmediate button world
+            World.destroyEntity button world
 
         static let createButton name (rets : Entity) world =
             let (button, world) = World.createEntity5 typeof<ButtonDispatcher>.Name (Some (rets.Name + "+" + name)) DefaultOverlay (etol rets) world
@@ -70,11 +70,8 @@ module OmniReticles =
             let world = rets.SetReticleButtonsNp [] world
 
             // destroy cancel button
-            match rets.GetItemCancelOpt world with
-            | Some cancelStr ->
-                let (cancelButton, world) = createCancelButton cancelStr rets world
-                rets.SetReticleCancelButtonOptNp (Some cancelButton) world
-            | None -> world
+            let world = Option.fold (flip destroyButton) world (rets.GetReticleCancelButtonOptNp world)
+            rets.SetReticleCancelButtonOptNp None world
 
         static let createButtons (rets : Entity) world =
 
@@ -100,18 +97,22 @@ module OmniReticles =
                     let world = rets.ReticleButtonsNp.Update (List.remove ((=) button)) world
                     World.destroyEntity button world)
                 world (rets.GetReticleButtonsNp world)
-        
+
         static member Properties =
             [define Entity.AimType EnemyAim
              define Entity.ReticleButtonsNp []
              define Entity.ReticleCancelButtonOptNp None
-             define Entity.SwallowMouseLeft false]
-        
-        override dispatcher.Register (rets, world) =
-            createButtons rets world
+             define Entity.SwallowMouseLeft false
+             define Entity.Visible false]
 
-        override dispatcher.Unregister (rets, world) =
-            destroyButtons rets world
+        override dispatcher.Register (rets : Entity, world) =
+            World.monitor (fun evt world ->
+                if evt.Data.Value :?> bool
+                then createButtons rets world
+                else destroyButtons rets world)
+                rets.Visible.ChangeEvent
+                rets
+                world
 
         override dispatcher.Update (rets, world) =
             updateButtons rets world
