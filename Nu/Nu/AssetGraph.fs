@@ -53,6 +53,12 @@ module AssetTag =
     let specialize<'a> (assetTag : obj AssetTag) : 'a AssetTag =
         convert<obj, 'a> assetTag
 
+[<AutoOpen>]
+module AssetTagOperators =
+
+    let asset<'a> packageName assetName : 'a AssetTag =
+        AssetTag.make packageName assetName
+
 /// Describes a game asset, such as a texture, sound, or model in detail.
 type [<StructuralEquality; NoComparison>] 'a Asset =
     { AssetTag : 'a AssetTag

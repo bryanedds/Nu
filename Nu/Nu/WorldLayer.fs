@@ -231,7 +231,7 @@ module WorldLayerModule =
             World.readLayer layerDescriptor nameOpt screen world
 
         /// Transform a stream into existing layers.
-        static member streamLayers (mapper : Lens<'a, World> -> LayerContent) (screen : Screen) (stream : Stream<Lens<'a option, World> seq, World>) =
+        static member streamLayers (mapper : int -> Lens<'a, World> -> LayerContent) (screen : Screen) (stream : Stream<Lens<'a option, World> seq, World>) =
             stream |>
             Stream.optimize |>
             Stream.insert (makeGuid ()) |>
@@ -242,7 +242,7 @@ module WorldLayerModule =
                 Seq.mapi (fun i lens ->
                     let lens = Lens.dereferenceOut lens
                     let guid = makeGuidDeterministic i guid
-                    let entityContent = mapper lens
+                    let entityContent = mapper i lens
                     PartialComparable.make guid entityContent) |>
                 Set.ofSeq) |>
             Stream.fold (fun (p, _, _) c -> (c, Set.difference c p, Set.difference p c)) (Set.empty, Set.empty, Set.empty) |>
@@ -270,7 +270,7 @@ module WorldLayerModule =
         static member expandLayerStream (lens : Lens<obj, World>) mapper screen world =
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
-            Stream.map (fun _ -> lens |> Lens.mapOut (Reflection.objToObjArray >> seq) |> Lens.explodeOut) |>
+            Stream.map (fun _ -> lens |> Lens.mapOut (Reflection.objToObjSeq) |> Lens.explode) |>
             World.streamLayers mapper screen |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 

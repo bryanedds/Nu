@@ -341,7 +341,7 @@ module WorldEntityModule =
                     ([], world)
 
         /// Transform a stream into existing entities.
-        static member streamEntities (mapper : Lens<'a, World> -> EntityContent) (ownerOpt : Entity option) (layer : Layer) (stream : Stream<Lens<'a option, World> seq, World>) =
+        static member streamEntities (mapper : int -> Lens<'a, World> -> EntityContent) (ownerOpt : Entity option) (layer : Layer) (stream : Stream<Lens<'a option, World> seq, World>) =
             stream |>
             Stream.optimize |>
             Stream.insert (makeGuid ()) |>
@@ -352,7 +352,7 @@ module WorldEntityModule =
                 Seq.mapi (fun i lens ->
                     let lens = Lens.dereferenceOut lens
                     let guid = makeGuidDeterministic i guid
-                    let entityContent = mapper lens
+                    let entityContent = mapper i lens
                     PartialComparable.make guid entityContent) |>
                 Set.ofSeq) |>
             Stream.fold (fun (p, _, _) c ->
@@ -382,7 +382,7 @@ module WorldEntityModule =
         static member expandEntityStream (lens : Lens<obj, World>) mapper ownerOpt layer world =
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
-            Stream.map (fun _ -> lens |> Lens.mapOut (Reflection.objToObjArray >> seq) |> Lens.explodeOut) |>
+            Stream.map (fun _ -> lens |> Lens.mapOut Reflection.objToObjSeq |> Lens.explode) |>
             World.streamEntities mapper ownerOpt layer |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
