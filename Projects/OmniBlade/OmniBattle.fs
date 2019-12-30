@@ -54,6 +54,7 @@ module OmniBattle =
         | DamageCharacterM of CharacterIndex
         | PoiseCharacterM of CharacterIndex
         | WoundCharacterM of CharacterIndex
+        | DestroyCharacterM of CharacterIndex
         | ReticlesSelect of CharacterIndex * int
         | Tick
 
@@ -137,117 +138,111 @@ module OmniBattle =
             let enemies = List.map updater model.Allies
             { model with Allies = allies; Enemies = enemies }
 
-        static member tickAttack (source : Entity) (targetOpt : Entity option) time timeLocal battleRunning world =
+        static member tickAttack sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal battleRunning model =
 
             // if target available, proceed with attack
-            match targetOpt with
-            | Some target when source.GetExists world && target.GetExists world ->
+            let source = BattleDispatcher.getCharacter sourceIndex model
+            match targetIndexOpt with
+            | Some targetIndex ->
+                let target = BattleDispatcher.getCharacter targetIndex model
                 match timeLocal with
-                | 0L when (target.GetCharacterState world).IsHealthy ->
-                    if target.CharacterState.GetBy (fun state -> state.IsHealthy) world then
-                        withCmd battleRunning (AttackCharacter (source, target))
+                | 0L when target.CharacterState.IsHealthy ->
+                    if target.CharacterState.IsHealthy then
+                        withCmd battleRunning (AttackCharacterM (sourceIndex, targetIndex))
                     else // target wounded, cancel attack
                         let battleRunning = { battleRunning with CurrentCommandOpt = None }
-                        withCmds battleRunning [ResetCharacter source; PoiseCharacter source]
-                | _ when timeLocal = 1L * int64 (source.CharacterAnimationState.Get world).Stutter ->
-                    withCmd battleRunning (DamageCharacter target)
+                        withMsgs battleRunning [ResetCharacterM sourceIndex; PoiseCharacterM sourceIndex]
+                | _ when timeLocal = 1L * int64 source.CharacterAnimationState.Stutter ->
+                    withCmd battleRunning (DamageCharacterM targetIndex)
                 | _ ->
-                    if CharacterAnimationState.finished time (source.GetCharacterAnimationState world) then
-                        if (target.GetCharacterState world).IsHealthy then
+                    if CharacterAnimationState.finished time source.CharacterAnimationState then
+                        if target.CharacterState.IsHealthy then
                             let battleRunning = { battleRunning with CurrentCommandOpt = None }
-                            withCmds battleRunning [PoiseCharacter source; PoiseCharacter target]
+                            withMsgs battleRunning [PoiseCharacterM sourceIndex; PoiseCharacterM targetIndex]
                         else
-                            let woundCommand = CurrentCommand.make time (ActionCommand.make Wound target None)
+                            let woundCommand = CurrentCommand.make time (ActionCommand.make Wound targetIndex None)
                             let battleRunning = { battleRunning with CurrentCommandOpt = Some woundCommand }
-                            withCmd battleRunning (PoiseCharacter source)
+                            withCmd battleRunning (PoiseCharacterM sourceIndex)
                     else just battleRunning
 
             // else target destroyed, cancel attack
-            | Some _ | None ->
+            | None ->
                 let battleRunning = { battleRunning with CurrentCommandOpt = None }
-                withCmds battleRunning [ResetCharacter source; PoiseCharacter source]
+                withMsgs battleRunning [ResetCharacterM sourceIndex; PoiseCharacterM sourceIndex]
 
-        static member tickWound (character : Entity) time timeLocal battleRunning world =
-            if character.GetExists world then
-                match timeLocal with
-                | 0L ->
-                    withCmd battleRunning (DamageCharacter character)
-                | _ ->
-                    let state = character.GetCharacterAnimationState world
-                    if (character.GetCharacterState world).IsAlly then
-                        match state.CharacterAnimationCycle with
-                        | DamageCycle ->
-                            if CharacterAnimationState.finished time state
-                            then withCmd { battleRunning with CurrentCommandOpt = None } (WoundCharacter character)
-                            else just battleRunning
-                        | _ -> failwithumf ()
-                    else
-                        match state.CharacterAnimationCycle with
-                        | DamageCycle ->
-                            if CharacterAnimationState.finished time state
-                            then withCmd battleRunning (WoundCharacter character)
-                            else just battleRunning
-                        | WoundCycle ->
-                            if CharacterAnimationState.finished time state
-                            then withCmd { battleRunning with CurrentCommandOpt = None } (DestroyCharacter character)
-                            else just battleRunning
-                        | _ -> failwithumf ()
-            else just battleRunning
+        static member tickWound characterIndex time timeLocal battleRunning model =
+            match timeLocal with
+            | 0L ->
+                withMsg battleRunning (DamageCharacterM characterIndex)
+            | _ ->
+                let character = BattleDispatcher.getCharacter characterIndex model
+                if character.CharacterState.IsAlly then
+                    match character.CharacterAnimationState.CharacterAnimationCycle with
+                    | DamageCycle ->
+                        if CharacterAnimationState.finished time character.CharacterAnimationState
+                        then withMsg { battleRunning with CurrentCommandOpt = None } (WoundCharacterM characterIndex)
+                        else just battleRunning
+                    | _ -> failwithumf ()
+                else
+                    match character.CharacterAnimationState.CharacterAnimationCycle with
+                    | DamageCycle ->
+                        if CharacterAnimationState.finished time character.CharacterAnimationState
+                        then withMsg battleRunning (WoundCharacterM characterIndex)
+                        else just battleRunning
+                    | WoundCycle ->
+                        if CharacterAnimationState.finished time character.CharacterAnimationState
+                        then withMsg { battleRunning with CurrentCommandOpt = None } (DestroyCharacterM characterIndex)
+                        else just battleRunning
+                    | _ -> failwithumf ()
 
-        static member tickReady state timeStart world =
-            let time = World.getTickTime world
+        static member tickReady time timeStart state =
             let timeLocal = time - timeStart
             match timeLocal with
-            | 0L -> withCmd (BattleRunning (BattleRunning.make ())) ReadyCharacters
-            | 30L -> withCmd (BattleRunning (BattleRunning.make ())) PoiseCharacters
+            | 0L -> withCmd (BattleRunning (BattleRunning.make ())) ReadyCharactersM
+            | 30L -> withCmd (BattleRunning (BattleRunning.make ())) PoiseCharactersM
             | _ -> just state
 
-        static member tickCurrentCommand currentCommand battleRunning world =
-            let time = World.getTickTime world
+        static member tickCurrentCommand currentCommand battleRunning time model =
             let timeLocal = time - currentCommand.TimeStart
             match currentCommand.ActionCommand.Action with
             | Attack ->
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
-                let (battleRunning, commands) = BattleDispatcher.tickAttack source targetOpt time timeLocal battleRunning world
+                let (battleRunning, commands) = BattleDispatcher.tickAttack source targetOpt time timeLocal battleRunning model
                 (BattleRunning battleRunning, commands)
             | Defend -> just (BattleRunning battleRunning)
             | Consume _ -> just (BattleRunning battleRunning)
             | Special _ -> just (BattleRunning battleRunning)
             | Wound ->
                 let source = currentCommand.ActionCommand.Source
-                let (battleRunning, signal) = BattleDispatcher.tickWound source time timeLocal battleRunning world
+                let (battleRunning, signal) = BattleDispatcher.tickWound source time timeLocal battleRunning model
                 match battleRunning.CurrentCommandOpt with
                 | Some _ ->
                     // keep ticking wound
                     withSig (BattleRunning battleRunning) signal
                 | None ->
-                    let allies = World.getAllies Simulants.Scene world
-                    let enemies = World.getEnemies Simulants.Scene world
                     let (state, signal2) =
-                        if Seq.forall (fun (character : Entity) -> (character.GetCharacterState world).IsWounded) allies
-                        then BattleDispatcher.tickState (BattleCease (false, time)) world // tick for frame 0
-                        elif Seq.forall (fun (character : Entity) -> (character.GetCharacterState world).IsWounded) enemies
-                        then BattleDispatcher.tickState (BattleCease (true, time)) world // tick for frame 0
+                        if Seq.forall (fun character -> character.CharacterState.IsWounded) model.Allies
+                        then BattleDispatcher.tickState time (BattleCease (false, time)) // tick for frame 0
+                        elif Seq.forall (fun character -> character.CharacterState.IsWounded) model.Enemies
+                        then BattleDispatcher.tickState time (BattleCease (true, time)) // tick for frame 0
                         else just (BattleRunning battleRunning)
                     withSig state (signal + signal2)
 
-        static member tickNoCommand battleRunning world =
+        static member tickNoCommand battleRunning time state =
             match battleRunning.ActionQueue with
             | Queue.Cons (currentCommand, nextCommands) ->
-                let time = World.getTickTime world
                 let command = CurrentCommand.make time currentCommand
                 let battleRunning = { battleRunning with CurrentCommandOpt = Some command; ActionQueue = nextCommands }
-                BattleDispatcher.tickState (BattleRunning battleRunning) world // tick for frame 0
+                BattleDispatcher.tickState (BattleRunning battleRunning) state // tick for frame 0
             | Queue.Nil ->
-                let allies = World.getAllies Simulants.Scene world
                 let (battleRunning, allyCommands) =
                     Seq.fold (fun (battleRunning, commands) (ally : Entity) ->
                         let index = (ally.GetCharacterState world).PartyIndex
                         if ally.GetActionTimeNp world = Constants.Battle.ActionTime then (battleRunning, IndexedCommand (RegularMenuShow, index) :: commands)
                         else (battleRunning, commands))
                         (battleRunning, [])
-                        allies
+                        stateAllies
                 let enemies = World.getEnemies Simulants.Scene world
                 let (battleRunning, enemyCommands) =
                     Seq.fold (fun (battleRunning, commands) (enemy : Entity) ->
@@ -264,29 +259,29 @@ module OmniBattle =
                 let commands = AdvanceCharacters :: enemyCommands @ allyCommands
                 withCmds (BattleRunning battleRunning) commands
 
-        static member tickRunning battleRunning world =
+        static member tickRunning battleRunning time state =
             match battleRunning.CurrentCommandOpt with
-            | Some currentCommand -> BattleDispatcher.tickCurrentCommand currentCommand battleRunning world
-            | None -> BattleDispatcher.tickNoCommand battleRunning world
+            | Some currentCommand -> BattleDispatcher.tickCurrentCommand currentCommand battleRunning state
+            | None -> BattleDispatcher.tickNoCommand battleRunning state
 
-        static member tickCease (state : BattleState) outcome timeStart world =
-            let time = World.getTickTime world
+        static member tickCease outcome time timeStart state =
             let timeLocal = time - timeStart
             match timeLocal with
-            | 0L -> withCmd state (CelebrateCharacters outcome)
+            | 0L -> withCmd state (CelebrateCharactersM outcome)
             | _ -> just state
 
-        static member tickState state world =
+        static member tickState time (state : BattleState) =
             let (state, sigs) =
                 match state with
-                | BattleReady timeStart -> BattleDispatcher.tickReady state timeStart world
-                | BattleRunning battleRunning -> BattleDispatcher.tickRunning battleRunning world
-                | BattleCease (outcome, timeStart) -> BattleDispatcher.tickCease state outcome timeStart world
+                | BattleReady timeStart -> BattleDispatcher.tickReady time timeStart state
+                | BattleRunning battleRunning -> BattleDispatcher.tickRunning battleRunning time state
+                | BattleCease (outcome, timeStart) -> BattleDispatcher.tickCease outcome time timeStart state
             (state, sigs)
 
         static member tick (model : BattleModel) world =
+            let time = World.getTickTime world
             let state = model.BattleState
-            let (state, sigs) = BattleDispatcher.tickState state world
+            let (state, sigs) = BattleDispatcher.tickState time state
             ({ model with BattleState = state }, sigs)
 
         static member inputBindings index =
@@ -402,7 +397,7 @@ module OmniBattle =
                 then BattleDispatcher.tick model world
                 else just model
 
-        override this.Command (command, _, battle, world) =
+        override this.Command (command, model, battle, world) =
             match command with
             | InitializeBattle ->
                 let world = World.hintRenderPackageUse Assets.BattlePackage world
@@ -412,10 +407,11 @@ module OmniBattle =
             | FinalizeBattle ->
                 let world = World.hintRenderPackageDisuse Assets.BattlePackage world
                 just (World.hintAudioPackageDisuse Assets.BattlePackage world)
-            | ResetCharacter character ->
+            | ResetCharacter characterIndex ->
+                let character = BattleDispatcher.getCharacter characterIndex model
                 let world =
-                    if (character.GetCharacterState world).IsAlly then
-                        let index = (character.GetCharacterState world).PartyIndex
+                    if character.CharacterState.IsAlly then
+                        let index = character.CharacterState.PartyIndex
                         let entities = Simulants.AllInputEntities index
                         List.fold (fun world (entity : Entity) -> entity.SetVisible false world) world entities
                     else world
