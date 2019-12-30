@@ -87,26 +87,3 @@ module OmniCharacter =
                                   Flip = FlipNone }}))
                     world
             else world
-
-    module World =
-
-        let getCharacters scene world =
-            World.getEntities scene world |>
-            Seq.filter (fun entity -> entity.DispatchesAs<CharacterDispatcher> world) |>
-            Seq.toList
-
-        let getAllies scene world =
-            getCharacters scene world |>
-            List.filter (fun entity -> (entity.GetCharacterState world).IsAlly)
-
-        let getEnemies scene world =
-            getCharacters scene world |>
-            List.filter (fun entity -> (entity.GetCharacterState world).IsEnemy)
-
-        let getHealthyAllies scene world =
-            getAllies scene world |>
-            List.filter (fun entity -> (entity.GetCharacterState world).IsHealthy)
-
-        let getWoundedAllies scene world =
-            getAllies scene world |>
-            List.filter (fun entity -> (entity.GetCharacterState world).IsWounded)

@@ -25,13 +25,35 @@ module OmniReticles =
     type ReticlesDispatcher () =
         inherit GuiDispatcher ()
 
-        static let CancelButtonOffset = Vector2 (0.0f, -80.0f)
+        static let CancelButtonOffset =
+            Vector2 (0.0f, -80.0f)
+
+        static let getCharacters scene world =
+            World.getEntities scene world |>
+            Seq.filter (fun entity -> entity.DispatchesAs<CharacterDispatcher> world) |>
+            Seq.toList
+
+        static let getAllies scene world =
+            getCharacters scene world |>
+            List.filter (fun entity -> (entity.GetCharacterState world).IsAlly)
+
+        static let getEnemies scene world =
+            getCharacters scene world |>
+            List.filter (fun entity -> (entity.GetCharacterState world).IsEnemy)
+
+        static let getHealthyAllies scene world =
+            getAllies scene world |>
+            List.filter (fun entity -> (entity.GetCharacterState world).IsHealthy)
+
+        static let getWoundedAllies scene world =
+            getAllies scene world |>
+            List.filter (fun entity -> (entity.GetCharacterState world).IsWounded)
 
         static let getTargets (rets : Entity) world =
             match rets.GetAimType world with
-            | EnemyAim -> World.getEnemies Simulants.Scene world
-            | AllyAim healthy -> (if healthy then World.getHealthyAllies else World.getWoundedAllies) Simulants.Scene world
-            | AnyAim -> World.getCharacters Simulants.Scene world
+            | EnemyAim -> getEnemies Simulants.Scene world
+            | AllyAim healthy -> (if healthy then getHealthyAllies else getWoundedAllies) Simulants.Scene world
+            | AnyAim -> getCharacters Simulants.Scene world
             | NoAim -> []
 
         static let destroyButton button world =
