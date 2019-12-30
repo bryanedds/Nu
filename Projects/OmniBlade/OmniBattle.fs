@@ -461,21 +461,21 @@ module OmniBattle =
                      Entity.Size == v2 1024.0f 1024.0f
                      Entity.Depth == -10.0f
                      Entity.LabelImage == asset "Battle" "Background"]
-                 Content.entitiesi (model.MapOut (fun model -> seq (getAllies model))) $ fun i model _ _ ->
+                 Content.entitiesi (model --> fun model -> getAllies model |> seq) $ fun i model _ _ ->
                     Content.entity<CharacterDispatcher> ("Ally+" + scstring i)
-                        [Entity.Position ==> model.MapOut (fun model -> model.CharacterPosition)
-                         Entity.Size ==> model.MapOut (fun model -> model.CharacterSize)
-                         Entity.CharacterAnimationSheet ==> model.MapOut (fun model -> model.CharacterAnimationSheet)
-                         Entity.CharacterAnimationState ==> model.MapOut (fun model -> model.CharacterAnimationState)
-                         Entity.CharacterState ==> model.MapOut (fun model -> model.CharacterState)]
-                 Content.entitiesi (model.MapOut (fun model -> seq (getEnemies model))) $ fun i model _ _ ->
+                        [Entity.Position ==> model --> fun model -> model.CharacterPosition
+                         Entity.Size ==> model --> fun model -> model.CharacterSize
+                         Entity.CharacterAnimationSheet ==> model --> fun model -> model.CharacterAnimationSheet
+                         Entity.CharacterAnimationState ==> model --> fun model -> model.CharacterAnimationState
+                         Entity.CharacterState ==> model --> fun model -> model.CharacterState]
+                 Content.entitiesi (model --> fun model -> getEnemies model |> seq) $ fun i model _ _ ->
                     Content.entity<CharacterDispatcher> ("Enemy+" + scstring i)
-                        [Entity.Position ==> model.MapOut (fun model -> model.CharacterPosition)
-                         Entity.Size ==> model.MapOut (fun model -> model.CharacterSize)
-                         Entity.CharacterAnimationSheet ==> model.MapOut (fun model -> model.CharacterAnimationSheet)
-                         Entity.CharacterAnimationState ==> model.MapOut (fun model -> model.CharacterAnimationState)
-                         Entity.CharacterState ==> model.MapOut (fun model -> model.CharacterState)]]
-             Content.layersi (model.MapOut (fun model -> seq (getAllies model))) $ fun i _ _ _ ->
+                        [Entity.Position ==> model --> fun model -> model.CharacterPosition
+                         Entity.Size ==> model --> fun model -> model.CharacterSize
+                         Entity.CharacterAnimationSheet ==> model --> fun model -> model.CharacterAnimationSheet
+                         Entity.CharacterAnimationState ==> model --> fun model -> model.CharacterAnimationState
+                         Entity.CharacterState ==> model --> fun model -> model.CharacterState]]
+             Content.layersi (model --> fun model -> getAllies model |> seq) $ fun i _ _ _ ->
                 Content.layer (Simulants.Input i).Name []
                     [Content.entity<RingMenuDispatcher> (Simulants.RegularMenu i).Name
                         [Entity.Items == ["Attack"; "Defend"; "Special"; "Item"]
