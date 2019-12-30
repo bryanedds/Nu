@@ -39,9 +39,9 @@ module OmniReticles =
 
         static let createButton name (rets : Entity) world =
             let (button, world) = World.createEntity5 typeof<ButtonDispatcher>.Name (Some (rets.Name + "+" + name)) DefaultOverlay (etol rets) world
+            let world = button.SetDepth (rets.GetDepth world + 1.0f) world // place slightly above menu
             let world = button.SetViewType Relative world
             let world = button.SetPersistent false world
-            let world = button.SetDepth (rets.GetDepth world + 1.0f) world
             let world = button.SetParentNodeOptWithAdjustment (Some (Relation.unresolve button.EntityAddress rets.EntityAddress)) world
             (button, world)
 
@@ -55,10 +55,11 @@ module OmniReticles =
             let world = World.monitor (fun _ world -> World.publish target rets.TargetSelectEvent [] rets world) button.ClickEvent button world
             (button, world)
 
-        static let createCancelButton cancelStr  (menu : Entity) world =
+        static let createCancelButton cancelStr (menu : Entity) world =
             let (button, world) = createButton cancelStr menu world
             let world = button.SetUpImage (asset Assets.BattlePackage (cancelStr + "Up")) world
             let world = button.SetDownImage (asset Assets.BattlePackage (cancelStr + "Down")) world
+            let world = button.QuickSize world
             let world = button.SetPositionLocal CancelButtonOffset world
             let world = World.monitor (fun _ world -> World.publish () menu.CancelEvent [] menu world) button.ClickEvent button world
             (button, world)
