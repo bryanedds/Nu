@@ -9,6 +9,18 @@ open OmniBlade
 [<AutoOpen>]
 module OmniCharacter =
 
+    type CharacterIndex =
+        | AllyIndex of int
+        | EnemyIndex of int
+
+    type [<NoComparison>] CharacterModel =
+        { CharacterPosition : Vector2
+          CharacterSize : Vector2
+          CharacterAnimationSheet : Image AssetTag
+          CharacterAnimationState : CharacterAnimationState
+          CharacterState : CharacterState
+          ActionTime : int }
+
     type Entity with
 
         member this.GetCharacterState world : CharacterState = this.Get Property? CharacterState world
