@@ -105,6 +105,8 @@ module OmniBattle =
                   ActionQueue = Queue.empty }
              model)
 
+        let [<Literal>] AllyMax = 3
+
         let getAllies model =
             model.BattleCharacters |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
 
@@ -287,7 +289,13 @@ module OmniBattle =
                 | BattleCease (outcome, timeStart) -> tickCease time timeStart outcome model
             (model, sigs)
 
-        let inputBindings index =
+        let battleBindings (battle : Screen) =
+            [battle.SelectEvent =>! InitializeBattleCmd
+             battle.DeselectEvent =>! FinalizeBattleCmd
+             battle.OutgoingStartEvent =>! FadeSongCmd
+             battle.UpdateEvent => Tick]
+
+        let allyBindings index =
             let regularMenu = Simulants.RegularMenu index
             let specialMenu = Simulants.SpecialMenu index
             let itemMenu = Simulants.ItemMenu index
@@ -300,14 +308,14 @@ module OmniBattle =
              reticles.TargetSelectEvent =|> fun evt -> ReticlesSelect (evt.Data, AllyIndex index)
              reticles.CancelEvent =>! IndexedCommandCmd (ReticlesCancel, index)]
 
+        let allyPartyBindings allyMax =
+            seq { for i in 0 .. allyMax - 1 do yield allyBindings i } |>
+            Seq.concat |>
+            Seq.toList
+
         override this.Bindings (_, battle, _) =
-            [battle.SelectEvent =>! InitializeBattleCmd
-             battle.DeselectEvent =>! FinalizeBattleCmd
-             battle.OutgoingStartEvent =>! FadeSongCmd
-             battle.UpdateEvent => Tick] @
-             inputBindings 0 @
-             inputBindings 1 @
-             inputBindings 2
+            battleBindings battle @
+            allyPartyBindings AllyMax
 
         override this.Message (message, model, _, world) =
             match message with
