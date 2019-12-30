@@ -43,7 +43,7 @@ module OmniRingMenu =
             position
 
         static let destroyButton button world =
-            World.destroyEntityImmediate button world
+            World.destroyEntity button world
 
         static let createButton item (menu : Entity) world =
             let (button, world) = World.createEntity5 typeof<ButtonDispatcher>.Name (Some (menu.Name + "+" + item)) DefaultOverlay (etol menu) world
@@ -112,7 +112,8 @@ module OmniRingMenu =
              define Entity.ItemCancelButtonOptNp None
              define Entity.Radius 128.0f
              define Entity.Rotation 0.0f
-             define Entity.SwallowMouseLeft false]
+             define Entity.SwallowMouseLeft false
+             define Entity.Visible false]
 
         override dispatcher.Register (menu, world) =
             let world = createButtons menu world
