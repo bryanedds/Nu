@@ -158,6 +158,9 @@
       <HintPath>..\..\Nu\Nu.Dependencies\FSharpx.Core\FSharpx.Core.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
+    <Reference Include="Nito.Collections.Deque">
+      <HintPath>..\..\Nu\Nu\bin\Release\Nito.Collections.Deque.dll</HintPath>
+    </Reference>
     <Reference Include="Prime">
       <HintPath>..\..\packages\Prime.3.8.5\lib\net472\Prime.exe</HintPath>
     </Reference>
