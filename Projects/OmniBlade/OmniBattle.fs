@@ -11,8 +11,8 @@ module OmniBattle =
 
     type [<NoEquality; NoComparison>] ActionCommand =
         { Action : ActionType
-          Source : Entity
-          TargetOpt : Entity option }
+          Source : CharacterIndex
+          TargetOpt : CharacterIndex option }
 
         static member make action source targetOpt =
             { Action = action
@@ -48,13 +48,14 @@ module OmniBattle =
         | ReadyCharactersM
         | PoiseCharactersM
         | CelebrateCharactersM of bool
+        | AdvanceCharactersM
         | AttackCharacterM of CharacterIndex * CharacterIndex
         | ResetCharacterM of CharacterIndex
         | DamageCharacterM of CharacterIndex
         | PoiseCharacterM of CharacterIndex
         | WoundCharacterM of CharacterIndex
-        | Tick
         | ReticlesSelect of CharacterIndex * int
+        | Tick
 
     and [<NoComparison>] IndexedCommand =
         | RegularMenuShow
@@ -66,18 +67,10 @@ module OmniBattle =
     and [<NoComparison>] BattleCommand =
         | InitializeBattle
         | FinalizeBattle
-        | ReadyCharacters
-        | PoiseCharacters
-        | CelebrateCharacters of bool
-        | AdvanceCharacters
-        | AttackCharacter of Entity * Entity
-        | DamageCharacter of Entity
-        | PoiseCharacter of Entity
-        | WoundCharacter of Entity
         | DestroyCharacter of CharacterIndex
         | ResetCharacter of CharacterIndex
-        | FadeSong
         | IndexedCommand of IndexedCommand * int
+        | FadeSong
 
     and Screen with
 
@@ -332,10 +325,10 @@ module OmniBattle =
                     [reticles.Visible == false]]
 
         override this.Bindings (_, battle, _) =
-            [battle.UpdateEvent => Tick
-             battle.SelectEvent =>! InitializeBattle
+            [battle.SelectEvent =>! InitializeBattle
              battle.DeselectEvent =>! FinalizeBattle
-             battle.OutgoingStartEvent =>! FadeSong] @
+             battle.OutgoingStartEvent =>! FadeSong
+             battle.UpdateEvent => Tick] @
              BattleDispatcher.inputBindings 0 @
              BattleDispatcher.inputBindings 1 @
              BattleDispatcher.inputBindings 2
@@ -356,6 +349,10 @@ module OmniBattle =
                     if outcome
                     then BattleDispatcher.updateAllies (fun character -> { character with CharacterAnimationState = (CharacterAnimationState.setCycle (Some time) CelebrateCycle) character.CharacterAnimationState }) model
                     else BattleDispatcher.updateAllies (fun character -> { character with CharacterAnimationState = (CharacterAnimationState.setCycle (Some time) CelebrateCycle) character.CharacterAnimationState }) model
+                just model
+            | AdvanceCharactersM ->
+                let time = World.getTickTime world
+                let model = BattleDispatcher.updateCharacters (fun character -> { character with ActionTime = character.ActionTime + Constants.Battle.ActionTimeInc }) model
                 just model
             | AttackCharacterM (sourceIndex, targetIndex) ->
                 let time = World.getTickTime world
@@ -392,10 +389,6 @@ module OmniBattle =
                 let time = World.getTickTime world
                 let model = BattleDispatcher.updateCharacter (fun character -> { character with CharacterAnimationState = (CharacterAnimationState.setCycle (Some time) WoundCycle) character.CharacterAnimationState }) characterIndex model
                 just model
-            | Tick ->
-                if World.isTicking world
-                then BattleDispatcher.tick model world
-                else just model
             | ReticlesSelect (enemy, index) ->
                 let ally = Simulants.Ally index
                 match model.BattleState with
@@ -404,6 +397,10 @@ module OmniBattle =
                     let model = BattleRunning { battleRunning with ActionQueue = Queue.conj command battleRunning.ActionQueue }
                     withCmd model (ResetCharacter ally)
                 | _ -> just model
+            | Tick ->
+                if World.isTicking world
+                then BattleDispatcher.tick model world
+                else just model
 
         override this.Command (command, _, battle, world) =
             match command with
@@ -415,67 +412,6 @@ module OmniBattle =
             | FinalizeBattle ->
                 let world = World.hintRenderPackageDisuse Assets.BattlePackage world
                 just (World.hintAudioPackageDisuse Assets.BattlePackage world)
-            | ReadyCharacters ->
-                let time = World.getTickTime world
-                let characters = World.getCharacters Simulants.Scene world
-                let world =
-                    Seq.fold (fun world (character : Entity) ->
-                        character.CharacterAnimationState.Update (CharacterAnimationState.setCycle (Some time) ReadyCycle) world)
-                        world characters
-                just world
-            | PoiseCharacters ->
-                let time = World.getTickTime world
-                let characters = World.getCharacters Simulants.Scene world
-                let world =
-                    Seq.fold (fun world (character : Entity) ->
-                        character.CharacterAnimationState.Update (CharacterAnimationState.setCycle (Some time) PoiseCycle) world)
-                        world characters
-                just world
-            | CelebrateCharacters outcome ->
-                let time = World.getTickTime world
-                let allies =
-                    if outcome
-                    then World.getAllies Simulants.Scene world
-                    else World.getEnemies Simulants.Scene world
-                let world =
-                    Seq.fold (fun world (character : Entity) ->
-                        character.CharacterAnimationState.Update (CharacterAnimationState.setCycle (Some time) CelebrateCycle) world)
-                        world allies
-                just world
-            | AdvanceCharacters ->
-                let characters = World.getCharacters Simulants.Scene world
-                let world =
-                    List.fold (fun world (character : Entity) ->
-                        character.ActionTimeNp.Update ((+) Constants.Battle.ActionTimeInc) world)
-                        world characters
-                just world
-            | AttackCharacter (source, target) ->
-                let time = World.getTickTime world
-                let world = source.CharacterAnimationState.Update (CharacterAnimationState.setCycle (Some time) AttackCycle) world
-                let world =
-                    target.CharacterState.Update (fun state ->
-                        let rom = Simulants.Game.GetModel world
-                        let power = source.CharacterState.GetBy (fun state -> state.ComputePower rom) world
-                        let shield = state.ComputeShield rom
-                        let damage = max 0 (int (Math.Ceiling (double (power - shield))))
-                        let hitPoints = (target.GetCharacterState world).HitPoints
-                        let hitPoints =  max 0 (hitPoints - damage)
-                        { state with HitPoints = hitPoints })
-                        world
-                if target.CharacterState.GetBy (fun state -> state.HitPoints = 0 && state.IsAlly) world
-                then withCmd world (ResetCharacter target)
-                else just world
-            | DamageCharacter character ->
-                let time = World.getTickTime world
-                just (character.CharacterAnimationState.Update (CharacterAnimationState.setCycle (Some time) DamageCycle) world)
-            | PoiseCharacter character ->
-                let time = World.getTickTime world
-                just (character.CharacterAnimationState.Update (CharacterAnimationState.setCycle (Some time) PoiseCycle) world)
-            | WoundCharacter character ->
-                let time = World.getTickTime world
-                just (character.CharacterAnimationState.Update (CharacterAnimationState.setCycle (Some time) WoundCycle) world)
-            | DestroyCharacter character ->
-                just (World.destroyEntity character world)
             | ResetCharacter character ->
                 let world =
                     if (character.GetCharacterState world).IsAlly then
@@ -483,11 +419,11 @@ module OmniBattle =
                         let entities = Simulants.AllInputEntities index
                         List.fold (fun world (entity : Entity) -> entity.SetVisible false world) world entities
                     else world
-                just (character.SetActionTimeNp 0 world)
-            | FadeSong ->
-                just (World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world)
+                just world
             | IndexedCommand (command, index) ->
                 this.IndexedCommand (command, index, battle, world)
+            | FadeSong ->
+                just (World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world)
 
         member this.IndexedCommand (command, index, _, world) =
             let ally = Simulants.Ally index
