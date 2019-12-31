@@ -11,15 +11,15 @@ module OmniReticles =
 
     type Entity with
 
-        member this.GetAimType world : AimType = this.Get Property? AimType world
-        member this.SetAimType (value : AimType) world = this.Set Property? AimType value world
-        member this.AimType = lens Property? AimType this.GetAimType this.SetAimType this
-        member this.GetReticleButtonsNp world : Entity list = this.Get Property? ReticleButtonsNp world
-        member this.SetReticleButtonsNp (value : Entity list) world = this.Set Property? ReticleButtonsNp value world
-        member this.ReticleButtonsNp = lens Property? ReticleButtonsNp this.GetReticleButtonsNp this.SetReticleButtonsNp this
-        member this.GetReticleCancelButtonOptNp world : Entity option = this.Get Property? ReticleCancelButtonOptNp world
-        member this.SetReticleCancelButtonOptNp (value : Entity option) world = this.Set Property? ReticleCancelButtonOptNp value world
-        member this.ReticleCancelButtonOptNp = lens Property? ReticleCancelButtonOptNp this.GetReticleCancelButtonOptNp this.SetReticleCancelButtonOptNp this
+        member this.GetAimType = this.Get Property? AimType
+        member this.SetAimType = this.Set Property? AimType
+        member this.AimType = lens<AimType> Property? AimType this.GetAimType this.SetAimType this
+        member this.GetReticleButtonsNp = this.Get Property? ReticleButtonsNp
+        member this.SetReticleButtonsNp = this.Set Property? ReticleButtonsNp
+        member this.ReticleButtonsNp = lens<Entity list> Property? ReticleButtonsNp this.GetReticleButtonsNp this.SetReticleButtonsNp this
+        member this.GetReticleCancelButtonOptNp = this.Get Property? ReticleCancelButtonOptNp
+        member this.SetReticleCancelButtonOptNp = this.Set Property? ReticleCancelButtonOptNp
+        member this.ReticleCancelButtonOptNp = lens<Entity option> Property? ReticleCancelButtonOptNp this.GetReticleCancelButtonOptNp this.SetReticleCancelButtonOptNp this
         member this.TargetSelectEvent = Events.TargetSelect --> this
 
     type ReticlesDispatcher () =
