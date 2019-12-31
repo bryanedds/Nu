@@ -34,8 +34,9 @@ module OmniCharacter =
 
     type CharacterDispatcher () =
         inherit EntityDispatcher ()
-        
-        static let [<Literal>] CelSize = 160.0f
+
+        static let [<Literal>] CelSize =
+            160.0f
 
         static let getSpriteInset (entity : Entity) world =
             let characterAnimationState = entity.GetCharacterAnimationState world

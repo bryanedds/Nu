@@ -56,12 +56,12 @@ module OmniBattle =
         | SpecialMenuSelect of string
         | ItemMenuSelect of string
         | ReticlesCancel
+        | PlayerInputHide
 
     and [<NoComparison>] BattleCommand =
         | FadeSong
         | InitializeBattle
         | FinalizeBattle
-        | ResetCharacterCmd of CharacterIndex
         | DestroyCharacter of CharacterIndex
         | IndexedCommand of IndexedCommand * int
 
@@ -350,6 +350,11 @@ module OmniBattle =
                 let world = reticles.SetVisible false world
                 let world = previousMenu.SetVisible true world
                 just (previousMenu.SetCenter (ally.GetCenter world) world)
+            | PlayerInputHide ->
+                let world =
+                    let entities = Simulants.AllInputEntities index
+                    List.fold (fun world (entity : Entity) -> entity.SetVisible false world) world entities
+                just world
 
         override this.Bindings (_, battle, _) =
             battleBindings battle @
@@ -409,7 +414,10 @@ module OmniBattle =
                 just model
             | ResetCharacter characterIndex ->
                 let model = updateCharacter (fun character -> { character with ActionTime = 0 }) characterIndex model
-                withCmd model (ResetCharacterCmd characterIndex)
+                let character = getCharacter characterIndex model
+                if character.CharacterState.IsAlly
+                then withCmd model (IndexedCommand (PlayerInputHide, character.CharacterState.PartyIndex))
+                else just model
             | ReticlesSelect (targetEntity, allyIndex) ->
                 match model.BattleState with
                 | BattleRunning ->
@@ -437,16 +445,6 @@ module OmniBattle =
             | FinalizeBattle ->
                 let world = World.hintRenderPackageDisuse Assets.BattlePackage world
                 just (World.hintAudioPackageDisuse Assets.BattlePackage world)
-            | ResetCharacterCmd characterIndex ->
-                // TODO: P1: find a more Elmish way of expressing this
-                let character = getCharacter characterIndex model
-                let world =
-                    if character.CharacterState.IsAlly then
-                        let index = character.CharacterState.PartyIndex
-                        let entities = Simulants.AllInputEntities index
-                        List.fold (fun world (entity : Entity) -> entity.SetVisible false world) world entities
-                    else world
-                just world
             | DestroyCharacter characterIndex ->
                 let character = Simulants.Character characterIndex
                 let world = World.destroyEntity character world
