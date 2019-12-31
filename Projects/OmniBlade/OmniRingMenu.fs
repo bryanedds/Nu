@@ -32,14 +32,15 @@ module OmniRingMenu =
     type RingMenuDispatcher () =
         inherit GuiDispatcher ()
 
-        static let CancelButtonOffset = Vector2 (0.0f, -48.0f)
+        static let CancelButtonOffset =
+            v2 0.0f -48.0f
 
         static let computeButtonPositionLocal index (menu : Entity) world =
             let items = menu.GetItems world
             let radius = menu.GetRadius world
             let progress = single index / single (List.length items)
             let rotation = (progress * single Math.PI * 2.0f) + (menu.GetRotation world * single Math.PI * 2.0f)
-            let position = Vector2 (radius * sin rotation, radius * -cos rotation)
+            let position = v2 (radius * sin rotation) (radius * -cos rotation)
             position
 
         static let destroyButton button world =

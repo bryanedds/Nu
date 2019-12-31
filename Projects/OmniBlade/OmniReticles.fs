@@ -26,7 +26,7 @@ module OmniReticles =
         inherit GuiDispatcher ()
 
         static let CancelButtonOffset =
-            Vector2 (0.0f, -80.0f)
+            v2 0.0f -80.0f
 
         static let getCharacters scene world =
             World.getEntities scene world |>
