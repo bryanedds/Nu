@@ -13,13 +13,13 @@ module OmniReticles =
 
         member this.GetAimType world : AimType = this.Get Property? AimType world
         member this.SetAimType (value : AimType) world = this.Set Property? AimType value world
-        member this.AimType = Lens.make Property? AimType this.GetAimType this.SetAimType this
+        member this.AimType = lens Property? AimType this.GetAimType this.SetAimType this
         member this.GetReticleButtonsNp world : Entity list = this.Get Property? ReticleButtonsNp world
         member this.SetReticleButtonsNp (value : Entity list) world = this.Set Property? ReticleButtonsNp value world
-        member this.ReticleButtonsNp = Lens.make Property? ReticleButtonsNp this.GetReticleButtonsNp this.SetReticleButtonsNp this
+        member this.ReticleButtonsNp = lens Property? ReticleButtonsNp this.GetReticleButtonsNp this.SetReticleButtonsNp this
         member this.GetReticleCancelButtonOptNp world : Entity option = this.Get Property? ReticleCancelButtonOptNp world
         member this.SetReticleCancelButtonOptNp (value : Entity option) world = this.Set Property? ReticleCancelButtonOptNp value world
-        member this.ReticleCancelButtonOptNp = Lens.make Property? ReticleCancelButtonOptNp this.GetReticleCancelButtonOptNp this.SetReticleCancelButtonOptNp this
+        member this.ReticleCancelButtonOptNp = lens Property? ReticleCancelButtonOptNp this.GetReticleCancelButtonOptNp this.SetReticleCancelButtonOptNp this
         member this.TargetSelectEvent = Events.TargetSelect --> this
 
     type ReticlesDispatcher () =
