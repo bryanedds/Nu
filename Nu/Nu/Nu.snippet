@@ -17,9 +17,9 @@
       </Declarations>
       <Code Language="FSharp" Kind="any">
         <![CDATA[
-        member this.Get$Name = this.Get<$Type> Property? $Name
-        member this.Set$Name = this.Set<$Type> Property? $Name
-        member this.$Name = Lens.make Property? $Name this.Get$Name this.Set$Name this]]>
+        member this.Get$Name = this.Get Property? $Name
+        member this.Set$Name = this.Set Property? $Name
+        member this.$Name = lens<$Type> Property? $Name this.Get$Name this.Set$Name this]]>
       </Code>
     </Snippet>
   </CodeSnippet>

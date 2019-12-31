@@ -28,13 +28,13 @@ module GameplayDispatcherModule =
 
         member this.GetContentRandState = this.Get Property? ContentRandState
         member this.SetContentRandState = this.Set Property? ContentRandState
-        member this.ContentRandState = Lens.make<uint64, World> Property? ContentRandState this.GetContentRandState this.SetContentRandState this
+        member this.ContentRandState = lens<uint64> Property? ContentRandState this.GetContentRandState this.SetContentRandState this
         member this.GetOngoingRandState = this.Get Property? OngoingRandState
         member this.SetOngoingRandState = this.Set Property? OngoingRandState
-        member this.OngoingRandState = Lens.make<uint64, World> Property? OngoingRandState this.GetOngoingRandState this.SetOngoingRandState this
+        member this.OngoingRandState = lens<uint64> Property? OngoingRandState this.GetOngoingRandState this.SetOngoingRandState this
         member this.GetShallLoadGame = this.Get Property? ShallLoadGame
         member this.SetShallLoadGame = this.Set Property? ShallLoadGame
-        member this.ShallLoadGame = Lens.make<bool, World> Property? ShallLoadGame this.GetShallLoadGame this.SetShallLoadGame this
+        member this.ShallLoadGame = lens<bool> Property? ShallLoadGame this.GetShallLoadGame this.SetShallLoadGame this
 
     type GameplayDispatcher () =
         inherit ScreenDispatcher<unit, unit, GameplayCommand> (())

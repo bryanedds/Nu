@@ -12,7 +12,7 @@ module EnemyDispatcherModule =
 
         member this.GetDesiredTurn = this.Get Property? DesiredTurn
         member this.SetDesiredTurn = this.Set Property? DesiredTurn
-        member this.DesiredTurn = Lens.make<Turn, World> Property? DesiredTurn this.GetDesiredTurn this.SetDesiredTurn this
+        member this.DesiredTurn = lens<Turn> Property? DesiredTurn this.GetDesiredTurn this.SetDesiredTurn this
 
     type EnemyDispatcher () =
         inherit CharacterDispatcher ()
