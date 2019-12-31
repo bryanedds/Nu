@@ -122,6 +122,14 @@ type [<NoEquality; NoComparison>] View =
 [<AutoOpen>]
 module DeclarativeOperators =
 
+    /// Make a lens.
+    let lens<'a> name get set this =
+        Lens.make<'a, World> name get set this
+
+    /// Make a read-only lens.
+    let lensOut<'a> name get this =
+        Lens.makeReadOnly<'a, World> name get this
+
     /// Initialize a property.
     let init lens value = PropertyDefinition (define lens value)
 
