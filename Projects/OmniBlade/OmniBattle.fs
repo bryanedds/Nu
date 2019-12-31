@@ -56,7 +56,7 @@ module OmniBattle =
         | SpecialMenuSelect of string
         | ItemMenuSelect of string
         | ReticlesCancel
-        | PlayerInputHide
+        | AllyInputHide
 
     and [<NoComparison>] BattleCommand =
         | FadeSong
@@ -350,7 +350,7 @@ module OmniBattle =
                 let world = reticles.SetVisible false world
                 let world = previousMenu.SetVisible true world
                 just (previousMenu.SetCenter (ally.GetCenter world) world)
-            | PlayerInputHide ->
+            | AllyInputHide ->
                 let world =
                     let entities = Simulants.AllInputEntities index
                     List.fold (fun world (entity : Entity) -> entity.SetVisible false world) world entities
@@ -416,7 +416,7 @@ module OmniBattle =
                 let model = updateCharacter (fun character -> { character with ActionTime = 0 }) characterIndex model
                 let character = getCharacter characterIndex model
                 if character.CharacterState.IsAlly
-                then withCmd model (IndexedCommand (PlayerInputHide, character.CharacterState.PartyIndex))
+                then withCmd model (IndexedCommand (AllyInputHide, character.CharacterState.PartyIndex))
                 else just model
             | ReticlesSelect (targetEntity, allyIndex) ->
                 match model.BattleState with
