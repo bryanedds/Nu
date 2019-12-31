@@ -41,7 +41,7 @@ module OmniCharacter =
         static let getSpriteInset (entity : Entity) world =
             let characterAnimationState = entity.GetCharacterAnimationState world
             let index = CharacterAnimationState.index (World.getTickTime world) characterAnimationState
-            let offset = Vector2 (single index.X * CelSize, single index.Y * CelSize)
+            let offset = v2 (single index.X * CelSize) (single index.Y * CelSize)
             let inset = Vector4 (offset.X, offset.Y, offset.X + CelSize, offset.Y + CelSize)
             inset
 
