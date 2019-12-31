@@ -13,19 +13,19 @@ module OmniRingMenu =
         
         member this.GetItems world : string list = this.Get Property? Items world
         member this.SetItems (value : string list) world = this.Set Property? Items value world
-        member this.Items = Lens.make Property? Items this.GetItems this.SetItems this
+        member this.Items = lens Property? Items this.GetItems this.SetItems this
         member this.GetItemButtonsNp world : Entity list = this.Get Property? ItemButtonsNp world
         member this.SetItemButtonsNp (value : Entity list) world = this.Set Property? ItemButtonsNp value world
-        member this.ItemButtonsNp = Lens.make Property? ItemButtonsNp this.GetItemButtonsNp this.SetItemButtonsNp this
+        member this.ItemButtonsNp = lens Property? ItemButtonsNp this.GetItemButtonsNp this.SetItemButtonsNp this
         member this.GetItemCancelOpt world : string option = this.Get Property? ItemCancelOpt world
         member this.SetItemCancelOpt (value : string option) world = this.Set Property? ItemCancelOpt value world
-        member this.ItemCancelOpt = Lens.make Property? ItemCancelOpt this.GetItemCancelOpt this.SetItemCancelOpt this
+        member this.ItemCancelOpt = lens Property? ItemCancelOpt this.GetItemCancelOpt this.SetItemCancelOpt this
         member this.GetItemCancelButtonOptNp world : Entity option = this.Get Property? ItemCancelButtonOptNp world
         member this.SetItemCancelButtonOptNp (value : Entity option) world = this.Set Property? ItemCancelButtonOptNp value world
         member this.GetRadius world : single = this.Get Property? Radius world
         member this.SetRadius (value : single) world = this.Set Property? Radius value world
-        member this.Radius = Lens.make Property? Radius this.GetRadius this.SetRadius this
-        member this.ItemCancelButtonOptNp = Lens.make Property? ItemCancelButtonOptNp this.GetItemCancelButtonOptNp this.SetItemCancelButtonOptNp this
+        member this.Radius = lens Property? Radius this.GetRadius this.SetRadius this
+        member this.ItemCancelButtonOptNp = lens Property? ItemCancelButtonOptNp this.GetItemCancelButtonOptNp this.SetItemCancelButtonOptNp this
         member this.ItemSelectEvent = Events.ItemSelect --> this
         member this.CancelEvent = Events.Cancel --> this
 

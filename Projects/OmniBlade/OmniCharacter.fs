@@ -21,16 +21,16 @@ module OmniCharacter =
     
         member this.GetCharacterAnimationSheet world : Image AssetTag = this.Get Property? CharacterAnimationSheet world
         member this.SetCharacterAnimationSheet (value : Image AssetTag) world = this.Set Property? CharacterAnimationSheet value world
-        member this.CharacterAnimationSheet = Lens.make Property? CharacterAnimationSheet this.GetCharacterAnimationSheet this.SetCharacterAnimationSheet this
+        member this.CharacterAnimationSheet = lens Property? CharacterAnimationSheet this.GetCharacterAnimationSheet this.SetCharacterAnimationSheet this
         member this.GetCharacterAnimationState world : CharacterAnimationState = this.Get Property? CharacterAnimationState world
         member this.SetCharacterAnimationState (value : CharacterAnimationState) world = this.Set Property? CharacterAnimationState value world
-        member this.CharacterAnimationState = Lens.make Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState this
+        member this.CharacterAnimationState = lens Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState this
         member this.GetCharacterState world : CharacterState = this.Get Property? CharacterState world
         member this.SetCharacterState (value : CharacterState) world = this.Set Property? CharacterState value world
-        member this.CharacterState = Lens.make Property? CharacterState this.GetCharacterState this.SetCharacterState this
+        member this.CharacterState = lens Property? CharacterState this.GetCharacterState this.SetCharacterState this
         member this.GetActionTimeNp world : int = this.Get Property? ActionTimeNp world
         member this.SetActionTimeNp (value : int) world = this.Set Property? ActionTimeNp value world
-        member this.ActionTimeNp = Lens.make Property? ActionTimeNp this.GetActionTimeNp this.SetActionTimeNp this
+        member this.ActionTimeNp = lens Property? ActionTimeNp this.GetActionTimeNp this.SetActionTimeNp this
 
     type CharacterDispatcher () =
         inherit EntityDispatcher ()
