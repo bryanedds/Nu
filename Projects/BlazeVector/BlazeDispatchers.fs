@@ -13,7 +13,7 @@ module BulletModule =
     
         member this.GetAge = this.Get Property? Age
         member this.SetAge = this.Set Property? Age
-        member this.Age = Lens.make<int64, World> Property? Age this.GetAge this.SetAge this
+        member this.Age = lens<int64> Property? Age this.GetAge this.SetAge this
 
     type BulletDispatcher () =
         inherit EntityDispatcher ()
@@ -61,7 +61,7 @@ module EnemyModule =
     
         member this.GetHealth = this.Get Property? Health
         member this.SetHealth = this.Set Property? Health
-        member this.Health = Lens.make<int, World> Property? Health this.GetHealth this.SetHealth this
+        member this.Health = lens<int> Property? Health this.GetHealth this.SetHealth this
         
         member this.IsOnScreen world =
             let viewBounds = World.getViewBoundsRelative world
@@ -125,10 +125,10 @@ module PlayerModule =
 
         member this.GetLastTimeOnGroundNp = this.Get Property? LastTimeOnGroundNp
         member this.SetLastTimeOnGroundNp = this.Set Property? LastTimeOnGroundNp
-        member this.LastTimeOnGroundNp = Lens.make<int64, World> Property? LastTimeOnGroundNp this.GetLastTimeOnGroundNp this.SetLastTimeOnGroundNp this
+        member this.LastTimeOnGroundNp = lens<int64> Property? LastTimeOnGroundNp this.GetLastTimeOnGroundNp this.SetLastTimeOnGroundNp this
         member this.GetLastTimeJumpNp = this.Get Property? LastTimeJumpNp
         member this.SetLastTimeJumpNp = this.Set Property? LastTimeJumpNp
-        member this.LastTimeJumpNp = Lens.make<int64, World> Property? LastTimeJumpNp this.GetLastTimeJumpNp this.SetLastTimeJumpNp this
+        member this.LastTimeJumpNp = lens<int64> Property? LastTimeJumpNp this.GetLastTimeJumpNp this.SetLastTimeJumpNp this
         member this.HasFallen world = (this.GetPosition world).Y < -600.0f
 
     type PlayerDispatcher () =

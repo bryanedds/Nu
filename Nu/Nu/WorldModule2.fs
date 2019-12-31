@@ -901,7 +901,7 @@ module GameDispatcherModule =
             this.SetModel<'model> (updater this.GetModel<'model> world) world
 
         member this.Model<'model> () =
-            Lens.make<'model, World> Property? Model this.GetModel<'model> this.SetModel<'model> this
+            lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
 
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalGame<'model, 'message, 'command> signal this world
@@ -916,7 +916,7 @@ module GameDispatcherModule =
             game.SetModel<'model> model world
 
         member this.Model (game : Game) =
-            Lens.make Property? Model (this.GetModel game) (flip this.SetModel game) game
+            lens Property? Model (this.GetModel game) (flip this.SetModel game) game
 
         override this.Register (game, world) =
             let (model, world) = World.attachModel initial Property? Model game world
