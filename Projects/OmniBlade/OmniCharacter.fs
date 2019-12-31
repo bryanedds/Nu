@@ -19,18 +19,18 @@ module OmniCharacter =
 
     type Entity with
     
-        member this.GetCharacterAnimationSheet world : Image AssetTag = this.Get Property? CharacterAnimationSheet world
-        member this.SetCharacterAnimationSheet (value : Image AssetTag) world = this.Set Property? CharacterAnimationSheet value world
-        member this.CharacterAnimationSheet = lens Property? CharacterAnimationSheet this.GetCharacterAnimationSheet this.SetCharacterAnimationSheet this
-        member this.GetCharacterAnimationState world : CharacterAnimationState = this.Get Property? CharacterAnimationState world
-        member this.SetCharacterAnimationState (value : CharacterAnimationState) world = this.Set Property? CharacterAnimationState value world
-        member this.CharacterAnimationState = lens Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState this
-        member this.GetCharacterState world : CharacterState = this.Get Property? CharacterState world
-        member this.SetCharacterState (value : CharacterState) world = this.Set Property? CharacterState value world
-        member this.CharacterState = lens Property? CharacterState this.GetCharacterState this.SetCharacterState this
-        member this.GetActionTimeNp world : int = this.Get Property? ActionTimeNp world
-        member this.SetActionTimeNp (value : int) world = this.Set Property? ActionTimeNp value world
-        member this.ActionTimeNp = lens Property? ActionTimeNp this.GetActionTimeNp this.SetActionTimeNp this
+        member this.GetCharacterAnimationSheet = this.Get Property? CharacterAnimationSheet
+        member this.SetCharacterAnimationSheet = this.Set Property? CharacterAnimationSheet
+        member this.CharacterAnimationSheet = lens<Image AssetTag> Property? CharacterAnimationSheet this.GetCharacterAnimationSheet this.SetCharacterAnimationSheet this
+        member this.GetCharacterAnimationState = this.Get Property? CharacterAnimationState
+        member this.SetCharacterAnimationState = this.Set Property? CharacterAnimationState
+        member this.CharacterAnimationState = lens<CharacterAnimationState> Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState this
+        member this.GetCharacterState = this.Get Property? CharacterState
+        member this.SetCharacterState = this.Set Property? CharacterState
+        member this.CharacterState = lens<CharacterState> Property? CharacterState this.GetCharacterState this.SetCharacterState this
+        member this.GetActionTimeNp = this.Get Property? ActionTimeNp
+        member this.SetActionTimeNp = this.Set Property? ActionTimeNp
+        member this.ActionTimeNp = lens<int> Property? ActionTimeNp this.GetActionTimeNp this.SetActionTimeNp this
 
     type CharacterDispatcher () =
         inherit EntityDispatcher ()

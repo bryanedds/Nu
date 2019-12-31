@@ -11,21 +11,21 @@ module OmniRingMenu =
 
     type Entity with
         
-        member this.GetItems world : string list = this.Get Property? Items world
-        member this.SetItems (value : string list) world = this.Set Property? Items value world
-        member this.Items = lens Property? Items this.GetItems this.SetItems this
-        member this.GetItemButtonsNp world : Entity list = this.Get Property? ItemButtonsNp world
-        member this.SetItemButtonsNp (value : Entity list) world = this.Set Property? ItemButtonsNp value world
-        member this.ItemButtonsNp = lens Property? ItemButtonsNp this.GetItemButtonsNp this.SetItemButtonsNp this
-        member this.GetItemCancelOpt world : string option = this.Get Property? ItemCancelOpt world
-        member this.SetItemCancelOpt (value : string option) world = this.Set Property? ItemCancelOpt value world
-        member this.ItemCancelOpt = lens Property? ItemCancelOpt this.GetItemCancelOpt this.SetItemCancelOpt this
-        member this.GetItemCancelButtonOptNp world : Entity option = this.Get Property? ItemCancelButtonOptNp world
-        member this.SetItemCancelButtonOptNp (value : Entity option) world = this.Set Property? ItemCancelButtonOptNp value world
-        member this.GetRadius world : single = this.Get Property? Radius world
-        member this.SetRadius (value : single) world = this.Set Property? Radius value world
-        member this.Radius = lens Property? Radius this.GetRadius this.SetRadius this
-        member this.ItemCancelButtonOptNp = lens Property? ItemCancelButtonOptNp this.GetItemCancelButtonOptNp this.SetItemCancelButtonOptNp this
+        member this.GetItems = this.Get Property? Items
+        member this.SetItems = this.Set Property? Items
+        member this.Items = lens<string list> Property? Items this.GetItems this.SetItems this
+        member this.GetItemButtonsNp = this.Get Property? ItemButtonsNp
+        member this.SetItemButtonsNp = this.Set Property? ItemButtonsNp
+        member this.ItemButtonsNp = lens<Entity list> Property? ItemButtonsNp this.GetItemButtonsNp this.SetItemButtonsNp this
+        member this.GetItemCancelOpt = this.Get Property? ItemCancelOpt
+        member this.SetItemCancelOpt = this.Set Property? ItemCancelOpt
+        member this.ItemCancelOpt = lens<string option> Property? ItemCancelOpt this.GetItemCancelOpt this.SetItemCancelOpt this
+        member this.GetItemCancelButtonOptNp = this.Get Property? ItemCancelButtonOptNp
+        member this.SetItemCancelButtonOptNp = this.Set Property? ItemCancelButtonOptNp
+        member this.ItemCancelButtonOptNp = lens<Entity option> Property? ItemCancelButtonOptNp this.GetItemCancelButtonOptNp this.SetItemCancelButtonOptNp this
+        member this.GetRadius = this.Get Property? Radius
+        member this.SetRadius = this.Set Property? Radius
+        member this.Radius = lens<single> Property? Radius this.GetRadius this.SetRadius this
         member this.ItemSelectEvent = Events.ItemSelect --> this
         member this.CancelEvent = Events.Cancel --> this
 
