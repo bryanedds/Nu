@@ -194,27 +194,27 @@ module WorldTypes =
 
         /// Register a game when adding it to the world.
         abstract Register : Game * World -> World
-        default dispatcher.Register (_, world) = world
+        default this.Register (_, world) = world
 
         /// Unregister a game when finished with the world.
         abstract Unregister : Game * World -> World
-        default dispatcher.Unregister (_, world) = world
+        default this.Unregister (_, world) = world
 
         /// Update a game.
         abstract Update : Game * World -> World
-        default dispatcher.Update (_, world) = world
+        default this.Update (_, world) = world
 
         /// Post-update a game.
         abstract PostUpdate : Game * World -> World
-        default dispatcher.PostUpdate (_, world) = world
+        default this.PostUpdate (_, world) = world
 
         /// Actualize a game.
         abstract Actualize : Game * World -> World
-        default dispatcher.Actualize (_, world) = world
+        default this.Actualize (_, world) = world
 
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Game * World -> Property option
-        default dispatcher.TryGetCalculatedProperty (_, _, _) = None
+        default this.TryGetCalculatedProperty (_, _, _) = None
     
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
@@ -222,27 +222,27 @@ module WorldTypes =
     
         /// Register a screen when adding it to the world.
         abstract Register : Screen * World -> World
-        default dispatcher.Register (_, world) = world
+        default this.Register (_, world) = world
     
         /// Unregister a screen when removing it from the world.
         abstract Unregister : Screen * World -> World
-        default dispatcher.Unregister (_, world) = world
+        default this.Unregister (_, world) = world
     
         /// Update a screen.
         abstract Update : Screen * World -> World
-        default dispatcher.Update (_, world) = world
+        default this.Update (_, world) = world
     
         /// Post-update a screen.
         abstract PostUpdate : Screen * World -> World
-        default dispatcher.PostUpdate (_, world) = world
+        default this.PostUpdate (_, world) = world
     
         /// Actualize a screen.
         abstract Actualize : Screen * World -> World
-        default dispatcher.Actualize (_, world) = world
+        default this.Actualize (_, world) = world
     
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Screen * World -> Property option
-        default dispatcher.TryGetCalculatedProperty (_, _, _) = None
+        default this.TryGetCalculatedProperty (_, _, _) = None
     
     /// The default dispatcher for layers.
     and LayerDispatcher () =
@@ -250,27 +250,27 @@ module WorldTypes =
     
         /// Register a layer when adding it to a screen.
         abstract Register : Layer * World -> World
-        default dispatcher.Register (_, world) = world
+        default this.Register (_, world) = world
     
         /// Unregister a layer when removing it from a screen.
         abstract Unregister : Layer * World -> World
-        default dispatcher.Unregister (_, world) = world
+        default this.Unregister (_, world) = world
     
         /// Update a layer.
         abstract Update : Layer * World -> World
-        default dispatcher.Update (_, world) = world
+        default this.Update (_, world) = world
     
         /// Post-update a layer.
         abstract PostUpdate : Layer * World -> World
-        default dispatcher.PostUpdate (_, world) = world
+        default this.PostUpdate (_, world) = world
     
         /// Actualize a layer.
         abstract Actualize : Layer * World -> World
-        default dispatcher.Actualize (_, world) = world
+        default this.Actualize (_, world) = world
     
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Layer * World -> Property option
-        default dispatcher.TryGetCalculatedProperty (_, _, _) = None
+        default this.TryGetCalculatedProperty (_, _, _) = None
     
     /// The default dispatcher for entities.
     and EntityDispatcher () =
@@ -297,70 +297,70 @@ module WorldTypes =
     
         /// Register an entity when adding it to a layer.
         abstract Register : Entity * World -> World
-        default dispatcher.Register (_, world) = world
+        default this.Register (_, world) = world
     
         /// Unregister an entity when removing it from a layer.
         abstract Unregister : Entity * World -> World
-        default dispatcher.Unregister (_, world) = world
+        default this.Unregister (_, world) = world
 
         /// Update an entity.
         abstract Update : Entity * World -> World
-        default dispatcher.Update (_, world) = world
+        default this.Update (_, world) = world
     
         /// Post-update an entity.
         abstract PostUpdate : Entity * World -> World
-        default dispatcher.PostUpdate (_, world) = world
+        default this.PostUpdate (_, world) = world
     
         /// Actualize an entity.
         abstract Actualize : Entity * World -> World
-        default dispatcher.Actualize (_, world) = world
+        default this.Actualize (_, world) = world
     
         /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         abstract GetQuickSize : Entity * World -> Vector2
-        default dispatcher.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
+        default this.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Entity * World -> Property option
-        default dispatcher.TryGetCalculatedProperty (_, _, _) = None
+        default this.TryGetCalculatedProperty (_, _, _) = None
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
     
         /// Register a facet when adding it to an entity.
         abstract Register : Entity * World -> World
-        default facet.Register (_, world) = world
+        default this.Register (_, world) = world
     
         /// Unregister a facet when removing it from an entity.
         abstract Unregister : Entity * World -> World
-        default facet.Unregister (_, world) = world
+        default this.Unregister (_, world) = world
 
         /// Participate in the registration of an entity's physics with the physics subsystem.
         abstract RegisterPhysics : Entity * World -> World
-        default facet.RegisterPhysics (_, world) = world
+        default this.RegisterPhysics (_, world) = world
     
         /// Participate in the unregistration of an entity's physics from the physics subsystem.
         abstract UnregisterPhysics : Entity * World -> World
-        default facet.UnregisterPhysics (_, world) = world
+        default this.UnregisterPhysics (_, world) = world
     
         /// Update a facet.
         abstract Update : Entity * World -> World
-        default facet.Update (_, world) = world
+        default this.Update (_, world) = world
     
         /// Post-update a facet.
         abstract PostUpdate : Entity * World -> World
-        default facet.PostUpdate (_, world) = world
+        default this.PostUpdate (_, world) = world
     
         /// Actualize a facet.
         abstract Actualize : Entity * World -> World
-        default facet.Actualize (_, world) = world
+        default this.Actualize (_, world) = world
     
         /// Participate in getting the priority with which an entity is picked in the editor.
         abstract GetQuickSize : Entity * World -> Vector2
-        default facet.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
+        default this.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Entity * World -> Property option
-        default facet.TryGetCalculatedProperty (_, _, _) = None
+        default this.TryGetCalculatedProperty (_, _, _) = None
 
     /// Generalized interface for simulant state.
     and SimulantState =

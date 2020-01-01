@@ -56,7 +56,7 @@ module BlazeDispatcherModule =
              Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve Default.DissolveData) Assets.GameplayLayerFilePath]
 
         // here we hint to the renderer and audio system that the 'Gui' package should be loaded
-        override dispatcher.Register (game, world) =
+        override this.Register (game, world) =
             let world = World.hintRenderPackageUse Assets.GuiPackage world
             let world = World.hintAudioPackageUse Assets.GuiPackage world
             base.Register (game, world)
