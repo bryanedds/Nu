@@ -8,8 +8,8 @@ type MyEntityDispatcher () =
     inherit EntityDispatcher ()
 
 #if !OPTIMIZE
-    static member FacetNames =
-        [typeof<StaticSpriteFacet>.Name]
+    static member Facets =
+        [typeof<StaticSpriteFacet>]
 #endif
 
 #if REACTIVE
