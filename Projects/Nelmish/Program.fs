@@ -10,20 +10,16 @@ module Program =
     type NelmishPlugin () =
         inherit NuPlugin ()
 
-        // make our game-specific game dispatcher...
-        override this.MakeGameDispatchers () =
-            [NelmishDispatcher () :> GameDispatcher]
+        // specify the above game dispatcher to use
+        override this.GetStandAloneGameDispatcher () =
+            typeof<NelmishDispatcher>
 
         // specify the above game dispatcher to use
-        override this.GetStandAloneGameDispatcherName () =
-            typeof<NelmishDispatcher>.Name
-
-        // specify the above game dispatcher to use
-        override this.GetEditorGameDispatcherName () =
-            typeof<NelmishDispatcher>.Name
+        override this.GetEditorGameDispatcher () =
+            typeof<NelmishDispatcher>
             
         // specify no gameplay screen dispatcher to be created by the editor
-        override this.GetEditorGameplayScreenDispatcherNameOpt () =
+        override this.GetEditorGameplayScreenDispatcherOpt () =
             None
 
     // this the entry point for your Nu application
