@@ -1163,8 +1163,8 @@ module WorldTypes =
         default this.GetEditorGameDispatcher () = typeof<GameDispatcher>
 
         /// The screen dispatcher that Nu may utilize when running inside the editor.
-        abstract GetEditorGameplayScreenDispatcherOpt : unit -> Type option
-        default this.GetEditorGameplayScreenDispatcherOpt () = Some typeof<ScreenDispatcher>
+        abstract GetEditorScreenDispatcherOpt : unit -> Type option
+        default this.GetEditorScreenDispatcherOpt () = Some typeof<ScreenDispatcher>
 
         /// Make the overlay routes that will allow Nu to use different overlays for the specified
         /// dispatcher name.

@@ -351,7 +351,7 @@ module WorldEntityModule =
                 Seq.takeWhile (fun lens ->
                     Option.isSome (lens.Get world)) |>
                 Seq.mapi (fun i lens ->
-                    let lens = Lens.dereferenceOut lens
+                    let lens = Lens.dereference lens
                     let guid = makeGuidDeterministic i guid
                     let entityContent = mapper i lens layer world
                     PartialComparable.make guid entityContent) |>

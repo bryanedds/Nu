@@ -1637,7 +1637,7 @@ module Gaia =
             let world = World.setEventFilter (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])]) world
             let screenDispatcherOpt =
                 if useGameplayScreen
-                then plugin.GetEditorGameplayScreenDispatcherOpt ()
+                then plugin.GetEditorScreenDispatcherOpt ()
                 else Some typeof<ScreenDispatcher>
             let world =
                 match screenDispatcherOpt with

@@ -16,7 +16,7 @@ type MyPlugin () =
         typeof<GameDispatcher>
 
     // specify the sceen dispatcher to optionally use in the editor
-    override this.GetEditorGameplayScreenDispatcherOpt () =
+    override this.GetEditorScreenDispatcherOpt () =
         Some typeof<MyGameplayDispatcher>
 
 // this is the main module for our program.
@@ -31,7 +31,7 @@ module Program =
         // this specifies the configuration of the game engine's use of SDL.
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
 
-        // use the default config
+        // use the default world config with the above SDL config.
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
 
         // initialize Nu
