@@ -187,15 +187,15 @@ type CharacterAnimationCycle =
 
 type CharacterAnimationState =
     { TimeStart : int64
-      CharacterAnimationSheet : Image AssetTag
-      CharacterAnimationCycle : CharacterAnimationCycle
+      AnimationSheet : Image AssetTag
+      AnimationCycle : CharacterAnimationCycle
       Direction : Direction
       Stutter : int }
 
     static member setCycle timeOpt cycle state =
         match timeOpt with
-        | Some time -> { state with TimeStart = time; CharacterAnimationCycle = cycle }
-        | None -> { state with CharacterAnimationCycle = cycle }
+        | Some time -> { state with TimeStart = time; AnimationCycle = cycle }
+        | None -> { state with AnimationCycle = cycle }
 
     static member directionToInt direction =
         match direction with
@@ -227,7 +227,7 @@ type CharacterAnimationState =
         Vector2i (CharacterAnimationState.indexSaturated run time state + offset, row)
 
     static member index time state =
-        match state.CharacterAnimationCycle with
+        match state.AnimationCycle with
         | WalkCycle -> CharacterAnimationState.indexLoopedWithDirection 0 6 time state
         | CelebrateCycle -> CharacterAnimationState.indexLoopedWithDirection 1 2 time state
         | ReadyCycle -> CharacterAnimationState.indexSaturatedWithDirection 2 3 time state
@@ -240,7 +240,7 @@ type CharacterAnimationState =
         | WoundCycle -> Vector2i (0, 8)
 
     static member cycleLengthOpt state =
-        match state.CharacterAnimationCycle with
+        match state.AnimationCycle with
         | WalkCycle -> None
         | CelebrateCycle -> None
         | ReadyCycle -> Some (int64 (5 * state.Stutter))
@@ -266,6 +266,7 @@ type CharacterAnimationState =
 type CharacterState =
     { CharacterType : CharacterType
       PartyIndex : int
+      ActionTime : int
       ExpPoints : int
       HitPoints : int
       SpecialPoints : int
@@ -281,6 +282,7 @@ type CharacterState =
     static member empty =
         { CharacterType = Ally Jinn
           PartyIndex = 0
+          ActionTime = 0
           ExpPoints = 0
           HitPoints = 10 // note this is an arbitrary number as hp max is calculated
           SpecialPoints = 1 // sp max is calculated
