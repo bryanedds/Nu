@@ -486,7 +486,7 @@ module GameplayDispatcherModule =
             if not (anyTurnsInProgress world) then
                 let chain = chain {
                     do! Chain.update $ Simulants.HudSaveGame.SetEnabled false
-                    do! Chain.spin 0 inc (fun i _ world -> i = 0 || anyTurnsInProgress world) $ fun i -> chain {
+                    do! Chain.loop 0 inc (fun i world -> i = 0 || anyTurnsInProgress world) $ fun i -> chain {
                         let! evt = Chain.next
                         do! match evt.Data with
                             | Right _ -> chain {
