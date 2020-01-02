@@ -2,13 +2,15 @@
 open Prime
 open Nu
 open Nu.Declarative
-module Nelmish =
+module Simulants =
 
     // here we create references for the entities that we are going to define for our game
     let DecrementButton = Default.Layer / "Decrement"
     let IncrementButton = Default.Layer / "Increment"
     let ResetButton = Default.Layer / "Reset"
     let CounterText = Default.Layer / "Counter"
+
+module Nelmish =
 
     // this is our Elm-style model type
     type Model =
@@ -26,9 +28,9 @@ module Nelmish =
 
         // here we define the Bindings used to connect events to their desired messages
         override this.Bindings (_, _, _) =
-            [DecrementButton.ClickEvent => Decrement
-             IncrementButton.ClickEvent => Increment
-             ResetButton.ClickEvent => Reset]
+            [Simulants.DecrementButton.ClickEvent => Decrement
+             Simulants.IncrementButton.ClickEvent => Increment
+             Simulants.ResetButton.ClickEvent => Reset]
 
         // here we handle the above messages
         override this.Message (message, model, _, _) =
@@ -42,16 +44,16 @@ module Nelmish =
         override this.Content (model, _, _) =
             [Content.screen Default.Screen.Name Vanilla []
                 [Content.layer Default.Layer.Name []
-                    [Content.button DecrementButton.Name
+                    [Content.button Simulants.DecrementButton.Name
                         [Entity.Text == "-"
                          Entity.Position == v2 -256.0f 64.0f]
-                     Content.button IncrementButton.Name
+                     Content.button Simulants.IncrementButton.Name
                         [Entity.Text == "+"
                          Entity.Position == v2 0.0f 64.0f]
-                     Content.text CounterText.Name
+                     Content.text Simulants.CounterText.Name
                         [Entity.Text ==> model --> scstring
                          Entity.Position == v2 -128.0f -32.0f]
                      Content.entityIf (model --> isNonZero) $ fun _ _ _ ->
-                        Content.button ResetButton.Name
+                        Content.button Simulants.ResetButton.Name
                             [Entity.Text == "Reset"
                              Entity.Position == v2 -128.0f -128.0f]]]]
