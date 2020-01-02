@@ -7,25 +7,17 @@ open Nu
 type MyPlugin () =
     inherit NuPlugin ()
 
-    // make our game-specific screen dispatchers...
-    override this.MakeScreenDispatchers () =
-        [MyGameplayDispatcher () :> ScreenDispatcher]
-
-    // make our game-specific game dispatchers...
-    override this.MakeGameDispatchers () =
-        [MyGameDispatcher () :> GameDispatcher]
-
     // specify the above game dispatcher to use at run-time
-    override this.GetStandAloneGameDispatcherName () =
-        typeof<MyGameDispatcher>.Name
+    override this.GetStandAloneGameDispatcher () =
+        typeof<MyGameDispatcher>
 
     // specify the empty game dispatcher to use in the editor
-    override this.GetEditorGameDispatcherName () =
-        typeof<GameDispatcher>.Name
+    override this.GetEditorGameDispatcher () =
+        typeof<GameDispatcher>
 
     // specify the sceen dispatcher to optionally use in the editor
-    override this.GetEditorGameplayScreenDispatcherNameOpt () =
-        Some typeof<MyGameplayDispatcher>.Name
+    override this.GetEditorGameplayScreenDispatcherOpt () =
+        Some typeof<MyGameplayDispatcher>
 
 // this is the main module for our program.
 module Program =

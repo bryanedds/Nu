@@ -16,7 +16,7 @@ type MyGameDispatcher () =
     inherit GameDispatcher<unit, unit, MyGameCommand> ()
 
     // here we define the Bindings used to connect events to their desired commands
-    override dispatcher.Bindings (_, _, _) =
+    override this.Bindings (_, _, _) =
         [Simulants.TitleCredits.ClickEvent =>! ShowCredits
          Simulants.TitlePlay.ClickEvent =>! ShowGameplay
          Simulants.TitleExit.ClickEvent =>! ExitGame
@@ -24,7 +24,7 @@ type MyGameDispatcher () =
          Simulants.Back.ClickEvent =>! ShowTitle]
 
     // here we handle the above commands
-    override dispatcher.Command (command, _, _, world) =
+    override this.Command (command, _, _, world) =
         let world =
             match command with
             | ShowTitle -> World.transitionScreen Simulants.Title world
@@ -34,14 +34,14 @@ type MyGameDispatcher () =
         just world
 
     // here we describe the content of the game including all of its screens.
-    override dispatcher.Content (_, _, _) =
+    override this.Content (_, _, _) =
         [Content.screen Simulants.Splash.Name (Splash (Default.DissolveData, Default.SplashData, Simulants.Title)) [] []
          Content.screenFromLayerFile Simulants.Title.Name (Dissolve Default.DissolveData) "Assets/Gui/Title.nulyr"
          Content.screenFromLayerFile Simulants.Credits.Name (Dissolve Default.DissolveData) "Assets/Gui/Credits.nulyr"
          Content.screen<MyGameplayDispatcher> Simulants.Gameplay.Name (Dissolve Default.DissolveData) [] []]
 
     // here we hint to the renderer and audio system that the 'Gui' package should be loaded ahead of time
-    override dispatcher.Register (game, world) =
+    override this.Register (game, world) =
         let world = World.hintRenderPackageUse "Gui" world
         let world = World.hintAudioPackageUse "Gui" world
         base.Register (game, world)

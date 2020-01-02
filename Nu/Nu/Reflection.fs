@@ -104,12 +104,8 @@ module Reflection =
         | (true, definitions) -> definitions
         | (false, _) ->
             let definitionsPropertyOpt =
-                match targetType.GetProperty (Property? PropertyDefinitions, BindingFlags.Static ||| BindingFlags.Public) with
-                | null ->
-                    // NOTE: also looking for just Properties for succinctness
-                    match targetType.GetProperty (Property? Properties, BindingFlags.Static ||| BindingFlags.Public) with
-                    | null -> None
-                    | definitionsProperty -> Some definitionsProperty
+                match targetType.GetProperty (Property? Properties, BindingFlags.Static ||| BindingFlags.Public) with
+                | null -> None
                 | definitionsProperty -> Some definitionsProperty
             let definitions =
                 match definitionsPropertyOpt with
@@ -117,7 +113,7 @@ module Reflection =
                     match definitionsProperty.GetValue null with
                     | :? (obj list) as definitions when List.isEmpty definitions -> []
                     | :? (PropertyDefinition list) as definitions -> definitions
-                    | _ -> failwith ("PropertyDefinitions / Properties property for type '" + targetType.Name + "' must be of type PropertyDefinition list.")
+                    | _ -> failwith ("Properties property for type '" + targetType.Name + "' must be of type PropertyDefinition list.")
                 | None -> []
             PropertyDefinitionsCache.Add (targetType, definitions)
             definitions
@@ -373,23 +369,26 @@ module Reflection =
             propertyDescriptors
             properties
 
-    /// Get the intrinsic facet names of a target type not considering inheritance.
-    let getIntrinsicFacetNamesNoInherit (targetType : Type) =
-        let intrinsicFacetNamesPropertyOpt =
-            match targetType.GetProperty (Property? IntrinsicFacetNames, BindingFlags.Static ||| BindingFlags.Public) with
-            | null ->
-                match targetType.GetProperty (Property? FacetNames, BindingFlags.Static ||| BindingFlags.Public) with
-                | null -> None
-                | intrinsicFacetNamesProperty -> Some intrinsicFacetNamesProperty
-            | intrinsicFacetNamesProperty -> Some intrinsicFacetNamesProperty
-        match intrinsicFacetNamesPropertyOpt with
-        | Some intrinsicFacetNamesProperty ->
-            let intrinsicFacetNames = intrinsicFacetNamesProperty.GetValue null
-            match intrinsicFacetNames with
-            | :? (obj list) as intrinsicFacetNames when List.isEmpty intrinsicFacetNames -> []
-            | :? (string list) as intrinsicFacetNames -> intrinsicFacetNames
-            | _ -> failwith ("IntrinsicFacetNames / FacetNames property for type '" + targetType.Name + "' must be of type string list.")
+    /// Get the intrinsic facet of a target type not considering inheritance.
+    let getIntrinsicFacetsNoInherit (targetType : Type) =
+        let intrinsicFacetsPropertyOpt =
+            match targetType.GetProperty (Property? Facets, BindingFlags.Static ||| BindingFlags.Public) with
+            | null -> None
+            | intrinsicFacetsProperty -> Some intrinsicFacetsProperty
+        match intrinsicFacetsPropertyOpt with
+        | Some intrinsicFacetsProperty ->
+            let intrinsicFacets = intrinsicFacetsProperty.GetValue null
+            match intrinsicFacets with
+            | :? (obj list) as intrinsicFacets when List.isEmpty intrinsicFacets -> []
+            | :? (Type list) as intrinsicFacets -> intrinsicFacets
+            | _ -> failwith ("Facets property for type '" + targetType.Name + "' must be of type 'Type list'.")
         | None -> []
+
+    /// Get the intrinsic facet names of a target type not considering inheritance.
+    let getIntrinsicFacetNamesNoInherit targetType =
+        targetType |>
+        getIntrinsicFacetsNoInherit |>
+        List.map (fun (ty : Type) -> ty.Name)
 
     /// Get the intrinsic facet names of a target type.
     let getIntrinsicFacetNames (targetType : Type) =
