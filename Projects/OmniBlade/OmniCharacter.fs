@@ -12,16 +12,12 @@ module OmniCharacter =
     type [<NoComparison>] CharacterModel =
         { CharacterPosition : Vector2
           CharacterSize : Vector2
-          CharacterAnimationSheet : Image AssetTag
           CharacterAnimationState : CharacterAnimationState
           CharacterState : CharacterState
           ActionTime : int }
 
     type Entity with
     
-        member this.GetCharacterAnimationSheet = this.Get Property? CharacterAnimationSheet
-        member this.SetCharacterAnimationSheet = this.Set Property? CharacterAnimationSheet
-        member this.CharacterAnimationSheet = lens<Image AssetTag> Property? CharacterAnimationSheet this.GetCharacterAnimationSheet this.SetCharacterAnimationSheet this
         member this.GetCharacterAnimationState = this.Get Property? CharacterAnimationState
         member this.SetCharacterAnimationState = this.Set Property? CharacterAnimationState
         member this.CharacterAnimationState = lens<CharacterAnimationState> Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState this
@@ -60,8 +56,7 @@ module OmniCharacter =
             color
 
         static member Properties =
-            [define Entity.CharacterAnimationSheet Assets.JinnAnimationSheet
-             define Entity.CharacterAnimationState { TimeStart = 0L; CharacterAnimationCycle = ReadyCycle; Direction = Downward; Stutter = 10 }
+            [define Entity.CharacterAnimationState { TimeStart = 0L; CharacterAnimationSheet = Assets.JinnAnimationSheet; CharacterAnimationCycle = ReadyCycle; Direction = Downward; Stutter = 10 }
              define Entity.CharacterState CharacterState.empty
              define Entity.ActionTimeNp 0
              define Entity.Omnipresent true
@@ -74,7 +69,7 @@ module OmniCharacter =
                         (LayerableDescriptor
                             { Depth = entity.GetDepth world
                               PositionY = (entity.GetPosition world).Y
-                              AssetTag = entity.GetCharacterAnimationSheet world
+                              AssetTag = (entity.GetCharacterAnimationState world).CharacterAnimationSheet
                               LayeredDescriptor =
                               SpriteDescriptor
                                 { Position = entity.GetPosition world
@@ -83,7 +78,7 @@ module OmniCharacter =
                                   Offset = Vector2.Zero
                                   ViewType = entity.GetViewType world
                                   InsetOpt = Some (getSpriteInset entity world)
-                                  Image = entity.GetCharacterAnimationSheet world
+                                  Image = (entity.GetCharacterAnimationState world).CharacterAnimationSheet
                                   Color = getSpriteColor entity world
                                   Flip = FlipNone }}))
                     world

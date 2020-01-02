@@ -187,6 +187,7 @@ type CharacterAnimationCycle =
 
 type CharacterAnimationState =
     { TimeStart : int64
+      CharacterAnimationSheet : Image AssetTag
       CharacterAnimationCycle : CharacterAnimationCycle
       Direction : Direction
       Stutter : int }

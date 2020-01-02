@@ -14,7 +14,7 @@ module Program =
         override this.GetEditorGameDispatcher () =
             typeof<EditorDispatcher>
 
-        override this.GetEditorGameplayScreenDispatcherOpt () =
+        override this.GetEditorScreenDispatcherOpt () =
             Some typeof<BattleDispatcher>
 
         override this.MakeOverlayRoutes () =
