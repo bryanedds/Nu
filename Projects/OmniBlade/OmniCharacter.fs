@@ -10,23 +10,19 @@ open OmniBlade
 module OmniCharacter =
 
     type [<NoComparison>] CharacterModel =
-        { CharacterPosition : Vector2
-          CharacterSize : Vector2
-          CharacterAnimationState : CharacterAnimationState
-          CharacterState : CharacterState
-          ActionTime : int }
+        { CharacterState : CharacterState
+          AnimationState : CharacterAnimationState
+          Position : Vector2
+          Size : Vector2 }
 
     type Entity with
     
-        member this.GetCharacterAnimationState = this.Get Property? CharacterAnimationState
-        member this.SetCharacterAnimationState = this.Set Property? CharacterAnimationState
-        member this.CharacterAnimationState = lens<CharacterAnimationState> Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState this
         member this.GetCharacterState = this.Get Property? CharacterState
         member this.SetCharacterState = this.Set Property? CharacterState
         member this.CharacterState = lens<CharacterState> Property? CharacterState this.GetCharacterState this.SetCharacterState this
-        member this.GetActionTimeNp = this.Get Property? ActionTimeNp
-        member this.SetActionTimeNp = this.Set Property? ActionTimeNp
-        member this.ActionTimeNp = lens<int> Property? ActionTimeNp this.GetActionTimeNp this.SetActionTimeNp this
+        member this.GetCharacterAnimationState = this.Get Property? CharacterAnimationState
+        member this.SetCharacterAnimationState = this.Set Property? CharacterAnimationState
+        member this.CharacterAnimationState = lens<CharacterAnimationState> Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState this
 
     type CharacterDispatcher () =
         inherit EntityDispatcher ()
@@ -45,7 +41,7 @@ module OmniCharacter =
             let statuses = (entity.GetCharacterState world).Statuses
             let color =
                 let state = entity.GetCharacterAnimationState world
-                if state.CharacterAnimationCycle = CharacterAnimationCycle.WoundCycle && (entity.GetCharacterState world).IsEnemy then
+                if state.AnimationCycle = CharacterAnimationCycle.WoundCycle && (entity.GetCharacterState world).IsEnemy then
                     match CharacterAnimationState.progressOpt (World.getTickTime world) state with
                     | Some progress -> Vector4 (1.0f,0.5f,1.0f,1.0f-progress) // purple
                     | None -> failwithumf ()
@@ -56,9 +52,8 @@ module OmniCharacter =
             color
 
         static member Properties =
-            [define Entity.CharacterAnimationState { TimeStart = 0L; CharacterAnimationSheet = Assets.JinnAnimationSheet; CharacterAnimationCycle = ReadyCycle; Direction = Downward; Stutter = 10 }
-             define Entity.CharacterState CharacterState.empty
-             define Entity.ActionTimeNp 0
+            [define Entity.CharacterState CharacterState.empty
+             define Entity.CharacterAnimationState { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Downward; Stutter = 10 }
              define Entity.Omnipresent true
              define Entity.PublishChanges true]
 
@@ -69,7 +64,7 @@ module OmniCharacter =
                         (LayerableDescriptor
                             { Depth = entity.GetDepth world
                               PositionY = (entity.GetPosition world).Y
-                              AssetTag = (entity.GetCharacterAnimationState world).CharacterAnimationSheet
+                              AssetTag = (entity.GetCharacterAnimationState world).AnimationSheet
                               LayeredDescriptor =
                               SpriteDescriptor
                                 { Position = entity.GetPosition world
@@ -78,7 +73,7 @@ module OmniCharacter =
                                   Offset = Vector2.Zero
                                   ViewType = entity.GetViewType world
                                   InsetOpt = Some (getSpriteInset entity world)
-                                  Image = (entity.GetCharacterAnimationState world).CharacterAnimationSheet
+                                  Image = (entity.GetCharacterAnimationState world).AnimationSheet
                                   Color = getSpriteColor entity world
                                   Flip = FlipNone }}))
                     world
