@@ -189,7 +189,7 @@ module EffectFacetModule =
              define Entity.EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
              variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
 
-        override facet.Actualize (entity, world) =
+        override this.Actualize (entity, world) =
             
             // evaluate effect if visible
             if entity.GetVisibleLayered world && entity.GetInView world then
@@ -227,13 +227,13 @@ module EffectFacetModule =
             // no need to evaluate non-visible effect
             else world
 
-        override facet.Update (entity, world) =
+        override this.Update (entity, world) =
             let effect = entity.GetEffect world
             match (entity.GetSelfDestruct world, effect.LifetimeOpt) with
             | (true, Some lifetime) -> if entity.GetEffectTime world > lifetime then World.destroyEntity entity world else world
             | (_, _) -> world
 
-        override facet.Register (entity, world) =
+        override this.Register (entity, world) =
             let effectStartTime = Option.getOrDefault (World.getTickTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             let world = World.monitor handleEffectsChanged (entity.GetChangeEvent Property? Effects) entity world
@@ -298,19 +298,19 @@ module ScriptFacetModule =
              define Entity.OnUpdate Scripting.Unit
              define Entity.OnPostUpdate Scripting.Unit]
 
-        override facet.Register (entity, world) =
+        override this.Register (entity, world) =
             let world = World.evalWithLogging (entity.GetOnRegister world) (entity.GetScriptFrame world) entity world |> snd'
             let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? Script) entity world
             let world = World.monitor handleOnRegisterChanged (entity.GetChangeEvent Property? OnRegister) entity world
             world
 
-        override facet.Unregister (entity, world) =
+        override this.Unregister (entity, world) =
             World.evalWithLogging (entity.GetOnUnregister world) (entity.GetScriptFrame world) entity world |> snd'
 
-        override facet.Update (entity, world) =
+        override this.Update (entity, world) =
             World.evalWithLogging (entity.GetOnUpdate world) (entity.GetScriptFrame world) entity world |> snd'
 
-        override facet.PostUpdate (entity, world) =
+        override this.PostUpdate (entity, world) =
             World.evalWithLogging (entity.GetOnPostUpdate world) (entity.GetScriptFrame world) entity world |> snd'
 
 [<AutoOpen>]
@@ -344,7 +344,7 @@ module TextFacetModule =
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
              define Entity.Color (Vector4 (0.0f, 0.0f, 0.0f, 1.0f))]
 
-        override facet.Actualize (text, world) =
+        override this.Actualize (text, world) =
             let textStr = text.GetText world
             if text.GetVisibleLayered world && not (String.IsNullOrWhiteSpace textStr) then
                 World.enqueueRenderMessage
@@ -446,7 +446,7 @@ module RigidBodyFacetModule =
              define Entity.IsBullet false
              define Entity.IsSensor false]
 
-        override facet.RegisterPhysics (entity, world) =
+        override this.RegisterPhysics (entity, world) =
             let bodyProperties = 
                 { BodyId = (entity.GetPhysicsId world).BodyId
                   Position = entity.GetPosition world + entity.GetSize world * 0.5f
@@ -470,10 +470,10 @@ module RigidBodyFacetModule =
                   IsSensor = entity.GetIsSensor world }
             World.createBody entity (entity.GetId world) bodyProperties world
 
-        override facet.UnregisterPhysics (entity, world) =
+        override this.UnregisterPhysics (entity, world) =
             World.destroyBody (entity.GetPhysicsId world) world
 
-        override facet.TryGetCalculatedProperty (name, entity, world) =
+        override this.TryGetCalculatedProperty (name, entity, world) =
             match name with
             | "PhysicsId" -> Some { PropertyType = typeof<PhysicsId>; PropertyValue = entity.GetPhysicsId world }
             | _ -> None
@@ -605,7 +605,7 @@ module TileMapFacetModule =
              define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackage "TileMap")
              define Entity.Parallax 0.0f]
 
-        override facet.RegisterPhysics (tileMap, world) =
+        override this.RegisterPhysics (tileMap, world) =
             let tileMapAsset = tileMap.GetTileMapAsset world
             match tryMakeTileMapData tileMapAsset world with
             | Some tileMapData ->
@@ -617,7 +617,7 @@ module TileMapFacetModule =
                 Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
                 world
 
-        override facet.UnregisterPhysics (tileMap, world) =
+        override this.UnregisterPhysics (tileMap, world) =
             let tileMapAsset = tileMap.GetTileMapAsset world
             match tryMakeTileMapData tileMapAsset world with
             | Some tileMapData ->
@@ -633,7 +633,7 @@ module TileMapFacetModule =
                 Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
                 world
 
-        override facet.Actualize (tileMap, world) =
+        override this.Actualize (tileMap, world) =
             if tileMap.GetVisible world then
                 match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with
                 | Some (_, images, map) ->
@@ -677,7 +677,7 @@ module TileMapFacetModule =
                 | None -> world
             else world
 
-        override facet.GetQuickSize (tileMap, world) =
+        override this.GetQuickSize (tileMap, world) =
             match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with
             | Some (_, _, map) -> Vector2 (single (map.Width * map.TileWidth), single (map.Height * map.TileHeight))
             | None -> Constants.Engine.DefaultEntitySize
@@ -838,7 +838,7 @@ module NodeFacetModule =
              define Entity.EnabledLocal true
              define Entity.NodeUnsubscribe (id : World -> World)]
 
-        override facet.Register (entity, world) =
+        override this.Register (entity, world) =
             let world = entity.SetNodeUnsubscribe id world // ensure unsubscribe function reference doesn't get copied in Gaia...
             let world = World.monitor handleNodeChange entity.ParentNodeOpt.ChangeEvent entity world
             let world = World.monitorPlus handleLocalPropertyChange entity.PositionLocal.ChangeEvent entity world |> snd
@@ -848,10 +848,10 @@ module NodeFacetModule =
             let world = subscribeToNodePropertyChanges entity world
             world
 
-        override facet.Unregister (entity, world) =
+        override this.Unregister (entity, world) =
             (entity.GetNodeUnsubscribe world) world // NOTE: not sure if this is necessary.
 
-        override facet.TryGetCalculatedProperty (propertyName, entity, world) =
+        override this.TryGetCalculatedProperty (propertyName, entity, world) =
             match propertyName with
             | "ParentNodeExists" -> Some { PropertyType = typeof<bool>; PropertyValue = entity.ParentNodeExists world }
             | _ -> None
@@ -875,7 +875,7 @@ module StaticSpriteFacetModule =
             [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")
              define Entity.Flip FlipNone]
 
-        override facet.Actualize (entity, world) =
+        override this.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
@@ -897,7 +897,7 @@ module StaticSpriteFacetModule =
                     world
             else world
 
-        override facet.GetQuickSize (entity, world) =
+        override this.GetQuickSize (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
@@ -948,7 +948,7 @@ module AnimatedSpriteFacetModule =
              define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackage "Image7")
              define Entity.Flip FlipNone]
 
-        override facet.Actualize (entity, world) =
+        override this.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
@@ -970,7 +970,7 @@ module AnimatedSpriteFacetModule =
                     world
             else world
 
-        override facet.GetQuickSize (entity, world) =
+        override this.GetQuickSize (entity, world) =
             entity.GetCelSize world
 
 [<AutoOpen>]
@@ -1051,8 +1051,8 @@ module EffectDispatcherModule =
     type EffectDispatcher () =
         inherit EntityDispatcher ()
 
-        static member FacetNames =
-            [typeof<EffectFacet>.Name]
+        static member Facets =
+            [typeof<EffectFacet>]
 
         static member Properties =
             [define Entity.PublishChanges true
@@ -1064,14 +1064,14 @@ module NodeDispatcherModule =
     type NodeDispatcher () =
         inherit EntityDispatcher ()
 
-        static member FacetNames =
-            [typeof<NodeFacet>.Name]
+        static member Facets =
+            [typeof<NodeFacet>]
 
     type [<AbstractClass>] NodeDispatcher<'model, 'message, 'command> (model) =
         inherit EntityDispatcher<'model, 'message, 'command> (model)
 
-        static member FacetNames =
-            [typeof<NodeFacet>.Name]
+        static member Facets =
+            [typeof<NodeFacet>]
 
 [<AutoOpen>]
 module GuiDispatcherModule =
@@ -1102,9 +1102,9 @@ module GuiDispatcherModule =
                 else Cascade
             (handling, world)
 
-        static member FacetNames =
-            [typeof<NodeFacet>.Name
-             typeof<ScriptFacet>.Name]
+        static member Facets =
+            [typeof<NodeFacet>
+             typeof<ScriptFacet>]
 
         static member Properties =
             [define Entity.PublishChanges true
@@ -1113,7 +1113,7 @@ module GuiDispatcherModule =
              define Entity.DisabledColor (Vector4 0.75f)
              define Entity.SwallowMouseLeft true]
 
-        override dispatcher.Register (gui, world) =
+        override this.Register (gui, world) =
             let world = World.monitorPlus handleMouseLeft Events.MouseLeftDown gui world |> snd
             let world = World.monitorPlus handleMouseLeft Events.MouseLeftUp gui world |> snd
             world
@@ -1135,9 +1135,9 @@ module GuiDispatcherModule =
                 else Cascade
             (handling, world)
 
-        static member FacetNames =
-            [typeof<NodeFacet>.Name
-             typeof<ScriptFacet>.Name]
+        static member Facets =
+            [typeof<NodeFacet>
+             typeof<ScriptFacet>]
 
         static member Properties =
             [define Entity.PublishChanges true
@@ -1146,7 +1146,7 @@ module GuiDispatcherModule =
              define Entity.DisabledColor (Vector4 0.75f)
              define Entity.SwallowMouseLeft true]
 
-        override dispatcher.Register (gui, world) =
+        override this.Register (gui, world) =
             let world = base.Register (gui, world)
             let world = World.monitorPlus handleMouseLeft Events.MouseLeftDown gui world |> snd
             let world = World.monitorPlus handleMouseLeft Events.MouseLeftUp gui world |> snd
@@ -1219,8 +1219,8 @@ module ButtonDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        static member FacetNames =
-            [typeof<TextFacet>.Name]
+        static member Facets =
+            [typeof<TextFacet>]
 
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
@@ -1231,12 +1231,12 @@ module ButtonDispatcherModule =
              define Entity.ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))
              define Entity.OnClick Scripting.Unit]
 
-        override dispatcher.Register (button, world) =
+        override this.Register (button, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown button world |> snd
             let world = World.monitorPlus handleMouseLeftUp Events.MouseLeftUp button world |> snd
             world
 
-        override dispatcher.Actualize (button, world) =
+        override this.Actualize (button, world) =
             if button.GetVisibleLayered world then
                 let image = if button.GetDown world then button.GetDownImage world else button.GetUpImage world
                 World.enqueueRenderMessage
@@ -1259,7 +1259,7 @@ module ButtonDispatcherModule =
                     world
             else world
 
-        override dispatcher.GetQuickSize (button, world) =
+        override this.GetQuickSize (button, world) =
             match Metadata.tryGetTextureSizeF (button.GetUpImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
@@ -1281,7 +1281,7 @@ module LabelDispatcherModule =
              define Entity.SwallowMouseLeft false
              define Entity.LabelImage (AssetTag.make<Image> Assets.DefaultPackage "Image3")]
 
-        override dispatcher.Actualize (label, world) =
+        override this.Actualize (label, world) =
             if label.GetVisibleLayered world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
@@ -1303,7 +1303,7 @@ module LabelDispatcherModule =
                     world
             else world
 
-        override dispatcher.GetQuickSize (label, world) =
+        override this.GetQuickSize (label, world) =
             match Metadata.tryGetTextureSizeF (label.GetLabelImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
@@ -1320,15 +1320,15 @@ module TextDispatcherModule =
     type TextDispatcher () =
         inherit GuiDispatcher ()
 
-        static member FacetNames =
-            [typeof<TextFacet>.Name]
+        static member Facets =
+            [typeof<TextFacet>]
 
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
              define Entity.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackage "Image3")]
 
-        override dispatcher.Actualize (text, world) =
+        override this.Actualize (text, world) =
             if text.GetVisibleLayered world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
@@ -1350,7 +1350,7 @@ module TextDispatcherModule =
                     world
             else world
 
-        override dispatcher.GetQuickSize (text, world) =
+        override this.GetQuickSize (text, world) =
             match Metadata.tryGetTextureSizeF (text.GetBackgroundImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
@@ -1423,8 +1423,8 @@ module ToggleDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        static member FacetNames =
-            [typeof<TextFacet>.Name]
+        static member Facets =
+            [typeof<TextFacet>]
 
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
@@ -1436,12 +1436,12 @@ module ToggleDispatcherModule =
              define Entity.ToggleSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))
              define Entity.OnToggle Scripting.Unit]
 
-        override dispatcher.Register (toggle, world) =
+        override this.Register (toggle, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown toggle world |> snd
             let world = World.monitorPlus handleMouseLeftUp Events.MouseLeftUp toggle world |> snd
             world
 
-        override dispatcher.Actualize (toggle, world) =
+        override this.Actualize (toggle, world) =
             if toggle.GetVisibleLayered world then
                 let image =
                     if toggle.GetOpen world && not (toggle.GetPressed world)
@@ -1467,7 +1467,7 @@ module ToggleDispatcherModule =
                     world
             else world
 
-        override dispatcher.GetQuickSize (toggle, world) =
+        override this.GetQuickSize (toggle, world) =
             match Metadata.tryGetTextureSizeF (toggle.GetOpenImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
@@ -1500,7 +1500,7 @@ module FpsDispatcherModule =
             [define Entity.StartTickTime 0L
              define Entity.StartDateTime DateTime.UtcNow]
 
-        override dispatcher.Update (entity, world) =
+        override this.Update (entity, world) =
             let world = resetIntermittent entity world
             let startDateTime = entity.GetStartDateTime world
             let currentDateTime = DateTime.UtcNow
@@ -1569,12 +1569,12 @@ module FeelerDispatcherModule =
              define Entity.OnTouch Scripting.Unit
              define Entity.OnUntouch Scripting.Unit]
 
-        override dispatcher.Register (feeler, world) =
+        override this.Register (feeler, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown feeler world |> snd
             let world = World.monitorPlus handleMouseLeftUp Events.MouseLeftUp feeler world |> snd
             world
 
-        override dispatcher.GetQuickSize (_, _) =
+        override this.GetQuickSize (_, _) =
             Vector2 64.0f
 
 [<AutoOpen>]
@@ -1614,7 +1614,7 @@ module FillBarDispatcherModule =
              define Entity.FillImage (AssetTag.make<Image> Assets.DefaultPackage "Image9")
              define Entity.BorderImage (AssetTag.make<Image> Assets.DefaultPackage "Image10")]
 
-        override dispatcher.Actualize (fillBar, world) =
+        override this.Actualize (fillBar, world) =
             if fillBar.GetVisibleLayered world then
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
                 let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
@@ -1653,7 +1653,7 @@ module FillBarDispatcherModule =
                     world
             else world
 
-        override dispatcher.GetQuickSize (fillBar, world) =
+        override this.GetQuickSize (fillBar, world) =
             match Metadata.tryGetTextureSizeF (fillBar.GetBorderImage world) (World.getMetadata world) with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
@@ -1664,9 +1664,9 @@ module BlockDispatcherModule =
     type BlockDispatcher () =
         inherit EntityDispatcher ()
 
-        static member FacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<StaticSpriteFacet>.Name]
+        static member Facets =
+            [typeof<RigidBodyFacet>
+             typeof<StaticSpriteFacet>]
 
         static member Properties =
             [define Entity.BodyType Static
@@ -1678,9 +1678,9 @@ module BoxDispatcherModule =
     type BoxDispatcher () =
         inherit EntityDispatcher ()
 
-        static member FacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<StaticSpriteFacet>.Name]
+        static member Facets =
+            [typeof<RigidBodyFacet>
+             typeof<StaticSpriteFacet>]
 
         static member Properties =
             [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")]
@@ -1714,8 +1714,8 @@ module CharacterDispatcherModule =
             let offset = v2 (i * celSize.X) (j * celSize.Y) 
             v4 offset.X offset.Y (offset.X + celSize.X) (offset.Y + celSize.Y)
 
-        static member FacetNames =
-            [typeof<RigidBodyFacet>.Name]
+        static member Facets =
+            [typeof<RigidBodyFacet>]
 
         static member Properties =
             [define Entity.AnimationDelay 6L
@@ -1783,8 +1783,8 @@ module TileMapDispatcherModule =
     type TileMapDispatcher () =
         inherit EntityDispatcher ()
 
-        static member FacetNames =
-            [typeof<TileMapFacet>.Name]
+        static member Facets =
+            [typeof<TileMapFacet>]
 
         static member Properties =
             [define Entity.Omnipresent true

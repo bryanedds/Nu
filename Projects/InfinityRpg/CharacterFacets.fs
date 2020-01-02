@@ -93,7 +93,7 @@ module CharacterAnimationFacetModule =
                       Direction = Upward }
              define Entity.CharacterAnimationSheet Assets.PlayerImage]
 
-        override facet.Actualize (entity, world) =
+        override this.Actualize (entity, world) =
             if entity.GetInView world then
                 World.enqueueRenderMessage
                     (RenderDescriptorsMessage
@@ -145,5 +145,5 @@ module CharacterCameraFacetModule =
                 else eyeCenter
             World.setEyeCenter eyeCenter world
 
-        override facet.Register (entity, world) =
+        override this.Register (entity, world) =
             Stream.monitor handlePostUpdate entity (Stream.make entity.PostUpdateEvent) world

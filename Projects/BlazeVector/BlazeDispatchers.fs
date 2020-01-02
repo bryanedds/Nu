@@ -18,7 +18,8 @@ module BulletModule =
     type BulletDispatcher () =
         inherit EntityDispatcher ()
 
-        static let [<Literal>] BulletLifetime = 27L
+        static let [<Literal>] BulletLifetime =
+            27L
 
         static let handleUpdate evt world =
             let bullet = evt.Subscriber : Entity
@@ -33,9 +34,9 @@ module BulletModule =
             then World.destroyEntity bullet world
             else world
 
-        static member FacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<StaticSpriteFacet>.Name]
+        static member Facets =
+            [typeof<RigidBodyFacet>
+             typeof<StaticSpriteFacet>]
 
         static member Properties =
             [define Entity.Size (Vector2 (20.0f, 20.0f))
@@ -49,7 +50,7 @@ module BulletModule =
              define Entity.StaticImage Assets.PlayerBulletImage
              define Entity.Age 0L]
 
-        override dispatcher.Register (bullet, world) =
+        override this.Register (bullet, world) =
             let world = World.monitor handleUpdate bullet.UpdateEvent bullet world
             let world = World.monitor handleCollision bullet.CollisionEvent bullet world
             world
@@ -95,9 +96,9 @@ module EnemyModule =
                 else world
             else world
 
-        static member FacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<AnimatedSpriteFacet>.Name]
+        static member Facets =
+            [typeof<RigidBodyFacet>
+             typeof<AnimatedSpriteFacet>]
 
         static member Properties =
             [define Entity.Size (Vector2 (48.0f, 96.0f))
@@ -113,7 +114,7 @@ module EnemyModule =
              define Entity.AnimationSheet Assets.EnemyImage
              define Entity.Health 7]
 
-        override dispatcher.Register (enemy, world) =
+        override this.Register (enemy, world) =
             let world = World.monitor handleUpdate enemy.UpdateEvent enemy world
             let world = World.monitor handleCollision enemy.CollisionEvent enemy world
             world
@@ -202,9 +203,9 @@ module PlayerModule =
                 | _ -> world
             else world
 
-        static member FacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<AnimatedSpriteFacet>.Name]
+        static member Facets =
+            [typeof<RigidBodyFacet>
+             typeof<AnimatedSpriteFacet>]
 
         static member Properties =
             [define Entity.Size (Vector2 (48.0f, 96.0f))
@@ -221,7 +222,7 @@ module PlayerModule =
              define Entity.LastTimeOnGroundNp Int64.MinValue
              define Entity.LastTimeJumpNp Int64.MinValue]
 
-        override dispatcher.Register (player, world) =
+        override this.Register (player, world) =
             let world = World.monitor handleSpawnBullet player.UpdateEvent player world
             let world = World.monitor handleMovement player.UpdateEvent player world
             let world = World.monitor handleJump Events.MouseLeftDown player world
@@ -238,11 +239,11 @@ module SceneModule =
     type SceneDispatcher () =
         inherit LayerDispatcher<unit, unit, SceneCommand> ()
 
-        override dispatcher.Bindings (_, scene, _) =
+        override this.Bindings (_, scene, _) =
             [scene.UpdateEvent =>! AdjustCamera
              scene.UpdateEvent =>! PlayerFall]
 
-        override dispatcher.Command (command, _, _, world) =
+        override this.Command (command, _, _, world) =
             let world =
                 match command with
                 | AdjustCamera ->
@@ -306,12 +307,12 @@ module GameplayModule =
         static let createScene gameplay world =
             World.readLayerFromFile Assets.SceneLayerFilePath (Some Simulants.Scene.Name) gameplay world |> snd
 
-        override dispatcher.Bindings (_, gameplay, _) =
+        override this.Bindings (_, gameplay, _) =
             [gameplay.SelectEvent =>! StartPlay
              gameplay.OutgoingStartEvent =>! StoppingPlay
              gameplay.DeselectEvent =>! StopPlay]
 
-        override dispatcher.Command (command, _, gameplay, world) =
+        override this.Command (command, _, gameplay, world) =
             let world =
                 match command with
                 | StartPlay ->

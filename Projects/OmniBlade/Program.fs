@@ -8,26 +8,14 @@ module Program =
     type OmniPlugin () =
         inherit NuPlugin ()
 
-        override this.MakeGameDispatchers () =
-            [StandAloneDispatcher () :> GameDispatcher
-             EditorDispatcher () :> GameDispatcher]
+        override this.GetStandAloneGameDispatcher () =
+            typeof<StandAloneDispatcher>
 
-        override this.MakeScreenDispatchers () =
-            [BattleDispatcher () :> ScreenDispatcher]
+        override this.GetEditorGameDispatcher () =
+            typeof<EditorDispatcher>
 
-        override this.MakeEntityDispatchers () =
-            [CharacterDispatcher () :> EntityDispatcher
-             ReticlesDispatcher () :> EntityDispatcher
-             RingMenuDispatcher () :> EntityDispatcher]
-
-        override this.GetStandAloneGameDispatcherName () =
-            typeof<StandAloneDispatcher>.Name
-
-        override this.GetEditorGameDispatcherName () =
-            typeof<EditorDispatcher>.Name
-
-        override this.GetEditorGameplayScreenDispatcherNameOpt () =
-            Some typeof<BattleDispatcher>.Name
+        override this.GetEditorGameplayScreenDispatcherOpt () =
+            Some typeof<BattleDispatcher>
 
         override this.MakeOverlayRoutes () =
             [typeof<ButtonDispatcher>.Name, Some "ButtonDispatcherRouted"]

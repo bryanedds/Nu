@@ -8,8 +8,8 @@ type MyEntityDispatcher () =
     inherit EntityDispatcher ()
 
 #if !OPTIMIZE
-    static member FacetNames =
-        [typeof<StaticSpriteFacet>.Name]
+    static member Facets =
+        [typeof<StaticSpriteFacet>]
 #endif
 
 #if REACTIVE
@@ -81,11 +81,9 @@ type MyGameDispatcher () =
 
 type MyGamePlugin () =
     inherit NuPlugin ()
-    override this.MakeEntityDispatchers () = [MyEntityDispatcher () :> EntityDispatcher]
-    override this.MakeGameDispatchers () = [MyGameDispatcher () :> GameDispatcher]
-    override this.GetStandAloneGameDispatcherName () = typeof<MyGameDispatcher>.Name
-    override this.GetEditorGameDispatcherName () = typeof<MyGameDispatcher>.Name
-    override this.GetEditorGameplayScreenDispatcherNameOpt () = None
+    override this.GetStandAloneGameDispatcher () = typeof<MyGameDispatcher>
+    override this.GetEditorGameDispatcher () = typeof<MyGameDispatcher>
+    override this.GetEditorGameplayScreenDispatcherOpt () = None
 
 module Program =
 
