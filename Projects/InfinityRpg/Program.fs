@@ -12,7 +12,7 @@ module Program =
         // this specifies the configuration of the game engine's use of SDL.
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
 
-        // use the default config
+        // use the default world config with the above SDL config.
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
 
         // initialize Nu
@@ -25,8 +25,8 @@ module Program =
             // an instance of the above plugin
             let plugin = InfinityRpgPlugin ()
 
-            // here is an attempt to make the world with the various initial states, the engine
-            // plugin, and SDL dependencies.
+            // here is an attempt to make the world with the the engine plugin, SDL dependencies,
+            // and world configuration.
             World.tryMake plugin sdlDeps worldConfig
 
         // after some configuration it is time to run the game. We're off and running!

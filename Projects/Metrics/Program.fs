@@ -83,7 +83,7 @@ type MyGamePlugin () =
     inherit NuPlugin ()
     override this.GetStandAloneGameDispatcher () = typeof<MyGameDispatcher>
     override this.GetEditorGameDispatcher () = typeof<MyGameDispatcher>
-    override this.GetEditorGameplayScreenDispatcherOpt () = None
+    override this.GetEditorScreenDispatcherOpt () = None
 
 module Program =
 
