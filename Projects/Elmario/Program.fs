@@ -10,20 +10,16 @@ module Program =
     type ElmarioPlugin () =
         inherit NuPlugin ()
 
-        // make our game-specific game dispatcher...
-        override this.MakeGameDispatchers () =
-            [ElmarioDispatcher () :> GameDispatcher]
+        // specify the above game dispatcher to use
+        override this.GetStandAloneGameDispatcher () =
+            typeof<ElmarioDispatcher>
 
         // specify the above game dispatcher to use
-        override this.GetStandAloneGameDispatcherName () =
-            typeof<ElmarioDispatcher>.Name
-
-        // specify the above game dispatcher to use
-        override this.GetEditorGameDispatcherName () =
-            typeof<ElmarioDispatcher>.Name
+        override this.GetEditorGameDispatcher () =
+            typeof<ElmarioDispatcher>
             
         // specify no gameplay screen dispatcher to be created by the editor
-        override this.GetEditorGameplayScreenDispatcherNameOpt () =
+        override this.GetEditorGameplayScreenDispatcherOpt () =
             None
 
     // this the entry point for your Nu application

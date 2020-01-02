@@ -1635,14 +1635,14 @@ module Gaia =
         match worldEir with
         | Right world ->
             let world = World.setEventFilter (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])]) world
-            let screenDispatcherNameOpt =
+            let screenDispatcherOpt =
                 if useGameplayScreen
-                then plugin.GetEditorGameplayScreenDispatcherNameOpt ()
-                else Some typeof<ScreenDispatcher>.Name
+                then plugin.GetEditorGameplayScreenDispatcherOpt ()
+                else Some typeof<ScreenDispatcher>
             let world =
-                match screenDispatcherNameOpt with
-                | Some screenDispatcherName ->
-                    let (screen, world) = World.createScreen3 screenDispatcherName (Some EditorScreen.Name) world
+                match screenDispatcherOpt with
+                | Some screenDispatcher ->
+                    let (screen, world) = World.createScreen3 screenDispatcher.Name (Some EditorScreen.Name) world
                     World.selectScreen screen world
                 | None -> world
             let world =

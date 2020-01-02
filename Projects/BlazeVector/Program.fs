@@ -10,31 +10,13 @@ open BlazeVector
 type BlazePlugin () =
     inherit NuPlugin ()
 
-    // make our game-specific game dispatcher...
-    override this.MakeGameDispatchers () =
-        [BlazeDispatcher () :> GameDispatcher]
-
-    // make our game-specific screen dispatchers...
-    override this.MakeScreenDispatchers () =
-        [GameplayDispatcher () :> ScreenDispatcher]
-
-    // make our game-specific layer dispatchers...
-    override this.MakeLayerDispatchers () =
-        [SceneDispatcher () :> LayerDispatcher]
-
-    // make our game-specific entity dispatchers...
-    override this.MakeEntityDispatchers () =
-        [BulletDispatcher () :> EntityDispatcher
-         PlayerDispatcher () :> EntityDispatcher
-         EnemyDispatcher () :> EntityDispatcher]
-
     // specify the game dispatcher to use at run-time
-    override this.GetStandAloneGameDispatcherName () =
-        typeof<BlazeDispatcher>.Name
+    override this.GetStandAloneGameDispatcher () =
+        typeof<BlazeDispatcher>
             
     // specify the sceen dispatcher to use in the editor
-    override this.GetEditorGameplayScreenDispatcherNameOpt () =
-        Some typeof<GameplayDispatcher>.Name
+    override this.GetEditorGameplayScreenDispatcherOpt () =
+        Some typeof<GameplayDispatcher>
 
 module Program =
 

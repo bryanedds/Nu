@@ -14,8 +14,8 @@ module internal World =
 
 namespace Nu
 open System
-open System.Diagnostics
 open System.Collections.Generic
+open System.Diagnostics
 open TiledSharp
 open Prime
 open Nu
@@ -1154,37 +1154,17 @@ module WorldTypes =
     /// specific values.
     and NuPlugin () =
 
-        /// Make user-defined game dispatcher such that Nu can utilize them at run-time.
-        abstract MakeGameDispatchers : unit -> GameDispatcher list
-        default this.MakeGameDispatchers () = []
+        /// The game dispatcher that Nu will utilize when running outside the editor.
+        abstract GetStandAloneGameDispatcher : unit -> Type
+        default this.GetStandAloneGameDispatcher () = typeof<GameDispatcher>
 
-        /// Make user-defined screen dispatchers such that Nu can utilize them at run-time.
-        abstract MakeScreenDispatchers : unit -> ScreenDispatcher list
-        default this.MakeScreenDispatchers () = []
+        /// The game dispatcher that Nu will utilize when running inside the editor.
+        abstract GetEditorGameDispatcher : unit -> Type
+        default this.GetEditorGameDispatcher () = typeof<GameDispatcher>
 
-        /// Make user-defined layer dispatchers such that Nu can utilize them at run-time.
-        abstract MakeLayerDispatchers : unit -> LayerDispatcher list
-        default this.MakeLayerDispatchers () = []
-
-        /// Make user-defined entity dispatchers such that Nu can utilize them at run-time.
-        abstract MakeEntityDispatchers : unit -> EntityDispatcher list
-        default this.MakeEntityDispatchers () = []
-
-        /// Make user-defined assets such that Nu can utilize them at run-time.
-        abstract MakeFacets : unit -> Facet list
-        default this.MakeFacets () = []
-
-        /// The name of the game dispatcher that Nu will utilize when running inside the editor.
-        abstract GetEditorGameDispatcherName : unit -> string
-        default this.GetEditorGameDispatcherName () = typeof<GameDispatcher>.Name
-
-        /// The name of the game dispatcher that Nu will utilize when running outside the editor.
-        abstract GetStandAloneGameDispatcherName : unit -> string
-        default this.GetStandAloneGameDispatcherName () = typeof<GameDispatcher>.Name
-
-        /// The name of the screen dispatcher that Nu may utilize when running inside the editor.
-        abstract GetEditorGameplayScreenDispatcherNameOpt : unit -> string option
-        default this.GetEditorGameplayScreenDispatcherNameOpt () = Some typeof<ScreenDispatcher>.Name
+        /// The screen dispatcher that Nu may utilize when running inside the editor.
+        abstract GetEditorGameplayScreenDispatcherOpt : unit -> Type option
+        default this.GetEditorGameplayScreenDispatcherOpt () = Some typeof<ScreenDispatcher>
 
         /// Make the overlay routes that will allow Nu to use different overlays for the specified
         /// dispatcher name.
@@ -1206,6 +1186,13 @@ module WorldTypes =
         /// A call-back at the end of each frame.
         abstract PostFrame : World -> World
         default this.PostFrame world = world
+
+        /// Birth facets / dispatchers of type 'a from plugin.
+        member internal this.Birth<'a> () =
+            let assembly = (this.GetType ()).Assembly;
+            let types = (assembly.GetTypes ()) |> Array.filter (fun ty -> ty.IsSubclassOf typeof<'a>) |> Array.filter (fun ty -> not ty.IsAbstract)
+            let instances = types |> Array.map (fun (ty : Type) -> (ty.Name, Activator.CreateInstance ty :?> 'a)) 
+            Array.toList instances
 
 /// Represents an unsubscription operation for an event.
 type Unsubscription = WorldTypes.Unsubscription

@@ -326,7 +326,7 @@ module WorldModule3 =
 
         static member private makeDefaultGameDispatcher () =
             World.pairWithName (GameDispatcher ())
-            
+
         static member private makeDefaultScreenDispatchers () =
             Map.ofList [World.pairWithName (ScreenDispatcher ())]
 
@@ -454,13 +454,13 @@ module WorldModule3 =
                     let globalParticipant = Default.Game
                     let globalParticipantGeneralized = { GpgAddress = atoa globalParticipant.GameAddress }
                     EventSystemDelegate.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
-
-                // make plug-in dispatchers
-                let pluginFacets = plugin.MakeFacets () |> List.map World.pairWithName
-                let pluginGameDispatchers = plugin.MakeGameDispatchers () |> List.map World.pairWithName
-                let pluginScreenDispatchers = plugin.MakeScreenDispatchers () |> List.map World.pairWithName
-                let pluginLayerDispatchers = plugin.MakeLayerDispatchers () |> List.map World.pairWithName
-                let pluginEntityDispatchers = plugin.MakeEntityDispatchers () |> List.map World.pairWithName
+                    
+                // make plug-in facets and dispatchers
+                let pluginFacets = plugin.Birth<Facet> ()
+                let pluginGameDispatchers = plugin.Birth<GameDispatcher> ()
+                let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> ()
+                let pluginLayerDispatchers = plugin.Birth<LayerDispatcher> ()
+                let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> ()
 
                 // make the default game dispatcher
                 let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
@@ -477,8 +477,8 @@ module WorldModule3 =
                       RebuildEntityTree = World.rebuildEntityTree }
 
                 // look up the active game dispather
-                let activeGameDispatcherName = if config.StandAlone then plugin.GetStandAloneGameDispatcherName () else plugin.GetEditorGameDispatcherName ()
-                let activeGameDispatcher = Map.find activeGameDispatcherName dispatchers.GameDispatchers
+                let activeGameDispatcherType = if config.StandAlone then plugin.GetStandAloneGameDispatcher () else plugin.GetEditorGameDispatcher ()
+                let activeGameDispatcher = Map.find activeGameDispatcherType.Name dispatchers.GameDispatchers
 
                 // make the world's subsystems
                 let subsystems =
