@@ -374,6 +374,7 @@ module WorldEntityModule =
                         match World.tryGetKeyedValue (scstring guid) world with
                         | Some entity ->
                             let world = World.removeKeyedValue (scstring guid) world
+                            let world = World.unregisterEntity entity world // HACK: this is a hack to terminate entity stream subscriptionsq
                             World.destroyEntity entity world
                         | None -> failwithumf ())
                         world removed
