@@ -47,6 +47,7 @@ module OmniBattle =
         | PoiseCharacter of CharacterIndex
         | WoundCharacter of CharacterIndex
         | ResetCharacter of CharacterIndex
+        | DestroyCharacter of CharacterIndex
         | ReticlesSelect of Entity * CharacterIndex
         | Tick
 
@@ -62,7 +63,6 @@ module OmniBattle =
         | FadeSong
         | InitializeBattle
         | FinalizeBattle
-        | DestroyCharacter of CharacterIndex
         | IndexedCommand of IndexedCommand * int
 
     and Screen with
@@ -186,7 +186,7 @@ module OmniBattle =
                         else just model
                     | WoundCycle ->
                         if CharacterAnimationState.finished time character.AnimationState
-                        then withCmd { model with CurrentCommandOpt = None } (DestroyCharacter characterIndex)
+                        then withMsg { model with CurrentCommandOpt = None } (DestroyCharacter characterIndex)
                         else just model
                     | _ -> failwithumf ()
 
@@ -407,6 +407,13 @@ module OmniBattle =
                 if character.CharacterState.IsAlly
                 then withCmd model (IndexedCommand (AllyInputHide, character.CharacterState.PartyIndex))
                 else just model
+            | DestroyCharacter characterIndex ->
+                let character = getCharacter characterIndex model
+                let model =
+                    if character.CharacterState.IsEnemy
+                    then { model with BattleCharacters = Map.remove characterIndex model.BattleCharacters }
+                    else model
+                just model
             | ReticlesSelect (targetEntity, allyIndex) ->
                 match model.BattleState with
                 | BattleRunning ->
@@ -434,10 +441,6 @@ module OmniBattle =
             | FinalizeBattle ->
                 let world = World.hintRenderPackageDisuse Assets.BattlePackage world
                 just (World.hintAudioPackageDisuse Assets.BattlePackage world)
-            | DestroyCharacter characterIndex ->
-                let character = Simulants.Character characterIndex
-                let world = World.destroyEntity character world
-                just world
             | IndexedCommand (command, index) ->
                 indexedCommand command index world
 

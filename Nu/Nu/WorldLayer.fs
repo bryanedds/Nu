@@ -246,7 +246,9 @@ module WorldLayerModule =
                     let layerContent = mapper i lens screen world
                     PartialComparable.make guid layerContent) |>
                 Set.ofSeq) |>
-            Stream.fold (fun (p, _, _) c -> (c, Set.difference c p, Set.difference p c)) (Set.empty, Set.empty, Set.empty) |>
+            Stream.fold (fun (p, _, _) c ->
+                (c, Set.difference c p, Set.difference p c))
+                (Set.empty, Set.empty, Set.empty) |>
             Stream.mapEffect (fun evt world ->
                 let (current, added, removed) = evt.Data
                 let world =
@@ -262,6 +264,7 @@ module WorldLayerModule =
                         match World.tryGetKeyedValue (scstring guid) world with
                         | Some layer ->
                             let world = World.removeKeyedValue (scstring guid) world
+                            let world = World.unregisterLayer layer world // HACK: this is a hack to terminate layer stream subscriptions
                             World.destroyLayer layer world
                         | None -> failwithumf ())
                         world removed
