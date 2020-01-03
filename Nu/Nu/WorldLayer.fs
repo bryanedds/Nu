@@ -264,7 +264,7 @@ module WorldLayerModule =
                         match World.tryGetKeyedValue (scstring guid) world with
                         | Some layer ->
                             let world = World.removeKeyedValue (scstring guid) world
-                            let world = World.unregisterLayer layer world // HACK: this is a hack to terminate layer stream subscriptions
+                            let world = world |> World.unregisterLayer layer  |> World.registerLayer layer // HACK: this is a hack to terminate layer stream subscriptions
                             World.destroyLayer layer world
                         | None -> failwithumf ())
                         world removed
