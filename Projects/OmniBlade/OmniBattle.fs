@@ -451,19 +451,19 @@ module OmniBattle =
                      Entity.Size == v2 1024.0f 1024.0f
                      Entity.Depth == -10.0f
                      Entity.LabelImage == asset "Battle" "Background"]
-                 Content.entitiesi (model --> fun model -> getAllies model |> seq) $ fun i ally _ _ ->
+                 Content.entities (model --> fun model -> getAllies model |> seq) (fun ally -> ally.CharacterState.PartyIndex) $ fun i ally _ _ ->
                     Content.entity<CharacterDispatcher> ("Ally+" + scstring i)
                         [Entity.CharacterState ==> ally --> fun ally -> ally.CharacterState
                          Entity.CharacterAnimationState ==> ally --> fun ally -> ally.AnimationState
                          Entity.Position ==> ally --> fun ally -> ally.Position
                          Entity.Size ==> ally --> fun ally -> ally.Size]
-                 Content.entitiesi (model --> fun model -> getEnemies model |> seq) $ fun i enemy _ _ ->
+                 Content.entities (model --> fun model -> getEnemies model |> seq) (fun enemy -> enemy.CharacterState.PartyIndex) $ fun i enemy _ _ ->
                     Content.entity<CharacterDispatcher> ("Enemy+" + scstring i)
                         [Entity.CharacterState ==> enemy --> fun enemy -> enemy.CharacterState
                          Entity.CharacterAnimationState ==> enemy --> fun enemy -> enemy.AnimationState
                          Entity.Position ==> enemy --> fun enemy -> enemy.Position
                          Entity.Size ==> enemy --> fun enemy -> enemy.Size]]
-             Content.layersi (model --> fun model -> getAllies model |> seq) $ fun i _ _ _ ->
+             Content.layers (model --> fun model -> getAllies model |> seq) (fun ally -> ally.CharacterState.PartyIndex) $ fun i _ _ _ ->
                 Content.layer (Simulants.Input i).Name []
                     [Content.entity<RingMenuDispatcher> (Simulants.RegularMenu i).Name
                         [Entity.Items == ["Attack"; "Defend"; "Special"; "Item"]
