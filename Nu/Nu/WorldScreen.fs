@@ -293,12 +293,12 @@ module WorldScreenModule =
                         WorldModule.equate5 name simulant property breaking world)
                         world equations
                 let world =
-                    List.fold (fun world (screen, lens, mapper) ->
-                        World.expandLayerStream lens mapper screen world)
+                    List.fold (fun world (screen, lens, indexer, mapper) ->
+                        World.expandLayerStream lens indexer mapper screen world)
                         world layerStreams
                 let world =
-                    List.fold (fun world (layer, lens, mapper) ->
-                        World.expandEntityStream lens mapper None layer world)
+                    List.fold (fun world (layer, lens, indexer, mapper) ->
+                        World.expandEntityStream lens indexer mapper None layer world)
                         world entityStreams
                 let world =
                     List.fold (fun world (owner, entityContents) ->
