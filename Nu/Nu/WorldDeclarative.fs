@@ -18,7 +18,7 @@ type SimulantContent = interface end
 
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
-    | EntitiesFromStream of Lens<obj, World> * (Lens<obj, World> -> Layer -> World -> EntityContent)
+    | EntitiesFromStream of Lens<obj, World> * (obj -> int) * (int -> Lens<obj, World> -> Layer -> World -> EntityContent)
     | EntityFromDefinitions of string * string * PropertyInitializer list * EntityContent list
     | EntityFromFile of string * string
     interface SimulantContent
@@ -26,8 +26,8 @@ type [<NoEquality; NoComparison>] EntityContent =
     /// Expand an entity content to its constituent parts.
     static member expand content (layer : Layer) (world : World) =
         match content with
-        | EntitiesFromStream (lens, mapper) ->
-            Choice1Of3 (lens, mapper)
+        | EntitiesFromStream (lens, indexer, mapper) ->
+            Choice1Of3 (lens, indexer, mapper)
         | EntityFromDefinitions (dispatcherName, name, initializers, content) ->
             let (descriptor, equationsEntity) = Describe.entity2 dispatcherName initializers (layer / name) world
             Choice2Of3 (name, descriptor, equationsEntity, (layer / name, content))
@@ -36,7 +36,7 @@ type [<NoEquality; NoComparison>] EntityContent =
 
 /// Describes the content of a layer.
 and [<NoEquality; NoComparison>] LayerContent =
-    | LayersFromStream of Lens<obj, World> * (Lens<obj, World> -> Screen -> World -> LayerContent)
+    | LayersFromStream of Lens<obj, World> * (obj -> int) * (int -> Lens<obj, World> -> Screen -> World -> LayerContent)
     | LayerFromDefinitions of string * string * PropertyInitializer list * EntityContent list
     | LayerFromFile of string * string
     interface SimulantContent
@@ -44,12 +44,12 @@ and [<NoEquality; NoComparison>] LayerContent =
     /// Expand a layer content to its constituent parts.
     static member expand content screen (world : World) =
         match content with
-        | LayersFromStream (lens, mapper) ->
-            Choice1Of3 (lens, mapper)
+        | LayersFromStream (lens, indexer, mapper) ->
+            Choice1Of3 (lens, indexer, mapper)
         | LayerFromDefinitions (dispatcherName, name, initializers, content) ->
             let layer = screen / name
             let expansions = List.map (fun content -> EntityContent.expand content layer world) content
-            let streams = List.map (function Choice1Of3 stream -> Some (layer, fst stream, snd stream) | _ -> None) expansions |> List.definitize
+            let streams = List.map (function Choice1Of3 stream -> Some (layer, Triple.fst stream, Triple.snd stream, Triple.thd stream) | _ -> None) expansions |> List.definitize
             let descriptors = List.map (function Choice2Of3 (entityName, descriptor, _, _) -> Some { descriptor with EntityProperties = Map.add Property? Name (valueToSymbol entityName) descriptor.EntityProperties } | _ -> None) expansions |> List.definitize
             let equations = List.map (function Choice2Of3 (_, _, equations, _) -> Some equations | _ -> None) expansions |> List.definitize |> List.concat
             let entityContents = List.map (function Choice2Of3 (_, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize
@@ -72,7 +72,7 @@ and [<NoEquality; NoComparison>] ScreenContent =
         | ScreenFromDefinitions (dispatcherName, name, behavior, initializers, content) ->
             let screen = Screen name
             let expansions = List.map (fun content -> LayerContent.expand content screen world) content
-            let streams = List.map (function Choice1Of3 stream -> Some (screen, fst stream, snd stream) | _ -> None) expansions |> List.definitize
+            let streams = List.map (function Choice1Of3 stream -> Some (screen, Triple.fst stream, Triple.snd stream, Triple.thd stream) | _ -> None) expansions |> List.definitize
             let descriptors = List.map (function Choice2Of3 (layerName, descriptor, _, _, _, _) -> Some { descriptor with LayerProperties = Map.add (Property? Name) (valueToSymbol layerName) descriptor.LayerProperties } | _ -> None) expansions |> List.definitize
             let equations = List.map (function Choice2Of3 (_, _, equations, _, _, _) -> Some equations | _ -> None) expansions |> List.definitize |> List.concat
             let entityStreams = List.map (function Choice2Of3 (_, _, _, stream, _, _) -> Some stream | _ -> None) expansions |> List.definitize |> List.concat
