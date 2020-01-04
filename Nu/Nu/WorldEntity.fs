@@ -342,18 +342,26 @@ module WorldEntityModule =
 
         /// Transform a stream into existing entities.
         /// TODO: P1: see if we can fuse the various streams used here and in expandEntityStream to decrease time and space overhead.
-        static member streamEntities (mapper : Lens<'a, World> -> Layer -> World -> EntityContent) (ownerOpt : Entity option) (layer : Layer) (stream : Stream<Lens<'a option, World> seq, World>) =
+        static member streamEntities
+            (indexer : 'a -> int)
+            (mapper : int -> Lens<'a, World> -> Layer -> World -> EntityContent)
+            (ownerOpt : Entity option)
+            (layer : Layer)
+            (stream : Stream<Lens<'a option, World> seq, World>) =
             stream |>
             Stream.optimize |>
             Stream.insert (makeGuid ()) |>
             Stream.mapWorld (fun (guid, seq) world ->
                 seq |>
-                Seq.takeWhile (fun lens ->
-                    Option.isSome (lens.Get world)) |>
-                Seq.mapi (fun i lens ->
-                    let lens = Lens.dereference lens
-                    let guid = makeGuidDeterministic i guid
-                    let entityContent = mapper lens layer world
+                Seq.map (fun lens ->
+                    (lens.Get world, Lens.dereference lens)) |>
+                Seq.takeWhile (fun (modelOpt, _) ->
+                    Option.isSome modelOpt) |>
+                Seq.map (fun (modelOpt, lens) ->
+                    let model = Option.get modelOpt
+                    let entityIndex = indexer model
+                    let guid = makeGuidDeterministic entityIndex guid
+                    let entityContent = mapper entityIndex lens layer world
                     PartialComparable.make guid entityContent) |>
                 Set.ofSeq) |>
             Stream.fold (fun (p, _, _) c ->
@@ -374,25 +382,25 @@ module WorldEntityModule =
                         match World.tryGetKeyedValue (scstring guid) world with
                         | Some entity ->
                             let world = World.removeKeyedValue (scstring guid) world
-                            let world = world |> World.unregisterEntity entity |> World.registerEntity entity // HACK: this is a hack to terminate entity stream subscriptionsq
+                            let world = world |> World.unregisterEntity entity |> World.registerEntity entity // HACK: this is a hack to terminate entity stream subscriptions
                             World.destroyEntity entity world
                         | None -> failwithumf ())
                         world removed
                 (current, world))
 
         /// Turn an entity stream into a series of live entities.
-        static member expandEntityStream (lens : Lens<obj, World>) mapper ownerOpt layer world =
+        static member expandEntityStream (lens : Lens<obj, World>) (indexer : obj -> int) mapper ownerOpt layer world =
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
             Stream.map (fun _ -> lens |> Lens.mapOut Reflection.objToObjSeq |> Lens.explode) |>
-            World.streamEntities mapper ownerOpt layer |>
+            World.streamEntities indexer mapper ownerOpt layer |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
         /// Turn entity content into a live entity.
         static member expandEntityContent guidOpt content ownerOpt layer world =
             match EntityContent.expand content layer world with
-            | Choice1Of3 (lens, mapper) ->
-                World.expandEntityStream lens mapper ownerOpt layer world
+            | Choice1Of3 (lens, indexer, mapper) ->
+                World.expandEntityStream lens indexer mapper ownerOpt layer world
             | Choice2Of3 (name, descriptor, equations, content) ->
                 let (entity, world) = World.readEntity descriptor (Some name) layer world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
