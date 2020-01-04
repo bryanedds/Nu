@@ -232,7 +232,7 @@ module WorldLayerModule =
 
         /// Transform a stream into existing layers.
         /// TODO: P1: see if we can fuse the various streams used here and in expandLayerStream to decrease time and space overhead.
-        static member streamLayers (mapper : int -> Lens<'a, World> -> Screen -> World -> LayerContent) (screen : Screen) (stream : Stream<Lens<'a option, World> seq, World>) =
+        static member streamLayers (mapper : Lens<'a, World> -> Screen -> World -> LayerContent) (screen : Screen) (stream : Stream<Lens<'a option, World> seq, World>) =
             stream |>
             Stream.optimize |>
             Stream.insert (makeGuid ()) |>
@@ -243,7 +243,7 @@ module WorldLayerModule =
                 Seq.mapi (fun i lens ->
                     let lens = Lens.dereference lens
                     let guid = makeGuidDeterministic i guid
-                    let layerContent = mapper i lens screen world
+                    let layerContent = mapper lens screen world
                     PartialComparable.make guid layerContent) |>
                 Set.ofSeq) |>
             Stream.fold (fun (p, _, _) c ->
