@@ -343,7 +343,6 @@ module WorldEntityModule =
         /// Transform a stream into existing entities.
         /// TODO: P1: see if we can fuse the various streams used here and in expandEntityStream to decrease time and space overhead.
         static member streamEntities
-            (indexer : 'a -> int)
             (mapper : int -> Lens<'a, World> -> Layer -> World -> EntityContent)
             (ownerOpt : Entity option)
             (layer : Layer)
@@ -357,11 +356,9 @@ module WorldEntityModule =
                     (lens.Get world, Lens.dereference lens)) |>
                 Seq.takeWhile (fun (modelOpt, _) ->
                     Option.isSome modelOpt) |>
-                Seq.map (fun (modelOpt, lens) ->
-                    let model = Option.get modelOpt
-                    let entityIndex = indexer model
-                    let guid = makeGuidDeterministic entityIndex guid
-                    let entityContent = mapper entityIndex lens layer world
+                Seq.mapi (fun i (_, lens) ->
+                    let guid = makeGuidDeterministic i guid
+                    let entityContent = mapper i lens layer world
                     PartialComparable.make guid entityContent) |>
                 Set.ofSeq) |>
             Stream.fold (fun (p, _, _) c ->
@@ -389,18 +386,18 @@ module WorldEntityModule =
                 (current, world))
 
         /// Turn an entity stream into a series of live entities.
-        static member expandEntityStream (lens : Lens<obj, World>) (indexer : obj -> int) mapper ownerOpt layer world =
+        static member expandEntityStream (lens : Lens<obj, World>) mapper ownerOpt layer world =
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
             Stream.map (fun _ -> lens |> Lens.mapOut Reflection.objToObjSeq |> Lens.explode) |>
-            World.streamEntities indexer mapper ownerOpt layer |>
+            World.streamEntities mapper ownerOpt layer |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
         /// Turn entity content into a live entity.
         static member expandEntityContent guidOpt content ownerOpt layer world =
             match EntityContent.expand content layer world with
-            | Choice1Of3 (lens, indexer, mapper) ->
-                World.expandEntityStream lens indexer mapper ownerOpt layer world
+            | Choice1Of3 (lens, mapper) ->
+                World.expandEntityStream lens mapper ownerOpt layer world
             | Choice2Of3 (name, descriptor, equations, content) ->
                 let (entity, world) = World.readEntity descriptor (Some name) layer world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
