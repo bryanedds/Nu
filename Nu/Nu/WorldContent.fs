@@ -30,18 +30,17 @@ module Content =
         ScreenFromDefinitions (typeof<'d>.Name, screenName, behavior, definitions, children)
 
     /// Describe layers to be streamed from a lens.
-    let layers (lens : Lens<'a seq, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> Screen -> World -> LayerContent) =
-        let indexer = fun (a : obj) -> indexer (cast<'a> a)
+    let layers (lens : Lens<'a seq, World>) (mapper : int -> Lens<'a, World> -> Screen -> World -> LayerContent) =
         let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.mapOut (cast<'a>)) world
-        LayersFromStream (lens.MapOut box, indexer, mapper)
+        LayersFromStream (lens.MapOut box, mapper)
 
     /// Describe a layer to be optionally streamed from a lens.
     let layerOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> Screen -> World -> LayerContent) =
-        layers (lens --> function Some a -> Seq.singleton a | None -> Seq.empty) (fun _ -> 0) (fun _ -> mapper)
+        layers (lens --> function Some a -> Seq.singleton a | None -> Seq.empty) (fun _ -> mapper)
 
     /// Describe a layer to be optionally streamed from a lens.
     let layerIf (lens : Lens<bool, World>) (mapper : Lens<unit, World> -> Screen -> World -> LayerContent) =
-        layers (lens --> function true -> Seq.singleton () | false -> Seq.empty) (fun () -> 0) (fun _ -> mapper)
+        layers (lens --> function true -> Seq.singleton () | false -> Seq.empty) (fun _ -> mapper)
 
     /// Describe a layer to be streamed when a screen is selected.
     let layerIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> Screen -> World -> LayerContent) =
@@ -56,18 +55,17 @@ module Content =
         LayerFromDefinitions (typeof<'d>.Name, layerName, definitions, children)
 
     /// Describe entities to be streamed from a lens.
-    let entities (lens : Lens<'a seq, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> Layer -> World -> EntityContent) =
-        let indexer = fun (a : obj) -> indexer (cast<'a> a)
+    let entities (lens : Lens<'a seq, World>) (mapper : int -> Lens<'a, World> -> Layer -> World -> EntityContent) =
         let mapper = fun i (a : obj) layer world -> mapper i (a :?> Lens<obj, World> |> Lens.mapOut (cast<'a>)) layer world
-        EntitiesFromStream (lens.MapOut box, indexer, mapper)
+        EntitiesFromStream (lens.MapOut box, mapper)
 
     /// Describe an entity to be optionally streamed from a lens.
     let entityOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> Layer -> World -> EntityContent) =
-        entities (lens --> function Some a -> Seq.singleton a | None -> Seq.empty) (fun _ -> 0) (fun _ -> mapper)
+        entities (lens --> function Some a -> Seq.singleton a | None -> Seq.empty) (fun _ -> mapper)
 
     /// Describe an entity to be optionally streamed from a lens.
     let entityIf (lens : Lens<bool, World>) (mapper : Lens<unit, World> -> Layer -> World -> EntityContent) =
-        entities (lens --> function true -> Seq.singleton () | false -> Seq.empty) (fun () -> 0) (fun _ -> mapper)
+        entities (lens --> function true -> Seq.singleton () | false -> Seq.empty) (fun _ -> mapper)
 
     /// Describe an entity to be streamed when a screen is selected.
     let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> Layer -> World -> EntityContent) =
