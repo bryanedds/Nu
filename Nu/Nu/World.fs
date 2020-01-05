@@ -289,9 +289,8 @@ module Nu =
                 let nonPersistent = not (Reflection.isPropertyPersistentByName name)
                 let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
                 let propagate (_ : Event<obj, Participant>) world =
-                    try let property = { PropertyType = lens.Type; PropertyValue = lens.Get world }
-                        World.setProperty name nonPersistent alwaysPublish property (participant :?> Simulant) world
-                    with _ -> world
+                    let property = { PropertyType = lens.Type; PropertyValue = lens.Get world }
+                    World.setProperty name nonPersistent alwaysPublish property (participant :?> Simulant) world
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
                 let world = Stream.make (atooa Events.Register --> lens.This.ParticipantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate participant $ world
                 Stream.make (atooa (Events.Change lens.Name) --> lens.This.ParticipantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate participant $ world
