@@ -187,7 +187,8 @@ type CharacterState =
       Statuses : StatusType Set
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
-      Relics : RelicType list }
+      Relics : RelicType list
+      Destroyed : bool }
 
     static member empty =
         { CharacterType = Ally Jinn
@@ -203,7 +204,8 @@ type CharacterState =
           Statuses = Set.empty<StatusType>
           WeaponOpt = Option<WeaponType>.None
           ArmorOpt = Option<ArmorType>.None
-          Relics = [] } // level is calculated from base experience + added experience
+          Relics = []
+          Destroyed = false } // level is calculated from base experience + added experience
 
     member this.Name = match this.CharacterType with Ally ally -> scstring ally | Enemy enemy -> scstring enemy
     member this.IsAlly = match this.CharacterType with Ally _ -> true | Enemy _ -> false
