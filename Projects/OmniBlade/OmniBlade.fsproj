@@ -159,7 +159,7 @@
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="Nito.Collections.Deque">
-      <HintPath>..\..\Nu\Nu\bin\Release\Nito.Collections.Deque.dll</HintPath>
+      <HintPath>..\..\Nu\Nu.Dependencies\Nito.Collections.Deque\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
       <HintPath>..\..\packages\Prime.3.8.7\lib\net472\Prime.exe</HintPath>
