@@ -348,12 +348,13 @@ module WorldEntityModule =
             (layer : Layer)
             (stream : Stream<Lens<'a option, World> seq, World>) =
             stream |>
-            Stream.optimize |>
             Stream.insert (makeGuid ()) |>
             Stream.mapWorld (fun (guid, seq) world ->
                 seq |>
                 Seq.map (fun lens ->
-                    (lens.Get world, Lens.dereference lens)) |>
+                    let modelOpt = lens.Get world
+                    let lens = { Lens.dereference lens with Validate = fun world -> Option.isSome (lens.Get world) }
+                    (modelOpt, lens)) |>
                 Seq.takeWhile (fun (modelOpt, _) ->
                     Option.isSome modelOpt) |>
                 Seq.mapi (fun i (_, lens) ->
