@@ -289,8 +289,10 @@ module Nu =
                 let nonPersistent = not (Reflection.isPropertyPersistentByName name)
                 let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
                 let propagate (_ : Event<obj, Participant>) world =
-                    let property = { PropertyType = lens.Type; PropertyValue = lens.Get world }
-                    World.setProperty name nonPersistent alwaysPublish property (participant :?> Simulant) world
+                    if lens.Validate world then
+                        let property = { PropertyType = lens.Type; PropertyValue = lens.GetWithoutValidation world }
+                        World.setProperty name nonPersistent alwaysPublish property (participant :?> Simulant) world
+                    else world
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
                 let world = Stream.make (atooa Events.Register --> lens.This.ParticipantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate participant $ world
                 Stream.make (atooa (Events.Change lens.Name) --> lens.This.ParticipantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate participant $ world
@@ -307,8 +309,8 @@ module Nu =
             Debug.World.viewEntity <- fun entity world -> Debug.Entity.view (entity :?> Entity) (world :?> World)
 #endif
 
-            // init Vsync with incoming parameter
-            Vsync.init nuConfig.RunSynchronously
+            // init Vsync
+            Vsync.Init nuConfig.RunSynchronously
 
             // init event world caching
             EventSystem.setEventAddressCaching true
