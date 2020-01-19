@@ -233,35 +233,36 @@ module WorldLayerModule =
         /// Transform a stream into existing layers.
         /// TODO: P1: see if we can fuse the various streams used here and in expandLayerStream to decrease time and space overhead.
         static member streamLayers
-            (indexerOpt : (obj -> int) option)
             (mapper : int -> Lens<obj, World> -> Screen -> World -> LayerContent)
             (screen : Screen)
-            (stream : Stream<Lens<obj option, World> seq, World>) =
+            (stream : Stream<Lens<(int * obj) option, World> seq, World>) =
             stream |>
             Stream.insert (makeGuid ()) |>
             Stream.mapWorld (fun (guid, seq) world ->
                 seq |>
                 Seq.map (fun lens ->
-                    let modelOpt = lens.Get world
+                    let opt = lens.Get world
                     let lens = { Lens.dereference lens with Validate = fun world -> Option.isSome (lens.Get world) }
-                    (modelOpt, lens)) |>
-                Seq.takeWhile (fun (modelOpt, _) ->
-                    Option.isSome modelOpt) |>
-                Seq.mapi (fun index (modelOpt, lens) ->
-                    let model = Option.get modelOpt
-                    let index = match indexerOpt with Some indexer -> indexer model | None -> index
+                    (opt, lens)) |>
+                Seq.takeWhile
+                    (fst >> Option.isSome) |>
+                Seq.map (fun (opt, lens) ->
+                    let (index, _) = Option.get opt
                     let guid = makeGuidDeterministic index guid
-                    let layerContent = mapper index lens screen world
-                    PartialComparable.make guid layerContent) |>
+                    let lens = lens.MapOut snd
+                    PartialComparable.make guid (index, lens)) |>
                 Set.ofSeq) |>
             Stream.fold (fun (p, _, _) c ->
                 (c, Set.difference c p, Set.difference p c))
                 (Set.empty, Set.empty, Set.empty) |>
+            StreamPlus.optimizeBy
+                Triple.fst |>
             Stream.mapEffect (fun evt world ->
                 let (current, added, removed) = evt.Data
                 let world =
                     Seq.fold (fun world guidAndContent ->
-                        let (guid, content) = PartialComparable.unmake guidAndContent
+                        let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
+                        let content = mapper index lens screen world
                         match World.tryGetKeyedValue (scstring guid) world with
                         | None -> World.expandLayerContent (Some guid) content screen world
                         | Some _ -> world)
@@ -281,8 +282,8 @@ module WorldLayerModule =
         static member expandLayerStream (lens : Lens<obj, World>) indexerOpt mapper screen world =
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
-            Stream.map (fun _ -> lens |> Lens.mapOut (Reflection.objToObjSeq) |> Lens.explode) |>
-            World.streamLayers indexerOpt mapper screen |>
+            Stream.map (fun _ -> lens |> Lens.mapOut (Reflection.objToObjSeq) |> Lens.explodeIndexedOpt indexerOpt) |>
+            World.streamLayers mapper screen |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
         /// Turn layer content into a live layer.

@@ -78,6 +78,36 @@ module CoreOperators =
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
 
+[<RequireQualifiedAccess>]
+module Lens =
+
+    let explodeIndexedOpt indexerOpt (lens : Lens<'a seq, 'w>) : Lens<(int * 'a) option, 'w> seq =
+        Seq.initInfinite id |>
+        Seq.map (fun index ->
+            Lens.mapOut (fun models ->
+                match Seq.tryItem index models with
+                | Some model ->
+                    match indexerOpt with
+                    | Some indexer -> Some (indexer model, model)
+                    | None -> Some (index, model)
+                | None -> None)
+                lens)
+
+[<RequireQualifiedAccess>]
+module StreamPlus =
+
+    let optimizeBy (by : 'a -> 'b) (stream : Stream<'a, 'w>) =
+        Stream.fold
+            (fun (s, _) a ->
+                let n = by a
+                match s with
+                | None -> (Some n, Some a)
+                | Some b -> if b = n then (Some n, None) else (Some n, Some a))
+            (None, None)
+            stream |>
+        Stream.map snd |>
+        Stream.definitize
+
 /// Specifies the screen-clearing routine.
 type ScreenClear =
     | NoClear
