@@ -343,20 +343,23 @@ module WorldEntityModule =
         /// Transform a stream into existing entities.
         /// TODO: P1: see if we can fuse the various streams used here and in expandEntityStream to decrease time and space overhead.
         static member streamEntities
+            (lensSeq : Lens<obj seq, World>)
             (mapper : int -> Lens<obj, World> -> Layer -> World -> EntityContent)
             (ownerOpt : Entity option)
             (layer : Layer)
             (stream : Stream<Lens<(int * obj) option, World> seq, World>) =
             stream |>
             Stream.insert (makeGuid ()) |>
-            Stream.mapWorld (fun (guid, seq) world ->
-                seq |>
+            Stream.mapWorld (fun (guid, lenses) world ->
+                lenses |>
                 Seq.map (fun lens ->
                     let opt = lens.Get world
                     let lens = { Lens.dereference lens with Validate = fun world -> Option.isSome (lens.Get world) }
                     (opt, lens)) |>
-                Seq.takeWhile
+                Seq.filter
                     (fst >> Option.isSome) |>
+                Seq.take
+                    (Lens.get lensSeq world |> Seq.length) |>
                 Seq.map (fun (opt, lens) ->
                     let (index, _) = Option.get opt
                     let guid = makeGuidDeterministic index guid
@@ -391,10 +394,11 @@ module WorldEntityModule =
 
         /// Turn an entity stream into a series of live entities.
         static member expandEntityStream (lens : Lens<obj, World>) indexerOpt mapper ownerOpt layer world =
+            let lensSeq = Lens.mapOut Reflection.objToObjSeq lens
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
-            Stream.map (fun _ -> lens |> Lens.mapOut Reflection.objToObjSeq |> Lens.explodeIndexedOpt indexerOpt) |>
-            World.streamEntities mapper ownerOpt layer |>
+            Stream.map (fun _ -> Lens.explodeIndexedOpt indexerOpt lensSeq) |>
+            World.streamEntities lensSeq mapper ownerOpt layer |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
         /// Turn entity content into a live entity.
