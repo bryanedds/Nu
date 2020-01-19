@@ -233,9 +233,10 @@ module WorldLayerModule =
         /// Transform a stream into existing layers.
         /// TODO: P1: see if we can fuse the various streams used here and in expandLayerStream to decrease time and space overhead.
         static member streamLayers
-            (mapper : int -> Lens<'a, World> -> Screen -> World -> LayerContent)
+            (indexerOpt : (obj -> int) option)
+            (mapper : int -> Lens<obj, World> -> Screen -> World -> LayerContent)
             (screen : Screen)
-            (stream : Stream<Lens<'a option, World> seq, World>) =
+            (stream : Stream<Lens<obj option, World> seq, World>) =
             stream |>
             Stream.insert (makeGuid ()) |>
             Stream.mapWorld (fun (guid, seq) world ->
@@ -246,9 +247,11 @@ module WorldLayerModule =
                     (modelOpt, lens)) |>
                 Seq.takeWhile (fun (modelOpt, _) ->
                     Option.isSome modelOpt) |>
-                Seq.mapi (fun i (_, lens) ->
-                    let guid = makeGuidDeterministic i guid
-                    let layerContent = mapper i lens screen world
+                Seq.mapi (fun index (modelOpt, lens) ->
+                    let model = Option.get modelOpt
+                    let index = match indexerOpt with Some indexer -> indexer model | None -> index
+                    let guid = makeGuidDeterministic index guid
+                    let layerContent = mapper index lens screen world
                     PartialComparable.make guid layerContent) |>
                 Set.ofSeq) |>
             Stream.fold (fun (p, _, _) c ->
@@ -275,18 +278,18 @@ module WorldLayerModule =
                 (current, world))
 
         /// Turn a layers stream into a series of live layers.
-        static member expandLayerStream (lens : Lens<obj, World>) mapper screen world =
+        static member expandLayerStream (lens : Lens<obj, World>) indexerOpt mapper screen world =
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
             Stream.map (fun _ -> lens |> Lens.mapOut (Reflection.objToObjSeq) |> Lens.explode) |>
-            World.streamLayers mapper screen |>
+            World.streamLayers indexerOpt mapper screen |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
         /// Turn layer content into a live layer.
         static member expandLayerContent guidOpt content screen world =
             match LayerContent.expand content screen world with
-            | Choice1Of3 (lens, mapper) ->
-                World.expandLayerStream lens mapper screen world
+            | Choice1Of3 (lens, indexerOpt, mapper) ->
+                World.expandLayerStream lens indexerOpt mapper screen world
             | Choice2Of3 (name, descriptor, equations, streams, entityFilePaths, entityContents) ->
                 let (layer, world) = World.readLayer descriptor (Some name) screen world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) layer world | None -> world
@@ -299,8 +302,8 @@ module WorldLayerModule =
                         WorldModule.equate5 name simulant property breaking world)
                         world equations
                 let world =
-                    List.fold (fun world (layer, lens, mapper) ->
-                        World.expandEntityStream lens mapper None layer world)
+                    List.fold (fun world (layer, lens, indexerOpt, mapper) ->
+                        World.expandEntityStream lens indexerOpt mapper None layer world)
                         world streams
                 let world =
                     List.fold (fun world (owner, entityContents) ->
