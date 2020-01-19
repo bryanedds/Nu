@@ -233,19 +233,22 @@ module WorldLayerModule =
         /// Transform a stream into existing layers.
         /// TODO: P1: see if we can fuse the various streams used here and in expandLayerStream to decrease time and space overhead.
         static member streamLayers
+            (lensSeq : Lens<obj seq, World>)
             (mapper : int -> Lens<obj, World> -> Screen -> World -> LayerContent)
             (screen : Screen)
             (stream : Stream<Lens<(int * obj) option, World> seq, World>) =
             stream |>
             Stream.insert (makeGuid ()) |>
-            Stream.mapWorld (fun (guid, seq) world ->
-                seq |>
+            Stream.mapWorld (fun (guid, lenses) world ->
+                lenses |>
                 Seq.map (fun lens ->
                     let opt = lens.Get world
                     let lens = { Lens.dereference lens with Validate = fun world -> Option.isSome (lens.Get world) }
                     (opt, lens)) |>
-                Seq.takeWhile
+                Seq.filter
                     (fst >> Option.isSome) |>
+                Seq.take
+                    (Lens.get lensSeq world |> Seq.length) |>
                 Seq.map (fun (opt, lens) ->
                     let (index, _) = Option.get opt
                     let guid = makeGuidDeterministic index guid
@@ -280,10 +283,11 @@ module WorldLayerModule =
 
         /// Turn a layers stream into a series of live layers.
         static member expandLayerStream (lens : Lens<obj, World>) indexerOpt mapper screen world =
+            let lensSeq = Lens.mapOut Reflection.objToObjSeq lens
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
-            Stream.map (fun _ -> lens |> Lens.mapOut (Reflection.objToObjSeq) |> Lens.explodeIndexedOpt indexerOpt) |>
-            World.streamLayers mapper screen |>
+            Stream.map (fun _ -> Lens.explodeIndexedOpt indexerOpt lensSeq) |>
+            World.streamLayers lensSeq mapper screen |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
         /// Turn layer content into a live layer.
