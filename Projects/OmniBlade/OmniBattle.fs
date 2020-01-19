@@ -451,30 +451,36 @@ module OmniBattle =
                      Entity.Size == v2 1024.0f 1024.0f
                      Entity.Depth == -10.0f
                      Entity.LabelImage == asset "Battle" "Background"]
-                 Content.entities (model --> fun model -> getAllies model) $ fun i ally _ _ ->
-                    Content.entity<CharacterDispatcher> ("Ally+" + scstring i)
-                        [Entity.CharacterState ==> ally --> fun ally -> ally.CharacterState
-                         Entity.CharacterAnimationState ==> ally --> fun ally -> ally.AnimationState
-                         Entity.Position ==> ally --> fun ally -> ally.Position
-                         Entity.Size ==> ally --> fun ally -> ally.Size]
-                 Content.entities (model --> fun model -> getEnemies model) $ fun i enemy _ _ ->
-                    Content.entity<CharacterDispatcher> ("Enemy+" + scstring i)
-                        [Entity.CharacterState ==> enemy --> fun enemy -> enemy.CharacterState
-                         Entity.CharacterAnimationState ==> enemy --> fun enemy -> enemy.AnimationState
-                         Entity.Position ==> enemy --> fun enemy -> enemy.Position
-                         Entity.Size ==> enemy --> fun enemy -> enemy.Size]]
-             Content.layers (model --> fun model -> getAllies model) $ fun i _ _ _ ->
-                Content.layer (Simulants.Input i).Name []
-                    [Content.entity<RingMenuDispatcher> (Simulants.RegularMenu i).Name
+                 Content.entitiesIndexed
+                    (model --> fun model -> getAllies model)
+                    (fun model -> model.CharacterState.PartyIndex)
+                    (fun allyIndex ally _ _ ->
+                        Content.entity<CharacterDispatcher> ("Ally+" + scstring allyIndex)
+                            [Entity.CharacterState ==> ally --> fun ally -> ally.CharacterState
+                             Entity.CharacterAnimationState ==> ally --> fun ally -> ally.AnimationState
+                             Entity.Position ==> ally --> fun ally -> ally.Position
+                             Entity.Size ==> ally --> fun ally -> ally.Size])
+                 Content.entitiesIndexed
+                    (model --> fun model -> getEnemies model)
+                    (fun model -> model.CharacterState.PartyIndex)
+                    (fun enemyIndex enemy _ _ ->
+                        Content.entity<CharacterDispatcher> ("Enemy+" + scstring enemyIndex)
+                            [Entity.CharacterState ==> enemy --> fun enemy -> enemy.CharacterState
+                             Entity.CharacterAnimationState ==> enemy --> fun enemy -> enemy.AnimationState
+                             Entity.Position ==> enemy --> fun enemy -> enemy.Position
+                             Entity.Size ==> enemy --> fun enemy -> enemy.Size])]
+             Content.layers (model --> fun model -> getAllies model) $ fun allyIndex _ _ _ ->
+                Content.layer (Simulants.Input allyIndex).Name []
+                    [Content.entity<RingMenuDispatcher> (Simulants.RegularMenu allyIndex).Name
                         [Entity.Items == ["Attack"; "Defend"; "Special"; "Item"]
                          Entity.Depth == 10.0f]
-                     Content.entity<RingMenuDispatcher> (Simulants.SpecialMenu i).Name
+                     Content.entity<RingMenuDispatcher> (Simulants.SpecialMenu allyIndex).Name
                         [Entity.Items == ["Attack"]
                          Entity.ItemCancelOpt == Some "Cancel"
                          Entity.Depth == 10.0f]
-                     Content.entity<RingMenuDispatcher> (Simulants.ItemMenu i).Name
+                     Content.entity<RingMenuDispatcher> (Simulants.ItemMenu allyIndex).Name
                         [Entity.Items == ["Attack"]
                          Entity.ItemCancelOpt == Some "Cancel"
                          Entity.Depth == 10.0f]
-                     Content.entity<ReticlesDispatcher> (Simulants.Reticles i).Name
+                     Content.entity<ReticlesDispatcher> (Simulants.Reticles allyIndex).Name
                         [Entity.Depth == 10.0f]]]
