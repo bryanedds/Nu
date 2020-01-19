@@ -361,13 +361,13 @@ type Vector2iConverter () =
             | _ -> failconv "Invalid Vector2iConverter conversion from source." (Some symbol)
         | :? Vector2i -> source
         | _ -> failconv "Invalid Vector2iConverter conversion from source." None
-        
+
 [<AutoOpen>]
 module Matrix3 =
 
     type Matrix3 with
 
-        /// Gets the invertse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
+        /// Gets the inverse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
         /// SDL_RenderCopyEx requirement that all corrdinates be arbitrarily converted to ints.
         /// TODO: See if we can expose an SDL_RenderCopyEx from SDL2(#) that takes floats instead.
         member this.InvertedView () =
