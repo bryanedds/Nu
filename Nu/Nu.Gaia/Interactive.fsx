@@ -10,7 +10,7 @@
 //#r "../../packages/xunit.assert.2.3.1/xunit.assert.2.3.1.nupkg"
 #r "../../packages/FsCheck.2.11.0/lib/net452/FsCheck.dll"
 #r "../../packages/FsCheck.Xunit.2.11.0/lib/net452/FsCheck.Xunit.dll"
-#r "../../packages/Prime.3.8.7/lib/net472/Prime.exe"
+#r "../../packages/Prime.3.9.2/lib/net472/Prime.exe"
 #r "../../Nu/Nu.Dependencies/FSharpx.Core/FSharpx.Core.dll"
 #r "../../Nu/Nu.Dependencies/FSharpx.Collections/FSharpx.Collections.dll"
 #r "../../Nu/Nu.Dependencies/Farseer/FarseerPhysics.dll"
@@ -39,7 +39,7 @@ open Nu.Gaia
 Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "../bin/Debug")
 
 // initialize Gaia
-Gaia.init ()
+Gaia.init NuConfig.defaultConfig
 
 // decide on a target directory and plugin
 let (_, targetDir, plugin) = Gaia.selectTargetDirAndMakeNuPlugin ()
@@ -55,7 +55,7 @@ form.Closing.Add (fun args ->
 let sdlDeps = Gaia.tryMakeSdlDeps form |> Either.getRightValue
 
 // make world ready for use in Gaia
-let world = Gaia.tryMakeWorld false plugin sdlDeps |> Either.getRightValue
+let world = Gaia.tryMakeWorld false plugin sdlDeps WorldConfig.defaultConfig |> Either.getRightValue
 
 // example of running Nu in Gaia for 60 frames from repl
 Gaia.runFromRepl (fun world -> World.getTickTime world < 60L) targetDir sdlDeps form world
