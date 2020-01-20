@@ -28,9 +28,9 @@ module Nelmish =
 
         // here we define the Bindings used to connect events to their desired messages
         override this.Bindings (_, _, _) =
-            [Simulants.DecrementButton.ClickEvent => Decrement
-             Simulants.IncrementButton.ClickEvent => Increment
-             Simulants.ResetButton.ClickEvent => Reset]
+            [Simulants.DecrementButton.ClickEvent => Signal.msg Decrement
+             Simulants.IncrementButton.ClickEvent => Signal.msg Increment
+             Simulants.ResetButton.ClickEvent => Signal.msg Reset]
 
         // here we handle the above messages
         override this.Message (message, model, _, _) =
@@ -56,4 +56,5 @@ module Nelmish =
                      Content.entityIf (model --> isNonZero) $ fun _ _ _ ->
                         Content.button Simulants.ResetButton.Name
                             [Entity.Text == "Reset"
-                             Entity.Position == v2 -128.0f -128.0f]]]]
+                             Entity.Position == v2 -128.0f -128.0f
+                             Entity.ClickEvent >|> fun _ -> Signal.msg Reset]]]]

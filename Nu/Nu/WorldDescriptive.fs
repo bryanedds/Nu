@@ -93,6 +93,7 @@ and [<NoComparison>] EntityDescriptor =
 
 /// Initializes a property.
 type [<NoEquality; NoComparison>] PropertyInitializer =
+    | EventHandlerDefinition of Address * (EventGeneralized -> obj)
     | PropertyDefinition of PropertyDefinition
     | Equation of string * World Lens * bool
 

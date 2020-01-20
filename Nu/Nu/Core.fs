@@ -112,6 +112,30 @@ module StreamPlus =
         Stream.map snd |>
         Stream.definitize
 
+// TODO: remove this after updating Prime.
+/// The generalized event type (can be used to handle any event).
+type Event = Event<obj, Participant>
+
+// TODO: remove this after updating Prime.
+[<RequireQualifiedAccess>]
+module Event =
+
+    /// Specialize an event.
+    let specialize (evt : Event) : Event<'a, 's> =
+        { Data = evt.Data :?> 'a
+          Subscriber = evt.Subscriber :?> 's
+          Publisher = evt.Publisher
+          Address = atoa evt.Address
+          Trace = evt.Trace }
+
+    // Generalize an event.
+    let generalize (evt : Event<'a, 's>) : Event =
+        { Data = evt.Data :> obj
+          Subscriber = evt.Subscriber
+          Publisher = evt.Publisher
+          Address = atoa evt.Address
+          Trace = evt.Trace }
+
 /// Specifies the screen-clearing routine.
 type ScreenClear =
     | NoClear

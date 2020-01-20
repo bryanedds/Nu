@@ -517,7 +517,7 @@ module Gaia =
                             selectedGridItem.PropertyDescriptor.PropertyType = typeof<Image AssetTag> ||
                             selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option>
                         form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
-                        propertyPickButtonClickHandler <- EventHandler (fun _ _ -> addWorldChanger $ handlePropertyPickButton selectedGridItem.PropertyDescriptor selectedEntityTds form)
+                        propertyPickButtonClickHandler <- EventHandlerDefinition (fun _ _ -> addWorldChanger $ handlePropertyPickButton selectedGridItem.PropertyDescriptor selectedEntityTds form)
                         form.pickPropertyButton.Click.AddHandler propertyPickButtonClickHandler
                 | _ ->
                     form.propertyEditor.Enabled <- false
