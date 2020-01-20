@@ -131,7 +131,8 @@ module DeclarativeOperators =
         Lens.makeReadOnly<'a, World> name get this
 
     /// Initialize a property.
-    let init lens value = PropertyDefinition (define lens value)
+    let init lens value =
+        PropertyDefinition (define lens value)
 
     /// Equate two properties, optionally breaking any potential update cycles.
     let equate3 (left : Lens<'a, World>) (right : Lens<'a, World>) breaking =
@@ -146,6 +147,14 @@ module DeclarativeOperators =
     /// Equate two properties, breaking any update cycles.
     let equateBreaking left right =
         equate3 left right true
+
+    /// Bind an event to a signal.
+    let inline (>=>) (evt : 'a Address) (signal : Signal<_, 'm>) : PropertyInitializer =
+        EventHandlerDefinition (evt, fun _ -> signal :> obj)
+
+    /// Bind an event to a signal.
+    let inline (>|>) (evt : 'a Address) (handler : Event<'a, 'p> -> Signal<_, 'm>) : PropertyInitializer =
+        EventHandlerDefinition (evt, fun evt -> handler (Event.specialize evt) :> obj)
 
     /// Initialize a property.
     let inline (==) left right = init left right
