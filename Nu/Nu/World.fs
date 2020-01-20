@@ -288,7 +288,7 @@ module Nu =
             WorldModule.equate5 <- fun name (participant : Participant) (lens : World Lens) breaking world ->
                 let nonPersistent = not (Reflection.isPropertyPersistentByName name)
                 let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
-                let propagate (_ : EventGeneralized) world =
+                let propagate (_ : Event) world =
                     if lens.Validate world then
                         let property = { PropertyType = lens.Type; PropertyValue = lens.GetWithoutValidation world }
                         World.setProperty name nonPersistent alwaysPublish property (participant :?> Simulant) world

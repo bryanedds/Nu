@@ -131,3 +131,14 @@ module Content =
 
     /// Describe a tile map with the given definitions.
     let tileMap entityName definitions = entity<TileMapDispatcher> entityName definitions
+
+[<AutoOpen>]
+module ContentOperators =
+
+    /// Bind an event to a signal.
+    let inline (>=>) (eventAddress : 'a Address) (signal : Signal<_, 'm>) : PropertyInitializer =
+        EventHandlerDefinition (atooa eventAddress, World.deriveFromEvent eventAddress, fun _ -> signal :> obj)
+
+    /// Bind an event to a signal.
+    let inline (>|>) (eventAddress : 'a Address) (handler : Event<'a, 'p> -> Signal<_, 'm>) : PropertyInitializer =
+        EventHandlerDefinition (atooa eventAddress, World.deriveFromEvent eventAddress, fun evt -> handler (Event.specialize evt) :> obj)

@@ -258,7 +258,7 @@ module WorldLayerModule =
             Stream.fold (fun (p, _, _) c ->
                 (c, Set.difference c p, Set.difference p c))
                 (Set.empty, Set.empty, Set.empty) |>
-            StreamPlus.optimizeBy
+            Stream.optimizeBy
                 Triple.fst |>
             Stream.mapEffect (fun evt world ->
                 let (current, added, removed) = evt.Data
@@ -296,7 +296,7 @@ module WorldLayerModule =
             match LayerContent.expand content screen world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
                 World.expandLayerStream lens indexerOpt mapper screen world
-            | Choice2Of3 (name, descriptor, equations, streams, entityFilePaths, entityContents) ->
+            | Choice2Of3 (name, descriptor, handlers, equations, streams, entityFilePaths, entityContents) ->
                 let (layer, world) = World.readLayer descriptor (Some name) screen world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) layer world | None -> world
                 let world =
@@ -307,6 +307,10 @@ module WorldLayerModule =
                     List.fold (fun world (name, simulant, property, breaking) ->
                         WorldModule.equate5 name simulant property breaking world)
                         world equations
+                let world =
+                    List.fold (fun world (address, subscriber, handler) ->
+                        World.monitor handler address subscriber world)
+                        world handlers
                 let world =
                     List.fold (fun world (layer, lens, indexerOpt, mapper) ->
                         World.expandEntityStream lens indexerOpt mapper None layer world)

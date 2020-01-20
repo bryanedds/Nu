@@ -369,7 +369,7 @@ module WorldEntityModule =
             Stream.fold (fun (p, _, _) c ->
                 (c, Set.difference c p, Set.difference p c))
                 (Set.empty, Set.empty, Set.empty) |>
-            StreamPlus.optimizeBy
+            Stream.optimizeBy
                 Triple.fst |>
             Stream.mapEffect (fun evt world ->
                 let (current, added, removed) = evt.Data
@@ -407,7 +407,7 @@ module WorldEntityModule =
             match EntityContent.expand content layer world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
                 World.expandEntityStream lens indexerOpt mapper ownerOpt layer world
-            | Choice2Of3 (name, descriptor, equations, content) ->
+            | Choice2Of3 (name, descriptor, handlers, equations, content) ->
                 let (entity, world) = World.readEntity descriptor (Some name) layer world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
                 let world = match ownerOpt with Some owner -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> owner) entity world | None -> world
@@ -415,6 +415,10 @@ module WorldEntityModule =
                     List.fold (fun world (name, simulant, property, breaking) ->
                         WorldModule.equate5 name simulant property breaking world)
                         world equations
+                let world =
+                    List.fold (fun world (address, subscriber, handler) ->
+                        World.monitor handler address subscriber world)
+                        world handlers
                 let world =
                     List.fold (fun world content ->
                         World.expandEntityContent (Some (makeGuid ())) content ownerOpt layer world)
