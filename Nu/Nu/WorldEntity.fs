@@ -387,6 +387,7 @@ module WorldEntityModule =
                         match World.tryGetKeyedValue (scstring guid) world with
                         | Some entity ->
                             let world = World.removeKeyedValue (scstring guid) world
+                            let world = world |> World.unregisterEntity entity |> World.registerEntity entity
                             World.destroyEntity entity world
                         | None -> failwithumf ())
                         world removed
