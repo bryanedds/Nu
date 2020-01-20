@@ -78,64 +78,6 @@ module CoreOperators =
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
 
-// TODO: remove this after updating Prime.
-[<RequireQualifiedAccess>]
-module Lens =
-
-    let explodeIndexedOpt indexerOpt (lens : Lens<'a seq, 'w>) : Lens<(int * 'a) option, 'w> seq =
-        Seq.initInfinite id |>
-        Seq.map (fun index ->
-            Lens.mapOut (fun models ->
-                match indexerOpt with
-                | Some indexer ->
-                    let modelsIndexed = Seq.map (fun model -> (indexer model, model)) models
-                    Seq.tryFind (fun (index2, _) -> index = index2) modelsIndexed
-                | None ->
-                    match Seq.tryItem index models with
-                    | Some model -> Some (index, model)
-                    | None -> None)
-                lens)
-
-// TODO: remove this after updating Prime.
-[<RequireQualifiedAccess>]
-module StreamPlus =
-
-    let optimizeBy (by : 'a -> 'b) (stream : Stream<'a, 'w>) =
-        Stream.fold
-            (fun (s, _) a ->
-                let n = by a
-                match s with
-                | None -> (Some n, Some a)
-                | Some b -> if b = n then (Some n, None) else (Some n, Some a))
-            (None, None)
-            stream |>
-        Stream.map snd |>
-        Stream.definitize
-
-// TODO: remove this after updating Prime.
-/// The generalized event type (can be used to handle any event).
-type Event = Event<obj, Participant>
-
-// TODO: remove this after updating Prime.
-[<RequireQualifiedAccess>]
-module Event =
-
-    /// Specialize an event.
-    let specialize (evt : Event) : Event<'a, 's> =
-        { Data = evt.Data :?> 'a
-          Subscriber = evt.Subscriber :?> 's
-          Publisher = evt.Publisher
-          Address = atoa evt.Address
-          Trace = evt.Trace }
-
-    // Generalize an event.
-    let generalize (evt : Event<'a, 's>) : Event =
-        { Data = evt.Data :> obj
-          Subscriber = evt.Subscriber
-          Publisher = evt.Publisher
-          Address = atoa evt.Address
-          Trace = evt.Trace }
-
 /// Specifies the screen-clearing routine.
 type ScreenClear =
     | NoClear
