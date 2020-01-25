@@ -49,7 +49,7 @@ and [<NoEquality; NoComparison>] LayerContent =
         | LayerFromDefinitions (dispatcherName, name, initializers, content) ->
             let layer = screen / name
             let expansions = List.map (fun content -> EntityContent.expand content layer world) content
-            let streams = List.map (function Choice1Of3 stream -> Some (layer, Triple.fst stream, Triple.snd stream, Triple.thd stream) | _ -> None) expansions |> List.definitize
+            let streams = List.map (function Choice1Of3 (lens, indexerOpt, mapper) -> Some (layer, lens, indexerOpt, mapper) | _ -> None) expansions |> List.definitize
             let descriptors = List.map (function Choice2Of3 (entityName, descriptor, _, _, _) -> Some { descriptor with EntityProperties = Map.add Property? Name (valueToSymbol entityName) descriptor.EntityProperties } | _ -> None) expansions |> List.definitize
             let handlers = List.map (function Choice2Of3 (_, _, handlers, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
             let equations = List.map (function Choice2Of3 (_, _, _, equations, _) -> Some equations | _ -> None) expansions |> List.definitize |> List.concat
@@ -73,7 +73,7 @@ and [<NoEquality; NoComparison>] ScreenContent =
         | ScreenFromDefinitions (dispatcherName, name, behavior, initializers, content) ->
             let screen = Screen name
             let expansions = List.map (fun content -> LayerContent.expand content screen world) content
-            let streams = List.map (function Choice1Of3 stream -> Some (screen, Triple.fst stream, Triple.snd stream, Triple.thd stream) | _ -> None) expansions |> List.definitize
+            let streams = List.map (function Choice1Of3 (lens, indexerOpt, mapper) -> Some (screen, lens, indexerOpt, mapper) | _ -> None) expansions |> List.definitize
             let descriptors = List.map (function Choice2Of3 (layerName, descriptor, _, _, _, _, _) -> Some { descriptor with LayerProperties = Map.add (Property? Name) (valueToSymbol layerName) descriptor.LayerProperties } | _ -> None) expansions |> List.definitize
             let handlers = List.map (function Choice2Of3 (_, _, handlers, _, _, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
             let equations = List.map (function Choice2Of3 (_, _, _, equations, _, _, _) -> Some equations | _ -> None) expansions |> List.definitize |> List.concat

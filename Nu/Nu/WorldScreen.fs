@@ -276,7 +276,7 @@ module WorldScreenModule =
                 (screen, world)
 
         /// Turn screen content into a live screen.
-        static member expandScreenContent setScreenSplash content game world =
+        static member expandScreenContent setScreenSplash content game (origin : Simulant) world =
             match ScreenContent.expand content game world with
             | Left (name, descriptor, handlers, equations, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths, entityContents) ->
                 let (screen, world) = World.readScreen descriptor (Some name) world
@@ -293,22 +293,25 @@ module WorldScreenModule =
                         WorldModule.equate5 name simulant property breaking world)
                         world equations
                 let world =
-                    List.fold (fun world (address, subscriber, handler) ->
-                        World.monitor handler address subscriber world)
+                    List.fold (fun world (handler, address, subscriber) ->
+                        World.monitor (fun evt world ->
+                            let signal = handler evt
+                            WorldModule.signal signal origin world)
+                            address subscriber world)
                         world handlers
                 let world =
                     List.fold (fun world (screen, lens, indexerOpt, mapper) ->
-                        World.expandLayerStream lens indexerOpt mapper screen world)
+                        World.expandLayerStream lens indexerOpt mapper screen origin world)
                         world layerStreams
                 let world =
                     List.fold (fun world (layer, lens, indexerOpt, mapper) ->
-                        World.expandEntityStream lens indexerOpt mapper None layer world)
+                        World.expandEntityStream lens indexerOpt mapper None layer origin world)
                         world entityStreams
                 let world =
                     List.fold (fun world (owner, entityContents) ->
                         let layer = etol owner
                         List.fold (fun world entityContent ->
-                            World.expandEntityContent (Some (makeGuid ())) entityContent (Some owner) layer world)
+                            World.expandEntityContent (Some (makeGuid ())) entityContent (Some owner) layer origin world)
                             world entityContents)
                         world entityContents
                 World.applyScreenBehavior setScreenSplash behavior screen world

@@ -924,7 +924,7 @@ module GameDispatcherModule =
             let world = Signal.processBindings bindings this.Message this.Command (this.Model game) game world
             let content = this.Content (this.Model game, game, world)
             List.foldi (fun contentIndex world content ->
-                let (screen, world) = World.expandScreenContent World.setScreenSplash content game world
+                let (screen, world) = World.expandScreenContent World.setScreenSplash content game game world
                 if contentIndex = 0 then World.selectScreen screen world else world)
                 world content
 
@@ -946,3 +946,17 @@ module GameDispatcherModule =
 
         abstract member View : 'model * Game * World -> View list
         default this.View (_, _, _) = []
+
+[<AutoOpen>]
+module WorldModule2' =
+
+    type World with
+
+        /// Send a signal to a simulant.
+        static member signal<'model, 'message, 'command> signal (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> entity.Signal<'model, 'message, 'command> signal world
+            | :? Layer as layer -> layer.Signal<'model, 'message, 'command> signal world
+            | :? Screen as screen -> screen.Signal<'model, 'message, 'command> signal world
+            | :? Game as game -> game.Signal<'model, 'message, 'command> signal world
+            | _ -> failwithumf ()

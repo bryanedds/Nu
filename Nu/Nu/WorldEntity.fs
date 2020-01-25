@@ -347,6 +347,7 @@ module WorldEntityModule =
             (mapper : int -> Lens<obj, World> -> Layer -> World -> EntityContent)
             (ownerOpt : Entity option)
             (layer : Layer)
+            (origin : Simulant)
             (stream : Stream<Lens<(int * obj) option, World> seq, World>) =
             stream |>
             Stream.insert (makeGuid ()) |>
@@ -378,7 +379,7 @@ module WorldEntityModule =
                         let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
                         let content = mapper index lens layer world
                         match World.tryGetKeyedValue (scstring guid) world with
-                        | None -> World.expandEntityContent (Some guid) content ownerOpt layer world
+                        | None -> World.expandEntityContent (Some guid) content ownerOpt layer origin world
                         | Some _ -> world)
                         world added
                 let world =
@@ -394,19 +395,19 @@ module WorldEntityModule =
                 (current, world))
 
         /// Turn an entity stream into a series of live entities.
-        static member expandEntityStream (lens : Lens<obj, World>) indexerOpt mapper ownerOpt layer world =
+        static member expandEntityStream (lens : Lens<obj, World>) indexerOpt mapper ownerOpt layer origin world =
             let lensSeq = Lens.mapOut Reflection.objToObjSeq lens
             Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
             Stream.map (fun _ -> Lens.explodeIndexedOpt indexerOpt lensSeq) |>
-            World.streamEntities lensSeq mapper ownerOpt layer |>
+            World.streamEntities lensSeq mapper ownerOpt layer origin |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
         /// Turn entity content into a live entity.
-        static member expandEntityContent guidOpt content ownerOpt layer world =
+        static member expandEntityContent guidOpt content ownerOpt layer origin world =
             match EntityContent.expand content layer world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
-                World.expandEntityStream lens indexerOpt mapper ownerOpt layer world
+                World.expandEntityStream lens indexerOpt mapper ownerOpt layer origin world
             | Choice2Of3 (name, descriptor, handlers, equations, content) ->
                 let (entity, world) = World.readEntity descriptor (Some name) layer world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
@@ -416,12 +417,15 @@ module WorldEntityModule =
                         WorldModule.equate5 name simulant property breaking world)
                         world equations
                 let world =
-                    List.fold (fun world (address, subscriber, handler) ->
-                        World.monitor handler address subscriber world)
+                    List.fold (fun world (handler, address, subscriber) ->
+                        World.monitor (fun evt world ->
+                            let signal = handler evt
+                            WorldModule.signal signal origin world)
+                            address subscriber world)
                         world handlers
                 let world =
                     List.fold (fun world content ->
-                        World.expandEntityContent (Some (makeGuid ())) content ownerOpt layer world)
+                        World.expandEntityContent (Some (makeGuid ())) content ownerOpt layer origin world)
                         world (snd content)
                 world
             | Choice3Of3 (entityName, filePath) ->
