@@ -17,11 +17,11 @@ type MyGameDispatcher () =
 
     // here we define the Bindings used to connect events to their desired commands
     override this.Bindings (_, _, _) =
-        [Simulants.TitleCredits.ClickEvent =>! ShowCredits
-         Simulants.TitlePlay.ClickEvent =>! ShowGameplay
-         Simulants.TitleExit.ClickEvent =>! ExitGame
-         Simulants.CreditsBack.ClickEvent =>! ShowTitle
-         Simulants.Back.ClickEvent =>! ShowTitle]
+        [Simulants.TitleCredits.ClickEvent => cmd ShowCredits
+         Simulants.TitlePlay.ClickEvent => cmd ShowGameplay
+         Simulants.TitleExit.ClickEvent => cmd ExitGame
+         Simulants.CreditsBack.ClickEvent => cmd ShowTitle
+         Simulants.Back.ClickEvent => cmd ShowTitle]
 
     // here we handle the above commands
     override this.Command (command, _, _, world) =
