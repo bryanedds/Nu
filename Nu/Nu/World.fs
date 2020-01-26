@@ -297,6 +297,10 @@ module Nu =
                 let world = Stream.make (atooa Events.Register --> lens.This.ParticipantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate participant $ world
                 Stream.make (atooa (Events.Change lens.Name) --> lens.This.ParticipantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate participant $ world
 
+            // init signal F# reach-around
+            WorldModule.trySignal <- fun signalObj simulant world ->
+                World.trySignal signalObj simulant world
+
             // init scripting
             World.initScripting ()
             WorldBindings.initBindings ()

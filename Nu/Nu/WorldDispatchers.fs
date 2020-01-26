@@ -1030,6 +1030,11 @@ module EntityDispatcherModule =
             let views = this.View (this.GetModel entity world, entity, world)
             World.actualizeViews views world
 
+        override this.TrySignal (signalObj, entity, world) =
+            match signalObj with
+            | :? Signal<'message, 'command> as signal -> entity.Signal<'model, 'message, 'command> signal world
+            | _ -> world
+
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         default this.Bindings (_, _, _) = []
 
@@ -1850,6 +1855,11 @@ module LayerDispatcherModule =
             let views = this.View (this.GetModel layer world, layer, world)
             World.actualizeViews views world
 
+        override this.TrySignal (signalObj, layer, world) =
+            match signalObj with
+            | :? Signal<'message, 'command> as signal -> layer.Signal<'model, 'message, 'command> signal world
+            | _ -> world
+
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
         default this.Bindings (_, _, _) = []
 
@@ -1920,6 +1930,11 @@ module ScreenDispatcherModule =
         override this.Actualize (screen, world) =
             let views = this.View (this.GetModel screen world, screen, world)
             World.actualizeViews views world
+
+        override this.TrySignal (signalObj, screen, world) =
+            match signalObj with
+            | :? Signal<'message, 'command> as signal -> screen.Signal<'model, 'message, 'command> signal world
+            | _ -> world
 
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
         default this.Bindings (_, _, _) = []

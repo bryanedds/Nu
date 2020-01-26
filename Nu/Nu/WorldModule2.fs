@@ -932,6 +932,11 @@ module GameDispatcherModule =
             let views = this.View (this.GetModel game world, game, world)
             World.actualizeViews views world
 
+        override this.TrySignal (signalObj, game, world) =
+            match signalObj with
+            | :? Signal<'message, 'command> as signal -> game.Signal<'model, 'message, 'command> signal world
+            | _ -> world
+
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
         default this.Bindings (_, _, _) = []
 
@@ -951,6 +956,15 @@ module GameDispatcherModule =
 module WorldModule2' =
 
     type World with
+
+        /// Send a signal to a simulant.
+        static member trySignal signal (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> entity.TrySignal signal world
+            | :? Layer as layer -> layer.TrySignal signal world
+            | :? Screen as screen -> screen.TrySignal signal world
+            | :? Game as game -> game.TrySignal signal world
+            | _ -> failwithumf ()
 
         /// Send a signal to a simulant.
         static member signal<'model, 'message, 'command> signal (simulant : Simulant) world =
