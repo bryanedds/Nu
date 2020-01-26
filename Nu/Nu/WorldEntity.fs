@@ -209,6 +209,9 @@ module WorldEntityModule =
         /// Get an entity's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.EntityAddress
 
+        /// Try to signal an entity.
+        member this.TrySignal signal world = (this.GetDispatcher world).TrySignal (signal, this, world)
+
     type World with
 
         static member internal updateEntity (entity : Entity) world =
@@ -420,7 +423,7 @@ module WorldEntityModule =
                     List.fold (fun world (handler, address, subscriber) ->
                         World.monitor (fun evt world ->
                             let signal = handler evt
-                            WorldModule.signal signal origin world)
+                            WorldModule.trySignal signal origin world)
                             address subscriber world)
                         world handlers
                 let world =

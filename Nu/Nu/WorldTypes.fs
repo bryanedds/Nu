@@ -215,6 +215,10 @@ module WorldTypes =
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Game * World -> Property option
         default this.TryGetCalculatedProperty (_, _, _) = None
+
+        /// Try to send a signal to a game.
+        abstract TrySignal : obj * Game * World -> World
+        default this.TrySignal (_, _, world) = world
     
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
@@ -243,6 +247,10 @@ module WorldTypes =
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Screen * World -> Property option
         default this.TryGetCalculatedProperty (_, _, _) = None
+
+        /// Try to send a signal to a screen.
+        abstract TrySignal : obj * Screen * World -> World
+        default this.TrySignal (_, _, world) = world
     
     /// The default dispatcher for layers.
     and LayerDispatcher () =
@@ -271,6 +279,10 @@ module WorldTypes =
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Layer * World -> Property option
         default this.TryGetCalculatedProperty (_, _, _) = None
+
+        /// Try to send a signal to a layer.
+        abstract TrySignal : obj * Layer * World -> World
+        default this.TrySignal (_, _, world) = world
     
     /// The default dispatcher for entities.
     and EntityDispatcher () =
@@ -322,6 +334,10 @@ module WorldTypes =
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Entity * World -> Property option
         default this.TryGetCalculatedProperty (_, _, _) = None
+
+        /// Try to send a signal to an entity.
+        abstract TrySignal : obj * Entity * World -> World
+        default this.TrySignal (_, _, world) = world
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
