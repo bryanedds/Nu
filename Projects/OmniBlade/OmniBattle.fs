@@ -273,23 +273,23 @@ module OmniBattle =
             (model, sigs)
 
         static let battleBindings (battle : Screen) =
-            [battle.OutgoingStartEvent =>! FadeSong
-             battle.SelectEvent =>! InitializeBattle
-             battle.DeselectEvent =>! FinalizeBattle
-             battle.UpdateEvent => Tick]
+            [battle.OutgoingStartEvent => cmd FadeSong
+             battle.SelectEvent => cmd InitializeBattle
+             battle.DeselectEvent => cmd FinalizeBattle
+             battle.UpdateEvent => msg Tick]
 
         static let allyBindings index =
             let regularMenu = Simulants.RegularMenu index
             let specialMenu = Simulants.SpecialMenu index
             let itemMenu = Simulants.ItemMenu index
             let reticles = Simulants.Reticles index
-            [regularMenu.ItemSelectEvent =|>! fun evt -> IndexedCommand (RegularMenuSelect evt.Data, index)
-             specialMenu.ItemSelectEvent =|>! fun evt -> IndexedCommand (SpecialMenuSelect evt.Data, index)
-             specialMenu.CancelEvent =>! IndexedCommand (RegularMenuShow, index)
-             itemMenu.ItemSelectEvent =|>! fun evt -> IndexedCommand (ItemMenuSelect evt.Data, index)
-             itemMenu.CancelEvent =>! IndexedCommand (RegularMenuShow, index)
-             reticles.TargetSelectEvent =|> fun evt -> ReticlesSelect (evt.Data, AllyIndex index)
-             reticles.CancelEvent =>! IndexedCommand (ReticlesCancel, index)]
+            [regularMenu.ItemSelectEvent =|> fun evt -> cmd (IndexedCommand (RegularMenuSelect evt.Data, index))
+             specialMenu.ItemSelectEvent =|> fun evt -> cmd (IndexedCommand (SpecialMenuSelect evt.Data, index))
+             specialMenu.CancelEvent => cmd (IndexedCommand (RegularMenuShow, index))
+             itemMenu.ItemSelectEvent =|> fun evt -> cmd (IndexedCommand (ItemMenuSelect evt.Data, index))
+             itemMenu.CancelEvent => cmd (IndexedCommand (RegularMenuShow, index))
+             reticles.TargetSelectEvent =|> fun evt -> msg (ReticlesSelect (evt.Data, AllyIndex index))
+             reticles.CancelEvent => cmd (IndexedCommand (ReticlesCancel, index))]
 
         static let allyPartyBindings allyMax =
             seq { for i in 0 .. allyMax - 1 do yield allyBindings i } |>
