@@ -47,10 +47,10 @@ module WorldModule2 =
         /// Sort subscriptions by their depth priority.
         static member sortSubscriptionsByDepth subscriptions world =
             World.sortSubscriptionsBy
-                (fun (participant : Participant) _ ->
+                (fun (simulant : Simulant) _ ->
                     let priority =
-                        match participant with
-                        | :? GlobalParticipantGeneralized
+                        match simulant with
+                        | :? GlobalSimulantGeneralized
                         | :? Game -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Default.Game }
                         | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen }
                         | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority + layer.GetDepth world; SortPositionY = 0.0f; SortTarget = layer }
@@ -66,7 +66,7 @@ module WorldModule2 =
             let address = Relation.resolve scriptContext.SimulantAddress relation
             address
 
-        /// Resolve a Participant relation to an address in the current script context.
+        /// Resolve a Simulant relation to an address in the current script context.
         [<FunctionBinding "resolve">]
         static member resolveGeneric (relation : obj Relation) world =
             World.resolve relation world

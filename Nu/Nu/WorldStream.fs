@@ -57,10 +57,10 @@ module StreamOperators =
     /// Make a stream of the subscriber's change events.
     let [<DebuggerHidden; DebuggerStepThrough>] (!--) (lens : Lens<'b, World>) = !-- lens
 
-    /// Propagate the event data of a stream to a value in the observing participant when the
+    /// Propagate the event data of a stream to a value in the observing simulant when the
     /// subscriber exists (doing nothing otherwise).
     let [<DebuggerHidden; DebuggerStepThrough>] (-|>) stream (lens : Lens<'b, World>) = stream -|> lens
 
-    // Propagate a value from the given source participant to a value in the given destination
-    // participant, but with update-based cycle-breaking.
+    // Propagate a value from the given source simulant to a value in the given destination
+    // simulant, but with update-based cycle-breaking.
     let [<DebuggerHidden; DebuggerStepThrough>] (-/>) stream lens = Stream.noMoreThanOncePerUpdate stream -|> lens

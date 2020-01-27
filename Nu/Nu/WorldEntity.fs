@@ -403,7 +403,7 @@ module WorldEntityModule =
         /// Turn an entity stream into a series of live entities.
         static member expandEntityStream (lens : Lens<obj, World>) indexerOpt mapper ownerOpt layer origin world =
             let lensSeq = Lens.mapOut Reflection.objToObjSeq lens
-            Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
+            Stream.make (Events.Register --> lens.This.SimulantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
             Stream.map (fun _ -> Lens.explodeIndexedOpt indexerOpt lensSeq) |>
             World.streamEntities lensSeq mapper ownerOpt layer origin |>
