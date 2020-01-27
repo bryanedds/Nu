@@ -275,6 +275,7 @@ module WorldLayerModule =
                         match World.tryGetKeyedValue (scstring guid) world with
                         | Some layer ->
                             let world = World.removeKeyedValue (scstring guid) world
+                            // HACK: remove lens bindings that may depend on a non-existent model index
                             let world = world |> World.unregisterLayer layer |> World.registerLayer layer
                             World.destroyLayer layer world
                         | None -> failwithumf ())
