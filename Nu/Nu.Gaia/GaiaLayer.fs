@@ -4,7 +4,6 @@
 namespace Nu.Gaia
 open System
 open System.ComponentModel
-open System.Collections.Generic
 open System.Windows.Forms
 open Prime
 open Nu

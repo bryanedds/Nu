@@ -1063,7 +1063,7 @@ module EntityDispatcherModule =
             let views = this.View (this.GetModel entity world, entity, world)
             World.actualizeViews views world
 
-        override this.TrySignalFacetCurried (signalObj : obj, facetName : string, entity : Entity, world : World) : World =
+        override this.TrySignalFacet (signalObj : obj, facetName : string, entity : Entity, world : World) : World =
             entity.TrySignalFacet signalObj facetName world
 
         override this.TrySignal (signalObj, entity, world) =
