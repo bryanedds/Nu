@@ -78,6 +78,12 @@ module CoreOperators =
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
 
+    // TODO: remove this once Prime is updated.
+    let inline bind source signal : Binding<'m, 'c, 's, 'w> = source => signal
+
+    // TODO: remove this once Prime is updated.
+    let inline react source signal : Binding<'m, 'c, 's, 'w> = source =|> signal
+
 /// Specifies the screen-clearing routine.
 type ScreenClear =
     | NoClear
