@@ -315,7 +315,7 @@ module WorldLayerModule =
                     List.fold (fun world (handler, address, simulant) ->
                         World.monitor (fun (evt : Event) world ->
                             let signal = handler evt
-                            WorldModule.trySignal signal simulant world)
+                            WorldModule.trySignal signal origin world)
                             address simulant world)
                         world handlers
                 let world =

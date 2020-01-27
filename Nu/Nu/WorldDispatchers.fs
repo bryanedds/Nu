@@ -116,7 +116,8 @@ module FacetModule =
 
         override this.TrySignal (signalObj, entity, world) =
             match signalObj with
-            | :? Signal<'message, 'command> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> signal (getTypeName this) world
+            | :? Signal<'message, obj> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) (getTypeName this) world
+            | :? Signal<obj, 'command> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) (getTypeName this) world
             | _ -> world
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
@@ -1067,7 +1068,8 @@ module EntityDispatcherModule =
 
         override this.TrySignal (signalObj, entity, world) =
             match signalObj with
-            | :? Signal<'message, 'command> as signal -> entity.Signal<'model, 'message, 'command> signal world
+            | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> world
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
@@ -1892,7 +1894,8 @@ module LayerDispatcherModule =
 
         override this.TrySignal (signalObj, layer, world) =
             match signalObj with
-            | :? Signal<'message, 'command> as signal -> layer.Signal<'model, 'message, 'command> signal world
+            | :? Signal<'message, obj> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> world
 
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
@@ -1968,7 +1971,8 @@ module ScreenDispatcherModule =
 
         override this.TrySignal (signalObj, screen, world) =
             match signalObj with
-            | :? Signal<'message, 'command> as signal -> screen.Signal<'model, 'message, 'command> signal world
+            | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> world
 
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
