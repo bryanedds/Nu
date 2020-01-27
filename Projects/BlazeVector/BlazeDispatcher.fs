@@ -25,15 +25,15 @@ module BlazeDispatcherModule =
 
         // here we define the Bindings used to connect events to their desired commands
         override this.Bindings (_, _, _) =
-            [Simulants.Splash.SelectEvent =>! PlaySplashSound
-             Simulants.Title.IncomingStartEvent =>! PlayTitleSong
-             Simulants.Title.OutgoingStartEvent =>! FadeSong
-             Simulants.TitleCredits.ClickEvent =>! ShowCredits
-             Simulants.TitlePlay.ClickEvent =>! ShowGameplay
-             Simulants.TitleExit.ClickEvent =>! ExitGame
-             Simulants.CreditsBack.ClickEvent =>! ShowTitle
-             Simulants.Gameplay.OutgoingStartEvent =>! FadeSong
-             Simulants.GameplayBack.ClickEvent =>! ShowTitle]
+            [Simulants.Splash.SelectEvent => cmd PlaySplashSound
+             Simulants.Title.IncomingStartEvent => cmd PlayTitleSong
+             Simulants.Title.OutgoingStartEvent => cmd FadeSong
+             Simulants.TitleCredits.ClickEvent => cmd ShowCredits
+             Simulants.TitlePlay.ClickEvent => cmd ShowGameplay
+             Simulants.TitleExit.ClickEvent => cmd ExitGame
+             Simulants.CreditsBack.ClickEvent => cmd ShowTitle
+             Simulants.Gameplay.OutgoingStartEvent => cmd FadeSong
+             Simulants.GameplayBack.ClickEvent => cmd ShowTitle]
 
         // here we handle the above commands
         override this.Command (command, _, _, world) =

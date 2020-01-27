@@ -5,10 +5,8 @@ open Nu
 open Nu.Declarative
 module Simulants =
 
-    // here we create references for the entities that we are going to define for our game
+    // here we create an entity reference for Elmario
     let Elmario = Default.Layer / "Elmario"
-    let Ground = Default.Layer / "Ground"
-    let Rock = Default.Layer / "Rock"
 
 module Elmario =
 
@@ -25,14 +23,14 @@ module Elmario =
 
         // here we define the Bindings used to connect events to their desired commands
         override this.Bindings (_, game, _) =
-            [game.KeyboardKeyDownEvent =|>! fun evt ->
+            [game.KeyboardKeyDownEvent =|> fun evt ->
                 if evt.Data.ScanCode = int SDL.SDL_Scancode.SDL_SCANCODE_UP && not evt.Data.Repeated
-                then Jump
-                else Nop
-             game.UpdateEvent =|>! fun _ ->
-                if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then MoveLeft
-                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then MoveRight
-                else Nop]
+                then cmd Jump
+                else cmd Nop
+             game.UpdateEvent =|> fun _ ->
+                if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then cmd MoveLeft
+                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then cmd MoveRight
+                else cmd Nop]
 
         // here we handle the above commands
         override this.Command (command, _, _, world) =
@@ -61,14 +59,14 @@ module Elmario =
         override this.Content (_, _, _) =
             [Content.screen Default.Screen.Name Vanilla []
                 [Content.layer Default.Layer.Name []
-                    [Content.character Simulants.Elmario.Name
+                    [Content.character "Elmario"
                         [Entity.Position == v2 0.0f 0.0f
                          Entity.Size == v2 144.0f 144.0f]
-                     Content.block Simulants.Ground.Name
+                     Content.block "Ground"
                         [Entity.Position == v2 -384.0f -256.0f
                          Entity.Size == v2 768.0f 64.0f
                          Entity.StaticImage == asset "Gameplay" "TreeTop"]
-                     Content.block Simulants.Rock.Name
+                     Content.block "Rock"
                         [Entity.Position == v2 320.0f -192.0f
                          Entity.Size == v2 64.0f 64.0f
                          Entity.StaticImage == asset "Gameplay" "Rock"]]]]
