@@ -936,7 +936,7 @@ module GameDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> game.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ -> world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
         default this.Bindings (_, _, _) = []
