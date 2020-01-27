@@ -209,6 +209,9 @@ module WorldEntityModule =
         /// Get an entity's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.EntityAddress
 
+        /// Try to signal an entity's facet.
+        member this.TrySignalFacet (signalObj : obj) facetName world = (this.GetDispatcher world).TrySignalFacetCurried (signalObj, facetName, this, world)
+
         /// Try to signal an entity.
         member this.TrySignal signal world = (this.GetDispatcher world).TrySignal (signal, this, world)
 
@@ -348,7 +351,7 @@ module WorldEntityModule =
         static member streamEntities
             (lensSeq : Lens<obj seq, World>)
             (mapper : int -> Lens<obj, World> -> Layer -> World -> EntityContent)
-            (ownerOpt : Entity option)
+            (ownerOpt : ContentOwner)
             (layer : Layer)
             (origin : Simulant)
             (stream : Stream<Lens<(int * obj) option, World> seq, World>) =
@@ -414,7 +417,11 @@ module WorldEntityModule =
             | Choice2Of3 (name, descriptor, handlers, equations, content) ->
                 let (entity, world) = World.readEntity descriptor (Some name) layer world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
-                let world = match ownerOpt with Some owner -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> owner) entity world | None -> world
+                let world =
+                    match ownerOpt with
+                    | SimulantOwner simulant -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
+                    | FacetOwner (simulant, _) -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
+                    | NoOwner -> world
                 let world =
                     List.fold (fun world (name, simulant, property, breaking) ->
                         WorldModule.equate5 name simulant property breaking world)
@@ -423,7 +430,10 @@ module WorldEntityModule =
                     List.fold (fun world (handler, address, subscriber) ->
                         World.monitor (fun evt world ->
                             let signal = handler evt
-                            WorldModule.trySignal signal origin world)
+                            match ownerOpt with
+                            | SimulantOwner _
+                            | NoOwner -> WorldModule.trySignal signal origin world
+                            | FacetOwner (_, facetName) -> WorldModule.trySignalFacet signal facetName origin world)
                             address subscriber world)
                         world handlers
                 let world =
@@ -434,7 +444,11 @@ module WorldEntityModule =
             | Choice3Of3 (entityName, filePath) ->
                 let (entity, world) = World.readEntityFromFile filePath (Some entityName) layer world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
-                let world = match ownerOpt with Some owner -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> owner) entity world | None -> world
+                let world =
+                    match ownerOpt with
+                    | SimulantOwner simulant -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
+                    | FacetOwner (simulant, _) -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
+                    | NoOwner -> world
                 world
 
     /// Represents the property value of an entity as accessible via reflection.

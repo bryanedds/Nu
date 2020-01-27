@@ -335,6 +335,10 @@ module WorldTypes =
         abstract TryGetCalculatedProperty : string * Entity * World -> Property option
         default this.TryGetCalculatedProperty (_, _, _) = None
 
+        /// Try to send a signal to an entity's facet.
+        abstract TrySignalFacetCurried : obj * string * Entity * World -> World
+        default this.TrySignalFacetCurried (_, _, _, world) = world
+
         /// Try to send a signal to an entity.
         abstract TrySignal : obj * Entity * World -> World
         default this.TrySignal (_, _, world) = world
@@ -377,6 +381,10 @@ module WorldTypes =
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Entity * World -> Property option
         default this.TryGetCalculatedProperty (_, _, _) = None
+
+        /// Try to send a signal to a facet.
+        abstract TrySignal : obj * Entity * World -> World
+        default this.TrySignal (_, _, world) = world
 
     /// Generalized interface for simulant state.
     and SimulantState =
@@ -753,7 +761,7 @@ module WorldTypes =
         static member acatff<'a> (address : 'a Address) (simulant : Simulant) = acatff address simulant.SimulantAddress
 
         /// Concatenate two addresses, forcing the type of first address.
-        static member (-->) (address, simulant : Simulant) = SimulantOperators.acatff address simulant
+        static member (-->) (address : 'a Address, simulant : Simulant) = SimulantOperators.acatff address simulant
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =

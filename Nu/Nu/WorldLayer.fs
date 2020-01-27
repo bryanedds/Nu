@@ -320,12 +320,12 @@ module WorldLayerModule =
                         world handlers
                 let world =
                     List.fold (fun world (layer, lens, indexerOpt, mapper) ->
-                        World.expandEntityStream lens indexerOpt mapper None layer origin world)
+                        World.expandEntityStream lens indexerOpt mapper NoOwner layer origin world)
                         world streams
                 let world =
                     List.fold (fun world (owner, entityContents) ->
                         List.fold (fun world entityContent ->
-                            World.expandEntityContent (Some (makeGuid ())) entityContent (Some owner) layer origin world)
+                            World.expandEntityContent (Some (makeGuid ())) entityContent (SimulantOwner owner) layer origin world)
                             world entityContents)
                         world entityContents
                 world
