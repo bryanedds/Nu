@@ -130,7 +130,7 @@ module Nu =
 
             // init handlePropertyChange F# reach-around
             WorldTypes.handlePropertyChange <- fun propertyName propertied handler world ->
-                let participant = propertied :?> Participant
+                let simulant = propertied :?> Simulant
                 let handler = handler :?> World PropertyChangeHandler
                 let (unsubscribe, world) =
                     World.subscribePlus
@@ -139,8 +139,8 @@ module Nu =
                             let data = event.Data :?> ChangeData
                             let world = handler data.Value world
                             (Cascade, world))
-                        (rtoa (Array.append [|"Change"; propertyName; "Event"|] (Address.getNames participant.ParticipantAddress)))
-                        (Default.Game :> Participant)
+                        (rtoa (Array.append [|"Change"; propertyName; "Event"|] (Address.getNames simulant.SimulantAddress)))
+                        (Default.Game :> Simulant)
                         (world :?> World)
                 (box unsubscribe, box world)
 
@@ -285,17 +285,19 @@ module Nu =
                 | None -> world
 
             // init equate5 F# reach-around
-            WorldModule.equate5 <- fun name (participant : Participant) (lens : World Lens) breaking world ->
+            WorldModule.equate5 <- fun name (simulant : Simulant) (lens : World Lens) breaking world ->
                 let nonPersistent = not (Reflection.isPropertyPersistentByName name)
                 let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
                 let propagate (_ : Event) world =
-                    if lens.Validate world then
-                        let property = { PropertyType = lens.Type; PropertyValue = lens.GetWithoutValidation world }
-                        World.setProperty name nonPersistent alwaysPublish property (participant :?> Simulant) world
-                    else world
+                    let property = { PropertyType = lens.Type; PropertyValue = lens.Get world }
+                    World.setProperty name nonPersistent alwaysPublish property simulant world
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
-                let world = Stream.make (atooa Events.Register --> lens.This.ParticipantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate participant $ world
-                Stream.make (atooa (Events.Change lens.Name) --> lens.This.ParticipantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate participant $ world
+                let world = Stream.make (atooa Events.Register --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
+                Stream.make (atooa (Events.Change lens.Name) --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
+
+            // init signal F# reach-around
+            WorldModule.trySignalFacet <- fun signalObj facetName simulant world ->
+                World.trySignalFacet signalObj facetName simulant world
 
             // init signal F# reach-around
             WorldModule.trySignal <- fun signalObj simulant world ->
@@ -384,9 +386,9 @@ module WorldModule3 =
                 let eventTracer = Log.remark "Event"
                 let eventTracing = Core.getEventTracing ()
                 let eventFilter = Core.getEventFilter ()
-                let globalParticipant = Default.Game
-                let globalParticipantGeneralized = { GpgAddress = atoa globalParticipant.GameAddress }
-                EventSystemDelegate.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
+                let globalSimulant = Default.Game
+                let globalSimulantGeneralized = { GpgAddress = atoa globalSimulant.GameAddress }
+                EventSystemDelegate.make eventTracer eventTracing eventFilter globalSimulant globalSimulantGeneralized
 
             // make the game dispatcher
             let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
@@ -457,9 +459,9 @@ module WorldModule3 =
                     let eventTracer = Log.remark "Event"
                     let eventTracing = Core.getEventTracing ()
                     let eventFilter = Core.getEventFilter ()
-                    let globalParticipant = Default.Game
-                    let globalParticipantGeneralized = { GpgAddress = atoa globalParticipant.GameAddress }
-                    EventSystemDelegate.make eventTracer eventTracing eventFilter globalParticipant globalParticipantGeneralized
+                    let globalSimulant = Default.Game
+                    let globalSimulantGeneralized = { GpgAddress = atoa globalSimulant.GameAddress }
+                    EventSystemDelegate.make eventTracer eventTracing eventFilter globalSimulant globalSimulantGeneralized
                     
                 // make plug-in facets and dispatchers
                 let pluginFacets = plugin.Birth<Facet> ()

@@ -56,7 +56,10 @@ module WorldModule =
     let mutable internal unsubscribeSimulantScripts : Simulant -> World -> World =
         Unchecked.defaultof<_>
 
-    let mutable internal equate5 : string -> Participant -> World Lens -> bool -> World -> World =
+    let mutable internal equate5 : string -> Simulant -> World Lens -> bool -> World -> World =
+        Unchecked.defaultof<_>
+
+    let mutable internal trySignalFacet : obj -> string -> Simulant -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal trySignal : obj -> Simulant -> World -> World =
@@ -142,7 +145,7 @@ module WorldModule =
 
         /// Set the context of the event system.
 #if DEBUG
-        static member internal withEventContext operation (context : Participant) (world : World) =
+        static member internal withEventContext operation (context : Simulant) (world : World) =
             let oldContext = World.getEventContext world
             EventSystem.setEventContext context world
             let world = operation world
@@ -167,9 +170,9 @@ module WorldModule =
             // OPTIMIZATION: entity priority boxed up front to decrease GC pressure.
             let entityPriorityBoxed = Constants.Engine.EntitySortPriority :> IComparable
             World.sortSubscriptionsBy
-                (fun (participant : Participant) _ ->
-                    match participant with
-                    | :? GlobalParticipantGeneralized
+                (fun (simulant : Simulant) _ ->
+                    match simulant with
+                    | :? GlobalSimulantGeneralized
                     | :? Game -> Constants.Engine.GameSortPriority :> IComparable
                     | :? Screen -> Constants.Engine.ScreenSortPriority :> IComparable
                     | :? Layer -> Constants.Engine.LayerSortPriority :> IComparable
@@ -196,22 +199,22 @@ module WorldModule =
             World.choose (EventSystem.unsubscribe<World> subscriptionKey world)
 
         /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
-        static member subscribePlus<'a, 's when 's :> Participant>
+        static member subscribePlus<'a, 's when 's :> Simulant>
             subscriptionKey (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
             mapSnd World.choose (EventSystem.subscribePlus<'a, 's, World> subscriptionKey subscription eventAddress subscriber world)
 
         /// Subscribe to an event.
-        static member subscribe<'a, 's when 's :> Participant>
+        static member subscribe<'a, 's when 's :> Simulant>
             (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
             World.choose (EventSystem.subscribe<'a, 's, World> subscription eventAddress subscriber world)
 
         /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
-        static member monitorPlus<'a, 's when 's :> Participant>
+        static member monitorPlus<'a, 's when 's :> Simulant>
             (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
             mapSnd World.choose (EventSystem.monitorPlus<'a, 's, World> subscription eventAddress subscriber world)
 
         /// Keep active a subscription for the lifetime of a simulant.
-        static member monitor<'a, 's when 's :> Participant>
+        static member monitor<'a, 's when 's :> Simulant>
             (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
             World.choose (EventSystem.monitor<'a, 's, World> subscription eventAddress subscriber world)
 

@@ -94,7 +94,7 @@ and [<NoComparison>] EntityDescriptor =
 /// Initializes a property.
 type [<NoEquality; NoComparison>] PropertyInitializer =
     | PropertyDefinition of PropertyDefinition
-    | EventHandlerDefinition of (Event -> obj) * obj Address * Participant
+    | EventHandlerDefinition of (Event -> obj) * obj Address
     | Equation of string * World Lens * bool
 
 /// Contains primitives for describing simulants.
@@ -112,7 +112,7 @@ module Describe =
             Map.ofSeq
         let eventHandlers =
             initializers |>
-            Seq.map (fun def -> match def with EventHandlerDefinition (handler, address, subscriber) -> Some (handler, address, subscriber) | PropertyDefinition _ | Equation _ -> None) |>
+            Seq.map (fun def -> match def with EventHandlerDefinition (handler, address) -> Some (handler, address --> game, game :> Simulant) | PropertyDefinition _ | Equation _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let equations =
@@ -141,7 +141,7 @@ module Describe =
             Map.ofSeq
         let eventHandlers =
             initializers |>
-            Seq.map (fun def -> match def with EventHandlerDefinition (handler, address, subscriber) -> Some (handler, address, subscriber) | PropertyDefinition _ | Equation _ -> None) |>
+            Seq.map (fun def -> match def with EventHandlerDefinition (handler, address) -> Some (handler, address --> screen, screen :> Simulant) | PropertyDefinition _ | Equation _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let equations =
@@ -170,7 +170,7 @@ module Describe =
             Map.ofSeq
         let eventHandlers =
             initializers |>
-            Seq.map (fun def -> match def with EventHandlerDefinition (handler, address, subscriber) -> Some (handler, address, subscriber) | PropertyDefinition _ | Equation _ -> None) |>
+            Seq.map (fun def -> match def with EventHandlerDefinition (handler, address) -> Some (handler, address --> layer, layer :> Simulant) | PropertyDefinition _ | Equation _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let equations =
@@ -199,7 +199,7 @@ module Describe =
             Map.ofSeq
         let eventHandlers =
             initializers |>
-            Seq.map (fun def -> match def with EventHandlerDefinition (handler, address, subscriber) -> Some (handler, address, subscriber) | PropertyDefinition _ | Equation _ -> None) |>
+            Seq.map (fun def -> match def with EventHandlerDefinition (handler, address) -> Some (handler, address --> entity, entity :> Simulant) | PropertyDefinition _ | Equation _ -> None) |>
             Seq.definitize |>
             Seq.toList
         let equations =
