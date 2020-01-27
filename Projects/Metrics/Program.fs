@@ -27,11 +27,11 @@ type MyEntityDispatcher () =
               DesignerValue = asset<Image> Assets.DefaultPackage "Image4" }]
 #endif
 
-    override dispatcher.Update (entity, world) =
+    override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
 
 #if OPTIMIZE
-    override dispatcher.Actualize (entity, world) =
+    override this.Actualize (entity, world) =
         let position = entity.GetPosition world
         let image = entity.GetStaticData world
         World.enqueueRenderMessage
@@ -59,7 +59,7 @@ type MyGameDispatcher () =
 
     let Fps = Default.Layer / "Fps"
 
-    override dispatcher.Register (game, world) =
+    override this.Register (game, world) =
         let world = base.Register (game, world)
         let world = World.createScreen (Some Default.Screen.Name) world |> snd
         let world = World.createLayer (Some Default.Layer.Name) Default.Screen world |> snd
