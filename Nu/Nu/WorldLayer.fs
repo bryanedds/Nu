@@ -245,14 +245,9 @@ module WorldLayerModule =
             Stream.insert (makeGuid ()) |>
             Stream.mapWorld (fun (guid, lenses) world ->
                 lenses |>
-                Seq.map (fun lens ->
-                    let opt = lens.Get world
-                    let lens = { Lens.dereference lens with Validate = fun world -> Option.isSome (lens.Get world) }
-                    (opt, lens)) |>
-                Seq.filter
-                    (fst >> Option.isSome) |>
-                Seq.take
-                    (Lens.get lensSeq world |> Seq.length) |>
+                Seq.map (fun lens -> (lens.Get world, Lens.dereference lens)) |>
+                Seq.filter (fst >> Option.isSome) |>
+                Seq.take (Lens.get lensSeq world |> Seq.length) |>
                 Seq.map (fun (opt, lens) ->
                     let (index, _) = Option.get opt
                     let guid = makeGuidDeterministic index guid
