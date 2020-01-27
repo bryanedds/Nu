@@ -138,7 +138,7 @@ module DeclarativeOperators =
         Lens.makeReadOnly<'a, World> name get this
 
     /// Initialize a property.
-    let init lens value =
+    let set lens value =
         PropertyDefinition (define lens value)
 
     /// Equate two properties, optionally breaking any potential update cycles.
@@ -156,7 +156,7 @@ module DeclarativeOperators =
         equate3 left right true
 
     /// Initialize a property.
-    let inline (==) left right = init left right
+    let inline (==) left right = set left right
 
     /// Equate two properties.
     let inline (==>) left right = equate left right
