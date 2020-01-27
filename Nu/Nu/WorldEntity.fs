@@ -388,6 +388,7 @@ module WorldEntityModule =
                         match World.tryGetKeyedValue (scstring guid) world with
                         | Some entity ->
                             let world = World.removeKeyedValue (scstring guid) world
+                            // HACK: remove lens bindings that may depend on a non-existent model index
                             let world = world |> World.unregisterEntity entity |> World.registerEntity entity
                             World.destroyEntity entity world
                         | None -> failwithumf ())
