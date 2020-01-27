@@ -45,4 +45,4 @@ module Nelmish =
                         Content.button "Reset"
                             [Entity.Text == "Reset!"
                              Entity.Position == v2 -128.0f -128.0f
-                             Entity.ClickEvent ==|> fun _ -> msg Reset]]]]
+                             Entity.ClickEvent ==> msg Reset]]]]
