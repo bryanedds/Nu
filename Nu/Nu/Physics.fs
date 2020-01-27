@@ -112,13 +112,13 @@ type [<StructuralEquality; NoComparison>] BodyProperties =
 
 /// A message to the physics system to create a body.
 type [<StructuralEquality; NoComparison>] CreateBodyMessage =
-    { SourceParticipant : Participant
+    { SourceSimulant : Simulant
       SourceId : Guid
       BodyProperties : BodyProperties }
 
 /// A message to the physics system to create multiple bodies.
 type [<StructuralEquality; NoComparison>] CreateBodiesMessage =
-    { SourceParticipant : Participant
+    { SourceSimulant : Simulant
       SourceId : Guid
       BodiesProperties : BodyProperties list }
 
@@ -167,14 +167,14 @@ type [<StructuralEquality; NoComparison>] ApplyBodyForceMessage =
 
 /// A message from the physics system describing a body collision that took place.
 type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
-    { SourceParticipant : Participant
-      SourceParticipant2 : Participant
+    { SourceSimulant : Simulant
+      SourceSimulant2 : Simulant
       Normal : Vector2
       Speed : single }
 
 /// A message from the physics system describing the updated transform of a body.
 type [<StructuralEquality; NoComparison>] BodyTransformMessage =
-    { SourceParticipant : Participant
+    { SourceSimulant : Simulant
       Position : Vector2
       Rotation : single }
 
@@ -283,8 +283,8 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
         physicsEngine (fixture : Dynamics.Fixture) (fixture2 : Dynamics.Fixture) (contact : Dynamics.Contacts.Contact) =
         let normal = fst (contact.GetWorldManifold ())
         let bodyCollisionMessage =
-            { SourceParticipant = fixture.Body.UserData :?> Participant
-              SourceParticipant2 = fixture2.Body.UserData :?> Participant
+            { SourceSimulant = fixture.Body.UserData :?> Simulant
+              SourceSimulant2 = fixture2.Body.UserData :?> Simulant
               Normal = Vector2 (normal.X, normal.Y)
               Speed = contact.TangentSpeed * Constants.Physics.PhysicsToPixelRatio }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
@@ -393,11 +393,11 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
         List.iter
-            (fun bodyProperties -> FarseerPhysicsEngine.createBody4 createBodiesMessage.SourceId createBodiesMessage.SourceParticipant bodyProperties physicsEngine)
+            (fun bodyProperties -> FarseerPhysicsEngine.createBody4 createBodiesMessage.SourceId createBodiesMessage.SourceSimulant bodyProperties physicsEngine)
             createBodiesMessage.BodiesProperties
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
-        FarseerPhysicsEngine.createBody4 createBodyMessage.SourceId createBodyMessage.SourceParticipant createBodyMessage.BodyProperties physicsEngine
+        FarseerPhysicsEngine.createBody4 createBodyMessage.SourceId createBodyMessage.SourceSimulant createBodyMessage.BodyProperties physicsEngine
 
     static member private destroyBody2 physicsId physicsEngine =
         match physicsEngine.Bodies.TryGetValue physicsId with
@@ -484,7 +484,7 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
             if body.Awake && not body.IsStatic then
                 let bodyTransformMessage =
                     BodyTransformMessage
-                        { SourceParticipant = body.UserData :?> Participant
+                        { SourceSimulant = body.UserData :?> Simulant
                           Position = FarseerPhysicsEngine.toPixelV2 body.Position
                           Rotation = body.Rotation }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage

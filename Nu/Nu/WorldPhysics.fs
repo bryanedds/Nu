@@ -31,18 +31,18 @@ module WorldPhysicsModule =
             | Running ->
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
-                    let entity = bodyTransformMessage.SourceParticipant :?> Entity
+                    let entity = bodyTransformMessage.SourceSimulant :?> Entity
                     if entity.GetExists world
                     then PhysicsEngineSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
                     else world
                 | BodyCollisionMessage bodyCollisionMessage ->
-                    let entity = bodyCollisionMessage.SourceParticipant :?> Entity
+                    let entity = bodyCollisionMessage.SourceSimulant :?> Entity
                     if entity.GetExists world then
                         let collisionAddress = Events.Collision --> entity.EntityAddress
                         let collisionData =
                             { Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed
-                              Collidee = bodyCollisionMessage.SourceParticipant2 :?> Entity }
+                              Collidee = bodyCollisionMessage.SourceSimulant2 :?> Entity }
                         let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
                         World.publish collisionData collisionAddress eventTrace Default.Game world
                     else world
@@ -136,13 +136,13 @@ module WorldPhysicsModule =
         /// Send a message to the physics system to create a physics body.
         [<FunctionBinding>]
         static member createBody (entity : Entity) entityId bodyProperties world =
-            let createBodyMessage = CreateBodyMessage { SourceParticipant = entity; SourceId = entityId; BodyProperties = bodyProperties }
+            let createBodyMessage = CreateBodyMessage { SourceSimulant = entity; SourceId = entityId; BodyProperties = bodyProperties }
             World.enqueuePhysicsMessage createBodyMessage world
 
         /// Send a message to the physics system to create several physics bodies.
         [<FunctionBinding>]
         static member createBodies (entity : Entity) entityId bodiesProperties world =
-            let createBodiesMessage = CreateBodiesMessage { SourceParticipant = entity; SourceId = entityId; BodiesProperties = bodiesProperties }
+            let createBodiesMessage = CreateBodiesMessage { SourceSimulant = entity; SourceId = entityId; BodiesProperties = bodiesProperties }
             World.enqueuePhysicsMessage createBodiesMessage world
 
         /// Send a message to the physics system to destroy a physics body.

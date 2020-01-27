@@ -213,7 +213,7 @@ module WorldScripting =
                                         | None -> (Cascade, world)
                                     | None -> (Cascade, world)
                                 | _ -> (Cascade, world))
-                                (simulant :> Participant)
+                                simulant
                                 stream.Stream
                                 world
                         let world = WorldModule.addSimulantScriptUnsubscription unsubscribe simulant world
@@ -374,7 +374,7 @@ module WorldScripting =
                     | None -> Log.info "Event data could not be imported into scripting environment."; world
                 | None -> world)
                 eventAddress
-                (subscriber :> Participant)
+                (subscriber :> Simulant)
                 world
 
         static member internal evalMonitor fnName evaledArg evaledArg2 originOpt world =

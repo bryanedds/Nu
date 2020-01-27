@@ -289,7 +289,7 @@ module WorldLayerModule =
         /// Turn a layers stream into a series of live layers.
         static member expandLayerStream (lens : Lens<obj, World>) indexerOpt mapper screen origin world =
             let lensSeq = Lens.mapOut Reflection.objToObjSeq lens
-            Stream.make (Events.Register --> lens.This.ParticipantAddress) |>
+            Stream.make (Events.Register --> lens.This.SimulantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
             Stream.map (fun _ -> Lens.explodeIndexedOpt indexerOpt lensSeq) |>
             World.streamLayers lensSeq mapper screen origin |>

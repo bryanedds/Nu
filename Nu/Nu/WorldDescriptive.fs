@@ -94,7 +94,7 @@ and [<NoComparison>] EntityDescriptor =
 /// Initializes a property.
 type [<NoEquality; NoComparison>] PropertyInitializer =
     | PropertyDefinition of PropertyDefinition
-    | EventHandlerDefinition of (Event -> obj) * obj Address * Participant
+    | EventHandlerDefinition of (Event -> obj) * obj Address * Simulant
     | Equation of string * World Lens * bool
 
 /// Contains primitives for describing simulants.
