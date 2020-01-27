@@ -751,7 +751,10 @@ module WorldTypes =
             | SimulantOperators
 
         /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (simulant : Simulant) = acatff address simulant.SimulantAddress
+        static member acatff<'a> (address : 'a Address) (simulant : Simulant) =
+            match box simulant with
+            | null -> address // NOTE: this case is a hack to be able to events into the elmish 
+            | _ -> acatff address simulant.SimulantAddress
 
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, simulant : Simulant) = SimulantOperators.acatff address simulant
@@ -803,7 +806,10 @@ module WorldTypes =
         member private this.View = Debug.World.viewGame Debug.World.Chosen
 
         /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (game : Game) = acatff address game.GameAddress
+        static member acatff<'a> (address : 'a Address) (game : Game) =
+            match box game with
+            | null -> address // NOTE: this case is a hack to be able to events into the elmish 
+            | _ -> acatff address game.GameAddress
 
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, game) = Game.acatff address game
@@ -859,7 +865,10 @@ module WorldTypes =
         member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
 
         /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (screen : Screen) = acatff address screen.ScreenAddress
+        static member acatff<'a> (address : 'a Address) (screen : Screen) =
+            match box screen with
+            | null -> address // NOTE: this case is a hack to be able to events into the elmish 
+            | _ -> acatff address screen.ScreenAddress
 
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, screen) = Screen.acatff address screen
@@ -926,7 +935,10 @@ module WorldTypes =
         member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
 
         /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (layer : Layer) = acatff address layer.LayerAddress
+        static member acatff<'a> (address : 'a Address) (layer : Layer) =
+            match box layer with
+            | null -> address // NOTE: this case is a hack to be able to events into the elmish 
+            | _ -> acatff address layer.LayerAddress
     
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, layer) = Layer.acatff address layer
@@ -1020,7 +1032,10 @@ module WorldTypes =
         member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
 
         /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (entity : Entity) = acatff address entity.EntityAddress
+        static member acatff<'a> (address : 'a Address) (entity : Entity) =
+            match box entity with
+            | null -> address // NOTE: this case is a hack to be able to events into the elmish 
+            | _ -> acatff address entity.EntityAddress
     
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, entity) = Entity.acatff address entity
