@@ -298,6 +298,10 @@ module Nu =
                 Stream.make (atooa (Events.Change lens.Name) --> lens.This.ParticipantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate participant $ world
 
             // init signal F# reach-around
+            WorldModule.trySignalFacet <- fun signalObj facetName simulant world ->
+                World.trySignalFacet signalObj facetName simulant world
+
+            // init signal F# reach-around
             WorldModule.trySignal <- fun signalObj simulant world ->
                 World.trySignal signalObj simulant world
 

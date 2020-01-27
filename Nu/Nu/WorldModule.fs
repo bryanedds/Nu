@@ -59,6 +59,9 @@ module WorldModule =
     let mutable internal equate5 : string -> Participant -> World Lens -> bool -> World -> World =
         Unchecked.defaultof<_>
 
+    let mutable internal trySignalFacet : obj -> string -> Simulant -> World -> World =
+        Unchecked.defaultof<_>
+
     let mutable internal trySignal : obj -> Simulant -> World -> World =
         Unchecked.defaultof<_>
 

@@ -958,6 +958,18 @@ module WorldModule2' =
     type World with
 
         /// Send a signal to a simulant.
+        static member trySignalFacet signal facetName (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> entity.TrySignalEntityFacet signal facetName world
+            | _ -> failwithumf ()
+
+        /// Send a signal to a simulant.
+        static member signalFacet<'model, 'message, 'command> signal facetName (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> entity.SignalEntityFacet<'model, 'message, 'command> signal facetName world
+            | _ -> failwithumf ()
+
+        /// Send a signal to a simulant.
         static member trySignal signal (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> entity.TrySignal signal world
