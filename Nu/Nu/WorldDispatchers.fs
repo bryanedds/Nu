@@ -45,20 +45,18 @@ module FacetModule =
             let facets = entity.GetFacets world
             match Array.tryFind (fun facet -> getTypeName facet = facetName) facets with
             | Some (:? Facet<'model, 'message, 'command> as facet) ->
-                let signal = signalObj :?> Signal<'message, 'command>
-                Signal.processSignal signal facet.Message facet.Command (entity.FacetModel<'model> facet.ModelName) entity world
-            | _ ->
-                Log.info "Failed to send signal to entity."
-                world
+                match signalObj with
+                | :? Signal<'message, 'command> as signal ->
+                    Signal.processSignal signal facet.Message facet.Command (entity.FacetModel<'model> facet.ModelName) entity world
+                | _ -> Log.info "Incorrect signal type returned from event binding."; world
+            | _ -> Log.info "Failed to send signal to entity."; world
 
         static member internal signalEntityFacet<'model, 'message, 'command> signal facetName (entity : Entity) world =
             let facets = entity.GetFacets world
             match Array.tryFind (fun facet -> getTypeName facet = facetName) facets with
             | Some (:? Facet<'model, 'message, 'command> as facet) ->
                 Signal.processSignal signal facet.Message facet.Command (entity.FacetModel<'model> facet.ModelName) entity world
-            | _ ->
-                Log.info "Failed to send signal to entity."
-                world
+            | _ -> Log.info "Failed to send signal to entity."; world
 
     and Entity with
     
@@ -118,7 +116,7 @@ module FacetModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) (getTypeName this) world
             | :? Signal<obj, 'command> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) (getTypeName this) world
-            | _ -> world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         default this.Bindings (_, _, _) = []
@@ -1070,7 +1068,7 @@ module EntityDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ -> world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         default this.Bindings (_, _, _) = []
@@ -1896,7 +1894,7 @@ module LayerDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ -> world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
         default this.Bindings (_, _, _) = []
@@ -1973,7 +1971,7 @@ module ScreenDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ -> world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
         default this.Bindings (_, _, _) = []
