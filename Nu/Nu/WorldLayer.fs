@@ -312,11 +312,11 @@ module WorldLayerModule =
                         WorldModule.equate5 name simulant property breaking world)
                         world equations
                 let world =
-                    List.fold (fun world (handler, address, subscriber) ->
-                        World.monitor (fun evt world ->
+                    List.fold (fun world (handler, address) ->
+                        World.monitor (fun (evt : Event) world ->
                             let signal = handler evt
                             WorldModule.trySignal signal origin world)
-                            address subscriber world)
+                            (address --> layer) (layer :> Simulant) world)
                         world handlers
                 let world =
                     List.fold (fun world (layer, lens, indexerOpt, mapper) ->

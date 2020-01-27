@@ -427,14 +427,14 @@ module WorldEntityModule =
                         WorldModule.equate5 name simulant property breaking world)
                         world equations
                 let world =
-                    List.fold (fun world (handler, address, subscriber) ->
-                        World.monitor (fun evt world ->
+                    List.fold (fun world (handler, address) ->
+                        World.monitor (fun (evt : Event) world ->
                             let signal = handler evt
                             match ownerOpt with
                             | SimulantOwner _
                             | NoOwner -> WorldModule.trySignal signal origin world
                             | FacetOwner (_, facetName) -> WorldModule.trySignalFacet signal facetName origin world)
-                            address subscriber world)
+                            (address --> entity) (entity :> Simulant) world)
                         world handlers
                 let world =
                     List.fold (fun world content ->
