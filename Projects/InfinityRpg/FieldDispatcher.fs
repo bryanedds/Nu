@@ -36,7 +36,7 @@ module FieldDispatcherModule =
             [define Entity.Omnipresent true
              define Entity.FieldMapNp DefaultFieldMap]
 
-        override dispatcher.Actualize (field, world) =
+        override this.Actualize (field, world) =
 
             let viewType =
                 field.GetViewType world
@@ -80,5 +80,5 @@ module FieldDispatcherModule =
                     world
             else world
 
-        override dispatcher.GetQuickSize (field, world) =
+        override this.GetQuickSize (field, world) =
             vmtovf (field.GetFieldMapNp world).FieldSizeM
