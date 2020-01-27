@@ -456,19 +456,19 @@ module OmniBattle =
                     (fun model -> model.CharacterState.PartyIndex)
                     (fun allyIndex ally _ _ ->
                         Content.entity<CharacterDispatcher> ("Ally+" + scstring allyIndex)
-                            [Entity.CharacterState ==> ally --> fun ally -> ally.CharacterState
-                             Entity.CharacterAnimationState ==> ally --> fun ally -> ally.AnimationState
-                             Entity.Position ==> ally --> fun ally -> ally.Position
-                             Entity.Size ==> ally --> fun ally -> ally.Size])
+                            [Entity.CharacterState <== ally --> fun ally -> ally.CharacterState
+                             Entity.CharacterAnimationState <== ally --> fun ally -> ally.AnimationState
+                             Entity.Position <== ally --> fun ally -> ally.Position
+                             Entity.Size <== ally --> fun ally -> ally.Size])
                  Content.entitiesIndexed
                     (model --> fun model -> getEnemies model)
                     (fun model -> model.CharacterState.PartyIndex)
                     (fun enemyIndex enemy _ _ ->
                         Content.entity<CharacterDispatcher> ("Enemy+" + scstring enemyIndex)
-                            [Entity.CharacterState ==> enemy --> fun enemy -> enemy.CharacterState
-                             Entity.CharacterAnimationState ==> enemy --> fun enemy -> enemy.AnimationState
-                             Entity.Position ==> enemy --> fun enemy -> enemy.Position
-                             Entity.Size ==> enemy --> fun enemy -> enemy.Size])]
+                            [Entity.CharacterState <== enemy --> fun enemy -> enemy.CharacterState
+                             Entity.CharacterAnimationState <== enemy --> fun enemy -> enemy.AnimationState
+                             Entity.Position <== enemy --> fun enemy -> enemy.Position
+                             Entity.Size <== enemy --> fun enemy -> enemy.Size])]
              Content.layers (model --> fun model -> getAllies model) $ fun allyIndex _ _ _ ->
                 Content.layer (Simulants.Input allyIndex).Name []
                     [Content.entity<RingMenuDispatcher> (Simulants.RegularMenu allyIndex).Name
