@@ -336,8 +336,8 @@ module WorldTypes =
         default this.TryGetCalculatedProperty (_, _, _) = None
 
         /// Try to send a signal to an entity's facet.
-        abstract TrySignalFacetCurried : obj * string * Entity * World -> World
-        default this.TrySignalFacetCurried (_, _, _, world) = world
+        abstract TrySignalFacet : obj * string * Entity * World -> World
+        default this.TrySignalFacet (_, _, _, world) = world
 
         /// Try to send a signal to an entity.
         abstract TrySignal : obj * Entity * World -> World
