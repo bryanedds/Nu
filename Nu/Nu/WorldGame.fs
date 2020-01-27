@@ -154,6 +154,9 @@ module WorldGameModule =
         /// Get a game's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.GameAddress
 
+        /// Try to signal a game.
+        member this.TrySignal signal world = (this.GetDispatcher world).TrySignal (signal, this, world)
+
     type World with
 
         static member private gameOnRegisterChanged _ world =

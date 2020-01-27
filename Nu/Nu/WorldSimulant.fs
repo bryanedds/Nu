@@ -183,6 +183,15 @@ module WorldSimulantModule =
             | Some simulant -> simulant
             | None -> failwithf "Could not derive simulant from address '%s'." (scstring address)
 
+        /// Convert an event address to the concrete simulant that it targets.
+        static member deriveFromEvent event =
+            let eventAddressNames = Address.getNames event
+            let eventTargetIndex = Array.findIndex (fun name -> name = "Event") eventAddressNames + 1
+            if eventTargetIndex < Array.length eventAddressNames then
+                let eventTarget = eventAddressNames |> Array.skip eventTargetIndex |> Address.makeFromArray
+                World.derive eventTarget
+            else failwithumf ()
+
         /// Constrain one property to equal the value of another, optionally breaking potential cycles.
         static member equate (left : Lens<'a, World>) (right : Lens<'a, World>) breaking world =
             WorldModule.equate5 left.Name (left.This :?> Simulant) right breaking world

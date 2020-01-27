@@ -288,7 +288,7 @@ module Nu =
             WorldModule.equate5 <- fun name (participant : Participant) (lens : World Lens) breaking world ->
                 let nonPersistent = not (Reflection.isPropertyPersistentByName name)
                 let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
-                let propagate (_ : Event<obj, Participant>) world =
+                let propagate (_ : Event) world =
                     if lens.Validate world then
                         let property = { PropertyType = lens.Type; PropertyValue = lens.GetWithoutValidation world }
                         World.setProperty name nonPersistent alwaysPublish property (participant :?> Simulant) world
@@ -296,6 +296,10 @@ module Nu =
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
                 let world = Stream.make (atooa Events.Register --> lens.This.ParticipantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate participant $ world
                 Stream.make (atooa (Events.Change lens.Name) --> lens.This.ParticipantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate participant $ world
+
+            // init signal F# reach-around
+            WorldModule.trySignal <- fun signalObj simulant world ->
+                World.trySignal signalObj simulant world
 
             // init scripting
             World.initScripting ()

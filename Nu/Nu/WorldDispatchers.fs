@@ -81,7 +81,7 @@ module FacetModule =
             let bindings = this.Bindings (model, entity, world)
             let world = Signal.processBindings bindings this.Message this.Command (this.Model entity) entity world
             let content = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world content
+            List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) entity world) world content
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -1024,11 +1024,16 @@ module EntityDispatcherModule =
             let bindings = this.Bindings (model, entity, world)
             let world = Signal.processBindings bindings this.Message this.Command (this.Model entity) entity world
             let content = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) world) world content
+            List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) entity world) world content
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
             World.actualizeViews views world
+
+        override this.TrySignal (signalObj, entity, world) =
+            match signalObj with
+            | :? Signal<'message, 'command> as signal -> entity.Signal<'model, 'message, 'command> signal world
+            | _ -> world
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         default this.Bindings (_, _, _) = []
@@ -1844,11 +1849,16 @@ module LayerDispatcherModule =
             let bindings = this.Bindings (model, layer, world)
             let world = Signal.processBindings bindings this.Message this.Command (this.Model layer) layer world
             let content = this.Content (this.Model layer, layer, world)
-            List.fold (fun world content -> World.expandEntityContent None content None layer world) world content
+            List.fold (fun world content -> World.expandEntityContent None content None layer layer world) world content
 
         override this.Actualize (layer, world) =
             let views = this.View (this.GetModel layer world, layer, world)
             World.actualizeViews views world
+
+        override this.TrySignal (signalObj, layer, world) =
+            match signalObj with
+            | :? Signal<'message, 'command> as signal -> layer.Signal<'model, 'message, 'command> signal world
+            | _ -> world
 
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
         default this.Bindings (_, _, _) = []
@@ -1914,12 +1924,17 @@ module ScreenDispatcherModule =
             let bindings = this.Bindings (model, screen, world)
             let world = Signal.processBindings bindings this.Message this.Command (this.Model screen) screen world
             let content = this.Content (this.Model screen, screen, world)
-            let world = List.fold (fun world content -> World.expandLayerContent None content screen world) world content
+            let world = List.fold (fun world content -> World.expandLayerContent None content screen screen world) world content
             world
 
         override this.Actualize (screen, world) =
             let views = this.View (this.GetModel screen world, screen, world)
             World.actualizeViews views world
+
+        override this.TrySignal (signalObj, screen, world) =
+            match signalObj with
+            | :? Signal<'message, 'command> as signal -> screen.Signal<'model, 'message, 'command> signal world
+            | _ -> world
 
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
         default this.Bindings (_, _, _) = []

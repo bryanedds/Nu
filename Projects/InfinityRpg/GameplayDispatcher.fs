@@ -552,22 +552,22 @@ module GameplayDispatcherModule =
              define Screen.ShallLoadGame false]
 
         override this.Bindings (_, _, _) =
-            [Simulants.Player.CharacterActivityState.ChangeEvent =>! ToggleHaltButton
-             Stream.make Simulants.HudFeeler.TouchEvent |> Stream.isSimulantSelected Simulants.HudFeeler =|>! fun evt -> HandlePlayerInput (TouchInput evt.Data)
-             Stream.make Simulants.HudDetailUp.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailUp =>! HandlePlayerInput (DetailInput Upward)
-             Stream.make Simulants.HudDetailRight.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailRight =>! HandlePlayerInput (DetailInput Rightward)
-             Stream.make Simulants.HudDetailDown.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailDown =>! HandlePlayerInput (DetailInput Downward)
-             Stream.make Simulants.HudDetailLeft.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailLeft =>! HandlePlayerInput (DetailInput Leftward)
-             Simulants.Gameplay.UpdateEvent =|>! fun _ ->
-                if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) then HandlePlayerInput (DetailInput Upward)
-                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then HandlePlayerInput (DetailInput Rightward)
-                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) then HandlePlayerInput (DetailInput Downward)
-                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then HandlePlayerInput (DetailInput Leftward)
-                else Nop
-             Simulants.Gameplay.SelectEvent =>! RunGameplay
-             Simulants.HudSaveGame.ClickEvent =|>! fun evt -> SaveGame evt.Subscriber
-             Simulants.Title.SelectEvent =>! QuittingGameplay
-             Simulants.Gameplay.DeselectEvent =>! QuitGameplay]
+            [Simulants.Player.CharacterActivityState.ChangeEvent => cmd ToggleHaltButton
+             Stream.make Simulants.HudFeeler.TouchEvent |> Stream.isSimulantSelected Simulants.HudFeeler =|> fun evt -> cmd (HandlePlayerInput (TouchInput evt.Data))
+             Stream.make Simulants.HudDetailUp.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailUp => cmd (HandlePlayerInput (DetailInput Upward))
+             Stream.make Simulants.HudDetailRight.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailRight => cmd (HandlePlayerInput (DetailInput Rightward))
+             Stream.make Simulants.HudDetailDown.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailDown => cmd (HandlePlayerInput (DetailInput Downward))
+             Stream.make Simulants.HudDetailLeft.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailLeft => cmd (HandlePlayerInput (DetailInput Leftward))
+             Simulants.Gameplay.UpdateEvent =|> fun _ ->
+                if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) then cmd (HandlePlayerInput (DetailInput Upward))
+                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then cmd (HandlePlayerInput (DetailInput Rightward))
+                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) then cmd (HandlePlayerInput (DetailInput Downward))
+                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then cmd (HandlePlayerInput (DetailInput Leftward))
+                else cmd Nop
+             Simulants.Gameplay.SelectEvent => cmd RunGameplay
+             Simulants.HudSaveGame.ClickEvent =|> fun evt -> cmd (SaveGame evt.Subscriber)
+             Simulants.Title.SelectEvent => cmd QuittingGameplay
+             Simulants.Gameplay.DeselectEvent => cmd QuitGameplay]
 
         override this.Command (command, _, _, world) =
             let world =

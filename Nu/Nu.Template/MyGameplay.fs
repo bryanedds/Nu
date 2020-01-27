@@ -18,15 +18,15 @@ type MyGameplayDispatcher () =
 
     // here we define the Bindings used to connect events to their desired commands
     override this.Bindings (_, _, _) =
-        [Simulants.Game.KeyboardKeyDownEvent =|>! fun evt ->
+        [Simulants.Game.KeyboardKeyDownEvent =|> fun evt ->
             if evt.Data.ScanCode = int SDL.SDL_Scancode.SDL_SCANCODE_UP && not evt.Data.Repeated
-            then Jump
-            else Nop
-         Simulants.Gameplay.UpdateEvent =|>! fun _ ->
-            if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then MoveLeft
-            elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then MoveRight
-            else Nop
-         Simulants.Gameplay.UpdateEvent =>! EyeTrack]
+            then cmd Jump
+            else cmd Nop
+         Simulants.Gameplay.UpdateEvent =|> fun _ ->
+            if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then cmd MoveLeft
+            elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then cmd MoveRight
+            else cmd Nop
+         Simulants.Gameplay.UpdateEvent => cmd EyeTrack]
 
     // here we handle the above commands
     override this.Command (command, _, _, world) =

@@ -34,15 +34,15 @@ module InfinityDispatcherModule =
             Simulants.Hud.SetPersistent false world
 
         override this.Bindings (_, _, _) =
-            [Simulants.Title.IncomingStartEvent =>! PlayTitleSong
-             Simulants.Title.OutgoingStartEvent =>! FadeSong
-             Simulants.TitleCredits.ClickEvent =>! ShowCredits
-             Simulants.TitleNewGame.ClickEvent =>! ShowGameplay false
-             Simulants.TitleLoadGame.ClickEvent =>! ShowGameplay true
-             Simulants.TitleExit.ClickEvent =>! ExitGame
-             Simulants.CreditsBack.ClickEvent =>! ShowTitle
-             Simulants.Gameplay.OutgoingStartEvent =>! FadeSong
-             Simulants.HudBack.ClickEvent =>! ShowTitle]
+            [Simulants.Title.IncomingStartEvent => cmd PlayTitleSong
+             Simulants.Title.OutgoingStartEvent => cmd FadeSong
+             Simulants.TitleCredits.ClickEvent => cmd ShowCredits
+             Simulants.TitleNewGame.ClickEvent => cmd (ShowGameplay false)
+             Simulants.TitleLoadGame.ClickEvent => cmd (ShowGameplay true)
+             Simulants.TitleExit.ClickEvent => cmd ExitGame
+             Simulants.CreditsBack.ClickEvent => cmd ShowTitle
+             Simulants.Gameplay.OutgoingStartEvent => cmd FadeSong
+             Simulants.HudBack.ClickEvent => cmd ShowTitle]
 
         override this.Command (command, _, _, world) =
             let world =
