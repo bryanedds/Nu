@@ -418,8 +418,13 @@ module WorldEntityModule =
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
                 let world =
                     match origin with
-                    | SimulantOrigin simulant -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
-                    | FacetOrigin (simulant, _) -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
+                    | SimulantOrigin simulant
+                    | FacetOrigin (simulant, _) ->
+                        World.monitor
+                            (constant $ World.destroyEntity entity)
+                            (Events.Unregistering --> simulant.SimulantAddress)
+                            entity
+                            world
                 let world =
                     List.fold (fun world (name, simulant, property, breaking) ->
                         WorldModule.equate5 name simulant property breaking world)
@@ -443,8 +448,13 @@ module WorldEntityModule =
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
                 let world =
                     match origin with
-                    | SimulantOrigin simulant -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
-                    | FacetOrigin (simulant, _) -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
+                    | SimulantOrigin simulant
+                    | FacetOrigin (simulant, _) ->
+                        World.monitor
+                            (constant $ World.destroyEntity entity)
+                            (Events.Unregistering --> simulant.SimulantAddress)
+                            entity
+                            world
                 world
 
     /// Represents the property value of an entity as accessible via reflection.
