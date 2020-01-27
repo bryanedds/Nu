@@ -552,3 +552,12 @@ module Reflection =
 
         // fin
         overlays
+
+[<AutoOpen>]
+module ReflectionOperators =
+
+    type Gen =
+        private | Gen of unit
+        static member guid = Guid.NewGuid ()
+        static member counter = Reflection.generateCounter ()
+        static member name = Reflection.generateName ()
