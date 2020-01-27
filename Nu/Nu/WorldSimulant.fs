@@ -166,7 +166,7 @@ module WorldSimulantModule =
         /// Check that a simulant exists in the world.
         [<FunctionBinding>]
         static member getExists (simulant : Simulant) (world : World) =
-            (world :> EventSystem<World>).ParticipantExists simulant
+            (world :> EventSystem<World>).SimulantExists simulant
 
         /// Attempt to convert an address to a concrete simulant reference.
         static member tryDerive address =
@@ -194,7 +194,7 @@ module WorldSimulantModule =
 
         /// Constrain one property to equal the value of another, optionally breaking potential cycles.
         static member equate (left : Lens<'a, World>) (right : Lens<'a, World>) breaking world =
-            WorldModule.equate5 left.Name (left.This :?> Simulant) right breaking world
+            WorldModule.equate5 left.Name left.This right breaking world
 
 [<AutoOpen>]
 module SimulantOperators2 =

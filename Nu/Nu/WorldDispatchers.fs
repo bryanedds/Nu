@@ -39,7 +39,28 @@ module DeclarativeOperators2 =
 [<AutoOpen>]
 module FacetModule =
 
-    type Entity with
+    type World with
+
+        static member internal trySignalEntityFacet (signalObj : obj) facetName (entity : Entity) world =
+            let facets = entity.GetFacets world
+            match Array.tryFind (fun facet -> getTypeName facet = facetName) facets with
+            | Some (:? Facet<'model, 'message, 'command> as facet) ->
+                let signal = signalObj :?> Signal<'message, 'command>
+                Signal.processSignal signal facet.Message facet.Command (entity.FacetModel<'model> facet.ModelName) entity world
+            | _ ->
+                Log.info "Failed to send signal to entity."
+                world
+
+        static member internal signalEntityFacet<'model, 'message, 'command> signal facetName (entity : Entity) world =
+            let facets = entity.GetFacets world
+            match Array.tryFind (fun facet -> getTypeName facet = facetName) facets with
+            | Some (:? Facet<'model, 'message, 'command> as facet) ->
+                Signal.processSignal signal facet.Message facet.Command (entity.FacetModel<'model> facet.ModelName) entity world
+            | _ ->
+                Log.info "Failed to send signal to entity."
+                world
+
+    and Entity with
     
         member this.GetFacetModel<'model> modelName world =
             let property = this.Get<DesignerProperty> modelName world
@@ -57,7 +78,13 @@ module FacetModule =
         member this.FacetModel<'model> modelName =
             lens<'model> modelName (this.GetFacetModel<'model> modelName) (this.SetFacetModel<'model> modelName) this
 
-    type [<AbstractClass>] Facet<'model, 'message, 'command> (initial : 'model) =
+        member this.TrySignalEntityFacet<'model, 'message, 'command> signal facetName world =
+            World.trySignalEntityFacet signal facetName this world
+
+        member this.SignalEntityFacet<'model, 'message, 'command> signal facetName world =
+            World.signalEntityFacet<'model, 'message, 'command> signal facetName this world
+
+    and [<AbstractClass>] Facet<'model, 'message, 'command> (initial : 'model) =
         inherit Facet ()
 
         let mutable modelNameOpt =
@@ -81,11 +108,17 @@ module FacetModule =
             let bindings = this.Bindings (model, entity, world)
             let world = Signal.processBindings bindings this.Message this.Command (this.Model entity) entity world
             let content = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) entity world) world content
+            List.fold (fun world content -> World.expandEntityContent None content (FacetOrigin (entity, getTypeName this)) (etol entity) world) world content
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
             World.actualizeViews views world
+
+        override this.TrySignal (signalObj, entity, world) =
+            match signalObj with
+            | :? Signal<'message, obj> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) (getTypeName this) world
+            | :? Signal<obj, 'command> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) (getTypeName this) world
+            | _ -> world
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         default this.Bindings (_, _, _) = []
@@ -1024,15 +1057,19 @@ module EntityDispatcherModule =
             let bindings = this.Bindings (model, entity, world)
             let world = Signal.processBindings bindings this.Message this.Command (this.Model entity) entity world
             let content = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (Some entity) (etol entity) entity world) world content
+            List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin entity) (etol entity) world) world content
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
             World.actualizeViews views world
 
+        override this.TrySignalFacetCurried (signalObj : obj, facetName : string, entity : Entity, world : World) : World =
+            entity.TrySignalFacet signalObj facetName world
+
         override this.TrySignal (signalObj, entity, world) =
             match signalObj with
-            | :? Signal<'message, 'command> as signal -> entity.Signal<'model, 'message, 'command> signal world
+            | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> world
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
@@ -1849,7 +1886,7 @@ module LayerDispatcherModule =
             let bindings = this.Bindings (model, layer, world)
             let world = Signal.processBindings bindings this.Message this.Command (this.Model layer) layer world
             let content = this.Content (this.Model layer, layer, world)
-            List.fold (fun world content -> World.expandEntityContent None content None layer layer world) world content
+            List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin layer) layer world) world content
 
         override this.Actualize (layer, world) =
             let views = this.View (this.GetModel layer world, layer, world)
@@ -1857,7 +1894,8 @@ module LayerDispatcherModule =
 
         override this.TrySignal (signalObj, layer, world) =
             match signalObj with
-            | :? Signal<'message, 'command> as signal -> layer.Signal<'model, 'message, 'command> signal world
+            | :? Signal<'message, obj> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> world
 
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
@@ -1933,7 +1971,8 @@ module ScreenDispatcherModule =
 
         override this.TrySignal (signalObj, screen, world) =
             match signalObj with
-            | :? Signal<'message, 'command> as signal -> screen.Signal<'model, 'message, 'command> signal world
+            | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> world
 
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list

@@ -335,6 +335,10 @@ module WorldTypes =
         abstract TryGetCalculatedProperty : string * Entity * World -> Property option
         default this.TryGetCalculatedProperty (_, _, _) = None
 
+        /// Try to send a signal to an entity's facet.
+        abstract TrySignalFacetCurried : obj * string * Entity * World -> World
+        default this.TrySignalFacetCurried (_, _, _, world) = world
+
         /// Try to send a signal to an entity.
         abstract TrySignal : obj * Entity * World -> World
         default this.TrySignal (_, _, world) = world
@@ -377,6 +381,10 @@ module WorldTypes =
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Entity * World -> Property option
         default this.TryGetCalculatedProperty (_, _, _) = None
+
+        /// Try to send a signal to a facet.
+        abstract TrySignal : obj * Entity * World -> World
+        default this.TrySignal (_, _, world) = world
 
     /// Generalized interface for simulant state.
     and SimulantState =
@@ -737,23 +745,19 @@ module WorldTypes =
         interface SimulantState with
             member this.GetXtension () = this.Xtension
 
-    /// A simulant in the world.
-    and Simulant =
-        interface
-            inherit Participant
-            abstract member SimulantAddress : Simulant Address
-            end
-
     /// Operators for the Simulant type.
     and SimulantOperators =
         private
             | SimulantOperators
 
         /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (simulant : Simulant) = acatff address simulant.SimulantAddress
+        static member acatff<'a> (address : 'a Address) (simulant : Simulant) =
+            match box simulant with
+            | null -> address // HACK: this case is a hack to be able to events into the elmish event handler
+            | _ -> acatff address simulant.SimulantAddress
 
         /// Concatenate two addresses, forcing the type of first address.
-        static member (-->) (address, simulant : Simulant) = SimulantOperators.acatff address simulant
+        static member (-->) (address : 'a Address, simulant : Simulant) = SimulantOperators.acatff address simulant
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =
@@ -775,7 +779,6 @@ module WorldTypes =
         static member op_Implicit (gameAddress : Game Address) = Game gameAddress
 
         interface Simulant with
-            member this.ParticipantAddress = atoa<Game, Participant> this.GameAddress
             member this.SimulantAddress = atoa<Game, Simulant> this.GameAddress
             end
 
@@ -803,7 +806,10 @@ module WorldTypes =
         member private this.View = Debug.World.viewGame Debug.World.Chosen
 
         /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (game : Game) = acatff address game.GameAddress
+        static member acatff<'a> (address : 'a Address) (game : Game) =
+            match box game with
+            | null -> address // HACK: this case is a hack to be able to events into the elmish event handler
+            | _ -> acatff address game.GameAddress
 
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, game) = Game.acatff address game
@@ -829,7 +835,6 @@ module WorldTypes =
         static member op_Implicit (screenAddress : Screen Address) = Screen screenAddress
 
         interface Simulant with
-            member this.ParticipantAddress = atoa<Screen, Participant> this.ScreenAddress
             member this.SimulantAddress = atoa<Screen, Simulant> this.ScreenAddress
             end
 
@@ -860,7 +865,10 @@ module WorldTypes =
         member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
 
         /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (screen : Screen) = acatff address screen.ScreenAddress
+        static member acatff<'a> (address : 'a Address) (screen : Screen) =
+            match box screen with
+            | null -> address // HACK: this case is a hack to be able to events into the elmish event handler
+            | _ -> acatff address screen.ScreenAddress
 
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, screen) = Screen.acatff address screen
@@ -897,7 +905,6 @@ module WorldTypes =
         static member op_Implicit (layerAddress : Layer Address) = Layer layerAddress
 
         interface Simulant with
-            member this.ParticipantAddress = atoa<Layer, Participant> this.LayerAddress
             member this.SimulantAddress = atoa<Layer, Simulant> this.LayerAddress
             end
 
@@ -928,7 +935,10 @@ module WorldTypes =
         member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
 
         /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (layer : Layer) = acatff address layer.LayerAddress
+        static member acatff<'a> (address : 'a Address) (layer : Layer) =
+            match box layer with
+            | null -> address // HACK: this case is a hack to be able to events into the elmish event handler
+            | _ -> acatff address layer.LayerAddress
     
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, layer) = Layer.acatff address layer
@@ -991,7 +1001,6 @@ module WorldTypes =
         static member op_Implicit (entityAddress : Entity Address) = Entity entityAddress
         
         interface Simulant with
-            member this.ParticipantAddress = atoa<Entity, Participant> this.EntityAddress
             member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress
             end
 
@@ -1023,7 +1032,10 @@ module WorldTypes =
         member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
 
         /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (entity : Entity) = acatff address entity.EntityAddress
+        static member acatff<'a> (address : 'a Address) (entity : Entity) =
+            match box entity with
+            | null -> address // HACK: this case is a hack to be able to events into the elmish event handler
+            | _ -> acatff address entity.EntityAddress
     
         /// Concatenate two addresses, forcing the type of first address.
         static member (-->) (address : 'a Address, entity) = Entity.acatff address entity
@@ -1076,41 +1088,41 @@ module WorldTypes =
 
             member this.GetLiveness () =
                 AmbientState.getLiveness this.AmbientState
-            
-            member this.GetGlobalParticipantSpecialized () =
-                EventSystemDelegate.getGlobalParticipantSpecialized this.EventSystemDelegate
-            
-            member this.GetGlobalParticipantGeneralized () =
-                EventSystemDelegate.getGlobalParticipantGeneralized this.EventSystemDelegate
-            
-            member this.ParticipantExists participant =
-                match participant with
-                | :? GlobalParticipantGeneralized
+
+            member this.GetGlobalSimulantSpecialized () =
+                EventSystemDelegate.getGlobalSimulantSpecialized this.EventSystemDelegate
+
+            member this.GetGlobalSimulantGeneralized () =
+                EventSystemDelegate.getGlobalSimulantGeneralized this.EventSystemDelegate
+
+            member this.SimulantExists simulant =
+                match simulant with
+                | :? GlobalSimulantGeneralized
                 | :? Game -> true
                 | :? Screen as screen -> UMap.containsKey screen.ScreenAddress this.ScreenStates
                 | :? Layer as layer -> UMap.containsKey layer.LayerAddress this.LayerStates
                 | :? Entity as entity -> UMap.containsKey entity.EntityAddress this.EntityStates
                 | _  -> false
-            
-            member this.GetPropertyOpt<'a> propertyName participant =
-                match getPropertyOpt propertyName participant (box this) with
+
+            member this.GetPropertyOpt<'a> propertyName simulant =
+                match getPropertyOpt propertyName simulant (box this) with
                 | Some a -> Some (a :?> 'a)
                 | None -> None
-            
-            member this.SetPropertyOpt<'a> propertyName participant (value : 'a option) =
+
+            member this.SetPropertyOpt<'a> propertyName simulant (value : 'a option) =
                 let world =
                     match value with
-                    | Some a -> setPropertyOpt propertyName participant (Some (box a)) typeof<'a> (box this)
-                    | None -> setPropertyOpt propertyName participant None typeof<'a> (box this)
+                    | Some a -> setPropertyOpt propertyName simulant (Some (box a)) typeof<'a> (box this)
+                    | None -> setPropertyOpt propertyName simulant None typeof<'a> (box this)
                 world :?> World
-            
-            member this.HandlePropertyChange propertyName participant handler =
-                let (unsubscribe, world) = handlePropertyChange propertyName participant (box handler) (box this)
+
+            member this.HandlePropertyChange propertyName simulant handler =
+                let (unsubscribe, world) = handlePropertyChange propertyName simulant (box handler) (box this)
                 (unsubscribe :?> World -> World, world :?> World)
-            
+
             member this.GetEventSystemDelegateHook () =
                 this.EventSystemDelegate
-            
+
             member this.UpdateEventSystemDelegateHook updater =
                 let this = { this with EventSystemDelegate = updater this.EventSystemDelegate }
 #if DEBUG
@@ -1118,15 +1130,15 @@ module WorldTypes =
                 Debug.World.Chosen <- this :> obj
 #endif
                 this
-            
-            member this.PublishEventHook (participant : Participant) publisher eventData eventAddress eventTrace subscription world =
+
+            member this.PublishEventHook (simulant : Simulant) publisher eventData eventAddress eventTrace subscription world =
                 let (handling, world) =
-                    match participant with
-                    | :? GlobalParticipantGeneralized -> EventSystem.publishEvent<'a, 'p, Participant, World> participant publisher eventData eventAddress eventTrace subscription world
-                    | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> participant publisher eventData eventAddress eventTrace subscription world
-                    | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> participant publisher eventData eventAddress eventTrace subscription world
-                    | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> participant publisher eventData eventAddress eventTrace subscription world
-                    | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> participant publisher eventData eventAddress eventTrace subscription world
+                    match simulant with
+                    | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> simulant publisher eventData eventAddress eventTrace subscription world
+                    | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> simulant publisher eventData eventAddress eventTrace subscription world
+                    | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> simulant publisher eventData eventAddress eventTrace subscription world
+                    | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> simulant publisher eventData eventAddress eventTrace subscription world
+                    | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> simulant publisher eventData eventAddress eventTrace subscription world
                     | _ -> failwithumf ()
 #if DEBUG
                 // inlined choose
@@ -1236,9 +1248,6 @@ type EntityDispatcher = WorldTypes.EntityDispatcher
 
 /// Dynamically augments an entity's behavior in a composable way.
 type Facet = WorldTypes.Facet
-
-/// A simulant in the world.
-type Simulant = WorldTypes.Simulant
 
 /// Operators for the Simulant type.
 type SimulantOperators = WorldTypes.SimulantOperators

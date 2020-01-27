@@ -16,6 +16,10 @@ type [<NoComparison>] ScreenBehavior =
 /// Describes the content of a simulant
 type SimulantContent = interface end
 
+type [<NoComparison>] ContentOrigin =
+    | SimulantOrigin of Simulant
+    | FacetOrigin of Simulant * string
+
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
     | EntitiesFromStream of Lens<obj, World> * (obj -> int) option * (int -> Lens<obj, World> -> Layer -> World -> EntityContent)

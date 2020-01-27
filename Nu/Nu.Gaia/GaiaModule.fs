@@ -76,8 +76,8 @@ module Gaia =
             treeGroupNode.Name <- treeGroupNodeName
             treeGroup.Nodes.Add treeGroupNode |> ignore
 
-    let private removeEntityTreeViewNode (entity : Participant) (form : GaiaForm) (_ : World) =
-        match form.entityTreeView.Nodes.Find (scstring entity.ParticipantAddress, true) with
+    let private removeEntityTreeViewNode (entity : Simulant) (form : GaiaForm) (_ : World) =
+        match form.entityTreeView.Nodes.Find (scstring entity.SimulantAddress, true) with
         | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.entityTreeView.Nodes.Remove treeNodes.[0]
 
@@ -243,7 +243,7 @@ module Gaia =
         (Cascade, world)
 
     let private handleNuEntityRegister (form : GaiaForm) evt world =
-        let entity = Entity (atoa evt.Publisher.ParticipantAddress)
+        let entity = Entity (atoa evt.Publisher.SimulantAddress)
         addEntityTreeViewNode entity form world
         if not (World.isTicking world) then
             // OPTIMIZATION: don't attempt to refresh the slow winforms UI while running the game
@@ -260,7 +260,7 @@ module Gaia =
         match form.entityPropertyGrid.SelectedObject with
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
-            if atoa evt.Publisher.ParticipantAddress = entityTds.DescribedEntity.EntityAddress then
+            if atoa evt.Publisher.SimulantAddress = entityTds.DescribedEntity.EntityAddress then
                 let world = updateEditorState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
                 deselectEntity form world
                 (Cascade, world)

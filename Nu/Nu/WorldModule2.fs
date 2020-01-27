@@ -47,10 +47,10 @@ module WorldModule2 =
         /// Sort subscriptions by their depth priority.
         static member sortSubscriptionsByDepth subscriptions world =
             World.sortSubscriptionsBy
-                (fun (participant : Participant) _ ->
+                (fun (simulant : Simulant) _ ->
                     let priority =
-                        match participant with
-                        | :? GlobalParticipantGeneralized
+                        match simulant with
+                        | :? GlobalSimulantGeneralized
                         | :? Game -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Default.Game }
                         | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen }
                         | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority + layer.GetDepth world; SortPositionY = 0.0f; SortTarget = layer }
@@ -66,7 +66,7 @@ module WorldModule2 =
             let address = Relation.resolve scriptContext.SimulantAddress relation
             address
 
-        /// Resolve a Participant relation to an address in the current script context.
+        /// Resolve a Simulant relation to an address in the current script context.
         [<FunctionBinding "resolve">]
         static member resolveGeneric (relation : obj Relation) world =
             World.resolve relation world
@@ -934,7 +934,8 @@ module GameDispatcherModule =
 
         override this.TrySignal (signalObj, game, world) =
             match signalObj with
-            | :? Signal<'message, 'command> as signal -> game.Signal<'model, 'message, 'command> signal world
+            | :? Signal<'message, obj> as signal -> game.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> world
 
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
@@ -956,6 +957,18 @@ module GameDispatcherModule =
 module WorldModule2' =
 
     type World with
+
+        /// Send a signal to a simulant.
+        static member trySignalFacet signal facetName (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> entity.TrySignalEntityFacet signal facetName world
+            | _ -> failwithumf ()
+
+        /// Send a signal to a simulant.
+        static member signalFacet<'model, 'message, 'command> signal facetName (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> entity.SignalEntityFacet<'model, 'message, 'command> signal facetName world
+            | _ -> failwithumf ()
 
         /// Send a signal to a simulant.
         static member trySignal signal (simulant : Simulant) world =
