@@ -108,7 +108,7 @@ module FacetModule =
             let bindings = this.Bindings (model, entity, world)
             let world = Signal.processBindings bindings this.Message this.Command (this.Model entity) entity world
             let content = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (FacetOwner (entity, getTypeName this)) (etol entity) entity world) world content
+            List.fold (fun world content -> World.expandEntityContent None content (FacetOrigin (entity, getTypeName this)) (etol entity) world) world content
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -1056,7 +1056,7 @@ module EntityDispatcherModule =
             let bindings = this.Bindings (model, entity, world)
             let world = Signal.processBindings bindings this.Message this.Command (this.Model entity) entity world
             let content = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (SimulantOwner entity) (etol entity) entity world) world content
+            List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin entity) (etol entity) world) world content
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -1884,7 +1884,7 @@ module LayerDispatcherModule =
             let bindings = this.Bindings (model, layer, world)
             let world = Signal.processBindings bindings this.Message this.Command (this.Model layer) layer world
             let content = this.Content (this.Model layer, layer, world)
-            List.fold (fun world content -> World.expandEntityContent None content NoOwner layer layer world) world content
+            List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin layer) layer world) world content
 
         override this.Actualize (layer, world) =
             let views = this.View (this.GetModel layer world, layer, world)

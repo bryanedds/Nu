@@ -16,10 +16,9 @@ type [<NoComparison>] ScreenBehavior =
 /// Describes the content of a simulant
 type SimulantContent = interface end
 
-type [<NoComparison>] ContentOwner =
-    | SimulantOwner of Simulant
-    | FacetOwner of Simulant * string
-    | NoOwner
+type [<NoComparison>] ContentOrigin =
+    | SimulantOrigin of Simulant
+    | FacetOrigin of Simulant * string
 
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =

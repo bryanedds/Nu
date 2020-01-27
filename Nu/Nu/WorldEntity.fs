@@ -351,9 +351,8 @@ module WorldEntityModule =
         static member streamEntities
             (lensSeq : Lens<obj seq, World>)
             (mapper : int -> Lens<obj, World> -> Layer -> World -> EntityContent)
-            (contentOwner : ContentOwner)
+            (origin : ContentOrigin)
             (layer : Layer)
-            (origin : Simulant)
             (stream : Stream<Lens<(int * obj) option, World> seq, World>) =
             stream |>
             Stream.insert (makeGuid ()) |>
@@ -385,7 +384,7 @@ module WorldEntityModule =
                         let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
                         let content = mapper index lens layer world
                         match World.tryGetKeyedValue (scstring guid) world with
-                        | None -> World.expandEntityContent (Some guid) content contentOwner layer origin world
+                        | None -> World.expandEntityContent (Some guid) content origin layer world
                         | Some _ -> world)
                         world added
                 let world =
@@ -401,54 +400,51 @@ module WorldEntityModule =
                 (current, world))
 
         /// Turn an entity stream into a series of live entities.
-        static member expandEntityStream (lens : Lens<obj, World>) indexerOpt mapper contentOwner layer origin world =
+        static member expandEntityStream (lens : Lens<obj, World>) indexerOpt mapper origin layer world =
             let lensSeq = Lens.mapOut Reflection.objToObjSeq lens
             Stream.make (Events.Register --> lens.This.SimulantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
             Stream.map (fun _ -> Lens.explodeIndexedOpt indexerOpt lensSeq) |>
-            World.streamEntities lensSeq mapper contentOwner layer origin |>
+            World.streamEntities lensSeq mapper origin layer |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
 
         /// Turn entity content into a live entity.
-        static member expandEntityContent guidOpt content contentOwner layer origin world =
+        static member expandEntityContent guidOpt content origin layer world =
             match EntityContent.expand content layer world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
-                World.expandEntityStream lens indexerOpt mapper contentOwner layer origin world
+                World.expandEntityStream lens indexerOpt mapper origin layer world
             | Choice2Of3 (name, descriptor, handlers, equations, content) ->
                 let (entity, world) = World.readEntity descriptor (Some name) layer world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
                 let world =
-                    match contentOwner with
-                    | SimulantOwner simulant -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
-                    | FacetOwner (simulant, _) -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
-                    | NoOwner -> world
+                    match origin with
+                    | SimulantOrigin simulant -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
+                    | FacetOrigin (simulant, _) -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
                 let world =
                     List.fold (fun world (name, simulant, property, breaking) ->
                         WorldModule.equate5 name simulant property breaking world)
                         world equations
                 let world =
-                    List.fold (fun world (handler, address) ->
+                    List.fold (fun world (handler, address, simulant) ->
                         World.monitor (fun (evt : Event) world ->
                             let signal = handler evt
-                            match contentOwner with
-                            | SimulantOwner _
-                            | NoOwner -> WorldModule.trySignal signal origin world
-                            | FacetOwner (_, facetName) -> WorldModule.trySignalFacet signal facetName origin world)
-                            (address --> entity) (entity :> Simulant) world)
+                            match origin with
+                            | SimulantOrigin owner -> WorldModule.trySignal signal owner world
+                            | FacetOrigin (_, facetName) -> WorldModule.trySignalFacet signal facetName simulant world)
+                            address simulant world)
                         world handlers
                 let world =
                     List.fold (fun world content ->
-                        World.expandEntityContent (Some (makeGuid ())) content contentOwner layer origin world)
+                        World.expandEntityContent (Some (makeGuid ())) content origin layer world)
                         world (snd content)
                 world
             | Choice3Of3 (entityName, filePath) ->
                 let (entity, world) = World.readEntityFromFile filePath (Some entityName) layer world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
                 let world =
-                    match contentOwner with
-                    | SimulantOwner simulant -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
-                    | FacetOwner (simulant, _) -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
-                    | NoOwner -> world
+                    match origin with
+                    | SimulantOrigin simulant -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
+                    | FacetOrigin (simulant, _) -> World.monitor (constant $ World.destroyEntity entity) (Events.Unregistering --> simulant.SimulantAddress) entity world
                 world
 
     /// Represents the property value of an entity as accessible via reflection.
