@@ -934,7 +934,8 @@ module GameDispatcherModule =
 
         override this.TrySignal (signalObj, game, world) =
             match signalObj with
-            | :? Signal<'message, 'command> as signal -> game.Signal<'model, 'message, 'command> signal world
+            | :? Signal<'message, obj> as signal -> game.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> world
 
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
