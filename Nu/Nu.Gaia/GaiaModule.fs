@@ -430,7 +430,7 @@ module Gaia =
         let entityNames =
             World.getEntities selectedLayer world |>
             Seq.filter (fun entity -> entity.FacetedAs<NodeFacet> world) |>
-            Seq.filter (fun entity -> not (Reflection.isNameGenerated entity.Name)) |>
+            Seq.filter (fun entity -> not (Gen.isName entity.Name)) |>
             Seq.map (fun entity -> entity.Name) |>
             flip Seq.append [Constants.Editor.NonePick] |>
             Seq.toArray
@@ -1379,11 +1379,11 @@ module Gaia =
                           SelectedLayer = defaultLayer
                           FilePaths = Map.empty }
                     let world = World.addKeyedValue Globals.EditorGuid editorState world
-                    let world = World.subscribePlus (makeGuid ()) (handleNuMouseRightDown form) Events.MouseRightDown Default.Game world |> snd
-                    let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragBegin form) Events.MouseLeftDown Default.Game world |> snd
-                    let world = World.subscribePlus (makeGuid ()) (handleNuEntityDragEnd form) Events.MouseLeftUp Default.Game world |> snd
-                    let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragBegin form) Events.MouseCenterDown Default.Game world |> snd
-                    let world = World.subscribePlus (makeGuid ()) (handleNuCameraDragEnd form) Events.MouseCenterUp Default.Game world |> snd
+                    let world = World.subscribePlus Gen.id (handleNuMouseRightDown form) Events.MouseRightDown Default.Game world |> snd
+                    let world = World.subscribePlus Gen.id (handleNuEntityDragBegin form) Events.MouseLeftDown Default.Game world |> snd
+                    let world = World.subscribePlus Gen.id (handleNuEntityDragEnd form) Events.MouseLeftUp Default.Game world |> snd
+                    let world = World.subscribePlus Gen.id (handleNuCameraDragBegin form) Events.MouseCenterDown Default.Game world |> snd
+                    let world = World.subscribePlus Gen.id (handleNuCameraDragEnd form) Events.MouseCenterUp Default.Game world |> snd
                     let world = subscribeToEntityEvents form world
                     (defaultLayer, world)
                 | Some _ -> (defaultLayer, world) // NOTE: conclude world is already attached
@@ -1485,8 +1485,8 @@ module Gaia =
                 member this.Compare (left, right) =
                     let leftName = ((left :?> TreeNode).Name.Split Constants.Address.Separator) |> Array.last
                     let rightName = ((right :?> TreeNode).Name.Split Constants.Address.Separator) |> Array.last
-                    let leftNameBiased = if Reflection.isNameGenerated leftName then "~" + leftName else leftName
-                    let rightNameBiased = if Reflection.isNameGenerated rightName then "~" + rightName else rightName
+                    let leftNameBiased = if Gen.isName leftName then "~" + leftName else leftName
+                    let rightNameBiased = if Gen.isName rightName then "~" + rightName else rightName
                     String.CompareOrdinal (leftNameBiased, rightNameBiased) }
 
         // sort entity tree view nodes with a bias against guids
