@@ -162,7 +162,7 @@ module DeclarativeOperators =
     let inline (<==) left right = equate left right
 
     /// Equate two properties, breaking any update cycles.
-    let inline (</=) left right = equateBreaking left right
+    let inline (</==) left right = equateBreaking left right
 
 module Declarative =
     let Game = Game.Prop

@@ -31,7 +31,7 @@ type [<CustomEquality; NoComparison>] PhysicsId =
 
     /// Make a PhysicsId for an external source.
     static member make (sourceId : Guid) =
-        { SourceId = sourceId; BodyId = makeGuid () }
+        { SourceId = sourceId; BodyId = Gen.id }
 
     interface PhysicsId IEquatable with
         member this.Equals that =

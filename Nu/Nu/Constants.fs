@@ -25,7 +25,6 @@ module Constants =
         let [<Literal>] DefaultEntityName = "Entity"
         let [<Literal>] DefaultEffectName = "Effect"
         let [<Literal>] GameSortPriority = Single.MaxValue
-        let [<Literal>] GeneratedNamePrefix = "@"
         let (*Literal*) ScreenSortPriority = GameSortPriority - 1.0f
         let (*Literal*) LayerSortPriority = ScreenSortPriority - 1.0f
         let (*Literal*) EntitySortPriority = LayerSortPriority - 1.0f

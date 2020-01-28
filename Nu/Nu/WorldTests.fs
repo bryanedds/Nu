@@ -8,7 +8,7 @@ open Prime
 open Nu
 module WorldTests =
 
-    let TestValueKey = scstring (makeGuid ())
+    let TestValueKey = scstring Gen.id
     let TestFilePath = "TestFile.nugame"
     let StringEvent = stoa<string> "String/Event"
     let Jim = Default.Layer / "Jim"

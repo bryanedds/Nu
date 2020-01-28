@@ -314,7 +314,7 @@ module WorldScreenModule =
                     List.fold (fun world (owner, entityContents) ->
                         let layer = etol owner
                         List.fold (fun world entityContent ->
-                            World.expandEntityContent (Some (makeGuid ())) entityContent (SimulantOrigin owner) layer world)
+                            World.expandEntityContent (Some Gen.id) entityContent (SimulantOrigin owner) layer world)
                             world entityContents)
                         world entityContents
                 World.applyScreenBehavior setScreenSplash behavior screen world
