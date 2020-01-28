@@ -242,7 +242,7 @@ module WorldLayerModule =
             (screen : Screen)
             (stream : Stream<Lens<(int * obj) option, World> seq, World>) =
             stream |>
-            Stream.insert (makeGuid ()) |>
+            Stream.insert Gen.id |>
             Stream.mapWorld (fun (guid, lenses) world ->
                 lenses |>
                 Seq.map (fun lens -> (lens.Get world, Lens.dereference lens)) |>
@@ -321,7 +321,7 @@ module WorldLayerModule =
                 let world =
                     List.fold (fun world (owner, entityContents) ->
                         List.fold (fun world entityContent ->
-                            World.expandEntityContent (Some (makeGuid ())) entityContent (SimulantOrigin owner) layer world)
+                            World.expandEntityContent (Some Gen.id) entityContent (SimulantOrigin owner) layer world)
                             world entityContents)
                         world entityContents
                 world

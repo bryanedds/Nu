@@ -3,9 +3,11 @@ open Prime
 open SDL2
 open Nu
 open Nu.Declarative
+
 module Simulants =
 
-    // here we create an entity reference for Elmario
+    // here we create an entity reference for Elmario. This is useful for simulants that you want
+    // to refer to from multiple places
     let Elmario = Default.Layer / "Elmario"
 
 module Elmario =
@@ -59,7 +61,7 @@ module Elmario =
         override this.Content (_, _, _) =
             [Content.screen Default.Screen.Name Vanilla []
                 [Content.layer Default.Layer.Name []
-                    [Content.character "Elmario"
+                    [Content.character Simulants.Elmario.Name
                         [Entity.Position == v2 0.0f 0.0f
                          Entity.Size == v2 144.0f 144.0f]
                      Content.block "Ground"

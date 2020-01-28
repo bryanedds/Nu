@@ -134,7 +134,7 @@ module Nu =
                 let handler = handler :?> World PropertyChangeHandler
                 let (unsubscribe, world) =
                     World.subscribePlus
-                        (makeGuid ())
+                        Gen.id
                         (fun (event : Event<obj, _>) world ->
                             let data = event.Data :?> ChangeData
                             let world = handler data.Value world
