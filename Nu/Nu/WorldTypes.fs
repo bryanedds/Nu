@@ -435,7 +435,7 @@ module WorldTypes =
               OnUpdate = Scripting.Unit
               OnPostUpdate = Scripting.Unit
               CreationTimeStamp = Core.getUniqueTimeStamp ()
-              Id = makeGuid () }
+              Id = Gen.id }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName gameState =
@@ -497,7 +497,7 @@ module WorldTypes =
           
         /// Make a screen state value.
         static member make nameOpt (dispatcher : ScreenDispatcher) =
-            let (id, name) = Reflection.deriveIdAndName nameOpt
+            let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
               TransitionState = IdlingState
@@ -575,7 +575,7 @@ module WorldTypes =
 
         /// Make a layer state value.
         static member make nameOpt (dispatcher : LayerDispatcher) =
-            let (id, name) = Reflection.deriveIdAndName nameOpt
+            let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
               Depth = 0.0f
@@ -655,7 +655,7 @@ module WorldTypes =
 
         /// Make an entity state value.
         static member make nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
-            let (id, name) = Reflection.deriveIdAndName nameOpt
+            let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
               Facets = [||]
               Xtension = Xtension.makeSafe ()

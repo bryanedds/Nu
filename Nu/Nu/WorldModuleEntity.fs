@@ -925,7 +925,7 @@ module WorldModuleEntity =
         static member reassignEntityImmediate entity nameOpt (layer : Layer) world =
             let entityState = World.getEntityState entity world
             let world = World.destroyEntityImmediate entity world
-            let (id, name) = Reflection.deriveIdAndName nameOpt
+            let (id, name) = Gen.idAndNameIf nameOpt
             let entityState = { entityState with Id = id; Name = name }
             let transmutedEntity = Entity (layer.LayerAddress <-- ntoa<Entity> name)
             let world = World.addEntity false entityState transmutedEntity world
@@ -1080,8 +1080,8 @@ module WorldModuleEntity =
             match Clipboard with
             | Some entityStateObj ->
                 let entityState = entityStateObj :?> EntityState
-                let id = makeGuid ()
-                let name = Reflection.generateName ()
+                let id = Gen.id
+                let name = Gen.name
                 let entityState = { entityState with Id = id; Name = name }
                 let position =
                     if atMouse

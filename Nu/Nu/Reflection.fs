@@ -12,33 +12,8 @@ open Nu
 [<RequireQualifiedAccess>]
 module Reflection =
 
-    let mutable private Counter = -1L
-    let private CounterLock = obj ()
-    let private PropertyDefinitionsCache = Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
-
-    /// Get the next global counter value.
-    let generateCounter () =
-        lock CounterLock (fun () -> Counter <- inc Counter; Counter)
-
-    /// Generate the next global name.
-    let generateName () =
-        Constants.Engine.GeneratedNamePrefix + scstring (generateCounter ())
-
-    /// Generate a simulant name from an optional name.
-    let generateNameIf nameOpt =
-        match nameOpt with
-        | Some name -> name
-        | None -> generateName ()
-
-    /// Check that a name is generated.
-    let isNameGenerated (name : string) =
-        name.StartsWith Constants.Engine.GeneratedNamePrefix
-
-    /// Derive a simulant id and name from an optional name.
-    let deriveIdAndName nameOpt =
-        let id = makeGuid ()
-        let name = generateNameIf nameOpt
-        (id, name)
+    let private PropertyDefinitionsCache =
+        Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
     /// Check if a property with the given name should always publish a change event.
     let isPropertyAlwaysPublishByName propertyName =
@@ -78,7 +53,7 @@ module Reflection =
         not
             (property.Name = Constants.Engine.NamePropertyName &&
              property.PropertyType = typeof<string> &&
-             isNameGenerated (property.GetValue target :?> string))
+             Gen.isName (property.GetValue target :?> string))
     /// Check that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) (dispatcher : 'a) =
         let dispatcherType = dispatcher.GetType ()
@@ -552,12 +527,3 @@ module Reflection =
 
         // fin
         overlays
-
-[<AutoOpen>]
-module ReflectionOperators =
-
-    type Gen =
-        private | Gen of unit
-        static member guid = Guid.NewGuid ()
-        static member counter = Reflection.generateCounter ()
-        static member name = Reflection.generateName ()

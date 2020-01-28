@@ -15,13 +15,13 @@ open global.Nu
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =
 
-    let private ScreenTransitionMouseLeftKey = makeGuid ()
-    let private ScreenTransitionMouseCenterKey = makeGuid ()
-    let private ScreenTransitionMouseRightKey = makeGuid ()
-    let private ScreenTransitionMouseX1Key = makeGuid ()
-    let private ScreenTransitionMouseX2Key = makeGuid ()
-    let private ScreenTransitionKeyboardKeyKey = makeGuid ()
-    let private SplashScreenUpdateKey = makeGuid ()
+    let private ScreenTransitionMouseLeftKey = Gen.id
+    let private ScreenTransitionMouseCenterKey = Gen.id
+    let private ScreenTransitionMouseRightKey = Gen.id
+    let private ScreenTransitionMouseX1Key = Gen.id
+    let private ScreenTransitionMouseX2Key = Gen.id
+    let private ScreenTransitionKeyboardKeyKey = Gen.id
+    let private SplashScreenUpdateKey = Gen.id
 
     type World with
 
@@ -147,7 +147,7 @@ module WorldModule2 =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 if World.getScreenExists selectedScreen world then
-                    let subscriptionKey = makeGuid ()
+                    let subscriptionKey = Gen.id
                     let subscription = fun (_ : Event<unit, Screen>) world ->
                         match World.getScreenTransitionDestinationOpt world with
                         | Some destination ->
