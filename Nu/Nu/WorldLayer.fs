@@ -233,8 +233,6 @@ module WorldLayerModule =
             let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
             World.readLayer layerDescriptor nameOpt screen world
 
-
-
         /// Turn a layers stream into a series of live layers.
         static member expandLayerStream (lens : Lens<obj, World>) indexerOpt mapper origin screen world =
             let mapperGeneralized = fun i lens (parent : Simulant) world -> mapper i lens (parent :?> Screen) world :> SimulantContent
