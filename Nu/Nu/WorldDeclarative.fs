@@ -13,13 +13,6 @@ type [<NoComparison>] ScreenBehavior =
     | Dissolve of DissolveData
     | Splash of DissolveData * SplashData * Screen
 
-/// Describes the content of a simulant
-type SimulantContent = interface end
-
-type [<NoComparison>] ContentOrigin =
-    | SimulantOrigin of Simulant
-    | FacetOrigin of Simulant * string
-
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
     | EntitiesFromStream of Lens<obj, World> * (obj -> int) option * (int -> Lens<obj, World> -> Layer -> World -> EntityContent)
@@ -126,6 +119,14 @@ type [<NoEquality; NoComparison>] View =
     | StopSong
     | Effect of (World -> World)
 
+/// Opens up some functions to make simulant lenses more accessible.
+module Declarative =
+
+    let Game = Game.Prop
+    let Screen = Screen.Prop
+    let Layer = Layer.Prop
+    let Entity = Entity.Prop
+
 [<AutoOpen>]
 module DeclarativeOperators =
 
@@ -164,8 +165,64 @@ module DeclarativeOperators =
     /// Equate two properties, breaking any update cycles.
     let inline (</==) left right = equateBreaking left right
 
-module Declarative =
-    let Game = Game.Prop
-    let Screen = Screen.Prop
-    let Layer = Layer.Prop
-    let Entity = Entity.Prop
+[<AutoOpen>]
+module WorldDeclarative =
+
+    type World with
+
+        /// Transform a stream into existing simulants.
+        static member streamSimulants
+            (lensSeq : Lens<obj seq, World>)
+            (mapper : int -> Lens<obj, World> -> Simulant -> World -> SimulantContent)
+            (origin : ContentOrigin)
+            (parent : Simulant)
+            (stream : Stream<Lens<(int * obj) option, World> seq, World>) =
+            stream |>
+            Stream.insert Gen.id |>
+            Stream.mapWorld (fun (guid, lenses) world ->
+                lenses |>
+                Seq.map (fun lens -> (lens.Get world, Lens.dereference lens)) |>
+                Seq.filter (fst >> Option.isSome) |>
+                Seq.take (Lens.get lensSeq world |> Seq.length) |>
+                Seq.map (fun (opt, lens) ->
+                    let (index, _) = Option.get opt
+                    let guid = makeGuidDeterministic index guid
+                    let lens = lens.MapOut snd
+                    PartialComparable.make guid (index, lens)) |>
+                Set.ofSeq) |>
+            Stream.fold (fun (p, _, _) c ->
+                (c, Set.difference c p, Set.difference p c))
+                (Set.empty, Set.empty, Set.empty) |>
+            Stream.optimizeBy
+                Triple.fst |>
+            Stream.mapEffect (fun evt world ->
+                let (current, added, removed) = evt.Data
+                let world =
+                    Seq.fold (fun world guidAndContent ->
+                        let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
+                        let content = mapper index lens parent world
+                        match World.tryGetKeyedValue (scstring guid) world with
+                        | None -> WorldModule.expandContent Unchecked.defaultof<_> (Some guid) content origin parent world
+                        | Some _ -> world)
+                        world added
+                let world =
+                    Seq.fold (fun world guidAndContent ->
+                        let (guid, _) = PartialComparable.unmake guidAndContent
+                        match World.tryGetKeyedValue (scstring guid) world with
+                        | Some entity ->
+                            let world = World.removeKeyedValue (scstring guid) world
+                            // HACK: remove lens bindings that may depend on a non-existent model index
+                            let world = world |> WorldModule.unregister entity |> WorldModule.register entity
+                            WorldModule.destroy entity world
+                        | None -> failwithumf ())
+                        world removed
+                (current, world))
+
+        /// Turn an entity stream into a series of live simulants.
+        static member expandSimulantStream (lens : Lens<obj, World>) indexerOpt mapper origin parent world =
+            let lensSeq = Lens.mapOut Reflection.objToObjSeq lens
+            Stream.make (Events.Register --> lens.This.SimulantAddress) |>
+            Stream.sum (Stream.make lens.ChangeEvent) |>
+            Stream.map (fun _ -> Lens.explodeIndexedOpt indexerOpt lensSeq) |>
+            World.streamSimulants lensSeq mapper origin parent |>
+            Stream.subscribe (fun _ value -> value) Default.Game $ world

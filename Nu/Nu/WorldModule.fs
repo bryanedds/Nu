@@ -56,7 +56,20 @@ module WorldModule =
     let mutable internal unsubscribeSimulantScripts : Simulant -> World -> World =
         Unchecked.defaultof<_>
 
+    /// F# reach-around for instantiating equality relationships.
     let mutable internal equate5 : string -> Simulant -> World Lens -> bool -> World -> World =
+        Unchecked.defaultof<_>
+
+    let mutable internal register : Simulant -> World -> World =
+        Unchecked.defaultof<_>
+
+    let mutable internal unregister : Simulant -> World -> World =
+        Unchecked.defaultof<_>
+
+    let mutable internal expandContent : (SplashData option -> Screen -> Screen -> World -> World) -> Guid option -> SimulantContent -> ContentOrigin -> Simulant -> World -> World =
+        Unchecked.defaultof<_>
+
+    let mutable internal destroy : Simulant -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal trySignalFacet : obj -> string -> Simulant -> World -> World =

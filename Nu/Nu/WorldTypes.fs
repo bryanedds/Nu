@@ -85,6 +85,15 @@ type OverlayNameDescriptor =
     | DefaultOverlay
     | ExplicitOverlay of string
 
+/// Describes the origin of a piece of simulnat content.
+type [<NoComparison>] ContentOrigin =
+    | SimulantOrigin of Simulant
+    | FacetOrigin of Simulant * string
+
+/// Describes the content of a simulant.
+type SimulantContent =
+    interface end
+
 /// Specifies that a module contains functions that need to be considered for binding generation.
 type [<AttributeUsage (AttributeTargets.Class); AllowNullLiteral>]
     ModuleBindingAttribute () =

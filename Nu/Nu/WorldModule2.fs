@@ -924,7 +924,7 @@ module GameDispatcherModule =
             let world = Signal.processBindings bindings this.Message this.Command (this.Model game) game world
             let content = this.Content (this.Model game, game, world)
             List.foldi (fun contentIndex world content ->
-                let (screen, world) = World.expandScreenContent World.setScreenSplash content game game world
+                let (screen, world) = World.expandScreenContent World.setScreenSplash content (SimulantOrigin game) game world
                 if contentIndex = 0 then World.selectScreen screen world else world)
                 world content
 
