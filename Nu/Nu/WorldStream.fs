@@ -40,14 +40,6 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] isSelectedScreenTransitioning stream =
         Stream.filterEvent (fun _ -> World.isSelectedScreenTransitioning) stream
 
-    /// Transform a stream into existing layers.
-    let [<DebuggerHidden; DebuggerStepThrough>] layers lens mapper =
-        World.streamLayers lens mapper
-
-    /// Transform a stream into existing entities.
-    let [<DebuggerHidden; DebuggerStepThrough>] entities lens mapper =
-        World.streamEntities lens mapper
-
 [<AutoOpen>]
 module StreamOperators =
 

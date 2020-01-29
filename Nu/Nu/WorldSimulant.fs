@@ -96,6 +96,44 @@ module WorldSimulantModule =
             | :? Entity as entity -> entity.GetDispatcher world :> Dispatcher
             | _ -> failwithumf ()
 
+        /// Unregister the given simulant.
+        [<FunctionBinding>]
+        static member unregister (simulant : Simulant) (world : World) =
+            match simulant with
+            | :? Game -> World.unregisterGame world
+            | :? Screen as screen -> World.unregisterScreen screen world
+            | :? Layer as layer -> World.unregisterLayer layer world
+            | :? Entity as entity -> World.unregisterEntity entity world
+            | _ -> failwithumf ()
+
+        /// Register the given simulant.
+        [<FunctionBinding>]
+        static member register (simulant : Simulant) (world : World) =
+            match simulant with
+            | :? Game -> World.registerGame world
+            | :? Screen as screen -> World.registerScreen screen world
+            | :? Layer as layer -> World.registerLayer layer world
+            | :? Entity as entity -> World.registerEntity entity world
+            | _ -> failwithumf ()
+
+        /// Expand the given simulant content.
+        [<FunctionBinding>]
+        static member expandContent setScreenSplash guidOpt (content : SimulantContent) origin (parent : Simulant) (world : World) =
+            match (content, parent) with
+            | ((:? ScreenContent as screenContent), (:? Game as game)) -> World.expandScreenContent setScreenSplash screenContent origin game world |> snd
+            | ((:? LayerContent as layerContent), (:? Screen as screen)) -> World.expandLayerContent guidOpt layerContent origin screen world
+            | ((:? EntityContent as entityContent), (:? Layer as layer)) -> World.expandEntityContent guidOpt entityContent origin layer world
+            | _ -> failwithumf ()
+
+        /// Destroy the given simulant.
+        [<FunctionBinding>]
+        static member destroy (simulant : Simulant) (world : World) =
+            match simulant with
+            | :? Screen as screen -> World.destroyScreen screen world
+            | :? Layer as layer -> World.destroyLayer layer world
+            | :? Entity as entity -> World.destroyEntity entity world
+            | _ -> failwithumf ()
+
         /// Get the script frame in which the given simulant's script code will run.
         static member internal tryGetScriptFrame (simulant : Simulant) world =
             match simulant with

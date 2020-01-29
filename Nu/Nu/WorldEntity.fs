@@ -346,63 +346,11 @@ module WorldEntityModule =
                     layerDescriptor.Entities
                     ([], world)
 
-        /// Transform a stream into existing entities.
-        /// TODO: P1: see if we can fuse the various streams used here and in expandEntityStream to decrease time and space overhead.
-        static member streamEntities
-            (lensSeq : Lens<obj seq, World>)
-            (mapper : int -> Lens<obj, World> -> Layer -> World -> EntityContent)
-            (origin : ContentOrigin)
-            (layer : Layer)
-            (stream : Stream<Lens<(int * obj) option, World> seq, World>) =
-            stream |>
-            Stream.insert Gen.id |>
-            Stream.mapWorld (fun (guid, lenses) world ->
-                lenses |>
-                Seq.map (fun lens -> (lens.Get world, Lens.dereference lens)) |>
-                Seq.filter (fst >> Option.isSome) |>
-                Seq.take (Lens.get lensSeq world |> Seq.length) |>
-                Seq.map (fun (opt, lens) ->
-                    let (index, _) = Option.get opt
-                    let guid = makeGuidDeterministic index guid
-                    let lens = lens.MapOut snd
-                    PartialComparable.make guid (index, lens)) |>
-                Set.ofSeq) |>
-            Stream.fold (fun (p, _, _) c ->
-                (c, Set.difference c p, Set.difference p c))
-                (Set.empty, Set.empty, Set.empty) |>
-            Stream.optimizeBy
-                Triple.fst |>
-            Stream.mapEffect (fun evt world ->
-                let (current, added, removed) = evt.Data
-                let world =
-                    Seq.fold (fun world guidAndContent ->
-                        let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
-                        let content = mapper index lens layer world
-                        match World.tryGetKeyedValue (scstring guid) world with
-                        | None -> World.expandEntityContent (Some guid) content origin layer world
-                        | Some _ -> world)
-                        world added
-                let world =
-                    Seq.fold (fun world guidAndContent ->
-                        let (guid, _) = PartialComparable.unmake guidAndContent
-                        match World.tryGetKeyedValue (scstring guid) world with
-                        | Some entity ->
-                            let world = World.removeKeyedValue (scstring guid) world
-                            // HACK: remove lens bindings that may depend on a non-existent model index
-                            let world = world |> World.unregisterEntity entity |> World.registerEntity entity
-                            World.destroyEntity entity world
-                        | None -> failwithumf ())
-                        world removed
-                (current, world))
 
         /// Turn an entity stream into a series of live entities.
         static member expandEntityStream (lens : Lens<obj, World>) indexerOpt mapper origin layer world =
-            let lensSeq = Lens.mapOut Reflection.objToObjSeq lens
-            Stream.make (Events.Register --> lens.This.SimulantAddress) |>
-            Stream.sum (Stream.make lens.ChangeEvent) |>
-            Stream.map (fun _ -> Lens.explodeIndexedOpt indexerOpt lensSeq) |>
-            World.streamEntities lensSeq mapper origin layer |>
-            Stream.subscribe (fun _ value -> value) Default.Game $ world
+            let mapperGeneralized = fun i lens (parent : Simulant) world -> mapper i lens (parent :?> Layer) world :> SimulantContent
+            World.expandSimulantStream lens indexerOpt mapperGeneralized origin layer world
 
         /// Turn entity content into a live entity.
         static member expandEntityContent guidOpt content origin layer world =
@@ -431,7 +379,7 @@ module WorldEntityModule =
                             let signal = handler evt
                             match origin with
                             | SimulantOrigin owner -> WorldModule.trySignal signal owner world
-                            | FacetOrigin (_, facetName) -> WorldModule.trySignalFacet signal facetName simulant world)
+                            | FacetOrigin (owner, facetName) -> WorldModule.trySignalFacet signal facetName owner world)
                             address simulant world)
                         world handlers
                 let world =

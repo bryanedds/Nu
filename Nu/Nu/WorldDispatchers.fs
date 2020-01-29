@@ -1960,7 +1960,7 @@ module ScreenDispatcherModule =
             let bindings = this.Bindings (model, screen, world)
             let world = Signal.processBindings bindings this.Message this.Command (this.Model screen) screen world
             let content = this.Content (this.Model screen, screen, world)
-            let world = List.fold (fun world content -> World.expandLayerContent None content screen screen world) world content
+            let world = List.fold (fun world content -> World.expandLayerContent None content (SimulantOrigin screen) screen world) world content
             world
 
         override this.Actualize (screen, world) =
