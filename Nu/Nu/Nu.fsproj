@@ -67,6 +67,7 @@
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
     <Compile Include="Core.fs" />
+    <Compile Include="Gen.fs" />
     <Compile Include="Assets.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="Math.fs" />
