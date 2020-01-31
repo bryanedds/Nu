@@ -197,8 +197,8 @@ module WorldLayerModule =
             layers |>
             Seq.sortBy (fun (layer : Layer) -> layer.GetCreationTimeStamp world) |>
             Seq.filter (fun (layer : Layer) -> layer.GetPersistent world) |>
-            Seq.fold (fun layerDescriptors layer -> World.writeLayer layer LayerDescriptor.empty world :: layerDescriptors) screenDescriptor.Layers |>
-            fun layerDescriptors -> { screenDescriptor with Layers = layerDescriptors }
+            Seq.fold (fun layerDescriptors layer -> World.writeLayer layer LayerDescriptor.empty world :: layerDescriptors) screenDescriptor.LayerDescriptors |>
+            fun layerDescriptors -> { screenDescriptor with LayerDescriptors = layerDescriptors }
 
         /// Write a layer to a file.
         [<FunctionBinding>]
@@ -223,7 +223,7 @@ module WorldLayerModule =
                     let layerNameOpt = LayerDescriptor.getNameOpt layerDescriptor
                     let (layer, world) = World.readLayer layerDescriptor layerNameOpt screen world
                     (layer :: layers, world))
-                screenDescriptor.Layers
+                screenDescriptor.LayerDescriptors
                 ([], world)
 
         /// Read a layer from a file.

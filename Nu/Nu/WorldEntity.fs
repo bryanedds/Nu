@@ -321,8 +321,8 @@ module WorldEntityModule =
             entities |>
             Seq.sortBy (fun (entity : Entity) -> entity.GetCreationTimeStamp world) |>
             Seq.filter (fun (entity : Entity) -> entity.GetPersistent world) |>
-            Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) layerDescriptor.Entities |>
-            fun entityDescriptors -> { layerDescriptor with Entities = entityDescriptors }
+            Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) layerDescriptor.EntitieDescriptors |>
+            fun entityDescriptors -> { layerDescriptor with EntitieDescriptors = entityDescriptors }
 
         /// Write an entity to a file.
         [<FunctionBinding>]
@@ -343,7 +343,7 @@ module WorldEntityModule =
                     let entityNameOpt = EntityDescriptor.getNameOpt entityDescriptor
                     let (entity, world) = World.readEntity entityDescriptor entityNameOpt layer world
                     (entity :: entities, world))
-                    layerDescriptor.Entities
+                    layerDescriptor.EntitieDescriptors
                     ([], world)
 
         /// Turn an entity stream into a series of live entities.

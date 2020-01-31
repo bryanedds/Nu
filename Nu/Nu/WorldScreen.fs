@@ -231,8 +231,8 @@ module WorldScreenModule =
             screens |>
             Seq.sortBy (fun (screen : Screen) -> screen.GetCreationTimeStamp world) |>
             Seq.filter (fun (screen : Screen) -> screen.GetPersistent world) |>
-            Seq.fold (fun screenDescriptors screen -> World.writeScreen screen ScreenDescriptor.empty world :: screenDescriptors) gameDescriptor.Screens |>
-            fun screenDescriptors -> { gameDescriptor with Screens = screenDescriptors }
+            Seq.fold (fun screenDescriptors screen -> World.writeScreen screen ScreenDescriptor.empty world :: screenDescriptors) gameDescriptor.ScreenDescriptors |>
+            fun screenDescriptors -> { gameDescriptor with ScreenDescriptors = screenDescriptors }
 
         /// Write a screen to a file.
         [<FunctionBinding>]
@@ -257,7 +257,7 @@ module WorldScreenModule =
                     let screenNameOpt = ScreenDescriptor.getNameOpt screenDescriptor
                     let (screen, world) = World.readScreen screenDescriptor screenNameOpt world
                     (screen :: screens, world))
-                gameDescriptor.Screens
+                gameDescriptor.ScreenDescriptors
                 ([], world)
 
         /// Read a screen from a file.
