@@ -26,7 +26,7 @@ type [<NoEquality; NoComparison>] EntityContent =
         | EntitiesFromStream (lens, indexerOpt, mapper) ->
             Choice1Of3 (lens, indexerOpt, mapper)
         | EntityFromDefinitions (dispatcherName, name, initializers, content) ->
-            let (descriptor, handlersEntity, equationsEntity) = Describe.entity2 dispatcherName initializers (layer / name) world
+            let (descriptor, handlersEntity, equationsEntity) = Describe.entity4 dispatcherName initializers (layer / name) world
             Choice2Of3 (name, descriptor, handlersEntity, equationsEntity, (layer / name, content))
         | EntityFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
@@ -52,7 +52,7 @@ and [<NoEquality; NoComparison>] LayerContent =
             let equations = List.map (function Choice2Of3 (_, _, _, equations, _) -> Some equations | _ -> None) expansions |> List.definitize |> List.concat
             let entityContents = List.map (function Choice2Of3 (_, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize
             let filePaths = List.map (function Choice3Of3 filePath -> Some filePath | _ -> None) expansions |> List.definitize |> List.map (fun (entityName, path) -> (name, entityName, path))
-            let (descriptor, handlersLayer, equationsLayer) = Describe.layer3 dispatcherName initializers descriptors layer world
+            let (descriptor, handlersLayer, equationsLayer) = Describe.layer5 dispatcherName initializers descriptors layer world
             Choice2Of3 (name, descriptor, handlers @ handlersLayer, equations @ equationsLayer, streams, filePaths, entityContents)
         | LayerFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
@@ -78,7 +78,7 @@ and [<NoEquality; NoComparison>] ScreenContent =
             let entityFilePaths = List.map (function Choice2Of3 (_, _, _, _, _, filePaths, _) -> Some (List.map (fun (layerName, entityName, filePath) -> (name, layerName, entityName, filePath)) filePaths) | _ -> None) expansions |> List.definitize |> List.concat
             let entityContents = List.map (function Choice2Of3 (_, _, _, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize |> List.concat
             let layerFilePaths = List.map (function Choice3Of3 (layerName, filePath) -> Some (name, layerName, filePath) | _ -> None) expansions |> List.definitize
-            let (descriptor, handlersScreen, equationsScreen) = Describe.screen3 dispatcherName initializers descriptors screen world
+            let (descriptor, handlersScreen, equationsScreen) = Describe.screen5 dispatcherName initializers descriptors screen world
             Left (name, descriptor, handlers @ handlersScreen, equations @ equationsScreen, behavior, streams, entityStreams, layerFilePaths, entityFilePaths, entityContents)
         | ScreenFromLayerFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
         | ScreenFromFile (name, behavior, filePath) -> Right (name, behavior, None, filePath)
@@ -105,7 +105,7 @@ and [<NoEquality; NoComparison>] GameContent =
             let entityFilePaths = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, _, _, entityFilePaths, _) -> entityFilePaths) |> List.concat
             let entityContents = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, _, _, _, entityContents) -> entityContents) |> List.concat
             let screenFilePaths = Either.getRightValues expansions
-            let (descriptor, handlersGame, equationsGame) = Describe.game3 dispatcherName initializers descriptors game world
+            let (descriptor, handlersGame, equationsGame) = Describe.game5 dispatcherName initializers descriptors game world
             Left (descriptor, handlers @ handlersGame, equations @ equationsGame, screenBehaviors, layerStreams, entityStreams, screenFilePaths, layerFilePaths, entityFilePaths, entityContents)
         | GameFromFile filePath -> Right filePath
 
@@ -146,7 +146,7 @@ module DeclarativeOperators =
     let equate3 (left : Lens<'a, World>) (right : Lens<'a, World>) breaking =
         if right.This :> obj |> isNull
         then failwith "Equate expects an authentic Lens where its This field is not null."
-        else Equation (left.Name, right, breaking)
+        else EquationDefinition (left.Name, right, breaking)
 
     /// Equate two properties.
     let equate left right =
