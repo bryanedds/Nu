@@ -98,6 +98,7 @@ type [<NoEquality; NoComparison>] PropertyInitializer =
     | EquationDefinition of string * World Lens * bool
 
 /// Contains primitives for describing simulants.
+[<RequireQualifiedAccess>]
 module Describe =
 
     let private initializersToDefinitions initializers world =
