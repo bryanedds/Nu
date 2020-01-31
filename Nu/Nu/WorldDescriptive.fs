@@ -101,36 +101,36 @@ type [<NoEquality; NoComparison>] PropertyInitializer =
 module Describe =
 
     let private initializersToDefinitions initializers world =
-        initializers
-        |> Seq.map (fun def ->
+        initializers |>
+        Seq.map (fun def ->
             match def with
             | PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr)
             | EventHandlerDefinition _ -> None
-            | EquationDefinition _ -> None)
-        |> Seq.definitize
-        |> Seq.map (mapSnd (function DefineExpr value -> value | VariableExpr fn -> fn world))
-        |> Seq.map (mapSnd valueToSymbol)
-        |> Map.ofSeq
+            | EquationDefinition _ -> None) |>
+        Seq.definitize |>
+        Seq.map (mapSnd (function DefineExpr value -> value | VariableExpr fn -> fn world)) |>
+        Seq.map (mapSnd valueToSymbol) |>
+        Map.ofSeq
 
     let private initializersToEventHandlers initializers (simulant : Simulant) =
-        initializers
-        |> Seq.map (fun def ->
+        initializers |>
+        Seq.map (fun def ->
             match def with
             | PropertyDefinition _ -> None
             | EventHandlerDefinition (handler, address) -> Some (handler, address --> simulant.SimulantAddress, simulant)
-            | EquationDefinition _ -> None)
-        |> Seq.definitize
-        |> Seq.toList
+            | EquationDefinition _ -> None) |>
+        Seq.definitize |>
+        Seq.toList
 
     let private initializersToEquations initializers (simulant : Simulant)=
-        initializers
-        |> Seq.map (fun def ->
+        initializers |>
+        Seq.map (fun def ->
             match def with
             | PropertyDefinition _ -> None
             | EventHandlerDefinition _ -> None
-            | EquationDefinition (leftName, right, breaking) -> Some (leftName, simulant, right, breaking))
-        |> Seq.definitize
-        |> Seq.toList
+            | EquationDefinition (leftName, right, breaking) -> Some (leftName, simulant, right, breaking)) |>
+        Seq.definitize |>
+        Seq.toList
 
     let private simulantToDescriptor dispatcherName definitions (children : SimulantDescriptor seq) (simulant : Simulant) =
         match simulant with
