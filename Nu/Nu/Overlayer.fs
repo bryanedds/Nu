@@ -38,7 +38,7 @@ module OverlayerModule =
               ExtrinsicOverlays : Overlay list
               Overlays : Map<string, Overlay> }
 
-    [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+    [<RequireQualifiedAccess>]
     module Overlayer =
 
         let rec private getOverlaySymbols2 overlayName overlayer =

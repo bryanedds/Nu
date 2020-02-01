@@ -38,7 +38,7 @@ type 'a AssetTag =
         member this.AssetName = this.AssetName
         end
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
 module AssetTag =
 
     let make<'a> packageName assetName : AssetTag<'a> =
@@ -66,7 +66,7 @@ type [<StructuralEquality; NoComparison>] 'a Asset =
       Refinements : Refinement list
       Associations : string Set }
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
 module Asset =
 
     let make<'a> assetTag filePath refinements associations : Asset<'a> =
@@ -131,7 +131,7 @@ module AssetGraphModule =
             { FilePathOpt : string option
               PackageDescriptors : Map<string, PackageDescriptor> }
     
-    [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+    [<RequireQualifiedAccess>]
     module AssetGraph =
     
         let private getAssetExtension2 rawAssetExtension refinement =

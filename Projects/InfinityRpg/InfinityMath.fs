@@ -19,7 +19,7 @@ type Direction =
     | Downward
     | Leftward
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
 module MapBounds =
 
     let isPointInBounds (point : Vector2i) bounds =
@@ -29,7 +29,7 @@ module MapBounds =
              point.Y < bounds.CornerNegative.Y ||
              point.Y > bounds.CornerPositive.Y)
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
 module Direction =
 
     let mutable GlobalWalkCounter = 0

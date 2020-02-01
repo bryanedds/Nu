@@ -32,7 +32,7 @@ module MetadataModule =
         private
             { MetadataMap : UMap<string, UMap<string, AssetMetadata>> }
 
-    [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+    [<RequireQualifiedAccess>]
     module Metadata =
 
         let private getTileSetProperties (tileSet : TmxTileset) =

@@ -16,7 +16,7 @@ type [<NoEquality; NoComparison>] FieldMap =
       FieldTiles : Map<Vector2i, FieldTile>
       FieldTileSheet : Image AssetTag }
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
 module FieldMap =
 
     let PathTile = { TileSheetPositionM = Vector2i (3, 0); TileType = Passable }
