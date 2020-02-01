@@ -21,7 +21,7 @@ module SymbolStoreModule =
         private
             { SymbolPackages : (SymbolLoadMetadata * Symbol) Packages }
 
-    [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+    [<RequireQualifiedAccess>]
     module SymbolStore =
 
         let private tryLoadSymbol3 metadata packageName (asset : Symbol Asset) =

@@ -14,7 +14,7 @@ module OverlayRouterModule =
         private
             { Routes : Map<string, string option> }
 
-    [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+    [<RequireQualifiedAccess>]
     module OverlayRouter =
 
         /// Try to find an optional overlay name for a given classification.

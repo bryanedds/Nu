@@ -9,7 +9,7 @@ open SDL2
 open Prime
 open Nu
 
-[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
 module Nu =
 
     let mutable private Initialized = false

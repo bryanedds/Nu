@@ -186,7 +186,7 @@ module EffectSystemModule =
               EffectEnv : Definitions
               Chaos : System.Random }
 
-    [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+    [<RequireQualifiedAccess>]
     module EffectSystem =
 
         let rec private addView view effectSystem =

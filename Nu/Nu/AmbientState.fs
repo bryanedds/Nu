@@ -39,7 +39,7 @@ module AmbientStateModule =
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter }
 
-    [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+    [<RequireQualifiedAccess>]
     module AmbientState =
 
         /// Get the tick rate.

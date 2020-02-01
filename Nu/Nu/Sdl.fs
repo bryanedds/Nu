@@ -58,7 +58,7 @@ module SdlDepsModule =
             member this.Dispose () =
                 this.Destroy ()
 
-    [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+    [<RequireQualifiedAccess>]
     module SdlDeps =
     
         /// An empty SdlDeps.

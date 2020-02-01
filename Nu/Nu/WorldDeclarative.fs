@@ -32,7 +32,7 @@ type [<NoEquality; NoComparison>] EntityContent =
             Choice3Of3 (name, filePath)
 
 /// Describes the content of a layer.
-and [<NoEquality; NoComparison>] LayerContent =
+type [<NoEquality; NoComparison>] LayerContent =
     | LayersFromStream of Lens<obj, World> * (obj -> int) option * (int -> Lens<obj, World> -> Screen -> World -> LayerContent)
     | LayerFromDefinitions of string * string * PropertyInitializer list * EntityContent list
     | LayerFromFile of string * string
@@ -58,7 +58,7 @@ and [<NoEquality; NoComparison>] LayerContent =
             Choice3Of3 (name, filePath)
 
 /// Describes the content of a screen.
-and [<NoEquality; NoComparison>] ScreenContent =
+type [<NoEquality; NoComparison>] ScreenContent =
     | ScreenFromDefinitions of string * string * ScreenBehavior * PropertyInitializer list * LayerContent list
     | ScreenFromLayerFile of string * ScreenBehavior * Type * string
     | ScreenFromFile of string * ScreenBehavior * string
@@ -84,7 +84,7 @@ and [<NoEquality; NoComparison>] ScreenContent =
         | ScreenFromFile (name, behavior, filePath) -> Right (name, behavior, None, filePath)
 
 /// Describes the content of a game.
-and [<NoEquality; NoComparison>] GameContent =
+type [<NoEquality; NoComparison>] GameContent =
     | GameFromDefinitions of string * PropertyInitializer list * ScreenContent list
     | GameFromFile of string
     interface SimulantContent
