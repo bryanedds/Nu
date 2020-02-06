@@ -873,7 +873,7 @@ module GameDispatcherModule =
         static member internal signalGame<'model, 'message, 'command> signal (game : Game) world =
             match game.GetDispatcher world with
             | :? GameDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal signal dispatcher.Message dispatcher.Command (game.Model<'model> ()) game world
+                Signal.processSignal dispatcher.Message dispatcher.Command (game.Model<'model> ()) signal game world
             | _ ->
                 Log.info "Failed to send signal to game."
                 world
@@ -921,7 +921,7 @@ module GameDispatcherModule =
         override this.Register (game, world) =
             let (model, world) = World.attachModel initial Property? Model game world
             let bindings = this.Bindings (model, game, world)
-            let world = Signal.processBindings bindings this.Message this.Command (this.Model game) game world
+            let world = Signal.processBindings this.Message this.Command (this.Model game) bindings game world
             let content = this.Content (this.Model game, game, world)
             List.foldi (fun contentIndex world content ->
                 let (screen, world) = World.expandScreenContent World.setScreenSplash content (SimulantOrigin game) game world
@@ -941,10 +941,10 @@ module GameDispatcherModule =
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
         default this.Bindings (_, _, _) = []
 
-        abstract member Message : 'message * 'model * Game * World -> 'model * Signal<'message, 'command>
-        default this.Message (_, model, _, _) = just model
+        abstract member Message : 'model * 'message * Game * World -> 'model * Signal<'message, 'command>
+        default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'command * 'model * Game * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Game * World -> World * Signal<'message, 'command>
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Game * World -> ScreenContent list

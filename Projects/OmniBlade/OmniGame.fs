@@ -41,7 +41,7 @@ module OmniGame =
              Simulants.Battle.OutgoingStartEvent => cmd FadeSong
              Simulants.BattleBack.ClickEvent => cmd ShowTitle]
 
-        override this.Command (command, _, _, world) =
+        override this.Command (_, command, _, world) =
             let world =
                 match command with
                 | PlayTitleSong -> World.playSong 0 (1.0f * Constants.Audio.MasterSongVolume) Assets.TitleSong world

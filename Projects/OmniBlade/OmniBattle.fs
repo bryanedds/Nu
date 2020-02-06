@@ -349,7 +349,7 @@ module OmniBattle =
             battleBindings battle @
             allyPartyBindings Constants.Battle.AllyMax
 
-        override this.Message (message, model, _, world) =
+        override this.Message (model, message, _, world) =
             match message with
             | ReadyCharacters ->
                 let time = World.getTickTime world
@@ -427,7 +427,7 @@ module OmniBattle =
                 then tick (World.getTickTime world) model
                 else just model
 
-        override this.Command (command, model, battle, world) =
+        override this.Command (model, command, battle, world) =
             match command with
             | FadeSong ->
                 let world = World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world

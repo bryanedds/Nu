@@ -569,7 +569,7 @@ module GameplayDispatcherModule =
              Simulants.Title.SelectEvent => cmd QuittingGameplay
              Simulants.Gameplay.DeselectEvent => cmd QuitGameplay]
 
-        override this.Command (command, _, _, world) =
+        override this.Command (_, command, _, world) =
             let world =
                 match command with
                 | ToggleHaltButton -> Simulants.HudHalt.SetEnabled (isPlayerNavigatingPath world) world

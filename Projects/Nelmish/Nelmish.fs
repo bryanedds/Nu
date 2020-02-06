@@ -19,7 +19,7 @@ module Nelmish =
         inherit GameDispatcher<Model, Message, unit> (0) // initial model value
 
         // here we handle the above messages
-        override this.Message (message, model, _, _) =
+        override this.Message (model, message, _, _) =
             match message with
             | Decrement -> just (dec model)
             | Increment -> just (inc model)

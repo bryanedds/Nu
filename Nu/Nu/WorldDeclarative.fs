@@ -186,7 +186,7 @@ module WorldDeclarative =
                 Seq.take (Lens.get lensSeq world |> Seq.length) |>
                 Seq.map (fun (opt, lens) ->
                     let (index, _) = Option.get opt
-                    let guid = makeGuidDeterministic index guid
+                    let guid = Gen.idDeterministic index guid
                     let lens = lens.MapOut snd
                     PartialComparable.make guid (index, lens)) |>
                 Set.ofSeq) |>
