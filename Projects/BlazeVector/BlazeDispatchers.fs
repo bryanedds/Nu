@@ -243,7 +243,7 @@ module SceneModule =
             [scene.UpdateEvent => cmd AdjustCamera
              scene.UpdateEvent => cmd PlayerFall]
 
-        override this.Command (command, _, _, world) =
+        override this.Command (_, command, _, world) =
             let world =
                 match command with
                 | AdjustCamera ->
@@ -312,7 +312,7 @@ module GameplayModule =
              gameplay.OutgoingStartEvent => cmd StoppingPlay
              gameplay.DeselectEvent => cmd StopPlay]
 
-        override this.Command (command, _, gameplay, world) =
+        override this.Command (_, command, gameplay, world) =
             let world =
                 match command with
                 | StartPlay ->

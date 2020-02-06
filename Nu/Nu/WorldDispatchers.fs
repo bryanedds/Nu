@@ -47,7 +47,7 @@ module FacetModule =
             | Some (:? Facet<'model, 'message, 'command> as facet) ->
                 match signalObj with
                 | :? Signal<'message, 'command> as signal ->
-                    Signal.processSignal signal facet.Message facet.Command (entity.FacetModel<'model> facet.ModelName) entity world
+                    Signal.processSignal facet.Message facet.Command (entity.FacetModel<'model> facet.ModelName) signal entity world
                 | _ -> Log.info "Incorrect signal type returned from event binding."; world
             | _ -> Log.info "Failed to send signal to entity."; world
 
@@ -55,7 +55,7 @@ module FacetModule =
             let facets = entity.GetFacets world
             match Array.tryFind (fun facet -> getTypeName facet = facetName) facets with
             | Some (:? Facet<'model, 'message, 'command> as facet) ->
-                Signal.processSignal signal facet.Message facet.Command (entity.FacetModel<'model> facet.ModelName) entity world
+                Signal.processSignal facet.Message facet.Command (entity.FacetModel<'model> facet.ModelName) signal entity world
             | _ -> Log.info "Failed to send signal to entity."; world
 
     and Entity with
@@ -104,7 +104,7 @@ module FacetModule =
         override this.Register (entity, world) =
             let (model, world) = World.attachModel initial this.ModelName entity world
             let bindings = this.Bindings (model, entity, world)
-            let world = Signal.processBindings bindings this.Message this.Command (this.Model entity) entity world
+            let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
             let content = this.Content (this.Model entity, entity, world)
             List.fold (fun world content -> World.expandEntityContent None content (FacetOrigin (entity, getTypeName this)) (etol entity) world) world content
 
@@ -121,10 +121,10 @@ module FacetModule =
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         default this.Bindings (_, _, _) = []
 
-        abstract member Message : 'message * 'model * Entity * World -> 'model * Signal<'message, 'command>
-        default this.Message (_, model, _, _) = just model
+        abstract member Message : 'model * 'message * Entity * World -> 'model * Signal<'message, 'command>
+        default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'command * 'model * Entity * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Entity * World -> World * Signal<'message, 'command>
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Entity * World -> EntityContent list
@@ -559,7 +559,7 @@ module TileMapFacetModule =
 
         let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr world =
             let tileShape = PhysicsEngine.localizeCollisionBody (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
-            { BodyId = makeGuidFromInts tli ti
+            { BodyId = Gen.idFromInts tli ti
               Position =
                 Vector2
                     (single (td.TilePosition.X + tmd.TileSize.X / 2),
@@ -620,7 +620,7 @@ module TileMapFacetModule =
                     match tileData.TileSetTileOpt with
                     | Some tileSetTile ->
                         if tileSetTile.Properties.ContainsKey Constants.Physics.CollisionProperty then
-                            let physicsId = { SourceId = tileMap.GetId world; BodyId = makeGuidFromInts tileLayerIndex tileIndex }
+                            let physicsId = { SourceId = tileMap.GetId world; BodyId = Gen.idFromInts tileLayerIndex tileIndex }
                             physicsId :: physicsIds
                         else physicsIds
                     | None -> physicsIds)
@@ -1012,7 +1012,7 @@ module EntityDispatcherModule =
         static member internal signalEntity<'model, 'message, 'command> signal (entity : Entity) world =
             match entity.GetDispatcher world with
             | :? EntityDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal signal dispatcher.Message dispatcher.Command (entity.Model<'model> ()) entity world
+                Signal.processSignal dispatcher.Message dispatcher.Command (entity.Model<'model> ()) signal entity world
             | _ ->
                 Log.info "Failed to send signal to entity."
                 world
@@ -1053,7 +1053,7 @@ module EntityDispatcherModule =
         override this.Register (entity, world) =
             let (model, world) = World.attachModel initial Property? Model entity world
             let bindings = this.Bindings (model, entity, world)
-            let world = Signal.processBindings bindings this.Message this.Command (this.Model entity) entity world
+            let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
             let content = this.Content (this.Model entity, entity, world)
             List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin entity) (etol entity) world) world content
 
@@ -1073,15 +1073,15 @@ module EntityDispatcherModule =
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         default this.Bindings (_, _, _) = []
 
-        abstract member Message : 'message * 'model * Entity * World -> 'model * Signal<'message, 'command>
-        default this.Message (_, model, _, _) = just model
+        abstract member Message : 'model * 'message * Entity * World -> 'model * Signal<'message, 'command>
+        default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'command * 'model * Entity * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Entity * World -> World * Signal<'message, 'command>
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Entity * World -> EntityContent list
         default this.Content (_, _, _) = []
-        
+
         abstract member View : 'model * Entity * World -> View list
         default this.View (_, _, _) = []
 
@@ -1843,7 +1843,7 @@ module LayerDispatcherModule =
         static member internal signalLayer<'model, 'message, 'command> signal (layer : Layer) world =
             match layer.GetDispatcher world with
             | :? LayerDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal signal dispatcher.Message dispatcher.Command (layer.Model<'model> ()) layer world
+                Signal.processSignal dispatcher.Message dispatcher.Command (layer.Model<'model> ()) signal layer world
             | _ ->
                 Log.info "Failed to send signal to layer."
                 world
@@ -1882,7 +1882,7 @@ module LayerDispatcherModule =
         override this.Register (layer, world) =
             let (model, world) = World.attachModel initial Property? Model layer world
             let bindings = this.Bindings (model, layer, world)
-            let world = Signal.processBindings bindings this.Message this.Command (this.Model layer) layer world
+            let world = Signal.processBindings this.Message this.Command (this.Model layer) bindings layer world
             let content = this.Content (this.Model layer, layer, world)
             List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin layer) layer world) world content
 
@@ -1899,10 +1899,10 @@ module LayerDispatcherModule =
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
         default this.Bindings (_, _, _) = []
 
-        abstract member Message : 'message * 'model * Layer * World -> 'model * Signal<'message, 'command>
-        default this.Message (_, model, _, _) = just model
+        abstract member Message : 'model * 'message * Layer * World -> 'model * Signal<'message, 'command>
+        default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'command * 'model * Layer * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Layer * World -> World * Signal<'message, 'command>
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Layer * World -> EntityContent list
@@ -1919,7 +1919,7 @@ module ScreenDispatcherModule =
         static member internal signalScreen<'model, 'message, 'command> signal (screen : Screen) world =
             match screen.GetDispatcher world with
             | :? ScreenDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal signal dispatcher.Message dispatcher.Command (screen.Model<'model> ()) screen world
+                Signal.processSignal dispatcher.Message dispatcher.Command (screen.Model<'model> ()) signal screen world
             | _ ->
                 Log.info "Failed to send signal to screen."
                 world
@@ -1958,7 +1958,7 @@ module ScreenDispatcherModule =
         override this.Register (screen, world) =
             let (model, world) = World.attachModel initial Property? Model screen world
             let bindings = this.Bindings (model, screen, world)
-            let world = Signal.processBindings bindings this.Message this.Command (this.Model screen) screen world
+            let world = Signal.processBindings this.Message this.Command (this.Model screen) bindings screen world
             let content = this.Content (this.Model screen, screen, world)
             let world = List.fold (fun world content -> World.expandLayerContent None content (SimulantOrigin screen) screen world) world content
             world
@@ -1976,10 +1976,10 @@ module ScreenDispatcherModule =
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
         default this.Bindings (_, _, _) = []
 
-        abstract member Message : 'message * 'model * Screen * World -> 'model * Signal<'message, 'command>
-        default this.Message (_, model, _, _) = just model
+        abstract member Message : 'model * 'message * Screen * World -> 'model * Signal<'message, 'command>
+        default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'command * 'model * Screen * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Screen * World -> World * Signal<'message, 'command>
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Screen * World -> LayerContent list

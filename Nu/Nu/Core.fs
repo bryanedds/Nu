@@ -50,8 +50,7 @@ module Core =
     /// Get a unique time stamp, spin until the time stamp advances if need be.
     let getUniqueTimeStamp () =
         let mutable nextStamp = getTimeStamp ()
-        while nextStamp = lastStamp do
-            nextStamp <- getTimeStamp ()
+        while nextStamp = lastStamp do nextStamp <- getTimeStamp ()
         lastStamp <- nextStamp
         nextStamp
 
@@ -83,9 +82,3 @@ module CoreOperators =
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
-
-    // TODO: remove this once Prime is updated.
-    let inline bind source signal : Binding<'m, 'c, 's, 'w> = source => signal
-
-    // TODO: remove this once Prime is updated.
-    let inline react source signal : Binding<'m, 'c, 's, 'w> = source =|> signal

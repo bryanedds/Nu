@@ -29,7 +29,7 @@ type MyGameplayDispatcher () =
          Simulants.Gameplay.UpdateEvent => cmd EyeTrack]
 
     // here we handle the above commands
-    override this.Command (command, _, _, world) =
+    override this.Command (_, command, _, world) =
         let world =
             match command with
             | Jump ->

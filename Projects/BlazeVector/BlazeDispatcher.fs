@@ -36,7 +36,7 @@ module BlazeDispatcherModule =
              Simulants.GameplayBack.ClickEvent => cmd ShowTitle]
 
         // here we handle the above commands
-        override this.Command (command, _, _, world) =
+        override this.Command (_, command, _, world) =
             let world =
                 match command with
                 | PlaySplashSound -> World.playSound 1.0f Assets.NuSplashSound world
