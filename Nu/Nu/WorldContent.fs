@@ -6,7 +6,7 @@ open System
 open Prime
 open Nu
 
-/// Contains primitives for describing simulant content.    
+[<RequireQualifiedAccess>]
 module Content =
 
     /// Describe a game to be loaded from a file.
