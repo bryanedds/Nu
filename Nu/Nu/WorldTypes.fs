@@ -766,7 +766,7 @@ module WorldTypes =
         /// The address of the game.
         member this.GameAddress = gameAddress
         
-        /// Helper for accessing strongly-typed game property tags.
+        /// Helper for accessing strongly-typed game properties.
         static member Prop = Unchecked.defaultof<Game>
         
         static member op_Implicit () = Game ()
@@ -822,7 +822,7 @@ module WorldTypes =
         /// The address of the screen.
         member this.ScreenAddress = screenAddress
 
-        /// Helper for accessing strongly-typed screen property tags.
+        /// Helper for accessing strongly-typed screen properties.
         static member Prop = Unchecked.defaultof<Screen>
         
         static member op_Implicit (screenName : string) = Screen screenName
@@ -892,7 +892,7 @@ module WorldTypes =
         /// The address of the layer.
         member this.LayerAddress = layerAddress
 
-        /// Helper for accessing strongly-typed layer property tags.
+        /// Helper for accessing strongly-typed layer properties.
         static member Prop = Unchecked.defaultof<Layer>
 
         static member op_Implicit (layerName : string) = Layer layerName
@@ -988,7 +988,7 @@ module WorldTypes =
             with get () = entityStateOpt
             and set value = entityStateOpt <- value
 
-        /// Helper for accessing strongly-typed entity property tags.
+        /// Helper for accessing strongly-typed entity properties.
         static member Prop = Unchecked.defaultof<Entity>
 
         static member op_Implicit (entityName : string) = Entity entityName
