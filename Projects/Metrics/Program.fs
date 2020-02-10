@@ -1,5 +1,4 @@
-﻿namespace MyGame
-open System
+﻿open System
 open Prime
 open Nu
 open Nu.Declarative
@@ -85,15 +84,13 @@ type MyGamePlugin () =
     override this.GetEditorGameDispatcher () = typeof<MyGameDispatcher>
     override this.GetEditorScreenDispatcherOpt () = None
 
-module Program =
-
-    // this program exists to take metrics on Nu's performance
-    let [<EntryPoint; STAThread>] main _ =
-        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "MyGame" }
-        let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
-        let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
-        Nu.init worldConfig.NuConfig
-        let tryMakeWorld sdlDeps worldConfig =
-            let plugin = MyGamePlugin ()
-            World.tryMake plugin sdlDeps worldConfig
-        World.run tryMakeWorld worldConfig
+/// This program exists to take metrics on Nu's performance
+let [<EntryPoint; STAThread>] main _ =
+    let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "MyGame" }
+    let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
+    let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
+    Nu.init worldConfig.NuConfig
+    let tryMakeWorld sdlDeps worldConfig =
+        let plugin = MyGamePlugin ()
+        World.tryMake plugin sdlDeps worldConfig
+    World.run tryMakeWorld worldConfig
