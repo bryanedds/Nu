@@ -2,21 +2,20 @@
 open Prime
 open Nu
 open Nu.Declarative
-module Nelmish =
 
-    // this is our Elm-style model type
-    type Model =
-        int
+// this is our Elm-style model type
+type Model =
+    int
 
-    // this is our Elm-style message type
-    type Message =
-        | Decrement
-        | Increment
-        | Reset
+// this is our Elm-style message type
+type Message =
+    | Decrement
+    | Increment
+    | Reset
 
-    // this is our Elm-style game dispatcher
-    type NelmishDispatcher () =
-        inherit GameDispatcher<Model, Message, unit> (0) // initial model value
+// this is our Elm-style game dispatcher
+type NelmishDispatcher () =
+    inherit GameDispatcher<Model, Message, unit> (0) // initial model value
 
         // here we handle the Elm-style messages
         override this.Message (model, message, _, _) =

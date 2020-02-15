@@ -29,7 +29,7 @@ module Program =
     interactions    | F# (chains)               | Visual Studio
     subsystems      | F#                        | Visual Studio
     components      | F# (facets / dispatchers) | Visual Studio
-    elmish / MMC    | F# (facets / dispatchers) | Visual Studio
+    elmish / MVU    | F# (facets / dispatchers) | Visual Studio
 
     The advantages and limitations that fall out of this is as such -
 
