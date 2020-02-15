@@ -754,20 +754,6 @@ module WorldTypes =
         interface SimulantState with
             member this.GetXtension () = this.Xtension
 
-    /// Operators for the Simulant type.
-    and SimulantOperators =
-        private
-            | SimulantOperators
-
-        /// Concatenate two addresses, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (simulant : Simulant) =
-            match box simulant with
-            | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
-            | _ -> acatff address simulant.SimulantAddress
-
-        /// Concatenate two addresses, forcing the type of first address.
-        static member (-->) (address : 'a Address, simulant : Simulant) = SimulantOperators.acatff address simulant
-
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =
 
@@ -780,7 +766,7 @@ module WorldTypes =
         /// The address of the game.
         member this.GameAddress = gameAddress
         
-        /// Helper for accessing strongly-typed game property tags.
+        /// Helper for accessing strongly-typed game properties.
         static member Prop = Unchecked.defaultof<Game>
         
         static member op_Implicit () = Game ()
@@ -814,13 +800,13 @@ module WorldTypes =
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewGame Debug.World.Chosen
 
-        /// Concatenate two addresses, forcing the type of first address.
+        /// Concatenate an address with a game's address, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (game : Game) =
             match box game with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
             | _ -> acatff address game.GameAddress
 
-        /// Concatenate two addresses, forcing the type of first address.
+        /// Concatenate an address with a game's address, forcing the type of first address.
         static member (-->) (address : 'a Address, game) = Game.acatff address game
 
     /// The screen type that allows transitioning to and from other screens, and also hosts the
@@ -836,7 +822,7 @@ module WorldTypes =
         /// The address of the screen.
         member this.ScreenAddress = screenAddress
 
-        /// Helper for accessing strongly-typed screen property tags.
+        /// Helper for accessing strongly-typed screen properties.
         static member Prop = Unchecked.defaultof<Screen>
         
         static member op_Implicit (screenName : string) = Screen screenName
@@ -873,13 +859,13 @@ module WorldTypes =
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
 
-        /// Concatenate two addresses, forcing the type of first address.
+        /// Concatenate an address with a screen's address, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (screen : Screen) =
             match box screen with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
             | _ -> acatff address screen.ScreenAddress
 
-        /// Concatenate two addresses, forcing the type of first address.
+        /// Concatenate an address with a screen's address, forcing the type of first address.
         static member (-->) (address : 'a Address, screen) = Screen.acatff address screen
 
         /// Derive a layer from its screen.
@@ -906,7 +892,7 @@ module WorldTypes =
         /// The address of the layer.
         member this.LayerAddress = layerAddress
 
-        /// Helper for accessing strongly-typed layer property tags.
+        /// Helper for accessing strongly-typed layer properties.
         static member Prop = Unchecked.defaultof<Layer>
 
         static member op_Implicit (layerName : string) = Layer layerName
@@ -943,13 +929,13 @@ module WorldTypes =
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
 
-        /// Concatenate two addresses, forcing the type of first address.
+        /// Concatenate an address with a layer's address, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (layer : Layer) =
             match box layer with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
             | _ -> acatff address layer.LayerAddress
     
-        /// Concatenate two addresses, forcing the type of first address.
+        /// Concatenate an address with a layer's address, forcing the type of first address.
         static member (-->) (address : 'a Address, layer) = Layer.acatff address layer
         
         /// Derive an entity from its layer.
@@ -1002,7 +988,7 @@ module WorldTypes =
             with get () = entityStateOpt
             and set value = entityStateOpt <- value
 
-        /// Helper for accessing strongly-typed entity property tags.
+        /// Helper for accessing strongly-typed entity properties.
         static member Prop = Unchecked.defaultof<Entity>
 
         static member op_Implicit (entityName : string) = Entity entityName
@@ -1040,13 +1026,13 @@ module WorldTypes =
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
 
-        /// Concatenate two addresses, forcing the type of first address.
+        /// Concatenate an address with an entity's address, forcing the type of first address.
         static member acatff<'a> (address : 'a Address) (entity : Entity) =
             match box entity with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
             | _ -> acatff address entity.EntityAddress
     
-        /// Concatenate two addresses, forcing the type of first address.
+        /// Concatenate an address with an entity, forcing the type of first address.
         static member (-->) (address : 'a Address, entity) = Entity.acatff address entity
     
     /// The world's dispatchers (including facets).
@@ -1257,9 +1243,6 @@ type EntityDispatcher = WorldTypes.EntityDispatcher
 
 /// Dynamically augments an entity's behavior in a composable way.
 type Facet = WorldTypes.Facet
-
-/// Operators for the Simulant type.
-type SimulantOperators = WorldTypes.SimulantOperators
 
 /// The game type that hosts the various screens used to navigate through a game.
 type Game = WorldTypes.Game
