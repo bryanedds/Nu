@@ -34,7 +34,7 @@ module Elmario =
                 elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then cmd MoveRight
                 else cmd Nop]
 
-        // here we handle the above commands
+        // here we handle the Elm-style commands
         override this.Command (_, command, _, world) =
             let world =
                 match command with
@@ -57,18 +57,10 @@ module Elmario =
                 | Nop -> world
             just world
 
-        // here we describe the content of the game including elmario and the ground he walks on.
+        // here we describe the content of the game including elmario, the ground he walks on, and a rock.
         override this.Content (_, _, _) =
             [Content.screen Default.Screen.Name Vanilla []
                 [Content.layer Default.Layer.Name []
-                    [Content.character Simulants.Elmario.Name
-                        [Entity.Position == v2 0.0f 0.0f
-                         Entity.Size == v2 144.0f 144.0f]
-                     Content.block "Ground"
-                        [Entity.Position == v2 -384.0f -256.0f
-                         Entity.Size == v2 768.0f 64.0f
-                         Entity.StaticImage == asset "Gameplay" "TreeTop"]
-                     Content.block "Rock"
-                        [Entity.Position == v2 320.0f -192.0f
-                         Entity.Size == v2 64.0f 64.0f
-                         Entity.StaticImage == asset "Gameplay" "Rock"]]]]
+                    [Content.character Simulants.Elmario.Name [Entity.Position == v2 0.0f 0.0f; Entity.Size == v2 144.0f 144.0f]
+                     Content.block "Ground" [Entity.Position == v2 -384.0f -256.0f; Entity.Size == v2 768.0f 64.0f; Entity.StaticImage == asset "Gameplay" "TreeTop"]
+                     Content.block "Rock" [Entity.Position == v2 320.0f -192.0f; Entity.Size == v2 64.0f 64.0f; Entity.StaticImage == asset "Gameplay" "Rock"]]]]
