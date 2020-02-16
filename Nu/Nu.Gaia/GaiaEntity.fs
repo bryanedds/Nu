@@ -96,7 +96,7 @@ and EntityPropertyDescriptor (property, attributes) =
             | "Name" ->
                 let name = value :?> string
                 if name.IndexOfAny Symbol.IllegalNameCharsArray = -1 then
-                    let (entity, world) = World.reassignEntityImmediate entity (Some name) (etol entity) world
+                    let (entity, world) = World.reassignEntityImmediate entity (Some name) entity.Parent world
                     Globals.World <- world // must be set for property grid
                     Globals.SelectEntity entity Globals.Form world
                     world

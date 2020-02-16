@@ -106,7 +106,7 @@ module FacetModule =
             let bindings = this.Bindings (model, entity, world)
             let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
             let content = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (FacetOrigin (entity, getTypeName this)) (etol entity) world) world content
+            List.fold (fun world content -> World.expandEntityContent None content (FacetOrigin (entity, getTypeName this)) entity.Parent world) world content
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -1059,7 +1059,7 @@ module EntityDispatcherModule =
             let bindings = this.Bindings (model, entity, world)
             let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
             let content = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin entity) (etol entity) world) world content
+            List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin entity) entity.Parent world) world content
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)

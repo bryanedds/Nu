@@ -140,7 +140,7 @@ module PlayerModule =
         static let [<Literal>] ClimbForce = 12000.0f
 
         static let createBullet (player : Entity) (playerTransform : Transform) world =
-            let (bullet, world) = World.createEntity<BulletDispatcher> None DefaultOverlay (etol player) world
+            let (bullet, world) = World.createEntity<BulletDispatcher> None DefaultOverlay player.Parent world
             let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetDepth playerTransform.Depth world

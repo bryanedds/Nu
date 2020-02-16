@@ -86,13 +86,13 @@ module Nu =
                     | :? Layer as layer ->
                         match (valueOpt, WorldModuleLayer.Setters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
-                            let screen = ltos layer
+                            let screen = layer.Parent
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
                             let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
                             setter property layer world |> snd |> box
                         | (Some value, (false, _)) ->
-                            let screen = ltos layer
+                            let screen = layer.Parent
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
                             let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
@@ -104,16 +104,16 @@ module Nu =
                     | :? Entity as entity ->
                         match (valueOpt, WorldModuleEntity.Setters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
-                            let layer = etol entity
-                            let screen = ltos layer
+                            let layer = entity.Parent
+                            let screen = layer.Parent
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
                             let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
                             let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
                             setter property entity world |> snd |> box
                         | (Some value, (false, _)) ->
-                            let layer = etol entity
-                            let screen = ltos layer
+                            let layer = entity.Parent
+                            let screen = layer.Parent
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
                             let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
                             let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world

@@ -153,8 +153,8 @@ module WorldSimulantModule =
             match simulant with
             | :? Game -> None
             | :? Screen -> Some (Default.Game :> Simulant)
-            | :? Layer as layer -> Some (ltos layer :> Simulant)
-            | :? Entity as entity -> Some (etol entity :> Simulant)
+            | :? Layer as layer -> Some (layer.Parent :> Simulant)
+            | :? Entity as entity -> Some (entity.Parent :> Simulant)
             | _ -> failwithumf ()
 
         /// Get the parent of the given simulant.
@@ -164,8 +164,8 @@ module WorldSimulantModule =
             match simulant with
             | :? Game -> failwithumf ()
             | :? Screen -> Default.Game :> Simulant
-            | :? Layer as layer -> ltos layer :> Simulant
-            | :? Entity as entity -> etol entity :> Simulant
+            | :? Layer as layer -> layer.Parent :> Simulant
+            | :? Entity as entity -> entity.Parent :> Simulant
             | _ -> failwithumf ()
         
         /// Attempt to get the parent of the parent of the given simulant.

@@ -33,7 +33,7 @@ module Gaia =
     let private getPickableEntities world =
         let selectedLayer = (getEditorState world).SelectedLayer
         let (entities, world) = World.getEntitiesInView2 world
-        let entitiesInLayer = Enumerable.ToList (Enumerable.Where (entities, fun entity -> etol entity = selectedLayer))
+        let entitiesInLayer = Enumerable.ToList (Enumerable.Where (entities, fun entity -> entity.Parent = selectedLayer))
         (entitiesInLayer, world)
 
     let private getSnaps (form : GaiaForm) =
@@ -789,7 +789,7 @@ module Gaia =
                     let entity = Entity (atoa address)
 
                     // select the layer of the selected entity
-                    let layer = etol entity
+                    let layer = entity.Parent
                     let layerTabIndex = form.layerTabControl.TabPages.IndexOfKey layer.Name
                     form.layerTabControl.SelectTab layerTabIndex
 
@@ -924,7 +924,7 @@ module Gaia =
                     let layerTabControl = form.layerTabControl
                     let layerTab = layerTabControl.SelectedTab
                     { editorState with
-                        SelectedLayer = stol EditorScreen layerTab.Text
+                        SelectedLayer = EditorScreen / layerTab.Text
                         FilePaths = Map.remove layer.LayerAddress editorState.FilePaths })
                     world
 
@@ -1052,7 +1052,7 @@ module Gaia =
             let selectedLayer =
                 let layerTabControl = form.layerTabControl
                 let layerTab = layerTabControl.SelectedTab
-                stol EditorScreen layerTab.Text
+                EditorScreen / layerTab.Text
             let world = updateEditorState (fun editorState -> { editorState with SelectedLayer = selectedLayer}) world
             let world = subscribeToEntityEvents form world
             refreshEntityTreeView form world
