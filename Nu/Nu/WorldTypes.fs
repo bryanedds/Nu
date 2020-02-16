@@ -822,6 +822,9 @@ module WorldTypes =
         /// The address of the screen.
         member this.ScreenAddress = screenAddress
 
+        /// The parent game of the screen.
+        member this.Parent = Game ()
+
         /// Helper for accessing strongly-typed screen properties.
         static member Prop = Unchecked.defaultof<Screen>
         
@@ -891,6 +894,9 @@ module WorldTypes =
 
         /// The address of the layer.
         member this.LayerAddress = layerAddress
+
+        /// The parent screen of the layer.
+        member this.Parent = let names = this.LayerAddress.Names in Screen names.[0]
 
         /// Helper for accessing strongly-typed layer properties.
         static member Prop = Unchecked.defaultof<Layer>
@@ -976,6 +982,9 @@ module WorldTypes =
 
         /// The address of the entity.
         member this.EntityAddress = entityAddress
+
+        /// The parent layer of the entity.
+        member this.Parent = let names = this.EntityAddress.Names in Layer [names.[0]; names.[1]]
 
         /// The address of the entity's update event.
         member this.UpdateEvent = updateEvent

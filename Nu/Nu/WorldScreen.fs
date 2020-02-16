@@ -315,8 +315,8 @@ module WorldScreenModule =
                         World.expandEntityStream lens indexerOpt mapper origin layer world)
                         world entityStreams
                 let world =
-                    List.fold (fun world (owner, entityContents) ->
-                        let layer = etol owner
+                    List.fold (fun world (owner : Entity, entityContents) ->
+                        let layer = owner.Parent
                         List.fold (fun world entityContent ->
                             World.expandEntityContent (Some Gen.id) entityContent (SimulantOrigin owner) layer world)
                             world entityContents)
