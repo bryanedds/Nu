@@ -41,7 +41,7 @@ module OmniBattle =
 
         member this.GetBattleModel = this.GetModel<BattleModel>
         member this.SetBattleModel = this.SetModel<BattleModel>
-        member this.BattleModel = this.Model<BattleModel>
+        member this.BattleModel = this.Model<BattleModel> ()
 
     and BattleDispatcher () =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
@@ -452,4 +452,4 @@ module OmniBattle =
                          Entity.Depth == 10.0f]
                      Content.entity<ReticlesDispatcher> (Simulants.Reticles allyIndex).Name
                         [Entity.Depth == 10.0f
-                         Entity.Model () <== model --> fun model -> { Characters = model.Characters; AimType = model.AimType }]]]
+                         Entity.ReticleModel <== model --> fun model -> { Characters = model.Characters; AimType = model.AimType }]]]
