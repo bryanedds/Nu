@@ -97,7 +97,10 @@ module WorldLayerModule =
         member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
 
         /// Resolve a relation in the context of a layer.
-        member this.Resolve relation = Layer (Relation.resolve this.LayerAddress relation)
+        member this.Resolve relation = resolve<Layer> this relation
+
+        /// Relate a layer to a simulant.
+        member this.Relate simulant = relate<Layer> this simulant
 
         /// Get a layer's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.LayerAddress

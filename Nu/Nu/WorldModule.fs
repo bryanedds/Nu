@@ -77,6 +77,20 @@ module WorldModuleOperators =
         let names = entity.EntityAddress.Names
         Screen names.[0]
 
+    /// Resolve a relationship to a simulant.
+    let resolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Relation) : 't =
+        let simulant2 = Relation.resolve<Simulant, 't> simulant.SimulantAddress relation
+        if  typeof<'t> = typeof<Entity> ||
+            typeof<'t> = typeof<Layer> ||
+            typeof<'t> = typeof<Screen> ||
+            typeof<'t> = typeof<Game> then
+            Activator.CreateInstance (typeof<'t>, [|simulant2|]) :?> 't
+        else failwithumf ()
+
+    /// Relate a simulant to another simulant.
+    let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Relation =
+        Relation.unresolve<Simulant, 't> simulant.SimulantAddress (atoa simulant2.SimulantAddress)
+
 [<AutoOpen; ModuleBinding>]
 module WorldModule =
 

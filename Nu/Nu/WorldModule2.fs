@@ -66,10 +66,21 @@ module WorldModule2 =
             let address = Relation.resolve scriptContext.SimulantAddress relation
             address
 
-        /// Resolve a Simulant relation to an address in the current script context.
+        /// Resolve a relation to an address in the current script context.
         [<FunctionBinding "resolve">]
-        static member resolveGeneric (relation : obj Relation) world =
+        static member resolveGeneralized (relation : obj Relation) world =
             World.resolve relation world
+    
+        /// Relate an address to the current script context.
+        static member relate address world =
+            let scriptContext = World.getScriptContext world
+            let address = Relation.unresolve scriptContext.SimulantAddress address
+            address
+
+        /// Relate an address to the current script context.
+        [<FunctionBinding "relate">]
+        static member relateGeneralized (address : obj Address) world =
+            World.relate address world
 
         /// Send a message to the renderer to reload its rendering assets.
         [<FunctionBinding>]
