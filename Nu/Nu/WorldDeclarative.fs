@@ -135,7 +135,7 @@ module DeclarativeOperators =
         Lens.make<'a, World> name get set this
 
     /// Make a read-only lens.
-    let lensOut<'a> name get this =
+    let lensReadOnly<'a> name get this =
         Lens.makeReadOnly<'a, World> name get this
 
     /// Initialize a property.

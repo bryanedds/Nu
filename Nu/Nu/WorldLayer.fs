@@ -16,7 +16,7 @@ module WorldLayerModule =
     type Layer with
     
         member this.GetDispatcher world = World.getLayerDispatcher this world
-        member this.Dispatcher = lensOut Property? Dispatcher this.GetDispatcher this
+        member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
         member this.GetDepth world = World.getLayerDepth this world
         member this.SetDepth value world = World.setLayerDepth value this world
         member this.Depth = lens Property? Depth this.GetDepth this.SetDepth this
@@ -33,7 +33,7 @@ module WorldLayerModule =
         member this.SetScript value world = World.setLayerScript value this world
         member this.Script = lens Property? Script this.GetScript this.SetScript this
         member this.GetScriptFrame world = World.getLayerScriptFrame this world
-        member this.ScriptFrame = lensOut Property? Script this.GetScriptFrame this
+        member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
         member internal this.GetScriptUnsubscriptions world = World.getLayerScriptUnsubscriptions this world
         member internal this.SetScriptUnsubscriptions value world = World.setLayerScriptUnsubscriptions value this world
         member internal this.ScriptUnsubscriptions = lens Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions this
@@ -50,9 +50,9 @@ module WorldLayerModule =
         member this.SetOnPostUpdate value world = World.setLayerOnPostUpdate value this world
         member this.OnPostUpdate = lens Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
         member this.GetCreationTimeStamp world = World.getLayerCreationTimeStamp this world
-        member this.CreationTimeStamp = lensOut Property? CreationTimeStamp this.GetCreationTimeStamp this
+        member this.CreationTimeStamp = lensReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetId world = World.getLayerId this world
-        member this.Id = lensOut Property? Id this.GetId this
+        member this.Id = lensReadOnly Property? Id this.GetId this
         
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this

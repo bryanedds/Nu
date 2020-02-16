@@ -161,16 +161,16 @@ module EffectFacetModule =
         member this.EffectOffset = lens Property? EffectOffset this.GetEffectOffset this.SetEffectOffset this
         member this.GetEffectPhysicsShapes world : unit = this.Get Property? EffectPhysicsShapes world // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
         member private this.SetEffectPhysicsShapes (value : unit) world = this.SetFast Property? EffectPhysicsShapes false true value world
-        member this.EffectPhysicsShapes = lensOut Property? EffectPhysicsShapes this.GetEffectPhysicsShapes this
+        member this.EffectPhysicsShapes = lensReadOnly Property? EffectPhysicsShapes this.GetEffectPhysicsShapes this
         member this.GetEffectTags world : EffectTags = this.Get Property? EffectTags world
         member private this.SetEffectTags (value : EffectTags) world = this.SetFast Property? EffectTags false true value world
-        member this.EffectTags = lensOut Property? EffectTags this.GetEffectTags this
+        member this.EffectTags = lensReadOnly Property? EffectTags this.GetEffectTags this
         member this.GetEffectHistoryMax world : int = this.Get Property? EffectHistoryMax world
         member this.SetEffectHistoryMax (value : int) world = this.SetFast Property? EffectHistoryMax false false value world
         member this.EffectHistoryMax = lens Property? EffectHistoryMax this.GetEffectHistoryMax this.SetEffectHistoryMax this
         member this.GetEffectHistory world : Effects.Slice Deque = this.Get Property? EffectHistory world
         member private this.SetEffectHistory (value : Effects.Slice Deque) world = this.SetFast Property? EffectHistory false true value world
-        member this.EffectHistory = lensOut Property? EffectHistory this.GetEffectHistory this
+        member this.EffectHistory = lensReadOnly Property? EffectHistory this.GetEffectHistory this
         
         /// The start time of the effect, or zero if none.
         member this.GetEffectStartTime world =
@@ -283,7 +283,7 @@ module ScriptFacetModule =
         member this.Script = lens Property? Script this.GetScript this.SetScript this
         member this.GetScriptFrame world : Scripting.DeclarationFrame = this.Get Property? ScriptFrame world
         member internal this.SetScriptFrame (value : Scripting.DeclarationFrame) world = this.SetFast Property? ScriptFrame false true value world
-        member this.ScriptFrame = lensOut Property? ScriptFrame this.GetScriptFrame this
+        member this.ScriptFrame = lensReadOnly Property? ScriptFrame this.GetScriptFrame this
         member internal this.GetScriptUnsubscriptions world : Unsubscription list = this.Get Property? ScriptUnsubscriptions world
         member internal this.SetScriptUnsubscriptions (value : Unsubscription list) world = this.SetFast Property? ScriptUnsubscriptions false true value world
         member internal this.ScriptUnsubscriptions = lens Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions this
@@ -450,7 +450,7 @@ module RigidBodyFacetModule =
         member this.SetIsSensor (value : bool) world = this.SetFast Property? IsSensor false false value world
         member this.IsSensor = lens Property? IsSensor this.GetIsSensor this.SetIsSensor this
         member this.GetPhysicsId world = { SourceId = this.GetId world; BodyId = Guid.Empty } // we hard-code the empty Guid here because we assume a singleton body
-        member this.PhysicsId = lensOut Property? PhysicsId this.GetPhysicsId this
+        member this.PhysicsId = lensReadOnly Property? PhysicsId this.GetPhysicsId this
         member this.CollisionEvent = Events.Collision --> this
 
     type RigidBodyFacet () =

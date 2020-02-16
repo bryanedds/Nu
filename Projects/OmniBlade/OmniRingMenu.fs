@@ -8,6 +8,9 @@ open OmniBlade
 [<AutoOpen>]
 module OmniRingMenu =
 
+    type [<NoComparison>] RingMenuMessage =
+        | Dirty
+
     type [<NoComparison>] RingMenuCommand =
         | Cancel
         | ItemSelect of string
@@ -24,13 +27,17 @@ module OmniRingMenu =
         member this.CancelEvent = Events.Cancel --> this
 
     type RingMenuDispatcher () =
-        inherit GuiDispatcher<RingMenuModel, unit, RingMenuCommand> ({ Items = []; ItemCancelOpt = None })
+        inherit GuiDispatcher<RingMenuModel, RingMenuMessage, RingMenuCommand> ({ Items = []; ItemCancelOpt = None; Dirt = Gen.id })
 
         static let computeButtonPositionLocal index rotation radius itemCount =
             let progress = single index / single itemCount
             let rotation = (progress * single Math.PI * 2.0f) + (rotation * single Math.PI * 2.0f)
             let position = v2 (radius * sin rotation) (radius * -cos rotation)
             position
+
+        override this.Message (model, message, _, _) =
+            match message with
+            | Dirty -> just { model with Dirt = Gen.id }
 
         override this.Command (_, command, menu, world) =
             match command with
@@ -47,12 +54,14 @@ module OmniRingMenu =
             [Content.entities (model --> fun model -> model.Items) $ fun index item _ world ->
                 let itemValue = item.Get world
                 Content.button (menu.Name + "+" + itemValue)
-                    [Entity.PositionLocal <== model --> fun model -> computeButtonPositionLocal index 0.0f 0.0f (List.length model.Items)
+                    [Entity.PositionLocal <== model.MapWorld (fun model world -> computeButtonPositionLocal index (menu.GetRadius world) (menu.GetRotation world) (List.length model.Items))
                      Entity.Depth <== menu.Depth
                      Entity.UpImage == asset Assets.BattlePackage (itemValue + "Up")
                      Entity.DownImage == asset Assets.BattlePackage (itemValue + "Down")
                      Entity.Size == v2 64.0f 64.0f
-                     Entity.Persistent == false]
+                     Entity.Persistent == false
+                     Entity.ChangeEvent Property? Rotation ==> msg Dirty
+                     Entity.ChangeEvent Property? Radius ==> msg Dirty]
              Content.entityOpt (model --> fun model -> model.ItemCancelOpt) $ fun itemCancel _ world ->
                 let itemCancelValue = itemCancel.Get world
                 Content.button (menu.Name + "+" + itemCancelValue)
