@@ -897,11 +897,11 @@ module GameDispatcherModule =
             let model = this.Get<DesignerProperty> Property? Model world
             this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
 
-        member this.UpdateModel<'model> updater world =
-            this.SetModel<'model> (updater (this.GetModel<'model> world)) world
-
         member this.Model<'model> () =
             lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
+
+        member this.UpdateModel<'model> updater world =
+            this.SetModel<'model> (updater (this.GetModel<'model> world)) world
 
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalGame<'model, 'message, 'command> signal this world

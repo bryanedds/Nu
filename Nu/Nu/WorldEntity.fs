@@ -85,13 +85,16 @@ module WorldEntityModule =
         member this.PostUpdateEvent = this.PostUpdateEvent
 
         /// Try to get a property value and type.
-        member this.TryGetProperty propertyName world = World.tryGetEntityProperty propertyName this world
+        member this.TryGetProperty propertyName world =
+            World.tryGetEntityProperty propertyName this world
 
         /// Get a property value and type.
-        member this.GetProperty propertyName world = World.getEntityProperty propertyName this world
+        member this.GetProperty propertyName world =
+            World.getEntityProperty propertyName this world
 
         /// Get a property value.
-        member this.Get<'a> propertyName world : 'a = (World.getEntityProperty propertyName this world).PropertyValue :?> 'a
+        member this.Get<'a> propertyName world : 'a =
+            (World.getEntityProperty propertyName this world).PropertyValue :?> 'a
 
         /// Try to set a property value with explicit type.
         member this.TrySetProperty propertyName alwaysPublish nonPersistent property world =

@@ -11,7 +11,7 @@ module OmniRingMenu =
     type [<NoComparison>] RingMenuCommand =
         | Cancel
         | ItemSelect of string
-        | RearrangeButton of Entity * int
+        | Arrange of Entity * int
 
     type Entity with
         
@@ -31,7 +31,7 @@ module OmniRingMenu =
             match command with
             | Cancel -> just (World.publish () menu.CancelEvent [] menu world)
             | ItemSelect item -> just (World.publish item menu.ItemSelectEvent [] menu world)
-            | RearrangeButton (button, index) ->
+            | Arrange (button, index) ->
                 let itemCount = List.length model.Items
                 let progress = single index / single itemCount
                 let rotation = (progress * single Math.PI * 2.0f) + (menu.GetRotation world * single Math.PI * 2.0f)
@@ -39,7 +39,7 @@ module OmniRingMenu =
                 let position = v2 (radius * sin rotation) (radius * -cos rotation)
                 let world = button.SetPositionLocal position world
                 just world
-                     
+
         static member Properties =
             [define Entity.Radius 128.0f
              define Entity.Rotation 0.0f
@@ -52,20 +52,20 @@ module OmniRingMenu =
                 let buttonName = menu.Name + "+" + itemValue
                 let button = layer / buttonName
                 Content.button buttonName
-                    [Entity.Depth <== menu.Depth
+                    [Entity.Size == v2 64.0f 64.0f
+                     Entity.Depth <== menu.Depth
                      Entity.UpImage == asset Assets.BattlePackage (itemValue + "Up")
                      Entity.DownImage == asset Assets.BattlePackage (itemValue + "Down")
-                     Entity.Size == v2 64.0f 64.0f
                      Entity.Persistent == false
-                     Entity.ChangeEvent Property? Radius ==> cmd (RearrangeButton (button, index))
-                     Entity.ChangeEvent Property? Rotation ==> cmd (RearrangeButton (button, index))
-                     Entity.ChangeEvent Property? Model ==> cmd (RearrangeButton (button, index))]
+                     Entity.ChangeEvent Property? Radius ==> cmd (Arrange (button, index))
+                     Entity.ChangeEvent Property? Rotation ==> cmd (Arrange (button, index))
+                     Entity.ChangeEvent Property? RingMenuModel ==> cmd (Arrange (button, index))]
              Content.entityOpt (model --> fun model -> model.ItemCancelOpt) $ fun itemCancel _ world ->
                 let itemCancelValue = itemCancel.Get world
                 Content.button (menu.Name + "+" + itemCancelValue)
                     [Entity.PositionLocal == v2 0.0f -48.0f
+                     Entity.Size == v2 64.0f 64.0f
                      Entity.Depth <== menu.Depth
                      Entity.UpImage == asset Assets.BattlePackage (itemCancelValue + "Up")
                      Entity.DownImage == asset Assets.BattlePackage (itemCancelValue + "Down")
-                     Entity.Size == v2 64.0f 64.0f
                      Entity.Persistent == false]]
