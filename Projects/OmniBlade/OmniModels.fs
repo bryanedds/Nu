@@ -418,6 +418,10 @@ type [<NoComparison>] ReticleModel =
     { Characters : Map<CharacterIndex, CharacterModel>
       AimType : AimType }
 
+type RingMenuModel =
+    { Items : string list
+      ItemCancelOpt : string option }
+
 type [<NoEquality; NoComparison>] ActionCommand =
     { Action : ActionType
       Source : CharacterIndex
