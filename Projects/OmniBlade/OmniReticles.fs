@@ -32,7 +32,9 @@ module OmniReticles =
             | TargetSelect index -> just (World.publish index rets.TargetSelectEvent [] rets world)
 
         override this.Content (model, rets, _) =
-            [Content.button (rets.Name + "+" + "Cancel")
+            let buttonName = rets.Name + "+" + "Cancel"
+            let button = etol rets / buttonName
+            [Content.button buttonName
                 [Entity.PositionLocal == v2 0.0f -80.0f
                  Entity.Size == v2 64.0f 64.0f
                  Entity.Depth <== rets.Depth + 1.0f
@@ -40,6 +42,7 @@ module OmniReticles =
                  Entity.Persistent == false
                  Entity.UpImage == asset Assets.BattlePackage "CancelUp"
                  Entity.DownImage == asset Assets.BattlePackage "CancelDown"
+                 Entity.ParentNodeOptWithAdjustment == Some (relate rets button)
                  Entity.ClickEvent ==> cmd TargetSelect]
              Content.entities (model --> fun model -> CharacterModels.getTargets model.AimType model.Characters) $ fun index character _ world ->
                 Content.button (rets.Name + "+" + "Reticle" + "+" + scstring index)
@@ -50,4 +53,5 @@ module OmniReticles =
                      Entity.Persistent == false
                      Entity.UpImage == asset Assets.BattlePackage "ReticleUp"
                      Entity.DownImage == asset Assets.BattlePackage "ReticleDown"
+                     Entity.ParentNodeOptWithAdjustment == Some (relate rets button)
                      Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterState.CharacterIndex)]]

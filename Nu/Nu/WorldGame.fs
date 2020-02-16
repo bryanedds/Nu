@@ -149,7 +149,10 @@ module WorldGameModule =
         member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
 
         /// Resolve a relation in the context of a game.
-        member this.Resolve relation = Game (Relation.resolve this.GameAddress relation)
+        member this.Resolve relation = resolve<Game> this relation
+
+        /// Relate a game to a simulant.
+        member this.Relate simulant = relate<Game> this simulant
 
         /// Get a game's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.GameAddress

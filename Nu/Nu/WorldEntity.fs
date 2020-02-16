@@ -211,7 +211,10 @@ module WorldEntityModule =
         member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
 
         /// Resolve a relation in the context of an entity.
-        member this.Resolve relation = Entity (Relation.resolve this.EntityAddress relation)
+        member this.Resolve relation = resolve<Entity> this relation
+
+        /// Relate an entity to a simulant.
+        member this.Relate simulant = relate<Entity> this simulant
 
         /// Get an entity's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.EntityAddress

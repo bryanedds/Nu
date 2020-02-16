@@ -300,8 +300,8 @@ let generateBindingFunction' binding =
 let generateTryGetBinding () =
     "    let tryGetBinding fnName =\n" +
     "        match WorldScripting.Bindings.TryGetValue fnName with\n" +
-    "        | (true, binding) -> FOption.some binding\n" +
-    "        | (false, _) -> FOption.none ()\n"
+    "        | (true, binding) -> Some binding\n" +
+    "        | (false, _) -> None\n"
 
 let generateInitBindings bindings =
 
