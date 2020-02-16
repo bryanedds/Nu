@@ -449,5 +449,5 @@ module OmniBattle =
                         [Entity.RingMenuModel == { Items = ["Attack"]; ItemCancelOpt = Some "Cancel"; Dirt = Gen.id }
                          Entity.Depth == 10.0f]
                      Content.entity<ReticlesDispatcher> (Simulants.Reticles allyIndex).Name
-                        [Entity.ReticleModel <== model --> fun model -> { Characters = model.Characters; AimType = model.AimType }
+                        [Entity.ReticlesModel <== model --> fun model -> { Characters = model.Characters; AimType = model.AimType }
                          Entity.Depth == 10.0f]]]

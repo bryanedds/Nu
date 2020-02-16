@@ -8,19 +8,19 @@ open OmniBlade
 [<AutoOpen>]
 module OmniReticles =
 
-    type [<NoComparison>] ReticleCommand =
+    type [<NoComparison>] ReticlesCommand =
         | Cancel
         | TargetSelect of CharacterIndex
 
     type Entity with
 
-        member this.GetReticleModel = this.GetModel<ReticleModel>
-        member this.SetReticleModel = this.SetModel<ReticleModel>
-        member this.ReticleModel = this.Model<ReticleModel> ()
+        member this.GetReticlesModel = this.GetModel<ReticlesModel>
+        member this.SetReticlesModel = this.SetModel<ReticlesModel>
+        member this.ReticlesModel = this.Model<ReticlesModel> ()
         member this.TargetSelectEvent = Events.TargetSelect --> this
 
     type ReticlesDispatcher () =
-        inherit GuiDispatcher<ReticleModel, unit, ReticleCommand> ({ Characters = Map.empty; AimType = NoAim })
+        inherit GuiDispatcher<ReticlesModel, unit, ReticlesCommand> ({ Characters = Map.empty; AimType = NoAim })
 
         static member Properties =
             [define Entity.SwallowMouseLeft false

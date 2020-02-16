@@ -33,8 +33,7 @@ module WorldSimulantModule =
             | :? Game -> World.getGameState world :> SimulantState
             | _ -> failwithumf ()
 
-        /// Attempt to get the property of a simulant.
-        static member tryGetProperty name (simulant : Simulant) world =
+        static member internal tryGetProperty name (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.tryGetGameProperty name world
             | :? Screen as screen -> World.tryGetScreenProperty name screen world
@@ -42,8 +41,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.tryGetEntityProperty name entity world
             | _ -> None
 
-        /// Get the property of a simulant.
-        static member getProperty name (simulant : Simulant) world =
+        static member internal getProperty name (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.getGameProperty name world
             | :? Screen as screen -> World.getScreenProperty name screen world
@@ -51,8 +49,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.getEntityProperty name entity world
             | _ -> failwithumf ()
 
-        /// Attempt to set the property of a simulant.
-        static member trySetProperty name alwaysPublish nonPersistent property (simulant : Simulant) world =
+        static member internal trySetProperty name alwaysPublish nonPersistent property (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.trySetGameProperty name property world
             | :? Screen as screen -> World.trySetScreenProperty name property screen world
@@ -60,8 +57,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.trySetEntityProperty name alwaysPublish nonPersistent property entity world
             | _ -> (false, world)
 
-        /// Set the property of a simulant.
-        static member setProperty name alwaysPublish nonPersistent property (simulant : Simulant) world =
+        static member internal setProperty name alwaysPublish nonPersistent property (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.setGameProperty name property world
             | :? Screen as screen -> World.setScreenProperty name property screen world
@@ -69,8 +65,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.setEntityProperty name alwaysPublish nonPersistent property entity world
             | _ -> failwithumf ()
 
-        /// Attach a property to the given simulant.
-        static member attachProperty name alwaysPublish nonPersistent property (simulant : Simulant) world =
+        static member internal attachProperty name alwaysPublish nonPersistent property (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.attachGameProperty name property world
             | :? Screen as screen -> World.attachScreenProperty name property screen world
@@ -78,8 +73,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.attachEntityProperty name alwaysPublish nonPersistent property entity world
             | _ -> failwithumf ()
 
-        /// Detach a property from the given simulant.
-        static member detachProperty name (simulant : Simulant) world =
+        static member internal detachProperty name (simulant : Simulant) world =
             match simulant with
             | :? Game -> World.detachGameProperty name world
             | :? Screen as screen -> World.detachScreenProperty name screen world
@@ -96,9 +90,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> entity.GetDispatcher world :> Dispatcher
             | _ -> failwithumf ()
 
-        /// Unregister the given simulant.
-        [<FunctionBinding>]
-        static member unregister (simulant : Simulant) (world : World) =
+        static member internal unregister (simulant : Simulant) (world : World) =
             match simulant with
             | :? Game -> World.unregisterGame world
             | :? Screen as screen -> World.unregisterScreen screen world
@@ -106,9 +98,7 @@ module WorldSimulantModule =
             | :? Entity as entity -> World.unregisterEntity entity world
             | _ -> failwithumf ()
 
-        /// Register the given simulant.
-        [<FunctionBinding>]
-        static member register (simulant : Simulant) (world : World) =
+        static member internal register (simulant : Simulant) (world : World) =
             match simulant with
             | :? Game -> World.registerGame world
             | :? Screen as screen -> World.registerScreen screen world

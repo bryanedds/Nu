@@ -415,7 +415,7 @@ module CharacterModels =
         | AnyAim -> Map.toValueList characters
         | NoAim -> []
 
-type [<NoComparison>] ReticleModel =
+type [<NoComparison>] ReticlesModel =
     { Characters : Map<CharacterIndex, CharacterModel>
       AimType : AimType }
 
