@@ -8,12 +8,10 @@ open OmniBlade
 [<AutoOpen>]
 module OmniRingMenu =
 
-    type [<NoComparison>] RingMenuMessage =
-        | Dirty
-
     type [<NoComparison>] RingMenuCommand =
         | Cancel
         | ItemSelect of string
+        | RearrangeButton of Entity * int
 
     type Entity with
         
@@ -27,23 +25,21 @@ module OmniRingMenu =
         member this.CancelEvent = Events.Cancel --> this
 
     type RingMenuDispatcher () =
-        inherit GuiDispatcher<RingMenuModel, RingMenuMessage, RingMenuCommand> ({ Items = []; ItemCancelOpt = None; Dirt = Gen.id })
+        inherit GuiDispatcher<RingMenuModel, unit, RingMenuCommand> ({ Items = []; ItemCancelOpt = None; Dirt = Gen.id })
 
-        static let computeButtonPositionLocal index rotation radius itemCount =
-            let progress = single index / single itemCount
-            let rotation = (progress * single Math.PI * 2.0f) + (rotation * single Math.PI * 2.0f)
-            let position = v2 (radius * sin rotation) (radius * -cos rotation)
-            position
-
-        override this.Message (model, message, _, _) =
-            match message with
-            | Dirty -> just { model with Dirt = Gen.id }
-
-        override this.Command (_, command, menu, world) =
+        override this.Command (model, command, menu, world) =
             match command with
             | Cancel -> just (World.publish () menu.CancelEvent [] menu world)
             | ItemSelect item -> just (World.publish item menu.ItemSelectEvent [] menu world)
-
+            | RearrangeButton (button, index) ->
+                let itemCount = List.length model.Items
+                let progress = single index / single itemCount
+                let rotation = (progress * single Math.PI * 2.0f) + (menu.GetRotation world * single Math.PI * 2.0f)
+                let radius = menu.GetRadius world
+                let position = v2 (radius * sin rotation) (radius * -cos rotation)
+                let world = button.SetPositionLocal position world
+                just world
+                     
         static member Properties =
             [define Entity.Radius 128.0f
              define Entity.Rotation 0.0f
@@ -51,17 +47,19 @@ module OmniRingMenu =
              define Entity.Visible false]
 
         override this.Content (model, menu, _) =
-            [Content.entities (model --> fun model -> model.Items) $ fun index item _ world ->
+            [Content.entities (model --> fun model -> model.Items) $ fun index item layer world ->
                 let itemValue = item.Get world
-                Content.button (menu.Name + "+" + itemValue)
-                    [Entity.PositionLocal <== model.MapWorld (fun model world -> computeButtonPositionLocal index (menu.GetRadius world) (menu.GetRotation world) (List.length model.Items))
-                     Entity.Depth <== menu.Depth
+                let buttonName = menu.Name + "+" + itemValue
+                let button = layer / buttonName
+                Content.button buttonName
+                    [Entity.Depth <== menu.Depth
                      Entity.UpImage == asset Assets.BattlePackage (itemValue + "Up")
                      Entity.DownImage == asset Assets.BattlePackage (itemValue + "Down")
                      Entity.Size == v2 64.0f 64.0f
                      Entity.Persistent == false
-                     Entity.ChangeEvent Property? Rotation ==> msg Dirty
-                     Entity.ChangeEvent Property? Radius ==> msg Dirty]
+                     Entity.ChangeEvent Property? Radius ==> cmd (RearrangeButton (button, index))
+                     Entity.ChangeEvent Property? Rotation ==> cmd (RearrangeButton (button, index))
+                     Entity.ChangeEvent Property? Model ==> cmd (RearrangeButton (button, index))]
              Content.entityOpt (model --> fun model -> model.ItemCancelOpt) $ fun itemCancel _ world ->
                 let itemCancelValue = itemCancel.Get world
                 Content.button (menu.Name + "+" + itemCancelValue)

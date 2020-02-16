@@ -65,9 +65,9 @@ module OmniBattle =
                      List.mapi (fun i enemy -> (EnemyIndex i, enemy)) enemies)
              { BattleState = BattleReady 0L
                Characters = characters
-               AimType = NoAim
                CurrentCommandOpt = None
-               ActionQueue = Queue.empty })
+               ActionQueue = Queue.empty
+               AimType = NoAim })
 
         static let getAllies model =
             CharacterModels.getAllies model.Characters
