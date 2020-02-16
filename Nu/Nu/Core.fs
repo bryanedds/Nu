@@ -3,7 +3,10 @@
 
 namespace Nu
 open System
+open System.Diagnostics
+#if !PLATFORM_AGNOSTIC_TIMESTAMPING
 open System.Runtime.InteropServices
+#endif
 open System.Configuration
 open Prime
 
@@ -24,7 +27,7 @@ module internal CoreInternal =
 #if PLATFORM_AGNOSTIC_TIMESTAMPING
     /// Get a time stamp at the highest-available resolution on linux.
     let internal getTimeStampInternal () =
-        System.Diagnostics.Stopwatch.GetTimestamp ()
+        Stopwatch.GetTimestamp ()
 #else
     /// Query the windows performance counter.
     [<DllImport "Kernel32.dll">]

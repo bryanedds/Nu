@@ -2,10 +2,6 @@
 open Prime
 open Nu
 
-type CharacterIndex =
-    | AllyIndex of int
-    | EnemyIndex of int
-
 [<RequireQualifiedAccess>]
 module Simulants =
 

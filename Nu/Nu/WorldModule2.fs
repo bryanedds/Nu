@@ -898,7 +898,7 @@ module GameDispatcherModule =
             this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
 
         member this.UpdateModel<'model> updater world =
-            this.SetModel<'model> (updater this.GetModel<'model> world) world
+            this.SetModel<'model> (updater (this.GetModel<'model> world)) world
 
         member this.Model<'model> () =
             lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this

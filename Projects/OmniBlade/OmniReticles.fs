@@ -1,6 +1,5 @@
 ﻿namespace OmniBlade
 open System
-open FSharpx.Collections
 open Prime
 open Nu
 open Nu.Declarative
@@ -9,133 +8,42 @@ open OmniBlade
 [<AutoOpen>]
 module OmniReticles =
 
-    type Entity with
+    type [<NoComparison>] ReticleCommand =
+        | Cancel
+        | TargetSelect of CharacterIndex
 
-        member this.GetAimType = this.Get Property? AimType
-        member this.SetAimType = this.Set Property? AimType
-        member this.AimType = lens<AimType> Property? AimType this.GetAimType this.SetAimType this
-        member this.GetReticleButtonsNp = this.Get Property? ReticleButtonsNp
-        member this.SetReticleButtonsNp = this.Set Property? ReticleButtonsNp
-        member this.ReticleButtonsNp = lens<Entity list> Property? ReticleButtonsNp this.GetReticleButtonsNp this.SetReticleButtonsNp this
-        member this.GetReticleCancelButtonOptNp = this.Get Property? ReticleCancelButtonOptNp
-        member this.SetReticleCancelButtonOptNp = this.Set Property? ReticleCancelButtonOptNp
-        member this.ReticleCancelButtonOptNp = lens<Entity option> Property? ReticleCancelButtonOptNp this.GetReticleCancelButtonOptNp this.SetReticleCancelButtonOptNp this
+    type Entity with
         member this.TargetSelectEvent = Events.TargetSelect --> this
 
     type ReticlesDispatcher () =
-        inherit GuiDispatcher ()
-
-        static let CancelButtonOffset =
-            v2 0.0f -80.0f
-
-        static let getCharacters scene world =
-            World.getEntities scene world |>
-            Seq.filter (fun entity -> entity.DispatchesAs<CharacterDispatcher> world) |>
-            Seq.toList
-
-        static let getAllies scene world =
-            getCharacters scene world |>
-            List.filter (fun entity -> (entity.GetCharacterState world).IsAlly)
-
-        static let getEnemies scene world =
-            getCharacters scene world |>
-            List.filter (fun entity -> (entity.GetCharacterState world).IsEnemy)
-
-        static let getAlliesHealthy scene world =
-            getAllies scene world |>
-            List.filter (fun entity -> (entity.GetCharacterState world).IsHealthy)
-
-        static let getAlliesWounded scene world =
-            getAllies scene world |>
-            List.filter (fun entity -> (entity.GetCharacterState world).IsWounded)
-
-        static let getTargets (rets : Entity) world =
-            match rets.GetAimType world with
-            | EnemyAim -> getEnemies Simulants.Scene world
-            | AllyAim healthy -> (if healthy then getAlliesHealthy else getAlliesWounded) Simulants.Scene world
-            | AnyAim -> getCharacters Simulants.Scene world
-            | NoAim -> []
-
-        static let destroyButton button world =
-            World.destroyEntity button world
-
-        static let createButton name (rets : Entity) world =
-            let (button, world) = World.createEntity5 typeof<ButtonDispatcher>.Name (Some (rets.Name + "+" + name)) DefaultOverlay (etol rets) world
-            let world = button.SetDepth (rets.GetDepth world + 1.0f) world // place slightly above menu
-            let world = button.SetViewType Relative world
-            let world = button.SetPersistent false world
-            let world = button.SetParentNodeOptWithAdjustment (Some (Relation.unresolve button.EntityAddress rets.EntityAddress)) world
-            (button, world)
-
-        static let createReticleButton index (target : Entity) (rets : Entity) world =
-            let (button, world) = createButton ("Reticle" + "+" + scstring index) rets world
-            let world = button.SetUpImage (asset Assets.BattlePackage "ReticleUp") world
-            let world = button.SetDownImage (asset Assets.BattlePackage "ReticleDown") world
-            let world = button.QuickSize world
-            let world = button.SetCenter (target.GetCenter world) world
-            let world = button.AttachProperty Property? Target false true { PropertyType = typeof<Entity>; PropertyValue = target } world
-            let world = World.monitor (fun _ world -> World.publish target rets.TargetSelectEvent [] rets world) button.ClickEvent button world
-            (button, world)
-
-        static let createCancelButton cancelStr (menu : Entity) world =
-            let (button, world) = createButton cancelStr menu world
-            let world = button.SetUpImage (asset Assets.BattlePackage (cancelStr + "Up")) world
-            let world = button.SetDownImage (asset Assets.BattlePackage (cancelStr + "Down")) world
-            let world = button.QuickSize world
-            let world = button.SetPositionLocal CancelButtonOffset world
-            let world = World.monitor (fun _ world -> World.publish () menu.CancelEvent [] menu world) button.ClickEvent button world
-            (button, world)
-
-        static let destroyButtons (rets : Entity) world =
-
-            // destroy reticle buttons
-            let world = List.fold (flip destroyButton) world (rets.GetReticleButtonsNp world)
-            let world = rets.SetReticleButtonsNp [] world
-
-            // destroy cancel button
-            let world = Option.fold (flip destroyButton) world (rets.GetReticleCancelButtonOptNp world)
-            rets.SetReticleCancelButtonOptNp None world
-
-        static let createButtons (rets : Entity) world =
-
-            // create reticle buttons
-            let (buttons, world) =
-                Seq.foldi (fun index (buttons, world) target ->
-                    let (button, world) = createReticleButton index target rets world
-                    (button :: buttons, world))
-                    ([], world) (getTargets rets world)
-            let world = rets.SetReticleButtonsNp buttons world
-
-            // create cancel button
-            let (cancelButton, world) = createCancelButton "Cancel" rets world
-            rets.SetReticleCancelButtonOptNp (Some cancelButton) world
-
-        static let updateButtons (rets : Entity) world =
-            Seq.fold (fun world (button : Entity) ->
-                let target = button.Get<Entity> Property? Target world
-                if target.GetExists world && (target.GetCharacterState world).IsHealthy then
-                    let world = button.SetDepth (rets.GetDepth world + 1.0f) world
-                    button.SetCenter (target.GetCenter world) world
-                else
-                    let world = rets.ReticleButtonsNp.Update (List.remove ((=) button)) world
-                    World.destroyEntity button world)
-                world (rets.GetReticleButtonsNp world)
+        inherit GuiDispatcher<ReticleModel, unit, ReticleCommand> ({ Characters = Map.empty; AimType = NoAim })
 
         static member Properties =
-            [define Entity.AimType EnemyAim
-             define Entity.ReticleButtonsNp []
-             define Entity.ReticleCancelButtonOptNp None
-             define Entity.SwallowMouseLeft false
+            [define Entity.SwallowMouseLeft false
              define Entity.Visible false]
 
-        override dispatcher.Register (rets : Entity, world) =
-            World.monitor (fun evt world ->
-                if evt.Data.Value :?> bool
-                then createButtons rets world
-                else destroyButtons rets world)
-                rets.Visible.ChangeEvent
-                rets
-                world
+        override this.Command (_, command, rets, world) =
+            match command with
+            | Cancel -> just (World.publish () rets.CancelEvent [] rets world)
+            | TargetSelect index -> just (World.publish index rets.TargetSelectEvent [] rets world)
 
-        override dispatcher.Update (rets, world) =
-            updateButtons rets world
+        override this.Content (model, rets, _) =
+            [Content.button (rets.Name + "+" + "Cancel")
+                [Entity.PositionLocal == v2 0.0f -80.0f
+                 Entity.Size == v2 64.0f 64.0f
+                 Entity.Depth <== rets.Depth + 1.0f
+                 Entity.ViewType == Relative
+                 Entity.Persistent == false
+                 Entity.UpImage == asset Assets.BattlePackage "CancelUp"
+                 Entity.DownImage == asset Assets.BattlePackage "CancelDown"
+                 Entity.ClickEvent ==> cmd TargetSelect]
+             Content.entities (model --> fun model -> CharacterModels.getTargets model.AimType model.Characters) $ fun index character _ world ->
+                Content.button (rets.Name + "+" + "Reticle" + "+" + scstring index)
+                    [Entity.Center <== character --> fun character -> character.Center
+                     Entity.Size == v2 64.0f 64.0f
+                     Entity.Depth <== rets.Depth + 1.0f
+                     Entity.ViewType == Relative
+                     Entity.Persistent == false
+                     Entity.UpImage == asset Assets.BattlePackage "ReticleUp"
+                     Entity.DownImage == asset Assets.BattlePackage "ReticleDown"
+                     Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterState.CharacterIndex)]]

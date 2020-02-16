@@ -31,13 +31,13 @@ module Content =
 
     /// Describe indexed layers to be streamed from a lens.
     let layersIndexed (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> Screen -> World -> LayerContent) =
-        let mapper = fun i (a : obj) screen world -> mapper i (a :?> Lens<obj, World> |> Lens.mapOut (cast<'a>)) screen world
-        LayersFromStream (lens.MapOut box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
+        let mapper = fun i (a : obj) screen world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) screen world
+        LayersFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
 
     /// Describe layers to be streamed from a lens.
     let layers (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> Screen -> World -> LayerContent) =
-        let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.mapOut (cast<'a>)) world
-        LayersFromStream (lens.MapOut box, None, mapper)
+        let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
+        LayersFromStream (lens.Map box, None, mapper)
 
     /// Describe a layer to be optionally streamed from a lens.
     let layerOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> Screen -> World -> LayerContent) =
@@ -61,13 +61,13 @@ module Content =
 
     /// Describe indexed entities to be streamed from a lens.
     let entitiesIndexed (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> Layer -> World -> EntityContent) =
-        let mapper = fun i (a : obj) layer world -> mapper i (a :?> Lens<obj, World> |> Lens.mapOut (cast<'a>)) layer world
-        EntitiesFromStream (lens.MapOut box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
+        let mapper = fun i (a : obj) layer world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) layer world
+        EntitiesFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
 
     /// Describe entities to be streamed from a lens.
     let entities (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> Layer -> World -> EntityContent) =
-        let mapper = fun i (a : obj) layer world -> mapper i (a :?> Lens<obj, World> |> Lens.mapOut (cast<'a>)) layer world
-        EntitiesFromStream (lens.MapOut box, None, mapper)
+        let mapper = fun i (a : obj) layer world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) layer world
+        EntitiesFromStream (lens.Map box, None, mapper)
 
     /// Describe an entity to be optionally streamed from a lens.
     let entityOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> Layer -> World -> EntityContent) =

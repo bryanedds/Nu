@@ -9,35 +9,7 @@ open OmniBlade
 [<AutoOpen>]
 module OmniBattle =
 
-    type [<NoEquality; NoComparison>] ActionCommand =
-        { Action : ActionType
-          Source : CharacterIndex
-          TargetOpt : CharacterIndex option }
-
-        static member make action source targetOpt =
-            { Action = action
-              Source = source
-              TargetOpt = targetOpt }
-
-    type [<NoEquality; NoComparison>] CurrentCommand =
-        { TimeStart : int64
-          ActionCommand : ActionCommand }
-
-        static member make timeStart actionCommand =
-            { TimeStart = timeStart; ActionCommand = actionCommand }
-
-    type [<NoEquality; NoComparison>] BattleState =
-        | BattleReady of int64
-        | BattleRunning
-        | BattleCease of bool * int64
-
-    type [<NoEquality; NoComparison>] BattleModel =
-        { BattleState : BattleState
-          BattleCharacters : Map<CharacterIndex, CharacterModel>
-          CurrentCommandOpt : CurrentCommand option
-          ActionQueue : ActionCommand Queue }
-
-    and [<NoComparison>] BattleMessage =
+    type [<NoComparison>] BattleMessage =
         | ReadyCharacters
         | PoiseCharacters
         | CelebrateCharacters of bool
@@ -48,7 +20,7 @@ module OmniBattle =
         | WoundCharacter of CharacterIndex
         | ResetCharacter of CharacterIndex
         | DestroyCharacter of CharacterIndex
-        | ReticlesSelect of Entity * CharacterIndex
+        | ReticlesSelect of CharacterIndex * CharacterIndex
         | Tick
 
     and [<NoComparison>] IndexedCommand =
@@ -92,18 +64,19 @@ module OmniBattle =
                     (List.mapi (fun i ally -> (AllyIndex i, ally)) allies @
                      List.mapi (fun i enemy -> (EnemyIndex i, enemy)) enemies)
              { BattleState = BattleReady 0L
-               BattleCharacters = characters
+               Characters = characters
+               AimType = NoAim
                CurrentCommandOpt = None
                ActionQueue = Queue.empty })
 
         static let getAllies model =
-            model.BattleCharacters |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
+            CharacterModels.getAllies model.Characters
 
         static let getEnemies model =
-            model.BattleCharacters |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
+            CharacterModels.getEnemies model.Characters
 
         static let updateCharacters3 predicate updater model =
-            { model with BattleCharacters = Map.map (fun index character -> if predicate index then updater character else character) model.BattleCharacters }
+            { model with BattleModel.Characters = Map.map (fun index character -> if predicate index then updater character else character) model.Characters }
 
         static let updateCharacters updater model =
             updateCharacters3 tautology updater model
@@ -115,28 +88,23 @@ module OmniBattle =
             updateCharacters3 (function EnemyIndex _ -> true | _ -> false) updater model
 
         static let tryGetCharacter characterIndex model =
-            Map.tryFind characterIndex model.BattleCharacters
+            Map.tryFind characterIndex model.Characters
 
         static let getCharacter characterIndex model =
             tryGetCharacter characterIndex model |> Option.get
-
-        static let getCharacterIndex (entity : Entity) =
-            let strs = entity.Name.Split '+'
-            let ctor = if strs.[0] = "Ally" then AllyIndex else EnemyIndex
-            ctor (scvalue<int> strs.[1])
 
         static let tryUpdateCharacter updater characterIndex model =
             match tryGetCharacter characterIndex model with
             | Some character ->
                 let character = updater character
-                { model with BattleCharacters = Map.add characterIndex character model.BattleCharacters }
+                { model with Characters = Map.add characterIndex character model.Characters }
             | None -> model
 
         static let updateCharacter updater characterIndex model =
             do ignore tryUpdateCharacter // temporarily quiet error about tryUpdateCharacter being unused
             let character = getCharacter characterIndex model
             let character = updater character
-            { model with BattleCharacters = Map.add characterIndex character model.BattleCharacters }
+            { model with Characters = Map.add characterIndex character model.Characters }
 
         static let tickAttack sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
             let source = getCharacter sourceIndex model
@@ -318,6 +286,7 @@ module OmniBattle =
                         else itemMenu
                     let world = currentMenu.SetVisible false world
                     let world = reticles.SetVisible true world
+                    let world = reticles.UpdateModel (fun model -> { model with BattleModel.AimType = EnemyAim }) world
                     just (reticles.AttachProperty Property? PreviousMenu false true { PropertyType = typeof<Entity>; PropertyValue = currentMenu } world)
                 | "Defend" ->
                     just world
@@ -411,13 +380,12 @@ module OmniBattle =
                 let character = getCharacter characterIndex model
                 let model =
                     if character.CharacterState.IsEnemy
-                    then { model with BattleCharacters = Map.remove characterIndex model.BattleCharacters }
+                    then { model with Characters = Map.remove characterIndex model.Characters }
                     else model
                 just model
-            | ReticlesSelect (targetEntity, allyIndex) ->
+            | ReticlesSelect (targetIndex, allyIndex) ->
                 match model.BattleState with
                 | BattleRunning ->
-                    let targetIndex = getCharacterIndex targetEntity
                     let command = ActionCommand.make Attack allyIndex (Some targetIndex)
                     let model = { model with ActionQueue = Queue.conj command model.ActionQueue }
                     withMsg model (ResetCharacter allyIndex)
@@ -483,4 +451,5 @@ module OmniBattle =
                          Entity.ItemCancelOpt == Some "Cancel"
                          Entity.Depth == 10.0f]
                      Content.entity<ReticlesDispatcher> (Simulants.Reticles allyIndex).Name
-                        [Entity.Depth == 10.0f]]]
+                        [Entity.Depth == 10.0f
+                         Entity.Model () <== model --> fun model -> { Characters = model.Characters; AimType = model.AimType }]]]
