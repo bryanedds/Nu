@@ -13,6 +13,10 @@ module OmniReticles =
         | TargetSelect of CharacterIndex
 
     type Entity with
+
+        member this.GetReticleModel = this.GetModel<ReticleModel>
+        member this.SetReticleModel = this.SetModel<ReticleModel>
+        member this.ReticleModel = this.Model<ReticleModel> ()
         member this.TargetSelectEvent = Events.TargetSelect --> this
 
     type ReticlesDispatcher () =
