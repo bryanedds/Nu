@@ -1126,6 +1126,7 @@ module WorldTypes =
 #endif
                 this
 
+            [<DebuggerHidden; DebuggerStepThrough>]
             member this.PublishEventHook (simulant : Simulant) publisher eventData eventAddress eventTrace subscription world =
                 let (handling, world) =
                     match simulant with

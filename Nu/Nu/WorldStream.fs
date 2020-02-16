@@ -44,7 +44,7 @@ module Stream =
 module StreamOperators =
 
     /// Stream sequencing operator.
-    let (---) = (|>)
+    let [<DebuggerHidden; DebuggerStepThrough>] (---) = (|>)
 
     /// Make a stream of the subscriber's change events.
     let [<DebuggerHidden; DebuggerStepThrough>] (!--) (lens : Lens<'b, World>) = !-- lens
