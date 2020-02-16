@@ -1,4 +1,5 @@
 ﻿namespace OmniBlade
+open System
 open System.IO
 open FSharpx.Collections
 open Prime
@@ -420,7 +421,8 @@ type [<NoComparison>] ReticleModel =
 
 type RingMenuModel =
     { Items : string list
-      ItemCancelOpt : string option }
+      ItemCancelOpt : string option
+      Dirt : Guid }
 
 type [<NoEquality; NoComparison>] ActionCommand =
     { Action : ActionType

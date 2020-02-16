@@ -440,13 +440,13 @@ module OmniBattle =
              Content.layers (model --> fun model -> getAllies model) $ fun allyIndex _ _ _ ->
                 Content.layer (Simulants.Input allyIndex).Name []
                     [Content.entity<RingMenuDispatcher> (Simulants.RegularMenu allyIndex).Name
-                        [Entity.RingMenuModel == { Items = ["Attack"; "Defend"; "Special"; "Item"]; ItemCancelOpt = None }
+                        [Entity.RingMenuModel == { Items = ["Attack"; "Defend"; "Special"; "Item"]; ItemCancelOpt = None; Dirt = Gen.id }
                          Entity.Depth == 10.0f]
                      Content.entity<RingMenuDispatcher> (Simulants.SpecialMenu allyIndex).Name
-                        [Entity.RingMenuModel == { Items = ["Attack"]; ItemCancelOpt = Some "Cancel" }
+                        [Entity.RingMenuModel == { Items = ["Attack"]; ItemCancelOpt = Some "Cancel"; Dirt = Gen.id }
                          Entity.Depth == 10.0f]
                      Content.entity<RingMenuDispatcher> (Simulants.ItemMenu allyIndex).Name
-                        [Entity.RingMenuModel == { Items = ["Attack"]; ItemCancelOpt = Some "Cancel" }
+                        [Entity.RingMenuModel == { Items = ["Attack"]; ItemCancelOpt = Some "Cancel"; Dirt = Gen.id }
                          Entity.Depth == 10.0f]
                      Content.entity<ReticlesDispatcher> (Simulants.Reticles allyIndex).Name
                         [Entity.ReticleModel <== model --> fun model -> { Characters = model.Characters; AimType = model.AimType }
