@@ -187,7 +187,7 @@ module WorldDeclarative =
                 Seq.map (fun (opt, lens) ->
                     let (index, _) = Option.get opt
                     let guid = Gen.idDeterministic index guid
-                    let lens = lens.MapOut snd
+                    let lens = lens.Map snd
                     PartialComparable.make guid (index, lens)) |>
                 Set.ofSeq) |>
             Stream.fold (fun (p, _, _) c ->
@@ -220,7 +220,7 @@ module WorldDeclarative =
 
         /// Turn an entity stream into a series of live simulants.
         static member expandSimulantStream (lens : Lens<obj, World>) indexerOpt mapper origin parent world =
-            let lensSeq = Lens.mapOut Reflection.objToObjSeq lens
+            let lensSeq = Lens.map Reflection.objToObjSeq lens
             Stream.make (Events.Register --> lens.This.SimulantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
             Stream.map (fun _ -> Lens.explodeIndexedOpt indexerOpt lensSeq) |>

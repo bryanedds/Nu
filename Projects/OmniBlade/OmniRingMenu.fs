@@ -117,12 +117,12 @@ module OmniRingMenu =
              define Entity.SwallowMouseLeft false
              define Entity.Visible false]
 
-        override dispatcher.Register (menu, world) =
+        override this.Register (menu, world) =
             let world = createButtons menu world
             let world = World.monitor handleTransformChange (menu.GetChangeEvent Property? Radius) menu world
             let world = World.monitor handleTransformChange (menu.GetChangeEvent Property? Rotation) menu world
             let world = World.monitor handleItemsChange (menu.GetChangeEvent Property? Items) menu world
             world
 
-        override dispatcher.Unregister (menu, world) =
+        override this.Unregister (menu, world) =
             destroyButtons menu world

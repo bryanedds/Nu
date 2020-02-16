@@ -9,12 +9,6 @@ open OmniBlade
 [<AutoOpen>]
 module OmniCharacter =
 
-    type [<NoComparison>] CharacterModel =
-        { CharacterState : CharacterState
-          AnimationState : CharacterAnimationState
-          Position : Vector2
-          Size : Vector2 }
-
     type Entity with
     
         member this.GetCharacterState = this.Get Property? CharacterState

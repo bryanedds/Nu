@@ -1,5 +1,6 @@
 ﻿namespace OmniBlade
 open System.IO
+open FSharpx.Collections
 open Prime
 open Nu
 
@@ -173,6 +174,10 @@ type PartyMember =
 type [<NoComparison>] Party =
     { PartyMembers : Map<int, PartyMember> }
 
+type CharacterIndex =
+    | AllyIndex of int
+    | EnemyIndex of int
+
 type CharacterState =
     { CharacterType : CharacterType
       PartyIndex : int
@@ -206,6 +211,7 @@ type CharacterState =
           Relics = [] } // level is calculated from base experience + added experience
 
     member this.Name = match this.CharacterType with Ally ally -> scstring ally | Enemy enemy -> scstring enemy
+    member this.CharacterIndex = match this.CharacterType with Ally _ -> AllyIndex this.PartyIndex | Enemy _ -> EnemyIndex this.PartyIndex
     member this.IsAlly = match this.CharacterType with Ally _ -> true | Enemy _ -> false
     member this.IsEnemy = not this.IsAlly
     member this.IsHealthy = this.HitPoints > 0
@@ -372,3 +378,71 @@ type CharacterAnimationState =
         match CharacterAnimationState.progressOpt time state with
         | Some progress -> progress = 1.0f
         | None -> false
+
+type [<NoComparison>] CharacterModel =
+    { CharacterState : CharacterState
+      AnimationState : CharacterAnimationState
+      Position : Vector2
+      Size : Vector2 }
+
+    member this.Center =
+        this.Position + this.Size * 0.5f
+
+type CharacterModels =
+    Map<CharacterIndex, CharacterModel>
+
+module CharacterModels =
+
+    let getAllies (characters : CharacterModels) =
+        characters |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
+
+    let getEnemies (characters : CharacterModels) =
+        characters |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
+
+    let getAlliesHealthy (characters : CharacterModels) =
+        getAllies characters |>
+        List.filter (fun character -> character.CharacterState.IsHealthy)
+
+    let getAlliesWounded (characters : CharacterModels) =
+        getAllies characters |>
+        List.filter (fun character -> character.CharacterState.IsWounded)
+
+    let getTargets aimType (characters : CharacterModels) =
+        match aimType with
+        | EnemyAim -> getEnemies characters
+        | AllyAim healthy -> if healthy then getAlliesHealthy characters else getAlliesWounded characters
+        | AnyAim -> Map.toValueList characters
+        | NoAim -> []
+
+type [<NoComparison>] ReticleModel =
+    { Characters : Map<CharacterIndex, CharacterModel>
+      AimType : AimType }
+
+type [<NoEquality; NoComparison>] ActionCommand =
+    { Action : ActionType
+      Source : CharacterIndex
+      TargetOpt : CharacterIndex option }
+
+    static member make action source targetOpt =
+        { Action = action
+          Source = source
+          TargetOpt = targetOpt }
+
+type [<NoEquality; NoComparison>] CurrentCommand =
+    { TimeStart : int64
+      ActionCommand : ActionCommand }
+
+    static member make timeStart actionCommand =
+        { TimeStart = timeStart; ActionCommand = actionCommand }
+
+type [<NoEquality; NoComparison>] BattleState =
+    | BattleReady of int64
+    | BattleRunning
+    | BattleCease of bool * int64
+
+type [<NoEquality; NoComparison>] BattleModel =
+    { BattleState : BattleState
+      Characters : Map<CharacterIndex, CharacterModel>
+      AimType : AimType
+      CurrentCommandOpt : CurrentCommand option
+      ActionQueue : ActionCommand Queue }
