@@ -55,7 +55,7 @@ module WorldModuleOperators =
 
     /// Relate a simulant to another simulant.
     let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Relation =
-        Relation.unresolve<Simulant, 't> simulant.SimulantAddress (atoa simulant2.SimulantAddress)
+        Relation.relate<Simulant, 't> simulant.SimulantAddress (atoa simulant2.SimulantAddress)
 
 [<AutoOpen; ModuleBinding>]
 module WorldModule =

@@ -486,7 +486,7 @@ module Gaia =
                     form.propertyEditor.Enabled <- not selectedGridItem.PropertyDescriptor.IsReadOnly
                     form.propertyNameLabel.Text <- selectedGridItem.Label
                     form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                    if isNotNull selectedGridItem.Value || isNullTrueValue ty then
+                    if notNull selectedGridItem.Value || isNullTrueValue ty then
                         let (keywords0, keywords1, prettyPrinter) =
                             match selectedGridItem.Label with
                             | "OverlayNameOpt" ->
@@ -543,7 +543,7 @@ module Gaia =
                     form.propertyEditor.Enabled <- true
                     form.propertyNameLabel.Text <- selectedGridItem.Label
                     form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                    if isNotNull selectedGridItem.Value || isNullTrueValue ty then
+                    if notNull selectedGridItem.Value || isNullTrueValue ty then
                         let (keywords0, keywords1, prettyPrinter) =
                             let syntax = SyntaxAttribute.getOrDefault ty
                             let keywords0 =
@@ -571,7 +571,7 @@ module Gaia =
                     form.pickPropertyButton.Visible <- false
 
     let private refreshEntityPropertyDesigner (form : GaiaForm) =
-        form.entityPropertyDesigner.Enabled <- isNotNull form.entityPropertyGrid.SelectedObject
+        form.entityPropertyDesigner.Enabled <- notNull form.entityPropertyGrid.SelectedObject
 
     // TODO: factor away some of the code duplication in this function!
     let private applyPropertyEditor (form : GaiaForm) =
@@ -759,7 +759,7 @@ module Gaia =
 
     let private handleFormEntityTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            if  isNotNull form.entityTreeView.SelectedNode &&
+            if  notNull form.entityTreeView.SelectedNode &&
                 form.entityTreeView.SelectedNode.Level = 1 then
                 let address = Address.makeFromString form.entityTreeView.SelectedNode.Name
                 match Address.getNames address with
@@ -772,7 +772,7 @@ module Gaia =
 
     let private handleFormHierarchyTreeViewNodeSelect (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            if isNotNull form.hierarchyTreeView.SelectedNode then
+            if notNull form.hierarchyTreeView.SelectedNode then
                 let address = Address.makeFromString form.hierarchyTreeView.SelectedNode.Name
                 match Address.getNames address with
                 | [|_; _|] ->

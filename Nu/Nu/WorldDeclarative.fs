@@ -209,11 +209,11 @@ module WorldDeclarative =
                     Seq.fold (fun world guidAndContent ->
                         let (guid, _) = PartialComparable.unmake guidAndContent
                         match World.tryGetKeyedValue (scstring guid) world with
-                        | Some entity ->
+                        | Some simulant ->
                             let world = World.removeKeyedValue (scstring guid) world
                             // HACK: remove lens bindings that may depend on a non-existent model index
-                            let world = world |> WorldModule.unregister entity |> WorldModule.register entity
-                            WorldModule.destroy entity world
+                            let world = world |> WorldModule.unregister simulant |> WorldModule.register simulant
+                            WorldModule.destroy simulant world
                         | None -> failwithumf ())
                         world removed
                 (current, world))

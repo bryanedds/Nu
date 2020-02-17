@@ -289,7 +289,10 @@ module Nu =
                 let nonPersistent = not (Reflection.isPropertyPersistentByName name)
                 let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
                 let propagate (_ : Event) world =
-                    let value = match lens.Get world with :? DesignerProperty as property -> property.DesignerValue | value -> value
+                    let value =
+                        match lens.Get world with
+                        | :? DesignerProperty as property -> property.DesignerValue
+                        | value -> value
                     let property = World.getProperty name simulant world
                     if property.PropertyType = typeof<DesignerProperty> then
                         let designerProperty = property.PropertyValue :?> DesignerProperty

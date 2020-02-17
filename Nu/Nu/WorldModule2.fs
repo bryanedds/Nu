@@ -74,7 +74,7 @@ module WorldModule2 =
         /// Relate an address to the current script context.
         static member relate address world =
             let scriptContext = World.getScriptContext world
-            let address = Relation.unresolve scriptContext.SimulantAddress address
+            let address = Relation.relate scriptContext.SimulantAddress address
             address
 
         /// Relate an address to the current script context.

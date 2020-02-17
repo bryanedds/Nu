@@ -173,7 +173,7 @@ module Reflection =
             match Map.tryFind property.Name propertyDescriptors with
             | Some propertySymbol ->
                 match propertySymbol with
-                | Symbols ([Text (str, _); _], _) when isNotNull (Type.GetType str) ->
+                | Symbols ([Text (str, _); _], _) when notNull (Type.GetType str) ->
                     let converter = SymbolicConverter (false, None, property.PropertyType)
                     if converter.CanConvertFrom typeof<Symbol> then
                         let propertyValue = converter.ConvertFrom propertySymbol
@@ -212,7 +212,7 @@ module Reflection =
                 else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyDefinition.PropertyType.Name + "'."); xtension
             | None ->
                 match propertySymbol with
-                | Symbols ([Text (str, _); _], _) when isNotNull (Type.GetType str) ->
+                | Symbols ([Text (str, _); _], _) when notNull (Type.GetType str) ->
                     let propertyType = typeof<DesignerProperty>
                     let converter = SymbolicConverter (false, None, propertyType)
                     if converter.CanConvertFrom typeof<Symbol> then

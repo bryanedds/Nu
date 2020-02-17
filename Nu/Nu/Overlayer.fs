@@ -144,7 +144,7 @@ module OverlayerModule =
                                 let recordProperties = targetType.GetProperties ()
                                 if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) recordProperties then
                                     match propertySymbol with
-                                    | Symbols ([Text (str, _); _], _) when isNotNull (Type.GetType str) ->
+                                    | Symbols ([Text (str, _); _], _) when notNull (Type.GetType str) ->
                                         let propertyType = typeof<DesignerProperty>
                                         match getPropertyState propertyName propertyType target oldOverlaySymbols with
                                         | Bare | Overlaid ->
