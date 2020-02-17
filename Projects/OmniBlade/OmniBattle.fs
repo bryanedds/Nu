@@ -337,7 +337,7 @@ module OmniBattle =
                 let model = updateCharacter (fun character -> { character with CharacterState = { character.CharacterState with ActionTime = 0 }}) characterIndex model
                 let model =
                     if character.CharacterState.IsAlly
-                    then updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+                    then updateCharacter (fun character -> { character with InputState = NoInput }) characterIndex model
                     else model
                 just model
             | DestroyCharacter characterIndex ->
