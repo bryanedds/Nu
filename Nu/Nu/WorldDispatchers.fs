@@ -724,7 +724,6 @@ module NodeFacetModule =
         member this.GetPositionLocal world : Vector2 = this.Get Property? PositionLocal world
         member this.SetPositionLocal (value : Vector2) world = this.SetFast Property? PositionLocal false false value world
         member this.PositionLocal = lens Property? PositionLocal this.GetPositionLocal this.SetPositionLocal this
-        // TODO: CenterLocal?
         member this.GetDepthLocal world : single = this.Get Property? DepthLocal world
         member this.SetDepthLocal (value : single) world = this.SetFast Property? DepthLocal false false value world
         member this.DepthLocal = lens Property? DepthLocal this.GetDepthLocal this.SetDepthLocal this
