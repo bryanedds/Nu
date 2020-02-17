@@ -9,7 +9,7 @@ open OmniBlade
 module OmniRingMenu =
 
     type [<NoComparison>] RingMenuCommand =
-        | Cancel
+        | ItemCancel
         | ItemSelect of string
         | ArrangeItemButton of Entity * int
 
@@ -29,7 +29,7 @@ module OmniRingMenu =
 
         override this.Command (model, command, menu, world) =
             match command with
-            | Cancel -> just (World.publish () menu.CancelEvent [] menu world)
+            | ItemCancel -> just (World.publish () menu.CancelEvent [] menu world)
             | ItemSelect item -> just (World.publish item menu.ItemSelectEvent [] menu world)
             | ArrangeItemButton (button, index) ->
                 let itemCount = List.length model.Items
@@ -72,4 +72,4 @@ module OmniRingMenu =
                      Entity.DownImage == asset Assets.BattlePackage (itemCancelValue + "Down")
                      Entity.ParentNodeOptWithAdjustment == Some (relate button menu)
                      Entity.Persistent == false
-                     Entity.ClickEvent ==> cmd Cancel]]
+                     Entity.ClickEvent ==> cmd ItemCancel]]

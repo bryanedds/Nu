@@ -10,6 +10,14 @@ open OmniBlade
 module OmniBattle =
 
     type [<NoComparison>] BattleMessage =
+        | RegularItemSelect of CharacterIndex * string
+        | RegularItemCancel of CharacterIndex
+        | SpecialItemSelect of CharacterIndex * string
+        | SpecialItemCancel of CharacterIndex
+        | ItemItemSelect of CharacterIndex * string
+        | ItemItemCancel of CharacterIndex
+        | ReticlesSelect of CharacterIndex * CharacterIndex
+        | ReticlesCancel of CharacterIndex
         | ReadyCharacters
         | PoiseCharacters
         | CelebrateCharacters of bool
@@ -20,22 +28,12 @@ module OmniBattle =
         | WoundCharacter of CharacterIndex
         | ResetCharacter of CharacterIndex
         | DestroyCharacter of CharacterIndex
-        | ReticlesSelect of CharacterIndex * CharacterIndex
         | Tick
-
-    and [<NoComparison>] IndexedCommand =
-        | RegularMenuShow
-        | RegularMenuSelect of string
-        | SpecialMenuSelect of string
-        | ItemMenuSelect of string
-        | ReticlesCancel
-        | AllyInputHide
 
     and [<NoComparison>] BattleCommand =
         | FadeSong
         | InitializeBattle
         | FinalizeBattle
-        | IndexedCommand of IndexedCommand * int
 
     and Screen with
 
@@ -78,17 +76,17 @@ module OmniBattle =
         static let getEnemies model =
             CharacterModels.getEnemies model.Characters
 
-        static let updateCharacters3 predicate updater model =
+        static let updateCharactersIf predicate updater model =
             { model with BattleModel.Characters = Map.map (fun index character -> if predicate index then updater character else character) model.Characters }
 
         static let updateCharacters updater model =
-            updateCharacters3 tautology updater model
+            updateCharactersIf tautology updater model
 
         static let updateAllies updater model =
-            updateCharacters3 (function AllyIndex _ -> true | _ -> false) updater model
+            updateCharactersIf (function AllyIndex _ -> true | _ -> false) updater model
 
         static let updateEnemies updater model =
-            updateCharacters3 (function EnemyIndex _ -> true | _ -> false) updater model
+            updateCharactersIf (function EnemyIndex _ -> true | _ -> false) updater model
 
         static let tryGetCharacter characterIndex model =
             Map.tryFind characterIndex model.Characters
@@ -201,12 +199,12 @@ module OmniBattle =
                 let model = { model with CurrentCommandOpt = Some command; ActionQueue = nextCommands }
                 tick time model // tick for frame 0
             | Queue.Nil ->
-                let (allySignalsRev, model) =
-                    List.fold (fun (commands, model) ally ->
+                let model =
+                    List.fold (fun model ally ->
                         if ally.CharacterState.ActionTime = Constants.Battle.ActionTime
-                        then (Command (IndexedCommand (RegularMenuShow, ally.CharacterState.PartyIndex)) :: commands, model)
-                        else (commands, model))
-                        ([], model)
+                        then updateCharacter (fun character -> { character with InputState = RegularMenu }) ally.CharacterState.CharacterIndex model
+                        else model)
+                        model
                         (getAllies model)
                 let (enemySignalsRev, model) =
                     List.fold (fun (commands, model) enemy ->
@@ -221,7 +219,7 @@ module OmniBattle =
                         ([], model)
                         (getEnemies model)
                 let advanceCharactersSignal = Message AdvanceCharacters
-                let signals = advanceCharactersSignal :: List.rev enemySignalsRev @ List.rev allySignalsRev
+                let signals = advanceCharactersSignal :: List.rev enemySignalsRev
                 withSigs model signals
 
         and tickRunning time model =
@@ -243,86 +241,48 @@ module OmniBattle =
                 | BattleCease (outcome, timeStart) -> tickCease time timeStart outcome model
             (model, sigs)
 
-        static let battleBindings (battle : Screen) =
+        override this.Bindings (_, battle, _) =
             [battle.OutgoingStartEvent => cmd FadeSong
              battle.SelectEvent => cmd InitializeBattle
              battle.DeselectEvent => cmd FinalizeBattle
              battle.UpdateEvent => msg Tick]
 
-        static let allyBindings index =
-            let regularMenu = Simulants.RegularMenu index
-            let specialMenu = Simulants.SpecialMenu index
-            let itemMenu = Simulants.ItemMenu index
-            let reticles = Simulants.Reticles index
-            [regularMenu.ItemSelectEvent =|> fun evt -> cmd (IndexedCommand (RegularMenuSelect evt.Data, index))
-             specialMenu.ItemSelectEvent =|> fun evt -> cmd (IndexedCommand (SpecialMenuSelect evt.Data, index))
-             specialMenu.CancelEvent => cmd (IndexedCommand (RegularMenuShow, index))
-             itemMenu.ItemSelectEvent =|> fun evt -> cmd (IndexedCommand (ItemMenuSelect evt.Data, index))
-             itemMenu.CancelEvent => cmd (IndexedCommand (RegularMenuShow, index))
-             reticles.TargetSelectEvent =|> fun evt -> msg (ReticlesSelect (evt.Data, AllyIndex index))
-             reticles.CancelEvent => cmd (IndexedCommand (ReticlesCancel, index))]
-
-        static let allyPartyBindings allyMax =
-            seq { for i in 0 .. allyMax - 1 do yield allyBindings i } |>
-            Seq.concat |>
-            Seq.toList
-
-        static let indexedCommand command index world =
-            let ally = Simulants.Ally index
-            let regularMenu = Simulants.RegularMenu index
-            let specialMenu = Simulants.SpecialMenu index
-            let itemMenu = Simulants.ItemMenu index
-            let reticles = Simulants.Reticles index
-            match command with
-            | RegularMenuShow ->
-                let world = specialMenu.SetVisible false world
-                let world = itemMenu.SetVisible false world
-                let world = reticles.SetVisible false world
-                let world = regularMenu.SetVisible true world
-                just (regularMenu.SetCenter (ally.GetCenter world) world)
-            | RegularMenuSelect item ->
-                match item with
-                | "Attack" ->
-                    let currentMenu =
-                        if regularMenu.GetVisible world then regularMenu
-                        elif specialMenu.GetVisible world then specialMenu
-                        else itemMenu
-                    let world = currentMenu.SetVisible false world
-                    let world = reticles.SetVisible true world
-                    let world = reticles.UpdateModel (fun model -> { model with BattleModel.AimType = EnemyAim }) world
-                    just (reticles.AttachProperty Property? PreviousMenu false true { PropertyType = typeof<Entity>; PropertyValue = currentMenu } world)
-                | "Defend" ->
-                    just world
-                | "Special" ->
-                    let world = regularMenu.SetVisible false world
-                    let world = specialMenu.SetVisible true world
-                    just (specialMenu.SetCenter (ally.GetCenter world) world)
-                | "Item" ->
-                    let world = regularMenu.SetVisible false world
-                    let world = itemMenu.SetVisible true world
-                    just (itemMenu.SetCenter (ally.GetCenter world) world)
-                | _ -> failwithumf ()
-            | SpecialMenuSelect _ ->
-                just world
-            | ItemMenuSelect _ ->
-                just world
-            | ReticlesCancel ->
-                let previousMenu = (reticles.GetProperty Property? PreviousMenu world).PropertyValue :?> Entity
-                let world = reticles.SetVisible false world
-                let world = previousMenu.SetVisible true world
-                just (previousMenu.SetCenter (ally.GetCenter world) world)
-            | AllyInputHide ->
-                let world =
-                    let entities = Simulants.AllInputEntities index
-                    List.fold (fun world (entity : Entity) -> entity.SetVisible false world) world entities
-                just world
-
-        override this.Bindings (_, battle, _) =
-            battleBindings battle @
-            allyPartyBindings Constants.Battle.AllyMax
-
         override this.Message (model, message, _, world) =
             match message with
+            | RegularItemSelect (characterIndex, item) ->
+                let model =
+                    match item with
+                    | "Attack" -> updateCharacter (fun character -> { character with InputState = AimReticles (item, EnemyAim) }) characterIndex model
+                    | "Special" -> updateCharacter (fun character -> { character with InputState = SpecialMenu }) characterIndex model
+                    | "Defend" -> updateCharacter (fun character -> { character with InputState = NoInput }) characterIndex model
+                    | "Item" -> updateCharacter (fun character -> { character with InputState = ItemMenu }) characterIndex model
+                    | _ -> failwithumf ()
+                just model
+            | RegularItemCancel characterIndex ->
+                let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+                just model
+            | SpecialItemSelect (characterIndex, _) ->
+                let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+                just model
+            | SpecialItemCancel characterIndex ->
+                let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+                just model
+            | ItemItemSelect (characterIndex, _) ->
+                let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+                just model
+            | ItemItemCancel characterIndex ->
+                let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+                just model
+            | ReticlesSelect (targetIndex, allyIndex) ->
+                match model.BattleState with
+                | BattleRunning ->
+                    let command = ActionCommand.make Attack allyIndex (Some targetIndex)
+                    let model = { model with ActionQueue = Queue.conj command model.ActionQueue }
+                    withMsg model (ResetCharacter allyIndex)
+                | _ -> just model
+            | ReticlesCancel characterIndex ->
+                let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+                just model
             | ReadyCharacters ->
                 let time = World.getTickTime world
                 let model = updateCharacters (fun character -> { character with AnimationState = (CharacterAnimationState.setCycle (Some time) ReadyCycle) character.AnimationState }) model
@@ -374,11 +334,13 @@ module OmniBattle =
                 let model = updateCharacter (fun character -> { character with AnimationState = (CharacterAnimationState.setCycle (Some time) WoundCycle) character.AnimationState }) characterIndex model
                 just model
             | ResetCharacter characterIndex ->
-                let model = updateCharacter (fun character -> { character with CharacterState = { character.CharacterState with ActionTime = 0 }}) characterIndex model
                 let character = getCharacter characterIndex model
-                if character.CharacterState.IsAlly
-                then withCmd model (IndexedCommand (AllyInputHide, character.CharacterState.PartyIndex))
-                else just model
+                let model = updateCharacter (fun character -> { character with CharacterState = { character.CharacterState with ActionTime = 0 }}) characterIndex model
+                let model =
+                    if character.CharacterState.IsAlly
+                    then updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+                    else model
+                just model
             | DestroyCharacter characterIndex ->
                 let character = getCharacter characterIndex model
                 let model =
@@ -386,13 +348,6 @@ module OmniBattle =
                     then { model with Characters = Map.remove characterIndex model.Characters }
                     else model
                 just model
-            | ReticlesSelect (targetIndex, allyIndex) ->
-                match model.BattleState with
-                | BattleRunning ->
-                    let command = ActionCommand.make Attack allyIndex (Some targetIndex)
-                    let model = { model with ActionQueue = Queue.conj command model.ActionQueue }
-                    withMsg model (ResetCharacter allyIndex)
-                | _ -> just model
             | Tick ->
                 if World.isTicking world
                 then tick (World.getTickTime world) model
@@ -412,8 +367,6 @@ module OmniBattle =
             | FinalizeBattle ->
                 let world = World.hintRenderPackageDisuse Assets.BattlePackage world
                 just (World.hintAudioPackageDisuse Assets.BattlePackage world)
-            | IndexedCommand (command, index) ->
-                indexedCommand command index world
 
         override this.Content (model, _, _) =
             [Content.layer Simulants.Scene.Name []
@@ -425,8 +378,8 @@ module OmniBattle =
                  Content.entitiesIndexed
                     (model --> fun model -> getAllies model)
                     (fun model -> model.CharacterState.PartyIndex)
-                    (fun allyIndex ally _ _ ->
-                        Content.entity<CharacterDispatcher> ("Ally+" + scstring allyIndex)
+                    (fun index ally _ _ ->
+                        Content.entity<CharacterDispatcher> ("Ally+" + scstring index)
                             [Entity.CharacterState <== ally --> fun ally -> ally.CharacterState
                              Entity.CharacterAnimationState <== ally --> fun ally -> ally.AnimationState
                              Entity.Position <== ally --> fun ally -> ally.Position
@@ -434,23 +387,36 @@ module OmniBattle =
                  Content.entitiesIndexed
                     (model --> fun model -> getEnemies model)
                     (fun model -> model.CharacterState.PartyIndex)
-                    (fun enemyIndex enemy _ _ ->
-                        Content.entity<CharacterDispatcher> ("Enemy+" + scstring enemyIndex)
+                    (fun index enemy _ _ ->
+                        Content.entity<CharacterDispatcher> ("Enemy+" + scstring index)
                             [Entity.CharacterState <== enemy --> fun enemy -> enemy.CharacterState
                              Entity.CharacterAnimationState <== enemy --> fun enemy -> enemy.AnimationState
                              Entity.Position <== enemy --> fun enemy -> enemy.Position
                              Entity.Size <== enemy --> fun enemy -> enemy.Size])]
-             Content.layers (model --> fun model -> getAllies model) $ fun allyIndex _ _ _ ->
-                Content.layer (Simulants.Input allyIndex).Name []
-                    [Content.entity<RingMenuDispatcher> (Simulants.RegularMenu allyIndex).Name
+             Content.layers (model --> fun model -> getAllies model) $ fun index ally _ _ ->
+                let allyIndex = AllyIndex index
+                Content.layer (Simulants.Input index).Name []
+                    [Content.entity<RingMenuDispatcher> (Simulants.RegularMenu index).Name
                         [Entity.RingMenuModel == { Items = ["Attack"; "Defend"; "Special"; "Item"]; ItemCancelOpt = None }
-                         Entity.Depth == 10.0f]
-                     Content.entity<RingMenuDispatcher> (Simulants.SpecialMenu allyIndex).Name
+                         Entity.Depth == 10.0f
+                         Entity.Visible <== ally --> fun ally -> ally.InputState = RegularMenu
+                         Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (allyIndex, evt.Data))
+                         Entity.CancelEvent ==> msg RegularItemCancel]
+                     Content.entity<RingMenuDispatcher> (Simulants.SpecialMenu index).Name
                         [Entity.RingMenuModel == { Items = ["Attack"]; ItemCancelOpt = Some "Cancel" }
-                         Entity.Depth == 10.0f]
-                     Content.entity<RingMenuDispatcher> (Simulants.ItemMenu allyIndex).Name
+                         Entity.Depth == 10.0f
+                         Entity.Visible <== ally --> fun ally -> ally.InputState = SpecialMenu
+                         Entity.ItemSelectEvent ==|> fun evt -> msg (SpecialItemSelect (allyIndex, evt.Data))
+                         Entity.CancelEvent ==> msg SpecialItemCancel]
+                     Content.entity<RingMenuDispatcher> (Simulants.ItemMenu index).Name
                         [Entity.RingMenuModel == { Items = ["Attack"]; ItemCancelOpt = Some "Cancel" }
-                         Entity.Depth == 10.0f]
-                     Content.entity<ReticlesDispatcher> (Simulants.Reticles allyIndex).Name
+                         Entity.Depth == 10.0f
+                         Entity.Visible <== ally --> fun ally -> ally.InputState = ItemMenu
+                         Entity.ItemSelectEvent ==|> fun evt -> msg (ItemItemSelect (allyIndex, evt.Data))
+                         Entity.CancelEvent ==> msg ItemItemCancel]
+                     Content.entity<ReticlesDispatcher> (Simulants.Reticles index).Name
                         [Entity.ReticlesModel <== model --> fun model -> { Characters = model.Characters; AimType = model.AimType }
-                         Entity.Depth == 10.0f]]]
+                         Entity.Depth == 10.0f
+                         Entity.Visible <== ally --> fun ally -> match ally.InputState with AimReticles _ -> true | _ -> false
+                         Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (allyIndex, evt.Data))
+                         Entity.CancelEvent ==> msg ReticlesCancel]]]

@@ -9,7 +9,7 @@ open OmniBlade
 module OmniReticles =
 
     type [<NoComparison>] ReticlesCommand =
-        | Cancel
+        | TargetCancel
         | TargetSelect of CharacterIndex
 
     type Entity with
@@ -28,7 +28,7 @@ module OmniReticles =
 
         override this.Command (_, command, rets, world) =
             match command with
-            | Cancel -> just (World.publish () rets.CancelEvent [] rets world)
+            | TargetCancel -> just (World.publish () rets.CancelEvent [] rets world)
             | TargetSelect index -> just (World.publish index rets.TargetSelectEvent [] rets world)
 
         override this.Content (model, rets, _) =
