@@ -388,6 +388,11 @@ type CharacterInputState =
     | ItemMenu
     | AimReticles of string * AimType
 
+    member this.AimType =
+        match this with
+        | NoInput | RegularMenu | DefendMenu | SpecialMenu | ItemMenu -> NoAim
+        | AimReticles (_, aimType) -> aimType
+
 type [<NoComparison>] CharacterModel =
     { CharacterState : CharacterState
       AnimationState : CharacterAnimationState
@@ -457,6 +462,5 @@ type [<NoEquality; NoComparison>] BattleState =
 type [<NoEquality; NoComparison>] BattleModel =
     { BattleState : BattleState
       Characters : Map<CharacterIndex, CharacterModel>
-      AimType : AimType
       CurrentCommandOpt : CurrentCommand option
       ActionQueue : ActionCommand Queue }

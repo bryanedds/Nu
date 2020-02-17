@@ -30,18 +30,18 @@ module OmniBattle =
         | DestroyCharacter of CharacterIndex
         | Tick
 
-    and [<NoComparison>] BattleCommand =
+    type [<NoComparison>] BattleCommand =
         | FadeSong
         | InitializeBattle
         | FinalizeBattle
 
-    and Screen with
+    type Screen with
 
         member this.GetBattleModel = this.GetModel<BattleModel>
         member this.SetBattleModel = this.SetModel<BattleModel>
         member this.BattleModel = this.Model<BattleModel> ()
 
-    and BattleDispatcher () =
+    type BattleDispatcher () =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
             (let allies =
                 [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ActionTime = 600; ExpPoints = 0; HitPoints = 20; SpecialPoints = 1; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
@@ -67,8 +67,7 @@ module OmniBattle =
              { BattleState = BattleReady 0L
                Characters = characters
                CurrentCommandOpt = None
-               ActionQueue = Queue.empty
-               AimType = NoAim })
+               ActionQueue = Queue.empty })
 
         static let getAllies model =
             CharacterModels.getAllies model.Characters
@@ -415,7 +414,7 @@ module OmniBattle =
                          Entity.ItemSelectEvent ==|> fun evt -> msg (ItemItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg ItemItemCancel]
                      Content.entity<ReticlesDispatcher> (Simulants.Reticles index).Name
-                        [Entity.ReticlesModel <== model --> fun model -> { Characters = model.Characters; AimType = model.AimType }
+                        [Entity.ReticlesModel <== model --> fun model -> { Characters = model.Characters; AimType = (getCharacter allyIndex model).InputState.AimType }
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> match ally.InputState with AimReticles _ -> true | _ -> false
                          Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (allyIndex, evt.Data))
