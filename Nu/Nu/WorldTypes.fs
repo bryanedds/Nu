@@ -987,10 +987,10 @@ module WorldTypes =
         member this.Parent = let names = this.EntityAddress.Names in Layer [names.[0]; names.[1]]
 
         /// The address of the entity's update event.
-        member this.UpdateEvent = updateEvent
+        member this.UpdateEventCached = updateEvent
 
         /// The address of the entity's post-update event.
-        member this.PostUpdateEvent = postUpdateEvent
+        member this.PostUpdateEventCached = postUpdateEvent
 
         /// The cached entity state for imperative entities.
         member this.EntityStateOpt

@@ -616,10 +616,10 @@ module WorldModuleEntity =
               SortTarget = entity }
 
         static member internal updateEntityPublishUpdateFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa entity.UpdateEvent) world
+            World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa entity.UpdateEventCached) world
 
         static member internal updateEntityPublishPostUpdateFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishPostUpdates entity (atooa entity.PostUpdateEvent) world
+            World.updateEntityPublishEventFlag World.setEntityPublishPostUpdates entity (atooa entity.PostUpdateEventCached) world
 
         static member internal updateEntityPublishFlags entity world =
             let world = World.updateEntityPublishUpdateFlag entity world

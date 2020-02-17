@@ -57,9 +57,7 @@ module OmniRingMenu =
                      Entity.UpImage == asset Assets.BattlePackage (itemValue + "Up")
                      Entity.DownImage == asset Assets.BattlePackage (itemValue + "Down")
                      Entity.Persistent == false
-                     Entity.ChangeEvent Property? Radius ==> cmd (Arrange (button, index))
-                     Entity.ChangeEvent Property? Rotation ==> cmd (Arrange (button, index))
-                     Entity.ChangeEvent Property? RingMenuModel ==> cmd (Arrange (button, index))]
+                     Entity.UpdateEvent ==> cmd (Arrange (button, index))]
              Content.entityOpt (model --> fun model -> model.ItemCancelOpt) $ fun itemCancel _ world ->
                 let itemCancelValue = itemCancel.Get world
                 Content.button (menu.Name + "+" + itemCancelValue)
