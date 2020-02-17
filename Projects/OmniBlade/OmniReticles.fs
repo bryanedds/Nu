@@ -43,8 +43,10 @@ module OmniReticles =
                  Entity.ParentNodeOpt == Some (relate button rets)
                  Entity.ClickEvent ==> cmd TargetSelect]
              Content.entities (model --> fun model -> CharacterModels.getTargets model.AimType model.Characters) $ fun index character _ world ->
-                Content.button (rets.Name + "+" + "Reticle" + "+" + scstring index)
-                    [Entity.PositionLocal <== character --> fun character -> character.Position
+                let buttonName = rets.Name + "+" + "Reticle" + "+" + scstring index
+                let button = rets.Parent / buttonName
+                Content.button buttonName
+                    [Entity.Position <== character --> fun character -> character.Position
                      Entity.Size == v2 128.0f 128.0f
                      Entity.ViewType == Relative
                      Entity.Persistent == false
