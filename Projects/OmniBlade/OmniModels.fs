@@ -421,8 +421,7 @@ type [<NoComparison>] ReticlesModel =
 
 type RingMenuModel =
     { Items : string list
-      ItemCancelOpt : string option
-      Dirt : Guid }
+      ItemCancelOpt : string option }
 
 type [<NoEquality; NoComparison>] ActionCommand =
     { Action : ActionType

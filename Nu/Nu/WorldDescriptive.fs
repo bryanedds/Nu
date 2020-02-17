@@ -105,12 +105,15 @@ module Describe =
         initializers |>
         Seq.map (fun def ->
             match def with
-            | PropertyDefinition def -> Some (def.PropertyName, def.PropertyExpr)
+            | PropertyDefinition def -> Some (def.PropertyType, def.PropertyName, def.PropertyExpr)
             | EventHandlerDefinition _ -> None
             | EquationDefinition _ -> None) |>
         Seq.definitize |>
-        Seq.map (mapSnd (function DefineExpr value -> value | VariableExpr fn -> fn world)) |>
-        Seq.map (mapSnd valueToSymbol) |>
+        Seq.map (fun (ty, name, expr) ->
+            let value = match expr with DefineExpr value -> value | VariableExpr fn -> fn world
+            let symbol = valueToSymbol value
+            let symbol = match name with "Model" -> Symbols ([Text (ty.AssemblyQualifiedName, None); symbol], None) | _ -> symbol
+            (name, symbol)) |>
         Map.ofSeq
 
     let private initializersToEventHandlers initializers (simulant : Simulant) =
