@@ -380,9 +380,18 @@ type CharacterAnimationState =
         | Some progress -> progress = 1.0f
         | None -> false
 
+type CharacterInputState =
+    | NoInput
+    | RegularMenu
+    | DefendMenu // should go away...
+    | SpecialMenu
+    | ItemMenu
+    | AimReticles of AimType
+
 type [<NoComparison>] CharacterModel =
     { CharacterState : CharacterState
       AnimationState : CharacterAnimationState
+      InputState : CharacterInputState
       Position : Vector2
       Size : Vector2 }
 
