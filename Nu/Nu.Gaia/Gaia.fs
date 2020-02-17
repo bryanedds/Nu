@@ -250,12 +250,12 @@ module Gaia =
         (Cascade, world)
 
     let private handleNuEntityUnregistering (form : GaiaForm) evt world =
-        removeEntityTreeViewNode evt.Publisher form world
         let world =
-            // OPTIMIZATION: don't attempt to refresh the slow winforms UI while running the game
-            if not (World.isTicking world)
-            then World.schedule2 (fun world -> refreshHierarchyTreeView form world; world) world
-            else world
+            World.schedule2 (fun world ->
+                removeEntityTreeViewNode evt.Publisher form world
+                refreshHierarchyTreeView form world
+                world)
+                world
         match form.entityPropertyGrid.SelectedObject with
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
@@ -321,9 +321,9 @@ module Gaia =
         | DragCameraNone -> (Resolve, world)
 
     let private monitorEntityEvents (layer : Layer) form world =
-        let world = World.monitorPlus (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt --> layer --> Events.Wildcard) Default.Game world |> snd
-        let world = World.monitorPlus (handleNuEntityRegister form) (Events.Register --> layer --> Events.Wildcard) Default.Game world |> snd
-        let world = World.monitorPlus (handleNuEntityUnregistering form) (Events.Unregistering --> layer --> Events.Wildcard) Default.Game world |> snd
+        let world = World.monitorPlus (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt --> layer --> Events.Wildcard) layer world |> snd
+        let world = World.monitorPlus (handleNuEntityRegister form) (Events.Register --> layer --> Events.Wildcard) layer world |> snd
+        let world = World.monitorPlus (handleNuEntityUnregistering form) (Events.Unregistering --> layer --> Events.Wildcard) layer world |> snd
         world
 
     let private trySaveSelectedLayer filePath world =
