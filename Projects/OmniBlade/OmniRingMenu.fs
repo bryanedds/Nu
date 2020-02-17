@@ -11,7 +11,7 @@ module OmniRingMenu =
     type [<NoComparison>] RingMenuCommand =
         | Cancel
         | ItemSelect of string
-        | Arrange of Entity * int
+        | ArrangeItemButton of Entity * int
 
     type Entity with
         
@@ -31,7 +31,7 @@ module OmniRingMenu =
             match command with
             | Cancel -> just (World.publish () menu.CancelEvent [] menu world)
             | ItemSelect item -> just (World.publish item menu.ItemSelectEvent [] menu world)
-            | Arrange (button, index) ->
+            | ArrangeItemButton (button, index) ->
                 let itemCount = List.length model.Items
                 let progress = single index / single itemCount
                 let rotation = (progress * single Math.PI * 2.0f) + (menu.GetRotation world * single Math.PI * 2.0f)
@@ -58,7 +58,8 @@ module OmniRingMenu =
                      Entity.DownImage == asset Assets.BattlePackage (itemValue + "Down")
                      Entity.Persistent == false
                      Entity.ParentNodeOptWithAdjustment == Some (relate button menu)
-                     Entity.UpdateEvent ==> cmd (Arrange (button, index))]
+                     Entity.ClickEvent ==> cmd (ItemSelect itemValue)
+                     Entity.UpdateEvent ==> cmd (ArrangeItemButton (button, index))]
              Content.entityOpt (model --> fun model -> model.ItemCancelOpt) $ fun itemCancel layer world ->
                 let itemCancelValue = itemCancel.Get world
                 let buttonName = menu.Name + "+" + itemCancelValue
@@ -70,4 +71,5 @@ module OmniRingMenu =
                      Entity.UpImage == asset Assets.BattlePackage (itemCancelValue + "Up")
                      Entity.DownImage == asset Assets.BattlePackage (itemCancelValue + "Down")
                      Entity.ParentNodeOptWithAdjustment == Some (relate button menu)
-                     Entity.Persistent == false]]
+                     Entity.Persistent == false
+                     Entity.ClickEvent ==> cmd Cancel]]
