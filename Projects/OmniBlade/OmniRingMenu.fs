@@ -25,7 +25,7 @@ module OmniRingMenu =
         member this.CancelEvent = Events.Cancel --> this
 
     type RingMenuDispatcher () =
-        inherit GuiDispatcher<RingMenuModel, unit, RingMenuCommand> ({ Items = []; ItemCancelOpt = None; Dirt = Gen.id })
+        inherit GuiDispatcher<RingMenuModel, unit, RingMenuCommand> ({ Items = []; ItemCancelOpt = None })
 
         override this.Command (model, command, menu, world) =
             match command with
