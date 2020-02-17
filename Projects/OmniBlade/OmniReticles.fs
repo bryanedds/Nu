@@ -35,23 +35,20 @@ module OmniReticles =
             let buttonName = rets.Name + "+" + "Cancel"
             let button = rets.Parent / buttonName
             [Content.button buttonName
-                [Entity.PositionLocal == v2 0.0f -80.0f
-                 Entity.Size == v2 64.0f 64.0f
-                 Entity.Depth <== rets.Depth + 1.0f
+                [Entity.Size == v2 64.0f 64.0f
                  Entity.ViewType == Relative
                  Entity.Persistent == false
                  Entity.UpImage == asset Assets.BattlePackage "CancelUp"
                  Entity.DownImage == asset Assets.BattlePackage "CancelDown"
-                 Entity.ParentNodeOptWithAdjustment == Some (relate button rets)
+                 Entity.ParentNodeOpt == Some (relate button rets)
                  Entity.ClickEvent ==> cmd TargetSelect]
              Content.entities (model --> fun model -> CharacterModels.getTargets model.AimType model.Characters) $ fun index character _ world ->
                 Content.button (rets.Name + "+" + "Reticle" + "+" + scstring index)
-                    [Entity.Position <== character --> fun character -> character.Position
-                     Entity.Size == v2 64.0f 64.0f
-                     Entity.Depth <== rets.Depth + 1.0f
+                    [Entity.PositionLocal <== character --> fun character -> character.Position
+                     Entity.Size == v2 128.0f 128.0f
                      Entity.ViewType == Relative
                      Entity.Persistent == false
                      Entity.UpImage == asset Assets.BattlePackage "ReticleUp"
                      Entity.DownImage == asset Assets.BattlePackage "ReticleDown"
-                     Entity.ParentNodeOptWithAdjustment == Some (relate button rets)
+                     Entity.ParentNodeOpt == Some (relate button rets)
                      Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterState.CharacterIndex)]]

@@ -807,7 +807,7 @@ module WorldTypes =
             | _ -> acatff address game.GameAddress
 
         /// Concatenate an address with a game's address, forcing the type of first address.
-        static member (-->) (address : 'a Address, game) = Game.acatff address game
+        static member (-->) (address : 'a Address, game : Game) = Simulant.acatff address game
 
     /// The screen type that allows transitioning to and from other screens, and also hosts the
     /// currently interactive layers of entities.
@@ -869,7 +869,7 @@ module WorldTypes =
             | _ -> acatff address screen.ScreenAddress
 
         /// Concatenate an address with a screen's address, forcing the type of first address.
-        static member (-->) (address : 'a Address, screen) = Screen.acatff address screen
+        static member (-->) (address : 'a Address, screen : Screen) = Simulant.acatff address screen
 
         /// Derive a layer from its screen.
         static member (/) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress --> ntoa layerName)
@@ -942,7 +942,7 @@ module WorldTypes =
             | _ -> acatff address layer.LayerAddress
     
         /// Concatenate an address with a layer's address, forcing the type of first address.
-        static member (-->) (address : 'a Address, layer) = Layer.acatff address layer
+        static member (-->) (address : 'a Address, layer : Layer) = Simulant.acatff address layer
         
         /// Derive an entity from its layer.
         static member (/) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress --> ntoa entityName)
@@ -1042,7 +1042,7 @@ module WorldTypes =
             | _ -> acatff address entity.EntityAddress
     
         /// Concatenate an address with an entity, forcing the type of first address.
-        static member (-->) (address : 'a Address, entity) = Entity.acatff address entity
+        static member (-->) (address : 'a Address, entity : Entity) = Simulant.acatff address entity
     
     /// The world's dispatchers (including facets).
     /// 
