@@ -76,8 +76,8 @@
     <Compile Include="OmniEvents.fs" />
     <Compile Include="OmniSimulants.fs" />
     <Compile Include="OmniRingMenu.fs" />
-    <Compile Include="OmniCharacter.fs" />
     <Compile Include="OmniReticles.fs" />
+    <Compile Include="OmniCharacter.fs" />
     <Compile Include="OmniBattle.fs" />
     <Compile Include="OmniGame.fs" />
     <Compile Include="Program.fs" />
