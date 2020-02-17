@@ -48,15 +48,18 @@ module OmniBattle =
             (let allies =
                 [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ActionTime = 600; ExpPoints = 0; HitPoints = 20; SpecialPoints = 1; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = asset "Battle" "Jinn"; AnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
+                   InputState = NoInput
                    Position = v2 -224.0f -168.0f
                    Size = v2 160.0f 160.0f }]
              let enemies =
                 [{ CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 0; ActionTime = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = asset "Battle" "Goblin"; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
+                   InputState = NoInput
                    Position = v2 0.0f 64.0f
                    Size = v2 160.0f 160.0f }
                  { CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 1; ActionTime = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = asset "Battle" "Goblin"; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
+                   InputState = NoInput
                    Position = v2 176.0f -152.0f
                    Size = v2 160.0f 160.0f }]
              let characters =
