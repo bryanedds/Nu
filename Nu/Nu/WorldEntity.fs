@@ -174,10 +174,6 @@ module WorldEntityModule =
             let size = this.GetSize world
             this.SetPosition (center - size * 0.5f) world
 
-        /// The center lens.
-        member this.Center =
-            lens Property? Center this.GetCenter this.SetCenter this
-
         /// Set the transform of an entity snapped to the give position and rotation snaps.
         member this.SetTransformSnapped positionSnap rotationSnap transform world =
             let transform = Math.snapTransform positionSnap rotationSnap transform

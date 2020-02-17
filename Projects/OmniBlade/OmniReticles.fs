@@ -46,7 +46,7 @@ module OmniReticles =
                  Entity.ClickEvent ==> cmd TargetSelect]
              Content.entities (model --> fun model -> CharacterModels.getTargets model.AimType model.Characters) $ fun index character _ world ->
                 Content.button (rets.Name + "+" + "Reticle" + "+" + scstring index)
-                    [Entity.Center <== character --> fun character -> character.Center
+                    [Entity.Position <== character --> fun character -> character.Position
                      Entity.Size == v2 64.0f 64.0f
                      Entity.Depth <== rets.Depth + 1.0f
                      Entity.ViewType == Relative
