@@ -81,8 +81,8 @@ module WorldEntityModule =
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
-        member this.UpdateEvent = this.UpdateEvent
-        member this.PostUpdateEvent = this.PostUpdateEvent
+        member this.UpdateEvent = Events.Update --> this
+        member this.PostUpdateEvent = Events.PostUpdate --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -238,7 +238,7 @@ module WorldEntityModule =
                     else Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
                 if World.getEntityPublishUpdates entity world then
                     let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.UpdateEvent eventTrace Default.Game false world
+                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.UpdateEventCached eventTrace Default.Game false world
                 else world)
                 entity
                 world
@@ -254,7 +254,7 @@ module WorldEntityModule =
                     else Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
                 if World.getEntityPublishPostUpdates entity world then
                     let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateEvent eventTrace Default.Game false world
+                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateEventCached eventTrace Default.Game false world
                 else world)
                 entity
                 world
