@@ -386,7 +386,7 @@ type CharacterInputState =
     | DefendMenu // should go away...
     | SpecialMenu
     | ItemMenu
-    | AimReticles of AimType
+    | AimReticles of string * AimType
 
 type [<NoComparison>] CharacterModel =
     { CharacterState : CharacterState
