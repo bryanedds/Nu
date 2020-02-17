@@ -417,5 +417,5 @@ module OmniBattle =
                         [Entity.ReticlesModel <== model --> fun model -> { Characters = model.Characters; AimType = (getCharacter allyIndex model).InputState.AimType }
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> match ally.InputState with AimReticles _ -> true | _ -> false
-                         Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (allyIndex, evt.Data))
+                         Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (evt.Data, allyIndex))
                          Entity.CancelEvent ==> msg ReticlesCancel]]]
