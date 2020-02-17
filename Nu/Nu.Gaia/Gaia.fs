@@ -134,6 +134,9 @@ module Gaia =
         setEntityTreeViewSelectionToEntityPropertyGridSelection form
 
     let private refreshHierarchyTreeView (form : GaiaForm) world =
+        // TODO: this code causes severe performance issues. To unfuck performance, we will probably have to find
+        // a way to update the hierarchy tree without a complete rebuild of it - IE, updating it in-place and
+        // imperatively.
         let treeState = getExpansionState form.hierarchyTreeView
         form.hierarchyTreeView.Nodes.Clear ()
         let layers = World.getLayers EditorScreen world
