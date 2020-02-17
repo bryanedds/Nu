@@ -88,8 +88,9 @@ module Gaia =
             | [||] -> form.entityTreeView.SelectedNode <- null
             | nodes ->
                 let node = nodes.[0]
-                if node.Parent.IsExpanded
-                then form.entityTreeView.SelectedNode <- node; node.EnsureVisible ()
+                if node.Parent.IsExpanded then
+                    form.entityTreeView.SelectedNode <- node
+                    node.EnsureVisible ()
                 else form.entityTreeView.SelectedNode <- null
         | _ -> form.entityTreeView.SelectedNode <- null
 
@@ -245,9 +246,7 @@ module Gaia =
     let private handleNuEntityRegister (form : GaiaForm) evt world =
         let entity = Entity (atoa evt.Publisher.SimulantAddress)
         addEntityTreeViewNode entity form world
-        if not (World.isTicking world) then
-            // OPTIMIZATION: don't attempt to refresh the slow winforms UI while running the game
-            refreshHierarchyTreeView form world
+        refreshHierarchyTreeView form world
         (Cascade, world)
 
     let private handleNuEntityUnregistering (form : GaiaForm) evt world =
@@ -321,17 +320,10 @@ module Gaia =
             (Resolve, world)
         | DragCameraNone -> (Resolve, world)
 
-    let private subscribeToEntityEvents form world =
-        let selectedLayer = (getEditorState world).SelectedLayer
-        let world = World.subscribePlus Constants.SubscriptionKeys.ChangeParentNodeOpt (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt --> selectedLayer --> Events.Wildcard) Default.Game world |> snd
-        let world = World.subscribePlus Constants.SubscriptionKeys.RegisterEntity (handleNuEntityRegister form) (Events.Register --> selectedLayer --> Events.Wildcard) Default.Game world |> snd
-        let world = World.subscribePlus Constants.SubscriptionKeys.UnregisteringEntity (handleNuEntityUnregistering form) (Events.Unregistering --> selectedLayer --> Events.Wildcard) Default.Game world |> snd
-        world
-
-    let private unsubscribeFromEntityEvents world =
-        let world = World.unsubscribe Constants.SubscriptionKeys.ChangeParentNodeOpt world
-        let world = World.unsubscribe Constants.SubscriptionKeys.RegisterEntity world
-        let world = World.unsubscribe Constants.SubscriptionKeys.UnregisteringEntity world
+    let private monitorEntityEvents (layer : Layer) form world =
+        let world = World.monitorPlus (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt --> layer --> Events.Wildcard) Default.Game world |> snd
+        let world = World.monitorPlus (handleNuEntityRegister form) (Events.Register --> layer --> Events.Wildcard) Default.Game world |> snd
+        let world = World.monitorPlus (handleNuEntityUnregistering form) (Events.Unregistering --> layer --> Events.Wildcard) Default.Game world |> snd
         world
 
     let private trySaveSelectedLayer filePath world =
@@ -349,7 +341,6 @@ module Gaia =
 
         try // destroy current layer
             let selectedLayer = (getEditorState world).SelectedLayer
-            let world = unsubscribeFromEntityEvents world
             let world = World.destroyLayerImmediate selectedLayer world
 
             // load and add layer, updating tab and selected layer in the process
@@ -362,7 +353,7 @@ module Gaia =
                 form.layerTabControl.SelectedTab.Text <- layer.Name
                 form.layerTabControl.SelectedTab.Name <- layer.Name
                 let world = updateEditorState (fun editorState -> { editorState with SelectedLayer = layer }) world
-                let world = subscribeToEntityEvents form world
+                let world = monitorEntityEvents layer form world
 
                 // refresh tree views
                 refreshEntityTreeView form world
@@ -1040,7 +1031,6 @@ module Gaia =
 
     let private handleFormLayerTabDeselected (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            let world = unsubscribeFromEntityEvents world
             deselectEntity form world
             refreshEntityTreeView form world
             refreshEntityPropertyGrid form world
@@ -1054,7 +1044,6 @@ module Gaia =
                 let layerTab = layerTabControl.SelectedTab
                 EditorScreen / layerTab.Text
             let world = updateEditorState (fun editorState -> { editorState with SelectedLayer = selectedLayer}) world
-            let world = subscribeToEntityEvents form world
             refreshEntityTreeView form world
             refreshEntityPropertyGrid form world
             selectLayer selectedLayer form world
@@ -1367,27 +1356,30 @@ module Gaia =
     /// Attach Gaia to the given world.
     let attachToWorld targetDir form world =
         if World.getSelectedScreen world = EditorScreen then
-            match World.getLayers EditorScreen world |> Seq.toList with
-            | defaultLayer :: _ ->
-                match World.tryGetKeyedValue<EditorState> Globals.EditorGuid world with
-                | None ->
-                    let editorState =
-                        { TargetDir = targetDir
-                          RightClickPosition = Vector2.Zero
-                          DragEntityState = DragEntityNone
-                          DragCameraState = DragCameraNone
-                          SelectedLayer = defaultLayer
-                          FilePaths = Map.empty }
-                    let world = World.addKeyedValue Globals.EditorGuid editorState world
-                    let world = World.subscribePlus Gen.id (handleNuMouseRightDown form) Events.MouseRightDown Default.Game world |> snd
-                    let world = World.subscribePlus Gen.id (handleNuEntityDragBegin form) Events.MouseLeftDown Default.Game world |> snd
-                    let world = World.subscribePlus Gen.id (handleNuEntityDragEnd form) Events.MouseLeftUp Default.Game world |> snd
-                    let world = World.subscribePlus Gen.id (handleNuCameraDragBegin form) Events.MouseCenterDown Default.Game world |> snd
-                    let world = World.subscribePlus Gen.id (handleNuCameraDragEnd form) Events.MouseCenterUp Default.Game world |> snd
-                    let world = subscribeToEntityEvents form world
-                    (defaultLayer, world)
-                | Some _ -> (defaultLayer, world) // NOTE: conclude world is already attached
-            | [] -> failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring EditorScreen + "' screen.")
+            let layers = World.getLayers EditorScreen world |> Seq.toList
+            let (defaultLayer, world) =
+                match layers with
+                | defaultLayer :: _ ->
+                    match World.tryGetKeyedValue<EditorState> Globals.EditorGuid world with
+                    | None ->
+                        let editorState =
+                            { TargetDir = targetDir
+                              RightClickPosition = Vector2.Zero
+                              DragEntityState = DragEntityNone
+                              DragCameraState = DragCameraNone
+                              SelectedLayer = defaultLayer
+                              FilePaths = Map.empty }
+                        let world = World.addKeyedValue Globals.EditorGuid editorState world
+                        let world = World.subscribePlus Gen.id (handleNuMouseRightDown form) Events.MouseRightDown Default.Game world |> snd
+                        let world = World.subscribePlus Gen.id (handleNuEntityDragBegin form) Events.MouseLeftDown Default.Game world |> snd
+                        let world = World.subscribePlus Gen.id (handleNuEntityDragEnd form) Events.MouseLeftUp Default.Game world |> snd
+                        let world = World.subscribePlus Gen.id (handleNuCameraDragBegin form) Events.MouseCenterDown Default.Game world |> snd
+                        let world = World.subscribePlus Gen.id (handleNuCameraDragEnd form) Events.MouseCenterUp Default.Game world |> snd
+                        (defaultLayer, world)
+                    | Some _ -> (defaultLayer, world) // NOTE: conclude world is already attached
+                | [] -> failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring EditorScreen + "' screen.")
+            let world = List.fold (fun world layer -> monitorEntityEvents layer form world) world layers
+            (defaultLayer, world)
         else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring EditorScreen + "'.")
 
     let rec private tryRun3 runWhile sdlDeps (form : GaiaForm) =
