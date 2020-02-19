@@ -289,18 +289,19 @@ module Nu =
                 let nonPersistent = not (Reflection.isPropertyPersistentByName name)
                 let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
                 let propagate (_ : Event) world =
-                    let value =
-                        match lens.Get world with
-                        | :? DesignerProperty as property -> property.DesignerValue
-                        | value -> value
-                    let property = World.getProperty name simulant world
-                    if property.PropertyType = typeof<DesignerProperty> then
-                        let designerProperty = property.PropertyValue :?> DesignerProperty
-                        let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
-                        World.setProperty name nonPersistent alwaysPublish property simulant world
-                    else
-                        let property = { property with PropertyValue = value }
-                        World.setProperty name nonPersistent alwaysPublish property simulant world
+                    try let value =
+                            match lens.Get world with
+                            | :? DesignerProperty as property -> property.DesignerValue
+                            | value -> value
+                        let property = World.getProperty name simulant world
+                        if property.PropertyType = typeof<DesignerProperty> then
+                            let designerProperty = property.PropertyValue :?> DesignerProperty
+                            let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
+                            World.setProperty name nonPersistent alwaysPublish property simulant world
+                        else
+                            let property = { property with PropertyValue = value }
+                            World.setProperty name nonPersistent alwaysPublish property simulant world
+                    with _ -> world
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
                 let world = Stream.make (atooa Events.Register --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
                 Stream.make (atooa (Events.Change lens.Name) --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
