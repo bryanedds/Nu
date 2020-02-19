@@ -368,7 +368,7 @@ module OmniBattle =
                 just (World.hintAudioPackageDisuse Assets.BattlePackage world)
 
         override this.Content (model, _, _) =
-            [Content.layer Simulants.Scene.Name []
+            [Content.layer "Scene" []
                 [Content.label "Background"
                     [Entity.Position == v2 -480.0f -512.0f
                      Entity.Size == v2 1024.0f 1024.0f
@@ -394,29 +394,29 @@ module OmniBattle =
                              Entity.Size <== enemy --> fun enemy -> enemy.Size])]
              Content.layers (model --> fun model -> getAllies model) $ fun index ally _ _ ->
                 let allyIndex = AllyIndex index
-                Content.layer (Simulants.Input index).Name []
-                    [Content.entity<RingMenuDispatcher> (Simulants.RegularMenu index).Name
+                Content.layer ("Input" + "+" + scstring index) []
+                    [Content.entity<RingMenuDispatcher> "RegularMenu"
                         [Entity.Position <== ally --> fun ally -> ally.Position
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> ally.InputState = RegularMenu
                          Entity.RingMenuModel == { Items = ["Attack"; "Defend"; "Special"; "Item"]; ItemCancelOpt = None }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg RegularItemCancel]
-                     Content.entity<RingMenuDispatcher> (Simulants.SpecialMenu index).Name
+                     Content.entity<RingMenuDispatcher> "SpecialMenu"
                         [Entity.Position <== ally --> fun ally -> ally.Position
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> ally.InputState = SpecialMenu
                          Entity.RingMenuModel == { Items = ["Attack"]; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (SpecialItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg SpecialItemCancel]
-                     Content.entity<RingMenuDispatcher> (Simulants.ItemMenu index).Name
+                     Content.entity<RingMenuDispatcher> "ItemMenu"
                         [Entity.Position <== ally --> fun ally -> ally.Position
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> ally.InputState = ItemMenu
                          Entity.RingMenuModel == { Items = ["Attack"]; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (ItemItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg ItemItemCancel]
-                     Content.entity<ReticlesDispatcher> (Simulants.Reticles index).Name
+                     Content.entity<ReticlesDispatcher> "Reticles"
                         [Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> match ally.InputState with AimReticles _ -> true | _ -> false
                          Entity.ReticlesModel <== model --> fun model -> { Characters = model.Characters; AimType = (getCharacter allyIndex model).InputState.AimType }
