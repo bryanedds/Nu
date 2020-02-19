@@ -168,7 +168,16 @@ module DeclarativeOperators =
 [<AutoOpen>]
 module WorldDeclarative =
 
+    let mutable internal LensError = false
+
     type World with
+
+        static member private dereferenceLensHack lens =
+            Lens.map (fun opt ->
+                match opt with
+                | Some value -> value
+                | None -> failwith "HACK: Expected lens error.")
+                lens
 
         /// Transform a stream into existing simulants.
         static member streamSimulants
@@ -181,7 +190,7 @@ module WorldDeclarative =
             Stream.insert Gen.id |>
             Stream.mapWorld (fun (guid, lenses) world ->
                 lenses |>
-                Seq.map (fun lens -> (lens.Get world, Lens.dereference lens)) |>
+                Seq.map (fun lens -> (lens.Get world, World.dereferenceLensHack lens)) |>
                 Seq.filter (fst >> Option.isSome) |>
                 Seq.take (Lens.get lensSeq world |> Seq.length) |>
                 Seq.map (fun (opt, lens) ->
@@ -211,8 +220,6 @@ module WorldDeclarative =
                         match World.tryGetKeyedValue (scstring guid) world with
                         | Some simulant ->
                             let world = World.removeKeyedValue (scstring guid) world
-                            // HACK: remove lens bindings that may depend on a non-existent model index
-                            let world = world |> WorldModule.unregister simulant |> WorldModule.register simulant
                             WorldModule.destroy simulant world
                         | None -> failwithumf ())
                         world removed
