@@ -19,7 +19,7 @@ module OmniCharacter =
         member this.CharacterAnimationState = lens<CharacterAnimationState> Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState this
 
     type CharacterDispatcher () =
-        inherit EntityDispatcher ()
+        inherit EntityDispatcher(*CharacterModel, CharacterMessage, CharacterCommand*) ()
 
         static let [<Literal>] CelSize =
             160.0f
