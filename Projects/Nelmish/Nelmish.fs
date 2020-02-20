@@ -20,8 +20,8 @@ type NelmishDispatcher () =
         // here we handle the Elm-style messages
         override this.Message (model, message, _, _) =
             match message with
-            | Decrement -> just (model + 1)
-            | Increment -> just (model - 1)
+            | Decrement -> just (model - 1)
+            | Increment -> just (model + 1)
             | Reset -> just 0
 
         // here we describe the content of the game including its one screen, one layer, three
