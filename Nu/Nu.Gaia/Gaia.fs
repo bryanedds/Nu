@@ -133,37 +133,49 @@ module Gaia =
         restoreExpansionState form.entityTreeView treeState
         setEntityTreeViewSelectionToEntityPropertyGridSelection form
 
+    let private collectHierarchyTreeNodes (form : GaiaForm) (_ : World) =
+        let rec collect (node : TreeNode) =
+            seq {
+                yield node
+                yield! node.Nodes.Cast<_> ()
+                for child in node.Nodes do
+                    yield! collect child }
+        let result =
+            seq {
+                for node in form.hierarchyTreeView.Nodes do
+                    yield node
+                    yield! collect node.Nodes.[0].Parent }
+        Array.ofSeq result
+
+    let private tryFindHierarchyTreeNode name (form : GaiaForm) (world : World) =
+        let nodes = collectHierarchyTreeNodes form world
+        Array.tryFind (fun (node : TreeNode) -> node.Name = name) nodes
+
+    let private containsHierarchyTreeNode name (form : GaiaForm) (world : World) =
+        Option.isSome (tryFindHierarchyTreeNode name form world)
+
     let private addHierarchyTreeEntityNode (entity : Entity) (form : GaiaForm) world =
-        let layer = entity.Parent
-        let layerNodeKey = scstring layer
-        let layerNode = form.hierarchyTreeView.Nodes.[layerNodeKey]
         let entityNodeKey = scstring entity
         let entityNode = TreeNode entity.Name
+        let layerNodeKey = scstring entity.Parent
+        let layerNode = form.hierarchyTreeView.Nodes.[layerNodeKey]
         entityNode.Name <- entityNodeKey
-        if entity.DispatchesAs<NodeDispatcher> world then
+        if entity.FacetedAs<NodeFacet> world then
             match entity.GetParentNodeOpt world with
             | Some relation ->
                 let entityParent = resolve entity relation
                 let entityParentNodeKey = scstring entityParent
-                let entityParentNode = form.hierarchyTreeView.Nodes.[entityParentNodeKey]
-                entityParentNode.Nodes.Add entityNode |> ignore
+                match tryFindHierarchyTreeNode entityParentNodeKey form world with
+                | Some node -> node.Nodes.Add entityNode |> ignore
+                | None -> failwithumf ()
             | None -> layerNode.Nodes.Add entityNode |> ignore
         else layerNode.Nodes.Add entityNode |> ignore
 
     let private removeHierarchyTreeEntityNode (entity : Entity) (form : GaiaForm) world =
-        let layer = entity.Parent
-        let layerNodeKey = scstring layer
-        let layerNode = form.hierarchyTreeView.Nodes.[layerNodeKey]
         let entityNodeKey = scstring entity
-        if entity.DispatchesAs<NodeDispatcher> world then
-            match entity.GetParentNodeOpt world with
-            | Some relation ->
-                let entityParent = resolve entity relation
-                let entityParentNodeKey = scstring entityParent
-                let entityParentNode = form.hierarchyTreeView.Nodes.[entityParentNodeKey]
-                entityParentNode.Nodes.RemoveByKey entityNodeKey |> ignore
-            | None -> layerNode.Nodes.RemoveByKey entityNodeKey |> ignore
-        else layerNode.Nodes.RemoveByKey entityNodeKey |> ignore
+        match tryFindHierarchyTreeNode entityNodeKey form world with
+        | Some node -> node.Remove ()
+        | None -> failwithumf ()
 
     let private refreshHierarchyTreeView (form : GaiaForm) world =
         // TODO: this code causes severe performance issues. To unfuck performance, we will probably have to find
@@ -274,8 +286,10 @@ module Gaia =
             else tryMousePickInner form mousePosition world
         | _ -> tryMousePickInner form mousePosition world
 
-    let private handleNuChangeParentNodeOpt form _ world =
-        refreshHierarchyTreeView form world
+    let private handleNuChangeParentNodeOpt form evt world =
+        let entity = Entity (atoa evt.Publisher.SimulantAddress)
+        removeHierarchyTreeEntityNode entity form world
+        addHierarchyTreeEntityNode entity form world
         (Cascade, world)
 
     let private handleNuEntityRegister (form : GaiaForm) evt world =
