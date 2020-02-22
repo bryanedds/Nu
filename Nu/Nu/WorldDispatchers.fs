@@ -107,7 +107,7 @@ module FacetModule =
             let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
             let content = this.Content (this.Model entity, entity, world)
             let world = List.fold (fun world content -> World.expandEntityContent None content (FacetOrigin (entity, getTypeName this)) entity.Parent world) world content
-            let initializers = this.Initializers (this.Model entity)
+            let initializers = this.Initializers (this.Model entity, entity, world)
             List.fold (fun world initializer ->
                 match initializer with
                 | PropertyDefinition def ->
@@ -135,8 +135,8 @@ module FacetModule =
             | :? Signal<obj, 'command> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) (getTypeName this) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Initializers : Lens<'model, World> -> PropertyInitializer list
-        default this.Initializers _ = []
+        abstract member Initializers : Lens<'model, World> * Entity * World -> PropertyInitializer list
+        default this.Initializers (_, _, _) = []
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         default this.Bindings (_, _, _) = []
@@ -1079,7 +1079,7 @@ module EntityDispatcherModule =
             let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
             let content = this.Content (this.Model entity, entity, world)
             let world = List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin entity) entity.Parent world) world content
-            let initializers = this.Initializers (this.Model entity)
+            let initializers = this.Initializers (this.Model entity, entity, world)
             List.fold (fun world initializer ->
                 match initializer with
                 | PropertyDefinition def ->
@@ -1109,8 +1109,8 @@ module EntityDispatcherModule =
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
             
-        abstract member Initializers : Lens<'model, World> -> PropertyInitializer list
-        default this.Initializers _ = []
+        abstract member Initializers : Lens<'model, World> * Entity * World -> PropertyInitializer list
+        default this.Initializers (_, _, _) = []
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         default this.Bindings (_, _, _) = []
@@ -1927,7 +1927,7 @@ module LayerDispatcherModule =
             let world = Signal.processBindings this.Message this.Command (this.Model layer) bindings layer world
             let content = this.Content (this.Model layer, layer, world)
             let world = List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin layer) layer world) world content
-            let initializers = this.Initializers (this.Model layer)
+            let initializers = this.Initializers (this.Model layer, layer, world)
             List.fold (fun world initializer ->
                 match initializer with
                 | PropertyDefinition def ->
@@ -1954,8 +1954,8 @@ module LayerDispatcherModule =
             | :? Signal<obj, 'command> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Initializers : Lens<'model, World> -> PropertyInitializer list
-        default this.Initializers _ = []
+        abstract member Initializers : Lens<'model, World> * Layer * World -> PropertyInitializer list
+        default this.Initializers (_, _, _) = []
 
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
         default this.Bindings (_, _, _) = []
@@ -2022,7 +2022,7 @@ module ScreenDispatcherModule =
             let world = Signal.processBindings this.Message this.Command (this.Model screen) bindings screen world
             let content = this.Content (this.Model screen, screen, world)
             let world = List.fold (fun world content -> World.expandLayerContent None content (SimulantOrigin screen) screen world) world content
-            let initializers = this.Initializers (this.Model screen)
+            let initializers = this.Initializers (this.Model screen, screen, world)
             List.fold (fun world initializer ->
                 match initializer with
                 | PropertyDefinition def ->
@@ -2049,8 +2049,8 @@ module ScreenDispatcherModule =
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Initializers : Lens<'model, World> -> PropertyInitializer list
-        default this.Initializers _ = []
+        abstract member Initializers : Lens<'model, World> * Screen * World -> PropertyInitializer list
+        default this.Initializers (_, _, _) = []
 
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
         default this.Bindings (_, _, _) = []

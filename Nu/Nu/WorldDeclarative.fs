@@ -145,7 +145,7 @@ module DeclarativeOperators =
     /// Equate two properties, optionally breaking any potential update cycles.
     let equate3 (left : Lens<'a, World>) (right : Lens<'a, World>) breaking =
         if right.This :> obj |> isNull
-        then failwith "Equate expects an authentic Lens where its This field is not null."
+        then failwith "Equate expects an authentic right lens (where its This field is not null)."
         else EquationDefinition (left.Name, right, breaking)
 
     /// Equate two properties.
