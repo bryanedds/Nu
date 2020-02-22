@@ -939,7 +939,7 @@ module GameDispatcherModule =
                     let (screen, world) = World.expandScreenContent World.setScreenSplash content (SimulantOrigin game) game world
                     if contentIndex = 0 then World.selectScreen screen world else world)
                     world content
-            let initializers = this.Initializers (this.Model game)
+            let initializers = this.Initializers (this.Model game, game, world)
             List.fold (fun world initializer ->
                 match initializer with
                 | PropertyDefinition def ->
@@ -966,8 +966,8 @@ module GameDispatcherModule =
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Initializers : Lens<'model, World> -> PropertyInitializer list
-        default this.Initializers _ = []
+        abstract member Initializers : Lens<'model, World> * Game * World -> PropertyInitializer list
+        default this.Initializers (_, _, _) = []
 
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
         default this.Bindings (_, _, _) = []

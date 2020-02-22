@@ -53,9 +53,9 @@ module OmniCharacter =
             [define Entity.Omnipresent true
              define Entity.PublishChanges true]
 
-        override this.Initializers model =
-            [Entity.Position <== model --> fun model -> model.Position
-             Entity.Size <== model --> fun model -> model.Size]
+        override this.Initializers (model, entity, _) =
+            [entity.Position <== model --> fun model -> model.Position
+             entity.Size <== model --> fun model -> model.Size]
 
         override this.Actualize (entity, world) =
             if entity.GetInView world then
