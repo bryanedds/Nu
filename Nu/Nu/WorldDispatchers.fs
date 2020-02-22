@@ -122,7 +122,8 @@ module FacetModule =
                         let signal = handler evt
                         WorldModule.trySignalFacet signal facetName entity world)
                         address (entity :> Simulant) world
-                | EquationDefinition (propertyName, lens, breaking) -> WorldModule.equate5 propertyName entity lens breaking world)
+                | EquationDefinition (propertyName, lens, breaking) ->
+                    WorldModule.equate5 propertyName entity lens breaking world)
                 world initializers
 
         override this.Actualize (entity, world) =
@@ -1093,7 +1094,8 @@ module EntityDispatcherModule =
                         let signal = handler evt
                         WorldModule.trySignal signal entity world)
                         address (entity :> Simulant) world
-                | EquationDefinition (propertyName, lens, breaking) -> WorldModule.equate5 propertyName entity lens breaking world)
+                | EquationDefinition (propertyName, lens, breaking) ->
+                    WorldModule.equate5 propertyName entity lens breaking world)
                 world initializers
 
         override this.Actualize (entity, world) =
@@ -1941,7 +1943,8 @@ module LayerDispatcherModule =
                         let signal = handler evt
                         WorldModule.trySignal signal layer world)
                         address (layer :> Simulant) world
-                | EquationDefinition (propertyName, lens, breaking) -> WorldModule.equate5 propertyName layer lens breaking world)
+                | EquationDefinition (propertyName, lens, breaking) ->
+                    WorldModule.equate5 propertyName layer lens breaking world)
                 world initializers
 
         override this.Actualize (layer, world) =
@@ -2036,7 +2039,8 @@ module ScreenDispatcherModule =
                         let signal = handler evt
                         WorldModule.trySignal signal screen world)
                         address (screen :> Simulant) world
-                | EquationDefinition (propertyName, lens, breaking) -> WorldModule.equate5 propertyName screen lens breaking world)
+                | EquationDefinition (propertyName, lens, breaking) ->
+                    WorldModule.equate5 propertyName screen lens breaking world)
                 world initializers
 
         override this.Actualize (screen, world) =
