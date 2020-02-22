@@ -133,6 +133,38 @@ module Gaia =
         restoreExpansionState form.entityTreeView treeState
         setEntityTreeViewSelectionToEntityPropertyGridSelection form
 
+    let private addHierarchyTreeEntityNode (entity : Entity) (form : GaiaForm) world =
+        let layer = entity.Parent
+        let layerNodeKey = scstring layer
+        let layerNode = form.hierarchyTreeView.Nodes.[layerNodeKey]
+        let entityNodeKey = scstring entity
+        let entityNode = TreeNode entity.Name
+        entityNode.Name <- entityNodeKey
+        if entity.DispatchesAs<NodeDispatcher> world then
+            match entity.GetParentNodeOpt world with
+            | Some relation ->
+                let entityParent = resolve entity relation
+                let entityParentNodeKey = scstring entityParent
+                let entityParentNode = form.hierarchyTreeView.Nodes.[entityParentNodeKey]
+                entityParentNode.Nodes.Add entityNode |> ignore
+            | None -> layerNode.Nodes.Add entityNode |> ignore
+        else layerNode.Nodes.Add entityNode |> ignore
+
+    let private removeHierarchyTreeEntityNode (entity : Entity) (form : GaiaForm) world =
+        let layer = entity.Parent
+        let layerNodeKey = scstring layer
+        let layerNode = form.hierarchyTreeView.Nodes.[layerNodeKey]
+        let entityNodeKey = scstring entity
+        if entity.DispatchesAs<NodeDispatcher> world then
+            match entity.GetParentNodeOpt world with
+            | Some relation ->
+                let entityParent = resolve entity relation
+                let entityParentNodeKey = scstring entityParent
+                let entityParentNode = form.hierarchyTreeView.Nodes.[entityParentNodeKey]
+                entityParentNode.Nodes.RemoveByKey entityNodeKey |> ignore
+            | None -> layerNode.Nodes.RemoveByKey entityNodeKey |> ignore
+        else layerNode.Nodes.RemoveByKey entityNodeKey |> ignore
+
     let private refreshHierarchyTreeView (form : GaiaForm) world =
         // TODO: this code causes severe performance issues. To unfuck performance, we will probably have to find
         // a way to update the hierarchy tree without a complete rebuild of it - IE, updating it in-place and
@@ -249,16 +281,13 @@ module Gaia =
     let private handleNuEntityRegister (form : GaiaForm) evt world =
         let entity = Entity (atoa evt.Publisher.SimulantAddress)
         addEntityTreeViewNode entity form world
-        refreshHierarchyTreeView form world
+        addHierarchyTreeEntityNode entity form world
         (Cascade, world)
 
     let private handleNuEntityUnregistering (form : GaiaForm) evt world =
-        let world =
-            World.schedule2 (fun world ->
-                removeEntityTreeViewNode evt.Publisher form world
-                refreshHierarchyTreeView form world
-                world)
-                world
+        let entity = Entity (atoa evt.Publisher.SimulantAddress)
+        removeEntityTreeViewNode evt.Publisher form world
+        removeHierarchyTreeEntityNode entity form world
         match form.entityPropertyGrid.SelectedObject with
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
