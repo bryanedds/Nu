@@ -289,8 +289,9 @@ module Nu =
                 let nonPersistent = not (Reflection.isPropertyPersistentByName name)
                 let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
                 let propagate (_ : Event) world =
-                    try let value =
-                            match lens.Get world with
+                    if lens.Validate world then
+                        let value =
+                            match lens.GetWithoutValidation world with
                             | :? DesignerProperty as property -> property.DesignerValue
                             | value -> value
                         let property = World.getProperty name simulant world
@@ -301,7 +302,7 @@ module Nu =
                         else
                             let property = { property with PropertyValue = value }
                             World.setProperty name nonPersistent alwaysPublish property simulant world
-                    with _ -> world
+                    else world
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
                 let world = Stream.make (atooa Events.Register --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
                 Stream.make (atooa (Events.Change lens.Name) --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world

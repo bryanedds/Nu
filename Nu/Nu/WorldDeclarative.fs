@@ -172,13 +172,6 @@ module WorldDeclarative =
 
     type World with
 
-        static member private dereferenceLensHack lens =
-            Lens.map (fun opt ->
-                match opt with
-                | Some value -> value
-                | None -> failwith "HACK: Expected lens error.")
-                lens
-
         /// Transform a stream into existing simulants.
         static member streamSimulants
             (lensSeq : Lens<obj seq, World>)
@@ -190,7 +183,7 @@ module WorldDeclarative =
             Stream.insert Gen.id |>
             Stream.mapWorld (fun (guid, lenses) world ->
                 lenses |>
-                Seq.map (fun lens -> (lens.Get world, World.dereferenceLensHack lens)) |>
+                Seq.map (fun lens -> (lens.Get world, { Lens.dereference lens with Validate = fun world -> Option.isSome (lens.Get world) })) |>
                 Seq.filter (fst >> Option.isSome) |>
                 Seq.take (Lens.get lensSeq world |> Seq.length) |>
                 Seq.map (fun (opt, lens) ->

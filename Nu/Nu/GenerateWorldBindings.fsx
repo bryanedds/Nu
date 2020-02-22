@@ -390,13 +390,13 @@ let types =
     AppDomain.CurrentDomain.GetAssemblies () |>
     Array.filter (fun asm -> (asm.GetName ()).Name = "Nu") |>
     Array.head |>
-    fun asm -> asm.GetTypes () |> Array.filter (fun ty -> isNotNull (ty.GetCustomAttribute<ModuleBindingAttribute> ()))
+    fun asm -> asm.GetTypes () |> Array.filter (fun ty -> notNull (ty.GetCustomAttribute<ModuleBindingAttribute> ()))
 
 let bindings =
     types |>
     Array.map (fun (ty : Type) -> ty.GetMethods ()) |>
     Array.concat |>
-    Array.filter (fun mi -> isNotNull (mi.GetCustomAttribute<FunctionBindingAttribute> ())) |>
+    Array.filter (fun mi -> notNull (mi.GetCustomAttribute<FunctionBindingAttribute> ())) |>
     Array.map tryGenerateBinding |>
     Array.definitize // TODO: error output
 
