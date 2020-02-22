@@ -377,11 +377,11 @@ module OmniBattle =
                  Content.entitiesIndexed
                     (model --> fun model -> getAllies model)
                     (fun model -> model.CharacterState.PartyIndex)
-                    (fun index ally _ _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.CharacterModel <== ally])
+                    (fun index model _ _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.CharacterModel <== model])
                  Content.entitiesIndexed
                     (model --> fun model -> getEnemies model)
                     (fun model -> model.CharacterState.PartyIndex)
-                    (fun index enemy _ _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.CharacterModel <== enemy])]
+                    (fun index model _ _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.CharacterModel <== model])]
              Content.layers (model --> fun model -> getAllies model) $ fun index ally _ _ ->
                 let allyIndex = AllyIndex index
                 Content.layer ("Input" + "+" + scstring index) []
