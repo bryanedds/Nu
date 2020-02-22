@@ -15,7 +15,7 @@ type MyGameCommand =
 type MyGameDispatcher () =
     inherit GameDispatcher<unit, unit, MyGameCommand> ()
 
-    // here we define the Bindings used to connect events to their desired commands
+    // here we define the bindings used to connect events to their desired commands
     override this.Bindings (_, _, _) =
         [Simulants.TitleCredits.ClickEvent => cmd ShowCredits
          Simulants.TitlePlay.ClickEvent => cmd ShowGameplay

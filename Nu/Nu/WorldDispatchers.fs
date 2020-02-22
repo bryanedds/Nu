@@ -91,7 +91,7 @@ module FacetModule =
         member this.ModelName =
             if isNull modelNameOpt then modelNameOpt <- getTypeName this + "Model"
             modelNameOpt
-
+            
         member this.GetModel (entity : Entity) world : 'model =
             entity.GetFacetModel<'model> this.ModelName world
 
@@ -106,7 +106,24 @@ module FacetModule =
             let bindings = this.Bindings (model, entity, world)
             let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
             let content = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (FacetOrigin (entity, getTypeName this)) entity.Parent world) world content
+            let world = List.fold (fun world content -> World.expandEntityContent None content (FacetOrigin (entity, getTypeName this)) entity.Parent world) world content
+            let initializers = this.Initializers (this.Model entity)
+            List.fold (fun world initializer ->
+                match initializer with
+                | PropertyDefinition def ->
+                    let propertyName = def.PropertyName
+                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                    let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
+                    World.setProperty def.PropertyName nonPersistent alwaysPublish property entity world
+                | EventHandlerDefinition (handler, address) ->
+                    World.monitor (fun (evt : Event) world ->
+                        let facetName = getTypeName this
+                        let signal = handler evt
+                        WorldModule.trySignalFacet signal facetName entity world)
+                        address (entity :> Simulant) world
+                | EquationDefinition (propertyName, lens, breaking) -> WorldModule.equate5 propertyName entity lens breaking world)
+                world initializers
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -117,6 +134,9 @@ module FacetModule =
             | :? Signal<'message, obj> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) (getTypeName this) world
             | :? Signal<obj, 'command> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) (getTypeName this) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Initializers : Lens<'model, World> -> PropertyInitializer list
+        default this.Initializers _ = []
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         default this.Bindings (_, _, _) = []
@@ -1058,7 +1078,23 @@ module EntityDispatcherModule =
             let bindings = this.Bindings (model, entity, world)
             let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
             let content = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin entity) entity.Parent world) world content
+            let world = List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin entity) entity.Parent world) world content
+            let initializers = this.Initializers (this.Model entity)
+            List.fold (fun world initializer ->
+                match initializer with
+                | PropertyDefinition def ->
+                    let propertyName = def.PropertyName
+                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                    let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
+                    World.setProperty def.PropertyName nonPersistent alwaysPublish property entity world
+                | EventHandlerDefinition (handler, address) ->
+                    World.monitor (fun (evt : Event) world ->
+                        let signal = handler evt
+                        WorldModule.trySignal signal entity world)
+                        address (entity :> Simulant) world
+                | EquationDefinition (propertyName, lens, breaking) -> WorldModule.equate5 propertyName entity lens breaking world)
+                world initializers
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -1072,6 +1108,9 @@ module EntityDispatcherModule =
             | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
+            
+        abstract member Initializers : Lens<'model, World> -> PropertyInitializer list
+        default this.Initializers _ = []
 
         abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
         default this.Bindings (_, _, _) = []
@@ -1887,7 +1926,23 @@ module LayerDispatcherModule =
             let bindings = this.Bindings (model, layer, world)
             let world = Signal.processBindings this.Message this.Command (this.Model layer) bindings layer world
             let content = this.Content (this.Model layer, layer, world)
-            List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin layer) layer world) world content
+            let world = List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin layer) layer world) world content
+            let initializers = this.Initializers (this.Model layer)
+            List.fold (fun world initializer ->
+                match initializer with
+                | PropertyDefinition def ->
+                    let propertyName = def.PropertyName
+                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                    let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
+                    World.setProperty def.PropertyName nonPersistent alwaysPublish property layer world
+                | EventHandlerDefinition (handler, address) ->
+                    World.monitor (fun (evt : Event) world ->
+                        let signal = handler evt
+                        WorldModule.trySignal signal layer world)
+                        address (layer :> Simulant) world
+                | EquationDefinition (propertyName, lens, breaking) -> WorldModule.equate5 propertyName layer lens breaking world)
+                world initializers
 
         override this.Actualize (layer, world) =
             let views = this.View (this.GetModel layer world, layer, world)
@@ -1898,6 +1953,9 @@ module LayerDispatcherModule =
             | :? Signal<'message, obj> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Initializers : Lens<'model, World> -> PropertyInitializer list
+        default this.Initializers _ = []
 
         abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
         default this.Bindings (_, _, _) = []
@@ -1964,7 +2022,22 @@ module ScreenDispatcherModule =
             let world = Signal.processBindings this.Message this.Command (this.Model screen) bindings screen world
             let content = this.Content (this.Model screen, screen, world)
             let world = List.fold (fun world content -> World.expandLayerContent None content (SimulantOrigin screen) screen world) world content
-            world
+            let initializers = this.Initializers (this.Model screen)
+            List.fold (fun world initializer ->
+                match initializer with
+                | PropertyDefinition def ->
+                    let propertyName = def.PropertyName
+                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                    let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
+                    World.setProperty def.PropertyName nonPersistent alwaysPublish property screen world
+                | EventHandlerDefinition (handler, address) ->
+                    World.monitor (fun (evt : Event) world ->
+                        let signal = handler evt
+                        WorldModule.trySignal signal screen world)
+                        address (screen :> Simulant) world
+                | EquationDefinition (propertyName, lens, breaking) -> WorldModule.equate5 propertyName screen lens breaking world)
+                world initializers
 
         override this.Actualize (screen, world) =
             let views = this.View (this.GetModel screen world, screen, world)
@@ -1975,6 +2048,9 @@ module ScreenDispatcherModule =
             | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Initializers : Lens<'model, World> -> PropertyInitializer list
+        default this.Initializers _ = []
 
         abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
         default this.Bindings (_, _, _) = []

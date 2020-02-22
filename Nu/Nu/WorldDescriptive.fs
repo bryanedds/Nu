@@ -103,8 +103,8 @@ module Describe =
 
     let private initializersToDefinitions initializers world =
         initializers |>
-        Seq.map (fun def ->
-            match def with
+        Seq.map (fun initializer ->
+            match initializer with
             | PropertyDefinition def -> Some (def.PropertyType, def.PropertyName, def.PropertyExpr)
             | EventHandlerDefinition _ -> None
             | EquationDefinition _ -> None) |>
@@ -118,8 +118,8 @@ module Describe =
 
     let private initializersToEventHandlers initializers (simulant : Simulant) =
         initializers |>
-        Seq.map (fun def ->
-            match def with
+        Seq.map (fun initializer ->
+            match initializer with
             | PropertyDefinition _ -> None
             | EventHandlerDefinition (handler, address) -> Some (handler, address --> simulant.SimulantAddress, simulant)
             | EquationDefinition _ -> None) |>
@@ -128,8 +128,8 @@ module Describe =
 
     let private initializersToEquations initializers (simulant : Simulant)=
         initializers |>
-        Seq.map (fun def ->
-            match def with
+        Seq.map (fun initializer ->
+            match initializer with
             | PropertyDefinition _ -> None
             | EventHandlerDefinition _ -> None
             | EquationDefinition (leftName, right, breaking) -> Some (leftName, simulant, right, breaking)) |>
