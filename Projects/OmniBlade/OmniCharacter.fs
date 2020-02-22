@@ -26,15 +26,15 @@ module OmniCharacter =
         static let [<Literal>] CelSize =
             160.0f
 
-        static let getSpriteInset (entity : Entity) world =
-            let animationState = (entity.GetCharacterModel world).AnimationState
+        static let getSpriteInset (character : Entity) world =
+            let animationState = (character.GetCharacterModel world).AnimationState
             let index = CharacterAnimationState.index (World.getTickTime world) animationState
             let offset = v2 (single index.X * CelSize) (single index.Y * CelSize)
             let inset = Vector4 (offset.X, offset.Y, offset.X + CelSize, offset.Y + CelSize)
             inset
 
-        static let getSpriteColor (entity : Entity) world =
-            let characterModel = entity.GetCharacterModel world
+        static let getSpriteColor (character : Entity) world =
+            let characterModel = character.GetCharacterModel world
             let characterState = characterModel.CharacterState
             let animationState = characterModel.AnimationState
             let statuses = characterState.Statuses
@@ -53,30 +53,30 @@ module OmniCharacter =
             [define Entity.Omnipresent true
              define Entity.PublishChanges true]
 
-        override this.Initializers (model, entity, _) =
-            [entity.Position <== model --> fun model -> model.Position
-             entity.Size <== model --> fun model -> model.Size]
+        override this.Initializers (model, character, _) =
+            [character.Position <== model --> fun model -> model.Position
+             character.Size <== model --> fun model -> model.Size]
 
-        override this.Actualize (entity, world) =
-            if entity.GetInView world then
-                let characterModel = entity.GetCharacterModel world
+        override this.Actualize (character, world) =
+            if character.GetInView world then
+                let characterModel = character.GetCharacterModel world
                 let animationState = characterModel.AnimationState
                 World.enqueueRenderMessage
                     (RenderDescriptorMessage
                         (LayerableDescriptor
-                            { Depth = entity.GetDepth world
-                              PositionY = (entity.GetPosition world).Y
+                            { Depth = character.GetDepth world
+                              PositionY = (character.GetPosition world).Y
                               AssetTag = animationState.AnimationSheet
                               LayeredDescriptor =
                               SpriteDescriptor
-                                { Position = entity.GetPosition world
-                                  Size = entity.GetSize world
-                                  Rotation = entity.GetRotation world
+                                { Position = character.GetPosition world
+                                  Size = character.GetSize world
+                                  Rotation = character.GetRotation world
                                   Offset = Vector2.Zero
-                                  ViewType = entity.GetViewType world
-                                  InsetOpt = Some (getSpriteInset entity world)
+                                  ViewType = character.GetViewType world
+                                  InsetOpt = Some (getSpriteInset character world)
                                   Image = animationState.AnimationSheet
-                                  Color = getSpriteColor entity world
+                                  Color = getSpriteColor character world
                                   Flip = FlipNone }}))
                     world
             else world
