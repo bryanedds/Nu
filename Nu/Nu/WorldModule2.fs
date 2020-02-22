@@ -934,10 +934,27 @@ module GameDispatcherModule =
             let bindings = this.Bindings (model, game, world)
             let world = Signal.processBindings this.Message this.Command (this.Model game) bindings game world
             let content = this.Content (this.Model game, game, world)
-            List.foldi (fun contentIndex world content ->
-                let (screen, world) = World.expandScreenContent World.setScreenSplash content (SimulantOrigin game) game world
-                if contentIndex = 0 then World.selectScreen screen world else world)
-                world content
+            let world =
+                List.foldi (fun contentIndex world content ->
+                    let (screen, world) = World.expandScreenContent World.setScreenSplash content (SimulantOrigin game) game world
+                    if contentIndex = 0 then World.selectScreen screen world else world)
+                    world content
+            let initializers = this.Initializers (this.Model game)
+            List.fold (fun world initializer ->
+                match initializer with
+                | PropertyDefinition def ->
+                    let propertyName = def.PropertyName
+                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                    let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
+                    World.setProperty def.PropertyName nonPersistent alwaysPublish property game world
+                | EventHandlerDefinition (handler, address) ->
+                    World.monitor (fun (evt : Event) world ->
+                        let signal = handler evt
+                        WorldModule.trySignal signal game world)
+                        address (game :> Simulant) world
+                | EquationDefinition (propertyName, lens, breaking) -> WorldModule.equate5 propertyName game lens breaking world)
+                world initializers
 
         override this.Actualize (game, world) =
             let views = this.View (this.GetModel game world, game, world)
@@ -948,6 +965,9 @@ module GameDispatcherModule =
             | :? Signal<'message, obj> as signal -> game.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
+
+        abstract member Initializers : Lens<'model, World> -> PropertyInitializer list
+        default this.Initializers _ = []
 
         abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
         default this.Bindings (_, _, _) = []

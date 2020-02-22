@@ -23,7 +23,7 @@ module BlazeDispatcherModule =
     type BlazeDispatcher () =
         inherit GameDispatcher<unit, unit, BlazeCommand> (())
 
-        // here we define the Bindings used to connect events to their desired commands
+        // here we define the bindings used to connect events to their desired commands
         override this.Bindings (_, _, _) =
             [Simulants.Splash.SelectEvent => cmd PlaySplashSound
              Simulants.Title.IncomingStartEvent => cmd PlayTitleSong

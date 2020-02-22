@@ -20,7 +20,7 @@ type Command =
 type ElmarioDispatcher () =
     inherit GameDispatcher<unit, unit, Command> (())
 
-    // here we define the Bindings used to connect events to their desired commands
+    // here we define the bindings used to connect events to their desired commands
     override this.Bindings (_, game, _) =
         [game.KeyboardKeyDownEvent =|> fun evt ->
             if evt.Data.ScanCode = int SDL.SDL_Scancode.SDL_SCANCODE_UP && not evt.Data.Repeated
