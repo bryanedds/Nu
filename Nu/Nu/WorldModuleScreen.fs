@@ -103,27 +103,9 @@ module WorldModuleScreen =
         static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing value screen world
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent value screen world
-        static member internal getScreenScriptOpt screen world = (World.getScreenState screen world).ScriptOpt
-        static member internal setScreenScriptOpt value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptOpt = value }) Property? ScriptOpt value screen world
-        static member internal getScreenScript screen world = (World.getScreenState screen world).Script
-        static member internal setScreenScript value screen world =
-            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
-            let world = World.updateScreenState (fun screenState -> { screenState with Script = value }) Property? Script value screen world
-            let world = World.setScreenScriptFrame scriptFrame screen world
-            evalManyWithLogging value scriptFrame screen world |> snd'
+        static member internal getScreenCreationTimeStamp screen world = (World.getScreenState screen world).CreationTimeStamp
         static member internal getScreenScriptFrame screen world = (World.getScreenState screen world).ScriptFrame
         static member internal setScreenScriptFrame value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptFrame = value }) Property? ScriptFrame value screen world
-        static member internal getScreenScriptUnsubscriptions screen world = (World.getScreenState screen world).ScriptUnsubscriptions
-        static member internal setScreenScriptUnsubscriptions value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptUnsubscriptions = value }) Property? ScriptUnsubscriptions value screen world
-        static member internal getScreenOnRegister screen world = (World.getScreenState screen world).OnRegister
-        static member internal setScreenOnRegister value screen world = World.updateScreenState (fun screenState -> { screenState with OnRegister = value }) Property? OnRegister value screen world
-        static member internal getScreenOnUnregister screen world = (World.getScreenState screen world).OnUnregister
-        static member internal setScreenOnUnregister value screen world = World.updateScreenState (fun screenState -> { screenState with OnUnregister = value }) Property? OnUnregister value screen world
-        static member internal getScreenOnUpdate screen world = (World.getScreenState screen world).OnUpdate
-        static member internal setScreenOnUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnUpdate = value }) Property? OnUpdate value screen world
-        static member internal getScreenOnPostUpdate screen world = (World.getScreenState screen world).OnPostUpdate
-        static member internal setScreenOnPostUpdate value screen world = World.updateScreenState (fun screenState -> { screenState with OnPostUpdate = value }) Property? OnPostUpdate value screen world
-        static member internal getScreenCreationTimeStamp screen world = (World.getScreenState screen world).CreationTimeStamp
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
         
@@ -190,36 +172,17 @@ module WorldModuleScreen =
             then World.updateScreenStateWithoutEvent (ScreenState.detachProperty propertyName) screen world
             else failwith ("Cannot detach screen property '" + propertyName + "'; screen '" + screen.Name + "' is not found.")
 
-        static member private screenOnRegisterChanged evt world =
-            let screen = evt.Subscriber : Screen
-            let world = World.unregisterScreen screen world
-            World.registerScreen screen world
-
-        static member private screenScriptOptChanged evt world =
-            let screen = evt.Subscriber : Screen
-            match World.getScreenScriptOpt screen world with
-            | Some script ->
-                let symbolLoadMetadata = { ImplicitDelimiters = true; StripCsvHeader = false }
-                match World.assetTagToValueOpt<Scripting.Expr array> script symbolLoadMetadata world with
-                | Some script -> World.setScreenScript script screen world
-                | None -> world
-            | None -> world
-
         static member internal registerScreen screen world =
-            let world = World.monitor World.screenOnRegisterChanged (rtoa<ChangeData> [|"Change"; (Property? OnRegister); "Event"; screen.Name|]) screen world
-            let world = World.monitor World.screenScriptOptChanged (rtoa<ChangeData> [|"Change"; (Property? ScriptOpt); "Event"; screen.Name|]) screen world
             World.withEventContext (fun world ->
                 let dispatcher = World.getScreenDispatcher screen world
                 let world = dispatcher.Register (screen, world)
                 let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
-                let world = World.publish () (rtoa<unit> [|"Register"; "Event"; screen.Name|]) eventTrace screen world
-                eval (World.getScreenOnRegister screen world) (World.getScreenScriptFrame screen world) screen world |> snd')
+                World.publish () (rtoa<unit> [|"Register"; "Event"; screen.Name|]) eventTrace screen world)
                 screen
                 world
 
         static member internal unregisterScreen screen world =
             World.withEventContext (fun world ->
-                let world = eval (World.getScreenOnUnregister screen world) (World.getScreenScriptFrame screen world) screen world |> snd'
                 let dispatcher = World.getScreenDispatcher screen world
                 let eventTrace = EventTrace.record "World" "unregisteringScreen" EventTrace.empty
                 let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"; screen.Name|]) eventTrace screen world
@@ -295,14 +258,7 @@ module WorldModuleScreen =
         Getters.Add ("Incoming", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world })
         Getters.Add ("Outgoing", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenOutgoing screen world })
         Getters.Add ("Persistent", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world })
-        Getters.Add ("ScriptOpt", fun screen world -> { PropertyType = typeof<Symbol AssetTag option>; PropertyValue = World.getScreenScriptOpt screen world })
-        Getters.Add ("Script", fun screen world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getScreenScript screen world })
         Getters.Add ("ScriptFrame", fun screen world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getScreenScriptFrame screen world })
-        Getters.Add ("ScriptUnsubscriptions", fun screen world -> { PropertyType = typeof<Unsubscription list>; PropertyValue = World.getScreenScriptUnsubscriptions screen world })
-        Getters.Add ("OnRegister", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnRegister screen world })
-        Getters.Add ("OnUnregister", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUnregister screen world })
-        Getters.Add ("OnUpdate", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnUpdate screen world })
-        Getters.Add ("OnPostUpdate", fun screen world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getScreenOnPostUpdate screen world })
         Getters.Add ("CreationTimeStamp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStamp screen world })
         Getters.Add ("Name", fun screen world -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world })
         Getters.Add ("Id", fun screen world -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world })
@@ -315,14 +271,7 @@ module WorldModuleScreen =
         Setters.Add ("Incoming", fun property screen world -> (true, World.setScreenIncoming (property.PropertyValue :?> Transition) screen world))
         Setters.Add ("Outgoing", fun property screen world -> (true, World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world))
         Setters.Add ("Persistent", fun property screen world -> (true, World.setScreenPersistent (property.PropertyValue :?> bool) screen world))
-        Setters.Add ("ScriptOpt", fun property screen world -> (true, World.setScreenScriptOpt (property.PropertyValue :?> Symbol AssetTag option) screen world))
-        Setters.Add ("Script", fun property screen world -> (true, World.setScreenScript (property.PropertyValue :?> Scripting.Expr array) screen world))
         Setters.Add ("ScriptFrame", fun _ _ world -> (false, world))
-        Setters.Add ("ScriptUnsubscriptions", fun property screen world -> (true, World.setScreenScriptUnsubscriptions (property.PropertyValue :?> Unsubscription list) screen world))
-        Setters.Add ("OnRegister", fun property screen world -> (true, World.setScreenOnRegister (property.PropertyValue :?> Scripting.Expr) screen world))
-        Setters.Add ("OnUnregister", fun property screen world -> (true, World.setScreenOnUnregister (property.PropertyValue :?> Scripting.Expr) screen world))
-        Setters.Add ("OnUpdate", fun property screen world -> (true, World.setScreenOnUpdate (property.PropertyValue :?> Scripting.Expr) screen world))
-        Setters.Add ("OnPostUpdate", fun property screen world -> (true, World.setScreenOnPostUpdate (property.PropertyValue :?> Scripting.Expr) screen world))
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
         Setters.Add ("Id", fun _ _ world -> (false, world))

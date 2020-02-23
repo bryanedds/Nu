@@ -413,14 +413,7 @@ module WorldTypes =
           ScreenTransitionDestinationOpt : Screen option
           EyeCenter : Vector2
           EyeSize : Vector2
-          ScriptOpt : Symbol AssetTag option
-          Script : Scripting.Expr array
           ScriptFrame : Scripting.DeclarationFrame
-          ScriptUnsubscriptions : Unsubscription list
-          OnRegister : Scripting.Expr
-          OnUnregister : Scripting.Expr
-          OnUpdate : Scripting.Expr
-          OnPostUpdate : Scripting.Expr
           CreationTimeStamp : int64
           Id : Guid }
 
@@ -435,14 +428,7 @@ module WorldTypes =
               ScreenTransitionDestinationOpt = None
               EyeCenter = eyeCenter
               EyeSize = eyeSize
-              ScriptOpt = None
-              Script = [||]
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
-              ScriptUnsubscriptions = []
-              OnRegister = Scripting.Unit
-              OnUnregister = Scripting.Unit
-              OnUpdate = Scripting.Unit
-              OnPostUpdate = Scripting.Unit
               CreationTimeStamp = Core.getUniqueTimeStamp ()
               Id = Gen.id }
 
@@ -492,14 +478,7 @@ module WorldTypes =
           Incoming : Transition
           Outgoing : Transition
           Persistent : bool
-          ScriptOpt : Symbol AssetTag option
-          Script : Scripting.Expr array
           ScriptFrame : Scripting.DeclarationFrame
-          ScriptUnsubscriptions : Unsubscription list
-          OnRegister : Scripting.Expr
-          OnUnregister : Scripting.Expr
-          OnUpdate : Scripting.Expr
-          OnPostUpdate : Scripting.Expr
           CreationTimeStamp : int64
           Name : string
           Id : Guid }
@@ -514,14 +493,7 @@ module WorldTypes =
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
               Persistent = true
-              ScriptOpt = None
-              Script = [||]
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
-              ScriptUnsubscriptions = []
-              OnRegister = Scripting.Unit
-              OnUnregister = Scripting.Unit
-              OnUpdate = Scripting.Unit
-              OnPostUpdate = Scripting.Unit
               CreationTimeStamp = Core.getUniqueTimeStamp ()
               Name = name
               Id = id }
@@ -570,14 +542,7 @@ module WorldTypes =
           Depth : single
           Visible : bool
           Persistent : bool
-          ScriptOpt : Symbol AssetTag option
-          Script : Scripting.Expr array
           ScriptFrame : Scripting.DeclarationFrame
-          ScriptUnsubscriptions : Unsubscription list
-          OnRegister : Scripting.Expr
-          OnUnregister : Scripting.Expr
-          OnUpdate : Scripting.Expr
-          OnPostUpdate : Scripting.Expr
           CreationTimeStamp : int64
           Name : string
           Id : Guid }
@@ -590,14 +555,7 @@ module WorldTypes =
               Depth = 0.0f
               Visible = true
               Persistent = true
-              ScriptOpt = None
-              Script = [||]
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
-              ScriptUnsubscriptions = []
-              OnRegister = Scripting.Unit
-              OnUnregister = Scripting.Unit
-              OnUpdate = Scripting.Unit
-              OnPostUpdate = Scripting.Unit
               CreationTimeStamp = Core.getUniqueTimeStamp ()
               Name = name
               Id = id }
@@ -658,6 +616,7 @@ module WorldTypes =
           // cache line end
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
+          ScriptFrame : Scripting.DeclarationFrame
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Name : string
           Id : Guid }
@@ -680,6 +639,7 @@ module WorldTypes =
               Flags = 0b0100011000
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
+              ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
               CreationTimeStamp = Core.getUniqueTimeStamp ()
               Name = name
               Id = id }

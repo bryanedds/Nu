@@ -130,10 +130,7 @@ module WorldSimulantModule =
             | :? Game -> Some (World.getGameScriptFrame world)
             | :? Screen as screen -> Some (World.getScreenScriptFrame screen world)
             | :? Layer as layer -> Some (World.getLayerScriptFrame layer world)
-            | :? Entity as entity ->
-                match World.tryGetEntityProperty Property? ScriptFrame entity world with
-                | Some scriptFrameProperty -> Some (scriptFrameProperty.PropertyValue :?> Scripting.DeclarationFrame)
-                | None -> None
+            | :? Entity as entity -> Some (World.getEntityScriptFrame entity world)
             | _ -> failwithumf ()
 
         /// Determine if the given simulant is currently selected.

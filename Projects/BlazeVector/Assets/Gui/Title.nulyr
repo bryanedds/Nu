@@ -1,14 +1,7 @@
 [LayerDispatcher
  [[Depth 0]
   [Name Gui]
-  [OnMessage []]
-  [OnPostUpdate []]
-  [OnRegister []]
-  [OnUnregister []]
-  [OnUpdate []]
   [Persistent True]
-  [Script []]
-  [ScriptOpt None]
   [Visible True]]
  [[ButtonDispatcher
    [[Name Credits]

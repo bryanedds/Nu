@@ -1,15 +1,7 @@
 [LayerDispatcher
  [[Depth 0]
   [Name Layer]
-  [OnActualize []]
-  [OnPostUpdate []]
-  [OnRegister []]
-  [OnUnregister []]
-  [OnUpdate []]
   [Persistent True]
-  [Script []]
-  [ScriptOpt None]
-  [Specialization ""]
   [Visible True]]
  [[EnemyDispatcher
    [[Depth 1]
