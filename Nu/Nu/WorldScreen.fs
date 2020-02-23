@@ -29,29 +29,8 @@ module WorldScreenModule =
         member this.GetPersistent world = World.getScreenPersistent this world
         member this.SetPersistent value world = World.setScreenPersistent value this world
         member this.Persistent = lensReadOnly Property? Persistent this.GetPersistent this
-        member this.GetScriptOpt world = World.getScreenScriptOpt this world
-        member this.SetScriptOpt value world = World.setScreenScriptOpt value this world
-        member this.ScriptOpt = lens Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt this
-        member this.GetScript world = World.getScreenScript this world
-        member this.SetScript value world = World.setScreenScript value this world
-        member this.Script = lens Property? Script this.GetScript this.SetScript this
         member this.GetScriptFrame world = World.getScreenScriptFrame this world
         member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
-        member internal this.GetScriptUnsubscriptions world = World.getScreenScriptUnsubscriptions this world
-        member internal this.SetScriptUnsubscriptions value world = World.setScreenScriptUnsubscriptions value this world
-        member internal this.ScriptUnsubscriptions = lens Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions this
-        member this.GetOnRegister world = World.getScreenOnRegister this world
-        member this.SetOnRegister value world = World.setScreenOnRegister value this world
-        member this.OnRegister = lens Property? OnRegister this.GetOnRegister this.SetOnRegister this
-        member this.GetOnUnregister world = World.getScreenOnUnregister this world
-        member this.SetOnUnregister value world = World.setScreenOnUnregister value this world
-        member this.OnUnregister = lens Property? OnUnregister this.GetOnUnregister this.SetOnUnregister this
-        member this.GetOnUpdate world = World.getScreenOnUpdate this world
-        member this.SetOnUpdate value world = World.setScreenOnUpdate value this world
-        member this.OnUpdate = lens Property? OnUpdate this.GetOnUpdate this.SetOnUpdate this
-        member this.GetOnPostUpdate world = World.getScreenOnPostUpdate this world
-        member this.SetOnPostUpdate value world = World.setScreenOnPostUpdate value this world
-        member this.OnPostUpdate = lens Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
         member this.GetCreationTimeStamp world = World.getScreenCreationTimeStamp this world
         member this.CreationTimeStamp = lensReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetId world = World.getScreenId this world
@@ -129,9 +108,6 @@ module WorldScreenModule =
                 let dispatcher = World.getScreenDispatcher screen world
                 let world = dispatcher.Update (screen, world)
 
-                // run script update
-                let world = World.evalWithLogging (screen.GetOnUpdate world) (screen.GetScriptFrame world) screen world |> snd'
-
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
                 World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update --> screen) eventTrace Default.Game true world)
@@ -145,9 +121,6 @@ module WorldScreenModule =
                 let dispatcher = World.getScreenDispatcher screen world
                 let world = dispatcher.PostUpdate (screen, world)
 
-                // run script post-update
-                let world = World.evalWithLogging (screen.GetOnPostUpdate world) (screen.GetScriptFrame world) screen world |> snd'
-                
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty
                 World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate --> screen) eventTrace Default.Game true world)

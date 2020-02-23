@@ -259,31 +259,6 @@ module Nu =
                     World.unregisterEntityPhysics entity world)
                     world entities
 
-            // init addSimulantScriptUnsubscription F# reach-around
-            WorldModule.addSimulantScriptUnsubscription <- fun unsubscription (simulant : Simulant) world ->
-                match simulant with
-                | :? Game as game -> game.ScriptUnsubscriptions.Update (List.cons unsubscription) world
-                | :? Screen as screen -> screen.ScriptUnsubscriptions.Update (List.cons unsubscription) world
-                | :? Layer as layer -> layer.ScriptUnsubscriptions.Update (List.cons unsubscription) world
-                | :? Entity as entity -> entity.ScriptUnsubscriptions.Update (List.cons unsubscription) world
-                | _ -> world
-
-            // init unsubscribeSimulantScripts F# reach-around
-            WorldModule.unsubscribeSimulantScripts <- fun (simulant : Simulant) world ->
-                let propertyOpt =
-                    match simulant with
-                    | :? Game as game -> Some game.ScriptUnsubscriptions
-                    | :? Screen as screen -> Some screen.ScriptUnsubscriptions
-                    | :? Layer as layer -> Some layer.ScriptUnsubscriptions
-                    | :? Entity as entity -> Some entity.ScriptUnsubscriptions
-                    | _ -> None
-                match propertyOpt with
-                | Some property ->
-                    let unsubscriptions = property.Get world
-                    let world = List.foldBack apply unsubscriptions world
-                    property.Set [] world
-                | None -> world
-
             // init equate5 F# reach-around
             WorldModule.equate5 <- fun name (simulant : Simulant) (lens : World Lens) breaking world ->
                 let nonPersistent = not (Reflection.isPropertyPersistentByName name)
@@ -387,7 +362,6 @@ module WorldModule3 =
             Map.ofList
                 [(typeof<NodeFacet>.Name, NodeFacet () :> Facet)
                  (typeof<EffectFacet>.Name, EffectFacet () :> Facet)
-                 (typeof<ScriptFacet>.Name, ScriptFacet () :> Facet)
                  (typeof<TextFacet>.Name, TextFacet () :> Facet)
                  (typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
                  (typeof<TileMapFacet>.Name, TileMapFacet () :> Facet)

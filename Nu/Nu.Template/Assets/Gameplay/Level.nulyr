@@ -1,13 +1,7 @@
 [LayerDispatcher
  [[Depth 0]
   [Name Level]
-  [OnPostUpdate []]
-  [OnRegister []]
-  [OnUnregister []]
-  [OnUpdate []]
   [Persistent True]
-  [Script []]
-  [ScriptOpt None]
   [Visible True]]
  [[BlockDispatcher
    [[Position [-320.0f -184.0f]]

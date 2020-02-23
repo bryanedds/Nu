@@ -26,29 +26,8 @@ module WorldLayerModule =
         member this.GetPersistent world = World.getLayerPersistent this world
         member this.SetPersistent value world = World.setLayerPersistent value this world
         member this.Persistent = lens Property? Persistent this.GetPersistent this.SetPersistent this
-        member this.GetScriptOpt world = World.getLayerScriptOpt this world
-        member this.SetScriptOpt value world = World.setLayerScriptOpt value this world
-        member this.ScriptOpt = lens Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt this
-        member this.GetScript world = World.getLayerScript this world
-        member this.SetScript value world = World.setLayerScript value this world
-        member this.Script = lens Property? Script this.GetScript this.SetScript this
         member this.GetScriptFrame world = World.getLayerScriptFrame this world
         member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
-        member internal this.GetScriptUnsubscriptions world = World.getLayerScriptUnsubscriptions this world
-        member internal this.SetScriptUnsubscriptions value world = World.setLayerScriptUnsubscriptions value this world
-        member internal this.ScriptUnsubscriptions = lens Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions this
-        member this.GetOnRegister world = World.getLayerOnRegister this world
-        member this.SetOnRegister value world = World.setLayerOnRegister value this world
-        member this.OnRegister = lens Property? OnRegister this.GetOnRegister this.SetOnRegister this
-        member this.GetOnUnregister world = World.getLayerOnUnregister this world
-        member this.SetOnUnregister value world = World.setLayerOnUnregister value this world
-        member this.OnUnregister = lens Property? OnUnregister this.GetOnUnregister this.SetOnUnregister this
-        member this.GetOnUpdate world = World.getLayerOnUpdate this world
-        member this.SetOnUpdate value world = World.setLayerOnUpdate value this world
-        member this.OnUpdate = lens Property? OnUpdate this.GetOnUpdate this.SetOnUpdate this
-        member this.GetOnPostUpdate world = World.getLayerOnPostUpdate this world
-        member this.SetOnPostUpdate value world = World.setLayerOnPostUpdate value this world
-        member this.OnPostUpdate = lens Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
         member this.GetCreationTimeStamp world = World.getLayerCreationTimeStamp this world
         member this.CreationTimeStamp = lensReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetId world = World.getLayerId this world
@@ -117,9 +96,6 @@ module WorldLayerModule =
                 let dispatcher = layer.GetDispatcher world
                 let world = dispatcher.Update (layer, world)
 
-                // run script update
-                let world = World.evalWithLogging (layer.GetOnUpdate world) (layer.GetScriptFrame world) layer world |> snd'
-
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
                 World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update --> layer) eventTrace Default.Game true world)
@@ -133,10 +109,7 @@ module WorldLayerModule =
                 let dispatcher = layer.GetDispatcher world
                 let world = dispatcher.PostUpdate (layer, world)
 
-                // run script post-update
-                let world = World.evalWithLogging (layer.GetOnPostUpdate world) (layer.GetScriptFrame world) layer world |> snd'
-
-                // run script post-update
+                // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty
                 World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate --> layer) eventTrace Default.Game true world)
                 layer

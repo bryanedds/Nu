@@ -1179,7 +1179,6 @@ module Gaia =
                     match form.entityPropertyGrid.SelectedObject with
                     | :?
                         EntityTypeDescriptorSource as entityTds when
-                        entityTds.DescribedEntity.FacetedAs<ScriptFacet> world &&
                         form.propertyTabControl.SelectedTab <> form.layerTabPage ->
                         let entity = entityTds.DescribedEntity
                         (entity :> Simulant, entity.GetScriptFrame world)

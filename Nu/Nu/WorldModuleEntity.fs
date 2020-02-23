@@ -291,6 +291,8 @@ module WorldModuleEntity =
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.Persistent <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Persistent <- value; entityState)) false false false Property? Persistent value entity world
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
+        static member internal getEntityScriptFrame entity world = (World.getEntityState entity world).ScriptFrame
+        static member internal setEntityScriptFrame value entity world = World.updateEntityState (fun entityState -> { entityState with ScriptFrame = value }) false true false Property? ScriptFrame value entity world
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
         static member internal getEntityId entity world = (World.getEntityState entity world).Id

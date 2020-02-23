@@ -20,7 +20,6 @@ module Reflection =
         match propertyName with
         | "ScriptOpt" // always publish certain script properties 
         | "Script"
-        | "OnRegister"
         | "EffectsOpt" -> true
         | _ -> propertyName.EndsWith "Ap"
 

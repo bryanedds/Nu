@@ -292,80 +292,6 @@ module EffectFacetModule =
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
 [<AutoOpen>]
-module ScriptFacetModule =
-
-    type Entity with
-    
-        member this.GetScriptOpt world : Symbol AssetTag option = this.Get Property? ScriptOpt world
-        member this.SetScriptOpt (value : Symbol AssetTag option) world = this.SetFast Property? ScriptOpt true false value world
-        member this.ScriptOpt = lens Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt this
-        member this.GetScript world : Scripting.Expr array = this.Get Property? Script world
-        member this.SetScript (value : Scripting.Expr array) world = this.SetFast Property? Script true false value world
-        member this.Script = lens Property? Script this.GetScript this.SetScript this
-        member this.GetScriptFrame world : Scripting.DeclarationFrame = this.Get Property? ScriptFrame world
-        member internal this.SetScriptFrame (value : Scripting.DeclarationFrame) world = this.SetFast Property? ScriptFrame false true value world
-        member this.ScriptFrame = lensReadOnly Property? ScriptFrame this.GetScriptFrame this
-        member internal this.GetScriptUnsubscriptions world : Unsubscription list = this.Get Property? ScriptUnsubscriptions world
-        member internal this.SetScriptUnsubscriptions (value : Unsubscription list) world = this.SetFast Property? ScriptUnsubscriptions false true value world
-        member internal this.ScriptUnsubscriptions = lens Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions this
-        member this.GetOnRegister world : Scripting.Expr = this.Get Property? OnRegister world
-        member this.SetOnRegister (value : Scripting.Expr) world = this.SetFast Property? OnRegister true false value world
-        member this.OnRegister = lens Property? OnRegister this.GetOnRegister this.SetOnRegister this
-        member this.GetOnUnregister world : Scripting.Expr = this.Get Property? OnUnregister world
-        member this.SetOnUnregister (value : Scripting.Expr) world = this.SetFast Property? OnUnregister false false value world
-        member this.OnUnregister = lens Property? OnUnregister this.GetOnUnregister this.SetOnUnregister this
-        member this.GetOnUpdate world : Scripting.Expr = this.Get Property? OnUpdate world
-        member this.SetOnUpdate (value : Scripting.Expr) world = this.SetFast Property? OnUpdate false false value world
-        member this.OnUpdate = lens Property? OnUpdate this.GetOnUpdate this.SetOnUpdate this
-        member this.GetOnPostUpdate world : Scripting.Expr = this.Get Property? OnPostUpdate world
-        member this.SetOnPostUpdate (value : Scripting.Expr) world = this.SetFast Property? OnPostUpdate false false value world
-        member this.OnPostUpdate = lens Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
-        member this.ChangeEvent propertyName = Events.Change propertyName --> this
-        member this.RegisterEvent = Events.Register --> this
-        member this.UnregisteringEvent = Events.Unregistering --> this
-
-    type ScriptFacet () =
-        inherit Facet ()
-
-        static let handleScriptChanged evt world =
-            let entity = evt.Subscriber : Entity
-            let script = entity.GetScript world
-            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
-            let world = entity.SetScriptFrame scriptFrame world
-            evalManyWithLogging script scriptFrame entity world |> snd'
-
-        static let handleOnRegisterChanged evt world =
-            let entity = evt.Subscriber : Entity
-            let world = World.unregisterEntity entity world
-            World.registerEntity entity world
-
-        static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.ScriptOpt None
-             define Entity.Script [||]
-             define Entity.ScriptFrame (Scripting.DeclarationFrame HashIdentity.Structural)
-             define Entity.ScriptUnsubscriptions []
-             define Entity.OnRegister Scripting.Unit
-             define Entity.OnUnregister Scripting.Unit
-             define Entity.OnUpdate Scripting.Unit
-             define Entity.OnPostUpdate Scripting.Unit]
-
-        override this.Register (entity, world) =
-            let world = World.evalWithLogging (entity.GetOnRegister world) (entity.GetScriptFrame world) entity world |> snd'
-            let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? Script) entity world
-            let world = World.monitor handleOnRegisterChanged (entity.GetChangeEvent Property? OnRegister) entity world
-            world
-
-        override this.Unregister (entity, world) =
-            World.evalWithLogging (entity.GetOnUnregister world) (entity.GetScriptFrame world) entity world |> snd'
-
-        override this.Update (entity, world) =
-            World.evalWithLogging (entity.GetOnUpdate world) (entity.GetScriptFrame world) entity world |> snd'
-
-        override this.PostUpdate (entity, world) =
-            World.evalWithLogging (entity.GetOnPostUpdate world) (entity.GetScriptFrame world) entity world |> snd'
-
-[<AutoOpen>]
 module TextFacetModule =
 
     type Entity with
@@ -1187,8 +1113,7 @@ module GuiDispatcherModule =
             (handling, world)
 
         static member Facets =
-            [typeof<NodeFacet>
-             typeof<ScriptFacet>]
+            [typeof<NodeFacet>]
 
         static member Properties =
             [define Entity.PublishChanges true
@@ -1220,8 +1145,7 @@ module GuiDispatcherModule =
             (handling, world)
 
         static member Facets =
-            [typeof<NodeFacet>
-             typeof<ScriptFacet>]
+            [typeof<NodeFacet>]
 
         static member Properties =
             [define Entity.PublishChanges true
@@ -1253,9 +1177,6 @@ module ButtonDispatcherModule =
         member this.GetClickSoundOpt world : Audio AssetTag option = this.Get Property? ClickSoundOpt world
         member this.SetClickSoundOpt (value : Audio AssetTag option) world = this.SetFast Property? ClickSoundOpt false false value world
         member this.ClickSoundOpt = lens Property? ClickSoundOpt this.GetClickSoundOpt this.SetClickSoundOpt this
-        member this.GetOnClick world : Scripting.Expr = this.Get Property? OnClick world
-        member this.SetOnClick (value : Scripting.Expr) world = this.SetFast Property? OnClick false false value world
-        member this.OnClick = lens Property? OnClick this.GetOnClick this.SetOnClick this
         member this.UpEvent = Events.Up --> this
         member this.DownEvent = Events.Down --> this
         member this.ClickEvent = Events.Click --> this
@@ -1293,7 +1214,6 @@ module ButtonDispatcherModule =
                         let world = World.publish () (Events.Up --> button) eventTrace button world
                         let eventTrace = EventTrace.record4 "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
                         let world = World.publish () (Events.Click --> button) eventTrace button world
-                        let world = World.evalWithLogging (button.GetOnClick world) (button.GetScriptFrame world) button world |> snd'
                         let world =
                             match button.GetClickSoundOpt world with
                             | Some clickSound -> World.playSound 1.0f clickSound world
@@ -1312,8 +1232,7 @@ module ButtonDispatcherModule =
              define Entity.Down false
              define Entity.UpImage (AssetTag.make<Image> Assets.DefaultPackage "Image")
              define Entity.DownImage (AssetTag.make<Image> Assets.DefaultPackage "Image2")
-             define Entity.ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))
-             define Entity.OnClick Scripting.Unit]
+             define Entity.ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))]
 
         override this.Register (button, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown button world |> snd
@@ -1459,9 +1378,6 @@ module ToggleDispatcherModule =
         member this.GetToggleSoundOpt world : Audio AssetTag option = this.Get Property? ToggleSoundOpt world
         member this.SetToggleSoundOpt (value : Audio AssetTag option) world = this.SetFast Property? ToggleSoundOpt false false value world
         member this.ToggleSoundOpt = lens Property? ToggleSoundOpt this.GetToggleSoundOpt this.SetToggleSoundOpt this
-        member this.GetOnToggle world : Scripting.Expr = this.Get Property? OnToggle world
-        member this.SetOnToggle (value : Scripting.Expr) world = this.SetFast Property? OnToggle false false value world
-        member this.OnToggle = lens Property? OnToggle this.GetOnToggle this.SetOnToggle this
         member this.ToggleEvent = Events.Toggle --> this
 
     type ToggleDispatcher () =
@@ -1497,7 +1413,6 @@ module ToggleDispatcherModule =
                         let world = World.publish () (eventAddress --> toggle) eventTrace toggle world
                         let eventTrace = EventTrace.record4 "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
                         let world = World.publish () (Events.Toggle --> toggle) eventTrace toggle world
-                        let world = World.evalWithLogging (toggle.GetOnToggle world) (toggle.GetScriptFrame world) toggle world |> snd'
                         let world =
                             match toggle.GetToggleSoundOpt world with
                             | Some toggleSound -> World.playSound 1.0f toggleSound world
@@ -1517,8 +1432,7 @@ module ToggleDispatcherModule =
              define Entity.Pressed false
              define Entity.OpenImage (AssetTag.make<Image> Assets.DefaultPackage "Image")
              define Entity.ClosedImage (AssetTag.make<Image> Assets.DefaultPackage "Image2")
-             define Entity.ToggleSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))
-             define Entity.OnToggle Scripting.Unit]
+             define Entity.ToggleSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))]
 
         override this.Register (toggle, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown toggle world |> snd
@@ -1604,12 +1518,6 @@ module FeelerDispatcherModule =
         member this.GetTouched world : bool = this.Get Property? Touched world
         member this.SetTouched (value : bool) world = this.SetFast Property? Touched false false value world
         member this.Touched = lens Property? Touched this.GetTouched this.SetTouched this
-        member this.GetOnTouch world : Scripting.Expr = this.Get Property? OnTouch world
-        member this.SetOnTouch (value : Scripting.Expr) world = this.SetFast Property? OnTouch false false value world
-        member this.OnTouch = lens Property? OnTouch this.GetOnTouch this.SetOnTouch this
-        member this.GetOnUntouch world : Scripting.Expr = this.Get Property? OnUntouch world
-        member this.SetOnUntouch (value : Scripting.Expr) world = this.SetFast Property? OnUntouch false false value world
-        member this.OnUntouch = lens Property? OnUntouch this.GetOnUntouch this.SetOnUntouch this
         member this.TouchEvent = Events.Touch --> this
         member this.UntouchEvent = Events.Untouch --> this
 
@@ -1627,7 +1535,6 @@ module FeelerDispatcherModule =
                         let world = feeler.SetTouched true world
                         let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty
                         let world = World.publish data.Position (Events.Touch --> feeler) eventTrace feeler world
-                        let world = World.evalWithLogging (feeler.GetOnTouch world) (feeler.GetScriptFrame world) feeler world |> snd'
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -1641,7 +1548,6 @@ module FeelerDispatcherModule =
                     let world = feeler.SetTouched false world
                     let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty
                     let world = World.publish data.Position (Events.Untouch --> feeler) eventTrace feeler world
-                    let world = World.evalWithLogging (feeler.GetOnUntouch world) (feeler.GetScriptFrame world) feeler world |> snd'
                     (Resolve, world)
                 else (Resolve, world)
             else (Cascade, world)
@@ -1649,9 +1555,7 @@ module FeelerDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
-             define Entity.Touched false
-             define Entity.OnTouch Scripting.Unit
-             define Entity.OnUntouch Scripting.Unit]
+             define Entity.Touched false]
 
         override this.Register (feeler, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown feeler world |> snd
