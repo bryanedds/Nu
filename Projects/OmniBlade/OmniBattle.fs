@@ -44,7 +44,7 @@ module OmniBattle =
     type BattleDispatcher () =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
             (let allies =
-                [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ActionTime = 600; ExpPoints = 0; HitPoints = 20; SpecialPoints = 1; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
+                [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ActionTime = 600; ExpPoints = 0; HitPoints = 15; SpecialPoints = 1; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = asset "Battle" "Jinn"; AnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
                    InputState = NoInput
                    Position = v2 -224.0f -168.0f
@@ -253,7 +253,7 @@ module OmniBattle =
                     match item with
                     | "Attack" -> updateCharacter (fun character -> { character with InputState = AimReticles (item, EnemyAim) }) characterIndex model
                     | "Special" -> updateCharacter (fun character -> { character with InputState = SpecialMenu }) characterIndex model
-                    | "Defend" -> updateCharacter (fun character -> { character with InputState = NoInput }) characterIndex model
+                    | "Defend" -> updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
                     | "Item" -> updateCharacter (fun character -> { character with InputState = ItemMenu }) characterIndex model
                     | _ -> failwithumf ()
                 just model
@@ -386,29 +386,29 @@ module OmniBattle =
                 let allyIndex = AllyIndex index
                 Content.layer ("Input" + "+" + scstring index) []
                     [Content.entity<RingMenuDispatcher> "RegularMenu"
-                        [Entity.Position <== ally --> fun ally -> ally.Position
+                        [Entity.Position <== ally --> fun ally -> ally.Position + ally.Size * 0.5f
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> ally.InputState = RegularMenu
                          Entity.RingMenuModel == { Items = ["Attack"; "Defend"; "Special"; "Item"]; ItemCancelOpt = None }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (allyIndex, evt.Data))
-                         Entity.CancelEvent ==> msg RegularItemCancel]
+                         Entity.CancelEvent ==> msg (RegularItemCancel allyIndex)]
                      Content.entity<RingMenuDispatcher> "SpecialMenu"
                         [Entity.Position <== ally --> fun ally -> ally.Position
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> ally.InputState = SpecialMenu
                          Entity.RingMenuModel == { Items = ["Attack"]; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (SpecialItemSelect (allyIndex, evt.Data))
-                         Entity.CancelEvent ==> msg SpecialItemCancel]
+                         Entity.CancelEvent ==> msg (SpecialItemCancel allyIndex)]
                      Content.entity<RingMenuDispatcher> "ItemMenu"
                         [Entity.Position <== ally --> fun ally -> ally.Position
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> ally.InputState = ItemMenu
                          Entity.RingMenuModel == { Items = ["Attack"]; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (ItemItemSelect (allyIndex, evt.Data))
-                         Entity.CancelEvent ==> msg ItemItemCancel]
+                         Entity.CancelEvent ==> msg (ItemItemCancel allyIndex)]
                      Content.entity<ReticlesDispatcher> "Reticles"
                         [Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> match ally.InputState with AimReticles _ -> true | _ -> false
                          Entity.ReticlesModel <== model --> fun model -> { Characters = model.Characters; AimType = (getCharacter allyIndex model).InputState.AimType }
                          Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (evt.Data, allyIndex))
-                         Entity.CancelEvent ==> msg ReticlesCancel]]]
+                         Entity.CancelEvent ==> msg (ReticlesCancel allyIndex)]]]

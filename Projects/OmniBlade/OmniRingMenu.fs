@@ -32,12 +32,12 @@ module OmniRingMenu =
             | ItemCancel -> just (World.publish () menu.CancelEvent [] menu world)
             | ItemSelect item -> just (World.publish item menu.ItemSelectEvent [] menu world)
             | ArrangeItemButton (button, index) ->
+                let radius = menu.GetRadius world
                 let itemCount = List.length model.Items
                 let progress = single index / single itemCount
-                let rotation = (progress * single Math.PI * 2.0f) + (menu.GetRotation world * single Math.PI * 2.0f)
-                let radius = menu.GetRadius world
-                let position = v2 (radius * sin rotation) (radius * -cos rotation)
-                let world = button.SetPositionLocal position world
+                let rotation = progress * single Math.PI * 2.0f
+                let position = v2 (radius * sin rotation) (radius * cos rotation)
+                let world = button.SetPositionLocal (position - button.GetSize world * 0.5f) world
                 just world
 
         static member Properties =

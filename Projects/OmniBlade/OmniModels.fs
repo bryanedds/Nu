@@ -383,14 +383,13 @@ type CharacterAnimationState =
 type CharacterInputState =
     | NoInput
     | RegularMenu
-    | DefendMenu // should go away...
     | SpecialMenu
     | ItemMenu
     | AimReticles of string * AimType
 
     member this.AimType =
         match this with
-        | NoInput | RegularMenu | DefendMenu | SpecialMenu | ItemMenu -> NoAim
+        | NoInput | RegularMenu | SpecialMenu | ItemMenu -> NoAim
         | AimReticles (_, aimType) -> aimType
 
 type [<NoComparison>] CharacterModel =
