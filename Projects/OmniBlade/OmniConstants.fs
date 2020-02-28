@@ -10,7 +10,7 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Audio =
 
-        let MasterSongVolume = 0.0f
+        let MasterSongVolume = 0.5f
 
     [<RequireQualifiedAccess>]
     module Battle =

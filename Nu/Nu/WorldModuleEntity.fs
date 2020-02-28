@@ -312,8 +312,21 @@ module WorldModuleEntity =
                 let world = World.publishEntityChange Property? Position value.Position entity world
                 let world = World.publishEntityChange Property? Size value.Size entity world
                 let world = World.publishEntityChange Property? Rotation value.Rotation entity world
-                World.publishEntityChange Property? Depth value.Depth entity world
+                let world = World.publishEntityChange Property? Depth value.Depth entity world
+                let world = World.publishEntityChange Property? Center (value.Position + value.Size * 0.5f) entity world
+                World.publishEntityChange Property? Transform value entity world
             else world
+
+        static member internal getEntityCenter entity world =
+            let transform = (World.getEntityState entity world).Transform
+            transform.Position + transform.Size * 0.5f
+
+        static member internal setEntityCenter value entity world =
+            World.updateEntityStatePlus (fun entityState ->
+                if entityState.Imperative
+                then entityState.Transform.Position <- value - entityState.Transform.Size * 0.5f; entityState
+                else { entityState with Transform = { entityState.Transform with Position = value - entityState.Transform.Size * 0.5f }})
+                false false true Property? Position value entity world
 
         static member private tryGetFacet facetName world =
             let facets = World.getFacets world
@@ -1123,6 +1136,8 @@ module WorldModuleEntity =
         Getters.Add ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
         Getters.Add ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })
         Getters.Add ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
+        Getters.Add ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = World.getEntityTransform entity world })
+        Getters.Add ("Center", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityCenter entity world })
         
     /// Initialize property setters.
     let private initSetters () =
@@ -1150,6 +1165,8 @@ module WorldModuleEntity =
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Id", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
+        Setters.Add ("Transform", fun property entity world -> (true, World.setEntityTransform (property.PropertyValue :?> Transform) entity world))
+        Setters.Add ("Center", fun property entity world -> (true, World.setEntityCenter (property.PropertyValue :?> Vector2) entity world))
         
     /// Initialize getters and setters
     let internal init () =

@@ -80,11 +80,23 @@ module WorldEntityModule =
         member this.GetId world = World.getEntityId this world
         member this.Id = lensReadOnly Property? Id this.GetId this
 
+        member this.GetCenter world = World.getEntityCenter this world
+        member this.SetCenter value world = World.setEntityCenter value this world
+        member this.Center = lens Property? Center this.GetCenter this.SetCenter this
+        member this.GetTransform world = World.getEntityTransform this world
+        member this.SetTransform value world = World.setEntityTransform value this world
+        member this.Transform = lens Property? Transform this.GetTransform this.SetTransform this
+
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
+
+        /// Set the transform of an entity snapped to the give position and rotation snaps.
+        member this.SetTransformSnapped positionSnap rotationSnap transform world =
+            let transform = Math.snapTransform positionSnap rotationSnap transform
+            this.SetTransform transform world
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -124,12 +136,6 @@ module WorldEntityModule =
         member this.SetFast<'a> propertyName alwaysPublish nonPersistent (value : 'a) world =
             World.setEntityProperty propertyName alwaysPublish nonPersistent { PropertyType = typeof<'a>; PropertyValue = value } this world
 
-        /// Get an entity's transform.
-        member this.GetTransform world = World.getEntityTransform this world
-        
-        /// Set an entity's transform.
-        member this.SetTransform value world = World.setEntityTransform value this world
-
         /// Get an entity's sorting priority.
         member this.GetSortingPriority world = World.getEntitySortingPriority this world
 
@@ -165,21 +171,6 @@ module WorldEntityModule =
                     (this.GetBoundsOverflow world)
                     world
              else true
-
-        /// Get the center position of an entity.
-        member this.GetCenter world =
-            let transform = this.GetTransform world
-            transform.Position + transform.Size * 0.5f
-
-        /// Set the center position of an entity.
-        member this.SetCenter center world =
-            let size = this.GetSize world
-            this.SetPosition (center - size * 0.5f) world
-
-        /// Set the transform of an entity snapped to the give position and rotation snaps.
-        member this.SetTransformSnapped positionSnap rotationSnap transform world =
-            let transform = Math.snapTransform positionSnap rotationSnap transform
-            this.SetTransform transform world
 
         /// Check that an entity exists in the world.
         member this.GetExists world = World.getEntityExists this world
