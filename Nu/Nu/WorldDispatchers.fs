@@ -724,9 +724,6 @@ module NodeFacetModule =
                 | (None, None) -> world
             this.SetParentNodeOpt value world
 
-        member this.ParentNodeOptWithAdjustment =
-            lens Property? ParentNodeOpt this.GetParentNodeOpt this.SetParentNodeOptWithAdjustment this
-        
         member this.GetChildNodes world =
             this.GetChildNodes2 [] world
 
