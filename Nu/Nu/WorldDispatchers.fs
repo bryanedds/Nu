@@ -806,7 +806,9 @@ module NodeFacetModule =
             | None -> world
 
         static let handleNodeChange evt world =
-            subscribeToNodePropertyChanges evt.Subscriber world
+            let entity = evt.Subscriber
+            let world = subscribeToNodePropertyChanges entity world
+            world
 
         static member Properties =
             [define Entity.ParentNodeOpt None
@@ -824,6 +826,16 @@ module NodeFacetModule =
             let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.ChangeEvent entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.EnabledLocal.ChangeEvent entity world |> snd
             let world = subscribeToNodePropertyChanges entity world
+            let world =
+                match entity.GetParentNodeOpt world with
+                | Some nodeRelation ->
+                    let node = entity.Resolve nodeRelation
+                    let world = updatePropertyFromNode "Position" node entity world
+                    let world = updatePropertyFromNode "Depth" node entity world
+                    let world = updatePropertyFromNode "Visible" node entity world
+                    let world = updatePropertyFromNode "Enabled" node entity world
+                    world
+                | None -> world
             world
 
         override this.Unregister (entity, world) =
@@ -1074,11 +1086,17 @@ module NodeDispatcherModule =
         static member Facets =
             [typeof<NodeFacet>]
 
+        static member Properties =
+            [define Entity.PublishChanges true]
+
     type [<AbstractClass>] NodeDispatcher<'model, 'message, 'command> (model) =
         inherit EntityDispatcher<'model, 'message, 'command> (model)
 
         static member Facets =
             [typeof<NodeFacet>]
+
+        static member Properties =
+            [define Entity.PublishChanges true]
 
 [<AutoOpen>]
 module GuiDispatcherModule =
