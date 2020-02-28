@@ -292,6 +292,76 @@ module EffectFacetModule =
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
 [<AutoOpen>]
+module ScriptFacetModule =
+
+    type Entity with
+    
+        member this.GetScriptOpt world : Symbol AssetTag option = this.Get Property? ScriptOpt world
+        member this.SetScriptOpt (value : Symbol AssetTag option) world = this.SetFast Property? ScriptOpt true false value world
+        member this.ScriptOpt = lens Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt this
+        member this.GetScript world : Scripting.Expr array = this.Get Property? Script world
+        member this.SetScript (value : Scripting.Expr array) world = this.SetFast Property? Script true false value world
+        member this.Script = lens Property? Script this.GetScript this.SetScript this
+        member internal this.GetScriptUnsubscriptions world : Unsubscription list = this.Get Property? ScriptUnsubscriptions world
+        member internal this.SetScriptUnsubscriptions (value : Unsubscription list) world = this.SetFast Property? ScriptUnsubscriptions false true value world
+        member internal this.ScriptUnsubscriptions = lens Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions this
+        member this.GetRegisterScript world : Scripting.Expr = this.Get Property? RegisterScript world
+        member this.SetRegisterScript (value : Scripting.Expr) world = this.SetFast Property? RegisterScript true false value world
+        member this.RegisterScript = lens Property? RegisterScript this.GetRegisterScript this.SetRegisterScript this
+        member this.GetUnregisterScript world : Scripting.Expr = this.Get Property? UnregisterScript world
+        member this.SetUnregisterScript (value : Scripting.Expr) world = this.SetFast Property? UnregisterScript false false value world
+        member this.UnregisterScript = lens Property? UnregisterScript this.GetUnregisterScript this.SetUnregisterScript this
+        member this.GetUpdateScript world : Scripting.Expr = this.Get Property? UpdateScript world
+        member this.SetUpdateScript (value : Scripting.Expr) world = this.SetFast Property? UpdateScript false false value world
+        member this.UpdateScript = lens Property? UpdateScript this.GetUpdateScript this.SetUpdateScript this
+        member this.GetPostUpdateScript world : Scripting.Expr = this.Get Property? PostUpdateScript world
+        member this.SetPostUpdateScript (value : Scripting.Expr) world = this.SetFast Property? PostUpdateScript false false value world
+        member this.PostUpdateScript = lens Property? PostUpdateScript this.GetPostUpdateScript this.SetPostUpdateScript this
+        member this.ChangeEvent propertyName = Events.Change propertyName --> this
+        member this.RegisterEvent = Events.Register --> this
+        member this.UnregisteringEvent = Events.Unregistering --> this
+
+    type ScriptFacet () =
+        inherit Facet ()
+
+        static let handleScriptChanged evt world =
+            let entity = evt.Subscriber : Entity
+            let script = entity.GetScript world
+            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+            let world = World.setEntityScriptFrame scriptFrame entity world
+            evalManyWithLogging script scriptFrame entity world |> snd'
+
+        static let handleOnRegisterChanged evt world =
+            let entity = evt.Subscriber : Entity
+            let world = World.unregisterEntity entity world
+            World.registerEntity entity world
+
+        static member Properties =
+            [define Entity.PublishChanges true
+             define Entity.ScriptOpt None
+             define Entity.Script [||]
+             define Entity.ScriptUnsubscriptions []
+             define Entity.RegisterScript Scripting.Unit
+             define Entity.UnregisterScript Scripting.Unit
+             define Entity.UpdateScript Scripting.Unit
+             define Entity.PostUpdateScript Scripting.Unit]
+
+        override this.Register (entity, world) =
+            let world = World.evalWithLogging (entity.GetRegisterScript world) (entity.GetScriptFrame world) entity world |> snd'
+            let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? Script) entity world
+            let world = World.monitor handleOnRegisterChanged (entity.GetChangeEvent Property? OnRegister) entity world
+            world
+
+        override this.Unregister (entity, world) =
+            World.evalWithLogging (entity.GetUnregisterScript world) (entity.GetScriptFrame world) entity world |> snd'
+
+        override this.Update (entity, world) =
+            World.evalWithLogging (entity.GetUpdateScript world) (entity.GetScriptFrame world) entity world |> snd'
+
+        override this.PostUpdate (entity, world) =
+            World.evalWithLogging (entity.GetPostUpdateScript world) (entity.GetScriptFrame world) entity world |> snd'
+
+[<AutoOpen>]
 module TextFacetModule =
 
     type Entity with
