@@ -399,6 +399,9 @@ type [<NoComparison>] CharacterModel =
       Position : Vector2
       Size : Vector2 }
 
+    member this.Center =
+        this.Position + this.Size * 0.5f
+
 type CharacterModels =
     Map<CharacterIndex, CharacterModel>
 
