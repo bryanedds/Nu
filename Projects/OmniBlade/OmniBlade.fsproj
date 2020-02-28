@@ -93,45 +93,6 @@
     <Content Include="Prelude.nuscript">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Assets\Default\Effect.nueffect" />
-    <Content Include="Assets\Default\Effect2.nueffect" />
-    <Content Include="Assets\Default\Image.png" />
-    <Content Include="Assets\Default\Image2.png" />
-    <Content Include="Assets\Default\Image3.png" />
-    <Content Include="Assets\Default\Image4.png" />
-    <Content Include="Assets\Default\Image5.png" />
-    <Content Include="Assets\Default\Image6.png" />
-    <Content Include="Assets\Default\Image7.png" />
-    <Content Include="Assets\Default\Image8.png" />
-    <Content Include="Assets\Default\Image9.png" />
-    <Content Include="Assets\Default\Image10.png" />
-    <Content Include="Assets\Default\FreeMonoBold.032.ttf" />
-    <Content Include="Assets\Default\Song.ogg" />
-    <Content Include="Assets\Default\Sound.wav" />
-    <Content Include="Assets\Default\TileMap.tmx" />
-    <Content Include="Assets\Default\TileSet.png" />
-    <None Include="Assets\Battle\Death.wav" />
-    <None Include="Assets\Battle\Enemy.png" />
-    <None Include="Assets\Battle\Explosion.wav" />
-    <None Include="Assets\Battle\FightingBlue.ogg" />
-    <None Include="Assets\Battle\Hit.wav" />
-    <None Include="Assets\Battle\Jump.wav" />
-    <None Include="Assets\Battle\Shot.wav" />
-    <None Include="Assets\Battle\SkylineTileSet.png" />
-    <None Include="Assets\Battle\Scene.nulyr" />
-    <None Include="Assets\Battle\Hud.nulyr" />
-    <None Include="Assets\Gui\BackButtonDown.png" />
-    <None Include="Assets\Gui\BackButtonUp.png" />
-    <None Include="Assets\Gui\Credits.nulyr" />
-    <None Include="Assets\Gui\CreditsButtonDown.png" />
-    <None Include="Assets\Gui\CreditsButtonUp.png" />
-    <None Include="Assets\Gui\ExitButtonDown.png" />
-    <None Include="Assets\Gui\ExitButtonUp.png" />
-    <None Include="Assets\Gui\Guitar in the Sand.ogg" />
-    <None Include="Assets\Gui\Nu.wav" />
-    <None Include="Assets\Gui\PlayButtonDown.png" />
-    <None Include="Assets\Gui\PlayButtonUp.png" />
-    <None Include="Assets\Gui\Title.nulyr" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FarseerPhysics">
