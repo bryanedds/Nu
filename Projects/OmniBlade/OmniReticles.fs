@@ -35,7 +35,7 @@ module OmniReticles =
             let buttonName = rets.Name + "+" + "Cancel"
             let button = rets.Parent / buttonName
             [Content.button buttonName
-                [Entity.PositionLocal == v2 -32.0f -128.0f
+                [Entity.PositionLocal == v2 -32.0f -96.0f
                  Entity.Size == v2 64.0f 64.0f
                  Entity.ViewType == Relative
                  Entity.Persistent == false

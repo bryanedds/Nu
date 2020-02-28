@@ -57,7 +57,7 @@ module OmniRingMenu =
                      Entity.UpImage == asset Assets.BattlePackage (itemValue + "Up")
                      Entity.DownImage == asset Assets.BattlePackage (itemValue + "Down")
                      Entity.Persistent == false
-                     Entity.ParentNodeOptWithAdjustment == Some (relate button menu)
+                     Entity.ParentNodeOpt == Some (relate button menu)
                      Entity.ClickEvent ==> cmd (ItemSelect itemValue)
                      Entity.UpdateEvent ==> cmd (ArrangeItemButton (button, index))]
              Content.entityOpt (model --> fun model -> model.ItemCancelOpt) $ fun itemCancel layer world ->
@@ -65,10 +65,11 @@ module OmniRingMenu =
                 let buttonName = menu.Name + "+" + itemCancelValue
                 let button = layer / buttonName
                 Content.button buttonName
-                    [Entity.Size == v2 64.0f 64.0f
+                    [Entity.PositionLocal == v2 -32.0f -96.0f
+                     Entity.Size == v2 64.0f 64.0f
                      Entity.Depth <== menu.Depth
                      Entity.UpImage == asset Assets.BattlePackage (itemCancelValue + "Up")
                      Entity.DownImage == asset Assets.BattlePackage (itemCancelValue + "Down")
-                     Entity.ParentNodeOptWithAdjustment == Some (relate button menu)
+                     Entity.ParentNodeOpt == Some (relate button menu)
                      Entity.Persistent == false
                      Entity.ClickEvent ==> cmd ItemCancel]]
