@@ -21,7 +21,7 @@ type MyEntityDispatcher () =
         [define Entity.Imperative true // makes updates faster by using mutation
          define Entity.Omnipresent true // makes updates faster by not touching the entity tree
          define Entity.IgnoreLayer true // makes actualization faster by not touching the containing layer
-         define (Entity.StaticData ()) // makes user-defined properties faster by using local data
+         define Entity.StaticData // makes user-defined properties faster by using local data
             { DesignerType = typeof<Image AssetTag>
               DesignerValue = asset<Image> Assets.DefaultPackage "Image4" }]
 #endif
@@ -32,7 +32,7 @@ type MyEntityDispatcher () =
 #if OPTIMIZE
     override this.Actualize (entity, world) =
         let position = entity.GetPosition world
-        let image = entity.GetStaticData world
+        let image = entity.GetStaticDataValue world
         World.enqueueRenderMessage
             (RenderDescriptorMessage
                 (LayerableDescriptor
