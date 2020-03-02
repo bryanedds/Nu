@@ -88,7 +88,7 @@ module WorldEntityModule =
         member this.GetStaticDataValue<'a> world = World.getEntityStaticDataValue<'a> this world
         member this.SetStaticDataValue<'a> value world = World.setEntityStaticDataValue<'a> value this world
         member this.UpdateStaticDataValue<'a> updater world = this.SetStaticDataValue<'a> (updater this.GetStaticDataValue<'a> world) world
-        member this.StaticDataValue<'a> () = lens Property? StaticData this.GetStaticDataValue<'a> this.SetStaticDataValue<'a> this
+        member this.StaticDataValue<'a> () = lens Property? StaticDataValue this.GetStaticDataValue<'a> this.SetStaticDataValue<'a> this
 
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
