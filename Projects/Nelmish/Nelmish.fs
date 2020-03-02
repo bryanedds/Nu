@@ -29,8 +29,19 @@ type NelmishDispatcher () =
         override this.Content (model, _, _) =
             [Content.screen Default.Screen.Name Vanilla []
                 [Content.layer Default.Layer.Name []
-                    [Content.button "Decrement" [Entity.Text == "-"; Entity.Position == v2 -256.0f 64.0f; Entity.ClickEvent ==> msg Decrement]
-                     Content.button "Increment" [Entity.Text == "+"; Entity.Position == v2 0.0f 64.0f; Entity.ClickEvent ==> msg Increment]
-                     Content.text "Counter" [Entity.Text <== model --> scstring; Entity.Position == v2 -128.0f -32.0f]
+                    [Content.button "Decrement"
+                        [Entity.Text == "-"
+                         Entity.Position == v2 -256.0f 64.0f
+                         Entity.ClickEvent ==> msg Decrement]
+                     Content.button "Increment"
+                        [Entity.Text == "+"
+                         Entity.Position == v2 0.0f 64.0f
+                         Entity.ClickEvent ==> msg Increment]
+                     Content.text "Counter"
+                        [Entity.Text <== model --> scstring
+                         Entity.Position == v2 -128.0f -32.0f]
                      Content.entityIf (model --> isNonZero) $ fun _ _ _ ->
-                        Content.button "Reset" [Entity.Text == "Reset"; Entity.Position == v2 -128.0f -128.0f; Entity.ClickEvent ==> msg Reset]]]]
+                        Content.button "Reset"
+                            [Entity.Text == "Reset"
+                             Entity.Position == v2 -128.0f -128.0f
+                             Entity.ClickEvent ==> msg Reset]]]]
