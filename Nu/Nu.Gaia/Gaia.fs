@@ -514,7 +514,6 @@ module Gaia =
                 let selectedEntityTds = selectedEntityTds :?> EntityTypeDescriptorSource // unbox manually
                 match selectedGridItem.GridItemType with
                 | GridItemType.Property ->
-                    // TODO: P1: there's a conversion bug with StaticData here that needs fixed.
                     let designTypeOpt =
                         match selectedGridItem.PropertyDescriptor.GetValue selectedEntityTds with
                         | :? DesignerProperty as dp -> Some dp.DesignerType

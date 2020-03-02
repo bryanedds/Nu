@@ -244,10 +244,10 @@ module WorldModuleEntity =
                     entityState)
                 false false false Property? Imperative value entity world
 
-        static member internal getEntityStaticData<'a> entity world =
-            (World.getEntityStaticDataInternal entity world).DesignerValue :?> 'a
+        static member internal getEntityStaticDataValue<'a> entity world =
+            (World.getEntityStaticData entity world).DesignerValue :?> 'a
 
-        static member internal setEntityStaticData<'a> (value : 'a) entity world =
+        static member internal setEntityStaticDataValue<'a> (value : 'a) entity world =
             World.updateEntityState (fun entityState ->
                 if entityState.Imperative
                 then entityState.StaticData.DesignerValue <- value; entityState
@@ -269,8 +269,8 @@ module WorldModuleEntity =
         static member internal setEntityViewType value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.Transform.ViewType <- value; entityState else { entityState with Transform = { entityState.Transform with ViewType = value }}) false false true Property? ViewType value entity world
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Transform.Omnipresent
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.Transform.Omnipresent <- value; entityState else { entityState with Transform = { entityState.Transform with Omnipresent = value }}) false false true Property? Omnipresent value entity world
-        static member internal getEntityStaticDataInternal entity world = (World.getEntityState entity world).StaticData
-        static member internal setEntityStaticDataInternal value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.StaticData <- value; entityState else { entityState with StaticData = value }) false false true Property? StaticData value entity world
+        static member internal getEntityStaticData entity world = (World.getEntityState entity world).StaticData
+        static member internal setEntityStaticData value entity world = World.updateEntityState (fun entityState -> if entityState.Imperative then entityState.StaticData <- value; entityState else { entityState with StaticData = value }) false false true Property? StaticData value entity world
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Overflow
         static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.Overflow <- value; entityState else { entityState with EntityState.Overflow = value }) false false true Property? Overflow value entity world
         static member internal getEntityPublishChanges entity world = (World.getEntityState entity world).PublishChanges
@@ -1149,7 +1149,7 @@ module WorldModuleEntity =
         Setters.Add ("Depth", fun property entity world -> (true, World.setEntityDepth (property.PropertyValue :?> single) entity world))
         Setters.Add ("ViewType", fun property entity world -> (true, World.setEntityViewType (property.PropertyValue :?> ViewType) entity world))
         Setters.Add ("Omnipresent", fun property entity world -> (true, World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world))
-        Setters.Add ("StaticData", fun property entity world -> (true, World.setEntityStaticData property.PropertyValue entity world))
+        Setters.Add ("StaticData", fun property entity world -> (true, World.setEntityStaticData (property.PropertyValue :?> DesignerProperty) entity world))
         Setters.Add ("Overflow", fun property entity world -> (true, World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world))
         Setters.Add ("Imperative", fun property entity world -> (true, World.setEntityImperative (property.PropertyValue :?> bool) entity world))
         Setters.Add ("PublishChanges", fun property entity world -> (true, World.setEntityPublishChanges (property.PropertyValue :?> bool) entity world))
