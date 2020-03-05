@@ -228,7 +228,7 @@ module WorldLayerModule =
                         world entityFilePaths
                 let world =
                     List.fold (fun world (name, simulant, property, breaking) ->
-                        WorldModule.equateByName5 name simulant property breaking world)
+                        WorldModule.fix5 name simulant property breaking world)
                         world equations
                 let world =
                     List.fold (fun world (handler, address, simulant) ->

@@ -954,7 +954,7 @@ module GameDispatcherModule =
                         WorldModule.trySignal signal game world)
                         address (game :> Simulant) world
                 | EquationDefinition (propertyName, lens, breaking) ->
-                    WorldModule.equateByName5 propertyName game lens breaking world)
+                    WorldModule.fix5 propertyName game lens breaking world)
                 world initializers
 
         override this.Actualize (game, world) =

@@ -123,7 +123,7 @@ module FacetModule =
                         WorldModule.trySignalFacet signal facetName entity world)
                         address (entity :> Simulant) world
                 | EquationDefinition (propertyName, lens, breaking) ->
-                    WorldModule.equateByName5 propertyName entity lens breaking world)
+                    WorldModule.fix5 propertyName entity lens breaking world)
                 world initializers
 
         override this.Actualize (entity, world) =
@@ -1100,7 +1100,7 @@ module EntityDispatcherModule =
                         WorldModule.trySignal signal entity world)
                         address (entity :> Simulant) world
                 | EquationDefinition (propertyName, lens, breaking) ->
-                    WorldModule.equateByName5 propertyName entity lens breaking world)
+                    WorldModule.fix5 propertyName entity lens breaking world)
                 world initializers
 
         override this.Actualize (entity, world) =
@@ -1933,7 +1933,7 @@ module LayerDispatcherModule =
                         WorldModule.trySignal signal layer world)
                         address (layer :> Simulant) world
                 | EquationDefinition (propertyName, lens, breaking) ->
-                    WorldModule.equateByName5 propertyName layer lens breaking world)
+                    WorldModule.fix5 propertyName layer lens breaking world)
                 world initializers
 
         override this.Actualize (layer, world) =
@@ -2029,7 +2029,7 @@ module ScreenDispatcherModule =
                         WorldModule.trySignal signal screen world)
                         address (screen :> Simulant) world
                 | EquationDefinition (propertyName, lens, breaking) ->
-                    WorldModule.equateByName5 propertyName screen lens breaking world)
+                    WorldModule.fix5 propertyName screen lens breaking world)
                 world initializers
 
         override this.Actualize (screen, world) =

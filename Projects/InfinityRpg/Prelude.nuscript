@@ -375,8 +375,8 @@
 [define stream [event]
     [toData [streamEvent event]]]
 
-; Equate two simulant's properties.
-[define equate [simulant property simulant2 property2]
+; Fix one simulant's property equal to another.
+[define fix [simulant property simulant2 property2]
     [setAsStream simulant property [getAsStream simulant2 property2]]]
 
 ; The game.
