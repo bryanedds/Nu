@@ -220,18 +220,49 @@ module WorldSimulantModule =
                 World.derive eventTarget
             else failwithumf ()
 
+        /// Take only one event from a stream per update.
+        static member internal noMoreThanOncePerUpdate (stream : Stream<'a, World>) =
+            stream |>
+            Stream.trackEvent4
+                (fun (a, current) _ world ->
+                    let previous = current
+                    let current = World.getUpdateCount world
+                    ((a, current), previous < current))
+                id (Unchecked.defaultof<'a>, -1L) |>
+            Stream.first
+
         /// Constrain one property to equal the value of another, optionally breaking potential cycles.
         static member equate (left : Lens<'a, World>) (right : Lens<'a, World>) breaking world =
-            WorldModule.equate5 left.Name left.This right breaking world
+            if left.This :> obj |> notNull then
+                let propagate (_ : Event) world =
+                    if right.Validate world then
+                        let value =
+                            match right.GetWithoutValidation world :> obj with
+                            | :? DesignerProperty as property -> property.DesignerValue :?> 'a
+                            | value -> value :?> 'a
+                        let world =
+                            match left.Get world :> obj with
+                            | :? DesignerProperty as designerProperty -> left.Set ({ designerProperty with DesignerValue = value } :> obj :?> 'a) world
+                            | _ -> left.Set value world
+                        world
+                    else world
+                let breaker = if breaking then World.noMoreThanOncePerUpdate else Stream.id
+                let world = Stream.make (atooa Events.Register --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate right.This $ world
+                let stream = Stream.make (atooa (Events.Change right.Name) --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate right.This $ world
+                stream
+            else WorldModule.equateByName5 left.Name left.This right breaking world
 
 [<AutoOpen>]
 module WorldSimulantOperators =
 
+    /// Constrain one property to equal the value of another, optionally breaking potential cycles.
+    let equate<'a> (left : Lens<'a, World>) right breaking = World.equate left right breaking
+
     /// Equate two properties, not breaking potential cycles.
-    let (===) left right = World.equate left right false
+    let inline (===) left right = equate left right false
 
     /// Equate two properties, breaking potential cycles.
-    let (=/=) left right = World.equate left right true
+    let inline (=/=) left right = equate left right true
 
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =

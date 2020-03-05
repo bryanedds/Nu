@@ -143,27 +143,21 @@ module DeclarativeOperators =
         PropertyDefinition (define lens value)
 
     /// Equate two properties, optionally breaking any potential update cycles.
-    let equate3 (left : Lens<'a, World>) (right : Lens<'a, World>) breaking =
+    /// HACK: equateByName allows the use of fake lenses in declarative usage.
+    /// NOTE: the downside to using fake lenses is that composed fakse lenses do not function.
+    let equateByName (left : Lens<'a, World>) (right : Lens<'a, World>) breaking =
         if right.This :> obj |> isNull
         then failwith "Equate expects an authentic right lens (where its This field is not null)."
         else EquationDefinition (left.Name, right, breaking)
 
-    /// Equate two properties.
-    let equate left right =
-        equate3 left right false
-
-    /// Equate two properties, breaking any update cycles.
-    let equateBreaking left right =
-        equate3 left right true
-
     /// Initialize a property.
     let inline (==) left right = set left right
 
-    /// Equate two properties.
-    let inline (<==) left right = equate left right
+    /// Equate two properties by name.
+    let inline (<==) left right = equateByName left right false
 
-    /// Equate two properties, breaking any update cycles.
-    let inline (</==) left right = equateBreaking left right
+    /// Equate two properties by name, breaking any update cycles.
+    let inline (</==) left right = equateByName left right true
 
 [<AutoOpen>]
 module WorldDeclarative =

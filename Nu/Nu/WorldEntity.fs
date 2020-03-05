@@ -369,7 +369,7 @@ module WorldEntityModule =
                             world
                 let world =
                     List.fold (fun world (name, simulant, property, breaking) ->
-                        WorldModule.equate5 name simulant property breaking world)
+                        WorldModule.equateByName5 name simulant property breaking world)
                         world equations
                 let world =
                     List.fold (fun world (handler, address, simulant) ->
