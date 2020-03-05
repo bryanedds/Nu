@@ -150,7 +150,7 @@ module DeclarativeOperators =
     /// HACK: fix3 allows the use of fake lenses in declarative usage.
     /// NOTE: the downside to using fake lenses is that composed fake lenses do not function.
     let fix3 (left : Lens<'a, World>) (right : Lens<'a, World>) breaking =
-        if right.This :> obj |> isNull
+        if right.This.SimulantAddress :> obj |> isNull
         then failwith "Equate expects an authentic right lens (where its This field is not null)."
         else FixDefinition (left.Name, right, breaking)
 

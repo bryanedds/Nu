@@ -233,7 +233,7 @@ module WorldSimulantModule =
 
         /// Fix the left property to the value of the right, optionally breaking any cycles.
         static member fix (left : Lens<'a, World>) (right : Lens<'a, World>) breaking world =
-            if left.This :> obj |> notNull then
+            if left.This.SimulantAddress :> obj |> notNull then
                 let propagate (_ : Event) world =
                     if right.Validate world then
                         let value =

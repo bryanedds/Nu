@@ -113,7 +113,7 @@ module Describe =
             let value = match expr with DefineExpr value -> value | VariableExpr fn -> fn world
             let symbol = valueToSymbol value
             let symbol =
-                // HACK: need to make these convert to designer properties...
+                // HACK: needed to make these convert to designer properties...
                 match name with
                 | "StaticData" 
                 | "Model"

@@ -727,7 +727,7 @@ module WorldTypes =
         member this.GameAddress = gameAddress
         
         /// Helper for accessing strongly-typed game properties.
-        static member Prop = Unchecked.defaultof<Game>
+        static member Prop = Game ()
         
         static member op_Implicit () = Game ()
         
@@ -761,32 +761,33 @@ module WorldTypes =
         member private this.View = Debug.World.viewGame Debug.World.Chosen
 
         /// Concatenate an address with a game's address, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (game : Game) =
-            match box game with
-            | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
-            | _ -> acatff address game.GameAddress
-
-        /// Concatenate an address with a game's address, forcing the type of first address.
-        static member (-->) (address : 'a Address, game : Game) = Simulant.acatff address game
+        static member (-->) (address : 'a Address, game : Game) = Game.acatff address game
 
     /// The screen type that allows transitioning to and from other screens, and also hosts the
     /// currently interactive layers of entities.
     and Screen (screenAddress) =
+    
+        // HACK: we allow internal mutation of the address in order to reconstitute lenses that use them
+        let mutable screenAddress = screenAddress
 
         // check that address is of correct length for a screen
-        do if Address.length screenAddress <> 1 then failwith "Screen address must be length of 1."
+        do if notNull (screenAddress :> obj) &&
+              Address.length screenAddress <> 1 then
+              failwith "Screen address must be length of 1."
 
         /// Create a screen reference from a name string.
         new (screenName : string) = Screen (ntoa screenName)
 
         /// The address of the screen.
-        member this.ScreenAddress = screenAddress
+        member this.ScreenAddress
+            with get () = screenAddress
+            and internal set value = screenAddress <- value
 
         /// The parent game of the screen.
         member this.Parent = Game ()
 
         /// Helper for accessing strongly-typed screen properties.
-        static member Prop = Unchecked.defaultof<Screen>
+        static member Prop = Screen Unchecked.defaultof<Screen Address>
         
         static member op_Implicit (screenName : string) = Screen screenName
         
@@ -823,22 +824,24 @@ module WorldTypes =
         member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
 
         /// Concatenate an address with a screen's address, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (screen : Screen) =
-            match box screen with
+        static member (-->) (address : 'a Address, screen : Screen) =
+            match screen.ScreenAddress :> obj with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
             | _ -> acatff address screen.ScreenAddress
-
-        /// Concatenate an address with a screen's address, forcing the type of first address.
-        static member (-->) (address : 'a Address, screen : Screen) = Simulant.acatff address screen
 
         /// Derive a layer from its screen.
         static member (/) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress --> ntoa layerName)
 
     /// Forms a logical layer of entities.
     and Layer (layerAddress) =
+    
+        // HACK: we allow internal mutation of the address in order to reconstitute lenses that use them
+        let mutable layerAddress = layerAddress
 
         // check that address is of correct length for a layer
-        do if Address.length layerAddress <> 2 then failwith "Layer address must be length of 2."
+        do if notNull (layerAddress :> obj) &&
+              Address.length layerAddress <> 2 then
+              failwith "Layer address must be length of 2."
 
         /// Create a layer reference from an address string.
         new (layerAddressStr : string) = Layer (stoa layerAddressStr)
@@ -853,13 +856,15 @@ module WorldTypes =
         new (screenName : string, layerName : string) = Layer [screenName; layerName]
 
         /// The address of the layer.
-        member this.LayerAddress = layerAddress
+        member this.LayerAddress
+            with get () = layerAddress
+            and internal set value = layerAddress <- value
 
         /// The parent screen of the layer.
         member this.Parent = let names = this.LayerAddress.Names in Screen names.[0]
 
         /// Helper for accessing strongly-typed layer properties.
-        static member Prop = Unchecked.defaultof<Layer>
+        static member Prop = Layer Unchecked.defaultof<Layer Address>
 
         static member op_Implicit (layerName : string) = Layer layerName
 
@@ -896,13 +901,10 @@ module WorldTypes =
         member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
 
         /// Concatenate an address with a layer's address, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (layer : Layer) =
-            match box layer with
+        static member (-->) (address : 'a Address, layer : Layer) =
+            match layer.LayerAddress :> obj with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
             | _ -> acatff address layer.LayerAddress
-
-        /// Concatenate an address with a layer's address, forcing the type of first address.
-        static member (-->) (address : 'a Address, layer : Layer) = Simulant.acatff address layer
 
         /// Derive an entity from its layer.
         static member (/) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress --> ntoa entityName)
@@ -913,35 +915,50 @@ module WorldTypes =
     /// reconstructing new ones for each entity every frame.
     and Entity (entityAddress) =
 
+        // OPTIMIZATION: caches entity state reference when possible
+        let mutable entityStateOpt = Unchecked.defaultof<EntityState>
+
+        // HACK: we allow internal mutation of the address in order to reconstitute lenses that use them
+        let mutable entityAddress = entityAddress
+
         // check that address is of correct length for an entity
-        do if Address.length entityAddress <> 3 then
-            failwith "Entity address must be length of 3."
+        do if notNull (entityAddress :> obj) &&
+              Address.length entityAddress <> 3 then
+              failwith "Entity address must be length of 3."
 
         let updateEvent =
-            let entityNames = Address.getNames entityAddress
-            rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+            if notNull (entityAddress :> obj) then
+                let entityNames = Address.getNames entityAddress
+                rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+            else Unchecked.defaultof<_>
 
         let postUpdateEvent =
-            let entityNames = Address.getNames entityAddress
-            rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+            if notNull (entityAddress :> obj) then
+                let entityNames = Address.getNames entityAddress
+                rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+            else Unchecked.defaultof<_>
 
-        let mutable entityStateOpt =
-            Unchecked.defaultof<EntityState>
-
-        // Create an entity reference from an address string.
+        /// Create an entity reference from an address string.
         new (entityAddressStr : string) = Entity (stoa entityAddressStr)
 
-        // Create an entity reference from an array of names.
+        /// Create an entity reference from an array of names.
         new (entityNames : string array) = Entity (rtoa entityNames)
 
-        // Create an entity reference from a list of names.
+        /// Create an entity reference from a list of names.
         new (entityNames : string list) = Entity (ltoa entityNames)
 
-        // Create an entity reference from a the required names.
+        /// Create an entity reference from a the required names.
         new (screenName : string, layerName : string, entityName : string) = Entity [screenName; layerName; entityName]
 
+        /// The cached entity state for imperative entities.
+        member this.EntityStateOpt
+            with get () = entityStateOpt
+            and internal set value = entityStateOpt <- value
+
         /// The address of the entity.
-        member this.EntityAddress = entityAddress
+        member this.EntityAddress
+            with get () = entityAddress
+            and internal set value = entityAddress <- value
 
         /// The parent layer of the entity.
         member this.Parent = let names = this.EntityAddress.Names in Layer [names.[0]; names.[1]]
@@ -952,20 +969,18 @@ module WorldTypes =
         /// The address of the entity's post-update event.
         member this.PostUpdateEventCached = postUpdateEvent
 
-        /// The cached entity state for imperative entities.
-        member this.EntityStateOpt
-            with get () = entityStateOpt
-            and set value = entityStateOpt <- value
-
         /// Helper for accessing strongly-typed entity properties.
-        static member Prop = Unchecked.defaultof<Entity>
+        static member Prop = Entity Unchecked.defaultof<Entity Address>
 
         static member op_Implicit (entityName : string) = Entity entityName
 
         static member op_Implicit (entityAddress : Entity Address) = Entity entityAddress
         
         interface Simulant with
-            member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress
+            member this.SimulantAddress =
+                if notNull (entityAddress :> obj)
+                then atoa<Entity, Simulant> entityAddress
+                else Unchecked.defaultof<_>
             end
 
         override this.Equals that =
@@ -995,14 +1010,11 @@ module WorldTypes =
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
 
-        /// Concatenate an address with an entity's address, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (entity : Entity) =
-            match box entity with
+        /// Concatenate an address with an entity, forcing the type of first address.
+        static member (-->) (address : 'a Address, entity : Entity) =
+            match entity.EntityAddress :> obj with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
             | _ -> acatff address entity.EntityAddress
-
-        /// Concatenate an address with an entity, forcing the type of first address.
-        static member (-->) (address : 'a Address, entity : Entity) = Simulant.acatff address entity
 
     /// The world's dispatchers (including facets).
     /// 
