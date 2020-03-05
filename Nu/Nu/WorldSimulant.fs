@@ -231,8 +231,8 @@ module WorldSimulantModule =
                 id (Unchecked.defaultof<'a>, -1L) |>
             Stream.first
 
-        /// Constrain one property to equal the value of another, optionally breaking potential cycles.
-        static member equate (left : Lens<'a, World>) (right : Lens<'a, World>) breaking world =
+        /// Fix the left property to the value of the right, optionally breaking any cycles.
+        static member fix (left : Lens<'a, World>) (right : Lens<'a, World>) breaking world =
             if left.This :> obj |> notNull then
                 let propagate (_ : Event) world =
                     if right.Validate world then
@@ -250,19 +250,19 @@ module WorldSimulantModule =
                 let world = Stream.make (atooa Events.Register --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate right.This $ world
                 let stream = Stream.make (atooa (Events.Change right.Name) --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate right.This $ world
                 stream
-            else WorldModule.equateByName5 left.Name left.This right breaking world
+            else WorldModule.fix5 left.Name left.This right breaking world
 
 [<AutoOpen>]
 module WorldSimulantOperators =
 
-    /// Constrain one property to equal the value of another, optionally breaking potential cycles.
-    let equate<'a> (left : Lens<'a, World>) right breaking = World.equate left right breaking
+    /// Fix one property to the value of another, optionally breaking potential cycles.
+    let fix<'a> (left : Lens<'a, World>) right breaking world = World.fix left right breaking world
 
     /// Equate two properties, not breaking potential cycles.
-    let inline (===) left right = equate left right false
+    let inline (===) left right = fix left right false
 
     /// Equate two properties, breaking potential cycles.
-    let inline (=/=) left right = equate left right true
+    let inline (=/=) left right = fix left right true
 
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =
