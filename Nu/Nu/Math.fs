@@ -92,8 +92,8 @@ type [<CustomEquality; CustomComparison>] Vector2Pluggable =
 
         member this.ToSymbol () =
             let v2 = Symbol.Atom ("v2", None)
-            let x = Symbol.Number (String.singleToCodeString this.Vector2.X, None)
-            let y = Symbol.Number (String.singleToCodeString this.Vector2.Y, None)
+            let x = Symbol.Number (scstring this.Vector2.X, None)
+            let y = Symbol.Number (scstring this.Vector2.Y, None)
             Symbol.Symbols ([v2; x; y], None)
 
 /// Converts Vector2 types.
@@ -108,8 +108,8 @@ type Vector2Converter () =
         if destType = typeof<Symbol> then
             let v2 = source :?> Vector2
             Symbols
-                ([Number (String.singleToCodeString v2.X, None)
-                  Number (String.singleToCodeString v2.Y, None)], None) :> obj
+                ([Number (scstring v2.X, None)
+                  Number (scstring v2.Y, None)], None) :> obj
         elif destType = typeof<Vector2> then source
         else failconv "Invalid Vector2Converter conversion to source." None
 
@@ -157,9 +157,9 @@ type Vector3Converter () =
         if destType = typeof<Symbol> then
             let v3 = source :?> Vector3
             Symbols
-                ([Number (String.singleToCodeString v3.X, None)
-                  Number (String.singleToCodeString v3.Y, None)
-                  Number (String.singleToCodeString v3.Z, None)], None) :> obj
+                ([Number (scstring v3.X, None)
+                  Number (scstring v3.Y, None)
+                  Number (scstring v3.Z, None)], None) :> obj
         elif destType = typeof<Vector3> then source
         else failconv "Invalid Vector3Converter conversion to source." None
 
@@ -215,10 +215,10 @@ type [<CustomEquality; CustomComparison>] Vector4Pluggable =
 
         member this.ToSymbol () =
             let v4 = Symbol.Atom ("v4", None)
-            let x = Symbol.Number (String.singleToCodeString this.Vector4.X, None)
-            let y = Symbol.Number (String.singleToCodeString this.Vector4.Y, None)
-            let z = Symbol.Number (String.singleToCodeString this.Vector4.Z, None)
-            let w = Symbol.Number (String.singleToCodeString this.Vector4.W, None)
+            let x = Symbol.Number (scstring this.Vector4.X, None)
+            let y = Symbol.Number (scstring this.Vector4.Y, None)
+            let z = Symbol.Number (scstring this.Vector4.Z, None)
+            let w = Symbol.Number (scstring this.Vector4.W, None)
             Symbol.Symbols ([v4; x; y; z; w], None)
 
 [<AutoOpen>]
@@ -255,10 +255,10 @@ type Vector4Converter () =
         if destType = typeof<Symbol> then
             let v4 = source :?> Vector4
             Symbols
-                ([Number (String.singleToCodeString v4.X, None)
-                  Number (String.singleToCodeString v4.Y, None)
-                  Number (String.singleToCodeString v4.Z, None)
-                  Number (String.singleToCodeString v4.W, None)], None) :> obj
+                ([Number (scstring v4.X, None)
+                  Number (scstring v4.Y, None)
+                  Number (scstring v4.Z, None)
+                  Number (scstring v4.W, None)], None) :> obj
         elif destType = typeof<Vector4> then source
         else failconv "Invalid Vector4Converter conversion to source." None
 
