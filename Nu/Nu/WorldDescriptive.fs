@@ -95,7 +95,7 @@ and [<NoComparison>] EntityDescriptor =
 type [<NoEquality; NoComparison>] PropertyInitializer =
     | PropertyDefinition of PropertyDefinition
     | EventHandlerDefinition of (Event -> obj) * obj Address
-    | EquationDefinition of string * World Lens * bool
+    | FixDefinition of string * World Lens * bool
 
 /// Contains primitives for describing simulants.
 [<RequireQualifiedAccess>]
@@ -107,7 +107,7 @@ module Describe =
             match initializer with
             | PropertyDefinition def -> Some (def.PropertyType, def.PropertyName, def.PropertyExpr)
             | EventHandlerDefinition _ -> None
-            | EquationDefinition _ -> None) |>
+            | FixDefinition _ -> None) |>
         Seq.definitize |>
         Seq.map (fun (ty, name, expr) ->
             let value = match expr with DefineExpr value -> value | VariableExpr fn -> fn world
@@ -128,17 +128,17 @@ module Describe =
             match initializer with
             | PropertyDefinition _ -> None
             | EventHandlerDefinition (handler, address) -> Some (handler, address --> simulant.SimulantAddress, simulant)
-            | EquationDefinition _ -> None) |>
+            | FixDefinition _ -> None) |>
         Seq.definitize |>
         Seq.toList
 
-    let private initializersToEquations initializers (simulant : Simulant)=
+    let private initializersToFixes initializers (simulant : Simulant)=
         initializers |>
         Seq.map (fun initializer ->
             match initializer with
             | PropertyDefinition _ -> None
             | EventHandlerDefinition _ -> None
-            | EquationDefinition (leftName, right, breaking) -> Some (leftName, simulant, right, breaking)) |>
+            | FixDefinition (leftName, right, breaking) -> Some (leftName, simulant, right, breaking)) |>
         Seq.definitize |>
         Seq.toList
 
@@ -154,9 +154,9 @@ module Describe =
     let simulant5 dispatcherName (initializers : PropertyInitializer seq) children simulant world =
         let definitions = initializersToDefinitions initializers world
         let eventHandlers = initializersToEventHandlers initializers simulant
-        let equations = initializersToEquations initializers simulant
+        let fixes = initializersToFixes initializers simulant
         let descriptor = simulantToDescriptor dispatcherName definitions children simulant
-        (descriptor, eventHandlers, equations)
+        (descriptor, eventHandlers, fixes)
 
     /// Describe a simulant with the given definitions and contained children.
     let simulant<'d when 'd :> GameDispatcher> initializers children simulant world =
