@@ -3,7 +3,7 @@ open Prime
 open Nu
 
 // this is our Elm-style command type. To learn about the Elm-style, read this article here -
-// https://medium.com/@bryanedds/a-game-engine-that-allows-you-to-program-in-the-elm-style-31d806fbe27f
+// https://vsyncronicity.com/2020/03/01/a-game-engine-in-the-elm-style/
 type MyGameCommand =
     | ShowTitle
     | ShowCredits
