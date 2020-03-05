@@ -253,69 +253,6 @@ module WorldLayerModule =
                 let (layer, world) = World.readLayerFromFile filePath (Some layerName) screen world
                 match guidOpt with Some guid -> World.addKeyedValue (scstring guid) layer world | None -> world
 
-    /// Represents the property value of an layer as accessible via reflection.
-    type [<ReferenceEquality>] LayerPropertyValue =
-        | LayerPropertyDescriptor of PropertyDescriptor
-        | LayerPropertyInfo of PropertyInfo
-
-        /// Check that an layer contains the given property.
-        static member containsProperty (property : PropertyInfo) =
-            let properties = typeof<LayerState>.GetProperties property.Name
-            Seq.exists (fun item -> item = property) properties
-
-        /// Get the layer's property value.
-        static member getValue property (layer : Layer) world =
-            let propertyName =
-                match property with
-                | LayerPropertyDescriptor propertyDescriptor -> propertyDescriptor.PropertyName
-                | LayerPropertyInfo propertyInfo -> propertyInfo.Name
-            let property = World.getLayerProperty propertyName layer world
-            match property.PropertyValue with
-            | :? DesignerProperty as dp -> dp.DesignerValue
-            | value -> value
-
-        /// Set the layer's property value.
-        static member setValue property propertyValue (layer : Layer) world =
-            let (propertyName, propertyType) =
-                match property with
-                | LayerPropertyDescriptor propertyDescriptor -> (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType)
-                | LayerPropertyInfo propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)
-            let propertyOld = World.getLayerProperty propertyName layer world
-            match propertyOld.PropertyValue with
-            | :? DesignerProperty as dp ->
-                let propertyValue = { dp with DesignerValue = propertyValue }
-                let propertyValue = { PropertyType = typeof<DesignerProperty>; PropertyValue = propertyValue }
-                World.setLayerProperty propertyName propertyValue layer world
-            | _ -> World.setLayerProperty propertyName { PropertyType = propertyType; PropertyValue = propertyValue } layer world
-
-        /// Get the property descriptors of as constructed from the given function in the given context.
-        static member getPropertyDescriptors makePropertyDescriptor contextOpt =
-            // OPTIMIZATION: seqs used for speed.
-            let properties = typeof<LayerState>.GetProperties ()
-            let typeConverterAttribute = TypeConverterAttribute typeof<SymbolicConverter>
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Xtension) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty (property.GetCustomAttributes<ExtensionAttribute> ())) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
-            let propertyDescriptors = Seq.map (fun property -> makePropertyDescriptor (LayerPropertyInfo property, [|typeConverterAttribute|])) properties
-            let propertyDescriptors =
-                match contextOpt with
-                | Some (layer, world) ->
-                    let properties' = World.getLayerXtensionProperties layer world
-                    let propertyDescriptors' =
-                        Seq.fold
-                            (fun propertyDescriptors' (propertyName, property : Property) ->
-                                let propertyType = property.PropertyType
-                                if Reflection.isPropertyPersistentByName propertyName then
-                                    let propertyDescriptor = LayerPropertyDescriptor { PropertyName = propertyName; PropertyType = propertyType }
-                                    let propertyDescriptor : System.ComponentModel.PropertyDescriptor = makePropertyDescriptor (propertyDescriptor, [|typeConverterAttribute|])
-                                    propertyDescriptor :: propertyDescriptors'
-                                else propertyDescriptors')
-                            []
-                            properties'
-                    Seq.append propertyDescriptors' propertyDescriptors
-                | None -> propertyDescriptors
-            List.ofSeq propertyDescriptors
-
 namespace Debug
 open Nu
 type Layer =
