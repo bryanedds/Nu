@@ -3,6 +3,9 @@
 
 namespace Nu
 open System
+open System.ComponentModel
+open System.Reflection
+open System.Runtime.CompilerServices
 open Prime
 open Nu
 
@@ -229,3 +232,81 @@ module WorldSimulantOperators =
 
     /// Equate two properties, breaking potential cycles.
     let (=/=) left right = World.equate left right true
+
+[<RequireQualifiedAccess>]
+module PropertyDescriptor =
+
+    /// Check that an entity contains the given property.
+    let containsProperty<'s when 's :> Simulant> (property : PropertyInfo) =
+        let properties = typeof<'s>.GetProperties property.Name
+        Seq.exists (fun item -> item = property) properties
+
+    /// Attempt to get the simulant's property value.
+    let tryGetValue propertyDescriptor simulant world =
+        let propertyName = propertyDescriptor.PropertyName
+        match World.tryGetProperty propertyName simulant world with
+        | Some property ->
+            match property.PropertyValue with
+            | :? DesignerProperty as dp -> Some dp.DesignerValue
+            | value -> Some value
+        | None -> None
+
+    /// Attempt to set the simulant's property value.
+    let trySetValue alwaysPublish nonPersistent propertyDescriptor propertyValue simulant world =
+        let (propertyName, propertyType) = (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType)
+        let property =
+            match World.tryGetProperty propertyName simulant world with
+            | Some propertyOld ->
+                match propertyOld.PropertyValue with
+                | :? DesignerProperty as dp ->
+                    let designerProperty = { dp with DesignerType = propertyType; DesignerValue = propertyValue }
+                    { PropertyType = typeof<DesignerProperty>; PropertyValue = designerProperty }
+                | _ -> { PropertyType = propertyType; PropertyValue = propertyValue }
+            | None -> { PropertyType = propertyType; PropertyValue = propertyValue }
+        World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world
+
+    /// Get the property descriptors of as constructed from the given function in the given context.
+    let getPropertyDescriptors<'s when 's :> SimulantState> makePropertyDescriptor contextOpt =
+        match contextOpt with
+        | Some (simulant, world) ->
+            // OPTIMIZATION: seqs used for speed.
+            let properties = typeof<'s>.GetProperties ()
+            let typeConverterAttribute = TypeConverterAttribute typeof<SymbolicConverter>
+            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Xtension) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Transform) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Flags) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty (property.GetCustomAttributes<ExtensionAttribute> ())) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
+            let propertyDescriptors =
+                Seq.map (fun (property : PropertyInfo) ->
+                    let propertyName = property.Name
+                    let property = World.getProperty property.Name simulant world
+                    let propertyType =
+                        match property.PropertyValue with
+                        | :? DesignerProperty as designerProperty -> designerProperty.DesignerType
+                        | _ -> property.PropertyType
+                    let property = { PropertyType = propertyType; PropertyName = propertyName }
+                    makePropertyDescriptor (property, [|typeConverterAttribute|]))
+                    properties
+            let propertyDescriptors =
+                match simulant :> obj with
+                | :? Entity as entity ->
+                    let properties' = World.getEntityXtensionProperties entity world
+                    let propertyDescriptors' =
+                        Seq.fold
+                            (fun propertyDescriptors' (propertyName, property : Property) ->
+                                if Reflection.isPropertyPersistentByName propertyName then
+                                    let propertyType =
+                                        match property.PropertyValue with
+                                        | :? DesignerProperty as designerProperty -> designerProperty.DesignerType
+                                        | _ -> property.PropertyType
+                                    let propertyDescriptor = { PropertyName = propertyName; PropertyType = propertyType }
+                                    let propertyDescriptor = makePropertyDescriptor (propertyDescriptor, [|typeConverterAttribute|]) : System.ComponentModel.PropertyDescriptor
+                                    propertyDescriptor :: propertyDescriptors'
+                                else propertyDescriptors')
+                            []
+                            properties'
+                    Seq.append propertyDescriptors' propertyDescriptors
+                | _ -> propertyDescriptors
+            List.ofSeq propertyDescriptors
+        | None -> []

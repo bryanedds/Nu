@@ -14,25 +14,17 @@ type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTy
     { DescribedEntity : Entity
       Form : GaiaForm }
 
-and EntityPropertyDescriptor (property, attributes) =
-    inherit System.ComponentModel.PropertyDescriptor (
-        (match property with EntityPropertyDescriptor xfd -> xfd.PropertyName | EntityPropertyInfo pi -> pi.Name),
-        attributes)
+and EntityPropertyDescriptor (propertyDescriptor, attributes) =
+    inherit System.ComponentModel.PropertyDescriptor (propertyDescriptor.PropertyName, attributes)
 
     let propertyName =
-        match property with
-        | EntityPropertyDescriptor pd -> pd.PropertyName
-        | EntityPropertyInfo pi -> pi.Name
+        propertyDescriptor.PropertyName
 
     let propertyType =
-        match property with
-        | EntityPropertyDescriptor pd -> pd.PropertyType
-        | EntityPropertyInfo pi -> pi.PropertyType
+        propertyDescriptor.PropertyType
 
     let propertyCanWrite =
-        match property with
-        | EntityPropertyDescriptor _ -> true
-        | EntityPropertyInfo xfd -> xfd.CanWrite
+        true
 
     override this.Category =
         // HACK: in order to put the Events as the last category, I start all the other categories with an unprinted
@@ -46,7 +38,6 @@ and EntityPropertyDescriptor (property, attributes) =
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) nodeProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "\rPhysics Properties"
-        elif propertyType = typeof<DesignerProperty> then "\rDesigner Properties"
         else "\rXtension Properties"
 
     override this.Description =
@@ -68,7 +59,7 @@ and EntityPropertyDescriptor (property, attributes) =
         | null -> null // WHY THE FUCK IS THIS EVER null???
         | source ->
             let entityTds = source :?> EntityTypeDescriptorSource
-            match EntityPropertyValue.tryGetValue property entityTds.DescribedEntity Globals.World with
+            match PropertyDescriptor.tryGetValue propertyDescriptor entityTds.DescribedEntity Globals.World with
             | Some value -> value
             | None -> null
 
@@ -130,7 +121,7 @@ and EntityPropertyDescriptor (property, attributes) =
                     | _ ->
                         let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
                         let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
-                        EntityPropertyValue.trySetValue alwaysPublish nonPersistent property value entity world |> snd
+                        PropertyDescriptor.trySetValue alwaysPublish nonPersistent propertyDescriptor value entity world |> snd
                 let world = entity.PropagatePhysics world
                 Globals.World <- world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
@@ -142,10 +133,10 @@ and EntityTypeDescriptor (sourceOpt : obj) =
     override this.GetProperties () =
         let contextOpt =
             match sourceOpt with
-            | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity, Globals.World)
+            | :? EntityTypeDescriptorSource as source -> Some (source.DescribedEntity :> Simulant, Globals.World)
             | _ -> None
         let makePropertyDescriptor = fun (epv, tcas) -> (EntityPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
-        let propertyDescriptors = EntityPropertyValue.getPropertyDescriptors makePropertyDescriptor contextOpt
+        let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<EntityState> makePropertyDescriptor contextOpt
         PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
     override this.GetProperties _ =

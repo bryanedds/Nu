@@ -514,12 +514,8 @@ module Gaia =
                 let selectedEntityTds = selectedEntityTds :?> EntityTypeDescriptorSource // unbox manually
                 match selectedGridItem.GridItemType with
                 | GridItemType.Property ->
-                    let designTypeOpt =
-                        match selectedGridItem.PropertyDescriptor.GetValue selectedEntityTds with
-                        | :? DesignerProperty as dp -> Some dp.DesignerType
-                        | _ -> None
                     let ty = selectedGridItem.PropertyDescriptor.PropertyType
-                    let typeConverter = SymbolicConverter (false, designTypeOpt, ty)
+                    let typeConverter = SymbolicConverter (false, None, ty)
                     form.propertyEditor.Enabled <- not selectedGridItem.PropertyDescriptor.IsReadOnly
                     form.propertyNameLabel.Text <- selectedGridItem.Label
                     form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
