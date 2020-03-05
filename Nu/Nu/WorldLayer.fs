@@ -219,7 +219,7 @@ module WorldLayerModule =
             match LayerContent.expand content screen world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
                 World.expandLayerStream lens indexerOpt mapper origin screen world
-            | Choice2Of3 (name, descriptor, handlers, equations, streams, entityFilePaths, entityContents) ->
+            | Choice2Of3 (name, descriptor, handlers, fixes, streams, entityFilePaths, entityContents) ->
                 let (layer, world) = World.readLayer descriptor (Some name) screen world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) layer world | None -> world
                 let world =
@@ -229,7 +229,7 @@ module WorldLayerModule =
                 let world =
                     List.fold (fun world (name, simulant, property, breaking) ->
                         WorldModule.fix5 name simulant property breaking world)
-                        world equations
+                        world fixes
                 let world =
                     List.fold (fun world (handler, address, simulant) ->
                         World.monitor (fun (evt : Event) world ->

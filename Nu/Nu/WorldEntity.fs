@@ -355,7 +355,7 @@ module WorldEntityModule =
             match EntityContent.expand content layer world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
                 World.expandEntityStream lens indexerOpt mapper origin layer world
-            | Choice2Of3 (name, descriptor, handlers, equations, content) ->
+            | Choice2Of3 (name, descriptor, handlers, fixes, content) ->
                 let (entity, world) = World.readEntity descriptor (Some name) layer world
                 let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
                 let world =
@@ -370,7 +370,7 @@ module WorldEntityModule =
                 let world =
                     List.fold (fun world (name, simulant, property, breaking) ->
                         WorldModule.fix5 name simulant property breaking world)
-                        world equations
+                        world fixes
                 let world =
                     List.fold (fun world (handler, address, simulant) ->
                         World.monitor (fun (evt : Event) world ->

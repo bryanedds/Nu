@@ -122,7 +122,7 @@ module FacetModule =
                         let signal = handler evt
                         WorldModule.trySignalFacet signal facetName entity world)
                         address (entity :> Simulant) world
-                | EquationDefinition (propertyName, lens, breaking) ->
+                | FixDefinition (propertyName, lens, breaking) ->
                     WorldModule.fix5 propertyName entity lens breaking world)
                 world initializers
 
@@ -1099,7 +1099,7 @@ module EntityDispatcherModule =
                         let signal = handler evt
                         WorldModule.trySignal signal entity world)
                         address (entity :> Simulant) world
-                | EquationDefinition (propertyName, lens, breaking) ->
+                | FixDefinition (propertyName, lens, breaking) ->
                     WorldModule.fix5 propertyName entity lens breaking world)
                 world initializers
 
@@ -1932,7 +1932,7 @@ module LayerDispatcherModule =
                         let signal = handler evt
                         WorldModule.trySignal signal layer world)
                         address (layer :> Simulant) world
-                | EquationDefinition (propertyName, lens, breaking) ->
+                | FixDefinition (propertyName, lens, breaking) ->
                     WorldModule.fix5 propertyName layer lens breaking world)
                 world initializers
 
@@ -2028,7 +2028,7 @@ module ScreenDispatcherModule =
                         let signal = handler evt
                         WorldModule.trySignal signal screen world)
                         address (screen :> Simulant) world
-                | EquationDefinition (propertyName, lens, breaking) ->
+                | FixDefinition (propertyName, lens, breaking) ->
                     WorldModule.fix5 propertyName screen lens breaking world)
                 world initializers
 
