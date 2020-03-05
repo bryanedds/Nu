@@ -228,31 +228,31 @@ module WorldTypes =
         /// Try to send a signal to a game.
         abstract TrySignal : obj * Game * World -> World
         default this.TrySignal (_, _, world) = world
-    
+
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
         inherit SimulantDispatcher ()
-    
+
         /// Register a screen when adding it to the world.
         abstract Register : Screen * World -> World
         default this.Register (_, world) = world
-    
+
         /// Unregister a screen when removing it from the world.
         abstract Unregister : Screen * World -> World
         default this.Unregister (_, world) = world
-    
+
         /// Update a screen.
         abstract Update : Screen * World -> World
         default this.Update (_, world) = world
-    
+
         /// Post-update a screen.
         abstract PostUpdate : Screen * World -> World
         default this.PostUpdate (_, world) = world
-    
+
         /// Actualize a screen.
         abstract Actualize : Screen * World -> World
         default this.Actualize (_, world) = world
-    
+
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Screen * World -> Property option
         default this.TryGetCalculatedProperty (_, _, _) = None
@@ -260,31 +260,31 @@ module WorldTypes =
         /// Try to send a signal to a screen.
         abstract TrySignal : obj * Screen * World -> World
         default this.TrySignal (_, _, world) = world
-    
+
     /// The default dispatcher for layers.
     and LayerDispatcher () =
         inherit SimulantDispatcher ()
-    
+
         /// Register a layer when adding it to a screen.
         abstract Register : Layer * World -> World
         default this.Register (_, world) = world
-    
+
         /// Unregister a layer when removing it from a screen.
         abstract Unregister : Layer * World -> World
         default this.Unregister (_, world) = world
-    
+
         /// Update a layer.
         abstract Update : Layer * World -> World
         default this.Update (_, world) = world
-    
+
         /// Post-update a layer.
         abstract PostUpdate : Layer * World -> World
         default this.PostUpdate (_, world) = world
-    
+
         /// Actualize a layer.
         abstract Actualize : Layer * World -> World
         default this.Actualize (_, world) = world
-    
+
         /// Try to get a calculated property with the given name.
         abstract TryGetCalculatedProperty : string * Layer * World -> Property option
         default this.TryGetCalculatedProperty (_, _, _) = None
@@ -292,11 +292,11 @@ module WorldTypes =
         /// Try to send a signal to a layer.
         abstract TrySignal : obj * Layer * World -> World
         default this.TrySignal (_, _, world) = world
-    
+
     /// The default dispatcher for entities.
     and EntityDispatcher () =
         inherit SimulantDispatcher ()
-    
+
         static member Properties =
             [Define? Position Vector2.Zero
              Define? Size Constants.Engine.DefaultEntitySize
@@ -315,11 +315,11 @@ module WorldTypes =
              Define? PublishUpdates false
              Define? PublishPostUpdates false
              Define? Persistent true]
-    
+
         /// Register an entity when adding it to a layer.
         abstract Register : Entity * World -> World
         default this.Register (_, world) = world
-    
+
         /// Unregister an entity when removing it from a layer.
         abstract Unregister : Entity * World -> World
         default this.Unregister (_, world) = world
@@ -327,15 +327,15 @@ module WorldTypes =
         /// Update an entity.
         abstract Update : Entity * World -> World
         default this.Update (_, world) = world
-    
+
         /// Post-update an entity.
         abstract PostUpdate : Entity * World -> World
         default this.PostUpdate (_, world) = world
-    
+
         /// Actualize an entity.
         abstract Actualize : Entity * World -> World
         default this.Actualize (_, world) = world
-    
+
         /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         abstract GetQuickSize : Entity * World -> Vector2
         default this.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
@@ -354,11 +354,11 @@ module WorldTypes =
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
-    
+
         /// Register a facet when adding it to an entity.
         abstract Register : Entity * World -> World
         default this.Register (_, world) = world
-    
+
         /// Unregister a facet when removing it from an entity.
         abstract Unregister : Entity * World -> World
         default this.Unregister (_, world) = world
@@ -366,23 +366,23 @@ module WorldTypes =
         /// Participate in the registration of an entity's physics with the physics subsystem.
         abstract RegisterPhysics : Entity * World -> World
         default this.RegisterPhysics (_, world) = world
-    
+
         /// Participate in the unregistration of an entity's physics from the physics subsystem.
         abstract UnregisterPhysics : Entity * World -> World
         default this.UnregisterPhysics (_, world) = world
-    
+
         /// Update a facet.
         abstract Update : Entity * World -> World
         default this.Update (_, world) = world
-    
+
         /// Post-update a facet.
         abstract PostUpdate : Entity * World -> World
         default this.PostUpdate (_, world) = world
-    
+
         /// Actualize a facet.
         abstract Actualize : Entity * World -> World
         default this.Actualize (_, world) = world
-    
+
         /// Participate in getting the priority with which an entity is picked in the editor.
         abstract GetQuickSize : Entity * World -> Vector2
         default this.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
@@ -465,7 +465,7 @@ module WorldTypes =
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
-    
+
     /// Hosts the ongoing state of a screen. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     /// NOTE: The properties here have duplicated representations in WorldModuleScreen that exist
@@ -833,7 +833,7 @@ module WorldTypes =
 
         /// Derive a layer from its screen.
         static member (/) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress --> ntoa layerName)
-    
+
     /// Forms a logical layer of entities.
     and Layer (layerAddress) =
 
@@ -842,7 +842,7 @@ module WorldTypes =
 
         /// Create a layer reference from an address string.
         new (layerAddressStr : string) = Layer (stoa layerAddressStr)
-        
+
         /// Create a layer reference from a list of names.
         new (layerNames : string array) = Layer (rtoa layerNames)
 
@@ -862,7 +862,7 @@ module WorldTypes =
         static member Prop = Unchecked.defaultof<Layer>
 
         static member op_Implicit (layerName : string) = Layer layerName
-        
+
         static member op_Implicit (layerAddress : Layer Address) = Layer layerAddress
 
         interface Simulant with
@@ -885,12 +885,12 @@ module WorldTypes =
                 match that with
                 | :? Layer as that -> (this :> Layer IComparable).CompareTo that
                 | _ -> failwith "Invalid Layer comparison (comparee not of type Layer)."
-    
+
         override this.ToString () = scstring this.LayerAddress
-    
+
         /// Get the name of a layer.
         member this.Name = Address.getName this.LayerAddress
-    
+
         /// Get the latest value of a layer's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
@@ -900,13 +900,13 @@ module WorldTypes =
             match box layer with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
             | _ -> acatff address layer.LayerAddress
-    
+
         /// Concatenate an address with a layer's address, forcing the type of first address.
         static member (-->) (address : 'a Address, layer : Layer) = Simulant.acatff address layer
-        
+
         /// Derive an entity from its layer.
         static member (/) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress --> ntoa entityName)
-    
+
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
     /// OPTIMIZATION: Includes pre-constructed entity change and update event addresses to avoid
@@ -916,7 +916,7 @@ module WorldTypes =
         // check that address is of correct length for an entity
         do if Address.length entityAddress <> 3 then
             failwith "Entity address must be length of 3."
-        
+
         let updateEvent =
             let entityNames = Address.getNames entityAddress
             rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
@@ -990,7 +990,7 @@ module WorldTypes =
 
         /// Get the name of an entity.
         member this.Name = Address.getName this.EntityAddress
-    
+
         /// Get the latest value of an entity's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
@@ -1000,10 +1000,10 @@ module WorldTypes =
             match box entity with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
             | _ -> acatff address entity.EntityAddress
-    
+
         /// Concatenate an address with an entity, forcing the type of first address.
         static member (-->) (address : 'a Address, entity : Entity) = Simulant.acatff address entity
-    
+
     /// The world's dispatchers (including facets).
     /// 
     /// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
@@ -1017,7 +1017,7 @@ module WorldTypes =
           TryGetExtrinsic : string -> World ScriptingTrinsic option
           UpdateEntityInEntityTree : bool -> ViewType -> Vector4 -> Entity -> World -> World -> World
           RebuildEntityTree : World -> Entity SpatialTree }
-    
+
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
     /// to implement a game, messages to by consumed by the various engine sub-systems, and general
     /// configuration data.
