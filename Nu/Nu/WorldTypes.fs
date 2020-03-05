@@ -304,7 +304,7 @@ module WorldTypes =
              Define? Depth 0.0f
              Define? ViewType Relative
              Define? Omnipresent false
-             Define? StaticData { DesignerType = typeof<unit>; DesignerValue = () }
+             Define? StaticData { DesignerType = typeof<string>; DesignerValue = "" }
              Define? Overflow Vector2.Zero
              Define? Imperative false
              Define? PublishChanges false
@@ -634,7 +634,7 @@ module WorldTypes =
                   Depth = 0.0f
                   ViewType = Relative
                   Omnipresent = false }
-              StaticData = { DesignerType = typeof<unit>; DesignerValue = () }
+              StaticData = { DesignerType = typeof<string>; DesignerValue = "" }
               Overflow = Vector2.Zero
               Flags = 0b0100011000
               OverlayNameOpt = overlayNameOpt
