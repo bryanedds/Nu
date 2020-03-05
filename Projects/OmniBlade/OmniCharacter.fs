@@ -50,8 +50,7 @@ module OmniCharacter =
             color
 
         static member Properties =
-            [define Entity.Omnipresent true
-             define Entity.PublishChanges true]
+            [define Entity.Omnipresent true]
 
         override this.Initializers (model, character, _) =
             [character.Position <== model --> fun model -> model.Position

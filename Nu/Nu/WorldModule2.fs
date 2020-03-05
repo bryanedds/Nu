@@ -944,10 +944,10 @@ module GameDispatcherModule =
                 match initializer with
                 | PropertyDefinition def ->
                     let propertyName = def.PropertyName
-                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
-                    World.setProperty def.PropertyName nonPersistent alwaysPublish property game world
+                    World.setProperty def.PropertyName alwaysPublish nonPersistent property game world
                 | EventHandlerDefinition (handler, address) ->
                     World.monitor (fun (evt : Event) world ->
                         let signal = handler evt

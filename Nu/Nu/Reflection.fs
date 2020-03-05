@@ -18,10 +18,13 @@ module Reflection =
     /// Check if a property with the given name should always publish a change event.
     let isPropertyAlwaysPublishByName propertyName =
         match propertyName with
-        | "ScriptOpt" // always publish certain script properties 
+        | "Model" // always publish certain script properties 
+        | "ScriptOpt"
         | "Script"
         | "EffectsOpt" -> true
-        | _ -> propertyName.EndsWith "Ap"
+        | _ ->
+            propertyName.EndsWith "Model" ||
+            propertyName.EndsWith "Ap"
 
     /// Is a property with the given name persistent?
     let isPropertyPersistentByName (propertyName : string) =
