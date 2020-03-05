@@ -112,7 +112,13 @@ module Describe =
         Seq.map (fun (ty, name, expr) ->
             let value = match expr with DefineExpr value -> value | VariableExpr fn -> fn world
             let symbol = valueToSymbol value
-            let symbol = match name with "Model" -> Symbols ([Text (ty.AssemblyQualifiedName, None); symbol], None) | _ -> symbol
+            let symbol =
+                // HACK: need to make these convert to designer properties...
+                match name with
+                | "StaticData" 
+                | "Model"
+                | _ when name.EndsWith "Model" -> Symbols ([Text (ty.AssemblyQualifiedName, None); symbol], None)
+                | _ -> symbol
             (name, symbol)) |>
         Map.ofSeq
 
