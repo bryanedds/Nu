@@ -273,10 +273,10 @@ module Nu =
                         if property.PropertyType = typeof<DesignerProperty> then
                             let designerProperty = property.PropertyValue :?> DesignerProperty
                             let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
-                            World.setProperty name nonPersistent alwaysPublish property simulant world
+                            World.setProperty name alwaysPublish nonPersistent property simulant world
                         else
                             let property = { property with PropertyValue = value }
-                            World.setProperty name nonPersistent alwaysPublish property simulant world
+                            World.setProperty name alwaysPublish nonPersistent property simulant world
                     else world
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
                 let world = Stream.make (atooa Events.Register --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
