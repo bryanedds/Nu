@@ -413,8 +413,12 @@ module WorldScripting =
             match World.evalManyInternal exprs world with
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v|], world) -> struct (v, world)
-            | struct ([|Single x; Single y|], world) -> struct (Pluggable { Vector2 = Vector2 (x, y) }, world)
-            | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single for the both arguments.", originOpt), world)
+            | struct ([|x; y|], world) ->
+                let xOpt = match x with Double x -> Some (single x) | Single x -> Some x | Int x -> Some (single x) | _ -> None
+                let yOpt = match y with Double y -> Some (single y) | Single y -> Some y | Int y -> Some (single y) | _ -> None
+                match (xOpt, yOpt) with
+                | (Some x, Some y) -> struct (Pluggable { Vector2 = Vector2 (x, y) }, world)
+                | (_, _) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single or Int for its arguments.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalIndexV2Extrinsic fnName exprs originOpt world =
@@ -454,8 +458,14 @@ module WorldScripting =
             | struct ([|_; Violation _ as v; _; _|], world) -> struct (v, world)
             | struct ([|_; _; Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; _; _; Violation _ as v|], world) -> struct (v, world)
-            | struct ([|Single x; Single y; Single z; Single w|], world) -> struct (Pluggable { Vector4 = Vector4 (x, y, z, w) }, world)
-            | struct ([|_; _; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single for the all arguments.", originOpt), world)
+            | struct ([|x; y; z; w|], world) ->
+                let xOpt = match x with Double x -> Some (single x) | Single x -> Some x | Int x -> Some (single x) | _ -> None
+                let yOpt = match y with Double y -> Some (single y) | Single y -> Some y | Int y -> Some (single y) | _ -> None
+                let zOpt = match z with Double z -> Some (single z) | Single z -> Some z | Int z -> Some (single z) | _ -> None
+                let wOpt = match w with Double w -> Some (single w) | Single w -> Some w | Int w -> Some (single w) | _ -> None
+                match (xOpt, yOpt, zOpt, wOpt) with
+                | (Some x, Some y, Some z, Some w) -> struct (Pluggable { Vector4 = Vector4 (x, y, z, w) }, world)
+                | (_, _, _, _) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single or Int for its arguments.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 4 arguments required.", originOpt), world)
 
         static member internal evalIndexV4Extrinsic fnName exprs originOpt world =
