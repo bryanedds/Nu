@@ -259,8 +259,8 @@ module Nu =
                     World.unregisterEntityPhysics entity world)
                     world entities
 
-            // init equate5 F# reach-around
-            WorldModule.equate5 <- fun name (simulant : Simulant) (lens : World Lens) breaking world ->
+            // init equateByName5 F# reach-around
+            WorldModule.equateByName5 <- fun name (simulant : Simulant) (lens : World Lens) breaking world ->
                 let nonPersistent = not (Reflection.isPropertyPersistentByName name)
                 let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
                 let propagate (_ : Event) world =

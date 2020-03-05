@@ -104,8 +104,10 @@ module WorldModule =
     let mutable internal unsubscribeSimulantScripts : Simulant -> World -> World =
         Unchecked.defaultof<_>
 
-    /// F# reach-around for instantiating equality relationships.
-    let mutable internal equate5 : string -> Simulant -> World Lens -> bool -> World -> World =
+    /// F# reach-around for instantiating equality relationships by name.
+    /// HACK: equateByName5 allows the use of fake lenses in declarative usage.
+    /// NOTE: the downside to using fake lenses is that composed fakse lenses do not function.
+    let mutable internal equateByName5 : string -> Simulant -> World Lens -> bool -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal register : Simulant -> World -> World =
