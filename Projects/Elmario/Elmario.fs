@@ -58,6 +58,14 @@ type ElmarioDispatcher () =
         override this.Content (_, _, _) =
             [Content.screen Default.Screen.Name Vanilla []
                 [Content.layer Default.Layer.Name []
-                    [Content.character Simulants.Elmario.Name [Entity.Position == v2 0.0f 0.0f; Entity.Size == v2 144.0f 144.0f]
-                     Content.block "Ground" [Entity.Position == v2 -384.0f -256.0f; Entity.Size == v2 768.0f 64.0f; Entity.StaticImage == asset "Gameplay" "TreeTop"]
-                     Content.block "Rock" [Entity.Position == v2 320.0f -192.0f; Entity.Size == v2 64.0f 64.0f; Entity.StaticImage == asset "Gameplay" "Rock"]]]]
+                    [Content.character Simulants.Elmario.Name
+                        [Entity.Position == v2 0.0f 0.0f
+                         Entity.Size == v2 144.0f 144.0f]
+                     Content.block "Ground"
+                        [Entity.Position == v2 -384.0f -256.0f
+                         Entity.Size == v2 768.0f 64.0f
+                         Entity.StaticImage == asset "Gameplay" "TreeTop"]
+                     Content.block "Rock"
+                        [Entity.Position == v2 320.0f -192.0f
+                         Entity.Size == v2 64.0f 64.0f
+                         Entity.StaticImage == asset "Gameplay" "Rock"]]]]
