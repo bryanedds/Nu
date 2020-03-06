@@ -260,27 +260,54 @@ module Nu =
                     world entities
 
             // init fix5 F# reach-around
-            WorldModule.fix5 <- fun name (simulant : Simulant) (lens : World Lens) breaking world ->
-                let nonPersistent = not (Reflection.isPropertyPersistentByName name)
-                let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
+            WorldModule.fix5 <- fun (simulant : Simulant) (left : World Lens) (right : World Lens) breaking world ->
+
+                // define propagation
                 let propagate (_ : Event) world =
-                    if lens.Validate world then
+
+                    // ensure lens validity
+                    if right.Validate world then
+
+                        // get right value
                         let value =
-                            match lens.GetWithoutValidation world with
+                            match right.GetWithoutValidation world with
                             | :? DesignerProperty as property -> property.DesignerValue
                             | value -> value
-                        let property = World.getProperty name simulant world
-                        if property.PropertyType = typeof<DesignerProperty> then
-                            let designerProperty = property.PropertyValue :?> DesignerProperty
-                            let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
-                            World.setProperty name alwaysPublish nonPersistent property simulant world
-                        else
-                            let property = { property with PropertyValue = value }
-                            World.setProperty name alwaysPublish nonPersistent property simulant world
+                            
+                        // hydrate the left lens with a real address
+                        let hydrate = isNull (left.This.SimulantAddress :> obj)
+                        if hydrate then
+                            match (simulant, left.This) with
+                            | ((:? Entity as entityFull), (:? Entity as entityPartial)) -> entityPartial.EntityAddress <- entityFull.EntityAddress
+                            | ((:? Layer as layerFull), (:? Layer as layerPartial)) -> layerPartial.LayerAddress <- layerFull.LayerAddress
+                            | ((:? Screen as screenFull), (:? Screen as screenPartial)) -> screenPartial.ScreenAddress <- screenFull.ScreenAddress
+                            | ((:? Game), (:? Game)) -> () // nothing to do since Game can never have an invalid address
+                            | (_, _) -> failwithumf ()
+
+                        // set left value
+                        let world =
+                            match left.GetWithoutValidation world with
+                            | :? DesignerProperty as designerProperty -> (Option.get left.SetOpt) ({ designerProperty with DesignerValue = value } :> obj) world
+                            | _ -> (Option.get left.SetOpt) value world
+
+                        // dehydrate
+                        if hydrate then
+                            match left.This with
+                            | :? Entity as entity -> entity.EntityAddress <- Unchecked.defaultof<_>
+                            | :? Layer as layer -> layer.LayerAddress <- Unchecked.defaultof<_>
+                            | :? Screen as screen -> screen.ScreenAddress <- Unchecked.defaultof<_>
+                            | :? Game -> () // nothing to do since Game can never have an invalid address
+                            | _ -> failwithumf ()
+
+                        world
+
+                    // invalid - do nothing
                     else world
+
+                // hook up propagation
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
-                let world = Stream.make (atooa Events.Register --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
-                Stream.make (atooa (Events.Change lens.Name) --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
+                let world = Stream.make (atooa Events.Register --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
+                Stream.make (atooa (Events.Change right.Name) --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
 
             WorldModule.register <- fun simulant world ->
                 World.register simulant world
