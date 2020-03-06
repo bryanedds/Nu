@@ -152,7 +152,7 @@ module DeclarativeOperators =
     let fix3 (left : Lens<'a, World>) (right : Lens<'a, World>) breaking =
         if right.This :> obj |> isNull
         then failwith "Equate expects an authentic right lens (where its This field is not null)."
-        else FixDefinition (left.Name, right, breaking)
+        else FixDefinition (left, right, breaking)
 
     /// Fix the left property to the value of the right.
     let inline (<==) left right =

@@ -122,8 +122,8 @@ module FacetModule =
                         let signal = handler evt
                         WorldModule.trySignalFacet signal facetName entity world)
                         address (entity :> Simulant) world
-                | FixDefinition (propertyName, lens, breaking) ->
-                    WorldModule.fix5 propertyName entity lens breaking world)
+                | FixDefinition (left, right, breaking) ->
+                    WorldModule.fix5 left.Name entity right breaking world)
                 world initializers
 
         override this.Actualize (entity, world) =
@@ -1099,8 +1099,8 @@ module EntityDispatcherModule =
                         let signal = handler evt
                         WorldModule.trySignal signal entity world)
                         address (entity :> Simulant) world
-                | FixDefinition (propertyName, lens, breaking) ->
-                    WorldModule.fix5 propertyName entity lens breaking world)
+                | FixDefinition (left, right, breaking) ->
+                    WorldModule.fix5 left.Name entity right breaking world)
                 world initializers
 
         override this.Actualize (entity, world) =
@@ -1932,8 +1932,8 @@ module LayerDispatcherModule =
                         let signal = handler evt
                         WorldModule.trySignal signal layer world)
                         address (layer :> Simulant) world
-                | FixDefinition (propertyName, lens, breaking) ->
-                    WorldModule.fix5 propertyName layer lens breaking world)
+                | FixDefinition (left, right, breaking) ->
+                    WorldModule.fix5 left.Name layer right breaking world)
                 world initializers
 
         override this.Actualize (layer, world) =
@@ -2028,8 +2028,8 @@ module ScreenDispatcherModule =
                         let signal = handler evt
                         WorldModule.trySignal signal screen world)
                         address (screen :> Simulant) world
-                | FixDefinition (propertyName, lens, breaking) ->
-                    WorldModule.fix5 propertyName screen lens breaking world)
+                | FixDefinition (left, right, breaking) ->
+                    WorldModule.fix5 left.Name screen right breaking world)
                 world initializers
 
         override this.Actualize (screen, world) =
