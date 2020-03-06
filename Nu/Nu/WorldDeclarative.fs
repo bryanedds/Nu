@@ -157,7 +157,7 @@ module DeclarativeOperators =
     /// Fix the left property to the value of the right.
     let inline (<==) left right =
         fix3 left right false
-        
+
     /// Fix the left property to the value of the right, breaking any update cycles.
     let inline (</==) left right =
         fix3 left right true

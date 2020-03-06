@@ -13,7 +13,43 @@ open Nu
 module Nu =
 
     let mutable private Initialized = false
+
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
+
+    /// Propagate lensed property directly.
+    let private propagate (left : World Lens) (right : World Lens) (_ : Event) world =
+        if right.Validate world then
+            let value =
+                match right.GetWithoutValidation world with
+                | :? DesignerProperty as property -> property.DesignerValue
+                | value -> value
+            let world =
+                match left.GetWithoutValidation world with
+                | :? DesignerProperty as designerProperty -> (Option.get left.SetOpt) ({ designerProperty with DesignerValue = value } :> obj) world
+                | _ -> (Option.get left.SetOpt) value world
+            world
+        else world
+
+    /// Propagate lensed property by property name.
+    let private propagateByName simulant leftName (right : World Lens) (_ : Event) world =
+        let nonPersistent = not (Reflection.isPropertyPersistentByName leftName)
+        let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
+        if right.Validate world then
+            let value =
+                match right.GetWithoutValidation world with
+                | :? DesignerProperty as property -> property.DesignerValue
+                | value -> value
+            match World.tryGetProperty leftName simulant world with
+            | Some property ->
+                if property.PropertyType = typeof<DesignerProperty> then
+                    let designerProperty = property.PropertyValue :?> DesignerProperty
+                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
+                    World.setProperty leftName alwaysPublish nonPersistent property simulant world
+                else
+                    let property = { property with PropertyValue = value }
+                    World.setProperty leftName alwaysPublish nonPersistent property simulant world
+            | None -> world // TODO: consider sending a debug message here instead of silently failing
+        else world
 
     /// Initialize the Nu game engine.
     let init nuConfig =
@@ -260,42 +296,8 @@ module Nu =
                     world entities
 
             // init fix5 F# reach-around
-            // TOOD: make this code a little more readable...
             WorldModule.fix5 <- fun simulant left right breaking world ->
-                let leftName = left.Name
-                let nonPersistent = not (Reflection.isPropertyPersistentByName leftName)
-                let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
-                let propagate (_ : Event) world =
-                    let leftName = left.Name // shadow outer leftName to avoid overhead of additional capture
-                    if isNull (simulant :> obj) then
-                        if right.Validate world then
-                            let value =
-                                match right.GetWithoutValidation world with
-                                | :? DesignerProperty as property -> property.DesignerValue
-                                | value -> value
-                            let world =
-                                match left.GetWithoutValidation world with
-                                | :? DesignerProperty as designerProperty -> (Option.get right.SetOpt) ({ designerProperty with DesignerValue = value } :> obj) world
-                                | _ -> (Option.get right.SetOpt) value world
-                            world
-                        else world
-                    else
-                        if right.Validate world then
-                            let value =
-                                match right.GetWithoutValidation world with
-                                | :? DesignerProperty as property -> property.DesignerValue
-                                | value -> value
-                            match World.tryGetProperty leftName simulant world with
-                            | Some property ->
-                                if property.PropertyType = typeof<DesignerProperty> then
-                                    let designerProperty = property.PropertyValue :?> DesignerProperty
-                                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
-                                    World.setProperty leftName alwaysPublish nonPersistent property simulant world
-                                else
-                                    let property = { property with PropertyValue = value }
-                                    World.setProperty leftName alwaysPublish nonPersistent property simulant world
-                            | None -> world // TODO: consider sending a debug message here instead of silently failing
-                        else world
+                let propagate = if notNull (left.This :> obj) then propagate left right else propagateByName simulant left.Name right
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
                 let world = Stream.make (atooa Events.Register --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate right.This $ world
                 Stream.make (atooa (Events.Change right.Name) --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate right.This $ world
