@@ -95,7 +95,7 @@ and [<NoComparison>] EntityDescriptor =
 type [<NoEquality; NoComparison>] PropertyInitializer =
     | PropertyDefinition of PropertyDefinition
     | EventHandlerDefinition of (Event -> obj) * obj Address
-    | FixDefinition of string * World Lens * bool
+    | FixDefinition of World Lens * World Lens * bool
 
 /// Contains primitives for describing simulants.
 [<RequireQualifiedAccess>]
@@ -138,7 +138,7 @@ module Describe =
             match initializer with
             | PropertyDefinition _ -> None
             | EventHandlerDefinition _ -> None
-            | FixDefinition (leftName, right, breaking) -> Some (leftName, simulant, right, breaking)) |>
+            | FixDefinition (left, right, breaking) -> Some (left.Name, simulant, right, breaking)) |>
         Seq.definitize |>
         Seq.toList
 

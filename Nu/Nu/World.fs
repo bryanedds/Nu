@@ -269,14 +269,16 @@ module Nu =
                             match lens.GetWithoutValidation world with
                             | :? DesignerProperty as property -> property.DesignerValue
                             | value -> value
-                        let property = World.getProperty name simulant world
-                        if property.PropertyType = typeof<DesignerProperty> then
-                            let designerProperty = property.PropertyValue :?> DesignerProperty
-                            let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
-                            World.setProperty name alwaysPublish nonPersistent property simulant world
-                        else
-                            let property = { property with PropertyValue = value }
-                            World.setProperty name alwaysPublish nonPersistent property simulant world
+                        match World.tryGetProperty name simulant world with
+                        | Some property ->
+                            if property.PropertyType = typeof<DesignerProperty> then
+                                let designerProperty = property.PropertyValue :?> DesignerProperty
+                                let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
+                                World.setProperty name alwaysPublish nonPersistent property simulant world
+                            else
+                                let property = { property with PropertyValue = value }
+                                World.setProperty name alwaysPublish nonPersistent property simulant world
+                        | None -> world // TODO: consider sending a debug message here instead of silently failing
                     else world
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
                 let world = Stream.make (atooa Events.Register --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world

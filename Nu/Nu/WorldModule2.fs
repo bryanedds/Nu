@@ -953,8 +953,8 @@ module GameDispatcherModule =
                         let signal = handler evt
                         WorldModule.trySignal signal game world)
                         address (game :> Simulant) world
-                | FixDefinition (propertyName, lens, breaking) ->
-                    WorldModule.fix5 propertyName game lens breaking world)
+                | FixDefinition (left, right, breaking) ->
+                    WorldModule.fix5 left.Name game right breaking world)
                 world initializers
 
         override this.Actualize (game, world) =

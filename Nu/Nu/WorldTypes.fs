@@ -761,13 +761,10 @@ module WorldTypes =
         member private this.View = Debug.World.viewGame Debug.World.Chosen
 
         /// Concatenate an address with a game's address, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (game : Game) =
+        static member (-->) (address : 'a Address, game : Game) =
             match box game with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
             | _ -> acatff address game.GameAddress
-
-        /// Concatenate an address with a game's address, forcing the type of first address.
-        static member (-->) (address : 'a Address, game : Game) = Simulant.acatff address game
 
     /// The screen type that allows transitioning to and from other screens, and also hosts the
     /// currently interactive layers of entities.
@@ -823,13 +820,10 @@ module WorldTypes =
         member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
 
         /// Concatenate an address with a screen's address, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (screen : Screen) =
+        static member (-->) (address : 'a Address, screen : Screen) =
             match box screen with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
             | _ -> acatff address screen.ScreenAddress
-
-        /// Concatenate an address with a screen's address, forcing the type of first address.
-        static member (-->) (address : 'a Address, screen : Screen) = Simulant.acatff address screen
 
         /// Derive a layer from its screen.
         static member (/) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress --> ntoa layerName)
@@ -896,13 +890,10 @@ module WorldTypes =
         member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
 
         /// Concatenate an address with a layer's address, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (layer : Layer) =
+        static member (-->) (address : 'a Address, layer : Layer) =
             match box layer with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
             | _ -> acatff address layer.LayerAddress
-
-        /// Concatenate an address with a layer's address, forcing the type of first address.
-        static member (-->) (address : 'a Address, layer : Layer) = Simulant.acatff address layer
 
         /// Derive an entity from its layer.
         static member (/) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress --> ntoa entityName)
@@ -995,14 +986,11 @@ module WorldTypes =
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
 
-        /// Concatenate an address with an entity's address, forcing the type of first address.
-        static member acatff<'a> (address : 'a Address) (entity : Entity) =
+        /// Concatenate an address with an entity, forcing the type of first address.
+        static member (-->) (address : 'a Address, entity : Entity) =
             match box entity with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
             | _ -> acatff address entity.EntityAddress
-
-        /// Concatenate an address with an entity, forcing the type of first address.
-        static member (-->) (address : 'a Address, entity : Entity) = Simulant.acatff address entity
 
     /// The world's dispatchers (including facets).
     /// 
