@@ -132,13 +132,13 @@ module Describe =
         Seq.definitize |>
         Seq.toList
 
-    let private initializersToFixes initializers (simulant : Simulant)=
+    let private initializersToFixes initializers (simulant : Simulant) =
         initializers |>
         Seq.map (fun initializer ->
             match initializer with
             | PropertyDefinition _ -> None
             | EventHandlerDefinition _ -> None
-            | FixDefinition (left, right, breaking) -> Some (left.Name, simulant, right, breaking)) |>
+            | FixDefinition (left, right, breaking) -> Some (simulant, left, right, breaking)) |>
         Seq.definitize |>
         Seq.toList
 

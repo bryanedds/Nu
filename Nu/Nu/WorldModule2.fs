@@ -954,7 +954,7 @@ module GameDispatcherModule =
                         WorldModule.trySignal signal game world)
                         address (game :> Simulant) world
                 | FixDefinition (left, right, breaking) ->
-                    WorldModule.fix5 left.Name game right breaking world)
+                    WorldModule.fix5 game left right breaking world)
                 world initializers
 
         override this.Actualize (game, world) =

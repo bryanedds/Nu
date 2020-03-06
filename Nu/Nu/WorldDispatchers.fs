@@ -123,7 +123,7 @@ module FacetModule =
                         WorldModule.trySignalFacet signal facetName entity world)
                         address (entity :> Simulant) world
                 | FixDefinition (left, right, breaking) ->
-                    WorldModule.fix5 left.Name entity right breaking world)
+                    WorldModule.fix5 entity left right breaking world)
                 world initializers
 
         override this.Actualize (entity, world) =
@@ -1100,7 +1100,7 @@ module EntityDispatcherModule =
                         WorldModule.trySignal signal entity world)
                         address (entity :> Simulant) world
                 | FixDefinition (left, right, breaking) ->
-                    WorldModule.fix5 left.Name entity right breaking world)
+                    WorldModule.fix5 entity left right breaking world)
                 world initializers
 
         override this.Actualize (entity, world) =
@@ -1933,7 +1933,7 @@ module LayerDispatcherModule =
                         WorldModule.trySignal signal layer world)
                         address (layer :> Simulant) world
                 | FixDefinition (left, right, breaking) ->
-                    WorldModule.fix5 left.Name layer right breaking world)
+                    WorldModule.fix5 layer left right breaking world)
                 world initializers
 
         override this.Actualize (layer, world) =
@@ -2029,7 +2029,7 @@ module ScreenDispatcherModule =
                         WorldModule.trySignal signal screen world)
                         address (screen :> Simulant) world
                 | FixDefinition (left, right, breaking) ->
-                    WorldModule.fix5 left.Name screen right breaking world)
+                    WorldModule.fix5 screen left right breaking world)
                 world initializers
 
         override this.Actualize (screen, world) =

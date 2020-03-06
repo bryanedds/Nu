@@ -368,8 +368,8 @@ module WorldEntityModule =
                             entity
                             world
                 let world =
-                    List.fold (fun world (name, simulant, property, breaking) ->
-                        WorldModule.fix5 name simulant property breaking world)
+                    List.fold (fun world (simulant, left : World Lens, right, breaking) ->
+                        WorldModule.fix5 simulant left right breaking world)
                         world fixes
                 let world =
                     List.fold (fun world (handler, address, simulant) ->

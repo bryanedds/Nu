@@ -260,29 +260,45 @@ module Nu =
                     world entities
 
             // init fix5 F# reach-around
-            WorldModule.fix5 <- fun name (simulant : Simulant) (lens : World Lens) breaking world ->
-                let nonPersistent = not (Reflection.isPropertyPersistentByName name)
-                let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
+            // TOOD: make this code a little more readable...
+            WorldModule.fix5 <- fun simulant left right breaking world ->
+                let leftName = left.Name
+                let nonPersistent = not (Reflection.isPropertyPersistentByName leftName)
+                let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
                 let propagate (_ : Event) world =
-                    if lens.Validate world then
-                        let value =
-                            match lens.GetWithoutValidation world with
-                            | :? DesignerProperty as property -> property.DesignerValue
-                            | value -> value
-                        match World.tryGetProperty name simulant world with
-                        | Some property ->
-                            if property.PropertyType = typeof<DesignerProperty> then
-                                let designerProperty = property.PropertyValue :?> DesignerProperty
-                                let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
-                                World.setProperty name alwaysPublish nonPersistent property simulant world
-                            else
-                                let property = { property with PropertyValue = value }
-                                World.setProperty name alwaysPublish nonPersistent property simulant world
-                        | None -> world // TODO: consider sending a debug message here instead of silently failing
-                    else world
+                    let leftName = left.Name // shadow outer leftName to avoid overhead of additional capture
+                    if isNull (simulant :> obj) then
+                        if right.Validate world then
+                            let value =
+                                match right.GetWithoutValidation world with
+                                | :? DesignerProperty as property -> property.DesignerValue
+                                | value -> value
+                            let world =
+                                match left.GetWithoutValidation world with
+                                | :? DesignerProperty as designerProperty -> (Option.get right.SetOpt) ({ designerProperty with DesignerValue = value } :> obj) world
+                                | _ -> (Option.get right.SetOpt) value world
+                            world
+                        else world
+                    else
+                        if right.Validate world then
+                            let value =
+                                match right.GetWithoutValidation world with
+                                | :? DesignerProperty as property -> property.DesignerValue
+                                | value -> value
+                            match World.tryGetProperty leftName simulant world with
+                            | Some property ->
+                                if property.PropertyType = typeof<DesignerProperty> then
+                                    let designerProperty = property.PropertyValue :?> DesignerProperty
+                                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
+                                    World.setProperty leftName alwaysPublish nonPersistent property simulant world
+                                else
+                                    let property = { property with PropertyValue = value }
+                                    World.setProperty leftName alwaysPublish nonPersistent property simulant world
+                            | None -> world // TODO: consider sending a debug message here instead of silently failing
+                        else world
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
-                let world = Stream.make (atooa Events.Register --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
-                Stream.make (atooa (Events.Change lens.Name) --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
+                let world = Stream.make (atooa Events.Register --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate right.This $ world
+                Stream.make (atooa (Events.Change right.Name) --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate right.This $ world
 
             WorldModule.register <- fun simulant world ->
                 World.register simulant world
