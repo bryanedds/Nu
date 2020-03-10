@@ -127,7 +127,7 @@ module Describe =
         Seq.map (fun initializer ->
             match initializer with
             | PropertyDefinition _ -> None
-            | EventHandlerDefinition (handler, address) -> Some (handler, address --> simulant.SimulantAddress, simulant)
+            | EventHandlerDefinition (handler, partialAddress) -> Some (handler, partialAddress --> simulant.SimulantAddress, simulant)
             | FixDefinition _ -> None) |>
         Seq.definitize |>
         Seq.toList

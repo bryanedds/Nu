@@ -137,7 +137,9 @@ module ContentOperators =
 
     /// Bind an event to a signal.
     let inline on (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : PropertyInitializer =
-        EventHandlerDefinition ((fun _ -> signal :> obj), atooa eventAddress)
+        let eventNameIndex = Address.findIndex (fun name -> name = "Event") eventAddress
+        let partialAddress = Address.take (inc eventNameIndex) eventAddress
+        EventHandlerDefinition ((fun _ -> signal :> obj), partialAddress)
 
     /// Bind an event to a signal.
     let inline (==>) (eventAddress : 'a Address) (signal : Signal<'message, 'command>) : PropertyInitializer =
@@ -145,7 +147,9 @@ module ContentOperators =
 
     /// Bind an event to a signal.
     let inline handle (eventAddress : 'a Address) (handler : Event<'a, 'p> -> Signal<'message, 'command>) : PropertyInitializer =
-        EventHandlerDefinition ((fun evt -> handler (Event.specialize evt) :> obj), atooa eventAddress)
+        let eventNameIndex = Address.findIndex (fun name -> name = "Event") eventAddress
+        let partialAddress = Address.take (inc eventNameIndex) eventAddress
+        EventHandlerDefinition ((fun evt -> handler (Event.specialize evt) :> obj), partialAddress)
 
     /// Bind an event to a signal.
     let inline (==|>) (eventAddress : 'a Address) (handler : Event<'a, 'p> -> Signal<'message, 'command>) : PropertyInitializer =

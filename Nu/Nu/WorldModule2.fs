@@ -948,11 +948,11 @@ module GameDispatcherModule =
                     let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
                     World.setProperty def.PropertyName alwaysPublish nonPersistent property game world
-                | EventHandlerDefinition (handler, address) ->
+                | EventHandlerDefinition (handler, partialAddress) ->
+                    let eventAddress = partialAddress --> game
                     World.monitor (fun (evt : Event) world ->
-                        let signal = handler evt
-                        WorldModule.trySignal signal game world)
-                        address (game :> Simulant) world
+                        WorldModule.trySignal (handler evt) game world)
+                        eventAddress (game :> Simulant) world
                 | FixDefinition (left, right, breaking) ->
                     WorldModule.fix5 game left right breaking world)
                 world initializers

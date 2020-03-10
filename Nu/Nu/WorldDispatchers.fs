@@ -116,12 +116,11 @@ module FacetModule =
                     let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
                     World.setProperty def.PropertyName alwaysPublish nonPersistent property entity world
-                | EventHandlerDefinition (handler, address) ->
+                | EventHandlerDefinition (handler, partialAddress) ->
+                    let eventAddress = partialAddress --> entity
                     World.monitor (fun (evt : Event) world ->
-                        let facetName = getTypeName this
-                        let signal = handler evt
-                        WorldModule.trySignalFacet signal facetName entity world)
-                        address (entity :> Simulant) world
+                        WorldModule.trySignalFacet (handler evt) (getTypeName this) entity world)
+                        eventAddress (entity :> Simulant) world
                 | FixDefinition (left, right, breaking) ->
                     WorldModule.fix5 entity left right breaking world)
                 world initializers
@@ -1094,11 +1093,11 @@ module EntityDispatcherModule =
                     let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
                     World.setProperty def.PropertyName alwaysPublish nonPersistent property entity world
-                | EventHandlerDefinition (handler, address) ->
+                | EventHandlerDefinition (handler, partialAddress) ->
+                    let eventAddress = partialAddress --> entity
                     World.monitor (fun (evt : Event) world ->
-                        let signal = handler evt
-                        WorldModule.trySignal signal entity world)
-                        address (entity :> Simulant) world
+                        WorldModule.trySignal (handler evt) entity world)
+                        eventAddress (entity :> Simulant) world
                 | FixDefinition (left, right, breaking) ->
                     WorldModule.fix5 entity left right breaking world)
                 world initializers
@@ -1927,11 +1926,11 @@ module LayerDispatcherModule =
                     let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
                     World.setProperty def.PropertyName alwaysPublish nonPersistent property layer world
-                | EventHandlerDefinition (handler, address) ->
+                | EventHandlerDefinition (handler, partialAddress) ->
+                    let eventAddress = partialAddress --> layer
                     World.monitor (fun (evt : Event) world ->
-                        let signal = handler evt
-                        WorldModule.trySignal signal layer world)
-                        address (layer :> Simulant) world
+                        WorldModule.trySignal (handler evt) layer world)
+                        eventAddress (layer :> Simulant) world
                 | FixDefinition (left, right, breaking) ->
                     WorldModule.fix5 layer left right breaking world)
                 world initializers
@@ -2023,11 +2022,11 @@ module ScreenDispatcherModule =
                     let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
                     World.setProperty def.PropertyName alwaysPublish nonPersistent property screen world
-                | EventHandlerDefinition (handler, address) ->
+                | EventHandlerDefinition (handler, partialAddress) ->
+                    let eventAddress = partialAddress --> screen
                     World.monitor (fun (evt : Event) world ->
-                        let signal = handler evt
-                        WorldModule.trySignal signal screen world)
-                        address (screen :> Simulant) world
+                        WorldModule.trySignal (handler evt) screen world)
+                        eventAddress (screen :> Simulant) world
                 | FixDefinition (left, right, breaking) ->
                     WorldModule.fix5 screen left right breaking world)
                 world initializers

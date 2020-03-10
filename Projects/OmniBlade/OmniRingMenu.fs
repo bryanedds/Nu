@@ -66,10 +66,10 @@ module OmniRingMenu =
                 let button = layer / buttonName
                 Content.button buttonName
                     [Entity.PositionLocal == v2 -32.0f -96.0f
-                     Entity.Size == v2 64.0f 64.0f
+                     button.Size == v2 64.0f 64.0f
                      Entity.Depth <== menu.Depth
-                     Entity.UpImage == asset Assets.BattlePackage (itemCancelValue + "Up")
-                     Entity.DownImage == asset Assets.BattlePackage (itemCancelValue + "Down")
+                     button.UpImage == asset Assets.BattlePackage (itemCancelValue + "Up")
+                     button.DownImage == asset Assets.BattlePackage (itemCancelValue + "Down")
                      Entity.ParentNodeOpt == Some (relate button menu)
                      Entity.Persistent == false
-                     Entity.ClickEvent ==> cmd ItemCancel]]
+                     button.ClickEvent ==> cmd ItemCancel]]
