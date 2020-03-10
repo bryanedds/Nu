@@ -48,7 +48,9 @@ module Nu =
                 else
                     let property = { property with PropertyValue = value }
                     World.setProperty leftName alwaysPublish nonPersistent property simulant world
-            | None -> world // TODO: consider sending a debug message here instead of silently failing
+            | None ->
+                Log.debug "Property propagation failed. You have used a composed lens on a faux simulant reference, which is not supported."
+                world
         else world
 
     /// Initialize the Nu game engine.
