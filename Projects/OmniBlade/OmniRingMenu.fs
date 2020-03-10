@@ -52,24 +52,24 @@ module OmniRingMenu =
                 let buttonName = menu.Name + "+" + itemValue
                 let button = layer / buttonName
                 Content.button buttonName
-                    [Entity.Size == v2 64.0f 64.0f
-                     Entity.Depth <== menu.Depth
-                     Entity.UpImage == asset Assets.BattlePackage (itemValue + "Up")
-                     Entity.DownImage == asset Assets.BattlePackage (itemValue + "Down")
-                     Entity.Persistent == false
-                     Entity.ParentNodeOpt == Some (relate button menu)
-                     Entity.ClickEvent ==> cmd (ItemSelect itemValue)
-                     Entity.UpdateEvent ==> cmd (ArrangeItemButton (button, index))]
+                    [button.Size == v2 64.0f 64.0f
+                     button.Depth <== menu.Depth
+                     button.UpImage == asset Assets.BattlePackage (itemValue + "Up")
+                     button.DownImage == asset Assets.BattlePackage (itemValue + "Down")
+                     button.Persistent == false
+                     button.ParentNodeOpt == Some (relate button menu)
+                     button.ClickEvent ==> cmd (ItemSelect itemValue)
+                     button.UpdateEvent ==> cmd (ArrangeItemButton (button, index))]
              Content.entityOpt (model --> fun model -> model.ItemCancelOpt) $ fun itemCancel layer world ->
                 let itemCancelValue = itemCancel.Get world
                 let buttonName = menu.Name + "+" + itemCancelValue
                 let button = layer / buttonName
                 Content.button buttonName
-                    [Entity.PositionLocal == v2 -32.0f -96.0f
+                    [button.PositionLocal == v2 -32.0f -96.0f
                      button.Size == v2 64.0f 64.0f
-                     Entity.Depth <== menu.Depth
+                     button.Depth <== menu.Depth
                      button.UpImage == asset Assets.BattlePackage (itemCancelValue + "Up")
                      button.DownImage == asset Assets.BattlePackage (itemCancelValue + "Down")
-                     Entity.ParentNodeOpt == Some (relate button menu)
-                     Entity.Persistent == false
+                     button.ParentNodeOpt == Some (relate button menu)
+                     button.Persistent == false
                      button.ClickEvent ==> cmd ItemCancel]]
