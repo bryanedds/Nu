@@ -726,8 +726,8 @@ module WorldTypes =
         /// The address of the game.
         member this.GameAddress = gameAddress
         
-        /// Helper for accessing strongly-typed game properties.
-        static member Prop = Unchecked.defaultof<Game>
+        /// Helper for accessing game lenses.
+        static member Lens = Unchecked.defaultof<Game>
         
         static member op_Implicit () = Game ()
         
@@ -782,8 +782,8 @@ module WorldTypes =
         /// The parent game of the screen.
         member this.Parent = Game ()
 
-        /// Helper for accessing strongly-typed screen properties.
-        static member Prop = Unchecked.defaultof<Screen>
+        /// Helper for accessing screen lenses.
+        static member Lens = Unchecked.defaultof<Screen>
         
         static member op_Implicit (screenName : string) = Screen screenName
         
@@ -852,8 +852,8 @@ module WorldTypes =
         /// The parent screen of the layer.
         member this.Parent = let names = this.LayerAddress.Names in Screen names.[0]
 
-        /// Helper for accessing strongly-typed layer properties.
-        static member Prop = Unchecked.defaultof<Layer>
+        /// Helper for accessing layer lenses.
+        static member Lens = Unchecked.defaultof<Layer>
 
         static member op_Implicit (layerName : string) = Layer layerName
 
@@ -948,8 +948,8 @@ module WorldTypes =
             with get () = entityStateOpt
             and set value = entityStateOpt <- value
 
-        /// Helper for accessing strongly-typed entity properties.
-        static member Prop = Unchecked.defaultof<Entity>
+        /// Helper for accessing entity lenses.
+        static member Lens = Unchecked.defaultof<Entity>
 
         static member op_Implicit (entityName : string) = Entity entityName
 

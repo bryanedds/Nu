@@ -7,7 +7,6 @@ open Nito.Collections
 open TiledSharp
 open Prime
 open Nu
-open Nu.Declarative
 
 [<AutoOpen>]
 module DeclarativeOperators2 =
@@ -228,17 +227,17 @@ module EffectFacetModule =
             setEffect effectsOpt entity world
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.SelfDestruct false
-             define Entity.Effects []
-             define Entity.EffectStartTimeOpt None
-             define Entity.EffectDefinitions Map.empty
-             define Entity.Effect Effect.empty
-             define Entity.EffectOffset (Vector2 0.5f)
-             define Entity.EffectPhysicsShapes ()
-             define Entity.EffectTags Map.empty
-             define Entity.EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
-             variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
+            [define Entity.Lens.PublishChanges true
+             define Entity.Lens.SelfDestruct false
+             define Entity.Lens.Effects []
+             define Entity.Lens.EffectStartTimeOpt None
+             define Entity.Lens.EffectDefinitions Map.empty
+             define Entity.Lens.Effect Effect.empty
+             define Entity.Lens.EffectOffset (Vector2 0.5f)
+             define Entity.Lens.EffectPhysicsShapes ()
+             define Entity.Lens.EffectTags Map.empty
+             define Entity.Lens.EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
+             variable Entity.Lens.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
 
         override this.Actualize (entity, world) =
             
@@ -336,14 +335,14 @@ module ScriptFacetModule =
             World.registerEntity entity world
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.ScriptOpt None
-             define Entity.Script [||]
-             define Entity.ScriptUnsubscriptions []
-             define Entity.RegisterScript Scripting.Unit
-             define Entity.UnregisterScript Scripting.Unit
-             define Entity.UpdateScript Scripting.Unit
-             define Entity.PostUpdateScript Scripting.Unit]
+            [define Entity.Lens.PublishChanges true
+             define Entity.Lens.ScriptOpt None
+             define Entity.Lens.Script [||]
+             define Entity.Lens.ScriptUnsubscriptions []
+             define Entity.Lens.RegisterScript Scripting.Unit
+             define Entity.Lens.UnregisterScript Scripting.Unit
+             define Entity.Lens.UpdateScript Scripting.Unit
+             define Entity.Lens.PostUpdateScript Scripting.Unit]
 
         override this.Register (entity, world) =
             let world = World.evalWithLogging (entity.GetRegisterScript world) (entity.GetScriptFrame world) entity world |> snd'
@@ -385,11 +384,11 @@ module TextFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Text ""
-             define Entity.Font (AssetTag.make<Font> Assets.DefaultPackage "Font")
-             define Entity.Margins Vector2.Zero
-             define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
-             define Entity.Color (Vector4 (0.0f, 0.0f, 0.0f, 1.0f))]
+            [define Entity.Lens.Text ""
+             define Entity.Lens.Font (AssetTag.make<Font> Assets.DefaultPackage "Font")
+             define Entity.Lens.Margins Vector2.Zero
+             define Entity.Lens.Justification (Justified (JustifyCenter, JustifyMiddle))
+             define Entity.Lens.Color (Vector4 (0.0f, 0.0f, 0.0f, 1.0f))]
 
         override this.Actualize (text, world) =
             let textStr = text.GetText world
@@ -476,22 +475,22 @@ module RigidBodyFacetModule =
             PhysicsEngine.localizeCollisionBody (entity.GetSize world) (entity.GetCollisionBody world)
 
         static member Properties =
-            [define Entity.BodyType Dynamic
-             define Entity.Awake true
-             define Entity.Density Constants.Physics.NormalDensity
-             define Entity.Friction 0.2f
-             define Entity.Restitution 0.0f
-             define Entity.FixedRotation false
-             define Entity.AngularVelocity 0.0f
-             define Entity.AngularDamping 0.0f
-             define Entity.LinearVelocity Vector2.Zero
-             define Entity.LinearDamping 0.0f
-             define Entity.GravityScale 1.0f
-             define Entity.CollisionCategories "1"
-             define Entity.CollisionMask "@"
-             define Entity.CollisionBody (BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero })
-             define Entity.IsBullet false
-             define Entity.IsSensor false]
+            [define Entity.Lens.BodyType Dynamic
+             define Entity.Lens.Awake true
+             define Entity.Lens.Density Constants.Physics.NormalDensity
+             define Entity.Lens.Friction 0.2f
+             define Entity.Lens.Restitution 0.0f
+             define Entity.Lens.FixedRotation false
+             define Entity.Lens.AngularVelocity 0.0f
+             define Entity.Lens.AngularDamping 0.0f
+             define Entity.Lens.LinearVelocity Vector2.Zero
+             define Entity.Lens.LinearDamping 0.0f
+             define Entity.Lens.GravityScale 1.0f
+             define Entity.Lens.CollisionCategories "1"
+             define Entity.Lens.CollisionMask "@"
+             define Entity.Lens.CollisionBody (BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero })
+             define Entity.Lens.IsBullet false
+             define Entity.Lens.IsSensor false]
 
         override this.RegisterPhysics (entity, world) =
             let bodyProperties = 
@@ -644,13 +643,13 @@ module TileMapFacetModule =
             Seq.toList
 
         static member Properties =
-            [define Entity.Omnipresent true
-             define Entity.Friction 0.0f
-             define Entity.Restitution 0.0f
-             define Entity.CollisionCategories "1"
-             define Entity.CollisionMask "@"
-             define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackage "TileMap")
-             define Entity.Parallax 0.0f]
+            [define Entity.Lens.Omnipresent true
+             define Entity.Lens.Friction 0.0f
+             define Entity.Lens.Restitution 0.0f
+             define Entity.Lens.CollisionCategories "1"
+             define Entity.Lens.CollisionMask "@"
+             define Entity.Lens.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackage "TileMap")
+             define Entity.Lens.Parallax 0.0f]
 
         override this.RegisterPhysics (tileMap, world) =
             let tileMapAsset = tileMap.GetTileMapAsset world
@@ -880,12 +879,12 @@ module NodeFacetModule =
             world
 
         static member Properties =
-            [define Entity.ParentNodeOpt None
-             define Entity.PositionLocal Vector2.Zero
-             define Entity.DepthLocal 0.0f
-             define Entity.VisibleLocal true
-             define Entity.EnabledLocal true
-             define Entity.NodeUnsubscribe (id : World -> World)]
+            [define Entity.Lens.ParentNodeOpt None
+             define Entity.Lens.PositionLocal Vector2.Zero
+             define Entity.Lens.DepthLocal 0.0f
+             define Entity.Lens.VisibleLocal true
+             define Entity.Lens.EnabledLocal true
+             define Entity.Lens.NodeUnsubscribe (id : World -> World)]
 
         override this.Register (entity, world) =
             let world = entity.SetNodeUnsubscribe id world // ensure unsubscribe function reference doesn't get copied in Gaia...
@@ -931,8 +930,8 @@ module StaticSpriteFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")
-             define Entity.Flip FlipNone]
+            [define Entity.Lens.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")
+             define Entity.Lens.Flip FlipNone]
 
         override this.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
@@ -1000,12 +999,12 @@ module AnimatedSpriteFacetModule =
             else None
 
         static member Properties =
-            [define Entity.CelCount 16 
-             define Entity.CelSize (Vector2 (16.0f, 16.0f))
-             define Entity.CelRun 4
-             define Entity.AnimationDelay 4L
-             define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackage "Image7")
-             define Entity.Flip FlipNone]
+            [define Entity.Lens.CelCount 16 
+             define Entity.Lens.CelSize (Vector2 (16.0f, 16.0f))
+             define Entity.Lens.CelRun 4
+             define Entity.Lens.AnimationDelay 4L
+             define Entity.Lens.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackage "Image7")
+             define Entity.Lens.Flip FlipNone]
 
         override this.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
@@ -1143,8 +1142,8 @@ module EffectDispatcherModule =
             [typeof<EffectFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.Effect (scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
+            [define Entity.Lens.PublishChanges true
+             define Entity.Lens.Effect (scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
 [<AutoOpen>]
 module NodeDispatcherModule =
@@ -1156,7 +1155,7 @@ module NodeDispatcherModule =
             [typeof<NodeFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true]
+            [define Entity.Lens.PublishChanges true]
 
     type [<AbstractClass>] NodeDispatcher<'model, 'message, 'command> (model) =
         inherit EntityDispatcher<'model, 'message, 'command> (model)
@@ -1165,7 +1164,7 @@ module NodeDispatcherModule =
             [typeof<NodeFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true]
+            [define Entity.Lens.PublishChanges true]
 
 [<AutoOpen>]
 module GuiDispatcherModule =
@@ -1200,11 +1199,11 @@ module GuiDispatcherModule =
             [typeof<NodeFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.ViewType Absolute
-             define Entity.AlwaysUpdate true
-             define Entity.DisabledColor (Vector4 0.75f)
-             define Entity.SwallowMouseLeft true]
+            [define Entity.Lens.PublishChanges true
+             define Entity.Lens.ViewType Absolute
+             define Entity.Lens.AlwaysUpdate true
+             define Entity.Lens.DisabledColor (Vector4 0.75f)
+             define Entity.Lens.SwallowMouseLeft true]
 
         override this.Register (gui, world) =
             let world = World.monitorPlus handleMouseLeft Events.MouseLeftDown gui world |> snd
@@ -1232,11 +1231,11 @@ module GuiDispatcherModule =
             [typeof<NodeFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.ViewType Absolute
-             define Entity.AlwaysUpdate true
-             define Entity.DisabledColor (Vector4 0.75f)
-             define Entity.SwallowMouseLeft true]
+            [define Entity.Lens.PublishChanges true
+             define Entity.Lens.ViewType Absolute
+             define Entity.Lens.AlwaysUpdate true
+             define Entity.Lens.DisabledColor (Vector4 0.75f)
+             define Entity.Lens.SwallowMouseLeft true]
 
         override this.Register (gui, world) =
             let world = base.Register (gui, world)
@@ -1311,12 +1310,12 @@ module ButtonDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (256.0f, 64.0f))
-             define Entity.SwallowMouseLeft false
-             define Entity.Down false
-             define Entity.UpImage (AssetTag.make<Image> Assets.DefaultPackage "Image")
-             define Entity.DownImage (AssetTag.make<Image> Assets.DefaultPackage "Image2")
-             define Entity.ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))]
+            [define Entity.Lens.Size (Vector2 (256.0f, 64.0f))
+             define Entity.Lens.SwallowMouseLeft false
+             define Entity.Lens.Down false
+             define Entity.Lens.UpImage (AssetTag.make<Image> Assets.DefaultPackage "Image")
+             define Entity.Lens.DownImage (AssetTag.make<Image> Assets.DefaultPackage "Image2")
+             define Entity.Lens.ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))]
 
         override this.Register (button, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown button world |> snd
@@ -1364,9 +1363,9 @@ module LabelDispatcherModule =
         inherit GuiDispatcher ()
 
         static member Properties =
-            [define Entity.Size (Vector2 (256.0f, 64.0f))
-             define Entity.SwallowMouseLeft false
-             define Entity.LabelImage (AssetTag.make<Image> Assets.DefaultPackage "Image3")]
+            [define Entity.Lens.Size (Vector2 (256.0f, 64.0f))
+             define Entity.Lens.SwallowMouseLeft false
+             define Entity.Lens.LabelImage (AssetTag.make<Image> Assets.DefaultPackage "Image3")]
 
         override this.Actualize (label, world) =
             if label.GetVisibleLayered world then
@@ -1411,9 +1410,9 @@ module TextDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (256.0f, 64.0f))
-             define Entity.SwallowMouseLeft false
-             define Entity.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackage "Image3")]
+            [define Entity.Lens.Size (Vector2 (256.0f, 64.0f))
+             define Entity.Lens.SwallowMouseLeft false
+             define Entity.Lens.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackage "Image3")]
 
         override this.Actualize (text, world) =
             if text.GetVisibleLayered world then
@@ -1510,13 +1509,13 @@ module ToggleDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (256.0f, 64.0f))
-             define Entity.SwallowMouseLeft false
-             define Entity.Open true
-             define Entity.Pressed false
-             define Entity.OpenImage (AssetTag.make<Image> Assets.DefaultPackage "Image")
-             define Entity.ClosedImage (AssetTag.make<Image> Assets.DefaultPackage "Image2")
-             define Entity.ToggleSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))]
+            [define Entity.Lens.Size (Vector2 (256.0f, 64.0f))
+             define Entity.Lens.SwallowMouseLeft false
+             define Entity.Lens.Open true
+             define Entity.Lens.Pressed false
+             define Entity.Lens.OpenImage (AssetTag.make<Image> Assets.DefaultPackage "Image")
+             define Entity.Lens.ClosedImage (AssetTag.make<Image> Assets.DefaultPackage "Image2")
+             define Entity.Lens.ToggleSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))]
 
         override this.Register (toggle, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown toggle world |> snd
@@ -1579,8 +1578,8 @@ module FpsDispatcherModule =
             else world
 
         static member Properties =
-            [define Entity.StartTickTime 0L
-             define Entity.StartDateTime DateTime.UtcNow]
+            [define Entity.Lens.StartTickTime 0L
+             define Entity.Lens.StartDateTime DateTime.UtcNow]
 
         override this.Update (entity, world) =
             let world = resetIntermittent entity world
@@ -1637,9 +1636,9 @@ module FeelerDispatcherModule =
             else (Cascade, world)
 
         static member Properties =
-            [define Entity.Size (Vector2 (256.0f, 64.0f))
-             define Entity.SwallowMouseLeft false
-             define Entity.Touched false]
+            [define Entity.Lens.Size (Vector2 (256.0f, 64.0f))
+             define Entity.Lens.SwallowMouseLeft false
+             define Entity.Lens.Touched false]
 
         override this.Register (feeler, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown feeler world |> snd
@@ -1679,12 +1678,12 @@ module FillBarDispatcherModule =
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
         static member Properties =
-            [define Entity.Size (Vector2 (256.0f, 64.0f))
-             define Entity.SwallowMouseLeft false
-             define Entity.Fill 0.0f
-             define Entity.FillInset 0.0f
-             define Entity.FillImage (AssetTag.make<Image> Assets.DefaultPackage "Image9")
-             define Entity.BorderImage (AssetTag.make<Image> Assets.DefaultPackage "Image10")]
+            [define Entity.Lens.Size (Vector2 (256.0f, 64.0f))
+             define Entity.Lens.SwallowMouseLeft false
+             define Entity.Lens.Fill 0.0f
+             define Entity.Lens.FillInset 0.0f
+             define Entity.Lens.FillImage (AssetTag.make<Image> Assets.DefaultPackage "Image9")
+             define Entity.Lens.BorderImage (AssetTag.make<Image> Assets.DefaultPackage "Image10")]
 
         override this.Actualize (fillBar, world) =
             if fillBar.GetVisibleLayered world then
@@ -1741,8 +1740,8 @@ module BlockDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.BodyType Static
-             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")]
+            [define Entity.Lens.BodyType Static
+             define Entity.Lens.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")]
 
 [<AutoOpen>]
 module BoxDispatcherModule =
@@ -1755,7 +1754,7 @@ module BoxDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")]
+            [define Entity.Lens.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")]
 
 [<AutoOpen>]
 module CharacterDispatcherModule =
@@ -1790,16 +1789,16 @@ module CharacterDispatcherModule =
             [typeof<RigidBodyFacet>]
 
         static member Properties =
-            [define Entity.AnimationDelay 6L
-             define Entity.CelSize (v2 28.0f 28.0f)
-             define Entity.CelRun 8
-             define Entity.FixedRotation true
-             define Entity.GravityScale 3.0f
-             define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero })
-             define Entity.CharacterIdleImage (AssetTag.make Assets.DefaultPackage "CharacterIdle")
-             define Entity.CharacterJumpImage (AssetTag.make Assets.DefaultPackage "CharacterJump")
-             define Entity.CharacterWalkSheet (AssetTag.make Assets.DefaultPackage "CharacterWalk")
-             define Entity.CharacterFacingLeft false]
+            [define Entity.Lens.AnimationDelay 6L
+             define Entity.Lens.CelSize (v2 28.0f 28.0f)
+             define Entity.Lens.CelRun 8
+             define Entity.Lens.FixedRotation true
+             define Entity.Lens.GravityScale 3.0f
+             define Entity.Lens.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero })
+             define Entity.Lens.CharacterIdleImage (AssetTag.make Assets.DefaultPackage "CharacterIdle")
+             define Entity.Lens.CharacterJumpImage (AssetTag.make Assets.DefaultPackage "CharacterJump")
+             define Entity.Lens.CharacterWalkSheet (AssetTag.make Assets.DefaultPackage "CharacterWalk")
+             define Entity.Lens.CharacterFacingLeft false]
 
         override this.Update (entity, world) =
             // we have to a bit of hackery to remember whether the character is facing left or right
@@ -1859,13 +1858,13 @@ module TileMapDispatcherModule =
             [typeof<TileMapFacet>]
 
         static member Properties =
-            [define Entity.Omnipresent true
-             define Entity.Friction 0.0f
-             define Entity.Restitution 0.0f
-             define Entity.CollisionCategories "1"
-             define Entity.CollisionMask "@"
-             define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackage "TileMap")
-             define Entity.Parallax 0.0f]
+            [define Entity.Lens.Omnipresent true
+             define Entity.Lens.Friction 0.0f
+             define Entity.Lens.Restitution 0.0f
+             define Entity.Lens.CollisionCategories "1"
+             define Entity.Lens.CollisionMask "@"
+             define Entity.Lens.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackage "TileMap")
+             define Entity.Lens.Parallax 0.0f]
 
 [<AutoOpen>]
 module LayerDispatcherModule =
