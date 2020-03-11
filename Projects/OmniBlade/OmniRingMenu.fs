@@ -2,7 +2,6 @@
 open System
 open Prime
 open Nu
-open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
@@ -41,10 +40,10 @@ module OmniRingMenu =
                 just world
 
         static member Properties =
-            [define Entity.Radius 128.0f
-             define Entity.Rotation 0.0f
-             define Entity.SwallowMouseLeft false
-             define Entity.Visible false]
+            [define Entity.Lens.Radius 128.0f
+             define Entity.Lens.Rotation 0.0f
+             define Entity.Lens.SwallowMouseLeft false
+             define Entity.Lens.Visible false]
 
         override this.Content (model, menu, _) =
             [Content.entities (model --> fun model -> model.Items) $ fun index item layer world ->

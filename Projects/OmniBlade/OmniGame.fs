@@ -1,7 +1,6 @@
 ﻿namespace OmniBlade
 open Prime
 open Nu
-open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]

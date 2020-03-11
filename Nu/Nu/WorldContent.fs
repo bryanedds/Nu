@@ -29,8 +29,8 @@ module Content =
     let screen<'d when 'd :> ScreenDispatcher> screenName behavior initializers layers =
         ScreenFromDefinitions (typeof<'d>.Name, screenName, behavior, initializers, layers)
 
-    /// Describe indexed layers to be streamed from a lens.
-    let layersIndexed (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> Screen -> World -> LayerContent) =
+    /// Describe layers to be streamed from a lens indexed by the given mapper.
+    let layersIndexBy (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> Screen -> World -> LayerContent) =
         let mapper = fun i (a : obj) screen world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) screen world
         LayersFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
 
@@ -59,8 +59,8 @@ module Content =
     let layer<'d when 'd :> LayerDispatcher> layerName initializers entities =
         LayerFromDefinitions (typeof<'d>.Name, layerName, initializers, entities)
 
-    /// Describe indexed entities to be streamed from a lens.
-    let entitiesIndexed (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> Layer -> World -> EntityContent) =
+    /// Describe entities to be streamed from a lens indexed by the given mapper.
+    let entitiesIndexBy (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> Layer -> World -> EntityContent) =
         let mapper = fun i (a : obj) layer world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) layer world
         EntitiesFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
 

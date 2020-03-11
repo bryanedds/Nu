@@ -2,7 +2,6 @@
 open System
 open Prime
 open Nu
-open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
@@ -23,8 +22,8 @@ module OmniReticles =
         inherit GuiDispatcher<ReticlesModel, unit, ReticlesCommand> ({ Characters = Map.empty; AimType = NoAim })
 
         static member Properties =
-            [define Entity.SwallowMouseLeft false
-             define Entity.Visible false]
+            [define Entity.Lens.SwallowMouseLeft false
+             define Entity.Lens.Visible false]
 
         override this.Command (_, command, rets, world) =
             match command with

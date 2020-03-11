@@ -122,10 +122,10 @@ type [<NoEquality; NoComparison>] View =
 /// Opens up some functions to make simulant lenses more accessible.
 module Declarative =
 
-    let Game = Game.Prop
-    let Screen = Screen.Prop
-    let Layer = Layer.Prop
-    let Entity = Entity.Prop
+    let Game = Game.Lens
+    let Screen = Screen.Lens
+    let Layer = Layer.Lens
+    let Entity = Entity.Lens
 
 [<AutoOpen>]
 module DeclarativeOperators =
