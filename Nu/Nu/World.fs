@@ -304,37 +304,27 @@ module Nu =
                 let world = Stream.make (atooa Events.Register --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate right.This $ world
                 Stream.make (atooa (Events.Change right.Name) --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate right.This $ world
 
-            WorldModule.register <- fun simulant world ->
-                World.register simulant world
-
-            WorldModule.unregister <- fun simulant world ->
-                World.unregister simulant world
-
-            WorldModule.expandContent <- fun setScreenSplash guidOpt content origin parent world ->
-                World.expandContent setScreenSplash guidOpt content origin parent world
-
-            WorldModule.destroy <- fun simulant world ->
-                World.destroy simulant world
-
-            WorldModule.trySignalFacet <- fun signalObj facetName simulant world ->
-                World.trySignalFacet signalObj facetName simulant world
-
-            WorldModule.trySignal <- fun signalObj simulant world ->
-                World.trySignal signalObj simulant world
+            // init remaining reach-arounds
+            WorldModule.register <- fun simulant world -> World.register simulant world
+            WorldModule.unregister <- fun simulant world -> World.unregister simulant world
+            WorldModule.expandContent <- fun setScreenSplash guidOpt content origin parent world -> World.expandContent setScreenSplash guidOpt content origin parent world
+            WorldModule.destroy <- fun simulant world -> World.destroy simulant world
+            WorldModule.trySignalFacet <- fun signalObj facetName simulant world -> World.trySignalFacet signalObj facetName simulant world
+            WorldModule.trySignal <- fun signalObj simulant world -> World.trySignal signalObj simulant world
 
             // init scripting
             World.initScripting ()
             WorldBindings.initBindings ()
 
-            // init debug view F# reach-arounds
 #if DEBUG
+            // init debug view F# reach-arounds
             Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
             Debug.World.viewScreen <- fun screen world -> Debug.Screen.view (screen :?> Screen) (world :?> World)
             Debug.World.viewLayer <- fun layer world -> Debug.Layer.view (layer :?> Layer) (world :?> World)
             Debug.World.viewEntity <- fun entity world -> Debug.Entity.view (entity :?> Entity) (world :?> World)
 #endif
 
-            // init Vsync
+            // init vsync
             Vsync.Init nuConfig.RunSynchronously
 
             // init event world caching

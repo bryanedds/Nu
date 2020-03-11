@@ -751,6 +751,10 @@ module NodeFacetModule =
         member private this.GetNodeUnsubscribe world : World -> World = this.Get Property? NodeUnsubscribe world
         member private this.SetNodeUnsubscribe (value : World -> World) world = this.SetFast Property? NodeUnsubscribe false true value world
         member private this.NodeUnsubscribe = lens Property? NodeUnsubscribe this.GetNodeUnsubscribe this.SetNodeUnsubscribe this
+
+        member this.GetCenterLocal world : Vector2 = this.GetPositionLocal world + this.GetSize world * 0.5f
+        member this.SetCenterLocal (value : Vector2) world = this.SetPositionLocal (value - this.GetSize world * 0.5f) world
+        member this.CenterLocal = lens Property? CenterLocal this.GetCenterLocal this.SetCenterLocal this
         
         member this.SetParentNodeOptWithAdjustment (value : Entity Relation option) world =
             let world =
