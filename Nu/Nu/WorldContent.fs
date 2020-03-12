@@ -30,25 +30,25 @@ module Content =
         ScreenFromDefinitions (typeof<'d>.Name, screenName, behavior, initializers, layers)
 
     /// Describe layers to be streamed from a lens indexed by the given mapper.
-    let layersIndexBy (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> Screen -> World -> LayerContent) =
-        let mapper = fun i (a : obj) screen world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) screen world
+    let layersIndexedBy (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
+        let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
         LayersFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
 
     /// Describe layers to be streamed from a lens.
-    let layers (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> Screen -> World -> LayerContent) =
+    let layers (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
         let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
         LayersFromStream (lens.Map box, None, mapper)
 
     /// Describe a layer to be optionally streamed from a lens.
-    let layerOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> Screen -> World -> LayerContent) =
+    let layerOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> World -> LayerContent) =
         layers (lens --> function Some a -> [a] | None -> []) (fun _ -> mapper)
 
     /// Describe a layer to be optionally streamed from a lens.
-    let layerIf (lens : Lens<bool, World>) (mapper : Lens<unit, World> -> Screen -> World -> LayerContent) =
+    let layerIf (lens : Lens<bool, World>) (mapper : Lens<unit, World> -> World -> LayerContent) =
         layers (lens --> function true -> [()] | false -> []) (fun _ -> mapper)
 
     /// Describe a layer to be streamed when a screen is selected.
-    let layerIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> Screen -> World -> LayerContent) =
+    let layerIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> LayerContent) =
         layerIf (Default.Game.SelectedScreenOpt --> fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe a layer to be loaded from a file.
@@ -60,25 +60,25 @@ module Content =
         LayerFromDefinitions (typeof<'d>.Name, layerName, initializers, entities)
 
     /// Describe entities to be streamed from a lens indexed by the given mapper.
-    let entitiesIndexBy (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> Layer -> World -> EntityContent) =
-        let mapper = fun i (a : obj) layer world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) layer world
+    let entitiesIndexedBy (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+        let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
         EntitiesFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
 
     /// Describe entities to be streamed from a lens.
-    let entities (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> Layer -> World -> EntityContent) =
-        let mapper = fun i (a : obj) layer world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) layer world
+    let entities (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+        let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
         EntitiesFromStream (lens.Map box, None, mapper)
 
     /// Describe an entity to be optionally streamed from a lens.
-    let entityOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> Layer -> World -> EntityContent) =
+    let entityOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> World -> EntityContent) =
         entities (lens --> function Some a -> [a] | None -> []) (fun _ -> mapper)
 
     /// Describe an entity to be optionally streamed from a lens.
-    let entityIf (lens : Lens<bool, World>) (mapper : Lens<unit, World> -> Layer -> World -> EntityContent) =
+    let entityIf (lens : Lens<bool, World>) (mapper : Lens<unit, World> -> World -> EntityContent) =
         entities (lens --> function true -> [()] | false -> []) (fun _ -> mapper)
 
     /// Describe an entity to be streamed when a screen is selected.
-    let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> Layer -> World -> EntityContent) =
+    let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> EntityContent) =
         entityIf (Default.Game.SelectedScreenOpt --> fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe an entity to be loaded from a file.

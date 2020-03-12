@@ -347,7 +347,7 @@ module WorldEntityModule =
 
         /// Turn an entity stream into a series of live entities.
         static member expandEntityStream (lens : Lens<obj, World>) indexerOpt mapper origin layer world =
-            let mapperGeneralized = fun i lens (parent : Simulant) world -> mapper i lens (parent :?> Layer) world :> SimulantContent
+            let mapperGeneralized = fun i lens world -> mapper i lens world :> SimulantContent
             World.expandSimulantStream lens indexerOpt mapperGeneralized origin layer world
 
         /// Turn entity content into a live entity.

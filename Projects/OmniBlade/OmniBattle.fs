@@ -376,21 +376,21 @@ module OmniBattle =
                      background.Size == v2 1024.0f 1024.0f
                      background.Depth == -10.0f
                      background.LabelImage == asset "Battle" "Background"]
-                 Content.entitiesIndexBy
+                 Content.entitiesIndexedBy
                     (model --> fun model -> getAllies model)
                     (fun model -> model.CharacterState.PartyIndex)
-                    (fun index model _ _ ->
+                    (fun index model _ ->
                         let ally = scene / ("Ally+" + scstring index)
                         Content.entity<CharacterDispatcher> ally.Name [ally.CharacterModel <== model])
-                 Content.entitiesIndexBy
+                 Content.entitiesIndexedBy
                     (model --> fun model -> getEnemies model)
                     (fun model -> model.CharacterState.PartyIndex)
-                    (fun index model _ _ ->
+                    (fun index model _ ->
                         let enemy = scene / ("Enemy+" + scstring index)
                         Content.entity<CharacterDispatcher> enemy.Name [enemy.CharacterModel <== model])]
 
         member private this.InputContent (model : Lens<BattleModel, World>, screen : Screen, _ : World) =
-            Content.layers (model --> fun model -> getAllies model) $ fun index ally _ _ ->
+            Content.layers (model --> fun model -> getAllies model) $ fun index ally _ ->
                 let allyIndex = AllyIndex index
                 let input = screen / ("Input" + "+" + scstring index)
                 let regularMenu = input / "RegularMenu"

@@ -40,7 +40,7 @@ type NelmishDispatcher () =
                      Content.text "Counter"
                         [Entity.Text <== model --> scstring
                          Entity.Position == v2 -128.0f -32.0f]
-                     Content.entityIf (model --> isNonZero) $ fun _ _ _ ->
+                     Content.entityIf (model --> isNonZero) $ fun _ _ ->
                         Content.button "Reset"
                             [Entity.Text == "Reset"
                              Entity.Position == v2 -128.0f -128.0f

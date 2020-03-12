@@ -15,7 +15,7 @@ type [<NoComparison>] ScreenBehavior =
 
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
-    | EntitiesFromStream of Lens<obj, World> * (obj -> int) option * (int -> Lens<obj, World> -> Layer -> World -> EntityContent)
+    | EntitiesFromStream of Lens<obj, World> * (obj -> int) option * (int -> Lens<obj, World> -> World -> EntityContent)
     | EntityFromDefinitions of string * string * PropertyInitializer list * EntityContent list
     | EntityFromFile of string * string
     interface SimulantContent
@@ -33,7 +33,7 @@ type [<NoEquality; NoComparison>] EntityContent =
 
 /// Describes the content of a layer.
 type [<NoEquality; NoComparison>] LayerContent =
-    | LayersFromStream of Lens<obj, World> * (obj -> int) option * (int -> Lens<obj, World> -> Screen -> World -> LayerContent)
+    | LayersFromStream of Lens<obj, World> * (obj -> int) option * (int -> Lens<obj, World> -> World -> LayerContent)
     | LayerFromDefinitions of string * string * PropertyInitializer list * EntityContent list
     | LayerFromFile of string * string
     interface SimulantContent
@@ -172,7 +172,7 @@ module WorldDeclarative =
         /// Transform a stream into existing simulants.
         static member streamSimulants
             (lensSeq : Lens<obj seq, World>)
-            (mapper : int -> Lens<obj, World> -> Simulant -> World -> SimulantContent)
+            (mapper : int -> Lens<obj, World> -> World -> SimulantContent)
             (origin : ContentOrigin)
             (parent : Simulant)
             (stream : Stream<Lens<(int * obj) option, World> seq, World>) =
@@ -199,7 +199,7 @@ module WorldDeclarative =
                 let world =
                     Seq.fold (fun world guidAndContent ->
                         let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
-                        let content = mapper index lens parent world
+                        let content = mapper index lens world
                         match World.tryGetKeyedValue (scstring guid) world with
                         | None -> WorldModule.expandContent Unchecked.defaultof<_> (Some guid) content origin parent world
                         | Some _ -> world)
