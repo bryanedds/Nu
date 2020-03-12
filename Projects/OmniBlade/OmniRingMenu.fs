@@ -46,10 +46,10 @@ module OmniRingMenu =
              define Entity.Lens.Visible false]
 
         override this.Content (model, menu, _) =
-            [Content.entities (model --> fun model -> model.Items) $ fun index item layer world ->
+            [Content.entities (model --> fun model -> model.Items) $ fun index item world ->
                 let itemValue = item.Get world
                 let buttonName = menu.Name + "+" + itemValue
-                let button = layer / buttonName
+                let button = menu.Parent / buttonName
                 Content.button buttonName
                     [button.Size == v2 64.0f 64.0f
                      button.Depth <== menu.Depth
@@ -59,10 +59,10 @@ module OmniRingMenu =
                      button.ParentNodeOpt == Some (relate button menu)
                      button.ClickEvent ==> cmd (ItemSelect itemValue)
                      button.UpdateEvent ==> cmd (ArrangeItemButton (button, index))]
-             Content.entityOpt (model --> fun model -> model.ItemCancelOpt) $ fun itemCancel layer world ->
+             Content.entityOpt (model --> fun model -> model.ItemCancelOpt) $ fun itemCancel world ->
                 let itemCancelValue = itemCancel.Get world
                 let buttonName = menu.Name + "+" + itemCancelValue
-                let button = layer / buttonName
+                let button = menu.Parent / buttonName
                 Content.button buttonName
                     [button.PositionLocal == v2 -32.0f -96.0f
                      button.Size == v2 64.0f 64.0f

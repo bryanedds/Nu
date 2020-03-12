@@ -211,7 +211,7 @@ module WorldLayerModule =
 
         /// Turn a layers stream into a series of live layers.
         static member expandLayerStream (lens : Lens<obj, World>) indexerOpt mapper origin screen world =
-            let mapperGeneralized = fun i lens (parent : Simulant) world -> mapper i lens (parent :?> Screen) world :> SimulantContent
+            let mapperGeneralized = fun i lens world -> mapper i lens world :> SimulantContent
             World.expandSimulantStream lens indexerOpt mapperGeneralized origin screen world
 
         /// Turn layer content into a live layer.
