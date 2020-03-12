@@ -367,10 +367,10 @@ module OmniBattle =
                 let world = World.hintRenderPackageDisuse Assets.BattlePackage world
                 just (World.hintAudioPackageDisuse Assets.BattlePackage world)
 
-        override this.Content (model, screen, _) =
+        member private this.SceneContent (model : Lens<BattleModel, World>, screen : Screen, _ : World) =
             let scene = screen / "Scene"
             let background = scene / "Background"
-            [Content.layer scene.Name []
+            Content.layer scene.Name []
                 [Content.label background.Name
                     [background.Position == v2 -480.0f -512.0f
                      background.Size == v2 1024.0f 1024.0f
@@ -379,19 +379,25 @@ module OmniBattle =
                  Content.entitiesIndexBy
                     (model --> fun model -> getAllies model)
                     (fun model -> model.CharacterState.PartyIndex)
-                    (fun index model _ _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.Lens.CharacterModel <== model])
+                    (fun index model _ _ ->
+                        let ally = scene / ("Ally+" + scstring index)
+                        Content.entity<CharacterDispatcher> ally.Name [ally.CharacterModel <== model])
                  Content.entitiesIndexBy
                     (model --> fun model -> getEnemies model)
                     (fun model -> model.CharacterState.PartyIndex)
-                    (fun index model _ _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.Lens.CharacterModel <== model])]
-             Content.layers (model --> fun model -> getAllies model) $ fun index ally _ _ ->
+                    (fun index model _ _ ->
+                        let enemy = scene / ("Enemy+" + scstring index)
+                        Content.entity<CharacterDispatcher> enemy.Name [enemy.CharacterModel <== model])]
+
+        member private this.InputContent (model : Lens<BattleModel, World>, screen : Screen, _ : World) =
+            Content.layers (model --> fun model -> getAllies model) $ fun index ally _ _ ->
                 let allyIndex = AllyIndex index
-                let inputLayer = screen / ("Input" + "+" + scstring index)
-                let regularMenu = inputLayer / "RegularMenu"
-                let specialMenu = inputLayer / "SpecialMenu"
-                let itemMenu = inputLayer / "ItemMenu"
-                let reticles = inputLayer / "Reticles"
-                Content.layer inputLayer.Name []
+                let input = screen / ("Input" + "+" + scstring index)
+                let regularMenu = input / "RegularMenu"
+                let specialMenu = input / "SpecialMenu"
+                let itemMenu = input / "ItemMenu"
+                let reticles = input / "Reticles"
+                Content.layer input.Name []
                     [Content.entity<RingMenuDispatcher> regularMenu.Name
                         [regularMenu.Position <== ally --> fun ally -> ally.Center
                          regularMenu.Depth == 10.0f
@@ -419,4 +425,8 @@ module OmniBattle =
                          reticles.Visible <== ally --> fun ally -> match ally.InputState with AimReticles _ -> true | _ -> false
                          reticles.ReticlesModel <== model --> fun model -> { Characters = model.Characters; AimType = (getCharacter allyIndex model).InputState.AimType }
                          reticles.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (evt.Data, allyIndex))
-                         reticles.CancelEvent ==> msg (ReticlesCancel allyIndex)]]]
+                         reticles.CancelEvent ==> msg (ReticlesCancel allyIndex)]]
+
+        override this.Content (model, screen, world) =
+            [this.SceneContent (model, screen, world)
+             this.InputContent (model, screen, world)]
