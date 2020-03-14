@@ -531,23 +531,12 @@ module WorldModuleEntity =
                 | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error); world
             | None -> world
 
-        static member internal tryGetEntityCalculatedProperty propertyName entity world =
-            let dispatcher = World.getEntityDispatcher entity world
-            match dispatcher.TryGetCalculatedProperty (propertyName, entity, world) with
-            | None ->
-                Array.tryFindPlus (fun (facet : Facet) ->
-                    facet.TryGetCalculatedProperty (propertyName, entity, world))
-                    (World.getEntityFacets entity world)
-            | Some _ as propertyOpt -> propertyOpt
-
         static member internal tryGetEntityProperty propertyName entity world =
             if World.getEntityExists entity world then
                 match Getters.TryGetValue propertyName with
                 | (false, _) ->
                     let entityState = World.getEntityState entity world
-                    match EntityState.tryGetProperty propertyName entityState with
-                    | Some _ as propertyOpt -> propertyOpt
-                    | None -> World.tryGetEntityCalculatedProperty propertyName entity world
+                    EntityState.tryGetProperty propertyName entityState
                 | (true, getter) -> Some (getter entity world)
             else None
 
@@ -556,10 +545,7 @@ module WorldModuleEntity =
             match EntityState.tryGetProperty propertyName entityState with
             | None ->
                 match Getters.TryGetValue propertyName with
-                | (false, _) ->
-                    match World.tryGetEntityCalculatedProperty propertyName entity world with
-                    | None -> failwithf "Could not find property '%s'." propertyName
-                    | Some property -> property
+                | (false, _) -> failwithf "Could not find property '%s'." propertyName
                 | (true, getter) -> getter entity world
             | Some property -> property
 

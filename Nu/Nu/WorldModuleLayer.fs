@@ -119,17 +119,10 @@ module WorldModuleLayer =
         static member internal getLayerName layer world = (World.getLayerState layer world).Name
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
         
-        static member internal tryGetLayerCalculatedProperty propertyName layer world =
-            let dispatcher = World.getLayerDispatcher layer world
-            dispatcher.TryGetCalculatedProperty (propertyName, layer, world)
-
         static member internal tryGetLayerProperty propertyName layer world =
             if World.getLayerExists layer world then
                 match Getters.TryGetValue propertyName with
-                | (false, _) ->
-                    match LayerState.tryGetProperty propertyName (World.getLayerState layer world) with
-                    | None -> World.tryGetLayerCalculatedProperty propertyName layer world
-                    | Some _ as propertyOpt -> propertyOpt
+                | (false, _) -> LayerState.tryGetProperty propertyName (World.getLayerState layer world)
                 | (true, getter) -> Some (getter layer world)
             else None
 
@@ -137,10 +130,7 @@ module WorldModuleLayer =
             match Getters.TryGetValue propertyName with
             | (false, _) ->
                 match LayerState.tryGetProperty propertyName (World.getLayerState layer world) with
-                | None ->
-                    match World.tryGetLayerCalculatedProperty propertyName layer world with
-                    | None -> failwithf "Could not find property '%s'." propertyName
-                    | Some property -> property
+                | None -> failwithf "Could not find property '%s'." propertyName
                 | Some property -> property
             | (true, getter) -> getter layer world
 

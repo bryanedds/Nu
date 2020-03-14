@@ -519,11 +519,6 @@ module RigidBodyFacetModule =
         override this.UnregisterPhysics (entity, world) =
             World.destroyBody (entity.GetPhysicsId world) world
 
-        override this.TryGetCalculatedProperty (name, entity, world) =
-            match name with
-            | "PhysicsId" -> Some { PropertyType = typeof<PhysicsId>; PropertyValue = entity.GetPhysicsId world }
-            | _ -> None
-
 [<AutoOpen>]
 module TileMapFacetModule =
 
@@ -912,11 +907,6 @@ module NodeFacetModule =
 
         override this.Unregister (entity, world) =
             (entity.GetNodeUnsubscribe world) world // NOTE: not sure if this is necessary.
-
-        override this.TryGetCalculatedProperty (propertyName, entity, world) =
-            match propertyName with
-            | "ParentNodeExists" -> Some { PropertyType = typeof<bool>; PropertyValue = entity.ParentNodeExists world }
-            | _ -> None
 
 [<AutoOpen>]
 module StaticSpriteFacetModule =

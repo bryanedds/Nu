@@ -221,10 +221,6 @@ module WorldTypes =
         abstract Actualize : Game * World -> World
         default this.Actualize (_, world) = world
 
-        /// Try to get a calculated property with the given name.
-        abstract TryGetCalculatedProperty : string * Game * World -> Property option
-        default this.TryGetCalculatedProperty (_, _, _) = None
-
         /// Try to send a signal to a game.
         abstract TrySignal : obj * Game * World -> World
         default this.TrySignal (_, _, world) = world
@@ -253,10 +249,6 @@ module WorldTypes =
         abstract Actualize : Screen * World -> World
         default this.Actualize (_, world) = world
 
-        /// Try to get a calculated property with the given name.
-        abstract TryGetCalculatedProperty : string * Screen * World -> Property option
-        default this.TryGetCalculatedProperty (_, _, _) = None
-
         /// Try to send a signal to a screen.
         abstract TrySignal : obj * Screen * World -> World
         default this.TrySignal (_, _, world) = world
@@ -284,10 +276,6 @@ module WorldTypes =
         /// Actualize a layer.
         abstract Actualize : Layer * World -> World
         default this.Actualize (_, world) = world
-
-        /// Try to get a calculated property with the given name.
-        abstract TryGetCalculatedProperty : string * Layer * World -> Property option
-        default this.TryGetCalculatedProperty (_, _, _) = None
 
         /// Try to send a signal to a layer.
         abstract TrySignal : obj * Layer * World -> World
@@ -340,10 +328,6 @@ module WorldTypes =
         abstract GetQuickSize : Entity * World -> Vector2
         default this.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
 
-        /// Try to get a calculated property with the given name.
-        abstract TryGetCalculatedProperty : string * Entity * World -> Property option
-        default this.TryGetCalculatedProperty (_, _, _) = None
-
         /// Try to send a signal to an entity's facet.
         abstract TrySignalFacet : obj * string * Entity * World -> World
         default this.TrySignalFacet (_, _, _, world) = world
@@ -386,10 +370,6 @@ module WorldTypes =
         /// Participate in getting the priority with which an entity is picked in the editor.
         abstract GetQuickSize : Entity * World -> Vector2
         default this.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
-
-        /// Try to get a calculated property with the given name.
-        abstract TryGetCalculatedProperty : string * Entity * World -> Property option
-        default this.TryGetCalculatedProperty (_, _, _) = None
 
         /// Try to send a signal to a facet.
         abstract TrySignal : obj * Entity * World -> World
