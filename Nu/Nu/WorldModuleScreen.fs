@@ -108,18 +108,11 @@ module WorldModuleScreen =
         static member internal setScreenScriptFrame value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptFrame = value }) Property? ScriptFrame value screen world
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
-        
-        static member internal tryGetScreenCalculatedProperty propertyName screen world =
-            let dispatcher = World.getScreenDispatcher screen world
-            dispatcher.TryGetCalculatedProperty (propertyName, screen, world)
 
         static member internal tryGetScreenProperty propertyName screen world =
             if World.getScreenExists screen world then
                 match Getters.TryGetValue propertyName with
-                | (false, _) ->
-                    match ScreenState.tryGetProperty propertyName (World.getScreenState screen world) with
-                    | None -> World.tryGetScreenCalculatedProperty propertyName screen world
-                    | Some _ as propertyOpt -> propertyOpt
+                | (false, _) -> ScreenState.tryGetProperty propertyName (World.getScreenState screen world)
                 | (true, getter) -> Some (getter screen world)
             else None
 
@@ -127,10 +120,7 @@ module WorldModuleScreen =
             match Getters.TryGetValue propertyName with
             | (false, _) ->
                 match ScreenState.tryGetProperty propertyName (World.getScreenState screen world) with
-                | None ->
-                    match World.tryGetScreenCalculatedProperty propertyName screen world with
-                    | None -> failwithf "Could not find property '%s'." propertyName
-                    | Some property -> property
+                | None -> failwithf "Could not find property '%s'." propertyName
                 | Some property -> property
             | (true, getter) -> getter screen world
 

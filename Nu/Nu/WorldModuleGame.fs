@@ -251,27 +251,16 @@ module WorldModuleGame =
         static member assetTagsToValueOpts<'a> assetTags metadata world =
             List.map (fun assetTag -> World.assetTagToValueOpt<'a> assetTag metadata world) assetTags
 
-        static member internal tryGetGameCalculatedProperty propertyName world =
-            let game = Game ()
-            let dispatcher = World.getGameDispatcher world
-            dispatcher.TryGetCalculatedProperty (propertyName, game, world)
-
         static member internal tryGetGameProperty propertyName world =
             match Getters.TryGetValue propertyName with
-            | (false, _) ->
-                match GameState.tryGetProperty propertyName (World.getGameState world) with
-                | None -> World.tryGetGameCalculatedProperty propertyName world
-                | Some _ as propertyOpt -> propertyOpt
+            | (false, _) -> GameState.tryGetProperty propertyName (World.getGameState world)
             | (true, getter) -> Some (getter world)
 
         static member internal getGameProperty propertyName world =
             match Getters.TryGetValue propertyName with
             | (false, _) ->
                 match GameState.tryGetProperty propertyName (World.getGameState world) with
-                | None ->
-                    match World.tryGetGameCalculatedProperty propertyName world with
-                    | None -> failwithf "Could not find property '%s'." propertyName
-                    | Some property -> property
+                | None -> failwithf "Could not find property '%s'." propertyName
                 | Some property -> property
             | (true, getter) -> getter world
 
