@@ -9,12 +9,6 @@ open System.Reflection
 open Prime
 open Nu
 
-/// A computed property.
-type [<NoEquality; NoComparison>] 'w ComputedProperty =
-    { ComputedType : Type
-      ComputedGet : 'w -> obj
-      ComputedSetOpt : (obj -> 'w -> 'w) option }
-
 [<RequireQualifiedAccess>]
 module Reflection =
 
@@ -521,7 +515,8 @@ module Reflection =
                                     let converter = SymbolicConverter (false, None, definition.PropertyType)
                                     let overlayProperty = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
                                     Map.add definition.PropertyName overlayProperty overlayProperties
-                                | VariableExpr _ -> overlayProperties)
+                                | VariableExpr _ -> overlayProperties
+                                | ComputedExpr _ -> overlayProperties)
                             definitions
                             Map.empty
                     let overlayProperties =

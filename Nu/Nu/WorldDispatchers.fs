@@ -464,7 +464,7 @@ module RigidBodyFacetModule =
         member this.GetIsSensor world : bool = this.Get Property? IsSensor world
         member this.SetIsSensor (value : bool) world = this.SetFast Property? IsSensor false false value world
         member this.IsSensor = lens Property? IsSensor this.GetIsSensor this.SetIsSensor this
-        member this.GetPhysicsId world = { SourceId = this.GetId world; BodyId = Guid.Empty } // we hard-code the empty Guid here because we assume a singleton body
+        member this.GetPhysicsId world : PhysicsId = this.Get Property? PhysicsId world
         member this.PhysicsId = lensReadOnly Property? PhysicsId this.GetPhysicsId this
         member this.CollisionEvent = Events.Collision --> this
 
@@ -490,7 +490,8 @@ module RigidBodyFacetModule =
              define Entity.Lens.CollisionMask "@"
              define Entity.Lens.CollisionBody (BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero })
              define Entity.Lens.IsBullet false
-             define Entity.Lens.IsSensor false]
+             define Entity.Lens.IsSensor false
+             computed Entity.Lens.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; BodyId = Guid.Empty }) None]
 
         override this.RegisterPhysics (entity, world) =
             let bodyProperties = 
@@ -746,11 +747,10 @@ module NodeFacetModule =
         member private this.GetNodeUnsubscribe world : World -> World = this.Get Property? NodeUnsubscribe world
         member private this.SetNodeUnsubscribe (value : World -> World) world = this.SetFast Property? NodeUnsubscribe false true value world
         member private this.NodeUnsubscribe = lens Property? NodeUnsubscribe this.GetNodeUnsubscribe this.SetNodeUnsubscribe this
-
-        member this.GetCenterLocal world : Vector2 = this.GetPositionLocal world + this.GetSize world * 0.5f
-        member this.SetCenterLocal (value : Vector2) world = this.SetPositionLocal (value - this.GetSize world * 0.5f) world
+        member this.GetCenterLocal world : Vector2 = this.Get Property? CenterLocal world
+        member this.SetCenterLocal (value : Vector2) world = this.SetFast Property? CenterLocal false true value world
         member this.CenterLocal = lens Property? CenterLocal this.GetCenterLocal this.SetCenterLocal this
-        
+
         member this.SetParentNodeOptWithAdjustment (value : Entity Relation option) world =
             let world =
                 match (this.GetParentNodeOpt world, value) with
@@ -883,7 +883,10 @@ module NodeFacetModule =
              define Entity.Lens.DepthLocal 0.0f
              define Entity.Lens.VisibleLocal true
              define Entity.Lens.EnabledLocal true
-             define Entity.Lens.NodeUnsubscribe (id : World -> World)]
+             define Entity.Lens.NodeUnsubscribe (id : World -> World)
+             computed Entity.Lens.CenterLocal
+                (fun (entity : Entity) world -> entity.GetPosition world + entity.GetSize world * 0.5f)
+                (Some (fun value (entity : Entity) world -> entity.SetPosition (value - entity.GetSize world * 0.5f) world))]
 
         override this.Register (entity, world) =
             let world = entity.SetNodeUnsubscribe id world // ensure unsubscribe function reference doesn't get copied in Gaia...

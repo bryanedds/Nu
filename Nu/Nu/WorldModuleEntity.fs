@@ -536,7 +536,7 @@ module WorldModuleEntity =
             match EntityState.tryGetProperty propertyName entityState with
             | Some property as some ->
                 match property.PropertyValue with
-                | :? (World ComputedProperty) as cp -> Some { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet world }
+                | :? ComputedProperty as cp -> Some { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }
                 | _ -> some
             | None ->
                 match Getters.TryGetValue propertyName with
@@ -555,9 +555,9 @@ module WorldModuleEntity =
                     match EntityState.tryGetProperty propertyName entityState with
                     | Some propertyExisting ->
                         match propertyExisting.PropertyValue with
-                        | :? (World ComputedProperty) as cp ->
+                        | :? ComputedProperty as cp ->
                             match cp.ComputedSetOpt with
-                            | Some computedSet -> (true, computedSet property.PropertyValue world)
+                            | Some computedSet -> (true, computedSet property.PropertyValue entity world :?> World)
                             | None -> (false, world)
                         | _ ->
                             match EntityState.trySetProperty propertyName property entityState with
