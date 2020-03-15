@@ -9,6 +9,12 @@ open System.Reflection
 open Prime
 open Nu
 
+/// A computed property.
+type [<NoEquality; NoComparison>] 'w ComputedProperty =
+    { ComputedType : Type
+      ComputedGet : 'w -> obj
+      ComputedSetOpt : (obj -> 'w -> 'w) option }
+
 [<RequireQualifiedAccess>]
 module Reflection =
 
