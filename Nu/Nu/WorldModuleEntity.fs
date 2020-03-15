@@ -253,7 +253,7 @@ module WorldModuleEntity =
                 then entityState.StaticData.DesignerValue <- value; entityState
                 else { entityState with StaticData = { DesignerType = entityState.StaticData.DesignerType; DesignerValue = value }})
                 false false true Property? StaticData value entity world
-                
+
         // NOTE: wouldn't macros be nice?
         static member internal getEntityDispatcher entity world = (World.getEntityState entity world).Dispatcher
         static member internal getEntityFacets entity world = (World.getEntityState entity world).Facets
@@ -294,10 +294,10 @@ module WorldModuleEntity =
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
-        
+
         static member internal getEntityTransform entity world =
             EntityState.getTransform (World.getEntityState entity world)
-        
+
         static member internal setEntityTransform value entity world =
             let oldWorld = world
             let oldEntityState = World.getEntityState entity world
@@ -532,49 +532,49 @@ module WorldModuleEntity =
             | None -> world
 
         static member internal tryGetEntityProperty propertyName entity world =
-            if World.getEntityExists entity world then
-                match Getters.TryGetValue propertyName with
-                | (false, _) ->
-                    let entityState = World.getEntityState entity world
-                    EntityState.tryGetProperty propertyName entityState
-                | (true, getter) -> Some (getter entity world)
-            else None
-
-        static member internal getEntityProperty propertyName entity world =
             let entityState = World.getEntityState entity world
             match EntityState.tryGetProperty propertyName entityState with
+            | Some property as some ->
+                match property.PropertyValue with
+                | :? (World ComputedProperty) as cp -> Some { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet world }
+                | _ -> some
             | None ->
                 match Getters.TryGetValue propertyName with
-                | (false, _) -> failwithf "Could not find property '%s'." propertyName
-                | (true, getter) -> getter entity world
+                | (false, _) -> None
+                | (true, getter) -> Some (getter entity world)
+
+        static member internal getEntityProperty propertyName entity world =
+            match World.tryGetEntityProperty propertyName entity world with
             | Some property -> property
+            | None -> failwithf "Could not find property '%s'." propertyName
 
         static member internal trySetEntityProperty propertyName alwaysPublish nonPersistent property entity world =
             if World.getEntityExists entity world then
                 let (success, world) =
                     let entityState = World.getEntityState entity world
-                    match EntityState.trySetProperty propertyName property entityState with
-                    | (false, _) ->
+                    match EntityState.tryGetProperty propertyName entityState with
+                    | Some propertyExisting ->
+                        match propertyExisting.PropertyValue with
+                        | :? (World ComputedProperty) as cp ->
+                            match cp.ComputedSetOpt with
+                            | Some computedSet -> (true, computedSet property.PropertyValue world)
+                            | None -> (false, world)
+                        | _ ->
+                            match EntityState.trySetProperty propertyName property entityState with
+                            | (true, entityState) -> (true, World.setEntityState entityState entity world)
+                            | (false, _) -> (false, world)
+                    | None ->
                         match Setters.TryGetValue propertyName with
-                        | (false, _) -> (false, world)
                         | (true, setter) -> setter property entity world
-                    | (true, entityState) -> (true, World.setEntityState entityState entity world)
+                        | (false, _) -> (false, world)
                 let world = World.updateEntityState id alwaysPublish nonPersistent true propertyName property.PropertyValue entity world
                 (success, world)
             else (false, world)
 
         static member internal setEntityProperty propertyName alwaysPublish nonPersistent property entity world =
-            if World.getEntityExists entity world then
-                match Setters.TryGetValue propertyName with
-                | (false, _) ->
-                    World.updateEntityState
-                        (EntityState.setProperty propertyName property)
-                        alwaysPublish nonPersistent true propertyName property.PropertyValue entity world
-                | (true, setter) ->
-                    match setter property entity world with
-                    | (true, world) -> world
-                    | (false, _) -> failwith ("Cannot change entity property '" + propertyName + "'.")
-            else world
+            match World.trySetEntityProperty propertyName alwaysPublish nonPersistent property entity world with
+            | (true, world) -> world
+            | (false, _) -> failwithf "Could not find property '%s'." propertyName
 
         static member internal attachEntityProperty propertyName alwaysPublish nonPersistent property entity world =
             if World.getEntityExists entity world
