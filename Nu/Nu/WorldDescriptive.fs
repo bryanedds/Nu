@@ -110,7 +110,14 @@ module Describe =
             | FixDefinition _ -> None) |>
         Seq.definitize |>
         Seq.map (fun (ty, name, expr) ->
-            let value = match expr with DefineExpr value -> value | VariableExpr fn -> fn world
+            // TODO: create a route for passing properties for simulant creation that doesn't
+            // go through the slow symbolic pipeline. This will also make computed properties
+            // workable as initializers!
+            let value =
+                match expr with
+                | DefineExpr value -> value
+                | VariableExpr fn -> fn world
+                | ComputedExpr _ -> failwithnie () // computed property cannot be a property definition...
             let symbol = valueToSymbol value
             let symbol =
                 // HACK: need to make these convert to designer properties...
