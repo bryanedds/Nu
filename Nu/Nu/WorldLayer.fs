@@ -4,9 +4,6 @@
 namespace Nu
 open System
 open System.IO
-open System.ComponentModel
-open System.Reflection
-open System.Runtime.CompilerServices
 open Prime
 open Nu
 
