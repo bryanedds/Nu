@@ -26,7 +26,7 @@ type [<NoEquality; NoComparison>] EntityContent =
         | EntitiesFromStream (lens, indexerOpt, mapper) ->
             Choice1Of3 (lens, indexerOpt, mapper)
         | EntityFromDefinitions (dispatcherName, name, initializers, content) ->
-            let (descriptor, handlersEntity, fixesEntity) = Describe.entity4 dispatcherName initializers (layer / name) world
+            let (descriptor, handlersEntity, fixesEntity) = Describe.entity4 dispatcherName (Some name) initializers (layer / name) world
             Choice2Of3 (name, descriptor, handlersEntity, fixesEntity, (layer / name, content))
         | EntityFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
@@ -47,12 +47,12 @@ type [<NoEquality; NoComparison>] LayerContent =
             let layer = screen / name
             let expansions = List.map (fun content -> EntityContent.expand content layer world) content
             let streams = List.map (function Choice1Of3 (lens, indexerOpt, mapper) -> Some (layer, lens, indexerOpt, mapper) | _ -> None) expansions |> List.definitize
-            let descriptors = List.map (function Choice2Of3 (entityName, descriptor, _, _, _) -> Some { descriptor with SimulantNameOpt = Some entityName } | _ -> None) expansions |> List.definitize
+            let descriptors = List.map (function Choice2Of3 (_, descriptor, _, _, _) -> Some descriptor | _ -> None) expansions |> List.definitize
             let handlers = List.map (function Choice2Of3 (_, _, handlers, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
             let fixes = List.map (function Choice2Of3 (_, _, _, fixes, _) -> Some fixes | _ -> None) expansions |> List.definitize |> List.concat
             let entityContents = List.map (function Choice2Of3 (_, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize
             let filePaths = List.map (function Choice3Of3 filePath -> Some filePath | _ -> None) expansions |> List.definitize |> List.map (fun (entityName, path) -> (name, entityName, path))
-            let (descriptor, handlersLayer, fixesLayer) = Describe.layer5 dispatcherName initializers descriptors layer world
+            let (descriptor, handlersLayer, fixesLayer) = Describe.layer5 dispatcherName (Some name) initializers descriptors layer world
             Choice2Of3 (name, descriptor, handlers @ handlersLayer, fixes @ fixesLayer, streams, filePaths, entityContents)
         | LayerFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
@@ -71,14 +71,14 @@ type [<NoEquality; NoComparison>] ScreenContent =
             let screen = Screen name
             let expansions = List.map (fun content -> LayerContent.expand content screen world) content
             let streams = List.map (function Choice1Of3 (lens, indexerOpt, mapper) -> Some (screen, lens, indexerOpt, mapper) | _ -> None) expansions |> List.definitize
-            let descriptors = List.map (function Choice2Of3 (layerName, descriptor, _, _, _, _, _) -> Some { descriptor with SimulantNameOpt = Some layerName } | _ -> None) expansions |> List.definitize
+            let descriptors = List.map (function Choice2Of3 (_, descriptor, _, _, _, _, _) -> Some descriptor | _ -> None) expansions |> List.definitize
             let handlers = List.map (function Choice2Of3 (_, _, handlers, _, _, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
             let fixes = List.map (function Choice2Of3 (_, _, _, fixes, _, _, _) -> Some fixes | _ -> None) expansions |> List.definitize |> List.concat
             let entityStreams = List.map (function Choice2Of3 (_, _, _, _, stream, _, _) -> Some stream | _ -> None) expansions |> List.definitize |> List.concat
             let entityFilePaths = List.map (function Choice2Of3 (_, _, _, _, _, filePaths, _) -> Some (List.map (fun (layerName, entityName, filePath) -> (name, layerName, entityName, filePath)) filePaths) | _ -> None) expansions |> List.definitize |> List.concat
             let entityContents = List.map (function Choice2Of3 (_, _, _, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize |> List.concat
             let layerFilePaths = List.map (function Choice3Of3 (layerName, filePath) -> Some (name, layerName, filePath) | _ -> None) expansions |> List.definitize
-            let (descriptor, handlersScreen, fixesScreen) = Describe.screen5 dispatcherName initializers descriptors screen world
+            let (descriptor, handlersScreen, fixesScreen) = Describe.screen5 dispatcherName (Some name) initializers descriptors screen world
             Left (name, descriptor, handlers @ handlersScreen, fixes @ fixesScreen, behavior, streams, entityStreams, layerFilePaths, entityFilePaths, entityContents)
         | ScreenFromLayerFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
         | ScreenFromFile (name, behavior, filePath) -> Right (name, behavior, None, filePath)
@@ -95,7 +95,7 @@ type [<NoEquality; NoComparison>] GameContent =
         | GameFromDefinitions (dispatcherName, initializers, content) ->
             let game = Game ()
             let expansions = List.map (fun content -> ScreenContent.expand content game world) content
-            let descriptors = Either.getLeftValues expansions |> List.map (fun (screenName, descriptor, _, _, _, _, _, _, _, _) -> { descriptor with SimulantNameOpt = Some screenName })
+            let descriptors = Either.getLeftValues expansions |> List.map (fun (_, descriptor, _, _, _, _, _, _, _, _) -> descriptor)
             let handlers = Either.getLeftValues expansions |> List.map (fun (_, _, handlers, _, _, _, _, _, _, _) -> handlers) |> List.concat
             let fixes = Either.getLeftValues expansions |> List.map (fun (_, _, _, fixes, _, _, _, _, _, _) -> fixes) |> List.concat
             let layerStreams = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, stream, _, _, _, _) -> stream) |> List.concat

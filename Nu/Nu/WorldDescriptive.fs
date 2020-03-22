@@ -136,46 +136,46 @@ module Describe =
             | FixDefinition (left, right, breaking) -> Some (simulant, left, right, breaking)) |>
         List.definitize
 
-    /// Describe a simulant with the given definitions and contained children.
-    let simulant5 dispatcherName (initializers : PropertyInitializer list) children simulant world =
+    /// Describe a simulant with the given initializers and contained children.
+    let simulant5 dispatcherName nameOpt (initializers : PropertyInitializer list) children simulant world =
         let properties = initializersToProperties initializers world
         let eventHandlers = initializersToEventHandlers initializers simulant
         let fixes = initializersToFixes initializers simulant
-        let descriptor = { SimulantNameOpt = None; SimulantDispatcherName = dispatcherName; SimulantProperties = properties; SimulantChildren = children }
+        let descriptor = { SimulantNameOpt = nameOpt; SimulantDispatcherName = dispatcherName; SimulantProperties = properties; SimulantChildren = children }
         (descriptor, eventHandlers, fixes)
 
-    /// Describe a simulant with the given definitions and contained children.
-    let simulant<'d when 'd :> GameDispatcher> initializers children simulant world =
-        simulant5 typeof<'d>.Name initializers children simulant world
+    /// Describe a simulant with the given initializers and contained children.
+    let simulant<'d when 'd :> GameDispatcher> nameOpt initializers children simulant world =
+        simulant5 typeof<'d>.Name nameOpt initializers children simulant world
 
-    /// Describe a game with the given definitions and contained screens.
+    /// Describe a game with the given initializers and contained screens.
     let game5 dispatcherName (initializers : PropertyInitializer list) (screens : SimulantDescriptor list) (game : Game) world =
-        simulant5 dispatcherName initializers screens game world
+        simulant5 dispatcherName None initializers screens game world
 
-    /// Describe a game with the given definitions and contained screens.
+    /// Describe a game with the given initializers and contained screens.
     let game<'d when 'd :> GameDispatcher> initializers screens game world =
         game5 typeof<'d>.Name initializers screens game world
 
-    /// Describe a screen with the given definitions and contained layers.
-    let screen5 dispatcherName (initializers : PropertyInitializer list) (layers : SimulantDescriptor list) (screen : Screen) world =
-        simulant5 dispatcherName initializers layers screen world
+    /// Describe a screen with the given initializers and contained layers.
+    let screen5 dispatcherName nameOpt (initializers : PropertyInitializer list) (layers : SimulantDescriptor list) (screen : Screen) world =
+        simulant5 dispatcherName nameOpt initializers layers screen world
 
-    /// Describe a screen with the given definitions and contained layers.
-    let screen<'d when 'd :> ScreenDispatcher> definitions layers screen world =
-        screen5 typeof<'d>.Name definitions layers screen world
+    /// Describe a screen with the given initializers and contained layers.
+    let screen<'d when 'd :> ScreenDispatcher> nameOpt initializers layers screen world =
+        screen5 typeof<'d>.Name nameOpt initializers layers screen world
 
-    /// Describe a layer with the given definitions and contained entities.
-    let layer5 dispatcherName (initializers : PropertyInitializer list) (entities : SimulantDescriptor list) (layer : Layer) world =
-        simulant5 dispatcherName initializers entities layer world
+    /// Describe a layer with the given initializers and contained entities.
+    let layer5 dispatcherName nameOpt (initializers : PropertyInitializer list) (entities : SimulantDescriptor list) (layer : Layer) world =
+        simulant5 dispatcherName nameOpt initializers entities layer world
 
-    /// Describe a layer with the given definitions and contained entities.
-    let layer<'d when 'd :> LayerDispatcher> definitions entities world =
-        layer5 typeof<'d>.Name definitions entities world
+    /// Describe a layer with the given initializers and contained entities.
+    let layer<'d when 'd :> LayerDispatcher> initializers entities world =
+        layer5 typeof<'d>.Name initializers entities world
 
-    /// Describe an entity with the given definitions.
-    let entity4 dispatcherName (initializers : PropertyInitializer list) (entity : Entity) world =
-        simulant5 dispatcherName initializers [] entity world
+    /// Describe an entity with the given initializers.
+    let entity4 dispatcherName nameOpt (initializers : PropertyInitializer list) (entity : Entity) world =
+        simulant5 dispatcherName nameOpt initializers [] entity world
 
-    /// Describe an entity with the given definitions.
-    let entity<'d when 'd :> EntityDispatcher> definitions world =
-        entity4 typeof<'d>.Name definitions world
+    /// Describe an entity with the given initializers.
+    let entity<'d when 'd :> EntityDispatcher> nameOpt initializers world =
+        entity4 typeof<'d>.Name nameOpt initializers world
