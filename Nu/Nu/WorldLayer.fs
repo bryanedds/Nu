@@ -255,9 +255,7 @@ module WorldLayerModule =
             match LayerContent.expand content screen world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
                 World.expandLayerStream lens indexerOpt mapper origin screen world
-            | Choice2Of3 (name, descriptor, handlers, fixes, streams, entityFilePaths, entityContents) ->
-                let descriptor =
-                    { descriptor with SimulantNameOpt = Some name }
+            | Choice2Of3 (_, descriptor, handlers, fixes, streams, entityFilePaths, entityContents) ->
                 let (layer, world) =
                     World.createLayer3 descriptor screen world
                 let world =
