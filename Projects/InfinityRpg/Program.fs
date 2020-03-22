@@ -2,6 +2,19 @@
 open Nu
 open InfinityRpg
 
+/// Creates InfinityRpg-specific values (here dispatchers and facets).
+/// Allows InfinityRpg simulation types to be created in the game as well as in Gaia.
+type InfinityRpgPlugin () =
+    inherit NuPlugin ()
+
+    // specify the game dispatcher to use at run-time
+    override this.GetStandAloneGameDispatcher () =
+        typeof<InfinityDispatcher>
+
+    // route overlays to specific dispatchers
+    override this.MakeOverlayRoutes () =
+        [typeof<ButtonDispatcher>.Name, Some "InfinityButtonDispatcher"]
+
 // this the entry point for the InfinityRpg application
 let [<EntryPoint; STAThread>] main _ =
 
