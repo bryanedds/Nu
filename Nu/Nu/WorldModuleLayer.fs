@@ -190,7 +190,7 @@ module WorldModuleLayer =
                 layer
                 world
 
-        static member private addLayer mayReplace layerState layer world =
+        static member internal addLayer mayReplace layerState layer world =
             let isNew = not (World.getLayerExists layer world)
             if isNew || mayReplace then
                 let world = World.addLayerState layerState layer world
@@ -203,28 +203,6 @@ module WorldModuleLayer =
                 let world = removeEntities layer world
                 World.removeLayerState layer world
             else world
-
-        /// Create a layer and add it to the world.
-        [<FunctionBinding "createLayer">]
-        static member createLayer4 dispatcherName nameOpt (screen : Screen) world =
-            let dispatchers = World.getLayerDispatchers world
-            let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None -> failwith ("Could not find a LayerDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
-            let layerState = LayerState.make nameOpt dispatcher
-            let layerState = Reflection.attachProperties LayerState.copy layerState.Dispatcher layerState world
-            let layer = Layer (screen.ScreenAddress <-- ntoa<Layer> layerState.Name)
-            let world =
-                if World.getLayerExists layer world then
-                    Log.debug "Scheduling layer creation assuming existing layer at the same address is being destroyed."
-                    World.schedule2 (World.addLayer false layerState layer) world
-                else World.addLayer false layerState layer world
-            (layer, world)
-
-        /// Create a layer and add it to the world.
-        static member createLayer<'d when 'd :> LayerDispatcher> nameOpt screen world =
-            World.createLayer4 typeof<'d>.Name nameOpt screen world
 
         static member internal writeLayer4 writeEntities layer layerDescriptor world =
             let layerState = World.getLayerState layer world
