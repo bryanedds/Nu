@@ -185,8 +185,9 @@ module WorldScreenModule =
             World.createScreen3 typeof<'d>.Name nameOpt world
 
         /// Create a screen from a snapshot and add it to the world.
-        static member createScreenFromSnapshot nameOpt snapshot world =
-            let (screen, world) = World.createScreen3 snapshot.SimulantDispatcherName nameOpt world
+        static member createScreenFromSnapshot snapshot world =
+            let (screen, world) =
+                World.createScreen3 snapshot.SimulantDispatcherName snapshot.SimulantNameOpt world
             let world =
                 Map.fold (fun world propertyName property ->
                     World.setScreenProperty propertyName property screen world)
@@ -271,8 +272,10 @@ module WorldScreenModule =
         static member expandScreenContent setScreenSplash content origin game world =
             match ScreenContent.expand content game world with
             | Left (name, snapshot, handlers, fixes, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths, entityContents) ->
+                let snapshot =
+                    { snapshot with SimulantNameOpt = Some name }
                 let (screen, world) =
-                    World.createScreenFromSnapshot (Some name) snapshot world
+                    World.createScreenFromSnapshot snapshot world
                 let world =
                     List.fold (fun world (_ : string, layerName, filePath) ->
                         World.readLayerFromFile filePath (Some layerName) screen world |> snd)

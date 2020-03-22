@@ -255,7 +255,9 @@ module WorldLayerModule =
             match LayerContent.expand content screen world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
                 World.expandLayerStream lens indexerOpt mapper origin screen world
-            | Choice2Of3 (_, snapshot, handlers, fixes, streams, entityFilePaths, entityContents) ->
+            | Choice2Of3 (name, snapshot, handlers, fixes, streams, entityFilePaths, entityContents) ->
+                let snapshot =
+                    { snapshot with SimulantNameOpt = Some name }
                 let (layer, world) =
                     World.createLayerFromSnapshot snapshot screen world
                 let world =
