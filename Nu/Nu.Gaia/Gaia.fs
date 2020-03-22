@@ -1467,7 +1467,7 @@ module Gaia =
                 | :? TextBox
                 | :? SymbolicTextBox -> handleKeyboardInput key true form Globals.World
                 | _ -> handleKeyboardInput key false form Globals.World
-            GaiaForm.CallNextHookEx (form.HookID, nCode, wParam, lParam)) |> ignore
+            GaiaForm.CallNextHookEx (form.HookId, nCode, wParam, lParam)) |> ignore
         tryRun3 runWhile sdlDeps (form : GaiaForm)
 
     /// Select a target directory for the desired plugin and its assets from the give file path.
