@@ -6,7 +6,8 @@ open System
 open Prime
 open Nu
 
-/// Describes a simulant value independent of the engine.
+/// Describes a generalized simulant value independent of the engine.
+/// Not used for serialization.
 type [<NoEquality; NoComparison>] SimulantDescriptor =
     { SimulantNameOpt : string option
       SimulantDispatcherName : string

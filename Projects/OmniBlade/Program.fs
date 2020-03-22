@@ -16,7 +16,5 @@ let [<EntryPoint; STAThread>] main _ =
     let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
     let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
     Nu.init worldConfig.NuConfig
-    let tryMakeWorld sdlDeps worldConfig =
-        let plugin = OmniPlugin ()
-        World.tryMake plugin sdlDeps worldConfig
+    let tryMakeWorld sdlDeps worldConfig = World.tryMake (OmniPlugin ()) sdlDeps worldConfig
     World.run tryMakeWorld worldConfig
