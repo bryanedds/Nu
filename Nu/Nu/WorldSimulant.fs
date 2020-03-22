@@ -194,7 +194,7 @@ module WorldSimulantModule =
         /// Check that a simulant exists in the world.
         [<FunctionBinding>]
         static member getExists (simulant : Simulant) (world : World) =
-            (world :> EventSystem<World>).SimulantExists simulant
+            (world :> World EventSystem).SimulantExists simulant
 
         /// Attempt to convert an address to a concrete simulant reference.
         static member tryDerive address =
