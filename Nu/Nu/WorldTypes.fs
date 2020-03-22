@@ -574,6 +574,8 @@ module WorldTypes =
         interface SimulantState with
             member this.GetXtension () = this.Xtension
 
+    /// A prototype for an entity-component-system implementation of Nu's backend.
+    /// See here for the related C++ prototype - https://github.com/bryanedds/ax/blob/5bb53b6985ee1cd07f869cb88ed4e333749fd118/src/hpp/ax/impl/system.hpp#L55-L64
     and [<Struct; CLIMutable; NoEquality; NoComparison>] EntityCore =
         { mutable Transform : Transform
           mutable StaticData : DesignerProperty
