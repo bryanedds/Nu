@@ -117,18 +117,22 @@ module Describe =
             | FixDefinition _ -> None) |>
         List.definitize |>
         List.map (fun (ty, name, expr) ->
-            let value =
+            let valueOpt =
                 match expr with
-                | DefineExpr value -> value
-                | VariableExpr fn -> fn world
-                | ComputedExpr _ -> failwithnie () // computed property cannot be a property definition...
-            let property =
-                match name with
-                | "StaticData"  | "Model" | _ when name.EndsWith "Model" ->
-                    // HACK: need to convert these to designer properties...
-                    { PropertyType = typeof<DesignerProperty>; PropertyValue = { DesignerType = ty; DesignerValue = value }}
-                | _ -> { PropertyType = ty; PropertyValue = value }
-            (name, property)) |>
+                | DefineExpr value -> Some value
+                | VariableExpr fn -> Some (fn world)
+                | ComputedExpr _ -> None // computed property cannot be an initializer...
+            match valueOpt with
+            | Some value ->
+                let property =
+                    match name with
+                    | "StaticData"  | "Model" | _ when name.EndsWith "Model" ->
+                        // HACK: need to convert these to designer properties...
+                        { PropertyType = typeof<DesignerProperty>; PropertyValue = { DesignerType = ty; DesignerValue = value }}
+                    | _ -> { PropertyType = ty; PropertyValue = value }
+                Some (name, property)
+            | None -> None) |>
+        List.definitize |>
         Map.ofList
 
     let private initializersToEventHandlers initializers (simulant : Simulant) =
