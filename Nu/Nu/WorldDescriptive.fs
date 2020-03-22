@@ -6,13 +6,15 @@ open System
 open Prime
 open Nu
 
-/// A marker interface for simulant descriptors.
-type SimulantDescriptor =
-    interface
-        abstract Children : SimulantDescriptor list
-        end
+/// Describes a simulant value independent of the engine.
+type [<NoEquality; NoComparison>] SimulantDescriptor =
+    { SimulantNameOpt : string option
+      SimulantDispatcherName : string
+      SimulantProperties : Map<string, Property>
+      SimulantChildren : SimulantDescriptor list }
 
 /// Describes a game value independent of the engine.
+/// Used to directly serialize a game.
 type [<NoComparison>] GameDescriptor =
     { GameDispatcherName : string
       GameProperties : Map<string, Symbol>
@@ -24,11 +26,8 @@ type [<NoComparison>] GameDescriptor =
           GameProperties = Map.empty
           ScreenDescriptors = [] }
 
-    interface SimulantDescriptor with
-        member this.Children =
-            this.ScreenDescriptors |> enumerable<SimulantDescriptor> |> List.ofSeq
-
 /// Describes a screen value independent of the engine.
+/// Used to directly serialize a screen.
 and [<NoComparison>] ScreenDescriptor =
     { ScreenDispatcherName : string
       ScreenProperties : Map<string, Symbol>
@@ -45,12 +44,9 @@ and [<NoComparison>] ScreenDescriptor =
         dispatcher.ScreenProperties |>
         Map.tryFind (Property? Name) |>
         Option.map symbolToValue<string>
-          
-    interface SimulantDescriptor with
-        member this.Children =
-            this.LayerDescriptors |> enumerable<SimulantDescriptor> |> List.ofSeq
 
 /// Describes a layer value independent of the engine.
+/// Used to directly serialize a layer.
 and [<NoComparison>] LayerDescriptor =
     { LayerDispatcherName : string
       LayerProperties : Map<string, Symbol>
@@ -68,11 +64,8 @@ and [<NoComparison>] LayerDescriptor =
         Map.tryFind (Property? Name) |>
         Option.map symbolToValue<string>
 
-    interface SimulantDescriptor with
-        member this.Children =
-            this.EntitieDescriptors |> enumerable<SimulantDescriptor> |> List.ofSeq
-
 /// Describes an entity value independent of the engine.
+/// Used to directly serialize an entity.
 and [<NoComparison>] EntityDescriptor =
     { EntityDispatcherName : string
       EntityProperties : Map<string, Symbol> }
@@ -87,16 +80,6 @@ and [<NoComparison>] EntityDescriptor =
         dispatcher.EntityProperties |>
         Map.tryFind (Property? Name) |>
         Option.map symbolToValue<string>
-
-    interface SimulantDescriptor with
-        member this.Children = []
-
-/// A snapshot of a simulant.
-type [<NoEquality; NoComparison>] SimulantSnapshot =
-    { SimulantNameOpt : string option
-      SimulantDispatcherName : string
-      SimulantProperties : Map<string, Property>
-      SimulantChildren : SimulantSnapshot list }
 
 /// Initializes a property.
 type [<NoEquality; NoComparison>] PropertyInitializer =
@@ -153,28 +136,20 @@ module Describe =
             | FixDefinition (left, right, breaking) -> Some (simulant, left, right, breaking)) |>
         List.definitize
 
-    let private simulantToDescriptor dispatcherName definitions (children : SimulantDescriptor list) (simulant : Simulant) =
-        match simulant with
-        | :? Game -> { GameDispatcherName = dispatcherName; GameProperties = definitions; ScreenDescriptors = children |> Seq.cast<ScreenDescriptor> |> List.ofSeq } :> SimulantDescriptor
-        | :? Screen -> { ScreenDispatcherName = dispatcherName; ScreenProperties = definitions; LayerDescriptors = children |> Seq.cast<LayerDescriptor> |> List.ofSeq } :> SimulantDescriptor
-        | :? Layer -> { LayerDispatcherName = dispatcherName; LayerProperties = definitions; EntitieDescriptors = children |> Seq.cast<EntityDescriptor> |> List.ofSeq } :> SimulantDescriptor
-        | :? Entity -> { EntityDispatcherName = dispatcherName; EntityProperties = definitions } :> SimulantDescriptor
-        | _ -> failwithumf ()
-
     /// Describe a simulant with the given definitions and contained children.
     let simulant5 dispatcherName (initializers : PropertyInitializer list) children simulant world =
         let properties = initializersToProperties initializers world
         let eventHandlers = initializersToEventHandlers initializers simulant
         let fixes = initializersToFixes initializers simulant
-        let snapshot = { SimulantNameOpt = None; SimulantDispatcherName = dispatcherName; SimulantProperties = properties; SimulantChildren = children }
-        (snapshot, eventHandlers, fixes)
+        let descriptor = { SimulantNameOpt = None; SimulantDispatcherName = dispatcherName; SimulantProperties = properties; SimulantChildren = children }
+        (descriptor, eventHandlers, fixes)
 
     /// Describe a simulant with the given definitions and contained children.
     let simulant<'d when 'd :> GameDispatcher> initializers children simulant world =
         simulant5 typeof<'d>.Name initializers children simulant world
 
     /// Describe a game with the given definitions and contained screens.
-    let game5 dispatcherName (initializers : PropertyInitializer list) (screens : SimulantSnapshot list) (game : Game) world =
+    let game5 dispatcherName (initializers : PropertyInitializer list) (screens : SimulantDescriptor list) (game : Game) world =
         simulant5 dispatcherName initializers screens game world
 
     /// Describe a game with the given definitions and contained screens.
@@ -182,7 +157,7 @@ module Describe =
         game5 typeof<'d>.Name initializers screens game world
 
     /// Describe a screen with the given definitions and contained layers.
-    let screen5 dispatcherName (initializers : PropertyInitializer list) (layers : SimulantSnapshot list) (screen : Screen) world =
+    let screen5 dispatcherName (initializers : PropertyInitializer list) (layers : SimulantDescriptor list) (screen : Screen) world =
         simulant5 dispatcherName initializers layers screen world
 
     /// Describe a screen with the given definitions and contained layers.
@@ -190,7 +165,7 @@ module Describe =
         screen5 typeof<'d>.Name definitions layers screen world
 
     /// Describe a layer with the given definitions and contained entities.
-    let layer5 dispatcherName (initializers : PropertyInitializer list) (entities : SimulantSnapshot list) (layer : Layer) world =
+    let layer5 dispatcherName (initializers : PropertyInitializer list) (entities : SimulantDescriptor list) (layer : Layer) world =
         simulant5 dispatcherName initializers entities layer world
 
     /// Describe a layer with the given definitions and contained entities.

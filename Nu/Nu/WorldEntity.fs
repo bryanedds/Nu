@@ -355,11 +355,11 @@ module WorldEntityModule =
             match EntityContent.expand content layer world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
                 World.expandEntityStream lens indexerOpt mapper origin layer world
-            | Choice2Of3 (name, snapshot, handlers, fixes, content) ->
-                let snapshot =
-                    { snapshot with SimulantNameOpt = Some name }
+            | Choice2Of3 (name, descriptor, handlers, fixes, content) ->
+                let descriptor =
+                    { descriptor with SimulantNameOpt = Some name }
                 let (entity, world) =
-                    World.createEntityFromSnapshot DefaultOverlay snapshot layer world
+                    World.createEntity4 DefaultOverlay descriptor layer world
                 let world =
                     match guidOpt with
                     | Some guid -> World.addKeyedValue (scstring guid) entity world

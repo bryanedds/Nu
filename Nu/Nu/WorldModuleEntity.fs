@@ -807,19 +807,19 @@ module WorldModuleEntity =
             let world = World.addEntity false entityState entity world
             (entity, world)
 
-        /// Create an entity and add it to the world.
-        static member createEntity<'d when 'd :> EntityDispatcher> nameOpt overlayNameDescriptor layer world =
-            World.createEntity5 typeof<'d>.Name nameOpt overlayNameDescriptor layer world
-
-        /// Create an entity from a snapshot and add it to the world.
-        static member createEntityFromSnapshot overlayDescriptor snapshot layer world =
+        /// Create an entity from an simulant descriptor.
+        static member createEntity4 overlayDescriptor descriptor layer world =
             let (entity, world) =
-                World.createEntity5 snapshot.SimulantDispatcherName snapshot.SimulantNameOpt overlayDescriptor layer world
+                World.createEntity5 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt overlayDescriptor layer world
             let world =
                 Map.fold (fun world propertyName property ->
                     World.setEntityProperty propertyName false false property entity world)
-                    world snapshot.SimulantProperties
+                    world descriptor.SimulantProperties
             (entity, world)
+
+        /// Create an entity and add it to the world.
+        static member createEntity<'d when 'd :> EntityDispatcher> nameOpt overlayNameDescriptor layer world =
+            World.createEntity5 typeof<'d>.Name nameOpt overlayNameDescriptor layer world
 
         /// Read an entity from an entity descriptor.
         static member readEntity entityDescriptor nameOpt (layer : Layer) world =
