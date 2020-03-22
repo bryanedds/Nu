@@ -637,8 +637,8 @@ module Gaia =
                                 form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
                             | None -> ()
                         | None -> ()
-                        Log.trace ("Invalid apply property operation due to: " + scstring exn)
-                    | exn -> Log.trace ("Invalid apply property operation due to: " + scstring exn)
+                        Log.info ("Invalid apply property operation due to: " + scstring exn)
+                    | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
                 | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
         | :? LayerTypeDescriptorSource as layerTds ->
             match form.layerPropertyGrid.SelectedGridItem with
@@ -663,8 +663,8 @@ module Gaia =
                                 form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
                             | None -> ()
                         | None -> ()
-                        Log.trace ("Invalid apply property operation due to: " + scstring exn)
-                    | exn -> Log.trace ("Invalid apply property operation due to: " + scstring exn)
+                        Log.info ("Invalid apply property operation due to: " + scstring exn)
+                    | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
                 | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
         | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
 
