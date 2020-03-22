@@ -153,23 +153,23 @@ module WorldLayerModule =
                 else World.addLayer false layerState layer world
             (layer, world)
 
-        /// Create a layer and add it to the world.
-        static member createLayer<'d when 'd :> LayerDispatcher> nameOpt screen world =
-            World.createLayer4 typeof<'d>.Name nameOpt screen world
-
-        /// Create a layer from a snapshot and add it to the world.
-        static member createLayerFromSnapshot snapshot screen world =
+        /// Create a layer from a simulnat descriptor.
+        static member createLayer3 descriptor screen world =
             let (layer, world) =
-                World.createLayer4 snapshot.SimulantDispatcherName snapshot.SimulantNameOpt screen world
+                World.createLayer4 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt screen world
             let world =
                 Map.fold (fun world propertyName property ->
                     World.setLayerProperty propertyName property layer world)
-                    world snapshot.SimulantProperties
+                    world descriptor.SimulantProperties
             let world =
-                List.fold (fun world childSnapshot ->
-                    World.createEntityFromSnapshot DefaultOverlay childSnapshot layer world |> snd)
-                    world snapshot.SimulantChildren
+                List.fold (fun world childDescriptor ->
+                    World.createEntity4 DefaultOverlay childDescriptor layer world |> snd)
+                    world descriptor.SimulantChildren
             (layer, world)
+
+        /// Create a layer and add it to the world.
+        static member createLayer<'d when 'd :> LayerDispatcher> nameOpt screen world =
+            World.createLayer4 typeof<'d>.Name nameOpt screen world
 
         /// Destroy a layer in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// layer's existence. Consider using World.destroyLayer instead.
@@ -255,11 +255,11 @@ module WorldLayerModule =
             match LayerContent.expand content screen world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
                 World.expandLayerStream lens indexerOpt mapper origin screen world
-            | Choice2Of3 (name, snapshot, handlers, fixes, streams, entityFilePaths, entityContents) ->
-                let snapshot =
-                    { snapshot with SimulantNameOpt = Some name }
+            | Choice2Of3 (name, descriptor, handlers, fixes, streams, entityFilePaths, entityContents) ->
+                let descriptor =
+                    { descriptor with SimulantNameOpt = Some name }
                 let (layer, world) =
-                    World.createLayerFromSnapshot snapshot screen world
+                    World.createLayer3 descriptor screen world
                 let world =
                     match guidOpt with
                     | Some guid -> World.addKeyedValue (scstring guid) layer world

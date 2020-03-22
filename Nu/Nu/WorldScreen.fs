@@ -180,23 +180,23 @@ module WorldScreenModule =
                 else World.addScreen false screenState screen world
             (screen, world)
 
-        /// Create a screen and add it to the world.
-        static member createScreen<'d when 'd :> ScreenDispatcher> nameOpt world =
-            World.createScreen3 typeof<'d>.Name nameOpt world
-
-        /// Create a screen from a snapshot and add it to the world.
-        static member createScreenFromSnapshot snapshot world =
+        /// Create a screen from a simulant descriptor.
+        static member createScreen2 descriptor world =
             let (screen, world) =
-                World.createScreen3 snapshot.SimulantDispatcherName snapshot.SimulantNameOpt world
+                World.createScreen3 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt world
             let world =
                 Map.fold (fun world propertyName property ->
                     World.setScreenProperty propertyName property screen world)
-                    world snapshot.SimulantProperties
+                    world descriptor.SimulantProperties
             let world =
-                List.fold (fun world childSnapshot ->
-                    World.createLayerFromSnapshot childSnapshot screen world |> snd)
-                    world snapshot.SimulantChildren
+                List.fold (fun world childDescriptor ->
+                    World.createLayer3 childDescriptor screen world |> snd)
+                    world descriptor.SimulantChildren
             (screen, world)
+
+        /// Create a screen and add it to the world.
+        static member createScreen<'d when 'd :> ScreenDispatcher> nameOpt world =
+            World.createScreen3 typeof<'d>.Name nameOpt world
 
         /// Create a screen with a dissolving transition, and add it to the world.
         [<FunctionBinding "createDissolveScreen">]
@@ -271,11 +271,11 @@ module WorldScreenModule =
         /// Turn screen content into a live screen.
         static member expandScreenContent setScreenSplash content origin game world =
             match ScreenContent.expand content game world with
-            | Left (name, snapshot, handlers, fixes, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths, entityContents) ->
-                let snapshot =
-                    { snapshot with SimulantNameOpt = Some name }
+            | Left (name, descriptor, handlers, fixes, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths, entityContents) ->
+                let descriptor =
+                    { descriptor with SimulantNameOpt = Some name }
                 let (screen, world) =
-                    World.createScreenFromSnapshot snapshot world
+                    World.createScreen2 descriptor world
                 let world =
                     List.fold (fun world (_ : string, layerName, filePath) ->
                         World.readLayerFromFile filePath (Some layerName) screen world |> snd)
