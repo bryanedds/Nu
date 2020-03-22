@@ -355,9 +355,13 @@ module WorldEntityModule =
             match EntityContent.expand content layer world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
                 World.expandEntityStream lens indexerOpt mapper origin layer world
-            | Choice2Of3 (name, descriptor, handlers, fixes, content) ->
-                let (entity, world) = World.readEntity descriptor (Some name) layer world
-                let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
+            | Choice2Of3 (_, snapshot, handlers, fixes, content) ->
+                let (entity, world) =
+                    World.createEntityFromSnapshot DefaultOverlay snapshot layer world
+                let world =
+                    match guidOpt with
+                    | Some guid -> World.addKeyedValue (scstring guid) entity world
+                    | None -> world
                 let world =
                     match origin with
                     | SimulantOrigin simulant

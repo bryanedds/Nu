@@ -811,6 +811,16 @@ module WorldModuleEntity =
         static member createEntity<'d when 'd :> EntityDispatcher> nameOpt overlayNameDescriptor layer world =
             World.createEntity5 typeof<'d>.Name nameOpt overlayNameDescriptor layer world
 
+        /// Create an entity from a snapshot and add it to the world.
+        static member createEntityFromSnapshot overlayDescriptor snapshot layer world =
+            let (entity, world) =
+                World.createEntity5 snapshot.SimulantDispatcherName snapshot.SimulantNameOpt overlayDescriptor layer world
+            let world =
+                Map.fold (fun world propertyName property ->
+                    World.setEntityProperty propertyName false false property entity world)
+                    world snapshot.SimulantProperties
+            (entity, world)
+
         /// Read an entity from an entity descriptor.
         static member readEntity entityDescriptor nameOpt (layer : Layer) world =
 

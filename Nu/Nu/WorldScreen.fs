@@ -184,6 +184,19 @@ module WorldScreenModule =
         static member createScreen<'d when 'd :> ScreenDispatcher> nameOpt world =
             World.createScreen3 typeof<'d>.Name nameOpt world
 
+        /// Create a screen from a snapshot and add it to the world.
+        static member createScreenFromSnapshot nameOpt snapshot world =
+            let (screen, world) = World.createScreen3 snapshot.SimulantDispatcherName nameOpt world
+            let world =
+                Map.fold (fun world propertyName property ->
+                    World.setScreenProperty propertyName property screen world)
+                    world snapshot.SimulantProperties
+            let world =
+                List.fold (fun world childSnapshot ->
+                    World.createLayerFromSnapshot childSnapshot screen world |> snd)
+                    world snapshot.SimulantChildren
+            (screen, world)
+
         /// Create a screen with a dissolving transition, and add it to the world.
         [<FunctionBinding "createDissolveScreen">]
         static member createDissolveScreen5 dispatcherName nameOpt dissolveData world =
@@ -257,8 +270,9 @@ module WorldScreenModule =
         /// Turn screen content into a live screen.
         static member expandScreenContent setScreenSplash content origin game world =
             match ScreenContent.expand content game world with
-            | Left (name, descriptor, handlers, fixes, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths, entityContents) ->
-                let (screen, world) = World.readScreen descriptor (Some name) world
+            | Left (name, snapshot, handlers, fixes, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths, entityContents) ->
+                let (screen, world) =
+                    World.createScreenFromSnapshot (Some name) snapshot world
                 let world =
                     List.fold (fun world (_ : string, layerName, filePath) ->
                         World.readLayerFromFile filePath (Some layerName) screen world |> snd)
