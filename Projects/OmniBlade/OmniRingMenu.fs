@@ -2,6 +2,7 @@
 open System
 open Prime
 open Nu
+open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
@@ -40,35 +41,35 @@ module OmniRingMenu =
                 just world
 
         static member Properties =
-            [define Entity.Lens.Radius 128.0f
-             define Entity.Lens.Rotation 0.0f
-             define Entity.Lens.SwallowMouseLeft false
-             define Entity.Lens.Visible false]
+            [define Entity.Radius 128.0f
+             define Entity.Rotation 0.0f
+             define Entity.SwallowMouseLeft false
+             define Entity.Visible false]
 
         override this.Content (model, menu, _) =
             [Content.entities (model --> fun model -> model.Items) $ fun index item world ->
                 let itemValue = item.Get world
                 let buttonName = menu.Name + "+" + itemValue
                 let button = menu.Parent / buttonName
-                Content.button buttonName
-                    [button.Size == v2 64.0f 64.0f
-                     button.Depth <== menu.Depth
-                     button.UpImage == asset Assets.BattlePackage (itemValue + "Up")
-                     button.DownImage == asset Assets.BattlePackage (itemValue + "Down")
-                     button.Persistent == false
-                     button.ParentNodeOpt == Some (relate button menu)
-                     button.ClickEvent ==> cmd (ItemSelect itemValue)
-                     button.UpdateEvent ==> cmd (ArrangeItemButton (button, index))]
+                Content.button button.Name
+                    [Entity.Size == v2 64.0f 64.0f
+                     Entity.Depth <== menu.Depth
+                     Entity.UpImage == asset Assets.BattlePackage (itemValue + "Up")
+                     Entity.DownImage == asset Assets.BattlePackage (itemValue + "Down")
+                     Entity.Persistent == false
+                     Entity.ParentNodeOpt == Some (relate button menu)
+                     Entity.ClickEvent ==> cmd (ItemSelect itemValue)
+                     Entity.UpdateEvent ==> cmd (ArrangeItemButton (button, index))]
              Content.entityOpt (model --> fun model -> model.ItemCancelOpt) $ fun itemCancel world ->
                 let itemCancelValue = itemCancel.Get world
                 let buttonName = menu.Name + "+" + itemCancelValue
                 let button = menu.Parent / buttonName
-                Content.button buttonName
-                    [button.PositionLocal == v2 -32.0f -96.0f
-                     button.Size == v2 64.0f 64.0f
-                     button.Depth <== menu.Depth
-                     button.UpImage == asset Assets.BattlePackage (itemCancelValue + "Up")
-                     button.DownImage == asset Assets.BattlePackage (itemCancelValue + "Down")
-                     button.ParentNodeOpt == Some (relate button menu)
-                     button.Persistent == false
-                     button.ClickEvent ==> cmd ItemCancel]]
+                Content.button button.Name
+                    [Entity.CenterLocal == v2 -32.0f -96.0f
+                     Entity.Size == v2 64.0f 64.0f
+                     Entity.Depth <== menu.Depth
+                     Entity.UpImage == asset Assets.BattlePackage (itemCancelValue + "Up")
+                     Entity.DownImage == asset Assets.BattlePackage (itemCancelValue + "Down")
+                     Entity.ParentNodeOpt == Some (relate button menu)
+                     Entity.Persistent == false
+                     Entity.ClickEvent ==> cmd ItemCancel]]

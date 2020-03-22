@@ -3,6 +3,7 @@ open System
 open FSharpx.Collections
 open Prime
 open Nu
+open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
@@ -49,11 +50,11 @@ module OmniCharacter =
             color
 
         static member Properties =
-            [define Entity.Lens.Omnipresent true]
+            [define Entity.Omnipresent true]
 
-        override this.Initializers (model, character, _) =
-            [character.Position <== model --> fun model -> model.Position
-             character.Size <== model --> fun model -> model.Size]
+        override this.Initializers (model, _, _) =
+            [Entity.Position <== model --> fun model -> model.Position
+             Entity.Size <== model --> fun model -> model.Size]
 
         override this.Actualize (character, world) =
             if character.GetInView world then

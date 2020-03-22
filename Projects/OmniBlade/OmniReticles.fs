@@ -2,6 +2,7 @@
 open System
 open Prime
 open Nu
+open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
@@ -22,8 +23,8 @@ module OmniReticles =
         inherit GuiDispatcher<ReticlesModel, unit, ReticlesCommand> ({ Characters = Map.empty; AimType = NoAim })
 
         static member Properties =
-            [define Entity.Lens.SwallowMouseLeft false
-             define Entity.Lens.Visible false]
+            [define Entity.SwallowMouseLeft false
+             define Entity.Visible false]
 
         override this.Command (_, command, rets, world) =
             match command with
@@ -33,24 +34,24 @@ module OmniReticles =
         override this.Content (model, rets, _) =
             let buttonName = rets.Name + "+" + "Cancel"
             let button = rets.Parent / buttonName
-            [Content.button buttonName
-                [button.PositionLocal == v2 -32.0f -96.0f
-                 button.Size == v2 64.0f 64.0f
-                 button.ViewType == Relative
-                 button.Persistent == false
-                 button.UpImage == asset Assets.BattlePackage "CancelUp"
-                 button.DownImage == asset Assets.BattlePackage "CancelDown"
-                 button.ParentNodeOpt == Some (relate button rets)
-                 button.ClickEvent ==> cmd TargetCancel]
+            [Content.button button.Name
+                [Entity.PositionLocal == v2 -32.0f -96.0f
+                 Entity.Size == v2 64.0f 64.0f
+                 Entity.ViewType == Relative
+                 Entity.Persistent == false
+                 Entity.UpImage == asset Assets.BattlePackage "CancelUp"
+                 Entity.DownImage == asset Assets.BattlePackage "CancelDown"
+                 Entity.ParentNodeOpt == Some (relate button rets)
+                 Entity.ClickEvent ==> cmd TargetCancel]
              Content.entities (model --> fun model -> CharacterModels.getTargets model.AimType model.Characters) $ fun index character world ->
                 let buttonName = rets.Name + "+" + "Reticle" + "+" + scstring index
                 let button = rets.Parent / buttonName
-                Content.button buttonName
-                    [button.Center <== character --> fun character -> character.Center
-                     button.Size == v2 128.0f 128.0f
-                     button.ViewType == Relative
-                     button.Persistent == false
-                     button.UpImage == asset Assets.BattlePackage "ReticleUp"
-                     button.DownImage == asset Assets.BattlePackage "ReticleDown"
-                     button.ParentNodeOpt == Some (relate button rets)
-                     button.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterState.CharacterIndex)]]
+                Content.button button.Name
+                    [Entity.Center <== character --> fun character -> character.Center
+                     Entity.Size == v2 128.0f 128.0f
+                     Entity.ViewType == Relative
+                     Entity.Persistent == false
+                     Entity.UpImage == asset Assets.BattlePackage "ReticleUp"
+                     Entity.DownImage == asset Assets.BattlePackage "ReticleDown"
+                     Entity.ParentNodeOpt == Some (relate button rets)
+                     Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterState.CharacterIndex)]]
