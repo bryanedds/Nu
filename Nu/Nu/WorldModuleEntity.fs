@@ -244,8 +244,18 @@ module WorldModuleEntity =
                     entityState)
                 false false false Property? Imperative value entity world
 
+        static member internal getEntityStaticDataProperty entity world =
+            (World.getEntityState entity world).StaticData
+
         static member internal getEntityStaticData<'a> entity world =
             (World.getEntityState entity world).StaticData.DesignerValue :?> 'a
+
+        static member internal setEntityStaticDataProperty (value : DesignerProperty) entity world =
+            World.updateEntityState (fun entityState ->
+                if entityState.Imperative
+                then entityState.StaticData <- value; entityState
+                else { entityState with StaticData = value })
+                false false true Property? StaticData value entity world
 
         static member internal setEntityStaticData<'a> (value : 'a) entity world =
             World.updateEntityState (fun entityState ->
@@ -1116,7 +1126,7 @@ module WorldModuleEntity =
         Getters.Add ("Depth", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityDepth entity world })
         Getters.Add ("ViewType", fun entity world -> { PropertyType = typeof<ViewType>; PropertyValue = World.getEntityViewType entity world })
         Getters.Add ("Omnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world })
-        Getters.Add ("StaticData", fun entity world -> { PropertyType = typeof<obj>; PropertyValue = World.getEntityStaticData entity world })
+        Getters.Add ("StaticData", fun entity world -> let designerProperty = World.getEntityStaticDataProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         Getters.Add ("Overflow", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world })
         Getters.Add ("IgnoreLayer", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIgnoreLayer entity world })
         Getters.Add ("Visible", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world })
@@ -1132,7 +1142,7 @@ module WorldModuleEntity =
         Getters.Add ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
         Getters.Add ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = World.getEntityTransform entity world })
         Getters.Add ("Center", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityCenter entity world })
-        
+
     /// Initialize property setters.
     let private initSetters () =
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
@@ -1143,7 +1153,7 @@ module WorldModuleEntity =
         Setters.Add ("Depth", fun property entity world -> (true, World.setEntityDepth (property.PropertyValue :?> single) entity world))
         Setters.Add ("ViewType", fun property entity world -> (true, World.setEntityViewType (property.PropertyValue :?> ViewType) entity world))
         Setters.Add ("Omnipresent", fun property entity world -> (true, World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world))
-        Setters.Add ("StaticData", fun property entity world -> (true, World.setEntityStaticData (property.PropertyValue :?> DesignerProperty) entity world))
+        Setters.Add ("StaticData", fun property entity world -> let designerProperty = World.getEntityStaticDataProperty entity world in (true, World.setEntityStaticDataProperty { designerProperty with DesignerValue = property.PropertyValue } entity world))
         Setters.Add ("Overflow", fun property entity world -> (true, World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world))
         Setters.Add ("Imperative", fun property entity world -> (true, World.setEntityImperative (property.PropertyValue :?> bool) entity world))
         Setters.Add ("PublishChanges", fun property entity world -> (true, World.setEntityPublishChanges (property.PropertyValue :?> bool) entity world))
