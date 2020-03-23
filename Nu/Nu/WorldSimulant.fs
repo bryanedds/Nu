@@ -282,7 +282,7 @@ module PropertyDescriptor =
             | None -> { PropertyType = propertyType; PropertyValue = propertyValue }
         World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world
 
-    /// Get the property descriptors of as constructed from the given function in the given context.
+    /// Get the property descriptors as constructed from the given function in the given context.
     let getPropertyDescriptors<'s when 's :> SimulantState> makePropertyDescriptor contextOpt =
         match contextOpt with
         | Some (simulant, world) ->
@@ -312,7 +312,9 @@ module PropertyDescriptor =
                     let propertyDescriptors' =
                         Seq.fold
                             (fun propertyDescriptors' (propertyName, property : Property) ->
-                                if Reflection.isPropertyPersistentByName propertyName then
+                                if property.PropertyType = typeof<ComputedProperty> then
+                                    propertyDescriptors'
+                                elif Reflection.isPropertyPersistentByName propertyName then
                                     let propertyType =
                                         match property.PropertyValue with
                                         | :? DesignerProperty as designerProperty -> designerProperty.DesignerType
