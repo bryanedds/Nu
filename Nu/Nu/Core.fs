@@ -85,3 +85,14 @@ module CoreOperators =
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
+    
+    // TODO: remove this after updating Prime.
+    let computed (lens : Lens<'a, 'w>) (get : 't -> 'w -> 'a) (setOpt : ('a -> 't -> 'w -> 'w) option) =
+        let computedProperty =
+            ComputedProperty.make
+                typeof<'a>
+                (fun (target : obj) (world : obj) -> get (target :?> 't) (world :?> 'w) :> obj)
+                (match setOpt with
+                    | Some set -> Some (fun value (target : obj) (world : obj) -> set (value :?> 'a) (target :?> 't) (world :?> 'w) :> obj)
+                    | None -> None)
+        PropertyDefinition.makeValidated lens.Name typeof<ComputedProperty> (ComputedExpr computedProperty)
