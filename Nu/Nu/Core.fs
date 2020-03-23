@@ -85,11 +85,3 @@ module CoreOperators =
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
-
-/// TODO: remove this after updating Prime.
-[<RequireQualifiedAccess>]
-module Either =
-
-    /// Map both sides of an either value.
-    let map fnl fnr =
-        Either.mapLeft fnl >> Either.mapRight fnr
