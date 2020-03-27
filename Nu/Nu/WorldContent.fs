@@ -15,7 +15,7 @@ module Content =
 
     /// Describe a game with the given initializers and contained screens.
     let game<'d when 'd :> GameDispatcher> initializers screens =
-        GameFromDefinitions (typeof<'d>.Name, initializers, screens)
+        GameFromInitializers (typeof<'d>.Name, initializers, screens)
 
     /// Describe a screen to be loaded from a file.
     let screenFromFile<'d when 'd :> ScreenDispatcher> screenName behavior filePath =
@@ -27,7 +27,7 @@ module Content =
 
     /// Describe a screen with the given initializers and contained layers.
     let screen<'d when 'd :> ScreenDispatcher> screenName behavior initializers layers =
-        ScreenFromDefinitions (typeof<'d>.Name, screenName, behavior, initializers, layers)
+        ScreenFromInitializers (typeof<'d>.Name, screenName, behavior, initializers, layers)
 
     /// Describe layers to be streamed from a lens indexed by the given mapper.
     let layersIndexedBy (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
@@ -57,7 +57,7 @@ module Content =
 
     /// Describe a layer with the given initializers and contained entities.
     let layer<'d when 'd :> LayerDispatcher> layerName initializers entities =
-        LayerFromDefinitions (typeof<'d>.Name, layerName, initializers, entities)
+        LayerFromInitializers (typeof<'d>.Name, layerName, initializers, entities)
 
     /// Describe entities to be streamed from a lens indexed by the given mapper.
     let entitiesIndexedBy (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
@@ -87,7 +87,7 @@ module Content =
 
     /// Describe an entity with the given initializers and content.
     let entityWithContent<'d when 'd :> EntityDispatcher> entityName initializers content =
-        EntityFromDefinitions (typeof<'d>.Name, entityName, initializers, content)
+        EntityFromInitializers (typeof<'d>.Name, entityName, initializers, content)
 
     /// Describe an entity with the given initializers.
     let entity<'d when 'd :> EntityDispatcher> entityName initializers =
@@ -104,6 +104,9 @@ module Content =
 
     /// Describe a label with the given initializers.
     let label entityName initializers = entity<LabelDispatcher> entityName initializers
+    
+    /// Describe a panel with the given initializers and content.
+    let panel entityName initializers content = entityWithContent<LabelDispatcher> entityName initializers content
 
     /// Describe a text with the given initializers.
     let text entityName initializers = entity<TextDispatcher> entityName initializers

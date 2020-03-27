@@ -356,13 +356,15 @@ module WorldEntityModule =
                 let (entity, world) =
                     World.createEntity4 DefaultOverlay descriptor layer world
                 let world =
-                    match guidOpt with
-                    | Some guid -> World.addKeyedValue (scstring guid) entity world
-                    | None -> world
-                let world =
                     match origin with
                     | SimulantOrigin simulant
                     | FacetOrigin (simulant, _) ->
+                        let world =
+                            match simulant with
+                            | :? Entity as parent ->
+                                let property = { PropertyType = typeof<Entity Relation option>; PropertyValue = Some (relate entity parent) }
+                                entity.TrySetProperty Property? ParentNodeOpt true false property world |> snd
+                            | _ -> world
                         World.monitor
                             (constant $ World.destroyEntity entity)
                             (Events.Unregistering --> simulant.SimulantAddress)
@@ -385,6 +387,10 @@ module WorldEntityModule =
                     List.fold (fun world content ->
                         World.expandEntityContent (Some Gen.id) content origin layer world)
                         world (snd content)
+                let world =
+                    match guidOpt with
+                    | Some guid -> World.addKeyedValue (scstring guid) entity world
+                    | None -> world
                 world
             | Choice3Of3 (entityName, filePath) ->
                 let (entity, world) = World.readEntityFromFile filePath (Some entityName) layer world

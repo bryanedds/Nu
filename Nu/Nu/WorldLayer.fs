@@ -256,10 +256,6 @@ module WorldLayerModule =
                 let (layer, world) =
                     World.createLayer3 descriptor screen world
                 let world =
-                    match guidOpt with
-                    | Some guid -> World.addKeyedValue (scstring guid) layer world
-                    | None -> world
-                let world =
                     List.fold (fun world (_, entityName, filePath) ->
                         World.readEntityFromFile filePath (Some entityName) layer world |> snd)
                         world entityFilePaths
@@ -285,6 +281,10 @@ module WorldLayerModule =
                             World.expandEntityContent (Some Gen.id) entityContent (SimulantOrigin owner) layer world)
                             world entityContents)
                         world entityContents
+                let world =
+                    match guidOpt with
+                    | Some guid -> World.addKeyedValue (scstring guid) layer world
+                    | None -> world
                 world
             | Choice3Of3 (layerName, filePath) ->
                 let (layer, world) = World.readLayerFromFile filePath (Some layerName) screen world
