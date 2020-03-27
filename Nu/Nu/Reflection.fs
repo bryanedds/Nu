@@ -19,6 +19,7 @@ module Reflection =
     let isPropertyAlwaysPublishByName propertyName =
         match propertyName with
         | "Model" // always publish certain script properties 
+        | "ParentNodeOpt"
         | "ScriptOpt"
         | "Script"
         | "EffectsOpt" -> true

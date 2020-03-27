@@ -731,7 +731,7 @@ module NodeFacetModule =
     type Entity with
     
         member this.GetParentNodeOpt world : Entity Relation option = this.Get Property? ParentNodeOpt world
-        member this.SetParentNodeOpt (value : Entity Relation option) world = this.SetFast Property? ParentNodeOpt false false value world
+        member this.SetParentNodeOpt (value : Entity Relation option) world = this.SetFast Property? ParentNodeOpt true false value world
         member this.ParentNodeOpt = lens Property? ParentNodeOpt this.GetParentNodeOpt this.SetParentNodeOpt this
         member this.GetPositionLocal world : Vector2 = this.Get Property? PositionLocal world
         member this.SetPositionLocal (value : Vector2) world = this.SetFast Property? PositionLocal false false value world
@@ -836,6 +836,21 @@ module NodeFacetModule =
             | "Enabled" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
             | _ -> world
 
+        static let updateFromNode (node : Entity) (entity : Entity) world =
+            let world = updatePropertyFromNode "Position" node entity world
+            let world = updatePropertyFromNode "Depth" node entity world
+            let world = updatePropertyFromNode "Visible" node entity world
+            let world = updatePropertyFromNode "Enabled" node entity world
+            world
+
+        static let tryUpdateFromNode (entity : Entity) world =
+            match entity.GetParentNodeOpt world with
+            | Some nodeRelation ->
+                let node = entity.Resolve nodeRelation
+                let world = updateFromNode node entity world
+                world
+            | None -> world
+
         static let handleLocalPropertyChange evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : ChangeData
@@ -853,7 +868,7 @@ module NodeFacetModule =
             let data = evt.Data : ChangeData
             (Cascade, updatePropertyFromNode data.Name node entity world)
 
-        static let subscribeToNodePropertyChanges (entity : Entity) world =
+        static let trySubscribeToNodePropertyChanges (entity : Entity) world =
             let oldWorld = world
             let world = (entity.GetNodeUnsubscribe world) world
             match entity.GetParentNodeOpt world with
@@ -875,7 +890,8 @@ module NodeFacetModule =
 
         static let handleNodeChange evt world =
             let entity = evt.Subscriber
-            let world = subscribeToNodePropertyChanges entity world
+            let world = tryUpdateFromNode entity world
+            let world = trySubscribeToNodePropertyChanges entity world
             world
 
         static member Properties =
@@ -896,17 +912,8 @@ module NodeFacetModule =
             let world = World.monitorPlus handleLocalPropertyChange entity.DepthLocal.ChangeEvent entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.ChangeEvent entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.EnabledLocal.ChangeEvent entity world |> snd
-            let world = subscribeToNodePropertyChanges entity world
-            let world =
-                match entity.GetParentNodeOpt world with
-                | Some nodeRelation ->
-                    let node = entity.Resolve nodeRelation
-                    let world = updatePropertyFromNode "Position" node entity world
-                    let world = updatePropertyFromNode "Depth" node entity world
-                    let world = updatePropertyFromNode "Visible" node entity world
-                    let world = updatePropertyFromNode "Enabled" node entity world
-                    world
-                | None -> world
+            let world = tryUpdateFromNode entity world
+            let world = trySubscribeToNodePropertyChanges entity world
             world
 
         override this.Unregister (entity, world) =

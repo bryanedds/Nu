@@ -16,7 +16,7 @@ type [<NoComparison>] ScreenBehavior =
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
     | EntitiesFromStream of Lens<obj, World> * (obj -> int) option * (int -> Lens<obj, World> -> World -> EntityContent)
-    | EntityFromDefinitions of string * string * PropertyInitializer list * EntityContent list
+    | EntityFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | EntityFromFile of string * string
     interface SimulantContent
 
@@ -25,7 +25,7 @@ type [<NoEquality; NoComparison>] EntityContent =
         match content with
         | EntitiesFromStream (lens, indexerOpt, mapper) ->
             Choice1Of3 (lens, indexerOpt, mapper)
-        | EntityFromDefinitions (dispatcherName, name, initializers, content) ->
+        | EntityFromInitializers (dispatcherName, name, initializers, content) ->
             let (descriptor, handlersEntity, fixesEntity) = Describe.entity4 dispatcherName (Some name) initializers (layer / name) world
             Choice2Of3 (name, descriptor, handlersEntity, fixesEntity, (layer / name, content))
         | EntityFromFile (name, filePath) ->
@@ -34,7 +34,7 @@ type [<NoEquality; NoComparison>] EntityContent =
 /// Describes the content of a layer.
 type [<NoEquality; NoComparison>] LayerContent =
     | LayersFromStream of Lens<obj, World> * (obj -> int) option * (int -> Lens<obj, World> -> World -> LayerContent)
-    | LayerFromDefinitions of string * string * PropertyInitializer list * EntityContent list
+    | LayerFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | LayerFromFile of string * string
     interface SimulantContent
 
@@ -43,7 +43,7 @@ type [<NoEquality; NoComparison>] LayerContent =
         match content with
         | LayersFromStream (lens, indexerOpt, mapper) ->
             Choice1Of3 (lens, indexerOpt, mapper)
-        | LayerFromDefinitions (dispatcherName, name, initializers, content) ->
+        | LayerFromInitializers (dispatcherName, name, initializers, content) ->
             let layer = screen / name
             let expansions = List.map (fun content -> EntityContent.expand content layer world) content
             let streams = List.map (function Choice1Of3 (lens, indexerOpt, mapper) -> Some (layer, lens, indexerOpt, mapper) | _ -> None) expansions |> List.definitize
@@ -59,7 +59,7 @@ type [<NoEquality; NoComparison>] LayerContent =
 
 /// Describes the content of a screen.
 type [<NoEquality; NoComparison>] ScreenContent =
-    | ScreenFromDefinitions of string * string * ScreenBehavior * PropertyInitializer list * LayerContent list
+    | ScreenFromInitializers of string * string * ScreenBehavior * PropertyInitializer list * LayerContent list
     | ScreenFromLayerFile of string * ScreenBehavior * Type * string
     | ScreenFromFile of string * ScreenBehavior * string
     interface SimulantContent
@@ -67,7 +67,7 @@ type [<NoEquality; NoComparison>] ScreenContent =
     /// Expand a screen content to its constituent parts.
     static member expand content (_ : Game) world =
         match content with
-        | ScreenFromDefinitions (dispatcherName, name, behavior, initializers, content) ->
+        | ScreenFromInitializers (dispatcherName, name, behavior, initializers, content) ->
             let screen = Screen name
             let expansions = List.map (fun content -> LayerContent.expand content screen world) content
             let streams = List.map (function Choice1Of3 (lens, indexerOpt, mapper) -> Some (screen, lens, indexerOpt, mapper) | _ -> None) expansions |> List.definitize
@@ -85,14 +85,14 @@ type [<NoEquality; NoComparison>] ScreenContent =
 
 /// Describes the content of a game.
 type [<NoEquality; NoComparison>] GameContent =
-    | GameFromDefinitions of string * PropertyInitializer list * ScreenContent list
+    | GameFromInitializers of string * PropertyInitializer list * ScreenContent list
     | GameFromFile of string
     interface SimulantContent
 
     /// Expand a game content to its constituent parts.
     static member expand content world =
         match content with
-        | GameFromDefinitions (dispatcherName, initializers, content) ->
+        | GameFromInitializers (dispatcherName, initializers, content) ->
             let game = Game ()
             let expansions = List.map (fun content -> ScreenContent.expand content game world) content
             let descriptors = Either.getLeftValues expansions |> List.map (fun (_, descriptor, _, _, _, _, _, _, _, _) -> descriptor)
