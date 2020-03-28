@@ -684,6 +684,11 @@ module WorldModuleEntity =
                 Array.fold (fun world (facet : Facet) -> facet.UnregisterPhysics (entity, world)) world facets)
                 entity world
 
+        static member internal propagateEntityPhysics entity world =
+            let world = World.unregisterEntityPhysics entity world
+            let world = World.registerEntityPhysics entity world
+            world
+
         static member internal addEntity mayReplace entityState entity world =
 
             // add entity only if it is new or is explicitly able to be replaced
@@ -823,6 +828,8 @@ module WorldModuleEntity =
                 Map.fold (fun world propertyName property ->
                     World.setEntityProperty propertyName false false property entity world)
                     world descriptor.SimulantProperties
+            let world =
+                World.propagateEntityPhysics entity world
             (entity, world)
 
         /// Create an entity and add it to the world.

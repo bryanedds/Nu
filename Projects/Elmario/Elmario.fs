@@ -38,17 +38,17 @@ type ElmarioDispatcher () =
             | MoveLeft ->
                 let physicsId = Simulants.Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 -30000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 -7500.0f 0.0f) physicsId world
+                then World.applyBodyForce (v2 -3000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 -750.0f 0.0f) physicsId world
             | MoveRight ->
                 let physicsId = Simulants.Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 30000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 7500.0f 0.0f) physicsId world
+                then World.applyBodyForce (v2 3000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 750.0f 0.0f) physicsId world
             | Jump ->
                 let physicsId = Simulants.Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world then
-                    let world = World.applyBodyForce (v2 0.0f 2000000.0f) physicsId world
+                    let world = World.applyBodyForce (v2 0.0f 200000.0f) physicsId world
                     World.playSound 0.5f (asset "Gameplay" "Jump") world
                 else world
             | Nop -> world
