@@ -175,12 +175,8 @@ module WorldEntityModule =
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =
             World.withEventContext (fun world ->
-                if WorldModule.isSimulantSelected this world then
-                    let facets = this.GetFacets world
-                    Array.fold (fun world (facet : Facet) ->
-                        let world = facet.UnregisterPhysics (this, world)
-                        facet.RegisterPhysics (this, world))
-                        world facets
+                if WorldModule.isSimulantSelected this world
+                then World.propagateEntityPhysics this world
                 else world)
                 this world
 
