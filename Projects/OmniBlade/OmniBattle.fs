@@ -380,15 +380,11 @@ module OmniBattle =
                  Content.entitiesIndexedBy
                     (model --> fun model -> getAllies model)
                     (fun model -> model.CharacterState.PartyIndex)
-                    (fun index model _ ->
-                        let ally = scene / ("Ally+" + scstring index)
-                        Content.entity<CharacterDispatcher> ally.Name [ally.CharacterModel <== model])
+                    (fun index model _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.CharacterModel <== model])
                  Content.entitiesIndexedBy
                     (model --> fun model -> getEnemies model)
                     (fun model -> model.CharacterState.PartyIndex)
-                    (fun index model _ ->
-                        let enemy = scene / ("Enemy+" + scstring index)
-                        Content.entity<CharacterDispatcher> enemy.Name [enemy.CharacterModel <== model])]
+                    (fun index model _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.CharacterModel <== model])]
 
         member private this.InputContent (model : Lens<BattleModel, World>, screen : Screen, _ : World) =
             Content.layers (model --> fun model -> getAllies model) $ fun index ally _ ->
