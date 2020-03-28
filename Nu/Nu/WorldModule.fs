@@ -43,7 +43,7 @@ module WorldModuleOperators =
     let ntos (screenName : string) =
         Screen screenName
 
-    /// Resolve a relationship to a simulant.
+    /// Resolve a relationship from a simulant.
     let resolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Relation) : 't =
         let simulant2 = Relation.resolve<Simulant, 't> simulant.SimulantAddress relation
         if  typeof<'t> = typeof<Entity> ||
@@ -53,7 +53,7 @@ module WorldModuleOperators =
             Activator.CreateInstance (typeof<'t>, simulant2) :?> 't
         else failwithumf ()
 
-    /// Relate a simulant to another simulant.
+    /// Relate the second simulant to the first.
     let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Relation =
         Relation.relate<Simulant, 't> simulant.SimulantAddress (atoa simulant2.SimulantAddress)
 

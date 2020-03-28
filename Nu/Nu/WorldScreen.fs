@@ -180,6 +180,20 @@ module WorldScreenModule =
                 else World.addScreen false screenState screen world
             (screen, world)
 
+        /// Create a screen from a simulant descriptor.
+        static member createScreen2 descriptor world =
+            let (screen, world) =
+                World.createScreen3 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt world
+            let world =
+                Map.fold (fun world propertyName property ->
+                    World.setScreenProperty propertyName property screen world)
+                    world descriptor.SimulantProperties
+            let world =
+                List.fold (fun world childDescriptor ->
+                    World.createLayer3 childDescriptor screen world |> snd)
+                    world descriptor.SimulantChildren
+            (screen, world)
+
         /// Create a screen and add it to the world.
         static member createScreen<'d when 'd :> ScreenDispatcher> nameOpt world =
             World.createScreen3 typeof<'d>.Name nameOpt world
@@ -257,8 +271,9 @@ module WorldScreenModule =
         /// Turn screen content into a live screen.
         static member expandScreenContent setScreenSplash content origin game world =
             match ScreenContent.expand content game world with
-            | Left (name, descriptor, handlers, fixes, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths, entityContents) ->
-                let (screen, world) = World.readScreen descriptor (Some name) world
+            | Left (_, descriptor, handlers, fixes, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths, entityContents) ->
+                let (screen, world) =
+                    World.createScreen2 descriptor world
                 let world =
                     List.fold (fun world (_ : string, layerName, filePath) ->
                         World.readLayerFromFile filePath (Some layerName) screen world |> snd)
