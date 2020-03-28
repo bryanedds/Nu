@@ -750,9 +750,6 @@ module WorldModuleEntity =
         [<FunctionBinding "createEntity">]
         static member createEntity5 dispatcherName nameOpt overlayNameDescriptor (layer : Layer) world =
 
-            // grab overlay dependencies
-            let overlayer = World.getOverlayer world
-
             // find the entity's dispatcher
             let dispatchers = World.getEntityDispatchers world
             let dispatcher =
@@ -775,6 +772,7 @@ module WorldModuleEntity =
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
             // apply the entity state's overlay to its facet names
+            let overlayer = World.getOverlayer world
             let entityState =
                 match overlayNameOpt with
                 | Some overlayName ->
@@ -814,9 +812,6 @@ module WorldModuleEntity =
         /// Read an entity from an entity descriptor.
         static member readEntity entityDescriptor nameOpt (layer : Layer) world =
 
-            // grab overlay dependencies
-            let overlayer = World.getOverlayer world
-
             // create the dispatcher
             let dispatcherName = entityDescriptor.EntityDispatcherName
             let dispatchers = World.getEntityDispatchers world
@@ -842,6 +837,7 @@ module WorldModuleEntity =
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
             // read the entity state's overlay and apply it to its facet names if applicable
+            let overlayer = World.getOverlayer world
             let entityState = Reflection.tryReadOverlayNameOptToTarget EntityState.copy entityDescriptor.EntityProperties entityState
             let entityState = if Option.isNone entityState.OverlayNameOpt then { entityState with OverlayNameOpt = defaultOverlayNameOpt } else entityState
             let entityState =
