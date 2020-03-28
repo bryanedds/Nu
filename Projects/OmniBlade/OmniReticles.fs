@@ -37,8 +37,6 @@ module OmniReticles =
             [Content.button button.Name
                 [Entity.PositionLocal == v2 -32.0f -96.0f
                  Entity.Size == v2 64.0f 64.0f
-                 Entity.ViewType == Relative
-                 Entity.Persistent == false
                  Entity.UpImage == asset Assets.BattlePackage "CancelUp"
                  Entity.DownImage == asset Assets.BattlePackage "CancelDown"
                  Entity.ClickEvent ==> cmd TargetCancel]
@@ -48,8 +46,6 @@ module OmniReticles =
                 Content.button button.Name
                     [Entity.Center <== character --> fun character -> character.Center
                      Entity.Size == v2 128.0f 128.0f
-                     Entity.ViewType == Relative
-                     Entity.Persistent == false
                      Entity.UpImage == asset Assets.BattlePackage "ReticleUp"
                      Entity.DownImage == asset Assets.BattlePackage "ReticleDown"
                      Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterState.CharacterIndex)]]
