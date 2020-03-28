@@ -519,7 +519,7 @@ module Gaia =
                     form.propertyEditor.Enabled <- not selectedGridItem.PropertyDescriptor.IsReadOnly
                     form.propertyNameLabel.Text <- selectedGridItem.Label
                     form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                    if notNull selectedGridItem.Value || isNullTrueValue ty then
+                    if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || isNullTrueValue ty) then
                         let (keywords0, keywords1, prettyPrinter) =
                             match selectedGridItem.Label with
                             | "OverlayNameOpt" ->
@@ -576,7 +576,7 @@ module Gaia =
                     form.propertyEditor.Enabled <- true
                     form.propertyNameLabel.Text <- selectedGridItem.Label
                     form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                    if notNull selectedGridItem.Value || isNullTrueValue ty then
+                    if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || isNullTrueValue ty) then
                         let (keywords0, keywords1, prettyPrinter) =
                             let syntax = SyntaxAttribute.getOrDefault ty
                             let keywords0 =
@@ -637,8 +637,8 @@ module Gaia =
                                 form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
                             | None -> ()
                         | None -> ()
-                        Log.trace ("Invalid apply property operation due to: " + scstring exn)
-                    | exn -> Log.trace ("Invalid apply property operation due to: " + scstring exn)
+                        Log.info ("Invalid apply property operation due to: " + scstring exn)
+                    | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
                 | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
         | :? LayerTypeDescriptorSource as layerTds ->
             match form.layerPropertyGrid.SelectedGridItem with
@@ -663,8 +663,8 @@ module Gaia =
                                 form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
                             | None -> ()
                         | None -> ()
-                        Log.trace ("Invalid apply property operation due to: " + scstring exn)
-                    | exn -> Log.trace ("Invalid apply property operation due to: " + scstring exn)
+                        Log.info ("Invalid apply property operation due to: " + scstring exn)
+                    | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
                 | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
         | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
 
@@ -1467,7 +1467,7 @@ module Gaia =
                 | :? TextBox
                 | :? SymbolicTextBox -> handleKeyboardInput key true form Globals.World
                 | _ -> handleKeyboardInput key false form Globals.World
-            GaiaForm.CallNextHookEx (form.HookID, nCode, wParam, lParam)) |> ignore
+            GaiaForm.CallNextHookEx (form.HookId, nCode, wParam, lParam)) |> ignore
         tryRun3 runWhile sdlDeps (form : GaiaForm)
 
     /// Select a target directory for the desired plugin and its assets from the give file path.

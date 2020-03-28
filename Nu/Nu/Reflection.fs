@@ -19,6 +19,7 @@ module Reflection =
     let isPropertyAlwaysPublishByName propertyName =
         match propertyName with
         | "Model" // always publish certain script properties 
+        | "ParentNodeOpt"
         | "ScriptOpt"
         | "Script"
         | "EffectsOpt" -> true
@@ -312,7 +313,8 @@ module Reflection =
         Seq.fold (fun propertyDescriptors (propertyName, (property : Property)) ->
             let propertyType = property.PropertyType
             let propertyValue = property.PropertyValue
-            if  isPropertyPersistentByName propertyName &&
+            if  propertyType <> typeof<ComputedProperty> &&
+                isPropertyPersistentByName propertyName &&
                 shouldWriteProperty propertyName propertyType propertyValue then
                 let converter = SymbolicConverter (false, None, propertyType)
                 let propertySymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol

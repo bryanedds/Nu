@@ -3,10 +3,7 @@
 
 namespace Nu
 open System
-open System.ComponentModel
 open System.IO
-open System.Reflection
-open System.Runtime.CompilerServices
 open Prime
 open Nu
 
@@ -355,13 +352,19 @@ module WorldEntityModule =
             match EntityContent.expand content layer world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
                 World.expandEntityStream lens indexerOpt mapper origin layer world
-            | Choice2Of3 (name, descriptor, handlers, fixes, content) ->
-                let (entity, world) = World.readEntity descriptor (Some name) layer world
-                let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
+            | Choice2Of3 (_, descriptor, handlers, fixes, content) ->
+                let (entity, world) =
+                    World.createEntity4 DefaultOverlay descriptor layer world
                 let world =
                     match origin with
                     | SimulantOrigin simulant
                     | FacetOrigin (simulant, _) ->
+                        let world =
+                            match simulant with
+                            | :? Entity as parent ->
+                                let property = { PropertyType = typeof<Entity Relation option>; PropertyValue = Some (relate entity parent) }
+                                entity.TrySetProperty Property? ParentNodeOpt true false property world |> snd
+                            | _ -> world
                         World.monitor
                             (constant $ World.destroyEntity entity)
                             (Events.Unregistering --> simulant.SimulantAddress)
@@ -384,6 +387,10 @@ module WorldEntityModule =
                     List.fold (fun world content ->
                         World.expandEntityContent (Some Gen.id) content origin layer world)
                         world (snd content)
+                let world =
+                    match guidOpt with
+                    | Some guid -> World.addKeyedValue (scstring guid) entity world
+                    | None -> world
                 world
             | Choice3Of3 (entityName, filePath) ->
                 let (entity, world) = World.readEntityFromFile filePath (Some entityName) layer world

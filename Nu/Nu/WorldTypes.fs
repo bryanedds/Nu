@@ -574,6 +574,8 @@ module WorldTypes =
         interface SimulantState with
             member this.GetXtension () = this.Xtension
 
+    /// A prototype component for an entity-component-system implementation of Nu's backend.
+    /// See here for the related C++ prototype - https://github.com/bryanedds/ax/blob/5bb53b6985ee1cd07f869cb88ed4e333749fd118/src/hpp/ax/impl/system.hpp#L55-L64
     and [<Struct; CLIMutable; NoEquality; NoComparison>] EntityCore =
         { mutable Transform : Transform
           mutable StaticData : DesignerProperty
@@ -705,24 +707,34 @@ module WorldTypes =
 
         /// The address of the game.
         member this.GameAddress = gameAddress
+
+        /// Get the latest value of a game's properties.
+        [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
+        member private this.View = Debug.World.viewGame Debug.World.Chosen
         
         /// Helper for accessing game lenses.
         static member Lens = Unchecked.defaultof<Game>
-        
-        static member op_Implicit () = Game ()
-        
-        static member op_Implicit (gameAddress : Game Address) = Game gameAddress
 
-        interface Simulant with
-            member this.SimulantAddress = atoa<Game, Simulant> this.GameAddress
-            end
+        /// Concatenate an address with a game's address, forcing the type of first address.
+        static member (-->) (address : 'a Address, game : Game) =
+            match box game with
+            | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
+            | _ -> acatff address game.GameAddress
+
+        override this.ToString () =
+            scstring this.GameAddress
 
         override this.Equals that =
             match that with
             | :? Game as that -> this.GameAddress.Equals that.GameAddress
             | _ -> false
 
-        override this.GetHashCode () = this.GameAddress.GetHashCode ()
+        override this.GetHashCode () =
+            this.GameAddress.GetHashCode ()
+
+        interface Simulant with
+            member this.SimulantAddress = atoa<Game, Simulant> this.GameAddress
+            end
 
         interface Game IComparable with
             member this.CompareTo that =
@@ -733,18 +745,6 @@ module WorldTypes =
                 match that with
                 | :? Game as that -> (this :> Game IComparable).CompareTo that
                 | _ -> failwith "Invalid Game comparison (comparee not of type Game)."
-
-        override this.ToString () = scstring this.GameAddress
-
-        /// Get the latest value of a game's properties.
-        [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-        member private this.View = Debug.World.viewGame Debug.World.Chosen
-
-        /// Concatenate an address with a game's address, forcing the type of first address.
-        static member (-->) (address : 'a Address, game : Game) =
-            match box game with
-            | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
-            | _ -> acatff address game.GameAddress
 
     /// The screen type that allows transitioning to and from other screens, and also hosts the
     /// currently interactive layers of entities.
@@ -762,23 +762,39 @@ module WorldTypes =
         /// The parent game of the screen.
         member this.Parent = Game ()
 
+        /// Get the name of a screen.
+        member this.Name = this.ScreenAddress.Names.[0]
+
+        /// Get the latest value of a screen's properties.
+        [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
+        member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
+
         /// Helper for accessing screen lenses.
         static member Lens = Unchecked.defaultof<Screen>
-        
-        static member op_Implicit (screenName : string) = Screen screenName
-        
-        static member op_Implicit (screenAddress : Screen Address) = Screen screenAddress
 
-        interface Simulant with
-            member this.SimulantAddress = atoa<Screen, Simulant> this.ScreenAddress
-            end
+        /// Derive a layer from its screen.
+        static member (/) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress --> ntoa layerName)
+
+        /// Concatenate an address with a screen's address, forcing the type of first address.
+        static member (-->) (address : 'a Address, screen : Screen) =
+            match box screen with
+            | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
+            | _ -> acatff address screen.ScreenAddress
+
+        override this.ToString () =
+            scstring this.ScreenAddress
 
         override this.Equals that =
             match that with
             | :? Screen as that -> this.ScreenAddress.Equals that.ScreenAddress
             | _ -> false
 
-        override this.GetHashCode () = this.ScreenAddress.GetHashCode ()
+        override this.GetHashCode () =
+            this.ScreenAddress.GetHashCode ()
+
+        interface Simulant with
+            member this.SimulantAddress = atoa<Screen, Simulant> this.ScreenAddress
+            end
 
         interface Screen IComparable with
             member this.CompareTo that =
@@ -789,24 +805,6 @@ module WorldTypes =
                 match that with
                 | :? Screen as that -> (this :> Screen IComparable).CompareTo that
                 | _ -> failwith "Invalid Screen comparison (comparee not of type Screen)."
-
-        override this.ToString () = scstring this.ScreenAddress
-
-        /// Get the name of a screen.
-        member this.Name = this.ScreenAddress.Names.[0]
-
-        /// Get the latest value of a screen's properties.
-        [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-        member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
-
-        /// Concatenate an address with a screen's address, forcing the type of first address.
-        static member (-->) (address : 'a Address, screen : Screen) =
-            match box screen with
-            | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
-            | _ -> acatff address screen.ScreenAddress
-
-        /// Derive a layer from its screen.
-        static member (/) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress --> ntoa layerName)
 
     /// Forms a logical layer of entities.
     and Layer (layerAddress) =
@@ -832,23 +830,39 @@ module WorldTypes =
         /// The parent screen of the layer.
         member this.Parent = let names = this.LayerAddress.Names in Screen names.[0]
 
+        /// Get the name of a layer.
+        member this.Name = Address.getName this.LayerAddress
+
+        /// Get the latest value of a layer's properties.
+        [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
+        member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
+
+        /// Derive an entity from its layer.
+        static member (/) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress --> ntoa entityName)
+
+        /// Concatenate an address with a layer's address, forcing the type of first address.
+        static member (-->) (address : 'a Address, layer : Layer) =
+            match box layer with
+            | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
+            | _ -> acatff address layer.LayerAddress
+
         /// Helper for accessing layer lenses.
         static member Lens = Unchecked.defaultof<Layer>
 
-        static member op_Implicit (layerName : string) = Layer layerName
-
-        static member op_Implicit (layerAddress : Layer Address) = Layer layerAddress
-
-        interface Simulant with
-            member this.SimulantAddress = atoa<Layer, Simulant> this.LayerAddress
-            end
+        override this.ToString () =
+            scstring this.LayerAddress
 
         override this.Equals that =
             match that with
             | :? Layer as that -> this.LayerAddress.Equals that.LayerAddress
             | _ -> false
 
-        override this.GetHashCode () = this.LayerAddress.GetHashCode ()
+        override this.GetHashCode () =
+            this.LayerAddress.GetHashCode ()
+
+        interface Simulant with
+            member this.SimulantAddress = atoa<Layer, Simulant> this.LayerAddress
+            end
 
         interface Layer IComparable with
             member this.CompareTo that =
@@ -859,24 +873,6 @@ module WorldTypes =
                 match that with
                 | :? Layer as that -> (this :> Layer IComparable).CompareTo that
                 | _ -> failwith "Invalid Layer comparison (comparee not of type Layer)."
-
-        override this.ToString () = scstring this.LayerAddress
-
-        /// Get the name of a layer.
-        member this.Name = Address.getName this.LayerAddress
-
-        /// Get the latest value of a layer's properties.
-        [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-        member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
-
-        /// Concatenate an address with a layer's address, forcing the type of first address.
-        static member (-->) (address : 'a Address, layer : Layer) =
-            match box layer with
-            | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
-            | _ -> acatff address layer.LayerAddress
-
-        /// Derive an entity from its layer.
-        static member (/) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress --> ntoa entityName)
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
@@ -928,16 +924,24 @@ module WorldTypes =
             with get () = entityStateOpt
             and set value = entityStateOpt <- value
 
+        /// Get the name of an entity.
+        member this.Name = Address.getName this.EntityAddress
+
+        /// Get the latest value of an entity's properties.
+        [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
+        member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
+
         /// Helper for accessing entity lenses.
         static member Lens = Unchecked.defaultof<Entity>
 
-        static member op_Implicit (entityName : string) = Entity entityName
+        /// Concatenate an address with an entity, forcing the type of first address.
+        static member (-->) (address : 'a Address, entity : Entity) =
+            match box entity with
+            | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
+            | _ -> acatff address entity.EntityAddress
 
-        static member op_Implicit (entityAddress : Entity Address) = Entity entityAddress
-        
-        interface Simulant with
-            member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress
-            end
+        override this.ToString () =
+            scstring this.EntityAddress
 
         override this.Equals that =
             match that with
@@ -946,6 +950,10 @@ module WorldTypes =
 
         override this.GetHashCode () =
             this.EntityAddress.GetHashCode ()
+
+        interface Simulant with
+            member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress
+            end
 
         interface Entity IComparable with
             member this.CompareTo that =
@@ -956,21 +964,6 @@ module WorldTypes =
                 match that with
                 | :? Entity as that -> (this :> Entity IComparable).CompareTo that
                 | _ -> failwith "Invalid Entity comparison (comparee not of type Entity)."
-
-        override this.ToString () = scstring this.EntityAddress
-
-        /// Get the name of an entity.
-        member this.Name = Address.getName this.EntityAddress
-
-        /// Get the latest value of an entity's properties.
-        [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-        member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
-
-        /// Concatenate an address with an entity, forcing the type of first address.
-        static member (-->) (address : 'a Address, entity : Entity) =
-            match box entity with
-            | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
-            | _ -> acatff address entity.EntityAddress
 
     /// The world's dispatchers (including facets).
     /// 
@@ -1016,7 +1009,7 @@ module WorldTypes =
               ScriptingContext : Simulant
               Plugin : NuPlugin }
 
-        interface EventSystem<World> with
+        interface World EventSystem with
 
             member this.GetLiveness () =
                 AmbientState.getLiveness this.AmbientState

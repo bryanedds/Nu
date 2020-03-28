@@ -4,9 +4,6 @@
 namespace Nu
 open System
 open System.IO
-open System.ComponentModel
-open System.Reflection
-open System.Runtime.CompilerServices
 open Prime
 open Nu
 
@@ -135,6 +132,42 @@ module WorldLayerModule =
                 | None -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
             | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
 
+        /// Create a layer and add it to the world.
+        [<FunctionBinding "createLayer">]
+        static member createLayer4 dispatcherName nameOpt (screen : Screen) world =
+            let dispatchers = World.getLayerDispatchers world
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None -> failwith ("Could not find a LayerDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
+            let layerState = LayerState.make nameOpt dispatcher
+            let layerState = Reflection.attachProperties LayerState.copy layerState.Dispatcher layerState world
+            let layer = Layer (screen.ScreenAddress <-- ntoa<Layer> layerState.Name)
+            let world =
+                if World.getLayerExists layer world then
+                    Log.debug "Scheduling layer creation assuming existing layer at the same address is being destroyed."
+                    World.schedule2 (World.addLayer false layerState layer) world
+                else World.addLayer false layerState layer world
+            (layer, world)
+
+        /// Create a layer from a simulnat descriptor.
+        static member createLayer3 descriptor screen world =
+            let (layer, world) =
+                World.createLayer4 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt screen world
+            let world =
+                Map.fold (fun world propertyName property ->
+                    World.setLayerProperty propertyName property layer world)
+                    world descriptor.SimulantProperties
+            let world =
+                List.fold (fun world childDescriptor ->
+                    World.createEntity4 DefaultOverlay childDescriptor layer world |> snd)
+                    world descriptor.SimulantChildren
+            (layer, world)
+
+        /// Create a layer and add it to the world.
+        static member createLayer<'d when 'd :> LayerDispatcher> nameOpt screen world =
+            World.createLayer4 typeof<'d>.Name nameOpt screen world
+
         /// Destroy a layer in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// layer's existence. Consider using World.destroyLayer instead.
         static member destroyLayerImmediate layer world =
@@ -219,9 +252,9 @@ module WorldLayerModule =
             match LayerContent.expand content screen world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
                 World.expandLayerStream lens indexerOpt mapper origin screen world
-            | Choice2Of3 (name, descriptor, handlers, fixes, streams, entityFilePaths, entityContents) ->
-                let (layer, world) = World.readLayer descriptor (Some name) screen world
-                let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) layer world | None -> world
+            | Choice2Of3 (_, descriptor, handlers, fixes, streams, entityFilePaths, entityContents) ->
+                let (layer, world) =
+                    World.createLayer3 descriptor screen world
                 let world =
                     List.fold (fun world (_, entityName, filePath) ->
                         World.readEntityFromFile filePath (Some entityName) layer world |> snd)
@@ -248,6 +281,10 @@ module WorldLayerModule =
                             World.expandEntityContent (Some Gen.id) entityContent (SimulantOrigin owner) layer world)
                             world entityContents)
                         world entityContents
+                let world =
+                    match guidOpt with
+                    | Some guid -> World.addKeyedValue (scstring guid) layer world
+                    | None -> world
                 world
             | Choice3Of3 (layerName, filePath) ->
                 let (layer, world) = World.readLayerFromFile filePath (Some layerName) screen world
