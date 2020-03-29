@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Debug
 open System

@@ -1,5 +1,5 @@
 ﻿// Gaia - The Nu Game Engine editor.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 using System;
 using System.Windows.Forms;
