@@ -818,6 +818,9 @@ module WorldModuleEntity =
             // add entity's state to world
             let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
             let world = World.addEntity false entityState entity world
+
+            // HACK: make sure xtension is consistent with imperativeness of entity state
+            let world = World.setEntityImperative entityState.Imperative entity world
             (entity, world)
 
         /// Create an entity from an simulant descriptor.
@@ -911,6 +914,9 @@ module WorldModuleEntity =
                     Log.debug "Scheduling entity creation assuming existing entity at the same address is being destroyed."
                     World.schedule2 (World.addEntity true entityState entity) world
                 else World.addEntity true entityState entity world
+                
+            // HACK: make sure xtension is consistent with imperativeness of entity state
+            let world = World.setEntityImperative entityState.Imperative entity world
             (entity, world)
 
         /// Read an entity from a file.
