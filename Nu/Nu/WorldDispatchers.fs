@@ -111,7 +111,10 @@ module FacetModule =
             let bindings = this.Bindings (model, entity, world)
             let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
             let content = this.Content (this.Model entity, entity, world)
-            let world = List.fold (fun world content -> World.expandEntityContent None content (FacetOrigin (entity, getTypeName this)) entity.Parent world) world content
+            let world =
+                List.fold (fun world content ->
+                    World.expandEntityContent None content (FacetOrigin (entity, getTypeName this)) entity.Parent world)
+                    world content
             let initializers = this.Initializers (this.Model entity, entity, world)
             List.fold (fun world initializer ->
                 match initializer with
@@ -335,7 +338,7 @@ module ScriptFacetModule =
             let world = World.setEntityScriptFrame scriptFrame entity world
             evalManyWithLogging script scriptFrame entity world |> snd'
 
-        static let handleOnRegisterChanged evt world =
+        static let handleRegisterScriptChanged evt world =
             let entity = evt.Subscriber : Entity
             let world = World.unregisterEntity entity world
             World.registerEntity entity world
@@ -353,7 +356,7 @@ module ScriptFacetModule =
         override this.Register (entity, world) =
             let world = World.evalWithLogging (entity.GetRegisterScript world) (entity.GetScriptFrame world) entity world |> snd'
             let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? Script) entity world
-            let world = World.monitor handleOnRegisterChanged (entity.GetChangeEvent Property? OnRegister) entity world
+            let world = World.monitor handleRegisterScriptChanged (entity.GetChangeEvent Property? RegisterScript) entity world
             world
 
         override this.Unregister (entity, world) =
@@ -1097,7 +1100,10 @@ module EntityDispatcherModule =
             let bindings = this.Bindings (model, entity, world)
             let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
             let content = this.Content (this.Model entity, entity, world)
-            let world = List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin entity) entity.Parent world) world content
+            let world =
+                List.fold (fun world content ->
+                    World.expandEntityContent None content (SimulantOrigin entity) entity.Parent world)
+                    world content
             let initializers = this.Initializers (this.Model entity, entity, world)
             List.fold (fun world initializer ->
                 match initializer with
@@ -1930,7 +1936,10 @@ module LayerDispatcherModule =
             let bindings = this.Bindings (model, layer, world)
             let world = Signal.processBindings this.Message this.Command (this.Model layer) bindings layer world
             let content = this.Content (this.Model layer, layer, world)
-            let world = List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin layer) layer world) world content
+            let world =
+                List.fold (fun world content ->
+                    World.expandEntityContent None content (SimulantOrigin layer) layer world)
+                    world content
             let initializers = this.Initializers (this.Model layer, layer, world)
             List.fold (fun world initializer ->
                 match initializer with
@@ -2026,7 +2035,10 @@ module ScreenDispatcherModule =
             let bindings = this.Bindings (model, screen, world)
             let world = Signal.processBindings this.Message this.Command (this.Model screen) bindings screen world
             let content = this.Content (this.Model screen, screen, world)
-            let world = List.fold (fun world content -> World.expandLayerContent None content (SimulantOrigin screen) screen world) world content
+            let world =
+                List.fold (fun world content ->
+                    World.expandLayerContent None content (SimulantOrigin screen) screen world)
+                    world content
             let initializers = this.Initializers (this.Model screen, screen, world)
             List.fold (fun world initializer ->
                 match initializer with

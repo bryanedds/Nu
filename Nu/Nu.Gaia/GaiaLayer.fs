@@ -29,10 +29,9 @@ and LayerPropertyDescriptor (propertyDescriptor, attributes) =
         true
 
     override this.Category =
-        // HACK: all of this stuff is a hack until we can get user-defined attributes on simulant properties!
-        // HACK: in order to put the Events as the last category, I start all the other categories with an unprinted
+        // HACK: in order to put Scripts as the last category, I start all the other categories with an unprinted
         // \r character as here - https://bytes.com/topic/c-sharp/answers/214456-q-ordering-sorting-category-text-propertygrid
-        if propertyName.Length > 2 && propertyName.StartsWith "On" && Char.IsUpper propertyName.[2] then "Events"
+        if propertyName.EndsWith "Script" then "Scripts"
         elif propertyName = "Name" then "\rAmbient Properties"
         elif propertyName = "Persistent" || propertyName = "Script" || propertyName = "ScriptOpt" || propertyName = "Depth" || propertyName = "Visible" then "\rScene Properties"
         elif propertyType = typeof<DesignerProperty> then "\rDesigner Properties"

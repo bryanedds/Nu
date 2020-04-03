@@ -20,7 +20,7 @@ type MyEntityDispatcher () =
     static member Properties =
         [define Entity.Imperative true // makes updates faster by using mutation
          define Entity.Omnipresent true // makes updates faster by not touching the entity tree
-         define Entity.IgnoreLayer true // makes actualization faster by not touching the containing layer
+         define Entity.IgnoreLayer true // makes actualization faster by not querying the containing layer
          define (Entity.StaticData ()) // makes user-defined properties faster by using local data
             { DesignerType = typeof<Image AssetTag>
               DesignerValue = asset<Image> Assets.DefaultPackage "Image4" }]
