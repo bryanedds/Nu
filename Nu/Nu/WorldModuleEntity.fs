@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
@@ -743,6 +743,11 @@ module WorldModuleEntity =
                 Array.fold (fun world (facet : Facet) -> facet.UnregisterPhysics (entity, world)) world facets)
                 entity world
 
+        static member internal propagateEntityPhysics entity world =
+            let world = World.unregisterEntityPhysics entity world
+            let world = World.registerEntityPhysics entity world
+            world
+
         static member internal addEntity mayReplace entityState entity world =
 
             // add entity only if it is new or is explicitly able to be replaced
@@ -819,9 +824,6 @@ module WorldModuleEntity =
         [<FunctionBinding "createEntity">]
         static member createEntity5 dispatcherName nameOpt overlayNameDescriptor (layer : Layer) world =
 
-            // grab overlay dependencies
-            let overlayer = World.getOverlayer world
-
             // find the entity's dispatcher
             let dispatchers = World.getEntityDispatchers world
             let dispatcher =
@@ -844,6 +846,7 @@ module WorldModuleEntity =
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
             // apply the entity state's overlay to its facet names
+            let overlayer = World.getOverlayer world
             let entityState =
                 match overlayNameOpt with
                 | Some overlayName ->
@@ -874,6 +877,9 @@ module WorldModuleEntity =
             // add entity's state to world
             let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
             let world = World.addEntity false entityState entity world
+
+            // HACK: make sure xtension is consistent with imperativeness of entity state
+            let world = World.setEntityImperative entityState.Imperative entity world
             (entity, world)
 
         /// Create an entity from an simulant descriptor.
@@ -884,6 +890,8 @@ module WorldModuleEntity =
                 Map.fold (fun world propertyName property ->
                     World.setEntityProperty propertyName false false property entity world)
                     world descriptor.SimulantProperties
+            let world =
+                World.propagateEntityPhysics entity world
             (entity, world)
 
         /// Create an entity and add it to the world.
@@ -892,9 +900,6 @@ module WorldModuleEntity =
 
         /// Read an entity from an entity descriptor.
         static member readEntity entityDescriptor nameOpt (layer : Layer) world =
-
-            // grab overlay dependencies
-            let overlayer = World.getOverlayer world
 
             // create the dispatcher
             let dispatcherName = entityDescriptor.EntityDispatcherName
@@ -921,6 +926,7 @@ module WorldModuleEntity =
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
 
             // read the entity state's overlay and apply it to its facet names if applicable
+            let overlayer = World.getOverlayer world
             let entityState = Reflection.tryReadOverlayNameOptToTarget EntityState.copy entityDescriptor.EntityProperties entityState
             let entityState = if Option.isNone entityState.OverlayNameOpt then { entityState with OverlayNameOpt = defaultOverlayNameOpt } else entityState
             let entityState =
@@ -967,6 +973,9 @@ module WorldModuleEntity =
                     Log.debug "Scheduling entity creation assuming existing entity at the same address is being destroyed."
                     World.schedule2 (World.addEntity true entityState entity) world
                 else World.addEntity true entityState entity world
+                
+            // HACK: make sure xtension is consistent with imperativeness of entity state
+            let world = World.setEntityImperative entityState.Imperative entity world
             (entity, world)
 
         /// Read an entity from a file.

@@ -41,7 +41,7 @@ module BulletModule =
         static member Properties =
             [define Entity.Size (Vector2 (20.0f, 20.0f))
              define Entity.Omnipresent true
-             define Entity.Density 0.25f
+             define Entity.Density 0.1f
              define Entity.Restitution 0.5f
              define Entity.LinearDamping 0.0f
              define Entity.GravityScale 0.0f
@@ -72,7 +72,7 @@ module EnemyModule =
         inherit EntityDispatcher ()
         
         static let move (enemy : Entity) world =
-            let force = Vector2 (-2000.0f, -20000.0f)
+            let force = Vector2 (-250.0f, -2500.0f)
             World.applyBodyForce force (enemy.GetPhysicsId world) world
 
         static let die (enemy : Entity) world =
@@ -135,9 +135,9 @@ module PlayerModule =
     type PlayerDispatcher () =
         inherit EntityDispatcher ()
 
-        static let [<Literal>] WalkForce = 8000.0f
-        static let [<Literal>] FallForce = -30000.0f
-        static let [<Literal>] ClimbForce = 12000.0f
+        static let [<Literal>] WalkForce = 1000.0f
+        static let [<Literal>] FallForce = -4000.0f
+        static let [<Literal>] ClimbForce = 1500.0f
 
         static let createBullet (player : Entity) (playerTransform : Transform) world =
             let (bullet, world) = World.createEntity<BulletDispatcher> None DefaultOverlay player.Parent world
@@ -148,7 +148,7 @@ module PlayerModule =
             (bullet, world)
 
         static let propelBullet (bullet : Entity) world =
-            let world = World.applyBodyLinearImpulse (Vector2 (35.0f, 0.0f)) (bullet.GetPhysicsId world) world
+            let world = World.applyBodyLinearImpulse (Vector2 (15.0f, 0.0f)) (bullet.GetPhysicsId world) world
             World.playSound 1.0f Assets.ShotSound world
 
         static let shootBullet (player : Entity) world =
@@ -191,7 +191,7 @@ module PlayerModule =
             if  tickTime >= player.GetLastTimeJumpNp world + 12L &&
                 tickTime <= player.GetLastTimeOnGroundNp world + 10L then
                 let world = player.SetLastTimeJumpNp tickTime world
-                let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 18000.0f)) (player.GetPhysicsId world) world
+                let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 2000.0f)) (player.GetPhysicsId world) world
                 let world = World.playSound 1.0f Assets.JumpSound world
                 world
             else world
