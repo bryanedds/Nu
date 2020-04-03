@@ -66,9 +66,14 @@ module FacetModule =
 
         member this.SetFacetModel<'model> modelName (value : 'model) world =
             let model = this.Get<DesignerProperty> modelName world
-            match this.GetImperative world with
-            | true -> model.DesignerValue <- value; world
-            | false -> this.Set<DesignerProperty> modelName { model with DesignerValue = value } world
+#if IMPERATIVE_ENTITIES
+            model.DesignerValue <- value
+            world
+#else
+            if this.GetImperative world
+            then model.DesignerValue <- value; world
+            else this.Set<DesignerProperty> modelName { model with DesignerValue = value } world
+#endif
 
         member this.UpdateFacetModel<'model> modelName updater world =
             this.SetFacetModel<'model> modelName (updater this.GetFacetModel<'model> modelName world) world
@@ -1057,9 +1062,14 @@ module EntityDispatcherModule =
 
         member this.SetModel<'model> (value : 'model) world =
             let model = this.Get<DesignerProperty> Property? Model world
-            match this.GetImperative world with
-            | true -> model.DesignerValue <- value; world
-            | false -> this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
+#if IMPERATIVE_ENTITIES
+            model.DesignerValue <- value
+            world
+#else
+            if this.GetImperative world
+            then model.DesignerValue <- value; world
+            else this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
+#endif
 
         member this.Model<'model> () =
             lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
