@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
@@ -76,7 +76,7 @@ module Constants =
         let (*Literal*) PhysicsStepRate = 1.0f / single Engine.DesiredFps
         let [<Literal>] PhysicsToPixelRatio = 64.0f
         let (*Literal*) PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
-        let [<Literal>] NormalDensity = 10.0f // NOTE: this seems to be a stable density for Farseer
+        let [<Literal>] NormalDensity = 1.0f
         let (*Literal*) Gravity = Vector2 (0.0f, -9.80665f) * PhysicsToPixelRatio
         let [<Literal>] CollisionProperty = "C"
         let (*Literal*) MessageListConfig = Functional

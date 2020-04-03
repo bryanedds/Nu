@@ -35,19 +35,19 @@ type MyGameplayDispatcher () =
             | Jump ->
                 let physicsId = Simulants.Player.GetPhysicsId world
                 if World.isBodyOnGround physicsId world then
-                    let world = World.applyBodyForce (v2 0.0f 2000000.0f) physicsId world
+                    let world = World.applyBodyForce (v2 0.0f 200000.0f) physicsId world
                     World.playSound 1.0f (asset "Gameplay" "Jump") world
                 else world
             | MoveLeft ->
                 let physicsId = Simulants.Player.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 -30000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 -7500.0f 0.0f) physicsId world
+                then World.applyBodyForce (v2 -3000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 -750.0f 0.0f) physicsId world
             | MoveRight ->
                 let physicsId = Simulants.Player.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 30000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 7500.0f 0.0f) physicsId world
+                then World.applyBodyForce (v2 3000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 750.0f 0.0f) physicsId world
             | EyeTrack ->
                 if World.getTickRate world <> 0L
                 then Simulants.Game.SetEyeCenter (Simulants.Player.GetCenter world) world
