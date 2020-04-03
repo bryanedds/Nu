@@ -159,6 +159,7 @@ module WorldModuleEntity =
         static member private updateEntityStateInternal updater (entityState : EntityState) entity world =
             let entityState = updater entityState : EntityState
 #if IMPERATIVE_ENTITIES
+            ignore entity
             (entityState, world)
 #else
             if entityState.Imperative
@@ -239,6 +240,8 @@ module WorldModuleEntity =
         static member internal setEntityImperative value entity world =
 #if IMPERATIVE_ENTITIES
             // can never be set in this build
+            ignore value
+            ignore entity
             world
 #else
             World.updateEntityState (fun entityState ->
@@ -324,7 +327,7 @@ module WorldModuleEntity =
         static member internal setEntityPublishUpdates value entity world = World.updateEntityState (fun entityState -> entityState.PublishUpdates <- value; entityState) false true Property? PublishUpdates value entity world
         static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> entityState.PublishPostUpdates <- value; entityState) false true Property? PublishPostUpdates value entity world
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> entityState.Persistent <- value; entityState) false false Property? Persistent value entity world
-        static member internal setEntityScriptFrame value entity world = World.updateEntityState (fun entityState -> entityState.ScriptFrame <- value) false true Property? ScriptFrame value entity world
+        static member internal setEntityScriptFrame value entity world = World.updateEntityState (fun entityState -> entityState.ScriptFrame <- value; entityState) false true Property? ScriptFrame value entity world
 #else
         static member internal setEntityPosition value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.Transform.Position <- value; entityState else { entityState with Transform = { entityState.Transform with Position = value }}) false false Property? Position value entity world
         static member internal setEntitySize value entity world = World.updateEntityStatePlus (fun entityState -> if entityState.Imperative then entityState.Transform.Size <- value; entityState else { entityState with Transform = { entityState.Transform with Size = value }}) false false Property? Size value entity world
@@ -463,10 +466,9 @@ module WorldModuleEntity =
                     let facetNames = Set.remove facetName entityState.FacetNames
                     let facets = Array.remove ((=) facet) entityState.Facets
 #if IMPERATIVE_ENTITIES
-                    if entityState.Imperative then
-                        entityState.FacetNames <- facetNames
-                        entityState.Facets <- facets
-                        entityState
+                    entityState.FacetNames <- facetNames
+                    entityState.Facets <- facets
+                    entityState
 #else
                     if entityState.Imperative then
                         entityState.FacetNames <- facetNames
@@ -496,10 +498,9 @@ module WorldModuleEntity =
                         let facetNames = Set.add facetName entityState.FacetNames
                         let facets = Array.add facet entityState.Facets
 #if IMPERATIVE_ENTITIES
-                        if entityState.Imperative then
-                            entityState.FacetNames <- facetNames
-                            entityState.Facets <- facets
-                            entityState
+                        entityState.FacetNames <- facetNames
+                        entityState.Facets <- facets
+                        entityState
 #else
                         if entityState.Imperative then
                             entityState.FacetNames <- facetNames

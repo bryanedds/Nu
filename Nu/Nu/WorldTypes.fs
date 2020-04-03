@@ -648,6 +648,7 @@ module WorldTypes =
             | (true, xtension) ->
                 let entityState =
 #if IMPERATIVE_ENTITIES
+                    ignore xtension
                     entityState
 #else
                     if entityState.Imperative then entityState
