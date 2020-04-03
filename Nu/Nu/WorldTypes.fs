@@ -294,7 +294,11 @@ module WorldTypes =
              Define? Omnipresent false
              Define? StaticData { DesignerType = typeof<string>; DesignerValue = "" }
              Define? Overflow Vector2.Zero
+#if IMPERATIVE_ENTITIES
+             Define? Imperative true
+#else
              Define? Imperative false
+#endif
              Define? PublishChanges false
              Define? IgnoreLayer false
              Define? Visible true
@@ -598,7 +602,7 @@ module WorldTypes =
           // cache line end
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
-          ScriptFrame : Scripting.DeclarationFrame
+          mutable ScriptFrame : Scripting.DeclarationFrame
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Name : string
           Id : Guid }
@@ -608,7 +612,11 @@ module WorldTypes =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
               Facets = [||]
+#if IMPERATIVE_ENTITIES
+              Xtension = Xtension.makeImperative ()
+#else
               Xtension = Xtension.makeSafe ()
+#endif
               Transform =
                 { Position = Vector2.Zero
                   Size = Constants.Engine.DefaultEntitySize
@@ -639,9 +647,12 @@ module WorldTypes =
             match Xtension.trySetProperty propertyName property entityState.Xtension with
             | (true, xtension) ->
                 let entityState =
-                    if not entityState.Imperative
-                    then { entityState with Xtension = xtension }
-                    else entityState
+#if IMPERATIVE_ENTITIES
+                    entityState
+#else
+                    if entityState.Imperative then entityState
+                    else { entityState with Xtension = xtension }
+#endif
                 (true, entityState)
             | (false, _) -> (false, entityState)
 
@@ -656,8 +667,13 @@ module WorldTypes =
         /// Detach an xtension property.
         static member detachProperty name entityState =
             let xtension = Xtension.detachProperty name entityState.Xtension
-            if entityState.Imperative then entityState.Xtension <- xtension; entityState
+#if IMPERATIVE_ENTITIES
+            ignore xtension
+            entityState
+#else
+            if entityState.Imperative then entityState
             else { entityState with EntityState.Xtension = xtension }
+#endif
 
         /// Get an entity state's transform.
         static member getTransform entityState =
@@ -665,16 +681,19 @@ module WorldTypes =
 
         /// Set an entity state's transform.
         static member setTransform (value : Transform) (entityState : EntityState) =
+#if IMPERATIVE_ENTITIES
+            entityState.Transform.Assign value
+            entityState
+#else
             if entityState.Imperative then
-                entityState.Transform.Assign value // in-place assignment
+                entityState.Transform.Assign value
                 entityState
-            else { entityState with Transform = value } // copy assignment
+            else { entityState with Transform = value }
+#endif
 
         /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy (entityState : EntityState) =
-            if not entityState.Imperative
-            then { entityState with EntityState.Id = entityState.Id }
-            else entityState
+            { entityState with EntityState.Id = entityState.Id }
 
         // Member properties; only for use by internal reflection facilities.
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
