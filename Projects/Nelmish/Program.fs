@@ -4,24 +4,24 @@ open Prime
 open Nu
 open Nelmish
 
-// this is a plugin for the Nu game engine by which user-defined dispatchers, facets, and other
-// sorts of types can be obtained by both your application and Gaia.
+// this is a plugin for the Nu game engine that directs the execution of your application and the
+// editor.
 type NelmishPlugin () =
     inherit NuPlugin ()
-
-    // specify the above game dispatcher to use
+    
+    // this specifies the game dispatcher to use in your application
     override this.GetStandAloneGameDispatcher () =
         typeof<NelmishDispatcher>
-
-    // specify the above game dispatcher to use
+        
+    // this specifies the game dispatcher to use in the editor
     override this.GetEditorGameDispatcher () =
         typeof<NelmishDispatcher>
             
-    // specify no screen dispatcher to be created by the editor
+    // this specifies no screen dispatcher to be used by the editor
     override this.GetEditorScreenDispatcherOpt () =
         None
 
-// this is the module where main is defined (the entry-point for your Nu application)
+// this is the module where main is defined (the entry-point for your application)
 module Program =
 
     // this the entry point for your Nu application
@@ -36,14 +36,14 @@ module Program =
         // use the default world config with the above SDL config.
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
 
-        // initialize Nu
+        // initialize Nu.
         Nu.init worldConfig.NuConfig
 
         // this is a callback that attempts to make 'the world' in a functional programming
         // sense. In a Nu game, the world is represented as an abstract data type named World.
         let tryMakeWorld sdlDeps worldConfig =
 
-            // an instance of the above plugin
+            // an instance of the above plugin.
             let plugin = NelmishPlugin ()
 
             // here is an attempt to make the world with the the engine plugin, SDL dependencies,
