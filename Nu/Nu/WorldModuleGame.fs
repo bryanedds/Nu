@@ -298,8 +298,8 @@ module WorldModuleGame =
             let gameState = World.getGameState world
             let gameDispatcherName = getTypeName gameState.Dispatcher
             let gameDescriptor = { gameDescriptor with GameDispatcherName = gameDispatcherName }
-            let viewGameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
-            let gameDescriptor = { gameDescriptor with GameProperties = viewGameProperties }
+            let gameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
+            let gameDescriptor = { gameDescriptor with GameProperties = gameProperties }
             writeScreens gameDescriptor world
 
         static member internal readGame3 readScreens gameDescriptor world =
