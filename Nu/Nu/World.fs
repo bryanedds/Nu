@@ -9,7 +9,8 @@ open SDL2
 open Prime
 open Nu
 
-[<RequireQualifiedAccess>]
+// HACK: I had to remove the [<RequireQualifiedAccess>] attribute from here because it was being interpreted in an
+// ambiguous way by F# Interactive.
 module Nu =
 
     let mutable private Initialized = false
