@@ -23,7 +23,6 @@
 #load "MyGame.fs"
 #load "Program.fs" // NOTE: ignore the error on this line - it's inconsequential in an interactive context
 
-open System
 open System.IO
 open Prime
 open Nu
@@ -36,5 +35,5 @@ match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
 | Right assetGraph -> AssetGraph.buildAssets "../.." "." "../../refinement" false assetGraph
 | Left _ -> ()
 
-// run main
+// run game
 MyGame.Program.main [||]
