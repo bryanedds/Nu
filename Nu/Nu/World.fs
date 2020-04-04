@@ -317,13 +317,11 @@ module Nu =
             World.initScripting ()
             WorldBindings.initBindings ()
 
-#if DEBUG
             // init debug view F# reach-arounds
             Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
             Debug.World.viewScreen <- fun screen world -> Debug.Screen.view (screen :?> Screen) (world :?> World)
             Debug.World.viewLayer <- fun layer world -> Debug.Layer.view (layer :?> Layer) (world :?> World)
             Debug.World.viewEntity <- fun entity world -> Debug.Entity.view (entity :?> Entity) (world :?> World)
-#endif
 
             // init vsync
             Vsync.Init nuConfig.RunSynchronously
