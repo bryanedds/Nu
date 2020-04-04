@@ -19,18 +19,13 @@
 #r "../../Nu/Nu.Math/bin/Debug/Nu.Math.dll"
 #r "../../Nu/Nu/bin/Debug/Nu.exe"
 
-open System
-open System.IO
-open FSharpx
-open FSharpx.Collections
-open SDL2
-open TiledSharp
-open Prime
-open Nu
-open Nu.Declarative
+#load "MySimulants.fs"
+#load "MyGameplay.fs"
+#load "MyGame.fs"
+#load "Program.fs"
 
 // set current directly to local for execution in VS F# interactive
-Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/bin/Debug")
+System.IO.Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/bin/Debug")
 
-// initialize Nu
-Nu.init NuConfig.defaultConfig
+// run main
+MyGame.Program.main [||]

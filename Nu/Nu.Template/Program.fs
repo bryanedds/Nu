@@ -1,25 +1,26 @@
-﻿open System
+﻿namespace MyGame
+open System
 open Nu
 open MyGame
 
-// this is a plugin for the Nu game engine by which user-defined dispatchers, facets, and other
-// sorts of types can be obtained by both your application and Gaia.
-type MyPlugin () =
-    inherit NuPlugin ()
+    // this is a plugin for the Nu game engine by which user-defined dispatchers, facets, and other
+    // sorts of types can be obtained by both your application and Gaia.
+    type MyPlugin () =
+        inherit NuPlugin ()
 
-    // specify the above game dispatcher to use at run-time
-    override this.GetStandAloneGameDispatcher () =
-        typeof<MyGameDispatcher>
+        // specify the above game dispatcher to use at run-time
+        override this.GetStandAloneGameDispatcher () =
+            typeof<MyGameDispatcher>
 
-    // specify the empty game dispatcher to use in the editor
-    override this.GetEditorGameDispatcher () =
-        typeof<GameDispatcher>
+        // specify the empty game dispatcher to use in the editor
+        override this.GetEditorGameDispatcher () =
+            typeof<GameDispatcher>
 
-    // specify the sceen dispatcher to optionally use in the editor
-    override this.GetEditorScreenDispatcherOpt () =
-        Some typeof<MyGameplayDispatcher>
-
-// this is the main module for our program.
+        // specify the sceen dispatcher to optionally use in the editor
+        override this.GetEditorScreenDispatcherOpt () =
+            None
+            
+// this is the module where main is defined (the entry-point for your Nu application)
 module Program =
 
     // this the entry point for your Nu application
