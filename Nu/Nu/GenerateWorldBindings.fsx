@@ -3,11 +3,11 @@
 
 #I __SOURCE_DIRECTORY__
 #load "Interactive.fsx"
-open global.System
-open global.System.IO
-open global.System.Reflection
-open global.Prime
-open global.Nu
+open System
+open System.IO
+open System.Reflection
+open Prime
+open Nu
 
 type ParameterConversionDetails =
     | NormalParameter of Type
