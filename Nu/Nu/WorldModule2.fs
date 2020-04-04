@@ -10,7 +10,7 @@ open System.Threading.Tasks
 #endif
 open SDL2
 open Prime
-open global.Nu
+open Nu
 
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =

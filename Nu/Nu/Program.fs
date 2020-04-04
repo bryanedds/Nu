@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open Prime
-open global.Nu
 module Program =
 
     (* DISCUSSION - On Nu's authoring story...

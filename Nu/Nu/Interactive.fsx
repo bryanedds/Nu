@@ -2,7 +2,7 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 #I __SOURCE_DIRECTORY__
-#r "System.Configuration"
+#r "System.Configuration" // TODO: ensure this reference is actually needed...
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsec.dll"
 #r "../../packages/FsCheck.2.11.0/lib/net452/FsCheck.dll"
@@ -19,15 +19,15 @@
 #r "../../Nu/Nu.Math/bin/Debug/Nu.Math.dll"
 #r "../../Nu/Nu/bin/Debug/Nu.exe"
 
-open System
-open System.IO
-open FSharpx
-open FSharpx.Collections
-open SDL2
-open TiledSharp
-open Prime
-open Nu
-open Nu.Declarative
+open global.System
+open global.System.IO
+open global.FSharpx
+open global.FSharpx.Collections
+open global.SDL2
+open global.TiledSharp
+open global.Prime
+open global.Nu
+open global.Nu.Declarative
 
 // set current directly to local for execution in VS F# interactive
 Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/bin/Debug")
