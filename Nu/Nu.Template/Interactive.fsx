@@ -21,7 +21,7 @@
 #load "MySimulants.fs"
 #load "MyGameplay.fs"
 #load "MyGame.fs"
-#load "Program.fs" // NOTE: ignore the error on this line - it's inconsequential in an interactive context
+#load "MyPlugin.fs"
 
 open System.IO
 open Prime
@@ -35,5 +35,6 @@ match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
 | Right assetGraph -> AssetGraph.buildAssets "../.." "." "../../refinement" false assetGraph
 | Left _ -> ()
 
-// run game
-MyGame.Program.main [||]
+// init nu and run game
+Nu.init NuConfig.defaultConfig
+World.run WorldConfig.defaultConfig (MyGame.MyPlugin ())

@@ -73,6 +73,7 @@
     <Compile Include="MySimulants.fs" />
     <Compile Include="MyGameplay.fs" />
     <Compile Include="MyGame.fs" />
+    <Compile Include="MyPlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />

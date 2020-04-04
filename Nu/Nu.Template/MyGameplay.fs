@@ -4,7 +4,15 @@ open SDL2
 open Nu
 open Nu.Declarative
 
-// this is our Elm-style command type
+// this is our Elm-style model type. Currently it's unit because do not yet have any state to model.
+type GameplayModel =
+    unit
+
+// this is our Elm-style model type. Currently it's unit because do not yet have any messages.
+type GameplayMessage =
+    unit
+
+// this is our Elm-style command type. Commands are used instead of messages when things like physics are involved.
 type GameplayCommand =
     | Jump
     | MoveLeft
@@ -14,7 +22,7 @@ type GameplayCommand =
 
 // this is the screen dispatcher that defines the screen where gameplay takes place.
 type MyGameplayDispatcher () =
-    inherit ScreenDispatcher<unit, unit, GameplayCommand> ()
+    inherit ScreenDispatcher<GameplayModel, GameplayMessage, GameplayCommand> ()
 
     // here we define the bindings used to connect events to their desired commands
     override this.Bindings (_, _, _) =
