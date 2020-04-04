@@ -64,7 +64,7 @@ type MyGameDispatcher () =
         let world = World.createLayer (Some Default.Layer.Name) Default.Screen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Default.Layer world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
-        let indices = // approximately 13,200 entities
+        let indices = // 13,200 entities
             seq {
                 for i in 0 .. 74 do
                     for j in 0 .. 43 do
