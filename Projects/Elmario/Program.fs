@@ -4,20 +4,20 @@ open Prime
 open Nu
 open Elmario
 
-// this is a plugin for the Nu game engine by which user-defined dispatchers, facets, and other
-// sorts of types can be obtained by both your application and Gaia.
+// this is a plugin for the Nu game engine that directs the execution of your application and the
+// editor.
 type ElmarioPlugin () =
     inherit NuPlugin ()
-
-    // specify the above game dispatcher to use
+    
+    // this specifies the game dispatcher to use in your application
     override this.GetStandAloneGameDispatcher () =
         typeof<ElmarioDispatcher>
-
-    // specify the above game dispatcher to use
+        
+    // this specifies the game dispatcher to use in the editor
     override this.GetEditorGameDispatcher () =
         typeof<ElmarioDispatcher>
             
-    // specify no screen dispatcher to be created by the editor
+    // this specifies no screen dispatcher to be used in the editor
     override this.GetEditorScreenDispatcherOpt () =
         None
         

@@ -13,11 +13,11 @@ type BlazePlugin () =
     // specify the game dispatcher to use at run-time
     override this.GetStandAloneGameDispatcher () =
         typeof<BlazeDispatcher>
-            
-    // specify the sceen dispatcher to use in the editor
+
+    // specify the screen dispatcher to use in the editor
     override this.GetEditorScreenDispatcherOpt () =
         Some typeof<GameplayDispatcher>
-        
+
 // this is the module where main is defined (the entry-point for your Nu application)
 module Program =
 
