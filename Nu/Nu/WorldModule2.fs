@@ -637,6 +637,7 @@ module WorldModule2 =
                     world
                     entities
 
+#if !DISABLE_POST_UPDATES
             // post-update simulants breadth-first
             let world = World.postUpdateGame world
             let world = List.fold (fun world screen -> World.postUpdateScreen screen world) world screens
@@ -648,6 +649,7 @@ module WorldModule2 =
                     else world)
                     world
                     entities
+#endif
 
             // fin
             world
