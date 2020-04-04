@@ -453,7 +453,7 @@ module WorldModule3 =
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member tryMake (plugin : NuPlugin) sdlDeps config =
+        static member tryMake sdlDeps config (plugin : NuPlugin) =
 
             // ensure game engine is initialized
             Nu.init config.NuConfig
@@ -565,3 +565,13 @@ module WorldModule3 =
                     | Left struct (error, _) -> Left error
                 | Left error -> Left error
             | Left error -> Left error
+
+        /// Run the game engine as a stand-alone application.
+        static member run worldConfig plugin =
+            match SdlDeps.attemptMake worldConfig.SdlConfig with
+            | Right sdlDeps ->
+                use sdlDeps = sdlDeps // bind explicitly to dispose automatically
+                match World.tryMake sdlDeps worldConfig plugin with
+                | Right world -> World.run4 tautology sdlDeps Running world
+                | Left error -> Log.trace error; Constants.Engine.FailureExitCode
+            | Left error -> Log.trace error; Constants.Engine.FailureExitCode

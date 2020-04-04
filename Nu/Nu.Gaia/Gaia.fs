@@ -183,7 +183,7 @@ module Gaia =
         // imperatively.
         let treeState = getExpansionState form.hierarchyTreeView
         form.hierarchyTreeView.Nodes.Clear ()
-        let layers = World.getLayers EditorScreen world
+        let layers = World.getLayers Default.Screen world
         for layer in layers do
             let layerNode = TreeNode layer.Name
             layerNode.Name <- scstring layer
@@ -206,7 +206,7 @@ module Gaia =
 
         // add layers imperatively to preserve existing layer tabs
         // NOTE: adding layers in reverse works better when opening anew
-        let layers = World.getLayers EditorScreen world
+        let layers = World.getLayers Default.Screen world
         let layerTabPages = form.layerTabControl.TabPages
         for layer in Seq.rev layers do
             let layerName = layer.Name
@@ -393,9 +393,9 @@ module Gaia =
             let layerDescriptorStr = File.ReadAllText filePath
             let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
             let layerName = match layerDescriptor.LayerProperties.TryFind "Name" with Some (Atom (name, _)) -> name | _ -> failwithumf ()
-            let layer = EditorScreen / layerName
+            let layer = Default.Screen / layerName
             if not (layer.GetExists world) then
-                let (layer, world) = World.readLayer layerDescriptor None EditorScreen world
+                let (layer, world) = World.readLayer layerDescriptor None Default.Screen world
                 form.layerTabControl.SelectedTab.Text <- layer.Name
                 form.layerTabControl.SelectedTab.Name <- layer.Name
                 let world = updateEditorState (fun editorState -> { editorState with SelectedLayer = layer }) world
@@ -889,7 +889,7 @@ module Gaia =
                 let layerName = layerCreationForm.nameTextBox.Text
                 let layerDispatcherName = layerCreationForm.dispatcherTextBox.Text
                 try if String.length layerName = 0 then failwith "Layer name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createLayer4 layerDispatcherName (Some layerName) EditorScreen world |> snd
+                    let world = World.createLayer4 layerDispatcherName (Some layerName) Default.Screen world |> snd
                     refreshLayerTabs form world
                     refreshHierarchyTreeView form world
                     deselectEntity form world
@@ -957,7 +957,7 @@ module Gaia =
                     let layerTabControl = form.layerTabControl
                     let layerTab = layerTabControl.SelectedTab
                     { editorState with
-                        SelectedLayer = EditorScreen / layerTab.Text
+                        SelectedLayer = Default.Screen / layerTab.Text
                         FilePaths = Map.remove layer.LayerAddress editorState.FilePaths })
                     world
 
@@ -1084,7 +1084,7 @@ module Gaia =
             let selectedLayer =
                 let layerTabControl = form.layerTabControl
                 let layerTab = layerTabControl.SelectedTab
-                EditorScreen / layerTab.Text
+                Default.Screen / layerTab.Text
             let world = updateEditorState (fun editorState -> { editorState with SelectedLayer = selectedLayer}) world
             refreshEntityTreeView form world
             refreshEntityPropertyGrid form world
@@ -1396,8 +1396,8 @@ module Gaia =
 
     /// Attach Gaia to the given world.
     let attachToWorld targetDir form world =
-        if World.getSelectedScreen world = EditorScreen then
-            let layers = World.getLayers EditorScreen world |> Seq.toList
+        if World.getSelectedScreen world = Default.Screen then
+            let layers = World.getLayers Default.Screen world |> Seq.toList
             let (defaultLayer, world) =
                 match layers with
                 | defaultLayer :: _ ->
@@ -1418,10 +1418,10 @@ module Gaia =
                         let world = World.subscribePlus Gen.id (handleNuCameraDragEnd form) Events.MouseCenterUp Default.Game world |> snd
                         (defaultLayer, world)
                     | Some _ -> (defaultLayer, world) // NOTE: conclude world is already attached
-                | [] -> failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring EditorScreen + "' screen.")
+                | [] -> failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring Default.Screen + "' screen.")
             let world = List.fold (fun world layer -> monitorEntityEvents layer form world) world layers
             (defaultLayer, world)
-        else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring EditorScreen + "'.")
+        else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring Default.Screen + "'.")
 
     let rec private tryRun3 runWhile sdlDeps (form : GaiaForm) =
         try World.runWithoutCleanUp
@@ -1663,8 +1663,8 @@ module Gaia =
     /// Attempt to make a world for use in the Gaia form.
     /// You can make your own world instead and use the Gaia.attachToWorld instead (so long as the world satisfies said
     /// function's various requirements.
-    let tryMakeWorld useGameplayScreen plugin sdlDeps worldConfig =
-        let worldEir = World.tryMake plugin sdlDeps worldConfig
+    let tryMakeWorld useGameplayScreen sdlDeps worldConfig (plugin : NuPlugin) =
+        let worldEir = World.tryMake sdlDeps worldConfig plugin
         match worldEir with
         | Right world ->
             let world = World.setEventFilter (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])]) world
@@ -1675,12 +1675,12 @@ module Gaia =
             let world =
                 match screenDispatcherOpt with
                 | Some screenDispatcher ->
-                    let (screen, world) = World.createScreen3 screenDispatcher.Name (Some EditorScreen.Name) world
+                    let (screen, world) = World.createScreen3 screenDispatcher.Name (Some Default.Screen.Name) world
                     World.selectScreen screen world
                 | None -> world
             let world =
-                if Seq.isEmpty (World.getLayers EditorScreen world)
-                then World.createLayer (Some DefaultEditorLayer.Name) EditorScreen world |> snd
+                if Seq.isEmpty (World.getLayers Default.Screen world)
+                then World.createLayer (Some Default.Layer.Name) Default.Screen world |> snd
                 else world
             Right world
         | Left error -> Left error
@@ -1709,7 +1709,7 @@ module Gaia =
         Globals.Form <- form
         match tryMakeSdlDeps form with
         | Right sdlDeps ->
-            match tryMakeWorld savedState.UseGameplayScreen plugin sdlDeps worldConfig with
+            match tryMakeWorld savedState.UseGameplayScreen sdlDeps worldConfig plugin with
             | Right world ->
                 Globals.World <- world
                 let _ = run3 tautology targetDir sdlDeps form
