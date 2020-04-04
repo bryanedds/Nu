@@ -1,4 +1,5 @@
-﻿open System
+﻿namespace InfinityRpg
+open System
 open Nu
 open InfinityRpg
 
@@ -14,32 +15,35 @@ type InfinityRpgPlugin () =
     // route overlays to specific dispatchers
     override this.MakeOverlayRoutes () =
         [typeof<ButtonDispatcher>.Name, Some "InfinityButtonDispatcher"]
-
-// this the entry point for the InfinityRpg application
-let [<EntryPoint; STAThread>] main _ =
-
-    // this specifies the window configuration used to display the game.
-    let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Infinity RPG" }
         
-    // this specifies the configuration of the game engine's use of SDL.
-    let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
+// this is the module where main is defined (the entry-point for your Nu application)
+module Program =
 
-    // use the default world config with the above SDL config.
-    let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
+    // this the entry point for the InfinityRpg application
+    let [<EntryPoint; STAThread>] main _ =
 
-    // initialize Nu
-    Nu.init worldConfig.NuConfig
+        // this specifies the window configuration used to display the game.
+        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Infinity RPG" }
+        
+        // this specifies the configuration of the game engine's use of SDL.
+        let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
 
-    // this is a callback that attempts to make 'the world' in a functional programming
-    // sense. In a Nu game, the world is represented as an abstract data type named World.
-    let tryMakeWorld sdlDeps worldConfig =
+        // use the default world config with the above SDL config.
+        let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
 
-        // an instance of the above plugin
-        let plugin = InfinityRpgPlugin ()
+        // initialize Nu
+        Nu.init worldConfig.NuConfig
 
-        // here is an attempt to make the world with the the engine plugin, SDL dependencies,
-        // and world configuration.
-        World.tryMake plugin sdlDeps worldConfig
+        // this is a callback that attempts to make 'the world' in a functional programming
+        // sense. In a Nu game, the world is represented as an abstract data type named World.
+        let tryMakeWorld sdlDeps worldConfig =
 
-    // after some configuration it is time to run the game. We're off and running!
-    World.run tryMakeWorld worldConfig
+            // an instance of the above plugin
+            let plugin = InfinityRpgPlugin ()
+
+            // here is an attempt to make the world with the the engine plugin, SDL dependencies,
+            // and world configuration.
+            World.tryMake plugin sdlDeps worldConfig
+
+        // after some configuration it is time to run the game. We're off and running!
+        World.run tryMakeWorld worldConfig
