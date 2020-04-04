@@ -18,8 +18,8 @@ open MyGame
 
         // specify the sceen dispatcher to optionally use in the editor
         override this.GetEditorScreenDispatcherOpt () =
-            None
-            
+            Some typeof<MyGameplayDispatcher>
+
 // this is the module where main is defined (the entry-point for your Nu application)
 module Program =
 
