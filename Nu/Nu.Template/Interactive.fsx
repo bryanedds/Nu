@@ -2,7 +2,7 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 #I __SOURCE_DIRECTORY__
-#r "System.Configuration"
+#r "System.Configuration" // TODO: ensure this reference is actually needed...
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsec.dll"
 #r "../../packages/FsCheck.2.11.0/lib/net452/FsCheck.dll"
@@ -24,8 +24,21 @@
 #load "MyGame.fs"
 #load "Program.fs"
 
+open global.System
+open global.System.IO
+open global.Prime
+open global.Nu
+
+// set current directly to source directory for consistency
+Directory.SetCurrentDirectory __SOURCE_DIRECTORY__
+
+// build assets
+match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
+| Right assetGraph -> AssetGraph.buildAssets "." "./bin/Debug" "./refinement" false assetGraph
+| Left _ -> ()
+
 // set current directly to local for execution in VS F# interactive
-System.IO.Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/bin/Debug")
+Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/bin/Debug")
 
 // run main
 MyGame.Program.main [||]

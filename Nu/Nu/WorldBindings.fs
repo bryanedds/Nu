@@ -10,7 +10,7 @@
 namespace Nu
 open System
 open Prime
-open global.Nu
+open Nu
 
 [<RequireQualifiedAccess>]
 module WorldBindings =
@@ -36,19 +36,19 @@ module WorldBindings =
         "getEntities0 getLayers0 isSimulantSelected writeGameToFile " +
         "readGameFromFile getScreens setScreenDissolve destroyScreen " +
         "createScreen createDissolveScreen writeScreenToFile readScreenFromFile " +
-        "getLayers destroyLayer destroyLayers writeLayerToFile " +
-        "readLayerFromFile getEntities destroyEntity destroyEntities " +
-        "tryPickEntity writeEntityToFile createEntity readEntityFromFile " +
-        "reassignEntity trySetEntityOverlayNameOpt trySetEntityFacetNames createLayer " +
+        "getLayers createLayer destroyLayer destroyLayers " +
+        "writeLayerToFile readLayerFromFile getEntities destroyEntity " +
+        "destroyEntities tryPickEntity writeEntityToFile createEntity " +
+        "readEntityFromFile reassignEntity trySetEntityOverlayNameOpt trySetEntityFacetNames " +
         "getEyeCenter setEyeCenter getEyeSize setEyeSize " +
         "getOmniScreenOpt setOmniScreenOpt getOmniScreen setOmniScreen " +
         "getSelectedScreenOpt setSelectedScreenOpt getSelectedScreen setSelectedScreen " +
         "getScreenTransitionDestinationOpt getViewBoundsRelative getViewBoundsAbsolute getViewBounds " +
         "isBoundsInView mouseToScreen mouseToWorld mouseToEntity " +
-        "getTickTime isTicking getUpdateCount getLiveness " +
-        "exit tryGetTextureSize getTextureSize tryGetTextureSizeF " +
-        "getTextureSizeF reloadSymbols getTickRate getTickRateF " +
-        "setTickRate resetTickTime incTickTime decTickTime"
+        "reloadSymbols getTickRate getTickRateF setTickRate " +
+        "resetTickTime incTickTime decTickTime getTickTime " +
+        "isTicking getUpdateCount getLiveness exit " +
+        "tryGetTextureSize getTextureSize tryGetTextureSizeF getTextureSizeF"
 
     let resolve relation world =
         let oldWorld = world
@@ -1407,6 +1407,35 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getLayers' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let createLayer dispatcherName nameOpt screen world =
+        let oldWorld = world
+        try
+            let dispatcherName =
+                match ScriptingSystem.tryExport typeof<String> dispatcherName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'dispatcherName'; expecting a value convertable to String."
+            let nameOpt =
+                match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
+                | Some value -> value :?> FSharpOption<String>
+                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
+            let struct (screen, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal screen world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (Screen address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.createLayer4 dispatcherName nameOpt screen world
+            let (value, world) = result
+            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createLayer' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
     let destroyLayer layer world =
         let oldWorld = world
         try
@@ -1770,35 +1799,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'trySetEntityFacetNames' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createLayer dispatcherName nameOpt screen world =
-        let oldWorld = world
-        try
-            let dispatcherName =
-                match ScriptingSystem.tryExport typeof<String> dispatcherName world with
-                | Some value -> value :?> String
-                | None -> failwith "Invalid argument type for 'dispatcherName'; expecting a value convertable to String."
-            let nameOpt =
-                match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
-                | Some value -> value :?> FSharpOption<String>
-                | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
-            let struct (screen, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal screen world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.createLayer4 dispatcherName nameOpt screen world
-            let (value, world) = result
-            let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createLayer' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
     let getEyeCenter world =
         let oldWorld = world
         try
@@ -2079,6 +2079,79 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'mouseToEntity' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let reloadSymbols world =
+        let oldWorld = world
+        try
+            let result = World.reloadSymbols world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadSymbols' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getTickRate world =
+        let oldWorld = world
+        try
+            let result = World.getTickRate world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Int64> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTickRate' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getTickRateF world =
+        let oldWorld = world
+        try
+            let result = World.getTickRateF world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Single> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTickRateF' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let setTickRate tickRate world =
+        let oldWorld = world
+        try
+            let tickRate =
+                match ScriptingSystem.tryExport typeof<Int64> tickRate world with
+                | Some value -> value :?> Int64
+                | None -> failwith "Invalid argument type for 'tickRate'; expecting a value convertable to Int64."
+            let result = World.setTickRate tickRate world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setTickRate' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let resetTickTime world =
+        let oldWorld = world
+        try
+            let result = World.resetTickTime world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'resetTickTime' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let incTickTime world =
+        let oldWorld = world
+        try
+            let result = World.incTickTime world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'incTickTime' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let decTickTime world =
+        let oldWorld = world
+        try
+            let result = World.decTickTime world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'decTickTime' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
     let getTickTime world =
         let oldWorld = world
         try
@@ -2190,79 +2263,6 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTextureSizeF' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let reloadSymbols world =
-        let oldWorld = world
-        try
-            let result = World.reloadSymbols world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'reloadSymbols' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let getTickRate world =
-        let oldWorld = world
-        try
-            let result = World.getTickRate world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Int64> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTickRate' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let getTickRateF world =
-        let oldWorld = world
-        try
-            let result = World.getTickRateF world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Single> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getTickRateF' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let setTickRate tickRate world =
-        let oldWorld = world
-        try
-            let tickRate =
-                match ScriptingSystem.tryExport typeof<Int64> tickRate world with
-                | Some value -> value :?> Int64
-                | None -> failwith "Invalid argument type for 'tickRate'; expecting a value convertable to Int64."
-            let result = World.setTickRate tickRate world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setTickRate' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let resetTickTime world =
-        let oldWorld = world
-        try
-            let result = World.resetTickTime world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'resetTickTime' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let incTickTime world =
-        let oldWorld = world
-        try
-            let result = World.incTickTime world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'incTickTime' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let decTickTime world =
-        let oldWorld = world
-        try
-            let result = World.decTickTime world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'decTickTime' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let evalResolveBinding fnName exprs originOpt world =
@@ -3112,6 +3112,17 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalCreateLayerBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|dispatcherName; nameOpt; screen|] -> createLayer dispatcherName nameOpt screen world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalDestroyLayerBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3261,17 +3272,6 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|facetNames; entity|] -> trySetEntityFacetNames facetNames entity world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalCreateLayerBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|dispatcherName; nameOpt; screen|] -> createLayer dispatcherName nameOpt screen world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3497,6 +3497,83 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalReloadSymbolsBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> reloadSymbols  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetTickRateBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getTickRate  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetTickRateFBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getTickRateF  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalSetTickRateBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|tickRate|] -> setTickRate tickRate world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalResetTickTimeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> resetTickTime  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalIncTickTimeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> incTickTime  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalDecTickTimeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> decTickTime  world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalGetTickTimeBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3596,83 +3673,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalReloadSymbolsBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> reloadSymbols  world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalGetTickRateBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> getTickRate  world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalGetTickRateFBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> getTickRateF  world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalSetTickRateBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|tickRate|] -> setTickRate tickRate world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalResetTickTimeBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> resetTickTime  world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalIncTickTimeBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> incTickTime  world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalDecTickTimeBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> decTickTime  world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let tryGetBinding fnName =
         match WorldScripting.Bindings.TryGetValue fnName with
         | (true, binding) -> Some binding
@@ -3758,6 +3758,7 @@ module WorldBindings =
              ("writeScreenToFile", { Fn = evalWriteScreenToFileBinding; Pars = [|"filePath"; "screen"|]; DocOpt = None })
              ("readScreenFromFile", { Fn = evalReadScreenFromFileBinding; Pars = [|"filePath"; "nameOpt"|]; DocOpt = None })
              ("getLayers", { Fn = evalGetLayersBinding; Pars = [|"screen"|]; DocOpt = None })
+             ("createLayer", { Fn = evalCreateLayerBinding; Pars = [|"dispatcherName"; "nameOpt"; "screen"|]; DocOpt = None })
              ("destroyLayer", { Fn = evalDestroyLayerBinding; Pars = [|"layer"|]; DocOpt = None })
              ("destroyLayers", { Fn = evalDestroyLayersBinding; Pars = [|"layers"|]; DocOpt = None })
              ("writeLayerToFile", { Fn = evalWriteLayerToFileBinding; Pars = [|"filePath"; "layer"|]; DocOpt = None })
@@ -3772,7 +3773,6 @@ module WorldBindings =
              ("reassignEntity", { Fn = evalReassignEntityBinding; Pars = [|"entity"; "nameOpt"; "layer"|]; DocOpt = None })
              ("trySetEntityOverlayNameOpt", { Fn = evalTrySetEntityOverlayNameOptBinding; Pars = [|"overlayNameOpt"; "entity"|]; DocOpt = None })
              ("trySetEntityFacetNames", { Fn = evalTrySetEntityFacetNamesBinding; Pars = [|"facetNames"; "entity"|]; DocOpt = None })
-             ("createLayer", { Fn = evalCreateLayerBinding; Pars = [|"dispatcherName"; "nameOpt"; "screen"|]; DocOpt = None })
              ("getEyeCenter", { Fn = evalGetEyeCenterBinding; Pars = [||]; DocOpt = None })
              ("setEyeCenter", { Fn = evalSetEyeCenterBinding; Pars = [|"value"|]; DocOpt = None })
              ("getEyeSize", { Fn = evalGetEyeSizeBinding; Pars = [||]; DocOpt = None })
@@ -3793,6 +3793,13 @@ module WorldBindings =
              ("mouseToScreen", { Fn = evalMouseToScreenBinding; Pars = [|"mousePosition"|]; DocOpt = None })
              ("mouseToWorld", { Fn = evalMouseToWorldBinding; Pars = [|"viewType"; "mousePosition"|]; DocOpt = None })
              ("mouseToEntity", { Fn = evalMouseToEntityBinding; Pars = [|"viewType"; "entityPosition"; "mousePosition"|]; DocOpt = None })
+             ("reloadSymbols", { Fn = evalReloadSymbolsBinding; Pars = [||]; DocOpt = None })
+             ("getTickRate", { Fn = evalGetTickRateBinding; Pars = [||]; DocOpt = None })
+             ("getTickRateF", { Fn = evalGetTickRateFBinding; Pars = [||]; DocOpt = None })
+             ("setTickRate", { Fn = evalSetTickRateBinding; Pars = [|"tickRate"|]; DocOpt = None })
+             ("resetTickTime", { Fn = evalResetTickTimeBinding; Pars = [||]; DocOpt = None })
+             ("incTickTime", { Fn = evalIncTickTimeBinding; Pars = [||]; DocOpt = None })
+             ("decTickTime", { Fn = evalDecTickTimeBinding; Pars = [||]; DocOpt = None })
              ("getTickTime", { Fn = evalGetTickTimeBinding; Pars = [||]; DocOpt = None })
              ("isTicking", { Fn = evalIsTickingBinding; Pars = [||]; DocOpt = None })
              ("getUpdateCount", { Fn = evalGetUpdateCountBinding; Pars = [||]; DocOpt = None })
@@ -3802,13 +3809,6 @@ module WorldBindings =
              ("getTextureSize", { Fn = evalGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("tryGetTextureSizeF", { Fn = evalTryGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("getTextureSizeF", { Fn = evalGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
-             ("reloadSymbols", { Fn = evalReloadSymbolsBinding; Pars = [||]; DocOpt = None })
-             ("getTickRate", { Fn = evalGetTickRateBinding; Pars = [||]; DocOpt = None })
-             ("getTickRateF", { Fn = evalGetTickRateFBinding; Pars = [||]; DocOpt = None })
-             ("setTickRate", { Fn = evalSetTickRateBinding; Pars = [|"tickRate"|]; DocOpt = None })
-             ("resetTickTime", { Fn = evalResetTickTimeBinding; Pars = [||]; DocOpt = None })
-             ("incTickTime", { Fn = evalIncTickTimeBinding; Pars = [||]; DocOpt = None })
-             ("decTickTime", { Fn = evalDecTickTimeBinding; Pars = [||]; DocOpt = None })
             ] |>
             dictPlus
         WorldScripting.Bindings <- bindings

@@ -3,10 +3,10 @@
 
 #I __SOURCE_DIRECTORY__
 #load "Interactive.fsx"
-open System
-open System.IO
-open System.Reflection
-open Prime
+open global.System
+open global.System.IO
+open global.System.Reflection
+open global.Prime
 open global.Nu
 
 type ParameterConversionDetails =
@@ -354,7 +354,7 @@ let generateBindingsCode bindings =
         "namespace Nu\n" +
         "open System\n" +
         "open Prime\n" +
-        "open global.Nu\n" +
+        "open Nu\n" +
         "\n" +
         "[<RequireQualifiedAccess>]\n" +
         "module WorldBindings =\n" +
