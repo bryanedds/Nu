@@ -1,5 +1,7 @@
 ﻿namespace BlazeVector
 open Nu
+
+[<RequireQualifiedAccess>]
 module Assets =
 
     // the packages as named in the project's 'AssetGraph.nuag' file
