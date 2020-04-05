@@ -27,4 +27,4 @@ module ReflectionTests =
         let properties = Reflection.writePropertiesFromTarget tautology3 Map.empty xtd
         let xtdRead = { xtd with Xtension = xtd.Xtension } // hacky copy
         let xtd = Reflection.readPropertiesToTarget TestXtended.copy properties xtdRead
-        Assert.Equal((xtd?TestProperty : int), (xtdRead?TestProperty : int))
+        Assert.Equal ((xtd?TestProperty : int), (xtdRead?TestProperty : int))
