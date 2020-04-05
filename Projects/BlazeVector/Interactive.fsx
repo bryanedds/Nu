@@ -18,8 +18,11 @@
 #r "../../Nu/Nu.Math/bin/Debug/Nu.Math.dll"
 #r "../../Nu/Nu/bin/Debug/Nu.exe"
 
-#load "Nelmish.fs"
-#load "NelmishPlugin.fs"
+#load "BlazeAssets.fs"
+#load "BlazeSimulants.fs"
+#load "BlazeDispatchers.fs"
+#load "BlazeDispatcher.fs"
+#load "BlazePlugin.fs"
 
 open System.IO
 open Prime
@@ -35,4 +38,4 @@ match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
 
 // init nu and run game
 Nu.init NuConfig.defaultConfig
-World.run WorldConfig.defaultConfig (Nelmish.NelmishPlugin ())
+World.run WorldConfig.defaultConfig (BlazeVector.BlazePlugin ())

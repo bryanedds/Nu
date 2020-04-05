@@ -68,7 +68,9 @@
     <Compile Include="BlazeSimulants.fs" />
     <Compile Include="BlazeDispatchers.fs" />
     <Compile Include="BlazeDispatcher.fs" />
+    <Compile Include="BlazePlugin.fs" />
     <Compile Include="Program.fs" />
+    <None Include="Interactive.fsx" />
     <None Include="App.config" />
     <Content Include="AssetGraph.nuag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
