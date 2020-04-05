@@ -4,7 +4,7 @@ open Prime
 open Nu
 open Nu.Declarative
 
-type MyEntityDispatcher () =
+type MetricsEntityDispatcher () =
     inherit EntityDispatcher ()
 
 #if !OPTIMIZE
@@ -73,18 +73,18 @@ type MyGameDispatcher () =
                             yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
             Seq.fold (fun world position ->
-                let (entity, world) = World.createEntity<MyEntityDispatcher> None DefaultOverlay Default.Layer world
+                let (entity, world) = World.createEntity<MetricsEntityDispatcher> None DefaultOverlay Default.Layer world
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 entity.SetSize (v2One * 8.0f) world)
                 world indices
         World.selectScreen Default.Screen world
 
-type MyGamePlugin () =
+type MetricsPlugin () =
     inherit NuPlugin ()
     override this.GetStandAloneGameDispatcher () = typeof<MyGameDispatcher>
     override this.GetEditorGameDispatcher () = typeof<MyGameDispatcher>
     override this.GetEditorScreenDispatcherOpt () = None
-    
+
 /// This program exists to take metrics on Nu's performance.
 module Program =
 
@@ -93,4 +93,4 @@ module Program =
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
         Nu.init worldConfig.NuConfig
-        World.run worldConfig (MyGamePlugin ())
+        World.run worldConfig (MetricsPlugin ())
