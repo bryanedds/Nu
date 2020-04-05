@@ -2,20 +2,6 @@
 open System
 open Nu
 open InfinityRpg
-
-// this is a plugin for the Nu game engine that directs the execution of your application and editor
-type InfinityRpgPlugin () =
-    inherit NuPlugin ()
-
-    // specify the game dispatcher to use at run-time
-    override this.GetStandAloneGameDispatcher () =
-        typeof<InfinityDispatcher>
-
-    // route overlays to specific dispatchers
-    override this.MakeOverlayRoutes () =
-        [typeof<ButtonDispatcher>.Name, Some "InfinityButtonDispatcher"]
-        
-// this is the module where main is defined (the entry-point for your Nu application)
 module Program =
 
     // this the entry point for the InfinityRpg application
@@ -34,4 +20,4 @@ module Program =
         Nu.init worldConfig.NuConfig
         
         // run the engine with the given config and plugin
-        World.run worldConfig (InfinityRpgPlugin ())
+        World.run worldConfig (InfinityPlugin ())
