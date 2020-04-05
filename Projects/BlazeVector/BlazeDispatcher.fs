@@ -1,5 +1,4 @@
 ﻿namespace BlazeVector
-open System
 open Prime
 open Nu
 open BlazeVector

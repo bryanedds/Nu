@@ -71,7 +71,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Nelmish.fs" />
-    <Compile Include="Plugin.fs" />
+    <Compile Include="NelmishPlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />

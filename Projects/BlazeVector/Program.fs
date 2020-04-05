@@ -1,23 +1,7 @@
 ﻿namespace BlazeVector
 open System
-open SDL2
-open Prime
 open Nu
 open BlazeVector
-
-// this is a plugin for the Nu game engine that directs the execution of your application and editor
-type BlazePlugin () =
-    inherit NuPlugin ()
-
-    // specify the game dispatcher to use at run-time
-    override this.GetStandAloneGameDispatcher () =
-        typeof<BlazeDispatcher>
-
-    // specify the screen dispatcher to use in the editor
-    override this.GetEditorScreenDispatcherOpt () =
-        Some typeof<GameplayDispatcher>
-
-// this is the module where main is defined (the entry-point for your Nu application)
 module Program =
 
     // this the entry point for the BlazeVector application
