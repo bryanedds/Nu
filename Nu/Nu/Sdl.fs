@@ -143,6 +143,7 @@ module SdlDepsModule =
                                 | Left error -> Left error
                                 | Right ((), destroy) ->
                                     GamepadState.init ()
+                                    SDL.SDL_RaiseWindow window
                                     Right { RenderContextOpt = Some renderContext; WindowOpt = Some window; Config = sdlConfig; Destroy = destroy }
                                     
 type SdlDeps = SdlDepsModule.SdlDeps
