@@ -81,7 +81,9 @@
     <Compile Include="OmniCharacter.fs" />
     <Compile Include="OmniBattle.fs" />
     <Compile Include="OmniGame.fs" />
+    <Compile Include="OmniPlugin.fs" />
     <Compile Include="Program.fs" />
+    <None Include="Interactive.fsx" />
     <None Include="App.config" />
     <Content Include="Packages.config" />
     <Content Include="AssetGraph.nuag">
