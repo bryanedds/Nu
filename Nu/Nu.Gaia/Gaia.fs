@@ -1326,7 +1326,7 @@ module Gaia =
         if not (canEditWithMouse form world) then
             match (getEditorState world).DragEntityState with
             | DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) ->
-                // in https://github.com/bryanedds/Nu/issues/272, we found that we need to check for an entity's
+                // NOTE: in https://github.com/bryanedds/Nu/issues/272, we found that we need to check for an entity's
                 // existence here because it could be deleted right as the drag operation begins if the delete button
                 // is held during selection
                 if entity.GetExists world then
