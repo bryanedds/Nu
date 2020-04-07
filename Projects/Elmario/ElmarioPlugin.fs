@@ -14,6 +14,6 @@ type ElmarioPlugin () =
     override this.GetEditorGameDispatcher () =
         typeof<ElmarioDispatcher>
             
-    // this specifies no screen dispatcher is to be created by the editor
+    // this specifies no screen dispatcher is created by the editor since one is already created by ElmarioDispatcher
     override this.GetEditorScreenDispatcherOpt () =
         None
