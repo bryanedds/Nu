@@ -5,10 +5,9 @@ namespace Nu.Gaia
 open System
 open Prime
 open Nu
-
-// TODO: increase warning level to 5.
-
 module Program =
+
+    // TODO: increase warning level to 5.
 
     let [<EntryPoint; STAThread>] main _ =
         let worldConfig = { WorldConfig.defaultConfig with TickRate = 0L; StandAlone = false }

@@ -2,8 +2,6 @@
 open System
 open Nu
 open Nelmish
-
-// this is the module where main is defined (the entry-point for your application)
 module Program =
 
     // this the entry point for your Nu application
