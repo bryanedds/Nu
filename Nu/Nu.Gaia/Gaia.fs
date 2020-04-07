@@ -1326,23 +1326,28 @@ module Gaia =
         if not (canEditWithMouse form world) then
             match (getEditorState world).DragEntityState with
             | DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) ->
-                let (positionSnap, _) = getSnaps form
-                let mousePosition = World.getMousePositionF world
-                let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
-                let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
-                let entityPositionSnapped = Math.snap2F positionSnap entityPosition
-                let world =
-                    if entity.FacetedAs<NodeFacet> world && entity.ParentNodeExists world
-                    then entity.SetPositionLocal entityPositionSnapped world
-                    else entity.SetPosition entityPositionSnapped world
-                let world = entity.PropagatePhysics world
-                let world =
-                    updateEditorState (fun editorState ->
-                        { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) })
-                        world
-                // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
-                // form.entityPropertyGrid.Refresh ()
-                world
+                // in https://github.com/bryanedds/Nu/issues/272, we found that we need to check for an entity's
+                // existence here because it could be deleted right as the drag operation begins if the delete button
+                // is held during selection
+                if entity.GetExists world then
+                    let (positionSnap, _) = getSnaps form
+                    let mousePosition = World.getMousePositionF world
+                    let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
+                    let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
+                    let entityPositionSnapped = Math.snap2F positionSnap entityPosition
+                    let world =
+                        if entity.FacetedAs<NodeFacet> world && entity.ParentNodeExists world
+                        then entity.SetPositionLocal entityPositionSnapped world
+                        else entity.SetPosition entityPositionSnapped world
+                    let world = entity.PropagatePhysics world
+                    let world =
+                        updateEditorState (fun editorState ->
+                            { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) })
+                            world
+                    // NOTE: disabled the following line to fix perf issue caused by refreshing the property grid every frame
+                    // form.entityPropertyGrid.Refresh ()
+                    world
+                else world
             | DragEntityRotation _ -> world
             | DragEntityNone -> world
         else world
