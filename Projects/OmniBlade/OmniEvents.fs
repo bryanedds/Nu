@@ -2,6 +2,7 @@
 open Prime
 open Nu
 
+[<RequireQualifiedAccess>]
 module Events =
 
     let Cancel = stoa<unit> "Cancel/Event"
