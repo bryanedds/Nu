@@ -1,6 +1,9 @@
 Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bryanedds/Nu/blob/master/License.md)
 =
 
+**New Discord channel here -**
+https://discord.gg/3RgQvc
+
 What is the **Nu Game Engine**?
 
 *"The Nu Game Engine is a game development platform that aims to drastically reduce the cost of game development by providing a superior programming model for games via Iterative Functional Reactive Programming (IFRP). After finally reaching v1.3.0.4, the implementation has matured enough to prove both the efficacy and viability of functional programming in games in terms of performance, programmability, and reliability."*
