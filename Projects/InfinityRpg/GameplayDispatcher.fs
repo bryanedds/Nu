@@ -559,10 +559,10 @@ module GameplayDispatcherModule =
              Stream.make Simulants.HudDetailDown.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailDown => cmd (HandlePlayerInput (DetailInput Downward))
              Stream.make Simulants.HudDetailLeft.DownEvent |> Stream.isSimulantSelected Simulants.HudDetailLeft => cmd (HandlePlayerInput (DetailInput Leftward))
              Simulants.Gameplay.UpdateEvent =|> fun _ ->
-                if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) then cmd (HandlePlayerInput (DetailInput Upward))
-                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then cmd (HandlePlayerInput (DetailInput Rightward))
-                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) then cmd (HandlePlayerInput (DetailInput Downward))
-                elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then cmd (HandlePlayerInput (DetailInput Leftward))
+                if KeyboardState.isKeyDown KeyboardKey.Up then cmd (HandlePlayerInput (DetailInput Upward))
+                elif KeyboardState.isKeyDown KeyboardKey.Right then cmd (HandlePlayerInput (DetailInput Rightward))
+                elif KeyboardState.isKeyDown KeyboardKey.Down then cmd (HandlePlayerInput (DetailInput Downward))
+                elif KeyboardState.isKeyDown KeyboardKey.Left then cmd (HandlePlayerInput (DetailInput Leftward))
                 else cmd Nop
              Simulants.Gameplay.SelectEvent => cmd RunGameplay
              Simulants.HudSaveGame.ClickEvent =|> fun evt -> cmd (SaveGame evt.Subscriber)

@@ -108,7 +108,7 @@ let tryGenerateBinding (method : MethodInfo) =
               FunctionReturn = returnConversion }
     | None -> None
 
-let generateParameterList (functionParameters : (string * ParameterConversion) array)=
+let generateParameterList (functionParameters : (string * ParameterConversion) array) =
     let parNames = Array.map fst functionParameters
     String.Join (" ", parNames)
 
@@ -400,6 +400,6 @@ let bindings =
     Array.map tryGenerateBinding |>
     Array.definitize // TODO: error output
 
-let code =
+do
     generateBindingsCode bindings |>
     fun code -> File.WriteAllText ("../../WorldBindings.fs", code)

@@ -81,6 +81,7 @@
     <Compile Include="Audio.fs" />
     <Compile Include="SymbolStore.fs" />
     <Compile Include="Metadata.fs" />
+    <Compile Include="InputBindings.fs" />
     <Compile Include="Input.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="Subsystems.fs" />
@@ -118,6 +119,7 @@
     <Compile Include="WorldTests.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
+    <None Include="GenerateInputBindings.fsx" />
     <None Include="GenerateWorldBindings.fsx" />
     <None Include="App.config" />
     <Content Include="AssetGraph.nuag">

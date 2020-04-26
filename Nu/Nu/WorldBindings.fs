@@ -960,14 +960,14 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMousePositionF' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let isKeyboardKeyDown scanCode world =
+    let isKeyboardKeyDown key world =
         let oldWorld = world
         try
-            let scanCode =
-                match ScriptingSystem.tryExport typeof<Int32> scanCode world with
-                | Some value -> value :?> Int32
-                | None -> failwith "Invalid argument type for 'scanCode'; expecting a value convertable to Int32."
-            let result = World.isKeyboardKeyDown scanCode world
+            let key =
+                match ScriptingSystem.tryExport typeof<KeyboardKey> key world with
+                | Some value -> value :?> KeyboardKey
+                | None -> failwith "Invalid argument type for 'key'; expecting a value convertable to Key."
+            let result = World.isKeyboardKeyDown key world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
@@ -2864,7 +2864,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|scanCode|] -> isKeyboardKeyDown scanCode world
+            | [|key|] -> isKeyboardKeyDown key world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3735,7 +3735,7 @@ module WorldBindings =
              ("isMouseButtonDown", { Fn = evalIsMouseButtonDownBinding; Pars = [|"mouseButton"|]; DocOpt = None })
              ("getMousePosition", { Fn = evalGetMousePositionBinding; Pars = [||]; DocOpt = None })
              ("getMousePositionF", { Fn = evalGetMousePositionFBinding; Pars = [||]; DocOpt = None })
-             ("isKeyboardKeyDown", { Fn = evalIsKeyboardKeyDownBinding; Pars = [|"scanCode"|]; DocOpt = None })
+             ("isKeyboardKeyDown", { Fn = evalIsKeyboardKeyDownBinding; Pars = [|"key"|]; DocOpt = None })
              ("expandContent", { Fn = evalExpandContentBinding; Pars = [|"setScreenSplash"; "guidOpt"; "content"; "origin"; "parent"|]; DocOpt = None })
              ("destroy", { Fn = evalDestroyBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("getSelected", { Fn = evalGetSelectedBinding; Pars = [|"simulant"|]; DocOpt = None })

@@ -23,12 +23,12 @@ type ElmarioDispatcher () =
     // here we define the bindings used to connect events to their desired commands
     override this.Bindings (_, game, _) =
         [game.KeyboardKeyDownEvent =|> fun evt ->
-            if evt.Data.ScanCode = int SDL.SDL_Scancode.SDL_SCANCODE_UP && not evt.Data.Repeated
+            if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
             then cmd Jump
             else cmd Nop
          game.UpdateEvent =|> fun _ ->
-            if KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) then cmd MoveLeft
-            elif KeyboardState.isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) then cmd MoveRight
+            if KeyboardState.isKeyDown KeyboardKey.Left then cmd MoveLeft
+            elif KeyboardState.isKeyDown KeyboardKey.Right then cmd MoveRight
             else cmd Nop]
 
     // here we handle the Elm-style commands

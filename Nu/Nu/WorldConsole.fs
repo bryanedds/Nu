@@ -67,7 +67,7 @@ module WorldConsole =
         | PlatformID.Win32Windows ->
             let world =
                 World.subscribe (fun keyEvent world ->
-                    if keyEvent.Data.ScanCode = int SDL.SDL_Scancode.SDL_SCANCODE_GRAVE
+                    if keyEvent.Data.KeyboardKey = KeyboardKey.Grave
                     then run (getActiveWindowTitle ()) world
                     else world)
                     Events.KeyboardKeyDown
