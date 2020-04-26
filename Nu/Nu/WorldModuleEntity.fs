@@ -892,7 +892,9 @@ module WorldModuleEntity =
                     World.setEntityProperty propertyName false false property entity world)
                     world descriptor.SimulantProperties
             let world =
-                World.propagateEntityPhysics entity world
+                if WorldModule.isSimulantSelected entity world
+                then World.propagateEntityPhysics entity world
+                else world
             (entity, world)
 
         /// Create an entity and add it to the world.
