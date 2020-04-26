@@ -118,7 +118,7 @@
       <Project>{85d631a5-821a-4755-a68e-c1ffc64e469a}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Nu.Math\Nu.Math.csproj">
+    <ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj">
       <Name>Nu.Math</Name>
       <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
       <Private>True</Private>
