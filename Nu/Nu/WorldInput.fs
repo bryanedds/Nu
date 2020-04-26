@@ -39,8 +39,8 @@ module WorldInputModule =
 
         /// Check that the given keyboard key is down.
         [<FunctionBinding>]
-        static member isKeyboardKeyDown scanCode world =
+        static member isKeyboardKeyDown key world =
             ignore (world : World)
-            KeyboardState.isKeyDown scanCode
+            KeyboardState.isKeyDown key
 
         // TODO: implement isKeyboardModifierActive.

@@ -522,7 +522,7 @@ module WorldModule2 =
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
-                    let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = true }
+                    let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyDown" EventTrace.empty
                     let world = World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDown eventTrace Default.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyChange" EventTrace.empty
@@ -530,7 +530,7 @@ module WorldModule2 =
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
-                    let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = false }
+                    let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyUp" EventTrace.empty
                     let world = World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp eventTrace Default.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyChange" EventTrace.empty

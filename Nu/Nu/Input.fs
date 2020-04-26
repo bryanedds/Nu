@@ -60,26 +60,26 @@ module MouseState =
 module KeyboardState =
 
     /// Check that the given keyboard key is down.
-    let isKeyDown scanCode =
+    let isKeyDown (key : KeyboardKey) =
         let keyboardStatePtr = fst (SDL.SDL_GetKeyboardState ())
         let keyboardStatePtr = NativeInterop.NativePtr.ofNativeInt keyboardStatePtr
-        let state = NativeInterop.NativePtr.get<byte> keyboardStatePtr scanCode
+        let state = NativeInterop.NativePtr.get<byte> keyboardStatePtr (int key)
         state = byte 1
 
     /// Check that either ctrl key is down.
     let isCtrlDown () =
-        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LCTRL) ||
-        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RCTRL)
+        isKeyDown KeyboardKey.Lctrl ||
+        isKeyDown KeyboardKey.Rctrl
 
     /// Check that either alt key is down.
     let isAltDown () =
-        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LALT) ||
-        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RALT)
+        isKeyDown KeyboardKey.Lalt ||
+        isKeyDown KeyboardKey.Ralt
 
     /// Check that either shift key is down.
     let isShiftDown () =
-        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LSHIFT) ||
-        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RSHIFT)
+        isKeyDown KeyboardKey.Lshift ||
+        isKeyDown KeyboardKey.Rshift
 
 /// Describes a gamepad direction.
 type GamepadDirection =

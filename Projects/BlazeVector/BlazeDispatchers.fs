@@ -198,8 +198,8 @@ module PlayerModule =
 
         static let handleJumpByKeyboardKey evt world =
             if World.isSelectedScreenIdling world then
-                match (enum<SDL.SDL_Scancode> evt.Data.ScanCode, evt.Data.Repeated) with
-                | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump evt world
+                match (evt.Data.KeyboardKey, evt.Data.Repeated) with
+                | (KeyboardKey.Space, false) -> handleJump evt world
                 | _ -> world
             else world
 

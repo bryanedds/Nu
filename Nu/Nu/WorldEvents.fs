@@ -18,7 +18,7 @@ type [<StructuralEquality; NoComparison>] MouseButtonData =
 
 /// The data for a keyboard key event.
 type [<StructuralEquality; NoComparison>] KeyboardKeyData =
-    { ScanCode : int
+    { KeyboardKey : KeyboardKey
       Repeated : bool
       Down : bool }
 
