@@ -69,7 +69,6 @@ let generateBindingsCode codesStr =
     "open System\n" +
     "open Prime\n" +
     "open Nu\n" +
-    "open SDL2\n" +
     "\n" +
     "type KeyboardKey =\n" +
     codesStr +

@@ -25,7 +25,6 @@ open System.IO
 open System.Windows.Forms
 open FSharpx
 open FSharpx.Collections
-open SDL2
 open TiledSharp
 open Prime
 open Nu

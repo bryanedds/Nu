@@ -1,6 +1,5 @@
 ﻿namespace Elmario
 open Prime
-open SDL2
 open Nu
 open Nu.Declarative
 module Simulants =

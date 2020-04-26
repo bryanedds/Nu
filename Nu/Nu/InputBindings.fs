@@ -11,7 +11,6 @@ namespace Nu
 open System
 open Prime
 open Nu
-open SDL2
 
 type KeyboardKey =
     | Unknown = 0

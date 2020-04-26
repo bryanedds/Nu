@@ -1,6 +1,5 @@
 ﻿namespace BlazeVector
 open System
-open SDL2
 open Prime
 open Nu
 open Nu.Declarative
