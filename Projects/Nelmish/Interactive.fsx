@@ -15,7 +15,7 @@
 #r "../../Nu/Nu.Dependencies/Nito.Collections.Deque/Nito.Collections.Deque.dll"
 #r "../../Nu/Nu.Dependencies/SDL2-CS/Debug/SDL2-CS.dll"
 #r "../../Nu/Nu.Dependencies/TiledSharp/Debug/TiledSharp.dll"
-#r "../../Nu/Nu.Math/bin/Debug/Nu.Math.dll"
+#r "../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll"
 #r "../../Nu/Nu/bin/Debug/Nu.exe"
 
 #load "Nelmish.fs"
