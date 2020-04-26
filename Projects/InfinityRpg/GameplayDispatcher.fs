@@ -2,7 +2,6 @@
 open System
 open System.IO
 open Prime
-open SDL2
 open Nu
 open Nu.Declarative
 open InfinityRpg
