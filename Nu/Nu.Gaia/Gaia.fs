@@ -671,7 +671,7 @@ module Gaia =
     let private tryReloadPrelude (_ : GaiaForm) world =
         let editorState = getEditorState world
         let targetDir = editorState.TargetDir
-        let assetSourceDir = Path.Combine (targetDir, "..\\..")
+        let assetSourceDir = targetDir + "/../.."
         World.tryReloadPrelude assetSourceDir targetDir world
 
     let private tryLoadPrelude (form : GaiaForm) world =
@@ -686,8 +686,8 @@ module Gaia =
     let private trySavePrelude (form : GaiaForm) world =
         let oldWorld = world
         let editorState = getEditorState world
-        let preludeSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
-        let preludeFilePath = Path.Combine (preludeSourceDir, Assets.PreludeFilePath)
+        let preludeSourceDir = editorState.TargetDir + "/../..")
+        let preludeFilePath = preludeSourceDir + "/" + Assets.PreludeFilePath
         try let preludeStr = form.preludeTextBox.Text.TrimEnd ()
             File.WriteAllText (preludeFilePath, preludeStr)
             (true, world)
@@ -698,7 +698,7 @@ module Gaia =
     let private tryReloadAssetGraph (_ : GaiaForm) world =
         let editorState = getEditorState world
         let targetDir = editorState.TargetDir
-        let assetSourceDir = Path.Combine (targetDir, "..\\..")
+        let assetSourceDir = targetDir + "/../.."
         World.tryReloadAssetGraph assetSourceDir targetDir Constants.Editor.RefinementDir world
 
     let private tryLoadAssetGraph (form : GaiaForm) world =
@@ -718,8 +718,8 @@ module Gaia =
     let private trySaveAssetGraph (form : GaiaForm) world =
         let oldWorld = world
         let editorState = getEditorState world
-        let assetSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
-        let assetGraphFilePath = Path.Combine (assetSourceDir, Assets.AssetGraphFilePath)
+        let assetSourceDir = editorState.TargetDir + "/../.."
+        let assetGraphFilePath = assetSourceDir + "/" + Assets.AssetGraphFilePath
         try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
             File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
@@ -730,7 +730,7 @@ module Gaia =
 
     let private tryReloadOverlays form world =
         let targetDir = (getEditorState world).TargetDir
-        let overlayDir = Path.Combine (targetDir, "..\\..")
+        let overlayDir = targetDir + "/../.."
         match World.tryReloadOverlays overlayDir targetDir world with
         | (Right overlayer, world) ->
             refreshOverlayComboBox form world
@@ -754,8 +754,8 @@ module Gaia =
     let private trySaveOverlayer (form : GaiaForm) world =
         let oldWorld = world
         let editorState = getEditorState world
-        let overlayerSourceDir = Path.Combine (editorState.TargetDir, "..\\..")
-        let overlayerFilePath = Path.Combine (overlayerSourceDir, Assets.OverlayerFilePath)
+        let overlayerSourceDir = editorState.TargetDir + "/../.."
+        let overlayerFilePath = overlayerSourceDir + "/" + Assets.OverlayerFilePath
         try let overlays = scvalue<Overlay list> (form.overlayerTextBox.Text.TrimEnd ())
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Overlay>).PrettyPrinter
             File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)

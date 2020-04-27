@@ -26,7 +26,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;OPTIMIZE</DefineConstants>
     <WarningLevel>5</WarningLevel>
-    <DocumentationFile>bin\Debug\Metrics.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\Metrics.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningsAsErrors />
@@ -40,7 +40,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE;OPTIMIZE</DefineConstants>
     <WarningLevel>5</WarningLevel>
-    <DocumentationFile>bin\Release\Metrics.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\Metrics.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningsAsErrors />

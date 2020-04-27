@@ -27,8 +27,15 @@ open System.IO
 open Prime
 open Nu
 
-// set current directly to local for execution in VS F# interactive
-Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/bin/Debug")
+// ensure project has been built at least once before proceeding
+let workingDirPath = __SOURCE_DIRECTORY__ + "/bin/Debug"
+if not (Directory.Exists workingDirPath) then failwith "You must build the project at least once before running in interactive."
+Directory.SetCurrentDirectory workingDirPath
+
+// copy over required project files
+File.Copy ("../../AssetGraph.nuag", "AssetGraph.nuag", true)
+File.Copy ("../../Overlayer.nuol", "Overlayer.nuol", true)
+File.Copy ("../../Prelude.nuscript", "Prelude.nuscript", true)
 
 // build assets
 match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with

@@ -25,7 +25,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;PLATFORM_AGNOSTIC_TIMESTAMPING</DefineConstants>
     <WarningLevel>5</WarningLevel>
-    <DocumentationFile>bin\Debug\Nu.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\Nu.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningsAsErrors />
     <Prefer32Bit>false</Prefer32Bit>
@@ -40,7 +40,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING</DefineConstants>
     <WarningLevel>5</WarningLevel>
-    <DocumentationFile>bin\Release\Nu.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\Nu.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningsAsErrors />
     <Prefer32Bit>false</Prefer32Bit>
