@@ -18,6 +18,7 @@ module Constants =
         let AllyMax = 3
         let ActionTime = 999
         let ActionTimeInc = 3
+        let DefendingCounterBuff = 0.5f
 
     [<RequireQualifiedAccess>]
     module OmniBlade =

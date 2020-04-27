@@ -17,7 +17,7 @@ type ElementType =
     | Water // beats fire, lightning; weakest
 
 type StatusType =
-    | DefendStatus // also implies countering
+    | DefendStatus // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
     | PoisonStatus
     | MuteStatus
     | SleepStatus
@@ -186,6 +186,8 @@ type CharacterState =
       ExpPoints : int
       HitPoints : int
       SpecialPoints : int
+      Defending : bool
+      Charging : bool
       PowerBuff : single
       ShieldBuff : single
       MagicBuff : single
@@ -202,6 +204,8 @@ type CharacterState =
           ExpPoints = 0
           HitPoints = 10 // note this is an arbitrary number as hp max is calculated
           SpecialPoints = 1 // sp max is calculated
+          Defending = false
+          Charging = false
           PowerBuff = 1.0f // rate at which power is buffed / debuffed
           MagicBuff = 1.0f // rate at which magic is buffed / debuffed
           ShieldBuff = 1.0f // rate at which shield is buffed / debuffed
@@ -290,11 +294,16 @@ type CharacterState =
             | _ -> 0.0f
         intermediate * single this.Level / 5.0f |> int |> max 0
 
+type PoiseType =
+    | Poising
+    | Defending
+    | Charging
+
 type CharacterAnimationCycle =
     | WalkCycle
     | CelebrateCycle
     | ReadyCycle
-    | PoiseCycle
+    | PoiseCycle of PoiseType
     | AttackCycle
     | CastCycle
     | SpinCycle
@@ -348,12 +357,14 @@ type CharacterAnimationState =
         | WalkCycle -> CharacterAnimationState.indexLoopedWithDirection 0 6 time state
         | CelebrateCycle -> CharacterAnimationState.indexLoopedWithDirection 1 2 time state
         | ReadyCycle -> CharacterAnimationState.indexSaturatedWithDirection 2 3 time state
-        | PoiseCycle -> CharacterAnimationState.indexLoopedWithDirection 3 3 time state
+        | PoiseCycle Poising -> CharacterAnimationState.indexLoopedWithDirection 3 3 time state
+        | PoiseCycle Defending -> CharacterAnimationState.indexLoopedWithDirection 9 1 time state
+        | PoiseCycle Charging -> CharacterAnimationState.indexLoopedWithDirection 5 2 time state
         | AttackCycle -> CharacterAnimationState.indexSaturatedWithDirection 4 3 time state
         | CastCycle -> CharacterAnimationState.indexLoopedWithDirection 5 2 time state
         | SpinCycle -> CharacterAnimationState.indexLoopedWithDirection 7 4 time state
         | DamageCycle -> CharacterAnimationState.indexSaturatedWithDirection 6 1 time state
-        | IdleCycle -> CharacterAnimationState.indexSaturatedWithDirection 7 1 time state
+        | IdleCycle -> CharacterAnimationState.indexSaturatedWithDirection 8 1 time state
         | WoundCycle -> Vector2i (0, 8)
 
     static member cycleLengthOpt state =
@@ -361,7 +372,7 @@ type CharacterAnimationState =
         | WalkCycle -> None
         | CelebrateCycle -> None
         | ReadyCycle -> Some (int64 (5 * state.Stutter))
-        | PoiseCycle -> None
+        | PoiseCycle _ -> None
         | AttackCycle -> Some (int64 (4 * state.Stutter))
         | CastCycle -> None
         | SpinCycle -> Some (int64 (4 * state.Stutter))
