@@ -155,12 +155,12 @@ module AssetGraphModule =
     
             // build the intermediate file path
             let intermediateFileExtension = Path.GetExtension intermediateFileSubpath
-            let intermediateFilePath = Path.Combine (intermediateDirectory, intermediateFileSubpath)
+            let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
     
             // build the refinement file path
             let refinementFileExtension = getAssetExtension2 intermediateFileExtension refinement
             let refinementFileSubpath = Path.ChangeExtension (intermediateFileSubpath, refinementFileExtension)
-            let refinementFilePath = Path.Combine (refinementDirectory, refinementFileSubpath)
+            let refinementFilePath = refinementDirectory + "/" + refinementFileSubpath
     
             // refine the asset
             Directory.CreateDirectory (Path.GetDirectoryName refinementFilePath) |> ignore
@@ -193,12 +193,12 @@ module AssetGraphModule =
                 // build input file path
                 let inputFileSubpath = asset.FilePath
                 let inputFileExtension = Path.GetExtension inputFileSubpath
-                let inputFilePath = Path.Combine (inputDirectory, inputFileSubpath)
+                let inputFilePath = inputDirectory + "/" + inputFileSubpath
     
                 // build the output file path
                 let outputFileExtension = getAssetExtension true inputFileExtension asset.Refinements
                 let outputFileSubpath = Path.ChangeExtension (asset.FilePath, outputFileExtension)
-                let outputFilePath = Path.Combine (outputDirectory, outputFileSubpath)
+                let outputFilePath = outputDirectory + "/" + outputFileSubpath
     
                 // build the asset if fully building or if it's out of date
                 if  fullBuild ||
@@ -211,8 +211,8 @@ module AssetGraphModule =
                         else refineAsset inputFileSubpath inputDirectory refinementDirectory asset.Refinements
     
                     // attempt to copy the intermediate asset if output file is out of date
-                    let intermediateFilePath = Path.Combine (intermediateDirectory, intermediateFileSubpath)
-                    let outputFilePath = Path.Combine (outputDirectory, intermediateFileSubpath)
+                    let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
+                    let outputFilePath = outputDirectory + "/" + intermediateFileSubpath
                     Directory.CreateDirectory (Path.GetDirectoryName outputFilePath) |> ignore
                     try File.Copy (intermediateFilePath, outputFilePath, true)
                     with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
@@ -276,7 +276,7 @@ module AssetGraphModule =
             // compute the asset graph's tracker file path
             let outputFilePathOpt =
                 Option.map
-                    (fun filePath -> Path.Combine (outputDirectory, Path.ChangeExtension(Path.GetFileName filePath, ".tracker")))
+                    (fun filePath -> outputDirectory + "/" + Path.ChangeExtension(Path.GetFileName filePath, ".tracker"))
                     assetGraph.FilePathOpt
 
             // check if the output assetGraph file is newer than the current

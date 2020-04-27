@@ -253,7 +253,7 @@ module OmniBattle =
                     match item with
                     | "Attack" -> updateCharacter (fun character -> { character with InputState = AimReticles (item, EnemyAim) }) characterIndex model
                     | "Special" -> updateCharacter (fun character -> { character with InputState = SpecialMenu }) characterIndex model
-                    | "Defend" -> updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+                    | "Defend" -> updateCharacter (fun character -> { character with InputState = RegularMenu (* TODO: implement *) }) characterIndex model
                     | "Item" -> updateCharacter (fun character -> { character with InputState = ItemMenu }) characterIndex model
                     | _ -> failwithumf ()
                 just model

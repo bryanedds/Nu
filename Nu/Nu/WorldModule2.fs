@@ -375,8 +375,8 @@ module WorldModule2 =
         static member tryReloadOverlays inputDirectory outputDirectory world =
             
             // attempt to reload overlay file
-            let inputOverlayerFilePath = Path.Combine (inputDirectory, Assets.OverlayerFilePath)
-            let outputOverlayerFilePath = Path.Combine (outputDirectory, Assets.OverlayerFilePath)
+            let inputOverlayerFilePath = inputDirectory + "/" + Assets.OverlayerFilePath
+            let outputOverlayerFilePath = outputDirectory + "/" + Assets.OverlayerFilePath
             try File.Copy (inputOverlayerFilePath, outputOverlayerFilePath, true)
 
                 // cache old overlayer and make new one
@@ -399,8 +399,8 @@ module WorldModule2 =
 
         /// Try to reload the prelude currently in use by the world.
         static member tryReloadPrelude inputDirectory outputDirectory world =
-            let inputPreludeFilePath = Path.Combine (inputDirectory, Assets.PreludeFilePath)
-            let outputPreludeFilePath = Path.Combine (outputDirectory, Assets.PreludeFilePath)
+            let inputPreludeFilePath = inputDirectory + "/" + Assets.PreludeFilePath
+            let outputPreludeFilePath = outputDirectory + "/" + Assets.PreludeFilePath
             try File.Copy (inputPreludeFilePath, outputPreludeFilePath, true)
                 match World.tryEvalPrelude world with
                 | Right struct (preludeStr, world) -> (Right preludeStr, world)
@@ -414,8 +414,9 @@ module WorldModule2 =
             
             // attempt to reload asset graph file
             try File.Copy
-                    (Path.Combine (inputDirectory, Assets.AssetGraphFilePath),
-                     Path.Combine (outputDirectory, Assets.AssetGraphFilePath), true)
+                    (inputDirectory + "/" + Assets.AssetGraphFilePath,
+                     outputDirectory + "/" + Assets.AssetGraphFilePath,
+                     true)
 
                 // attempt to load asset graph
                 match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
