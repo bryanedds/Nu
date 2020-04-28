@@ -35,8 +35,10 @@ module OmniReticles =
             let buttonName = rets.Name + "+" + "Cancel"
             let button = rets.Parent / buttonName
             [Content.button button.Name
-                [Entity.Size == v2 64.0f 64.0f
-                 Entity.CenterLocal == v2 0.0f -48.0f
+                [Entity.ParentNodeOpt == None
+                 Entity.Visible <== rets.Visible
+                 Entity.Size == v2 64.0f 64.0f
+                 Entity.Position == Constants.Battle.CancelPosition
                  Entity.UpImage == asset Assets.BattlePackage "CancelUp"
                  Entity.DownImage == asset Assets.BattlePackage "CancelDown"
                  Entity.ClickEvent ==> cmd TargetCancel]
@@ -45,7 +47,7 @@ module OmniReticles =
                 let button = rets.Parent / buttonName
                 Content.button button.Name
                     [Entity.Size == v2 128.0f 128.0f
-                     Entity.Center <== character --> fun character -> character.Center + Constants.Battle.CenterOffsetReticle
+                     Entity.Center <== character --> fun character -> character.Center + Constants.Battle.CharacterCenterOffset
                      Entity.UpImage == asset Assets.BattlePackage "ReticleUp"
                      Entity.DownImage == asset Assets.BattlePackage "ReticleDown"
                      Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterState.CharacterIndex)]]

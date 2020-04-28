@@ -63,8 +63,10 @@ module OmniRingMenu =
                 let buttonName = menu.Name + "+" + itemCancelValue
                 let button = menu.Parent / buttonName
                 Content.button button.Name
-                    [Entity.Size == v2 64.0f 64.0f
-                     Entity.CenterLocal == v2 0.0f -32.0f
+                    [Entity.ParentNodeOpt == None
+                     Entity.Visible <== menu.Visible
+                     Entity.Size == v2 64.0f 64.0f
+                     Entity.Position == Constants.Battle.CancelPosition
                      Entity.Depth <== menu.Depth
                      Entity.UpImage == asset Assets.BattlePackage (itemCancelValue + "Up")
                      Entity.DownImage == asset Assets.BattlePackage (itemCancelValue + "Down")
