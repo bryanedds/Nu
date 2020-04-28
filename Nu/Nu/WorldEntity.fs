@@ -358,8 +358,11 @@ module WorldEntityModule =
                         let world =
                             match simulant with
                             | :? Entity as parent ->
-                                let property = { PropertyType = typeof<Entity Relation option>; PropertyValue = Some (relate entity parent) }
-                                entity.TrySetProperty Property? ParentNodeOpt true false property world |> snd
+                                // only set parent node if one was not specified by the descriptor properties
+                                if not (List.exists (fun (name, _) -> name = Property? ParentNodeOpt) descriptor.SimulantProperties) then
+                                    let property = { PropertyType = typeof<Entity Relation option>; PropertyValue = Some (relate entity parent) }
+                                    entity.TrySetProperty Property? ParentNodeOpt true false property world |> snd
+                                else world
                             | _ -> world
                         World.monitor
                             (constant $ World.destroyEntity entity)
