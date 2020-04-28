@@ -397,9 +397,15 @@ type CharacterAnimationState =
         let offset = CharacterAnimationState.directionToInt state.Direction * run
         Vector2i (CharacterAnimationState.indexLooped run time state + offset, row)
 
+    static member indexLoopedWithoutDirection row run time state =
+        Vector2i (CharacterAnimationState.indexLooped run time state, row)
+
     static member indexSaturatedWithDirection row run time state =
         let offset = CharacterAnimationState.directionToInt state.Direction * run
         Vector2i (CharacterAnimationState.indexSaturated run time state + offset, row)
+
+    static member indexSaturatedWithoutDirection row run time state =
+        Vector2i (CharacterAnimationState.indexSaturated run time state, row)
 
     static member index time state =
         match state.AnimationCycle with
@@ -411,7 +417,7 @@ type CharacterAnimationState =
         | PoiseCycle Charging -> CharacterAnimationState.indexLoopedWithDirection 5 2 time state
         | AttackCycle -> CharacterAnimationState.indexSaturatedWithDirection 4 3 time state
         | CastCycle -> CharacterAnimationState.indexLoopedWithDirection 5 2 time state
-        | SpinCycle -> CharacterAnimationState.indexLoopedWithDirection 7 4 time state
+        | SpinCycle -> CharacterAnimationState.indexLoopedWithoutDirection 7 4 time state
         | DamageCycle -> CharacterAnimationState.indexSaturatedWithDirection 6 1 time state
         | IdleCycle -> CharacterAnimationState.indexSaturatedWithDirection 8 1 time state
         | WoundCycle -> Vector2i (0, 8)
