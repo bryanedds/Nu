@@ -68,8 +68,8 @@ module OmniBattle =
                Characters = characters
                CurrentCommandOpt = None
                ActionQueue = Queue.empty
-               Inventory = { Items = Map.empty }
-               Gold = 0 })
+               Inventory = { Items = Map.singleton (Consumable Herb) 3 }
+               Gold = 100 })
 
         static let getAllies model =
             CharacterModels.getAllies model.Characters
@@ -179,7 +179,6 @@ module OmniBattle =
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
                 tickAttack source targetOpt time timeLocal model
-            | Defend -> just model // TODO: make the act of defending grant a significant counter buff
             | Consume _ -> just model
             | Special _ -> just model
             | Wound ->

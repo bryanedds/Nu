@@ -58,7 +58,6 @@ type SpecialType = string
 
 type ActionType =
     | Attack
-    | Defend // auto counters at rate of counter stat
     | Consume of ConsumableType
     | Special of SpecialType
     | Wound

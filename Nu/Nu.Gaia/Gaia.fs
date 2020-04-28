@@ -686,7 +686,7 @@ module Gaia =
     let private trySavePrelude (form : GaiaForm) world =
         let oldWorld = world
         let editorState = getEditorState world
-        let preludeSourceDir = editorState.TargetDir + "/../..")
+        let preludeSourceDir = editorState.TargetDir + "/../.."
         let preludeFilePath = preludeSourceDir + "/" + Assets.PreludeFilePath
         try let preludeStr = form.preludeTextBox.Text.TrimEnd ()
             File.WriteAllText (preludeFilePath, preludeStr)
