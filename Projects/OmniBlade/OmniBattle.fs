@@ -134,7 +134,7 @@ module OmniBattle =
                             let model = { model with CurrentCommandOpt = None }
                             withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
                         else
-                            let woundCommand = CurrentCommand.make time (ActionCommand.make Wound targetIndex None)
+                            let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
                             let model = { model with CurrentCommandOpt = Some woundCommand }
                             withMsg model (PoiseCharacter sourceIndex)
                     else just model
@@ -456,7 +456,7 @@ module OmniBattle =
                         targetIndex
                         model
                 if target.CharacterState.HitPoints > 0 || target.CharacterState.IsEnemy then
-                    let model = updateCharacter (fun character -> { character with AnimationState = (CharacterAnimationState.setCycle (Some time) DamageCycle) character.AnimationState }) targetIndex model
+                    let model = updateCharacter (fun character -> { character with AnimationState = (CharacterAnimationState.setCycle (Some time) SpinCycle) character.AnimationState }) targetIndex model
                     just model
                 else withSig model (Message (ResetCharacter targetIndex))
             | Tick ->
