@@ -167,13 +167,62 @@ type [<NoComparison>] Rom =
           Items = Map.empty
           Characters = Map.empty }
 
-type PartyMember =
-    { PartyIndex : int // key
-      ActivePartyIndexOpt : int option
+type Inventory =
+    { Items : Map<ItemType, int> }
+
+    static member getKeyItems inv =
+        Map.filter (fun item _ -> match item with KeyItem _ -> true | _ -> false) inv.Items
+        
+    static member getNonKeyItems inv =
+        Map.filter (fun item _ -> match item with KeyItem _ -> false | _ -> true) inv.Items
+
+type [<CustomEquality; CustomComparison>] GameEvent =
+    | SavedPrincess
+    | FoughtBadfdie of bool
+
+    member private this.ToInt () =
+        match this with
+        | SavedPrincess -> 0
+        | FoughtBadfdie _ -> 1
+        
+    override this.GetHashCode () =
+        let rand = Rand.makeFromInt (this.ToInt ())
+        let (result, _) = Rand.nextInt rand
+        result
+
+    override this.Equals that =
+        match that with
+        | :? GameEvent as thatEvent -> (this :> IComparable<GameEvent>).CompareTo thatEvent = 0
+        | _ -> false
+
+    interface IComparable<GameEvent> with
+        member this.CompareTo that =
+            let thisInt = this.ToInt ()
+            let thatInt = that.ToInt ()
+            thisInt.CompareTo thatInt
+            
+    interface IComparable with
+        member this.CompareTo that =
+            match that with
+            | :? GameEvent as thatEvent -> (this :> IComparable<GameEvent>).CompareTo thatEvent
+            | _ -> -1
+                
+type Legionnaire =
+    { LegionIndex : int // key
+      PartyIndexOpt : int option
       CharacterType : CharacterType }
 
-type [<NoComparison>] Party =
-    { PartyMembers : Map<int, PartyMember> }
+// Rom -> FieldModel -> BattleModel -> CharacterModel -> etc.
+type [<NoComparison>] FieldModel =
+    { Legion : Map<int, Legionnaire>
+      GameEvents : Set<GameEvent>
+      Inventory : Inventory
+      Gold : int }
+
+    static member getPartyMembers fieldModel =
+        Map.filter
+            (fun _ legionnaire -> Option.isSome legionnaire.PartyIndexOpt)
+            fieldModel.Legion
 
 type CharacterIndex =
     | AllyIndex of int
@@ -473,4 +522,6 @@ type [<NoEquality; NoComparison>] BattleModel =
     { BattleState : BattleState
       Characters : Map<CharacterIndex, CharacterModel>
       CurrentCommandOpt : CurrentCommand option
-      ActionQueue : ActionCommand Queue }
+      ActionQueue : ActionCommand Queue
+      Inventory : Inventory
+      Gold : int }
