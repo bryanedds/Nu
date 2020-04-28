@@ -155,7 +155,7 @@ module WorldLayerModule =
             let (layer, world) =
                 World.createLayer4 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt screen world
             let world =
-                Map.fold (fun world propertyName property ->
+                List.fold (fun world (propertyName, property) ->
                     World.setLayerProperty propertyName property layer world)
                     world descriptor.SimulantProperties
             let world =

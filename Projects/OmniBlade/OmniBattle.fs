@@ -558,14 +558,14 @@ module OmniBattle =
                 let input = screen / ("Input" + "+" + scstring index)
                 Content.layer input.Name []
                     [Content.entity<RingMenuDispatcher> "RegularMenu"
-                        [Entity.Position <== ally --> fun ally -> ally.Center
+                        [Entity.Position <== ally --> fun ally -> ally.Center + Constants.Battle.CenterOffsetCancel
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> ally.InputState = RegularMenu
                          Entity.RingMenuModel == { Items = ["Attack"; "Defend"; "Special"; "Item"]; ItemCancelOpt = None }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (RegularItemCancel allyIndex)]
                      Content.entity<RingMenuDispatcher> "SpecialMenu"
-                        [Entity.Position <== ally --> fun ally -> ally.Center
+                        [Entity.Position <== ally --> fun ally -> ally.Center + Constants.Battle.CenterOffsetCancel
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> ally.InputState = SpecialMenu
                          Entity.RingMenuModel <== ally --> fun ally ->
@@ -575,7 +575,7 @@ module OmniBattle =
                          Entity.ItemSelectEvent ==|> fun evt -> msg (SpecialItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (SpecialItemCancel allyIndex)]
                      Content.entity<RingMenuDispatcher> "ItemMenu"
-                        [Entity.Position <== ally --> fun ally -> ally.Center
+                        [Entity.Position <== ally --> fun ally -> ally.Center + Constants.Battle.CenterOffsetCancel
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> ally.InputState = ItemMenu
                          Entity.RingMenuModel <== model --> fun model ->

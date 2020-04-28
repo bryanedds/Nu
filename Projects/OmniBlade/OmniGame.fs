@@ -53,10 +53,10 @@ module OmniGame =
             just world
 
         override this.Content (_, _, _) =
-            [Content.screen Simulants.Splash.Name (Splash (Constants.OmniBlade.DissolveData, Constants.OmniBlade.SplashData, Simulants.Title)) [] []
+            [Content.screenFromLayerFile<BattleDispatcher> Simulants.Battle.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.BattleHudLayerFilePath
+             Content.screen Simulants.Splash.Name (Splash (Constants.OmniBlade.DissolveData, Constants.OmniBlade.SplashData, Simulants.Title)) [] []
              Content.screenFromLayerFile Simulants.Title.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.TitleLayerFilePath
-             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.CreditsLayerFilePath
-             Content.screenFromLayerFile<BattleDispatcher> Simulants.Battle.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.BattleHudLayerFilePath]
+             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.CreditsLayerFilePath]
 
     type EditorDispatcher () =
         inherit GameDispatcher<Rom, unit, OmniCommand> (Rom.readFromFiles ())

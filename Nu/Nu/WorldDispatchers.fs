@@ -910,8 +910,8 @@ module NodeFacetModule =
              define Entity.EnabledLocal true
              define Entity.NodeUnsubscribe (id : World -> World)
              computed Entity.CenterLocal
-                (fun (entity : Entity) world -> entity.GetPosition world + entity.GetSize world * 0.5f)
-                (Some (fun value (entity : Entity) world -> entity.SetPosition (value - entity.GetSize world * 0.5f) world))]
+                (fun (entity : Entity) world -> entity.GetPositionLocal world + entity.GetSize world * 0.5f)
+                (Some (fun value (entity : Entity) world -> entity.SetPositionLocal (value - entity.GetSize world * 0.5f) world))]
 
         override this.Register (entity, world) =
             let world = entity.SetNodeUnsubscribe id world // ensure unsubscribe function reference doesn't get copied in Gaia...
