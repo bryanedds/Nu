@@ -55,7 +55,8 @@ type EffectType =
     | Physical
     | Magical
 
-type SpecialType = string
+type SpecialType =
+    | JumpSlash
 
 type ActionType =
     | Attack
@@ -63,7 +64,8 @@ type ActionType =
     | Special of SpecialType
     | Wound
 
-type WeaponType = string
+type WeaponType =
+    string
 
 type WeaponSubtype =
     | Melee
@@ -79,7 +81,8 @@ type WeaponData =
       PowerBase : int
       MagicBase : int }
 
-type ArmorType = string
+type ArmorType =
+    string
 
 type ArmorSubtype =
     | Robe
@@ -92,7 +95,8 @@ type ArmorData =
       HitPointsBase : int
       SpecialPointsBase : int }
 
-type RelicType = string
+type RelicType =
+    string
 
 type RelicData =
     { RelicType : RelicType // key
@@ -249,6 +253,7 @@ type CharacterState =
       ShieldBuff : single
       MagicBuff : single
       CounterBuff : single
+      Specials : SpecialType Set
       Statuses : StatusType Set
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
@@ -267,9 +272,10 @@ type CharacterState =
           MagicBuff = 1.0f // rate at which magic is buffed / debuffed
           ShieldBuff = 1.0f // rate at which shield is buffed / debuffed
           CounterBuff = 1.0f // rate at which counter is buffed / debuffed
-          Statuses = Set.empty<StatusType>
-          WeaponOpt = Option<WeaponType>.None
-          ArmorOpt = Option<ArmorType>.None
+          Specials = Set.empty
+          Statuses = Set.empty
+          WeaponOpt = None
+          ArmorOpt = None
           Relics = [] } // level is calculated from base experience + added experience
 
     member this.Name = match this.CharacterType with Ally ally -> scstring ally | Enemy enemy -> scstring enemy
@@ -435,7 +441,9 @@ type CharacterAnimationState =
         | WalkCycle -> None
         | CelebrateCycle -> None
         | ReadyCycle -> Some (int64 (5 * state.Stutter))
-        | PoiseCycle _ -> None
+        | PoiseCycle Poising -> None
+        | PoiseCycle Defending -> None
+        | PoiseCycle Charging -> Some (int64 (4 * state.Stutter))
         | AttackCycle -> Some (int64 (4 * state.Stutter))
         | CastCycle -> None
         | SpinCycle -> Some (int64 (4 * state.Stutter))
