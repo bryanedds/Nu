@@ -171,10 +171,18 @@ type Inventory =
     { Items : Map<ItemType, int> }
 
     static member getKeyItems inv =
-        Map.filter (fun item _ -> match item with KeyItem _ -> true | _ -> false) inv.Items
+        inv.Items |>
+        Map.toArray |>
+        Array.map (function (KeyItem keyItemType, count) -> Some (keyItemType, count) | _ -> None) |>
+        Array.definitize |>
+        Map.ofArray
         
-    static member getNonKeyItems inv =
-        Map.filter (fun item _ -> match item with KeyItem _ -> false | _ -> true) inv.Items
+    static member getConsumables inv =
+        inv.Items |>
+        Map.toArray |>
+        Array.map (function (Consumable consumableType, count) -> Some (consumableType, count) | _ -> None) |>
+        Array.definitize |>
+        Map.ofArray
 
 type [<CustomEquality; CustomComparison>] GameEvent =
     | SavedPrincess
