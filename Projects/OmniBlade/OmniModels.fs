@@ -29,7 +29,6 @@ type EquipmentType =
 
 type ConsumableType =
     | GreenHerb
-    | DriedHerb
     | RedHerb
 
 type KeyItemType =

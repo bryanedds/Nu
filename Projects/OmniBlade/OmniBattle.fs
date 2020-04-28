@@ -326,8 +326,8 @@ module OmniBattle =
             | SpecialItemCancel characterIndex ->
                 let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
                 just model
-            | ItemItemSelect (characterIndex, _) ->
-                let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+            | ItemItemSelect (characterIndex, item) ->
+                let model = updateCharacter (fun character -> { character with InputState = AimReticles (item, AllyAim true) }) characterIndex model
                 just model
             | ItemItemCancel characterIndex ->
                 let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
@@ -335,9 +335,17 @@ module OmniBattle =
             | ReticlesSelect (targetIndex, allyIndex) ->
                 match model.BattleState with
                 | BattleRunning ->
-                    let command = ActionCommand.make Attack allyIndex (Some targetIndex)
-                    let model = { model with ActionQueue = Queue.conj command model.ActionQueue }
-                    withMsg model (ResetCharacter allyIndex)
+                    let ally = getCharacter allyIndex model
+                    match ally.InputState with
+                    | AimReticles (item, _) ->
+                        let command =
+                            match item with
+                            | "GreenHerb" -> ActionCommand.make (Consume GreenHerb) allyIndex (Some targetIndex)
+                            | "RedHerb" -> ActionCommand.make (Consume RedHerb) allyIndex (Some targetIndex)
+                            | _ -> ActionCommand.make Attack allyIndex (Some targetIndex)
+                        let model = { model with ActionQueue = Queue.conj command model.ActionQueue }
+                        withMsg model (ResetCharacter allyIndex)
+                    | _ -> just model
                 | _ -> just model
             | ReticlesCancel characterIndex ->
                 let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
@@ -438,13 +446,11 @@ module OmniBattle =
                         let state = character.CharacterState
                         match consumable with
                         | GreenHerb
-                        | DriedHerb
                         | RedHerb ->
                             let cure =
                                 match consumable with
-                                | GreenHerb -> 40
-                                | DriedHerb -> 120
-                                | RedHerb -> 360
+                                | GreenHerb -> 100
+                                | RedHerb -> 500
                             let hitPoints = state.HitPoints + cure
                             { character with CharacterState = { state with HitPoints = hitPoints }})
                         targetIndex
@@ -514,7 +520,7 @@ module OmniBattle =
                         [Entity.Position <== ally --> fun ally -> ally.Center
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> ally.InputState = ItemMenu
-                         Entity.RingMenuModel == { Items = ["Attack"]; ItemCancelOpt = Some "Cancel" }
+                         Entity.RingMenuModel == { Items = ["GreenHerb"]; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (ItemItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (ItemItemCancel allyIndex)]
                      Content.entity<ReticlesDispatcher> "Reticles"
