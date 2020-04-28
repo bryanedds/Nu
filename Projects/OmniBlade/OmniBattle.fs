@@ -67,7 +67,9 @@ module OmniBattle =
              { BattleState = BattleReady 0L
                Characters = characters
                CurrentCommandOpt = None
-               ActionQueue = Queue.empty })
+               ActionQueue = Queue.empty
+               Inventory = { Items = Map.empty }
+               Gold = 0 })
 
         static let getAllies model =
             CharacterModels.getAllies model.Characters
