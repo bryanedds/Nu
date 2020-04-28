@@ -19,8 +19,8 @@ module Constants =
         let ActionTime = 999
         let ActionTimeInc = 3
         let DefendingCounterBuff = 0.5f
-        let CenterOffsetCancel = v2 0.0f -16.0f
-        let CenterOffsetReticle = v2 0.0f -32.0f
+        let CancelPosition = v2 -448.0f -240.0f
+        let CharacterCenterOffset = v2 0.0f -16.0f
 
     [<RequireQualifiedAccess>]
     module OmniBlade =
