@@ -185,7 +185,7 @@ module WorldScreenModule =
             let (screen, world) =
                 World.createScreen3 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt world
             let world =
-                Map.fold (fun world propertyName property ->
+                List.fold (fun world (propertyName, property) ->
                     World.setScreenProperty propertyName property screen world)
                     world descriptor.SimulantProperties
             let world =

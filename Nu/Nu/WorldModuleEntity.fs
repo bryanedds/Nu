@@ -888,7 +888,7 @@ module WorldModuleEntity =
             let (entity, world) =
                 World.createEntity5 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt overlayDescriptor layer world
             let world =
-                Map.fold (fun world propertyName property ->
+                List.fold (fun world (propertyName, property) ->
                     World.setEntityProperty propertyName false false property entity world)
                     world descriptor.SimulantProperties
             let world =

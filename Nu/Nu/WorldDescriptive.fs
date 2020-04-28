@@ -11,7 +11,7 @@ open Nu
 type [<NoEquality; NoComparison>] SimulantDescriptor =
     { SimulantNameOpt : string option
       SimulantDispatcherName : string
-      SimulantProperties : Map<string, Property>
+      SimulantProperties : (string * Property) list
       SimulantChildren : SimulantDescriptor list }
 
 /// Describes a game value independent of the engine.
@@ -116,8 +116,7 @@ module Describe =
                     | _ -> { PropertyType = ty; PropertyValue = value }
                 Some (name, property)
             | None -> None) |>
-        List.definitize |>
-        Map.ofList
+        List.definitize
 
     let private initializersToEventHandlers initializers (simulant : Simulant) =
         initializers |>
