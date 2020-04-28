@@ -441,9 +441,7 @@ type CharacterAnimationState =
         | WalkCycle -> None
         | CelebrateCycle -> None
         | ReadyCycle -> Some (int64 (5 * state.Stutter))
-        | PoiseCycle Poising -> None
-        | PoiseCycle Defending -> None
-        | PoiseCycle Charging -> Some (int64 (4 * state.Stutter))
+        | PoiseCycle _ -> None
         | AttackCycle -> Some (int64 (4 * state.Stutter))
         | CastCycle -> None
         | SpinCycle -> Some (int64 (4 * state.Stutter))

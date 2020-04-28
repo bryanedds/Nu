@@ -175,10 +175,10 @@ module OmniBattle =
                     then withMsg model (ChargeCharacter sourceIndex)
                     else withMsgs { model with CurrentCommandOpt = None } [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
                 | _ ->
-                    if timeLocal = int64 source.AnimationState.Stutter then
+                    if timeLocal = int64 source.AnimationState.Stutter * 4L then
                         match specialType with
                         | JumpSlash -> withMsg model (AttackCharacter sourceIndex)
-                    elif timeLocal = int64 source.AnimationState.Stutter * 2L then
+                    elif timeLocal = int64 source.AnimationState.Stutter * 5L then
                         withMsg model (DamageCharacter (sourceIndex, targetIndex, Some specialType))
                     elif CharacterAnimationState.finished time source.AnimationState then
                         let target = getCharacter targetIndex model
