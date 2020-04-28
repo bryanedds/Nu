@@ -28,7 +28,9 @@ type EquipmentType =
     | Relic
 
 type ConsumableType =
-    | Herb
+    | GreenHerb
+    | DriedHerb
+    | RedHerb
 
 type KeyItemType =
     | BrassKey

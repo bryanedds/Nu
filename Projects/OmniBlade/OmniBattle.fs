@@ -22,12 +22,14 @@ module OmniBattle =
         | PoiseCharacters
         | CelebrateCharacters of bool
         | AdvanceCharacters
-        | AttackCharacter of CharacterIndex * CharacterIndex
-        | DamageCharacter of CharacterIndex
+        | AttackCharacter of CharacterIndex
+        | DamageCharacter of CharacterIndex * CharacterIndex
         | PoiseCharacter of CharacterIndex
         | WoundCharacter of CharacterIndex
         | ResetCharacter of CharacterIndex
         | DestroyCharacter of CharacterIndex
+        | GiveConsumable of ConsumableType * CharacterIndex
+        | TakeConsumable of ConsumableType * CharacterIndex
         | Tick
 
     type [<NoComparison>] BattleCommand =
@@ -68,7 +70,7 @@ module OmniBattle =
                Characters = characters
                CurrentCommandOpt = None
                ActionQueue = Queue.empty
-               Inventory = { Items = Map.singleton (Consumable Herb) 3 }
+               Inventory = { Items = Map.singleton (Consumable GreenHerb) 3 }
                Gold = 100 })
 
         static let getAllies model =
@@ -121,11 +123,11 @@ module OmniBattle =
                 match timeLocal with
                 | 0L ->
                     if target.CharacterState.IsHealthy
-                    then withMsg model (AttackCharacter (sourceIndex, targetIndex))
+                    then withMsg model (AttackCharacter sourceIndex)
                     else withMsgs { model with CurrentCommandOpt = None } [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
                 | _ ->
-                    if timeLocal = 1L * int64 source.AnimationState.Stutter
-                    then withMsg model (DamageCharacter targetIndex)
+                    if timeLocal = int64 source.AnimationState.Stutter
+                    then withMsg model (DamageCharacter (sourceIndex, targetIndex))
                     elif CharacterAnimationState.finished time source.AnimationState then
                         let target = getCharacter targetIndex model
                         if target.CharacterState.IsHealthy then
@@ -140,28 +142,49 @@ module OmniBattle =
                 let model = { model with CurrentCommandOpt = None }
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
 
-        static let tickWound characterIndex time timeLocal model =
+        static let tickConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
+            let source = getCharacter sourceIndex model
+            match targetIndexOpt with
+            | Some targetIndex ->
+                let target = getCharacter targetIndex model
+                match timeLocal with
+                | 0L ->
+                    if target.CharacterState.IsHealthy
+                    then withMsg model (GiveConsumable (consumable, sourceIndex))
+                    else withMsgs { model with CurrentCommandOpt = None } [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
+                | _ ->
+                    if timeLocal = int64 source.AnimationState.Stutter
+                    then withMsg model (TakeConsumable (consumable, targetIndex))
+                    elif CharacterAnimationState.finished time source.AnimationState then
+                        let model = { model with CurrentCommandOpt = None }
+                        withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
+                    else just model
+            | None ->
+                let model = { model with CurrentCommandOpt = None }
+                withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
+
+        static let tickWound sourceIndex targetIndex time timeLocal model =
             match timeLocal with
             | 0L ->
-                withMsg model (DamageCharacter characterIndex)
+                withMsg model (DamageCharacter (sourceIndex, targetIndex))
             | _ ->
-                let character = getCharacter characterIndex model
+                let character = getCharacter targetIndex model
                 if character.CharacterState.IsAlly then
                     match character.AnimationState.AnimationCycle with
                     | DamageCycle ->
                         if CharacterAnimationState.finished time character.AnimationState
-                        then withMsg { model with CurrentCommandOpt = None } (WoundCharacter characterIndex)
+                        then withMsg { model with CurrentCommandOpt = None } (WoundCharacter targetIndex)
                         else just model
                     | _ -> failwithumf ()
                 else
                     match character.AnimationState.AnimationCycle with
                     | DamageCycle ->
                         if CharacterAnimationState.finished time character.AnimationState
-                        then withMsg model (WoundCharacter characterIndex)
+                        then withMsg model (WoundCharacter targetIndex)
                         else just model
                     | WoundCycle ->
                         if CharacterAnimationState.finished time character.AnimationState
-                        then withMsg { model with CurrentCommandOpt = None } (DestroyCharacter characterIndex)
+                        then withMsg { model with CurrentCommandOpt = None } (DestroyCharacter targetIndex)
                         else just model
                     | _ -> failwithumf ()
 
@@ -179,23 +202,31 @@ module OmniBattle =
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
                 tickAttack source targetOpt time timeLocal model
-            | Consume _ -> just model
-            | Special _ -> just model
+            | Consume consumable ->
+                let source = currentCommand.ActionCommand.Source
+                let targetOpt = currentCommand.ActionCommand.TargetOpt
+                tickConsume consumable source targetOpt time timeLocal model
+            | Special _ ->
+                // TODO: implement
+                just model
             | Wound ->
                 let source = currentCommand.ActionCommand.Source
-                let (model, signal) = tickWound source time timeLocal model
-                match model.CurrentCommandOpt with
-                | Some _ -> withSig model signal // keep ticking wound
-                | None ->
-                    let (model, signal2) =
-                        let allies = getAllies model
-                        let enemies = getEnemies model
-                        if Seq.forall (fun character -> character.CharacterState.IsWounded) allies
-                        then tick time { model with BattleState = BattleCease (false, time) } // tick for frame 0
-                        elif Seq.forall (fun character -> character.CharacterState.IsWounded) enemies
-                        then tick time { model with BattleState = BattleCease (true, time) } // tick for frame 0
-                        else just model
-                    withSig model (signal + signal2)
+                match currentCommand.ActionCommand.TargetOpt with
+                | Some target ->
+                    let (model, signal) = tickWound source target time timeLocal model
+                    match model.CurrentCommandOpt with
+                    | Some _ -> withSig model signal // keep ticking wound
+                    | None ->
+                        let (model, signal2) =
+                            let allies = getAllies model
+                            let enemies = getEnemies model
+                            if Seq.forall (fun character -> character.CharacterState.IsWounded) allies
+                            then tick time { model with BattleState = BattleCease (false, time) } // tick for frame 0
+                            elif Seq.forall (fun character -> character.CharacterState.IsWounded) enemies
+                            then tick time { model with BattleState = BattleCease (true, time) } // tick for frame 0
+                            else just model
+                        withSig model (signal + signal2)
+                | None -> just model
 
         and tickNoCommand time model =
             match model.ActionQueue with
@@ -335,11 +366,14 @@ module OmniBattle =
             | AdvanceCharacters ->
                 let model = updateCharacters (fun character -> { character with CharacterState = { character.CharacterState with ActionTime = character.CharacterState.ActionTime + Constants.Battle.ActionTimeInc }}) model
                 just model
-            | AttackCharacter (sourceIndex, targetIndex) ->
+            | AttackCharacter sourceIndex ->
+                let time = World.getTickTime world
+                let model = updateCharacter (fun character -> { character with AnimationState = (CharacterAnimationState.setCycle (Some time) AttackCycle) character.AnimationState }) sourceIndex model
+                just model
+            | DamageCharacter (sourceIndex, targetIndex) ->
                 let time = World.getTickTime world
                 let source = getCharacter sourceIndex model
                 let target = getCharacter targetIndex model
-                let model = updateCharacter (fun character -> { character with AnimationState = (CharacterAnimationState.setCycle (Some time) AttackCycle) character.AnimationState }) sourceIndex model
                 let model =
                     updateCharacter (fun character ->
                         let state = character.CharacterState
@@ -352,13 +386,10 @@ module OmniBattle =
                         { character with CharacterState = { state with HitPoints = hitPoints }})
                         targetIndex
                         model
-                if target.CharacterState.HitPoints = 0 && target.CharacterState.IsAlly
-                then withSig model (Message (ResetCharacter targetIndex))
-                else just model
-            | DamageCharacter characterIndex ->
-                let time = World.getTickTime world
-                let model = updateCharacter (fun character -> { character with AnimationState = (CharacterAnimationState.setCycle (Some time) DamageCycle) character.AnimationState }) characterIndex model
-                just model
+                if target.CharacterState.HitPoints > 0 || target.CharacterState.IsEnemy then
+                    let model = updateCharacter (fun character -> { character with AnimationState = (CharacterAnimationState.setCycle (Some time) DamageCycle) character.AnimationState }) targetIndex model
+                    just model
+                else withSig model (Message (ResetCharacter targetIndex))
             | PoiseCharacter characterIndex ->
                 let time = World.getTickTime world
                 let model =
@@ -390,6 +421,38 @@ module OmniBattle =
                     then { model with Characters = Map.remove characterIndex model.Characters }
                     else model
                 just model
+            | GiveConsumable (consumable, sourceIndex) ->
+                let time = World.getTickTime world
+                let model = updateCharacter (fun character -> { character with AnimationState = (CharacterAnimationState.setCycle (Some time) CastCycle) character.AnimationState }) sourceIndex model
+                let item = Consumable consumable
+                match Map.tryFind item model.Inventory.Items with
+                | Some herbCount when herbCount > 0 ->
+                    let model = { model with Inventory = { model.Inventory with Items = Map.add item (dec herbCount) model.Inventory.Items }}
+                    just model
+                | _ -> just model
+            | TakeConsumable (consumable, targetIndex) ->
+                let time = World.getTickTime world
+                let target = getCharacter targetIndex model
+                let model =
+                    updateCharacter (fun character ->
+                        let state = character.CharacterState
+                        match consumable with
+                        | GreenHerb
+                        | DriedHerb
+                        | RedHerb ->
+                            let cure =
+                                match consumable with
+                                | GreenHerb -> 40
+                                | DriedHerb -> 120
+                                | RedHerb -> 360
+                            let hitPoints = state.HitPoints + cure
+                            { character with CharacterState = { state with HitPoints = hitPoints }})
+                        targetIndex
+                        model
+                if target.CharacterState.HitPoints > 0 || target.CharacterState.IsEnemy then
+                    let model = updateCharacter (fun character -> { character with AnimationState = (CharacterAnimationState.setCycle (Some time) DamageCycle) character.AnimationState }) targetIndex model
+                    just model
+                else withSig model (Message (ResetCharacter targetIndex))
             | Tick ->
                 if World.isTicking world
                 then tick (World.getTickTime world) model
