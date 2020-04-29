@@ -109,7 +109,6 @@ module OmniBattle =
             | None -> model
 
         static let updateCharacter updater characterIndex model =
-            do ignore tryUpdateCharacter // temporarily quiet error about tryUpdateCharacter being unused
             let character = getCharacter characterIndex model
             let character = updater character
             { model with Characters = Map.add characterIndex character model.Characters }
