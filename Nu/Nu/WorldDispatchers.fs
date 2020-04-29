@@ -290,7 +290,10 @@ module EffectFacetModule =
         override this.Update (entity, world) =
             let effect = entity.GetEffect world
             match (entity.GetSelfDestruct world, effect.LifetimeOpt) with
-            | (true, Some lifetime) -> if entity.GetEffectTime world > lifetime then World.destroyEntity entity world else world
+            | (true, Some lifetime) ->
+                if entity.GetEffectTime world = lifetime
+                then World.destroyEntity entity world
+                else world
             | (_, _) -> world
 
         override this.Register (entity, world) =
