@@ -8,7 +8,7 @@ open OmniBlade
 [<AutoOpen>]
 module OmniRingMenu =
 
-    type [<NoComparison>] RingMenuCommand =
+    type RingMenuCommand =
         | ItemCancel
         | ItemSelect of string
         | ArrangeItemButton of Entity * int

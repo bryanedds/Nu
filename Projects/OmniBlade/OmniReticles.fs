@@ -8,7 +8,7 @@ open OmniBlade
 [<AutoOpen>]
 module OmniReticles =
 
-    type [<NoComparison>] ReticlesCommand =
+    type ReticlesCommand =
         | TargetCancel
         | TargetSelect of CharacterIndex
 
