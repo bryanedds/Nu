@@ -254,6 +254,10 @@ type CharacterIndex =
     | AllyIndex of int
     | EnemyIndex of int
 
+type AutoBattle =
+    { Target : CharacterIndex
+      Special : bool }
+
 type CharacterState =
     { CharacterType : CharacterType
       PartyIndex : int
@@ -270,7 +274,8 @@ type CharacterState =
       Statuses : StatusType Set
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
-      Relics : RelicType list }
+      Relics : RelicType list
+      AutoBattleOpt : AutoBattle option }
 
     static member empty =
         { CharacterType = Ally Jinn
@@ -288,7 +293,8 @@ type CharacterState =
           Statuses = Set.empty
           WeaponOpt = None
           ArmorOpt = None
-          Relics = [] } // level is calculated from base experience + added experience
+          Relics = []
+          AutoBattleOpt = None } // level is calculated from base experience + added experience
 
     member this.Name = match this.CharacterType with Ally ally -> scstring ally | Enemy enemy -> scstring enemy
     member this.CharacterIndex = match this.CharacterType with Ally _ -> AllyIndex this.PartyIndex | Enemy _ -> EnemyIndex this.PartyIndex
