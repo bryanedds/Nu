@@ -255,8 +255,8 @@ type CharacterIndex =
     | EnemyIndex of int
 
 type AutoBattle =
-    { Target : CharacterIndex
-      Special : bool }
+    { AutoTarget : CharacterIndex
+      AutoSpecialOpt : SpecialType option }
 
 type CharacterState =
     { CharacterType : CharacterType
@@ -274,8 +274,7 @@ type CharacterState =
       Statuses : StatusType Set
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
-      Relics : RelicType list
-      AutoBattleOpt : AutoBattle option }
+      Relics : RelicType list }
 
     static member empty =
         { CharacterType = Ally Jinn
@@ -293,8 +292,7 @@ type CharacterState =
           Statuses = Set.empty
           WeaponOpt = None
           ArmorOpt = None
-          Relics = []
-          AutoBattleOpt = None } // level is calculated from base experience + added experience
+          Relics = [] } // level is calculated from base experience + added experience
 
     member this.Name = match this.CharacterType with Ally ally -> scstring ally | Enemy enemy -> scstring enemy
     member this.CharacterIndex = match this.CharacterType with Ally _ -> AllyIndex this.PartyIndex | Enemy _ -> EnemyIndex this.PartyIndex
@@ -325,7 +323,7 @@ type CharacterState =
         elif this.ExpPoints < 10000 then 19
         else 20
 
-    member this.ComputeHitPointsMax rom =
+    member this.HitPointsMax rom =
         let intermediate =
             match this.ArmorOpt with
             | Some armor ->
@@ -335,7 +333,7 @@ type CharacterState =
             | None -> 5.0f
         intermediate * single this.Level |> int |> max 1
 
-    member this.ComputeSpecialPointsMax rom =
+    member this.SpecialPointsMax rom =
         let intermediate =
             match this.ArmorOpt with
             | Some armor ->
@@ -345,7 +343,7 @@ type CharacterState =
             | None -> 2.0f
         intermediate * single this.Level |> int |> max 1
 
-    member this.ComputePower rom =
+    member this.Power rom =
         let intermediate =
             match this.WeaponOpt with
             | Some weapon ->
@@ -355,7 +353,7 @@ type CharacterState =
             | None -> 5.0f
         intermediate * single this.Level / 5.0f |> int |> max 1
 
-    member this.ComputeMagic rom =
+    member this.Magic rom =
         let intermediate =
             match this.WeaponOpt with
             | Some weapon ->
@@ -365,7 +363,7 @@ type CharacterState =
             | None -> 5.0f
         intermediate * single this.Level / 5.0f |> int |> max 1
 
-    member this.ComputeShield (rom : Rom) =
+    member this.Shield (rom : Rom) =
         let intermediate =
             match this.Relics with
             | relic :: _ -> // just the first relic for now
@@ -375,11 +373,19 @@ type CharacterState =
             | _ -> 0.0f
         intermediate * single this.Level / 5.0f |> int |> max 0
 
-    static member computeDamage scalar (source : CharacterState) (target : CharacterState) rom =
-        let power = source.ComputePower rom
-        let shield = target.ComputeShield rom
+    static member getDamage scalar (source : CharacterState) (target : CharacterState) rom =
+        let power = source.Power rom
+        let shield = target.Shield rom
         let damage = max 1 (int (Math.Ceiling (double (power - shield))))
         damage * scalar
+
+    static member tryGetSpecialRandom state =
+        let specials = state.Specials
+        if Set.notEmpty specials then
+            let specialIndex = Random().Next specials.Count
+            let special = Seq.item specialIndex specials
+            Some special
+        else None
 
 type PoiseType =
     | Poising
@@ -500,15 +506,17 @@ type [<NoComparison>] CharacterModel =
     { CharacterState : CharacterState
       AnimationState : CharacterAnimationState
       ActionTime : int
+      AutoBattleOpt : AutoBattle option
       InputState : CharacterInputState
       Position : Vector2
       Size : Vector2 }
 
-    member this.Center =
-        this.Position + this.Size * 0.5f
-        
-    member this.Bottom =
-        this.Position + v2 (this.Size.X * 0.5f) 0.0f
+    member this.Center = this.Position + this.Size * 0.5f
+    member this.Bottom = this.Position + v2 (this.Size.X * 0.5f) 0.0f
+    member this.IsEnemy = this.CharacterState.IsEnemy
+    member this.IsAlly = this.CharacterState.IsAlly
+    member this.IsHealthy = this.CharacterState.IsHealthy
+    member this.IsWonded = this.CharacterState.IsWounded
 
     static member setInputState inputState character =
         { character with InputState = inputState }
@@ -518,6 +526,9 @@ type [<NoComparison>] CharacterModel =
 
     static member setActionTime actionTime character =
         { character with ActionTime = actionTime }
+
+    static member setAutoBattleOpt autoBattleOpt character =
+        { character with AutoBattleOpt = autoBattleOpt }
 
     static member changeActionTime delta character =
         CharacterModel.setActionTime (character.ActionTime + delta) character
@@ -532,6 +543,27 @@ type [<NoComparison>] CharacterModel =
         elif character.CharacterState.Charging then Charging
         else Poising
 
+    static member tryGetSpecialRandom character =
+        CharacterState.tryGetSpecialRandom character.CharacterState
+
+    static member readyForAutoBattle (character : CharacterModel) =
+        character.IsEnemy &&
+        character.AutoBattleOpt.IsNone &&
+        character.ActionTime > 222
+
+    static member runAutoBattle getAllyIndexRandom character =
+        let allyIndex = getAllyIndexRandom ()
+        let specialOpt =
+            match Random().Next 4 with
+            | 0 -> CharacterModel.tryGetSpecialRandom character
+            | _ -> None
+        { character with AutoBattleOpt = Some { AutoTarget = allyIndex; AutoSpecialOpt = specialOpt }}
+
+    static member runningSpecialAutoBattle character =
+        match character.AutoBattleOpt with
+        | Some autoBattle -> Option.isSome autoBattle.AutoSpecialOpt
+        | None -> false
+
 type CharacterModels =
     Map<CharacterIndex, CharacterModel>
 
@@ -542,6 +574,22 @@ module CharacterModels =
 
     let getEnemies (characters : CharacterModels) =
         characters |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
+
+    let getAllyIndices (characters : CharacterModels) =
+        characters |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map fst |> Seq.toList
+
+    let getEnemyIndices (characters : CharacterModels) =
+        characters |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Seq.map fst |> Seq.toList
+
+    let getAllyIndexRandom characters =
+        let allyIndices = getAllyIndices characters
+        let allyIndex = List.item (Random().Next allyIndices.Length) allyIndices
+        allyIndex
+
+    let getEnemyIndexRagdom characters =
+        let enemyIndices = getEnemyIndices characters
+        let enemyIndex = List.item (Random().Next enemyIndices.Length) enemyIndices
+        enemyIndex
 
     let getAlliesHealthy (characters : CharacterModels) =
         getAllies characters |>
@@ -592,6 +640,54 @@ type [<NoComparison>] BattleModel =
     { BattleState : BattleState
       Characters : Map<CharacterIndex, CharacterModel>
       CurrentCommandOpt : CurrentCommand option
-      ActionQueue : ActionCommand Queue
+      ActionCommands : ActionCommand Queue
       Inventory : Inventory
       Gold : int }
+
+    static member getAllies model =
+        CharacterModels.getAllies model.Characters
+
+    static member getEnemies model =
+        CharacterModels.getEnemies model.Characters
+
+    static member getAllyIndices model =
+        CharacterModels.getAllyIndices model.Characters
+
+    static member getEnemyIndices model =
+        CharacterModels.getEnemyIndices model.Characters
+
+    static member getAllyIndexRandom model =
+        CharacterModels.getAllyIndexRandom model.Characters
+
+    static member updateCharactersIf predicate updater model =
+        { model with BattleModel.Characters = Map.map (fun index character -> if predicate index then updater character else character) model.Characters }
+
+    static member updateCharacters updater model =
+        BattleModel.updateCharactersIf tautology updater model
+
+    static member updateAllies updater model =
+        BattleModel.updateCharactersIf (function AllyIndex _ -> true | _ -> false) updater model
+
+    static member updateEnemies updater model =
+        BattleModel.updateCharactersIf (function EnemyIndex _ -> true | _ -> false) updater model
+
+    static member tryGetCharacter characterIndex model =
+        Map.tryFind characterIndex model.Characters
+
+    static member getCharacter characterIndex model =
+        BattleModel.tryGetCharacter characterIndex model |> Option.get
+
+    static member tryUpdateCharacter updater characterIndex model =
+        match BattleModel.tryGetCharacter characterIndex model with
+        | Some character ->
+            let character = updater character
+            { model with Characters = Map.add characterIndex character model.Characters }
+        | None -> model
+
+    static member updateCharacter updater characterIndex model =
+        let character = BattleModel.getCharacter characterIndex model
+        let character = updater character
+        { model with Characters = Map.add characterIndex character model.Characters }
+
+    static member conjActionCommand command model =
+        { model with ActionCommands = Queue.conj command model.ActionCommands }
