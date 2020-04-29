@@ -47,19 +47,22 @@ module OmniBattle =
     type BattleDispatcher () =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
             (let allies =
-                [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ActionTime = 600; ExpPoints = 0; HitPoints = 15; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.singleton JumpSlash; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
+                [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 15; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.singleton JumpSlash; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = asset "Battle" "Jinn"; AnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
+                   ActionTime = 600
                    InputState = NoInput
                    Position = v2 -224.0f -168.0f
                    Size = v2 160.0f 160.0f }]
              let enemies =
-                [{ CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 0; ActionTime = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.empty; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
+                [{ CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.empty; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = asset "Battle" "Goblin"; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
+                   ActionTime = 0
                    InputState = NoInput
                    Position = v2 0.0f 64.0f
                    Size = v2 160.0f 160.0f }
-                 { CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 1; ActionTime = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.empty; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
+                 { CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 1; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.empty; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = asset "Battle" "Goblin"; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
+                   ActionTime = 0
                    InputState = NoInput
                    Position = v2 176.0f -152.0f
                    Size = v2 160.0f 160.0f }]
@@ -266,7 +269,7 @@ module OmniBattle =
             | Queue.Nil ->
                 let model =
                     List.fold (fun model ally ->
-                        if ally.CharacterState.ActionTime = Constants.Battle.ActionTime then
+                        if ally.ActionTime = Constants.Battle.ActionTime then
                             updateCharacter
                                 (fun character ->
                                     let characterState = character.CharacterState
@@ -276,8 +279,7 @@ module OmniBattle =
                                         else characterState
                                     let characterState = { characterState with Defending = false }
                                     let animationState = { character.AnimationState with AnimationCycle = PoiseCycle Poising }
-                                    let inputState = RegularMenu
-                                    { character with CharacterState = characterState; AnimationState = animationState; InputState = inputState })
+                                    { character with CharacterState = characterState; AnimationState = animationState; InputState = RegularMenu })
                                 ally.CharacterState.CharacterIndex
                                 model
                         else model)
@@ -285,7 +287,7 @@ module OmniBattle =
                         (getAllies model)
                 let (enemySignalsRev, model) =
                     List.fold (fun (commands, model) enemy ->
-                        if enemy.CharacterState.ActionTime = Constants.Battle.ActionTime then
+                        if enemy.ActionTime = Constants.Battle.ActionTime then
                             let enemyIndex = EnemyIndex enemy.CharacterState.PartyIndex
                             let allies = getAllies model
                             let allyIndex = (Random ()).Next allies.Length
@@ -330,40 +332,38 @@ module OmniBattle =
                 let model =
                     match item with
                     | "Attack" ->
-                        updateCharacter (fun character -> { character with InputState = AimReticles (item, EnemyAim) }) characterIndex model
+                        updateCharacter (CharacterModel.setInputState (AimReticles (item, EnemyAim))) characterIndex model
                     | "Special" ->
-                        updateCharacter (fun character -> { character with InputState = SpecialMenu }) characterIndex model
+                        updateCharacter (CharacterModel.setInputState SpecialMenu) characterIndex model
                     | "Item" ->
-                        updateCharacter (fun character -> { character with InputState = ItemMenu }) characterIndex model
+                        updateCharacter (CharacterModel.setInputState ItemMenu) characterIndex model
                     | "Defend" ->
                         updateCharacter
                             (fun character ->
                                 let characterState = character.CharacterState
-                                let characterState = { characterState with ActionTime = 0 }
                                 let characterState = { characterState with Defending = true }
                                 let characterState = { characterState with CounterBuff = characterState.CounterBuff + Constants.Battle.DefendingCounterBuff }
                                 let animationState = { character.AnimationState with AnimationCycle = PoiseCycle Defending }
-                                let inputState = NoInput
-                                { character with CharacterState = characterState; AnimationState = animationState; InputState = inputState })
+                                { character with CharacterState = characterState; AnimationState = animationState; ActionTime = 0; InputState = NoInput })
                             characterIndex
                             model
                     | _ ->
                         failwithumf ()
                 just model
             | RegularItemCancel characterIndex ->
-                let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+                let model = updateCharacter (CharacterModel.setInputState RegularMenu) characterIndex model
                 just model
             | SpecialItemSelect (characterIndex, item) ->
-                let model = updateCharacter (fun character -> { character with InputState = AimReticles (item, EnemyAim) }) characterIndex model
+                let model = updateCharacter (CharacterModel.setInputState (AimReticles (item, EnemyAim))) characterIndex model
                 just model
             | SpecialItemCancel characterIndex ->
-                let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+                let model = updateCharacter (CharacterModel.setInputState RegularMenu) characterIndex model
                 just model
             | ItemItemSelect (characterIndex, item) ->
-                let model = updateCharacter (fun character -> { character with InputState = AimReticles (item, AllyAim true) }) characterIndex model
+                let model = updateCharacter (CharacterModel.setInputState (AimReticles (item, AllyAim true))) characterIndex model
                 just model
             | ItemItemCancel characterIndex ->
-                let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+                let model = updateCharacter (CharacterModel.setInputState RegularMenu) characterIndex model
                 just model
             | ReticlesSelect (targetIndex, allyIndex) ->
                 match model.BattleState with
@@ -382,11 +382,11 @@ module OmniBattle =
                     | _ -> just model
                 | _ -> just model
             | ReticlesCancel characterIndex ->
-                let model = updateCharacter (fun character -> { character with InputState = RegularMenu }) characterIndex model
+                let model = updateCharacter (CharacterModel.setInputState RegularMenu) characterIndex model
                 just model
             | ReadyCharacters ->
                 let time = World.getTickTime world
-                let model = updateCharacters (fun character -> { character with AnimationState = CharacterAnimationState.setCycle (Some time) ReadyCycle character.AnimationState }) model
+                let model = updateCharacters (CharacterModel.setAnimationCycle time ReadyCycle) model
                 just model
             | PoiseCharacters ->
                 let time = World.getTickTime world
@@ -394,23 +394,23 @@ module OmniBattle =
                     updateCharacters
                         (fun character ->
                             let poiseType = getCharacterPoiseType character
-                            let animationState = CharacterAnimationState.setCycle (Some time) (PoiseCycle poiseType) character.AnimationState
-                            { character with AnimationState = animationState })
+                            let character = CharacterModel.setAnimationCycle time (PoiseCycle poiseType) character
+                            character)
                         model
                 just model
             | CelebrateCharacters outcome ->
                 let time = World.getTickTime world
                 let model =
                     if outcome
-                    then updateAllies (fun character -> { character with AnimationState = CharacterAnimationState.setCycle (Some time) CelebrateCycle character.AnimationState }) model
-                    else updateEnemies (fun character -> { character with AnimationState = CharacterAnimationState.setCycle (Some time) CelebrateCycle character.AnimationState }) model
+                    then updateAllies (CharacterModel.setAnimationCycle time CelebrateCycle) model
+                    else updateEnemies (CharacterModel.setAnimationCycle time CelebrateCycle) model
                 just model
             | AdvanceCharacters ->
-                let model = updateCharacters (fun character -> { character with CharacterState = { character.CharacterState with ActionTime = character.CharacterState.ActionTime + Constants.Battle.ActionTimeInc }}) model
+                let model = updateCharacters (CharacterModel.incActionTime Constants.Battle.ActionTimeInc) model
                 just model
             | AttackCharacter sourceIndex ->
                 let time = World.getTickTime world
-                let model = updateCharacter (fun character -> { character with AnimationState = CharacterAnimationState.setCycle (Some time) AttackCycle character.AnimationState }) sourceIndex model
+                let model = updateCharacter (CharacterModel.setAnimationCycle time AttackCycle) sourceIndex model
                 just model
             | DamageCharacter (sourceIndex, targetIndex, specialTypeOpt) ->
                 let time = World.getTickTime world
@@ -443,12 +443,12 @@ module OmniBattle =
                             targetIndex
                             model
                 if target.CharacterState.HitPoints > 0 || target.CharacterState.IsEnemy then
-                    let model = updateCharacter (fun character -> { character with AnimationState = CharacterAnimationState.setCycle (Some time) DamageCycle character.AnimationState }) targetIndex model
+                    let model = updateCharacter (CharacterModel.setAnimationCycle time DamageCycle) targetIndex model
                     just model
                 else withSig model (Message (ResetCharacter targetIndex))
             | ChargeCharacter sourceIndex ->
                 let time = World.getTickTime world
-                let model = updateCharacter (fun character -> { character with AnimationState = CharacterAnimationState.setCycle (Some time) (PoiseCycle Charging) character.AnimationState }) sourceIndex model
+                let model = updateCharacter (CharacterModel.setAnimationCycle time (PoiseCycle Charging)) sourceIndex model
                 just model
             | PoiseCharacter characterIndex ->
                 let time = World.getTickTime world
@@ -456,22 +456,22 @@ module OmniBattle =
                     updateCharacter
                         (fun character ->
                             let poiseType = getCharacterPoiseType character
-                            let animationState = CharacterAnimationState.setCycle (Some time) (PoiseCycle poiseType) character.AnimationState
-                            { character with AnimationState = animationState })
+                            let character = CharacterModel.setAnimationCycle time (PoiseCycle poiseType) character
+                            character)
                         characterIndex
                         model
                 just model
             | WoundCharacter characterIndex ->
                 let time = World.getTickTime world
                 let model = updateCharacter (fun character -> if character.CharacterState.IsAlly then { character with InputState = NoInput } else character) characterIndex model
-                let model = updateCharacter (fun character -> { character with AnimationState = CharacterAnimationState.setCycle (Some time) WoundCycle character.AnimationState }) characterIndex model
+                let model = updateCharacter (CharacterModel.setAnimationCycle time WoundCycle) characterIndex model
                 just model
             | ResetCharacter characterIndex ->
                 let character = getCharacter characterIndex model
-                let model = updateCharacter (fun character -> { character with CharacterState = { character.CharacterState with ActionTime = 0 }}) characterIndex model
+                let model = updateCharacter (CharacterModel.setActionTime 0) characterIndex model
                 let model =
                     if character.CharacterState.IsAlly
-                    then updateCharacter (fun character -> { character with InputState = NoInput }) characterIndex model
+                    then updateCharacter (CharacterModel.setInputState NoInput) characterIndex model
                     else model
                 just model
             | DestroyCharacter characterIndex ->
@@ -483,8 +483,9 @@ module OmniBattle =
                 just model
             | GiveConsumable (consumable, sourceIndex) ->
                 let time = World.getTickTime world
-                let model = updateCharacter (fun character -> { character with AnimationState = CharacterAnimationState.setCycle (Some time) CastCycle character.AnimationState }) sourceIndex model
+                let model = updateCharacter (CharacterModel.setAnimationCycle time CastCycle) sourceIndex model
                 let item = Consumable consumable
+                // TODO: extract this out to Intventory type
                 match Map.tryFind item model.Inventory.Items with
                 | Some itemCount when itemCount > 1 ->
                     let model = { model with Inventory = { model.Inventory with Items = Map.add item (dec itemCount) model.Inventory.Items }}
@@ -511,7 +512,7 @@ module OmniBattle =
                         targetIndex
                         model
                 if target.CharacterState.HitPoints > 0 || target.CharacterState.IsEnemy then
-                    let model = updateCharacter (fun character -> { character with AnimationState = CharacterAnimationState.setCycle (Some time) SpinCycle character.AnimationState }) targetIndex model
+                    let model = updateCharacter (CharacterModel.setAnimationCycle time SpinCycle) targetIndex model
                     just model
                 else withSig model (Message (ResetCharacter targetIndex))
             | Tick ->
@@ -561,7 +562,7 @@ module OmniBattle =
                         [Entity.Position <== ally --> fun ally -> ally.Center + Constants.Battle.CharacterCenterOffset
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> ally.InputState = RegularMenu
-                         Entity.RingMenuModel == { Items = ["Attack"; "Defend"; "Special"; "Item"]; ItemCancelOpt = None }
+                         Entity.RingMenuModel == { Items = ["Attack"; "Defend"; "Item"; "Special"]; ItemCancelOpt = None }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (RegularItemCancel allyIndex)]
                      Content.entity<RingMenuDispatcher> "SpecialMenu"
