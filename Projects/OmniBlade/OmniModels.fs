@@ -368,6 +368,12 @@ type CharacterState =
             | _ -> 0.0f
         intermediate * single this.Level / 5.0f |> int |> max 0
 
+    static member computeDamage scalar (source : CharacterState) (target : CharacterState) rom =
+        let power = source.ComputePower rom
+        let shield = target.ComputeShield rom
+        let damage = max 1 (int (Math.Ceiling (double (power - shield))))
+        damage * scalar
+
 type PoiseType =
     | Poising
     | Defending
@@ -493,6 +499,9 @@ type [<NoComparison>] CharacterModel =
 
     member this.Center =
         this.Position + this.Size * 0.5f
+        
+    member this.Bottom =
+        this.Position + v2 (this.Size.X * 0.5f) 0.0f
 
     static member setInputState inputState character =
         { character with InputState = inputState }
@@ -503,9 +512,14 @@ type [<NoComparison>] CharacterModel =
     static member setActionTime actionTime character =
         { character with ActionTime = actionTime }
 
-    static member incActionTime translation character =
-        CharacterModel.setActionTime (character.ActionTime + translation) character
-        
+    static member changeActionTime delta character =
+        CharacterModel.setActionTime (character.ActionTime + delta) character
+
+    static member changeHitPoints delta character =
+        let hitPoints = character.CharacterState.HitPoints
+        let hitPoints =  max 0 (hitPoints + delta)
+        { character with CharacterState = { character.CharacterState with HitPoints = hitPoints }}
+
     static member getPoiseType character =
         if character.CharacterState.Defending then Defending
         elif character.CharacterState.Charging then Charging

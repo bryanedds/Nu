@@ -25,3 +25,4 @@ module Simulants =
     let Battle = Default.Screen
     let BattleHud = Battle / "Hud"
     let BattleBack = BattleHud / "Back"
+    let BattleScene = Battle / "Scene"

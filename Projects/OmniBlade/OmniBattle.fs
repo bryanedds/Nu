@@ -35,6 +35,7 @@ module OmniBattle =
 
     type [<NoComparison>] BattleCommand =
         | FadeSong
+        | DisplayDamage of CharacterIndex * int
         | InitializeBattle
         | FinalizeBattle
 
@@ -403,7 +404,7 @@ module OmniBattle =
                     else updateEnemies (CharacterModel.setAnimationCycle time CelebrateCycle) model
                 just model
             | AdvanceCharacters ->
-                let model = updateCharacters (CharacterModel.incActionTime Constants.Battle.ActionTimeInc) model
+                let model = updateCharacters (CharacterModel.changeActionTime Constants.Battle.ActionTimeInc) model
                 just model
             | AttackCharacter sourceIndex ->
                 let time = World.getTickTime world
@@ -411,38 +412,23 @@ module OmniBattle =
                 just model
             | DamageCharacter (sourceIndex, targetIndex, specialTypeOpt) ->
                 let time = World.getTickTime world
+                let rom = Simulants.Game.GetModel world
                 let source = getCharacter sourceIndex model
                 let target = getCharacter targetIndex model
-                let model =
+                let (damage, model) =
                     match specialTypeOpt with
                     | None ->
-                        updateCharacter (fun character ->
-                            let state = character.CharacterState
-                            let rom = Simulants.Game.GetModel world
-                            let power = source.CharacterState.ComputePower rom
-                            let shield = state.ComputeShield rom
-                            let damage = max 0 (int (Math.Ceiling (double (power - shield))))
-                            let hitPoints = state.HitPoints
-                            let hitPoints =  max 0 (hitPoints - damage)
-                            { character with CharacterState = { state with HitPoints = hitPoints }})
-                            targetIndex
-                            model
+                        let damage = CharacterState.computeDamage 1 source.CharacterState target.CharacterState rom
+                        let model = updateCharacter (CharacterModel.changeHitPoints -damage) targetIndex model
+                        (damage, model)
                     | Some JumpSlash ->
-                        updateCharacter (fun character ->
-                            let state = character.CharacterState
-                            let rom = Simulants.Game.GetModel world
-                            let power = source.CharacterState.ComputePower rom * 3 // TODO: pull from rom data
-                            let shield = state.ComputeShield rom
-                            let damage = max 0 (int (Math.Ceiling (double (power - shield))))
-                            let hitPoints = state.HitPoints
-                            let hitPoints =  max 0 (hitPoints - damage)
-                            { character with CharacterState = { state with HitPoints = hitPoints }})
-                            targetIndex
-                            model
+                        let damage = CharacterState.computeDamage 2 source.CharacterState target.CharacterState rom // TODO: pull scalar from rom
+                        let model = updateCharacter (CharacterModel.changeHitPoints -damage) targetIndex model
+                        (damage, model)
                 if target.CharacterState.HitPoints > 0 || target.CharacterState.IsEnemy then
                     let model = updateCharacter (CharacterModel.setAnimationCycle time DamageCycle) targetIndex model
-                    just model
-                else withSig model (Message (ResetCharacter targetIndex))
+                    withCmd model (DisplayDamage (targetIndex, damage))
+                else withMsg model (ResetCharacter targetIndex)
             | ChargeCharacter sourceIndex ->
                 let time = World.getTickTime world
                 let model = updateCharacter (CharacterModel.setAnimationCycle time (PoiseCycle Charging)) sourceIndex model
@@ -463,7 +449,10 @@ module OmniBattle =
                 let model =
                     updateCharacter
                         (fun character ->
-                            let character = if character.CharacterState.IsAlly then CharacterModel.setInputState NoInput character else character
+                            let character =
+                                if character.CharacterState.IsAlly
+                                then CharacterModel.setInputState NoInput character
+                                else character
                             let character = CharacterModel.setAnimationCycle time WoundCycle character
                             character)
                         characterIndex
@@ -521,6 +510,31 @@ module OmniBattle =
             | FadeSong ->
                 let world = World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
                 just world
+            | DisplayDamage (targetIndex, damage) ->
+                match tryGetCharacter targetIndex model with
+                | Some target ->
+                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
+                    let effect =
+                        { EffectName = ""
+                          LifetimeOpt = Some 59L
+                          Definitions = Map.empty
+                          Content =
+                            Effects.TextSprite
+                                (Effects.Resource (Assets.DefaultPackage, Assets.DefaultFont),
+                                 [|Effects.Text (scstring damage)
+                                   Effects.Color
+                                    (Effects.Set, Effects.Linear, Effects.Once,
+                                     [|{ TweenValue = v4One; TweenLength = 30L }
+                                       { TweenValue = v4One; TweenLength = 30L }
+                                       { TweenValue = v4 1.0f 1.0f 1.0f 0.0f; TweenLength = 0L }|])|],
+                                 Effects.Nil) }
+                    let world = entity.SetEffect effect world
+                    let world = entity.SetSize v2Zero world
+                    let world = entity.SetPosition target.Bottom world
+                    let world = entity.SetDepth 100.0f world // TODO: derive this from something understandable
+                    let world = entity.SetSelfDestruct true world
+                    just world
+                | None -> just world
             | InitializeBattle ->
                 let world = World.hintRenderPackageUse Assets.BattlePackage world
                 let world = World.hintAudioPackageUse Assets.BattlePackage world
@@ -531,10 +545,9 @@ module OmniBattle =
                 let world = World.hintRenderPackageDisuse Assets.BattlePackage world
                 just (World.hintAudioPackageDisuse Assets.BattlePackage world)
 
-        member private this.SceneContent (model : Lens<BattleModel, World>, screen : Screen, _ : World) =
-            let scene = screen / "Scene"
-            let background = scene / "Background"
-            Content.layer scene.Name []
+        member private this.SceneContent (model : Lens<BattleModel, World>, _ : Screen, _ : World) =
+            let background = Simulants.BattleScene / "Background"
+            Content.layer Simulants.BattleScene.Name []
                 [Content.label background.Name
                     [background.Position == v2 -480.0f -512.0f
                      background.Size == v2 1024.0f 1024.0f

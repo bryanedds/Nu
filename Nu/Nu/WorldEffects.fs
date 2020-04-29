@@ -40,6 +40,7 @@ module Effects =
           Depth : single
           Offset : Vector2
           Color : Vector4
+          Text : string
           Volume : single
           Enabled : bool }
 
@@ -116,6 +117,7 @@ module Effects =
         | Rotation of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Depth of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Color of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
+        | Text of string
         | Volume of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Bone // TODO: implement bone aspect
         | Expand of string * Argument array
@@ -124,6 +126,7 @@ module Effects =
         | Nil // first to make default value when missing
         | StaticSprite of Resource * Aspect array * Content
         | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect array * Content
+        | TextSprite of Resource * Aspect array * Content
         | SoundEffect of Resource * Aspect array * Content
         | Mount of Shift * Aspect array * Content
         | Repeat of Shift * Repetition * Aspect array * Content
@@ -152,7 +155,7 @@ module Effects =
             "Shift " +
             "Expand Resource " +
             "Expand Enabled Position Translation Offset Size Rotation Depth Color Volume Bone " +
-            "Expand StaticSprite AnimatedSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
+            "Expand StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
             "View",
             "", "", "", "",
             Constants.PrettyPrinter.DefaultThresholdMin,
@@ -399,6 +402,8 @@ module EffectSystemModule =
                     let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Volume tweened applicator
                     { slice with Volume = applied }
                 else slice
+            | Text text ->
+                { slice with Text = text }
             | Bone ->
                 slice
             | Aspect.Expand (definitionName, _) ->
@@ -497,6 +502,38 @@ module EffectSystemModule =
             // build implicitly mounted content
             evalContent content slice effectSystem
 
+        and private evalTextSprite resource aspects content slice effectSystem =
+
+            // pull font from resource
+            let font = evalResource resource effectSystem
+
+            // eval aspects
+            let slice = evalAspects aspects slice effectSystem
+
+            // build sprite views
+            let effectSystem =
+                if slice.Enabled then
+                    let spriteView =
+                        Render
+                            (LayerableDescriptor
+                                { Depth = slice.Depth
+                                  AssetTag = font
+                                  PositionY = slice.Position.Y
+                                  LayeredDescriptor =
+                                    TextDescriptor 
+                                        { Position = slice.Position
+                                          Size = slice.Size
+                                          ViewType = effectSystem.ViewType
+                                          Text = slice.Text
+                                          Font = AssetTag.specialize<Font> font
+                                          Color = slice.Color
+                                          Justification = Justified (JustifyCenter, JustifyMiddle) }})
+                    addView spriteView effectSystem
+                else effectSystem
+
+            // build implicitly mounted content
+            evalContent content slice effectSystem
+
         and private evalSoundEffect resource aspects content slice effectSystem =
 
             // pull sound from resource
@@ -583,6 +620,8 @@ module EffectSystemModule =
                 evalStaticSprite resource aspects content slice effectSystem
             | AnimatedSprite (resource, celSize, celRun, celCount, delay, aspects, content) ->
                 evalAnimatedSprite resource celSize celRun celCount delay aspects content slice effectSystem
+            | TextSprite (resource, aspects, content) ->
+                evalTextSprite resource aspects content slice effectSystem
             | SoundEffect (resource, aspects, content) ->
                 evalSoundEffect resource aspects content slice effectSystem
             | Mount (Shift shift, aspects, content) ->

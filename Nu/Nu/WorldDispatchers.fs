@@ -266,6 +266,7 @@ module EffectFacetModule =
                       Effects.Offset = Vector2 0.5f
                       Effects.Color = Vector4.One
                       Effects.Enabled = true
+                      Effects.Text = ""
                       Effects.Volume = 1.0f }
                 let effectHistory = entity.GetEffectHistory world
                 let effectEnv = entity.GetEffectDefinitions world
@@ -394,7 +395,7 @@ module TextFacetModule =
 
         static member Properties =
             [define Entity.Text ""
-             define Entity.Font (AssetTag.make<Font> Assets.DefaultPackage "Font")
+             define Entity.Font (AssetTag.make<Font> Assets.DefaultPackage Assets.DefaultFont)
              define Entity.Margins Vector2.Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
              define Entity.Color (Vector4 (0.0f, 0.0f, 0.0f, 1.0f))]
@@ -653,7 +654,7 @@ module TileMapFacetModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackage "TileMap")
+             define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackage Assets.DefaultTileMap)
              define Entity.Parallax 0.0f]
 
         override this.RegisterPhysics (tileMap, world) =
@@ -1884,7 +1885,7 @@ module TileMapDispatcherModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackage "TileMap")
+             define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackage Assets.DefaultTileMap)
              define Entity.Parallax 0.0f]
 
 [<AutoOpen>]
