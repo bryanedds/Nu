@@ -114,11 +114,6 @@ module OmniBattle =
             let character = updater character
             { model with Characters = Map.add characterIndex character model.Characters }
 
-        static let getCharacterPoiseType character =
-            if character.CharacterState.Defending then Defending
-            elif character.CharacterState.Charging then Charging
-            else Poising
-
         static let tickAttack sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
             let source = getCharacter sourceIndex model
             match targetIndexOpt with
@@ -278,8 +273,9 @@ module OmniBattle =
                                         then { characterState with CounterBuff = max 0.0f (characterState.CounterBuff - Constants.Battle.DefendingCounterBuff) }
                                         else characterState
                                     let characterState = { characterState with Defending = false }
-                                    let animationState = { character.AnimationState with AnimationCycle = PoiseCycle Poising }
-                                    { character with CharacterState = characterState; AnimationState = animationState; InputState = RegularMenu })
+                                    let character = { character with CharacterState = characterState; InputState = RegularMenu }
+                                    let character = CharacterModel.setAnimationCycle time (PoiseCycle Poising) character
+                                    character)
                                 ally.CharacterState.CharacterIndex
                                 model
                         else model)
@@ -340,11 +336,13 @@ module OmniBattle =
                     | "Defend" ->
                         updateCharacter
                             (fun character ->
+                                let time = World.getTickTime world
                                 let characterState = character.CharacterState
                                 let characterState = { characterState with Defending = true }
                                 let characterState = { characterState with CounterBuff = characterState.CounterBuff + Constants.Battle.DefendingCounterBuff }
-                                let animationState = { character.AnimationState with AnimationCycle = PoiseCycle Defending }
-                                { character with CharacterState = characterState; AnimationState = animationState; ActionTime = 0; InputState = NoInput })
+                                let character = { character with CharacterState = characterState; ActionTime = 0; InputState = NoInput }
+                                let character = CharacterModel.setAnimationCycle time (PoiseCycle Defending) character
+                                character)
                             characterIndex
                             model
                     | _ ->
@@ -393,7 +391,7 @@ module OmniBattle =
                 let model =
                     updateCharacters
                         (fun character ->
-                            let poiseType = getCharacterPoiseType character
+                            let poiseType = CharacterModel.getPoiseType character
                             let character = CharacterModel.setAnimationCycle time (PoiseCycle poiseType) character
                             character)
                         model
@@ -455,7 +453,7 @@ module OmniBattle =
                 let model =
                     updateCharacter
                         (fun character ->
-                            let poiseType = getCharacterPoiseType character
+                            let poiseType = CharacterModel.getPoiseType character
                             let character = CharacterModel.setAnimationCycle time (PoiseCycle poiseType) character
                             character)
                         characterIndex
@@ -463,8 +461,14 @@ module OmniBattle =
                 just model
             | WoundCharacter characterIndex ->
                 let time = World.getTickTime world
-                let model = updateCharacter (fun character -> if character.CharacterState.IsAlly then { character with InputState = NoInput } else character) characterIndex model
-                let model = updateCharacter (CharacterModel.setAnimationCycle time WoundCycle) characterIndex model
+                let model =
+                    updateCharacter
+                        (fun character ->
+                            let character = if character.CharacterState.IsAlly then CharacterModel.setInputState NoInput character else character
+                            let character = CharacterModel.setAnimationCycle time WoundCycle character
+                            character)
+                        characterIndex
+                        model
                 just model
             | ResetCharacter characterIndex ->
                 let character = getCharacter characterIndex model
@@ -485,15 +489,8 @@ module OmniBattle =
                 let time = World.getTickTime world
                 let model = updateCharacter (CharacterModel.setAnimationCycle time CastCycle) sourceIndex model
                 let item = Consumable consumable
-                // TODO: extract this out to Intventory type
-                match Map.tryFind item model.Inventory.Items with
-                | Some itemCount when itemCount > 1 ->
-                    let model = { model with Inventory = { model.Inventory with Items = Map.add item (dec itemCount) model.Inventory.Items }}
-                    just model
-                | Some itemCount when itemCount = 1 ->
-                    let model = { model with Inventory = { model.Inventory with Items = Map.remove item  model.Inventory.Items }}
-                    just model
-                | _ -> just model
+                let model = { model with Inventory = Inventory.removeItem item model.Inventory }
+                just model
             | TakeConsumable (consumable, targetIndex) ->
                 let time = World.getTickTime world
                 let target = getCharacter targetIndex model
