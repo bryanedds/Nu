@@ -35,7 +35,7 @@ module OmniBattle =
 
     type [<NoComparison>] BattleCommand =
         | FadeSong
-        | DisplayDamage of CharacterIndex * int
+        | DisplayHitPointsChange of CharacterIndex * int
         | InitializeBattle
         | FinalizeBattle
 
@@ -427,7 +427,7 @@ module OmniBattle =
                         (damage, model)
                 if target.CharacterState.HitPoints > 0 || target.CharacterState.IsEnemy then
                     let model = updateCharacter (CharacterModel.setAnimationCycle time DamageCycle) targetIndex model
-                    withCmd model (DisplayDamage (targetIndex, damage))
+                    withCmd model (DisplayHitPointsChange (targetIndex, -damage))
                 else withMsg model (ResetCharacter targetIndex)
             | ChargeCharacter sourceIndex ->
                 let time = World.getTickTime world
@@ -481,25 +481,13 @@ module OmniBattle =
                 just model
             | TakeConsumable (consumable, targetIndex) ->
                 let time = World.getTickTime world
-                let target = getCharacter targetIndex model
-                let model =
-                    updateCharacter (fun character ->
-                        let state = character.CharacterState
-                        match consumable with
-                        | GreenHerb
-                        | RedHerb ->
-                            let cure =
-                                match consumable with
-                                | GreenHerb -> 100 // TODO: pull from rom data
-                                | RedHerb -> 500 // TODO: pull from rom data
-                            let hitPoints = state.HitPoints + cure
-                            { character with CharacterState = { state with HitPoints = hitPoints }})
-                        targetIndex
-                        model
-                if target.CharacterState.HitPoints > 0 || target.CharacterState.IsEnemy then
-                    let model = updateCharacter (CharacterModel.setAnimationCycle time SpinCycle) targetIndex model
-                    just model
-                else withSig model (Message (ResetCharacter targetIndex))
+                let healing =
+                    match consumable with
+                    | GreenHerb -> 100 // TODO: pull from rom data
+                    | RedHerb -> 500 // TODO: pull from rom data
+                let model = updateCharacter (CharacterModel.changeHitPoints healing) targetIndex model
+                let model = updateCharacter (CharacterModel.setAnimationCycle time SpinCycle) targetIndex model
+                withCmd model (DisplayHitPointsChange (targetIndex, healing))
             | Tick ->
                 if World.isTicking world
                 then tick (World.getTickTime world) model
@@ -510,10 +498,16 @@ module OmniBattle =
             | FadeSong ->
                 let world = World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
                 just world
-            | DisplayDamage (targetIndex, damage) ->
+            | DisplayHitPointsChange (targetIndex, delta) ->
                 match tryGetCharacter targetIndex model with
                 | Some target ->
                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
+                    let colorOpaque =
+                        if delta < 0
+                        then v4 1.0f 1.0f 1.0f 1.0f
+                        else v4 0.0f 1.0f 1.0f 1.0f
+                    let colorTransparent =
+                        colorOpaque.WithW 0.0f
                     let effect =
                         { EffectName = ""
                           LifetimeOpt = Some 60L
@@ -521,12 +515,12 @@ module OmniBattle =
                           Content =
                             Effects.TextSprite
                                 (Effects.Resource (Assets.DefaultPackage, Assets.DefaultFont),
-                                 [|Effects.Text (scstring damage)
+                                 [|Effects.Text (scstring (abs delta))
                                    Effects.Color
                                     (Effects.Set, Effects.Linear, Effects.Once,
-                                     [|{ TweenValue = v4One; TweenLength = 30L }
-                                       { TweenValue = v4One; TweenLength = 30L }
-                                       { TweenValue = v4 1.0f 1.0f 1.0f 0.0f; TweenLength = 0L }|])|],
+                                     [|{ TweenValue = colorOpaque; TweenLength = 30L }
+                                       { TweenValue = colorOpaque; TweenLength = 30L }
+                                       { TweenValue = colorTransparent; TweenLength = 0L }|])|],
                                  Effects.Nil) }
                     let world = entity.SetEffect effect world
                     let world = entity.SetSize v2Zero world
