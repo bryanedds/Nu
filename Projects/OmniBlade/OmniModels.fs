@@ -243,7 +243,6 @@ type CharacterIndex =
 type CharacterState =
     { CharacterType : CharacterType
       PartyIndex : int
-      ActionTime : int
       ExpPoints : int
       HitPoints : int
       SpecialPoints : int
@@ -262,7 +261,6 @@ type CharacterState =
     static member empty =
         { CharacterType = Ally Jinn
           PartyIndex = 0
-          ActionTime = 0
           ExpPoints = 0
           HitPoints = 10 // note this is an arbitrary number as hp max is calculated
           SpecialPoints = 1 // sp max is calculated
@@ -475,12 +473,25 @@ type CharacterInputState =
 type [<NoComparison>] CharacterModel =
     { CharacterState : CharacterState
       AnimationState : CharacterAnimationState
+      ActionTime : int
       InputState : CharacterInputState
       Position : Vector2
       Size : Vector2 }
 
     member this.Center =
         this.Position + this.Size * 0.5f
+
+    static member setInputState inputState character =
+        { character with InputState = inputState }
+
+    static member setAnimationCycle time cycle character =
+        { character with AnimationState = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState }
+
+    static member setActionTime actionTime character =
+        { character with ActionTime = actionTime }
+
+    static member incActionTime translation character =
+        CharacterModel.setActionTime (character.ActionTime + translation) character
 
 type CharacterModels =
     Map<CharacterIndex, CharacterModel>
