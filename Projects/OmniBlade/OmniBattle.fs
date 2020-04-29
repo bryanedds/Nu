@@ -516,7 +516,7 @@ module OmniBattle =
                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
                     let effect =
                         { EffectName = ""
-                          LifetimeOpt = Some 59L
+                          LifetimeOpt = Some 60L
                           Definitions = Map.empty
                           Content =
                             Effects.TextSprite
