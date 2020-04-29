@@ -57,6 +57,7 @@ type EffectType =
 
 type SpecialType =
     | JumpSlash
+    | Volt
 
 type ActionType =
     | Attack
@@ -149,7 +150,7 @@ type CharacterData =
       BaseActions : ActionData list // base actions for all instances of character
       Reward : RewardData }
 
-type [<NoComparison>] Rom =
+type Rom =
     { Weapons : Map<WeaponType, WeaponData>
       Armors : Map<ArmorType, ArmorData>
       Relics : Map<RelicType, RelicData>
@@ -238,7 +239,7 @@ type Legionnaire =
       CharacterType : CharacterType }
 
 // Rom -> FieldModel -> BattleModel -> CharacterModel -> etc.
-type [<NoComparison>] FieldModel =
+type FieldModel =
     { Legion : Map<int, Legionnaire>
       GameEvents : Set<GameEvent>
       Inventory : Inventory
@@ -559,7 +560,7 @@ type RingMenuModel =
     { Items : string list
       ItemCancelOpt : string option }
 
-type [<NoEquality; NoComparison>] ActionCommand =
+type ActionCommand =
     { Action : ActionType
       Source : CharacterIndex
       TargetOpt : CharacterIndex option }
@@ -569,19 +570,19 @@ type [<NoEquality; NoComparison>] ActionCommand =
           Source = source
           TargetOpt = targetOpt }
 
-type [<NoEquality; NoComparison>] CurrentCommand =
+type CurrentCommand =
     { TimeStart : int64
       ActionCommand : ActionCommand }
 
     static member make timeStart actionCommand =
         { TimeStart = timeStart; ActionCommand = actionCommand }
 
-type [<NoEquality; NoComparison>] BattleState =
+type BattleState =
     | BattleReady of int64
     | BattleRunning
     | BattleCease of bool * int64
 
-type [<NoEquality; NoComparison>] BattleModel =
+type [<NoComparison>] BattleModel =
     { BattleState : BattleState
       Characters : Map<CharacterIndex, CharacterModel>
       CurrentCommandOpt : CurrentCommand option

@@ -9,7 +9,7 @@ open OmniBlade
 [<AutoOpen>]
 module OmniBattle =
 
-    type [<NoComparison>] BattleMessage =
+    type BattleMessage =
         | RegularItemSelect of CharacterIndex * string
         | RegularItemCancel of CharacterIndex
         | SpecialItemSelect of CharacterIndex * string
@@ -33,7 +33,7 @@ module OmniBattle =
         | TakeConsumable of ConsumableType * CharacterIndex
         | Tick
 
-    type [<NoComparison>] BattleCommand =
+    type BattleCommand =
         | FadeSong
         | DisplayHitPointsChange of CharacterIndex * int
         | InitializeBattle
@@ -48,7 +48,7 @@ module OmniBattle =
     type BattleDispatcher () =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
             (let allies =
-                [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 15; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.singleton JumpSlash; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
+                [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 15; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash; Volt]; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = asset "Battle" "Jinn"; AnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
                    ActionTime = 600
                    InputState = NoInput
@@ -176,6 +176,7 @@ module OmniBattle =
                     if timeLocal = int64 source.AnimationState.Stutter * 4L then
                         match specialType with
                         | JumpSlash -> withMsg model (AttackCharacter sourceIndex)
+                        | Volt -> withMsg model (AttackCharacter sourceIndex)
                     elif timeLocal = int64 source.AnimationState.Stutter * 5L then
                         withMsg model (DamageCharacter (sourceIndex, targetIndex, Some specialType))
                     elif CharacterAnimationState.finished time source.AnimationState then
@@ -327,12 +328,9 @@ module OmniBattle =
             | RegularItemSelect (characterIndex, item) ->
                 let model =
                     match item with
-                    | "Attack" ->
-                        updateCharacter (CharacterModel.setInputState (AimReticles (item, EnemyAim))) characterIndex model
-                    | "Special" ->
-                        updateCharacter (CharacterModel.setInputState SpecialMenu) characterIndex model
-                    | "Item" ->
-                        updateCharacter (CharacterModel.setInputState ItemMenu) characterIndex model
+                    | "Attack" -> updateCharacter (CharacterModel.setInputState (AimReticles (item, EnemyAim))) characterIndex model
+                    | "Special" -> updateCharacter (CharacterModel.setInputState SpecialMenu) characterIndex model
+                    | "Item" -> updateCharacter (CharacterModel.setInputState ItemMenu) characterIndex model
                     | "Defend" ->
                         updateCharacter
                             (fun character ->
@@ -345,8 +343,7 @@ module OmniBattle =
                                 character)
                             characterIndex
                             model
-                    | _ ->
-                        failwithumf ()
+                    | _ -> failwithumf ()
                 just model
             | RegularItemCancel characterIndex ->
                 let model = updateCharacter (CharacterModel.setInputState RegularMenu) characterIndex model
@@ -374,6 +371,7 @@ module OmniBattle =
                             | "GreenHerb" -> ActionCommand.make (Consume GreenHerb) allyIndex (Some targetIndex)
                             | "RedHerb" -> ActionCommand.make (Consume RedHerb) allyIndex (Some targetIndex)
                             | "JumpSlash" -> ActionCommand.make (Special JumpSlash) allyIndex (Some targetIndex)
+                            | "Volt" -> ActionCommand.make (Special Volt) allyIndex (Some targetIndex)
                             | _ -> ActionCommand.make Attack allyIndex (Some targetIndex)
                         let model = { model with ActionQueue = Queue.conj command model.ActionQueue }
                         withMsg model (ResetCharacter allyIndex)
@@ -425,6 +423,8 @@ module OmniBattle =
                         let damage = CharacterState.computeDamage 2 source.CharacterState target.CharacterState rom // TODO: pull scalar from rom
                         let model = updateCharacter (CharacterModel.changeHitPoints -damage) targetIndex model
                         (damage, model)
+                    | Some Volt ->
+                        (0, model) // TODO: implement
                 if target.CharacterState.HitPoints > 0 || target.CharacterState.IsEnemy then
                     let model = updateCharacter (CharacterModel.setAnimationCycle time DamageCycle) targetIndex model
                     withCmd model (DisplayHitPointsChange (targetIndex, -damage))
@@ -523,7 +523,7 @@ module OmniBattle =
                                        { TweenValue = colorTransparent; TweenLength = 0L }|])|],
                                  Effects.Nil) }
                     let world = entity.SetEffect effect world
-                    let world = entity.SetSize v2Zero world
+                    let world = entity.SetSize v2Zero world // TODO: figure out why we have to set size to zero instead of just setting center
                     let world = entity.SetPosition target.Bottom world
                     let world = entity.SetDepth 100.0f world // TODO: derive this from something understandable
                     let world = entity.SetSelfDestruct true world
