@@ -375,7 +375,7 @@ module OmniBattle =
                         let character = CharacterModel.changeActionTime Constants.Battle.ActionTimeInc character
                         let character =
                             if CharacterModel.readyForAutoBattle character
-                            then CharacterModel.runAutoBattle (fun () -> BattleModel.getAllyIndexRandom model) character
+                            then BattleModel.runAutoBattle character model
                             else character
                         character)
                         model

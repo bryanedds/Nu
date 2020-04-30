@@ -11,6 +11,16 @@ type Direction =
     | Upward
     | Rightward
 
+    static member fromVector2 (v2 : Vector2) =
+        let angle = double (atan2 v2.Y v2.X)
+        let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
+        let direction =
+            if      angle > Math.PI * 1.75 || angle <= Math.PI * 0.25 then  Rightward
+            elif    angle > Math.PI * 0.25 && angle <= Math.PI * 0.75 then  Upward
+            elif    angle > Math.PI * 0.75 && angle <= Math.PI * 1.25 then  Leftward
+            else                                                            Downward
+        direction
+
 type ElementType =
     | Fire // beats nothing; strongest
     | Lightning // beats water
@@ -551,14 +561,6 @@ type [<NoComparison>] CharacterModel =
         character.AutoBattleOpt.IsNone &&
         character.ActionTime > 222
 
-    static member runAutoBattle getAllyIndexRandom character =
-        let allyIndex = getAllyIndexRandom ()
-        let specialOpt =
-            match Random().Next 4 with
-            | 0 -> CharacterModel.tryGetSpecialRandom character
-            | _ -> None
-        { character with AutoBattleOpt = Some { AutoTarget = allyIndex; AutoSpecialOpt = specialOpt }}
-
     static member runningSpecialAutoBattle character =
         match character.AutoBattleOpt with
         | Some autoBattle -> Option.isSome autoBattle.AutoSpecialOpt
@@ -688,6 +690,19 @@ type [<NoComparison>] BattleModel =
         let character = BattleModel.getCharacter characterIndex model
         let character = updater character
         { model with Characters = Map.add characterIndex character model.Characters }
+
+    static member runAutoBattle character model =
+        let allyIndex = BattleModel.getAllyIndexRandom model
+        let ally = BattleModel.getCharacter allyIndex model
+        let characterToAlly = ally.Position - character.Position
+        let direction = Direction.fromVector2 characterToAlly
+        let specialOpt =
+            match Random().Next 4 with
+            | 0 -> CharacterModel.tryGetSpecialRandom character
+            | _ -> None
+        let autoBattle = { AutoTarget = allyIndex; AutoSpecialOpt = specialOpt }
+        let animationState = { character.AnimationState with Direction = direction }
+        { character with AutoBattleOpt = Some autoBattle; AnimationState = animationState }
 
     static member conjActionCommand command model =
         { model with ActionCommands = Queue.conj command model.ActionCommands }
