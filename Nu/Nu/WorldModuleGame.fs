@@ -18,7 +18,7 @@ module WorldModuleGame =
 
     type World with
 
-        static member private publishGameChange propertyName propertyValue world =
+        static member private publishGameChange propertyName (propertyValue : obj) world =
             let game = Game ()
             let world =
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
@@ -39,18 +39,21 @@ module WorldModuleGame =
 
         static member private updateGameStateWithoutEvent updater world =
             let gameState = World.getGameState world
-            let gameState = updater gameState
-            World.setGameState gameState world
+            match updater gameState with
+            | Some gameState -> (true, World.setGameState gameState world)
+            | None -> (false, world)
 
         static member private updateGameState updater propertyName propertyValue world =
-            let world = World.updateGameStateWithoutEvent updater world
-            World.publishGameChange propertyName propertyValue world
+            let (changed, world) = World.updateGameStateWithoutEvent updater world
+            if changed
+            then World.publishGameChange propertyName propertyValue world
+            else world
 
         static member internal getGameId world = (World.getGameState world).Id
         static member internal getGameCreationTimeStamp world = (World.getGameState world).CreationTimeStamp
         static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
         static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
-        static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> { gameState with ScriptFrame = value }) Property? ScriptFrame value world
+        static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> if value <> gameState.ScriptFrame then Some { gameState with ScriptFrame = value } else None) Property? ScriptFrame value world
 
         /// Get the current eye center.
         [<FunctionBinding>]
@@ -60,7 +63,7 @@ module WorldModuleGame =
         /// Set the current eye center.
         [<FunctionBinding>]
         static member setEyeCenter value world =
-            World.updateGameState (fun gameState -> { gameState with EyeCenter = value }) Property? EyeCenter value world
+            World.updateGameState (fun gameState -> if value <> gameState.EyeCenter then Some { gameState with EyeCenter = value } else None) Property? EyeCenter value world
 
         /// Get the current eye size.
         [<FunctionBinding>]
@@ -70,7 +73,7 @@ module WorldModuleGame =
         /// Set the current eye size.
         [<FunctionBinding>]
         static member setEyeSize value world =
-            World.updateGameState (fun gameState -> { gameState with EyeSize = value }) Property? EyeSize value world
+            World.updateGameState (fun gameState -> if value <> gameState.EyeSize then Some { gameState with EyeSize = value } else None) Property? EyeSize value world
 
         /// Get the omni-screen, if any.
         [<FunctionBinding>]
@@ -81,7 +84,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member setOmniScreenOpt value world =
             if Option.isSome value && World.getSelectedScreenOpt world = value then failwith "Cannot set OmniScreen to SelectedScreen."
-            World.updateGameState (fun gameState -> { gameState with OmniScreenOpt = value }) Property? OmniScreenOpt value world
+            World.updateGameState (fun gameState -> if value <> gameState.OmniScreenOpt then Some { gameState with OmniScreenOpt = value } else None) Property? OmniScreenOpt value world
 
         /// Get the omniScreen (failing with an exception if there isn't one).
         [<FunctionBinding>]
@@ -109,7 +112,7 @@ module WorldModuleGame =
                 failwith "Cannot set SelectedScreen to OmniScreen."
 
             // raise change event for none selection
-            let world = World.updateGameState id Property? SelectedScreenOpt None world
+            let world = World.updateGameState Some Property? SelectedScreenOpt None world
 
             // clear out singleton states
             let world =
@@ -121,7 +124,13 @@ module WorldModuleGame =
                 | None -> world
                 
             // actually set selected screen (no events)
-            let world = World.updateGameStateWithoutEvent (fun gameState -> { gameState with SelectedScreenOpt = value }) world
+            let (_, world) =
+                World.updateGameStateWithoutEvent
+                    (fun gameState ->
+                        if value <> gameState.SelectedScreenOpt
+                        then Some { gameState with SelectedScreenOpt = value }
+                        else None)
+                    world
 
             // handle some case
             match value with
@@ -132,7 +141,7 @@ module WorldModuleGame =
                 let world = WorldModule.registerScreenPhysics screen world
 
                 // raise change event for some selection
-                World.updateGameState id Property? SelectedScreenOpt (Some screen) world
+                World.updateGameState Some Property? SelectedScreenOpt (Some screen) world
 
             // fin
             | None -> world
@@ -158,7 +167,14 @@ module WorldModuleGame =
         /// TODO: consider asserting such predication here.
         [<FunctionBinding>]
         static member internal setScreenTransitionDestinationOpt destination world =
-            World.updateGameState (fun gameState -> { gameState with ScreenTransitionDestinationOpt = destination }) Property? ScreenTransitionDestinationOpt destination world
+            World.updateGameState
+                (fun gameState ->
+                    if destination <> gameState.ScreenTransitionDestinationOpt
+                    then Some { gameState with ScreenTransitionDestinationOpt = destination }
+                    else None)
+                Property? ScreenTransitionDestinationOpt
+                destination
+                world
 
         /// Get the view of the eye in absolute terms (world space).
         static member getViewAbsolute world =
@@ -269,30 +285,51 @@ module WorldModuleGame =
             | (false, _) ->
                 let mutable success = false // bit of a hack to get additional state out of the lambda
                 let world =
-                    World.updateGameState (fun entityState ->
-                        let (successInner, entityState) = GameState.trySetProperty propertyName property entityState
-                        success <- successInner
-                        entityState)
+                    World.updateGameState
+                        (fun gameState ->
+                            match GameState.tryGetProperty propertyName gameState with
+                            | Some propertyOld ->
+                                if property.PropertyValue <> propertyOld.PropertyValue then
+                                    let (successInner, gameState) = GameState.trySetProperty propertyName property gameState
+                                    success <- successInner
+                                    Some gameState
+                                else None
+                            | None -> None)
                         propertyName property.PropertyValue world
                 (success, world)
             | (true, setter) -> setter property world
 
         static member internal setGameProperty propertyName property world =
-            match Setters.TryGetValue propertyName with
+            match Getters.TryGetValue propertyName with
             | (false, _) ->
                 World.updateGameState
-                    (GameState.setProperty propertyName property)
+                    (fun gameState ->
+                        let propertyOld = GameState.getProperty propertyName gameState
+                        if property.PropertyValue <> propertyOld.PropertyValue
+                        then Some (GameState.setProperty propertyName property gameState)
+                        else None)
                     propertyName property.PropertyValue world
-            | (true, setter) ->
-                match setter property world with
-                | (true, world) -> world
+            | (true, getter) ->
+                let propertyOld = getter world
+                match Setters.TryGetValue propertyName with
+                | (true, setter) ->
+                    if property.PropertyValue <> propertyOld.PropertyValue then
+                        match setter property world with
+                        | (true, world) -> world
+                        | (false, _) -> failwith ("Cannot change game property " + propertyName + ".")
+                    else world
                 | (false, _) -> failwith ("Cannot change game property " + propertyName + ".")
 
         static member internal attachGameProperty propertyName property world =
-            World.updateGameState (GameState.attachProperty propertyName property) propertyName property.PropertyValue world
+            World.updateGameState
+                (fun gameState -> Some (GameState.attachProperty propertyName property gameState))
+                propertyName property.PropertyValue world
 
         static member internal detachGameProperty propertyName world =
-            World.updateGameStateWithoutEvent (GameState.detachProperty propertyName) world
+            World.updateGameStateWithoutEvent
+                (fun gameState -> Some (GameState.detachProperty propertyName gameState))
+                world |>
+            snd
 
         static member internal writeGame3 writeScreens gameDescriptor world =
             let gameState = World.getGameState world

@@ -70,7 +70,7 @@ module WorldModuleLayer =
         static member private removeLayerState layer world =
             World.layerStateRemover layer world
 
-        static member private publishLayerChange propertyName propertyValue (layer : Layer) world =
+        static member private publishLayerChange propertyName (propertyValue : obj) (layer : Layer) world =
             let world =
                 let layerNames = Address.getNames layer.LayerAddress
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; layerNames.[0]; layerNames.[1]|]
@@ -95,12 +95,15 @@ module WorldModuleLayer =
 
         static member private updateLayerStateWithoutEvent updater layer world =
             let layerState = World.getLayerState layer world
-            let layerState = updater layerState
-            World.setLayerState layerState layer world
+            match updater layerState with
+            | Some layerState -> (true, World.setLayerState layerState layer world)
+            | None -> (false, world)
 
         static member private updateLayerState updater propertyName propertyValue layer world =
-            let world = World.updateLayerStateWithoutEvent updater layer world
-            World.publishLayerChange propertyName propertyValue layer world
+            let (changed, world) = World.updateLayerStateWithoutEvent updater layer world
+            if changed
+            then World.publishLayerChange propertyName propertyValue layer world
+            else world
 
         /// Check that a layer exists in the world.
         static member internal getLayerExists layer world =
@@ -108,14 +111,14 @@ module WorldModuleLayer =
 
         static member internal getLayerDispatcher layer world = (World.getLayerState layer world).Dispatcher
         static member internal getLayerDepth layer world = (World.getLayerState layer world).Depth
-        static member internal setLayerDepth value layer world = World.updateLayerState (fun layerState -> { layerState with Depth = value }) Property? Depth value layer world
+        static member internal setLayerDepth value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Depth then Some { layerState with Depth = value } else None) Property? Depth value layer world
         static member internal getLayerVisible layer world = (World.getLayerState layer world).Visible
-        static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> { layerState with Visible = value }) Property? Visible value layer world
+        static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Visible then Some { layerState with Visible = value } else None) Property? Visible value layer world
         static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
-        static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> { layerState with Persistent = value }) Property? Persistent value layer world
+        static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Persistent then Some { layerState with Persistent = value } else None) Property? Persistent value layer world
         static member internal getLayerCreationTimeStamp layer world = (World.getLayerState layer world).CreationTimeStamp
         static member internal getLayerScriptFrame layer world = (World.getLayerState layer world).ScriptFrame
-        static member internal setLayerScriptFrame value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptFrame = value }) Property? ScriptFrame value layer world
+        static member internal setLayerScriptFrame value layer world = World.updateLayerState (fun layerState -> if value <> layerState.ScriptFrame then Some { layerState with ScriptFrame = value } else None) Property? ScriptFrame value layer world
         static member internal getLayerName layer world = (World.getLayerState layer world).Name
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
         
@@ -140,10 +143,16 @@ module WorldModuleLayer =
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
                     let world =
-                        World.updateLayerState (fun layerState ->
-                            let (successInner, layerState) = LayerState.trySetProperty propertyName property layerState
-                            success <- successInner
-                            layerState)
+                        World.updateLayerState
+                            (fun layerState ->
+                                match LayerState.tryGetProperty propertyName layerState with
+                                | Some propertyOld ->
+                                    if property.PropertyValue <> propertyOld.PropertyValue then
+                                        let (successInner, gameState) = LayerState.trySetProperty propertyName property layerState
+                                        success <- successInner
+                                        Some gameState
+                                    else None
+                                | None -> None)
                             propertyName property.PropertyValue layer world
                     (success, world)
                 | (true, setter) -> setter property layer world
@@ -154,7 +163,11 @@ module WorldModuleLayer =
                 match Setters.TryGetValue propertyName with
                 | (false, _) ->
                     World.updateLayerState
-                        (LayerState.setProperty propertyName property)
+                        (fun layerState ->
+                            let propertyOld = LayerState.getProperty propertyName layerState
+                            if property.PropertyValue <> propertyOld.PropertyValue
+                            then Some (LayerState.setProperty propertyName property layerState)
+                            else None)
                         propertyName property.PropertyValue layer world
                 | (true, setter) ->
                     match setter property layer world with
@@ -163,13 +176,18 @@ module WorldModuleLayer =
             else world
 
         static member internal attachLayerProperty propertyName property layer world =
-            if World.getLayerExists layer world
-            then World.updateLayerState (LayerState.attachProperty propertyName property) propertyName property.PropertyValue layer world
+            if World.getLayerExists layer world then
+                World.updateLayerState
+                    (fun layerState -> Some (LayerState.attachProperty propertyName property layerState))
+                    propertyName property.PropertyValue layer world
             else failwith ("Cannot attach layer property '" + propertyName + "'; layer '" + layer.Name + "' is not found.")
 
         static member internal detachLayerProperty propertyName layer world =
-            if World.getLayerExists layer world
-            then World.updateLayerStateWithoutEvent (LayerState.detachProperty propertyName) layer world
+            if World.getLayerExists layer world then
+                World.updateLayerStateWithoutEvent
+                    (fun layerState -> Some (LayerState.detachProperty propertyName layerState))
+                    layer world |>
+                snd
             else failwith ("Cannot detach layer property '" + propertyName + "'; layer '" + layer.Name + "' is not found.")
 
         static member internal registerLayer layer world =

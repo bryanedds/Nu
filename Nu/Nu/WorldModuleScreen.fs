@@ -61,7 +61,7 @@ module WorldModuleScreen =
         static member private removeScreenState screen world =
             World.screenStateRemover screen world
 
-        static member private publishScreenChange (propertyName : string) (screen : Screen) propertyValue world =
+        static member private publishScreenChange (propertyName : string) (propertyValue : obj) (screen : Screen) world =
             let world =
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; screen.Name|]
                 let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
@@ -81,12 +81,15 @@ module WorldModuleScreen =
 
         static member private updateScreenStateWithoutEvent updater screen world =
             let screenState = World.getScreenState screen world
-            let screenState = updater screenState
-            World.setScreenState screenState screen world
+            match updater screenState with
+            | Some screenState -> (true, World.setScreenState screenState screen world)
+            | None -> (false, world)
 
         static member private updateScreenState updater propertyName propertyValue screen world =
-            let world = World.updateScreenStateWithoutEvent updater screen world
-            World.publishScreenChange propertyName screen propertyValue world
+            let (changed, world) = World.updateScreenStateWithoutEvent updater screen world
+            if changed
+            then World.publishScreenChange propertyName propertyValue screen world
+            else world
 
         /// Check that a screen exists in the world.
         static member internal getScreenExists screen world =
@@ -94,18 +97,18 @@ module WorldModuleScreen =
 
         static member internal getScreenDispatcher screen world = (World.getScreenState screen world).Dispatcher
         static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
-        static member internal setScreenTransitionState value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionState = value }) Property? TransitionState value screen world
+        static member internal setScreenTransitionState value screen world = World.updateScreenState (fun screenState -> if value <> screenState.TransitionState then Some { screenState with TransitionState = value } else None) Property? TransitionState value screen world
         static member internal getScreenTransitionTicks screen world = (World.getScreenState screen world).TransitionTicks
-        static member internal setScreenTransitionTicks value screen world = World.updateScreenState (fun screenState -> { screenState with TransitionTicks = value }) Property? TransitionTicks value screen world
+        static member internal setScreenTransitionTicks value screen world = World.updateScreenState (fun screenState -> if value <> screenState.TransitionTicks then Some { screenState with TransitionTicks = value } else None) Property? TransitionTicks value screen world
         static member internal getScreenIncoming screen world = (World.getScreenState screen world).Incoming
-        static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> { screenState with Incoming = value }) Property? Incoming value screen world
+        static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Incoming then Some { screenState with Incoming = value } else None) Property? Incoming value screen world
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
-        static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing value screen world
+        static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Outgoing then Some { screenState with Outgoing = value } else None) Property? Outgoing value screen world
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
-        static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> { screenState with Persistent = value }) Property? Persistent value screen world
+        static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Persistent then Some { screenState with Persistent = value } else None) Property? Persistent value screen world
         static member internal getScreenCreationTimeStamp screen world = (World.getScreenState screen world).CreationTimeStamp
         static member internal getScreenScriptFrame screen world = (World.getScreenState screen world).ScriptFrame
-        static member internal setScreenScriptFrame value screen world = World.updateScreenState (fun screenState -> { screenState with ScriptFrame = value }) Property? ScriptFrame value screen world
+        static member internal setScreenScriptFrame value screen world = World.updateScreenState (fun screenState -> if value <> screenState.ScriptFrame then Some { screenState with ScriptFrame = value } else None) Property? ScriptFrame value screen world
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
 
@@ -130,10 +133,16 @@ module WorldModuleScreen =
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
                     let world =
-                        World.updateScreenState (fun screenState ->
-                            let (successInner, screenState) = ScreenState.trySetProperty propertyName property screenState
-                            success <- successInner
-                            screenState)
+                        World.updateScreenState
+                            (fun screenState ->
+                                match ScreenState.tryGetProperty propertyName screenState with
+                                | Some propertyOld ->
+                                    if property.PropertyValue <> propertyOld.PropertyValue then
+                                        let (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
+                                        success <- successInner
+                                        Some gameState
+                                    else None
+                                | None -> None)
                             propertyName property.PropertyValue screen world
                     (success, world)
                 | (true, setter) -> setter property screen world
@@ -144,7 +153,11 @@ module WorldModuleScreen =
                 match Setters.TryGetValue propertyName with
                 | (false, _) ->
                     World.updateScreenState
-                        (ScreenState.setProperty propertyName property)
+                        (fun screenState ->
+                            let propertyOld = ScreenState.getProperty propertyName screenState
+                            if property.PropertyValue <> propertyOld.PropertyValue
+                            then Some (ScreenState.setProperty propertyName property screenState)
+                            else None)
                         propertyName property.PropertyValue screen world
                 | (true, setter) ->
                     match setter property screen world with
@@ -153,13 +166,18 @@ module WorldModuleScreen =
             else world
 
         static member internal attachScreenProperty propertyName property screen world =
-            if World.getScreenExists screen world
-            then World.updateScreenState (ScreenState.attachProperty propertyName property) propertyName property.PropertyValue screen world
+            if World.getScreenExists screen world then
+                World.updateScreenState
+                    (fun screenState -> Some (ScreenState.attachProperty propertyName property screenState))
+                    propertyName property.PropertyValue screen world
             else failwith ("Cannot attach screen property '" + propertyName + "'; screen '" + screen.Name + "' is not found.")
 
         static member internal detachScreenProperty propertyName screen world =
-            if World.getScreenExists screen world
-            then World.updateScreenStateWithoutEvent (ScreenState.detachProperty propertyName) screen world
+            if World.getScreenExists screen world then
+                World.updateScreenStateWithoutEvent
+                    (fun screenState -> Some (ScreenState.detachProperty propertyName screenState))
+                    screen world |>
+                snd
             else failwith ("Cannot detach screen property '" + propertyName + "'; screen '" + screen.Name + "' is not found.")
 
         static member internal registerScreen screen world =
