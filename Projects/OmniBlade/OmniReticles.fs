@@ -46,7 +46,9 @@ module OmniReticles =
                 let buttonName = rets.Name + "+" + "Reticle" + "+" + scstring index
                 let button = rets.Parent / buttonName
                 Content.button button.Name
-                    [Entity.Size == v2 128.0f 128.0f
+                    [Entity.ParentNodeOpt == None
+                     Entity.Visible <== rets.Visible
+                     Entity.Size == v2 128.0f 128.0f
                      Entity.Center <== character --> fun character -> character.Center + Constants.Battle.CharacterCenterOffset
                      Entity.UpImage == asset Assets.BattlePackage "ReticleUp"
                      Entity.DownImage == asset Assets.BattlePackage "ReticleDown"
