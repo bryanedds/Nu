@@ -602,16 +602,18 @@ module WorldModuleEntity =
             | None -> world
 
         static member internal tryGetEntityProperty propertyName entity world =
-            let entityState = World.getEntityState entity world
-            match EntityState.tryGetProperty propertyName entityState with
-            | Some property as some ->
-                match property.PropertyValue with
-                | :? ComputedProperty as cp -> Some { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }
-                | _ -> some
-            | None ->
-                match Getters.TryGetValue propertyName with
-                | (false, _) -> None
-                | (true, getter) -> Some (getter entity world)
+            match World.getEntityStateOpt entity world with
+            | Some entityState ->
+                match EntityState.tryGetProperty propertyName entityState with
+                | Some property as some ->
+                    match property.PropertyValue with
+                    | :? ComputedProperty as cp -> Some { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }
+                    | _ -> some
+                | None ->
+                    match Getters.TryGetValue propertyName with
+                    | (false, _) -> None
+                    | (true, getter) -> Some (getter entity world)
+            | None -> None
 
         static member internal getEntityProperty propertyName entity world =
             match World.tryGetEntityProperty propertyName entity world with
@@ -619,9 +621,9 @@ module WorldModuleEntity =
             | None -> failwithf "Could not find property '%s'." propertyName
 
         static member internal trySetEntityProperty propertyName alwaysPublish nonPersistent property entity world =
-            if World.getEntityExists entity world then
+            match World.getEntityStateOpt entity world with
+            | Some entityState ->
                 let (success, world) =
-                    let entityState = World.getEntityState entity world
                     match EntityState.tryGetProperty propertyName entityState with
                     | Some propertyExisting ->
                         match propertyExisting.PropertyValue with
@@ -639,7 +641,7 @@ module WorldModuleEntity =
                         | (false, _) -> (false, world)
                 let world = World.updateEntityState id alwaysPublish nonPersistent propertyName property.PropertyValue entity world
                 (success, world)
-            else (false, world)
+            | None -> (false, world)
 
         static member internal setEntityProperty propertyName alwaysPublish nonPersistent property entity world =
             match World.trySetEntityProperty propertyName alwaysPublish nonPersistent property entity world with

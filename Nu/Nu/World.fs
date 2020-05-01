@@ -25,9 +25,11 @@ module Nu =
                 | :? DesignerProperty as property -> property.DesignerValue
                 | value -> value
             let world =
-                match left.GetWithoutValidation world with
-                | :? DesignerProperty as designerProperty -> (Option.get left.SetOpt) ({ designerProperty with DesignerValue = value } :> obj) world
-                | _ -> (Option.get left.SetOpt) value world
+                if World.getExists left.This world then
+                    match left.GetWithoutValidation world with
+                    | :? DesignerProperty as designerProperty -> (Option.get left.SetOpt) ({ designerProperty with DesignerValue = value } :> obj) world
+                    | _ -> (Option.get left.SetOpt) value world
+                else world
             world
         else world
 
@@ -45,10 +47,10 @@ module Nu =
                 if property.PropertyType = typeof<DesignerProperty> then
                     let designerProperty = property.PropertyValue :?> DesignerProperty
                     let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
-                    World.setProperty leftName alwaysPublish nonPersistent property simulant world
+                    World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
                 else
                     let property = { property with PropertyValue = value }
-                    World.setProperty leftName alwaysPublish nonPersistent property simulant world
+                    World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
             | None ->
                 Log.debug "Property propagation failed. You have used a composed lens on a faux simulant reference, which is not supported."
                 world
