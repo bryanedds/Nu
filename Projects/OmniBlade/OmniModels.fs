@@ -393,7 +393,7 @@ type CharacterState =
     static member tryGetSpecialRandom state =
         let specials = state.Specials
         if Set.notEmpty specials then
-            let specialIndex = Random().Next specials.Count
+            let specialIndex = Gen.random1 specials.Count
             let special = Seq.item specialIndex specials
             Some special
         else None
@@ -586,12 +586,12 @@ module CharacterModels =
 
     let getAllyIndexRandom characters =
         let allyIndices = getAllyIndices characters
-        let allyIndex = List.item (Random().Next allyIndices.Length) allyIndices
+        let allyIndex = List.item (Gen.random1 allyIndices.Length) allyIndices
         allyIndex
 
-    let getEnemyIndexRagdom characters =
+    let getEnemyIndexRandom characters =
         let enemyIndices = getEnemyIndices characters
-        let enemyIndex = List.item (Random().Next enemyIndices.Length) enemyIndices
+        let enemyIndex = List.item (Gen.random1 enemyIndices.Length) enemyIndices
         enemyIndex
 
     let getAlliesHealthy (characters : CharacterModels) =
@@ -698,7 +698,7 @@ type [<ReferenceEquality; NoComparison>] BattleModel =
         let characterToAlly = ally.Position - character.Position
         let direction = Direction.fromVector2 characterToAlly
         let specialOpt =
-            match Random().Next 4 with
+            match Gen.random1 4 with
             | 0 -> CharacterModel.tryGetSpecialRandom character
             | _ -> None
         let autoBattle = { AutoTarget = allyIndex; AutoSpecialOpt = specialOpt }
