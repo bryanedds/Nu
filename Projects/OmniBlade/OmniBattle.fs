@@ -500,8 +500,7 @@ module OmniBattle =
                                        { TweenValue = colorTransparent; TweenLength = 0L }|])|],
                                  Effects.Nil) }
                     let world = entity.SetEffect effect world
-                    let world = entity.SetSize v2Zero world // TODO: figure out why we have to set size to zero instead of just setting center
-                    let world = entity.SetPosition target.Bottom world
+                    let world = entity.SetCenter target.Bottom world
                     let world = entity.SetDepth 100.0f world // TODO: derive this from something understandable
                     let world = entity.SetSelfDestruct true world
                     just world

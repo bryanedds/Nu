@@ -521,7 +521,7 @@ module EffectSystemModule =
                                   PositionY = slice.Position.Y
                                   LayeredDescriptor =
                                     TextDescriptor 
-                                        { Position = slice.Position
+                                        { Position = slice.Position - slice.Size * 0.5f
                                           Size = slice.Size
                                           ViewType = effectSystem.ViewType
                                           Text = slice.Text

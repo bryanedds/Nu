@@ -425,21 +425,21 @@ module Math =
         let transform = { transform with Position = snap2F positionSnap transform.Position }
         { transform with Rotation = snapR rotationSnap transform.Rotation }
 
-    /// Queries that a point is within the given bounds.
+    /// Check that a point is within the given bounds.
     let isPointInBounds (point : Vector2) (bounds : Vector4) =
         point.X >= bounds.X &&
         point.X <= bounds.Z &&
         point.Y >= bounds.Y &&
         point.Y <= bounds.W
 
-    /// Queries that a bounds is within the given bounds.
+    /// Check that a bounds is within the given bounds.
     let isBoundsInBounds (bounds : Vector4) (bounds2 : Vector4) =
         bounds.X >= bounds2.X &&
         bounds.Z <= bounds2.Z &&
         bounds.Y >= bounds2.Y &&
         bounds.W <= bounds2.W
 
-    /// Queries that a bounds is intersecting the given bounds.
+    /// Check that a bounds is intersecting the given bounds.
     let isBoundsIntersectingBounds (bounds : Vector4) (bounds2 : Vector4) =
         bounds.X < bounds2.Z &&
         bounds.Z > bounds2.X &&
