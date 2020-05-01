@@ -116,7 +116,6 @@ module OmniBattle =
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
 
         static let tickConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
-            let source = BattleModel.getCharacter sourceIndex model
             match targetIndexOpt with
             | Some targetIndex ->
                 let target = BattleModel.getCharacter targetIndex model

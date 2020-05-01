@@ -18,7 +18,7 @@ module Nu =
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
     /// Propagate lensed property directly.
-    let private propagate (left : World Lens) (right : World Lens) (_ : Event) world =
+    let private tryPropagateByLens (left : World Lens) (right : World Lens) (_ : Event) world =
         if right.Validate world then
             let value =
                 match right.GetWithoutValidation world with
@@ -34,7 +34,7 @@ module Nu =
         else world
 
     /// Propagate lensed property by property name.
-    let private propagateByName simulant leftName (right : World Lens) (_ : Event) world =
+    let private tryPropagateByName simulant leftName (right : World Lens) (_ : Event) world =
         let nonPersistent = not (Reflection.isPropertyPersistentByName leftName)
         let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
         if right.Validate world then
@@ -302,10 +302,14 @@ module Nu =
 
             // init fix5 F# reach-around
             WorldModule.fix5 <- fun simulant left right breaking world ->
-                let propagate = if notNull (left.This :> obj) then propagate left right else propagateByName simulant left.Name right
+                let tryPropagate =
+                    if notNull (left.This :> obj)
+                    then tryPropagateByLens left right
+                    else tryPropagateByName simulant left.Name right
+                let world = tryPropagate Unchecked.defaultof<_> world // propagate immediately to start things out synchronized
                 let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
-                let world = Stream.make (atooa Events.Register --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate right.This $ world
-                Stream.make (atooa (Events.Change right.Name) --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate right.This $ world
+                let world = Stream.make (atooa Events.Register --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor tryPropagate right.This $ world
+                Stream.make (atooa (Events.Change right.Name) --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor tryPropagate right.This $ world
 
             // init remaining reach-arounds
             WorldModule.register <- fun simulant world -> World.register simulant world
