@@ -87,7 +87,7 @@ module CoreOperators =
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
 
     /// Get the union tag for the give case value.
-    /// TODO: put this in Prime?
+    /// TODO: remove this after updating Prime.
     let getTag<'u> (unionCase : 'u) =
         let (unionCaseInfo, _) = FSharp.Reflection.FSharpValue.GetUnionFields (unionCase, typeof<'u>)
         unionCaseInfo.Tag

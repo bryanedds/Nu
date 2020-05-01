@@ -48,15 +48,15 @@ module OmniRingMenu =
 
         override this.Content (model, menu, _) =
             [Content.entitiesIndexedByFst (model --> fun model -> model.Items) $ fun index item world ->
-                let item = item.Get world |> snd
-                let buttonName = menu.Name + "+" + item
+                let itemValue = item.Get world |> snd
+                let buttonName = menu.Name + "+" + itemValue
                 let button = menu.Parent / buttonName
                 Content.button button.Name
                     [Entity.Size == v2 64.0f 64.0f
                      Entity.Depth <== menu.Depth
-                     Entity.UpImage == asset Assets.BattlePackage (item + "Up")
-                     Entity.DownImage == asset Assets.BattlePackage (item + "Down")
-                     Entity.ClickEvent ==> cmd (ItemSelect item)
+                     Entity.UpImage == asset Assets.BattlePackage (itemValue + "Up")
+                     Entity.DownImage == asset Assets.BattlePackage (itemValue + "Down")
+                     Entity.ClickEvent ==> cmd (ItemSelect itemValue)
                      Entity.UpdateEvent ==> cmd (ArrangeItemButton (button, index))]
              Content.entityOpt (model --> fun model -> model.ItemCancelOpt) $ fun itemCancel world ->
                 let itemCancelValue = itemCancel.Get world
