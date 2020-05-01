@@ -126,9 +126,9 @@ module OmniBattle =
                     then withMsg model (GiveConsumable (consumable, sourceIndex))
                     else withMsgs { model with CurrentCommandOpt = None } [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
                 | _ ->
-                    if timeLocal = int64 source.AnimationState.Stutter
+                    if timeLocal = int64 target.AnimationState.Stutter
                     then withMsg model (TakeConsumable (consumable, targetIndex))
-                    elif CharacterAnimationState.finished time source.AnimationState then
+                    elif CharacterAnimationState.finished time target.AnimationState then
                         let model = { model with CurrentCommandOpt = None }
                         withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
                     else just model
