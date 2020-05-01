@@ -54,6 +54,13 @@ module OmniBattle =
                    AutoBattleOpt = None
                    InputState = NoInput
                    Position = v2 -224.0f -168.0f
+                   Size = v2 160.0f 160.0f }
+                 { CharacterState = { CharacterType = Ally Glenn; PartyIndex = 1; ExpPoints = 0; HitPoints = 15; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash; Volt]; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
+                   AnimationState = { TimeStart = 0L; AnimationSheet = asset "Battle" "Glenn"; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
+                   ActionTime = 300
+                   AutoBattleOpt = None
+                   InputState = NoInput
+                   Position = v2 224.0f 64.0f
                    Size = v2 160.0f 160.0f }]
              let enemies =
                 [{ CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.empty; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
@@ -61,14 +68,14 @@ module OmniBattle =
                    ActionTime = 0
                    AutoBattleOpt = None
                    InputState = NoInput
-                   Position = v2 0.0f 64.0f
+                   Position = v2 0.0f 0.0f
                    Size = v2 160.0f 160.0f }
                  { CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 1; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.empty; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = asset "Battle" "Goblin"; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
                    ActionTime = 0
                    AutoBattleOpt = None
                    InputState = NoInput
-                   Position = v2 176.0f -152.0f
+                   Position = v2 176.0f -192.0f
                    Size = v2 160.0f 160.0f }]
              let characters =
                 Map.ofList
