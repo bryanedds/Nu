@@ -116,6 +116,7 @@ type RelicData =
 
 type AllyType =
     | Jinn
+    | Glenn
 
 type EnemyType =
     | Goblin
