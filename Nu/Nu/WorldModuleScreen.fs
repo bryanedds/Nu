@@ -130,6 +130,7 @@ module WorldModuleScreen =
         static member internal trySetScreenProperty propertyName property screen world =
             if World.getScreenExists screen world then
                 match Setters.TryGetValue propertyName with
+                | (true, setter) -> setter property screen world
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
                     let world =
@@ -145,12 +146,15 @@ module WorldModuleScreen =
                                 | None -> None)
                             propertyName property.PropertyValue screen world
                     (success, world)
-                | (true, setter) -> setter property screen world
             else (false, world)
 
         static member internal setScreenProperty propertyName property screen world =
             if World.getScreenExists screen world then
                 match Setters.TryGetValue propertyName with
+                | (true, setter) ->
+                    match setter property screen world with
+                    | (true, world) -> world
+                    | (false, _) -> failwith ("Cannot change screen property " + propertyName + ".")
                 | (false, _) ->
                     World.updateScreenState
                         (fun screenState ->
@@ -159,10 +163,6 @@ module WorldModuleScreen =
                             then Some (ScreenState.setProperty propertyName property screenState)
                             else None)
                         propertyName property.PropertyValue screen world
-                | (true, setter) ->
-                    match setter property screen world with
-                    | (true, world) -> world
-                    | (false, _) -> failwith ("Cannot change screen property " + propertyName + ".")
             else world
 
         static member internal attachScreenProperty propertyName property screen world =

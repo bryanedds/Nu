@@ -140,6 +140,7 @@ module WorldModuleLayer =
         static member internal trySetLayerProperty propertyName property layer world =
             if World.getLayerExists layer world then
                 match Setters.TryGetValue propertyName with
+                | (true, setter) -> setter property layer world
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
                     let world =
@@ -155,12 +156,15 @@ module WorldModuleLayer =
                                 | None -> None)
                             propertyName property.PropertyValue layer world
                     (success, world)
-                | (true, setter) -> setter property layer world
             else (false, world)
 
         static member internal setLayerProperty propertyName property layer world =
             if World.getLayerExists layer world then
                 match Setters.TryGetValue propertyName with
+                | (true, setter) ->
+                    match setter property layer world with
+                    | (true, world) -> world
+                    | (false, _) -> failwith ("Cannot change layer property " + propertyName + ".")
                 | (false, _) ->
                     World.updateLayerState
                         (fun layerState ->
@@ -169,10 +173,6 @@ module WorldModuleLayer =
                             then Some (LayerState.setProperty propertyName property layerState)
                             else None)
                         propertyName property.PropertyValue layer world
-                | (true, setter) ->
-                    match setter property layer world with
-                    | (true, world) -> world
-                    | (false, _) -> failwith ("Cannot change layer property " + propertyName + ".")
             else world
 
         static member internal attachLayerProperty propertyName property layer world =

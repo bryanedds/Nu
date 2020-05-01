@@ -282,6 +282,7 @@ module WorldModuleGame =
 
         static member internal trySetGameProperty propertyName property world =
             match Setters.TryGetValue propertyName with
+            | (true, setter) -> setter property world
             | (false, _) ->
                 let mutable success = false // bit of a hack to get additional state out of the lambda
                 let world =
@@ -297,10 +298,13 @@ module WorldModuleGame =
                             | None -> None)
                         propertyName property.PropertyValue world
                 (success, world)
-            | (true, setter) -> setter property world
 
         static member internal setGameProperty propertyName property world =
-            match Getters.TryGetValue propertyName with
+            match Setters.TryGetValue propertyName with
+            | (true, setter) ->
+                match setter property world with
+                | (true, world) -> world
+                | (false, _) -> failwith ("Cannot change game property " + propertyName + ".")
             | (false, _) ->
                 World.updateGameState
                     (fun gameState ->
@@ -309,16 +313,6 @@ module WorldModuleGame =
                         then Some (GameState.setProperty propertyName property gameState)
                         else None)
                     propertyName property.PropertyValue world
-            | (true, getter) ->
-                let propertyOld = getter world
-                match Setters.TryGetValue propertyName with
-                | (true, setter) ->
-                    if property.PropertyValue <> propertyOld.PropertyValue then
-                        match setter property world with
-                        | (true, world) -> world
-                        | (false, _) -> failwith ("Cannot change game property " + propertyName + ".")
-                    else world
-                | (false, _) -> failwith ("Cannot change game property " + propertyName + ".")
 
         static member internal attachGameProperty propertyName property world =
             World.updateGameState
