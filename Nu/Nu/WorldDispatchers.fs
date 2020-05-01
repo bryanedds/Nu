@@ -66,14 +66,9 @@ module FacetModule =
 
         member this.SetFacetModel<'model when 'model : equality> modelName (value : 'model) world =
             let model = this.Get<DesignerProperty> modelName world
-#if IMPERATIVE_ENTITIES
-            model.DesignerValue <- value
-            world
-#else
             if this.GetImperative world
             then model.DesignerValue <- value; world
             else this.Set<DesignerProperty> modelName { model with DesignerValue = value } world
-#endif
 
         member this.UpdateFacetModel<'model when 'model : equality> modelName updater world =
             this.SetFacetModel<'model> modelName (updater this.GetFacetModel<'model> modelName world) world
