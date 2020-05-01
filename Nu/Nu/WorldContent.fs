@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open FSharp.Reflection
 open Prime
 open Nu
 
@@ -34,6 +35,26 @@ module Content =
         let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
         LayersFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
 
+    /// Describe layers to be streamed from a lens indexed by fst.
+    let layersIndexedByFst (lens : Lens<(int * 'a) list, World>) (mapper : int -> Lens<(int * 'a), World> -> World -> LayerContent) =
+        layersIndexedBy lens fst mapper
+
+    /// Describe layers to be streamed from a lens indexed by snd.
+    let layersIndexedBySnd (lens : Lens<('a * int) list, World>) (mapper : int -> Lens<('a * int), World> -> World -> LayerContent) =
+        layersIndexedBy lens snd mapper
+
+    /// Describe layers to be streamed from a lens indexed by discriminated union tag.
+    let layersIndexedByArray (lens : Lens<'a list, World>) (arr : 'a array) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
+        let indexer a = Array.findIndex ((=) a) arr
+        layersIndexedBy lens indexer mapper
+
+    /// Describe layers to be streamed from a lens indexed by its union tag.
+    let layersIndexedByTag (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
+        let indexer (a : 'a) =
+            let (unionCaseInfo, _) = FSharpValue.GetUnionFields (a :> obj, typeof<'a>)
+            unionCaseInfo.Tag
+        layersIndexedBy lens indexer mapper
+
     /// Describe layers to be streamed from a lens.
     let layers (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
         let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
@@ -59,10 +80,30 @@ module Content =
     let layer<'d when 'd :> LayerDispatcher> layerName initializers entities =
         LayerFromInitializers (typeof<'d>.Name, layerName, initializers, entities)
 
-    /// Describe entities to be streamed from a lens indexed by the given mapper.
+    /// Describe entities to be streamed from a lens indexed by the given indexer.
     let entitiesIndexedBy (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
         let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
         EntitiesFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
+
+    /// Describe entities to be streamed from a lens indexed by fst.
+    let entitiesIndexedByFst (lens : Lens<(int * 'a) list, World>) (mapper : int -> Lens<(int * 'a), World> -> World -> EntityContent) =
+        entitiesIndexedBy lens fst mapper
+
+    /// Describe entities to be streamed from a lens indexed by snd.
+    let entitiesIndexedBySnd (lens : Lens<('a * int) list, World>) (mapper : int -> Lens<('a * int), World> -> World -> EntityContent) =
+        entitiesIndexedBy lens snd mapper
+
+    /// Describe entities to be streamed from a lens indexed by discriminated union tag.
+    let entitiesIndexedByArray (lens : Lens<'a list, World>) (arr : 'a array) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+        let indexer a = Array.findIndex ((=) a) arr
+        entitiesIndexedBy lens indexer mapper
+
+    /// Describe entities to be streamed from a lens indexed by its union tag.
+    let entitiesIndexedByTag (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+        let indexer (a : 'a) =
+            let (unionCaseInfo, _) = FSharpValue.GetUnionFields (a :> obj, typeof<'a>)
+            unionCaseInfo.Tag
+        entitiesIndexedBy lens indexer mapper
 
     /// Describe entities to be streamed from a lens.
     let entities (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
