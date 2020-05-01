@@ -1126,7 +1126,7 @@ module EntityDispatcherModule =
             | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
-            
+
         abstract member Initializers : Lens<'model, World> * Entity * World -> PropertyInitializer list
         default this.Initializers (_, _, _) = []
 

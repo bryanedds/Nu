@@ -21,7 +21,6 @@ module OmniBattle =
         | ReadyCharacters
         | PoiseCharacters
         | CelebrateCharacters of bool
-        | AdvanceCharacters
         | AttackCharacter of CharacterIndex
         | DamageCharacter of CharacterIndex * CharacterIndex * SpecialType option
         | ChargeCharacter of CharacterIndex
@@ -268,9 +267,16 @@ module OmniBattle =
                         else (commands, model))
                         ([], model)
                         (BattleModel.getEnemies model)
-                let advanceCharactersSignal = Message AdvanceCharacters
-                let signals = advanceCharactersSignal :: List.rev enemySignalsRev
-                withSigs model signals
+                let model =
+                    BattleModel.updateCharacters (fun character ->
+                        let character = CharacterModel.changeActionTime Constants.Battle.ActionTimeInc character
+                        let character =
+                            if CharacterModel.readyForAutoBattle character
+                            then BattleModel.runAutoBattle character model
+                            else character
+                        character)
+                        model
+                withSigs model (List.rev enemySignalsRev)
 
         and tickRunning time model =
             match model.CurrentCommandOpt with
@@ -374,17 +380,6 @@ module OmniBattle =
                     if outcome
                     then BattleModel.updateAllies (CharacterModel.setAnimationCycle time CelebrateCycle) model
                     else BattleModel.updateEnemies (CharacterModel.setAnimationCycle time CelebrateCycle) model
-                just model
-            | AdvanceCharacters ->
-                let model =
-                    BattleModel.updateCharacters (fun character ->
-                        let character = CharacterModel.changeActionTime Constants.Battle.ActionTimeInc character
-                        let character =
-                            if CharacterModel.readyForAutoBattle character
-                            then BattleModel.runAutoBattle character model
-                            else character
-                        character)
-                        model
                 just model
             | AttackCharacter sourceIndex ->
                 let time = World.getTickTime world
