@@ -513,7 +513,7 @@ type CharacterInputState =
         | NoInput | RegularMenu | SpecialMenu | ItemMenu -> NoAim
         | AimReticles (_, aimType) -> aimType
 
-type [<NoComparison>] CharacterModel =
+type [<ReferenceEquality; NoComparison>] CharacterModel =
     { CharacterState : CharacterState
       AnimationState : CharacterAnimationState
       ActionTime : int
@@ -639,7 +639,7 @@ type BattleState =
     | BattleRunning
     | BattleCease of bool * int64
 
-type [<NoComparison>] BattleModel =
+type [<ReferenceEquality; NoComparison>] BattleModel =
     { BattleState : BattleState
       Characters : Map<CharacterIndex, CharacterModel>
       CurrentCommandOpt : CurrentCommand option
