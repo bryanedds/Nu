@@ -614,7 +614,7 @@ type [<NoComparison>] ReticlesModel =
       AimType : AimType }
 
 type RingMenuModel =
-    { Items : string list
+    { Items : (int * string) list
       ItemCancelOpt : string option }
 
 type ActionCommand =

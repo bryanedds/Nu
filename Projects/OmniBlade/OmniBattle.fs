@@ -548,7 +548,7 @@ module OmniBattle =
                         [Entity.Position <== ally --> fun ally -> ally.Center + Constants.Battle.CharacterCenterOffset
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> ally.InputState = RegularMenu
-                         Entity.RingMenuModel == { Items = ["Attack"; "Defend"; "Item"; "Special"]; ItemCancelOpt = None }
+                         Entity.RingMenuModel == { Items = [(0, "Attack"); (1, "Defend"); (2, "Item"); (3, "Special")]; ItemCancelOpt = None }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (RegularItemCancel allyIndex)]
                      Content.entity<RingMenuDispatcher> "SpecialMenu"
@@ -557,8 +557,8 @@ module OmniBattle =
                          Entity.Visible <== ally --> fun ally -> ally.InputState = SpecialMenu
                          Entity.RingMenuModel <== ally --> fun ally ->
                              let specials = List.ofSeq ally.CharacterState.Specials
-                             let specialStrs = List.map scstring specials
-                             { Items = specialStrs; ItemCancelOpt = Some "Cancel" }
+                             let specials = List.map (fun special -> (getTag special, scstring special)) specials
+                             { Items = specials; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (SpecialItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (SpecialItemCancel allyIndex)]
                      Content.entity<RingMenuDispatcher> "ItemMenu"
@@ -567,9 +567,9 @@ module OmniBattle =
                          Entity.Visible <== ally --> fun ally -> ally.InputState = ItemMenu
                          Entity.RingMenuModel <== model --> fun model ->
                             let consumables = Inventory.getConsumables model.Inventory
-                            let items = Map.toKeyList consumables
-                            let itemStrs = List.map scstring items
-                            { Items = itemStrs; ItemCancelOpt = Some "Cancel" }
+                            let consumables = Map.toKeyList consumables
+                            let consumables = List.map (fun special -> (getTag special, scstring special)) consumables
+                            { Items = consumables; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (ItemItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (ItemItemCancel allyIndex)]
                      Content.entity<ReticlesDispatcher> "Reticles"
