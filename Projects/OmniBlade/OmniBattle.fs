@@ -85,7 +85,7 @@ module OmniBattle =
                Characters = characters
                CurrentCommandOpt = None
                ActionCommands = Queue.empty
-               Inventory = { Items = Map.ofList [(Consumable GreenHerb, 3); (Consumable RedHerb, 1)] }
+               Inventory = { Items = Map.ofList [(Consumable GreenHerb, 2); (Consumable RedHerb, 2)] }
                Gold = 100 })
 
         static let tickAttack sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
