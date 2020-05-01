@@ -8,16 +8,29 @@ open Prime
 [<AutoOpen>]
 module Gen =
 
+    let private Lock = obj ()
+    let private random = Random ()
     let mutable private Counter = -1L
-    let private CounterLock = obj ()
 
     /// Generates engine-specific values on-demand.
     type Gen =
         private | Gen of unit
 
+        /// Get the next random number integer.
+        static member random =
+            lock Lock (fun () -> random.Next)
+            
+        /// Get the next random number integer below maxValue.
+        static member random1 maxValue =
+            lock Lock (fun () -> random.Next maxValue)
+
+        /// Get the next random number integer GTE minValue and LT maxValue.
+        static member random2 minValue maxValue =
+            lock Lock (fun () -> random.Next (minValue, maxValue))
+
         /// Generate a unique counter.
         static member counter =
-            lock CounterLock (fun () -> Counter <- inc Counter; Counter)
+            lock Lock (fun () -> Counter <- inc Counter; Counter)
 
         /// The prefix of a generated name
         static member namePrefix =
