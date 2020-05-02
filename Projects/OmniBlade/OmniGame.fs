@@ -43,8 +43,8 @@ module OmniGame =
         override this.Command (_, command, _, world) =
             let world =
                 match command with
-                | PlayTitleSong -> World.playSong 0 (1.0f * Constants.Audio.MasterSongVolume) Assets.TitleSong world
-                | PlaySplashSound -> World.playSound 1.0f Assets.NuSplashSound world
+                | PlayTitleSong -> World.playSong 0 (Constants.Audio.DefaultSongVolume) Assets.TitleSong world
+                | PlaySplashSound -> World.playSound Constants.Audio.DefaultSoundVolume Assets.NuSplashSound world
                 | FadeSong -> World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
                 | ShowTitle -> World.transitionScreen Simulants.Title world
                 | ShowCredits -> World.transitionScreen Simulants.Credits world
