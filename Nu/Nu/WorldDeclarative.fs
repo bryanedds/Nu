@@ -220,8 +220,9 @@ module WorldDeclarative =
         /// Turn an entity stream into a series of live simulants.
         static member expandSimulantStream (lens : Lens<obj, World>) indexerOpt mapper origin parent world =
             let lensSeq = Lens.map Reflection.objToObjSeq lens
+            let lensSeqExploded = Lens.explodeIndexedOpt indexerOpt lensSeq
             Stream.make (Events.Register --> lens.This.SimulantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
-            Stream.map (fun _ -> Lens.explodeIndexedOpt indexerOpt lensSeq) |>
+            Stream.map (fun _ -> lensSeqExploded) |>
             World.streamSimulants lensSeq mapper origin parent |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
