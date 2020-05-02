@@ -8,8 +8,8 @@ module Assets =
 
     // the various assets described by the project's 'AssetGraph.nuag' file
     let NuSplashSound = asset<Audio> GuiPackage "Nu"
-    let TitleSong = asset<Audio> GuiPackage "Guitar in the Sand"
-    let BattleSong = asset<Audio> BattlePackage "FightingBlue"
+    let TitleSong = asset<Audio> GuiPackage "Title"
+    let BattleSong = asset<Audio> BattlePackage "Battle"
     let HitSound = asset<Audio> BattlePackage "Hit"
     let ExplosionSound = asset<Audio> BattlePackage "Explosion"
     let JinnAnimationSheet = asset<Image> BattlePackage "Jinn"
