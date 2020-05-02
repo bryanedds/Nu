@@ -560,7 +560,7 @@ type [<ReferenceEquality; NoComparison>] CharacterModel =
     static member readyForAutoBattle (character : CharacterModel) =
         character.IsEnemy &&
         character.AutoBattleOpt.IsNone &&
-        character.ActionTime > 222
+        character.ActionTime > Constants.Battle.AutoBattleReadyTime
 
     static member runningSpecialAutoBattle character =
         match character.AutoBattleOpt with
