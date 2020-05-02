@@ -563,10 +563,11 @@ module OmniBattle =
                 let allyIndex = AllyIndex index
                 let input = screen / ("Input" + "+" + scstring index)
                 Content.layer input.Name []
-                    [Content.fillBar "FillBar"
+                    [Content.fillBar "HealthBar"
                         [Entity.Size == v2 64.0f 8.0f
                          Entity.Center <== ally --> fun ally -> ally.UnderFeet
                          Entity.Depth == Constants.Battle.GuiDepth
+                         Entity.Visible <== ally --> fun ally -> ally.CharacterState.HitPoints > 0
                          Entity.Fill <== ally ->> fun ally world ->
                             let rom = screen.Parent.GetModel<Rom> world
                             single ally.CharacterState.HitPoints / single (ally.CharacterState.HitPointsMax rom)]
