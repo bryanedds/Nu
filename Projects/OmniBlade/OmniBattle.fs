@@ -541,6 +541,10 @@ module OmniBattle =
                         [Entity.Position <== ally --> fun ally -> ally.Center + Constants.Battle.CharacterCenterOffset
                          Entity.Depth == 10.0f
                          Entity.Visible <== ally --> fun ally -> ally.InputState = RegularMenu
+                         Entity.Enabled <== model --> fun model ->
+                            let allies = BattleModel.getAllies model
+                            let alliesPastRegularMenu = List.notExists (fun ally -> match ally.InputState with NoInput | RegularMenu -> false | _ -> true) allies
+                            alliesPastRegularMenu
                          Entity.RingMenuModel == { Items = [(0, "Attack"); (1, "Defend"); (2, "Item"); (3, "Special")]; ItemCancelOpt = None }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (RegularItemCancel allyIndex)]
