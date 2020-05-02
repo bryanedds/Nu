@@ -563,7 +563,7 @@ module OmniBattle =
                 let allyIndex = AllyIndex index
                 let input = screen / ("Input" + "+" + scstring index)
                 Content.layer input.Name []
-                    [Content.fillBar "HealthBar"
+                    [Content.fillBar "HealthBar" 
                         [Entity.Size == v2 64.0f 8.0f
                          Entity.Center <== ally --> fun ally -> ally.UnderFeet
                          Entity.Depth == Constants.Battle.GuiDepth
