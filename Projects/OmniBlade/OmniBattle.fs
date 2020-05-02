@@ -118,6 +118,7 @@ module OmniBattle =
         static let tickConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
             match targetIndexOpt with
             | Some targetIndex ->
+                let source = BattleModel.getCharacter sourceIndex model
                 let target = BattleModel.getCharacter targetIndex model
                 match timeLocal with
                 | 0L ->
@@ -125,7 +126,7 @@ module OmniBattle =
                     then withMsg model (GiveConsumable (consumable, sourceIndex))
                     else withMsgs { model with CurrentCommandOpt = None } [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
                 | _ ->
-                    if timeLocal = int64 target.AnimationState.Stutter
+                    if timeLocal = int64 source.AnimationState.Stutter * 3L
                     then withMsg model (TakeConsumable (consumable, targetIndex))
                     elif CharacterAnimationState.finished time target.AnimationState then
                         let model = { model with CurrentCommandOpt = None }
