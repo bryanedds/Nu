@@ -339,50 +339,50 @@ type CharacterState =
             match this.ArmorOpt with
             | Some armor ->
                 match Map.tryFind armor rom.Armors with
-                | Some armorData -> single armorData.HitPointsBase |> max 5.0f
-                | None -> 5.0f
-            | None -> 5.0f
-        intermediate * single this.Level |> int |> max 1
+                | Some armorData -> single armorData.HitPointsBase
+                | None -> 8.0f
+            | None -> 8.0f
+        intermediate * single this.Level |> int
 
     member this.SpecialPointsMax rom =
         let intermediate =
             match this.ArmorOpt with
             | Some armor ->
                 match Map.tryFind armor rom.Armors with
-                | Some armorData -> single armorData.SpecialPointsBase |> max 2.0f
-                | None -> 2.0f
-            | None -> 2.0f
-        intermediate * single this.Level |> int |> max 1
+                | Some armorData -> single armorData.SpecialPointsBase
+                | None -> 4.0f
+            | None -> 4.0f
+        intermediate * single this.Level |> int
 
     member this.Power rom =
         let intermediate =
             match this.WeaponOpt with
             | Some weapon ->
                 match Map.tryFind weapon rom.Weapons with
-                | Some weaponData -> single weaponData.PowerBase * this.PowerBuff |> max 5.0f
-                | None -> 5.0f
-            | None -> 5.0f
-        intermediate * single this.Level / 5.0f |> int |> max 1
+                | Some weaponData -> single weaponData.PowerBase
+                | None -> 1.0f
+            | None -> 1.0f
+        intermediate * single this.Level * this.PowerBuff |> int |> max 1
 
     member this.Magic rom =
         let intermediate =
             match this.WeaponOpt with
             | Some weapon ->
                 match Map.tryFind weapon rom.Weapons with
-                | Some weaponData -> single weaponData.MagicBase * this.MagicBuff |> max 5.0f
-                | None -> 5.0f
-            | None -> 5.0f
-        intermediate * single this.Level / 5.0f |> int |> max 1
+                | Some weaponData -> single weaponData.MagicBase
+                | None -> 1.0f
+            | None -> 1.0f
+        intermediate * single this.Level * this.MagicBuff |> int |> max 1
 
     member this.Shield (rom : Rom) =
         let intermediate =
             match this.Relics with
             | relic :: _ -> // just the first relic for now
                 match Map.tryFind relic rom.Relics with
-                | Some weaponData -> single weaponData.ShieldBase * this.ShieldBuff |> max 0.0f
+                | Some weaponData -> single weaponData.ShieldBase
                 | None -> 0.0f
             | _ -> 0.0f
-        intermediate * single this.Level / 5.0f |> int |> max 0
+        intermediate * single this.Level * this.ShieldBuff |> int |> max 0
 
     static member getDamage scalar (source : CharacterState) (target : CharacterState) rom =
         let power = source.Power rom
@@ -522,7 +522,10 @@ type [<ReferenceEquality; NoComparison>] CharacterModel =
       Position : Vector2
       Size : Vector2 }
 
+    member this.UnderFeet = this.Position + v2 (this.Size.X * 0.5f) -8.0f
     member this.Center = this.Position + this.Size * 0.5f
+    member this.CenterOffset = this.Center + Constants.Battle.CharacterCenterOffset
+    member this.CenterOffset2 = this.Center + Constants.Battle.CharacterCenterOffset2
     member this.Bottom = this.Position + v2 (this.Size.X * 0.5f) 0.0f
     member this.IsEnemy = this.CharacterState.IsEnemy
     member this.IsAlly = this.CharacterState.IsAlly

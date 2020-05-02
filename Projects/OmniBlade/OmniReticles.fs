@@ -48,7 +48,7 @@ module OmniReticles =
                 Content.button button.Name
                     [Entity.ParentNodeOpt == None
                      Entity.Size == v2 128.0f 128.0f
-                     Entity.Center <== character --> fun character -> character.Center + Constants.Battle.CharacterCenterOffset
+                     Entity.Center <== character --> fun character -> character.CenterOffset
                      Entity.UpImage == asset Assets.BattlePackage "ReticleUp"
                      Entity.DownImage == asset Assets.BattlePackage "ReticleDown"
                      Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterState.CharacterIndex)]]

@@ -17,6 +17,11 @@ module Constants =
         let DefendingCounterBuff = 0.5f
         let CancelPosition = v2 -448.0f -240.0f
         let CharacterCenterOffset = v2 0.0f -16.0f
+        let CharacterCenterOffset2 = v2 0.0f -32.0f
+        let BackgroundDepth = -10.0f
+        let ForgroundDepth = 0.0f
+        let GuiDepth = 10.0f
+        let GuiEffectDepth = 20.0f
 
     [<RequireQualifiedAccess>]
     module OmniBlade =

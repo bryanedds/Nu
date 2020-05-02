@@ -41,7 +41,7 @@ module OmniRingMenu =
                 just world
 
         static member Properties =
-            [define Entity.Radius 96.0f
+            [define Entity.Radius 112.0f
              define Entity.Rotation 0.0f
              define Entity.SwallowMouseLeft false
              define Entity.Visible false]

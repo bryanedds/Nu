@@ -1,2 +1,3 @@
 Type,Subtype,HitPointsBase,SpecialPointsBase
-Leather Robe,Robe,50,30
+Leather Robe,Robe,10,5
+Leather Vest,Vest,20,5
