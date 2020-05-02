@@ -177,43 +177,45 @@ module WorldDeclarative =
             (parent : Simulant)
             (stream : Stream<Lens<(int * obj) option, World> seq, World>) =
             stream |>
-            Stream.insert Gen.id |>
-            Stream.mapWorld (fun (guid, lenses) world ->
-                lenses |>
-                Seq.map (fun lens -> (lens.Get world, { Lens.dereference lens with Validate = fun world -> Option.isSome (lens.Get world) })) |>
-                Seq.filter (fst >> Option.isSome) |>
-                Seq.take (Lens.get lensSeq world |> Seq.length) |>
-                Seq.map (fun (opt, lens) ->
-                    let (index, _) = Option.get opt
-                    let guid = Gen.idDeterministic index guid
-                    let lens = lens.Map snd
-                    PartialComparable.make guid (index, lens)) |>
-                Set.ofSeq) |>
-            Stream.fold (fun (p, _, _) c ->
-                (c, Set.difference c p, Set.difference p c))
-                (Set.empty, Set.empty, Set.empty) |>
-            Stream.optimizeBy
-                Triple.fst |>
-            Stream.mapEffect (fun evt world ->
-                let (current, added, removed) = evt.Data
+            Stream.trackEffect4 (fun (guid, p, _, _) event world ->
+                let c =
+                    event.Data |>
+                    Seq.map (fun lens -> (Lens.get lens world, { Lens.dereference lens with Validate = fun world -> Option.isSome (lens.Get world) })) |>
+                    Seq.filter (fst >> Option.isSome) |>
+                    Seq.take (Lens.get lensSeq world |> Seq.length) |>
+                    Seq.map (fun (opt, lens) ->
+                        let (index, _) = Option.get opt
+                        let guid = Gen.idDeterministic index guid
+                        let lens = lens.Map snd
+                        PartialComparable.make guid (index, lens)) |>
+                    Set.ofSeq
+                let cpd = Set.difference c p
+                let pcd = Set.difference p c
+                let changed = Set.notEmpty cpd || Set.notEmpty pcd
                 let world =
-                    Seq.fold (fun world guidAndContent ->
-                        let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
-                        let content = mapper index lens world
-                        match World.tryGetKeyedValue (scstring guid) world with
-                        | None -> WorldModule.expandContent Unchecked.defaultof<_> (Some guid) content origin parent world
-                        | Some _ -> world)
-                        world added
-                let world =
-                    Seq.fold (fun world guidAndContent ->
-                        let (guid, _) = PartialComparable.unmake guidAndContent
-                        match World.tryGetKeyedValue (scstring guid) world with
-                        | Some simulant ->
-                            let world = World.removeKeyedValue (scstring guid) world
-                            WorldModule.destroy simulant world
-                        | None -> failwithumf ())
-                        world removed
-                (current, world))
+                    if changed then
+                        let world =
+                            Seq.fold (fun world guidAndContent ->
+                                let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
+                                let content = mapper index lens world
+                                match World.tryGetKeyedValue (scstring guid) world with
+                                | None -> WorldModule.expandContent Unchecked.defaultof<_> (Some guid) content origin parent world
+                                | Some _ -> world)
+                                world cpd
+                        let world =
+                            Seq.fold (fun world guidAndContent ->
+                                let (guid, _) = PartialComparable.unmake guidAndContent
+                                match World.tryGetKeyedValue (scstring guid) world with
+                                | Some simulant ->
+                                    let world = World.removeKeyedValue (scstring guid) world
+                                    WorldModule.destroy simulant world
+                                | None -> failwithumf ())
+                                world pcd
+                        world
+                    else world
+                ((guid, c, cpd, pcd), changed, world))
+                id
+                (Gen.id, Set.empty, Set.empty, Set.empty)
 
         /// Turn an entity stream into a series of live simulants.
         static member expandSimulantStream (lens : Lens<obj, World>) indexerOpt mapper origin parent world =
