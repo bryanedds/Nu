@@ -48,14 +48,14 @@ module OmniBattle =
     type BattleDispatcher () =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
             (let allies =
-                [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 15; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash; Volt]; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
+                [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 25; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash; Volt]; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = Some "Leather Vest"; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
                    ActionTime = 600
                    AutoBattleOpt = None
                    InputState = NoInput
                    Position = v2 -224.0f -168.0f
                    Size = v2 160.0f 160.0f }
-                 { CharacterState = { CharacterType = Ally Glenn; PartyIndex = 1; ExpPoints = 0; HitPoints = 15; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash; Volt]; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
+                 { CharacterState = { CharacterType = Ally Glenn; PartyIndex = 1; ExpPoints = 0; HitPoints = 25; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash; Volt]; Statuses = Set.empty; WeaponOpt = Some "Oak Rod"; ArmorOpt = Some "Leather Robe"; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = Assets.GlennAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
                    ActionTime = 420
                    AutoBattleOpt = None
@@ -501,21 +501,27 @@ module OmniBattle =
                         colorOpaque.WithW 0.0f
                     let effect =
                         { EffectName = ""
-                          LifetimeOpt = Some 60L
+                          LifetimeOpt = Some 70L
                           Definitions = Map.empty
                           Content =
                             Effects.TextSprite
                                 (Effects.Resource (Assets.DefaultPackage, Assets.DefaultFont),
                                  [|Effects.Text (scstring (abs delta))
+                                   Effects.Position
+                                    (Effects.Sum, Effects.Linear, Effects.Bounce,
+                                     [|{ TweenValue = v2Zero; TweenLength = 10L }
+                                       { TweenValue = v2 0.0f 48.0f; TweenLength = 10L }
+                                       { TweenValue = v2Zero; TweenLength = 10L }
+                                       { TweenValue = v2Zero; TweenLength = 40L }|])
                                    Effects.Color
-                                    (Effects.Set, Effects.Linear, Effects.Once,
-                                     [|{ TweenValue = colorOpaque; TweenLength = 30L }
+                                    (Effects.Set, Effects.EaseOut, Effects.Once,
+                                     [|{ TweenValue = colorOpaque; TweenLength = 40L }
                                        { TweenValue = colorOpaque; TweenLength = 30L }
                                        { TweenValue = colorTransparent; TweenLength = 0L }|])|],
                                  Effects.Nil) }
                     let world = entity.SetEffect effect world
-                    let world = entity.SetCenter target.Bottom world
-                    let world = entity.SetDepth 100.0f world // TODO: derive this from something understandable
+                    let world = entity.SetCenter target.CenterOffset2 world
+                    let world = entity.SetDepth Constants.Battle.GuiEffectDepth world // TODO: derive this from something understandable
                     let world = entity.SetSelfDestruct true world
                     just world
                 | None -> just world
@@ -535,7 +541,7 @@ module OmniBattle =
                 [Content.label background.Name
                     [background.Position == v2 -480.0f -512.0f
                      background.Size == v2 1024.0f 1024.0f
-                     background.Depth == -10.0f
+                     background.Depth == Constants.Battle.BackgroundDepth
                      background.LabelImage == asset "Battle" "Background"]
                  Content.entitiesIndexedBy
                     (model --> fun model -> BattleModel.getAllies model)
@@ -551,9 +557,16 @@ module OmniBattle =
                 let allyIndex = AllyIndex index
                 let input = screen / ("Input" + "+" + scstring index)
                 Content.layer input.Name []
-                    [Content.entity<RingMenuDispatcher> "RegularMenu"
-                        [Entity.Position <== ally --> fun ally -> ally.Center + Constants.Battle.CharacterCenterOffset
-                         Entity.Depth == 10.0f
+                    [Content.fillBar "FillBar"
+                        [Entity.Size == v2 64.0f 16.0f
+                         Entity.Center <== ally --> fun ally -> ally.UnderFeet
+                         Entity.Depth == Constants.Battle.GuiDepth
+                         Entity.Fill <== ally ->> fun ally world ->
+                            let rom = screen.Parent.GetModel<Rom> world
+                            single ally.CharacterState.HitPoints / single (ally.CharacterState.HitPointsMax rom)]
+                     Content.entity<RingMenuDispatcher> "RegularMenu"
+                        [Entity.Position <== ally --> fun ally -> ally.CenterOffset
+                         Entity.Depth == Constants.Battle.GuiDepth
                          Entity.Visible <== ally --> fun ally -> ally.InputState = RegularMenu
                          Entity.Enabled <== model --> fun model ->
                             let allies = BattleModel.getAllies model
@@ -563,8 +576,8 @@ module OmniBattle =
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (RegularItemCancel allyIndex)]
                      Content.entity<RingMenuDispatcher> "SpecialMenu"
-                        [Entity.Position <== ally --> fun ally -> ally.Center + Constants.Battle.CharacterCenterOffset
-                         Entity.Depth == 10.0f
+                        [Entity.Position <== ally --> fun ally -> ally.CenterOffset
+                         Entity.Depth == Constants.Battle.GuiDepth
                          Entity.Visible <== ally --> fun ally -> ally.InputState = SpecialMenu
                          Entity.RingMenuModel <== ally --> fun ally ->
                              let specials = List.ofSeq ally.CharacterState.Specials
@@ -573,8 +586,8 @@ module OmniBattle =
                          Entity.ItemSelectEvent ==|> fun evt -> msg (SpecialItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (SpecialItemCancel allyIndex)]
                      Content.entity<RingMenuDispatcher> "ItemMenu"
-                        [Entity.Position <== ally --> fun ally -> ally.Center + Constants.Battle.CharacterCenterOffset
-                         Entity.Depth == 10.0f
+                        [Entity.Position <== ally --> fun ally -> ally.CenterOffset
+                         Entity.Depth == Constants.Battle.GuiDepth
                          Entity.Visible <== ally --> fun ally -> ally.InputState = ItemMenu
                          Entity.RingMenuModel <== model --> fun model ->
                             let consumables = Inventory.getConsumables model.Inventory
@@ -584,8 +597,8 @@ module OmniBattle =
                          Entity.ItemSelectEvent ==|> fun evt -> msg (ItemItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (ItemItemCancel allyIndex)]
                      Content.entity<ReticlesDispatcher> "Reticles"
-                        [Entity.Position <== ally --> fun ally -> ally.Center + Constants.Battle.CharacterCenterOffset
-                         Entity.Depth == 10.0f
+                        [Entity.Position <== ally --> fun ally -> ally.CenterOffset
+                         Entity.Depth == Constants.Battle.GuiDepth
                          Entity.Visible <== ally --> fun ally -> match ally.InputState with AimReticles _ -> true | _ -> false
                          Entity.ReticlesModel <== model --> fun model -> { Characters = model.Characters; AimType = (BattleModel.getCharacter allyIndex model).InputState.AimType }
                          Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (evt.Data, allyIndex))
