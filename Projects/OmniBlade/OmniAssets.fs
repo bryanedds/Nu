@@ -12,9 +12,6 @@ module Assets =
     let BattleSong = asset<Audio> BattlePackage "FightingBlue"
     let HitSound = asset<Audio> BattlePackage "Hit"
     let ExplosionSound = asset<Audio> BattlePackage "Explosion"
-    let ShotSound = asset<Audio> BattlePackage "Shot"
-    let JumpSound = asset<Audio> BattlePackage "Jump"
-    let DeathSound = asset<Audio> BattlePackage "Death"
     let JinnAnimationSheet = asset<Image> BattlePackage "Jinn"
 
     // the file paths from which various simulants are loaded
