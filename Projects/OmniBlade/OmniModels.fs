@@ -22,9 +22,9 @@ type Direction =
         direction
 
 type ElementType =
-    | Fire // beats nothing; strongest
+    | Fire // beats nothing; strongest innate mpow
     | Lightning // beats water
-    | Water // beats fire, lightning; weakest
+    | Water // beats fire, lightning; weakest innate mpow
 
 type StatusType =
     | DefendStatus // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
