@@ -384,7 +384,7 @@ type CharacterState =
             | _ -> 0.0f
         intermediate * single this.Level * this.ShieldBuff |> int |> max 0
 
-    static member getDamage scalar (source : CharacterState) (target : CharacterState) rom =
+    static member getDamage rom scalar (source : CharacterState) (target : CharacterState) =
         let power = source.Power rom
         let shield = target.Shield rom
         let damage = max 1 (int (Math.Ceiling (double (power - shield))))
@@ -547,9 +547,10 @@ type [<ReferenceEquality; NoComparison>] CharacterModel =
     static member changeActionTime delta character =
         CharacterModel.setActionTime (character.ActionTime + delta) character
 
-    static member changeHitPoints delta character =
+    static member changeHitPoints rom delta character =
         let hitPoints = character.CharacterState.HitPoints
-        let hitPoints =  max 0 (hitPoints + delta)
+        let hitPoints = max 0 (hitPoints + delta)
+        let hitPoints = min (character.CharacterState.HitPointsMax rom) hitPoints
         { character with CharacterState = { character.CharacterState with HitPoints = hitPoints }}
 
     static member getPoiseType character =

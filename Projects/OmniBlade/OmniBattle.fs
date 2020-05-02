@@ -310,7 +310,7 @@ module OmniBattle =
              battle.DeselectEvent => cmd FinalizeBattle
              battle.UpdateEvent => msg Tick]
 
-        override this.Message (model, message, _, world) =
+        override this.Message (model, message, screen, world) =
             match message with
             | RegularItemSelect (characterIndex, item) ->
                 let model =
@@ -396,18 +396,18 @@ module OmniBattle =
                 withCmd model playHitSound
             | DamageCharacter (sourceIndex, targetIndex, specialTypeOpt) ->
                 let time = World.getTickTime world
-                let rom = Simulants.Game.GetModel world
+                let rom = screen.Parent.GetModel<Rom> world
                 let source = BattleModel.getCharacter sourceIndex model
                 let target = BattleModel.getCharacter targetIndex model
                 let (damage, model) =
                     match specialTypeOpt with
                     | None ->
-                        let damage = CharacterState.getDamage 1 source.CharacterState target.CharacterState rom
-                        let model = BattleModel.updateCharacter (CharacterModel.changeHitPoints -damage) targetIndex model
+                        let damage = CharacterState.getDamage rom 1 source.CharacterState target.CharacterState
+                        let model = BattleModel.updateCharacter (CharacterModel.changeHitPoints rom -damage) targetIndex model
                         (damage, model)
                     | Some JumpSlash ->
-                        let damage = CharacterState.getDamage 2 source.CharacterState target.CharacterState rom // TODO: pull scalar from rom
-                        let model = BattleModel.updateCharacter (CharacterModel.changeHitPoints -damage) targetIndex model
+                        let damage = CharacterState.getDamage rom 2 source.CharacterState target.CharacterState // TODO: pull scalar from rom
+                        let model = BattleModel.updateCharacter (CharacterModel.changeHitPoints rom -damage) targetIndex model
                         (damage, model)
                     | Some Volt ->
                         (0, model) // TODO: implement
@@ -467,12 +467,18 @@ module OmniBattle =
                 just model
             | TakeConsumable (consumable, targetIndex) ->
                 let time = World.getTickTime world
+                let rom = screen.Parent.GetModel<Rom> world
                 let healing =
                     match consumable with
-                    | GreenHerb -> 100 // TODO: pull from rom data
+                    | GreenHerb -> 50 // TODO: pull from rom data
                     | RedHerb -> 500 // TODO: pull from rom data
-                let model = BattleModel.updateCharacter (CharacterModel.changeHitPoints healing) targetIndex model
-                let model = BattleModel.updateCharacter (CharacterModel.setAnimationCycle time SpinCycle) targetIndex model
+                let model =
+                    BattleModel.updateCharacter
+                        (fun character ->
+                            let character = CharacterModel.changeHitPoints rom healing character
+                            let character = CharacterModel.setAnimationCycle time SpinCycle character
+                            character)
+                        targetIndex model
                 let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
                 let playHealSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.HealSound)
                 withCmds model [displayHitPointsChange; playHealSound]
