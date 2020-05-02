@@ -172,14 +172,16 @@ module WorldDeclarative =
         /// Transform a stream into existing simulants.
         static member streamSimulants
             (lensSeq : Lens<obj seq, World>)
+            (indexerOpt : (obj -> int) option)
             (mapper : int -> Lens<obj, World> -> World -> SimulantContent)
             (origin : ContentOrigin)
             (parent : Simulant)
-            (stream : Stream<Lens<(int * obj) option, World> seq, World>) =
+            (stream : Stream<'a, World>) =
+            let lenses = Lens.explodeIndexedOpt indexerOpt lensSeq
             stream |>
-            Stream.trackEffect4 (fun (guid, p, _, _) event world ->
-                let c =
-                    event.Data |>
+            Stream.trackEffect4 (fun (guid, previous, _, _) _ world ->
+                let current =
+                    lenses |>
                     Seq.map (fun lens -> (Lens.get lens world, { Lens.dereference lens with Validate = fun world -> Option.isSome (lens.Get world) })) |>
                     Seq.filter (fst >> Option.isSome) |>
                     Seq.take (Lens.get lensSeq world |> Seq.length) |>
@@ -189,8 +191,8 @@ module WorldDeclarative =
                         let lens = lens.Map snd
                         PartialComparable.make guid (index, lens)) |>
                     Set.ofSeq
-                let cpd = Set.difference c p
-                let pcd = Set.difference p c
+                let cpd = Set.difference current previous
+                let pcd = Set.difference previous current
                 let changed = Set.notEmpty cpd || Set.notEmpty pcd
                 let world =
                     if changed then
@@ -213,16 +215,14 @@ module WorldDeclarative =
                                 world pcd
                         world
                     else world
-                ((guid, c, cpd, pcd), changed, world))
+                ((guid, current, cpd, pcd), changed, world))
                 id
                 (Gen.id, Set.empty, Set.empty, Set.empty)
 
         /// Turn an entity stream into a series of live simulants.
         static member expandSimulantStream (lens : Lens<obj, World>) indexerOpt mapper origin parent world =
             let lensSeq = Lens.map Reflection.objToObjSeq lens
-            let lensSeqExploded = Lens.explodeIndexedOpt indexerOpt lensSeq
             Stream.make (Events.Register --> lens.This.SimulantAddress) |>
             Stream.sum (Stream.make lens.ChangeEvent) |>
-            Stream.map (fun _ -> lensSeqExploded) |>
-            World.streamSimulants lensSeq mapper origin parent |>
+            World.streamSimulants lensSeq indexerOpt mapper origin parent |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
