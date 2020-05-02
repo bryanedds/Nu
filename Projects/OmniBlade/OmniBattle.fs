@@ -48,14 +48,14 @@ module OmniBattle =
     type BattleDispatcher () =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
             (let allies =
-                [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 25; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash; Volt]; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = Some "Leather Vest"; Relics = [] }
+                [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 10; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash; Volt]; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = Some "Leather Vest"; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
                    ActionTime = 600
                    AutoBattleOpt = None
                    InputState = NoInput
                    Position = v2 -224.0f -168.0f
                    Size = v2 160.0f 160.0f }
-                 { CharacterState = { CharacterType = Ally Glenn; PartyIndex = 1; ExpPoints = 0; HitPoints = 25; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash; Volt]; Statuses = Set.empty; WeaponOpt = Some "Oak Rod"; ArmorOpt = Some "Leather Robe"; Relics = [] }
+                 { CharacterState = { CharacterType = Ally Glenn; PartyIndex = 1; ExpPoints = 0; HitPoints = 10; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash; Volt]; Statuses = Set.empty; WeaponOpt = Some "Oak Rod"; ArmorOpt = Some "Leather Robe"; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = Assets.GlennAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
                    ActionTime = 420
                    AutoBattleOpt = None
@@ -558,7 +558,7 @@ module OmniBattle =
                 let input = screen / ("Input" + "+" + scstring index)
                 Content.layer input.Name []
                     [Content.fillBar "FillBar"
-                        [Entity.Size == v2 64.0f 16.0f
+                        [Entity.Size == v2 64.0f 8.0f
                          Entity.Center <== ally --> fun ally -> ally.UnderFeet
                          Entity.Depth == Constants.Battle.GuiDepth
                          Entity.Fill <== ally ->> fun ally world ->
