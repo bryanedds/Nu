@@ -244,7 +244,7 @@ module EffectFacetModule =
              variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
 
         override this.Actualize (entity, world) =
-            
+
             // evaluate effect if visible
             if entity.GetVisibleLayered world && entity.GetInView world then
 
