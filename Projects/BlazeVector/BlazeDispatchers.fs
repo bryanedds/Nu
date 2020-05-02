@@ -76,7 +76,7 @@ module EnemyModule =
 
         static let die (enemy : Entity) world =
             let world = World.destroyEntity enemy world
-            World.playSound 1.0f Assets.ExplosionSound world
+            World.playSound Constants.Audio.DefaultSoundVolume Assets.ExplosionSound world
 
         static let handleUpdate evt world =
             let enemy = evt.Subscriber : Entity
@@ -90,7 +90,7 @@ module EnemyModule =
                 let isBullet = collidee.DispatchesAs<BulletDispatcher> world
                 if isBullet then
                     let world = enemy.SetHealth (enemy.GetHealth world - 1) world
-                    let world = World.playSound 1.0f Assets.HitSound world
+                    let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.HitSound world
                     world
                 else world
             else world
@@ -148,7 +148,7 @@ module PlayerModule =
 
         static let propelBullet (bullet : Entity) world =
             let world = World.applyBodyLinearImpulse (Vector2 (15.0f, 0.0f)) (bullet.GetPhysicsId world) world
-            World.playSound 1.0f Assets.ShotSound world
+            World.playSound Constants.Audio.DefaultSoundVolume Assets.ShotSound world
 
         static let shootBullet (player : Entity) world =
             let playerTransform = player.GetTransform world
@@ -191,7 +191,7 @@ module PlayerModule =
                 tickTime <= player.GetLastTimeOnGroundNp world + 10L then
                 let world = player.SetLastTimeJumpNp tickTime world
                 let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 2000.0f)) (player.GetPhysicsId world) world
-                let world = World.playSound 1.0f Assets.JumpSound world
+                let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.JumpSound world
                 world
             else world
 
@@ -256,7 +256,7 @@ module SceneModule =
                     else world
                 | PlayerFall ->
                     if Simulants.Player.HasFallen world && World.isSelectedScreenIdling world then
-                        let world = World.playSound 1.0f Assets.DeathSound world
+                        let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.DeathSound world
                         if Simulants.Title.GetExists world
                         then World.transitionScreen Simulants.Title world
                         else world

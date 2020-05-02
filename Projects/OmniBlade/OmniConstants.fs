@@ -8,14 +8,6 @@ open OmniBlade
 module Constants =
 
     [<RequireQualifiedAccess>]
-    module Audio =
-
-        // TODO: implement these to use the master volume functionality of the engine
-        // when that is finally implemented.
-        let MasterSongVolume = 0.5f
-        let MasterSoundVolume = 1.0f
-
-    [<RequireQualifiedAccess>]
     module Battle =
 
         let AllyMax = 3

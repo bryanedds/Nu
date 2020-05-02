@@ -1273,6 +1273,9 @@ module ButtonDispatcherModule =
         member this.GetClickSoundOpt world : Audio AssetTag option = this.Get Property? ClickSoundOpt world
         member this.SetClickSoundOpt (value : Audio AssetTag option) world = this.SetFast Property? ClickSoundOpt false false value world
         member this.ClickSoundOpt = lens Property? ClickSoundOpt this.GetClickSoundOpt this.SetClickSoundOpt this
+        member this.GetClickSoundVolume world : single = this.Get Property? ClickSoundVolume world
+        member this.SetClickSoundVolume (value : single) world = this.SetFast Property? ClickSoundVolume false false value world
+        member this.ClickSoundVolume = lens Property? ClickSoundVolume this.GetClickSoundVolume this.SetClickSoundVolume this
         member this.UpEvent = Events.Up --> this
         member this.DownEvent = Events.Down --> this
         member this.ClickEvent = Events.Click --> this
@@ -1312,7 +1315,7 @@ module ButtonDispatcherModule =
                         let world = World.publish () (Events.Click --> button) eventTrace button world
                         let world =
                             match button.GetClickSoundOpt world with
-                            | Some clickSound -> World.playSound 1.0f clickSound world
+                            | Some clickSound -> World.playSound (button.GetClickSoundVolume world) clickSound world
                             | None -> world
                         (Resolve, world)
                     else (Resolve, world)
@@ -1328,7 +1331,8 @@ module ButtonDispatcherModule =
              define Entity.Down false
              define Entity.UpImage (AssetTag.make<Image> Assets.DefaultPackage "Image")
              define Entity.DownImage (AssetTag.make<Image> Assets.DefaultPackage "Image2")
-             define Entity.ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))]
+             define Entity.ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))
+             define Entity.ClickSoundVolume Constants.Audio.DefaultSoundVolume]
 
         override this.Register (button, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown button world |> snd
@@ -1474,6 +1478,9 @@ module ToggleDispatcherModule =
         member this.GetToggleSoundOpt world : Audio AssetTag option = this.Get Property? ToggleSoundOpt world
         member this.SetToggleSoundOpt (value : Audio AssetTag option) world = this.SetFast Property? ToggleSoundOpt false false value world
         member this.ToggleSoundOpt = lens Property? ToggleSoundOpt this.GetToggleSoundOpt this.SetToggleSoundOpt this
+        member this.GetToggleSoundVolume world : single = this.Get Property? ToggleSoundVolume world
+        member this.SetToggleSoundVolume (value : single) world = this.SetFast Property? ToggleSoundVolume false false value world
+        member this.ToggleSoundVolume = lens Property? ToggleSoundVolume this.GetToggleSoundVolume this.SetToggleSoundVolume this
         member this.ToggleEvent = Events.Toggle --> this
 
     type ToggleDispatcher () =
@@ -1511,7 +1518,7 @@ module ToggleDispatcherModule =
                         let world = World.publish () (Events.Toggle --> toggle) eventTrace toggle world
                         let world =
                             match toggle.GetToggleSoundOpt world with
-                            | Some toggleSound -> World.playSound 1.0f toggleSound world
+                            | Some toggleSound -> World.playSound (toggle.GetToggleSoundVolume world) toggleSound world
                             | None -> world
                         (Resolve, world)
                     else (Resolve, world)
@@ -1528,7 +1535,8 @@ module ToggleDispatcherModule =
              define Entity.Pressed false
              define Entity.OpenImage (AssetTag.make<Image> Assets.DefaultPackage "Image")
              define Entity.ClosedImage (AssetTag.make<Image> Assets.DefaultPackage "Image2")
-             define Entity.ToggleSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))]
+             define Entity.ToggleSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))
+             define Entity.ToggleSoundVolume Constants.Audio.DefaultSoundVolume]
 
         override this.Register (toggle, world) =
             let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown toggle world |> snd

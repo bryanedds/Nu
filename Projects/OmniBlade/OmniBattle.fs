@@ -181,7 +181,7 @@ module OmniBattle =
                 | DamageCycle ->
                     if CharacterAnimationState.finished time character.AnimationState then
                         let woundCharacter = WoundCharacter targetIndex
-                        let playDeathSound = PlaySound (0L, Constants.Audio.MasterSoundVolume, Assets.DeathSound)
+                        let playDeathSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.DeathSound)
                         withSigs model [Message woundCharacter; Command playDeathSound]
                     else just model
                 | WoundCycle ->
@@ -256,7 +256,7 @@ module OmniBattle =
                                         character)
                                     ally.CharacterState.CharacterIndex
                                     model
-                            let playActionTimeSound = PlaySound (0L, Constants.Audio.MasterSoundVolume, Assets.AffirmSound)
+                            let playActionTimeSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.AffirmSound)
                             (Command playActionTimeSound :: signals, model)
                         else (signals, model))
                         ([], model)
@@ -392,7 +392,7 @@ module OmniBattle =
                 let time = World.getTickTime world
                 let model = BattleModel.updateCharacter (CharacterModel.setAnimationCycle time AttackCycle) sourceIndex model
                 let playHitSoundDelay = int64 (BattleModel.getCharacter sourceIndex model).AnimationState.Stutter
-                let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.MasterSoundVolume, Assets.HitSound)
+                let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                 withCmd model playHitSound
             | DamageCharacter (sourceIndex, targetIndex, specialTypeOpt) ->
                 let time = World.getTickTime world
@@ -474,7 +474,7 @@ module OmniBattle =
                 let model = BattleModel.updateCharacter (CharacterModel.changeHitPoints healing) targetIndex model
                 let model = BattleModel.updateCharacter (CharacterModel.setAnimationCycle time SpinCycle) targetIndex model
                 let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
-                let playHealSound = PlaySound (0L, Constants.Audio.MasterSoundVolume, Assets.HealSound)
+                let playHealSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.HealSound)
                 withCmds model [displayHitPointsChange; playHealSound]
             | Tick ->
                 if World.isTicking world
@@ -522,7 +522,7 @@ module OmniBattle =
             | InitializeBattle ->
                 let world = World.hintRenderPackageUse Assets.BattlePackage world
                 let world = World.hintAudioPackageUse Assets.BattlePackage world
-                let world = World.playSong 0 (1.0f * Constants.Audio.MasterSongVolume) Assets.BattleSong world
+                let world = World.playSong 0 Constants.Audio.DefaultSongVolume Assets.BattleSong world
                 let world = battle.SetBattleModel { model with BattleState = BattleReady (World.getTickTime world) } world
                 just world
             | FinalizeBattle ->

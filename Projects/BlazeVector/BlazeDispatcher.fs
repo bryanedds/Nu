@@ -37,8 +37,8 @@ module BlazeDispatcherModule =
         override this.Command (_, command, _, world) =
             let world =
                 match command with
-                | PlaySplashSound -> World.playSound 1.0f Assets.NuSplashSound world
-                | PlayTitleSong -> World.playSong 0 1.0f Assets.MachinerySong world
+                | PlaySplashSound -> World.playSound Constants.Audio.DefaultSoundVolume Assets.NuSplashSound world
+                | PlayTitleSong -> World.playSong 0 Constants.Audio.DefaultSongVolume Assets.MachinerySong world
                 | FadeSong -> World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
                 | ShowTitle -> World.transitionScreen Simulants.Title world
                 | ShowCredits -> World.transitionScreen Simulants.Credits world

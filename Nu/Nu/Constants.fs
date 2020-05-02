@@ -66,6 +66,8 @@ module Constants =
     module Audio =
 
         let [<Literal>] Frequency = 44100
+        let [<Literal>] DefaultSongVolume = 0.25f
+        let [<Literal>] DefaultSoundVolume = 0.5f
         let [<Literal>] DefaultBufferSize = 1024
         let [<Literal>] DefaultTimeToFadeOutSongMs = 500
         let (*Literal*) AssetMapConfig = Functional

@@ -43,7 +43,7 @@ type MyGameplayDispatcher () =
                 let physicsId = Simulants.Player.GetPhysicsId world
                 if World.isBodyOnGround physicsId world then
                     let world = World.applyBodyForce (v2 0.0f 200000.0f) physicsId world
-                    World.playSound 1.0f (asset "Gameplay" "Jump") world
+                    World.playSound Constants.Audio.DefaultSoundVolume (asset "Gameplay" "Jump") world
                 else world
             | MoveLeft ->
                 let physicsId = Simulants.Player.GetPhysicsId world
