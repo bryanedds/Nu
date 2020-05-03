@@ -63,14 +63,14 @@ module OmniBattle =
                    Position = v2 224.0f 64.0f
                    Size = v2 160.0f 160.0f }]
              let enemies =
-                [{ CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.empty; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
+                [{ CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
                    ActionTime = 99
                    AutoBattleOpt = None
                    InputState = NoInput
                    Position = v2 0.0f 0.0f
                    Size = v2 160.0f 160.0f }
-                 { CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 1; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.empty; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
+                 { CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 1; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = [] }
                    AnimationState = { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
                    ActionTime = 0
                    AutoBattleOpt = None
@@ -267,8 +267,11 @@ module OmniBattle =
                             let enemyIndex = EnemyIndex enemy.CharacterState.PartyIndex
                             match enemy.AutoBattleOpt with
                             | Some autoBattle ->
-                                let attack = { Action = Attack; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
-                                let model = BattleModel.conjActionCommand attack model
+                                let actionCommand =
+                                    match autoBattle.AutoSpecialOpt with
+                                    | Some special -> { Action = Special special; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
+                                    | None -> { Action = Attack; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
+                                let model = BattleModel.conjActionCommand actionCommand model
                                 (Message (ResetCharacter enemyIndex) :: signals, model)
                             | None -> (Message (ResetCharacter enemyIndex) :: signals, model)
                         else (signals, model))

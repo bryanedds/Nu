@@ -55,6 +55,7 @@ type [<StructuralEquality; NoComparison>] SpriteDescriptor =
       InsetOpt : Vector4 option
       Image : Image AssetTag
       Color : Vector4
+      Glow : Vector4
       Flip : Flip }
 
 /// Describes how to render a tile map to the rendering system.
@@ -255,6 +256,7 @@ type [<ReferenceEquality>] SdlRenderer =
         let positionView = position * view
         let sizeView = sprite.Size * view.ExtractScaleMatrix ()
         let color = sprite.Color
+        let glow = sprite.Glow
         let image = AssetTag.generalize sprite.Image
         let flip = Flip.toSdlFlip sprite.Flip
         match SdlRenderer.tryLoadRenderAsset image renderer with
@@ -283,18 +285,17 @@ type [<ReferenceEquality>] SdlRenderer =
                 let mutable rotationCenter = SDL.SDL_Point ()
                 rotationCenter.x <- int (sizeView.X * 0.5f)
                 rotationCenter.y <- int (sizeView.Y * 0.5f)
+                SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
                 SDL.SDL_SetTextureColorMod (texture, byte (255.0f * color.X), byte (255.0f * color.Y), byte (255.0f * color.Z)) |> ignore
                 SDL.SDL_SetTextureAlphaMod (texture, byte (255.0f * color.W)) |> ignore
-                let renderResult =
-                    SDL.SDL_RenderCopyEx (
-                        renderer.RenderContext,
-                        texture,
-                        ref sourceRect,
-                        ref destRect,
-                        rotation,
-                        ref rotationCenter,
-                        flip)
+                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
                 if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
+                if glow <> Vector4.Zero then
+                    SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
+                    SDL.SDL_SetTextureColorMod (texture, byte (255.0f * glow.X), byte (255.0f * glow.Y), byte (255.0f * glow.Z)) |> ignore
+                    SDL.SDL_SetTextureAlphaMod (texture, byte (255.0f * glow.W)) |> ignore
+                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
+                    if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 

@@ -260,6 +260,7 @@ module EffectFacetModule =
                       Effects.Depth = entity.GetDepth world
                       Effects.Offset = Vector2 0.5f
                       Effects.Color = Vector4.One
+                      Effects.Glow = Vector4.Zero
                       Effects.Enabled = true
                       Effects.Text = ""
                       Effects.Volume = 1.0f }
@@ -964,6 +965,7 @@ module StaticSpriteFacetModule =
                                       InsetOpt = None
                                       Image = entity.GetStaticImage world
                                       Color = Vector4.One
+                                      Glow = Vector4.Zero
                                       Flip = entity.GetFlip world }}|])
                     world
             else world
@@ -1037,6 +1039,7 @@ module AnimatedSpriteFacetModule =
                                       InsetOpt = getSpriteInsetOpt entity world
                                       Image = entity.GetAnimationSheet world
                                       Color = Vector4.One
+                                      Glow = Vector4.Zero
                                       Flip = entity.GetFlip world }}|])
                     world
             else world
@@ -1359,6 +1362,7 @@ module ButtonDispatcherModule =
                                       InsetOpt = None
                                       Image = image
                                       Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world
+                                      Glow = Vector4.Zero
                                       Flip = FlipNone }}|])
                     world
             else world
@@ -1403,6 +1407,7 @@ module LabelDispatcherModule =
                                       InsetOpt = None
                                       Image = label.GetLabelImage world
                                       Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world
+                                      Glow = Vector4.Zero
                                       Flip = FlipNone }}|])
                     world
             else world
@@ -1450,6 +1455,7 @@ module TextDispatcherModule =
                                       InsetOpt = None
                                       Image = text.GetBackgroundImage world
                                       Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world
+                                      Glow = Vector4.Zero
                                       Flip = FlipNone }}|])
                     world
             else world
@@ -1566,6 +1572,7 @@ module ToggleDispatcherModule =
                                       InsetOpt = None
                                       Image = image
                                       Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world
+                                      Glow = Vector4.Zero
                                       Flip = FlipNone }}|])
                     world
             else world
@@ -1727,6 +1734,7 @@ module FillBarDispatcherModule =
                                       InsetOpt = None
                                       Image = fillBar.GetBorderImage world
                                       Color = fillBarColor
+                                      Glow = Vector4.Zero
                                       Flip = FlipNone }}
                           LayerableDescriptor
                             { Depth = fillBar.GetDepth world
@@ -1742,6 +1750,7 @@ module FillBarDispatcherModule =
                                       InsetOpt = None
                                       Image = fillBar.GetFillImage world
                                       Color = fillBarColor
+                                      Glow = Vector4.Zero
                                       Flip = FlipNone }}|])
                     world
             else world
@@ -1865,7 +1874,8 @@ module CharacterDispatcherModule =
                                       ViewType = entity.GetViewType world
                                       InsetOpt = insetOpt
                                       Image = image
-                                      Color = v4One
+                                      Color = Vector4.One
+                                      Glow = Vector4.Zero
                                       Flip = if facingLeft then FlipH else FlipNone }}|])
                     world
             else world

@@ -707,7 +707,7 @@ type [<ReferenceEquality; NoComparison>] BattleModel =
         let characterToAlly = ally.Position - character.Position
         let direction = Direction.fromVector2 characterToAlly
         let specialOpt =
-            match Gen.random1 4 with
+            match Gen.random1 Constants.Battle.AutoBattleSpecialFrequency with
             | 0 -> CharacterState.tryGetSpecialRandom character.CharacterState
             | _ -> None
         let autoBattle = { AutoTarget = allyIndex; AutoSpecialOpt = specialOpt }

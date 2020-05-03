@@ -50,6 +50,7 @@ type MetricsEntityDispatcher () =
                           InsetOpt = None
                           Image = image
                           Color = Vector4.One
+                          Glow = Vector4.Zero
                           Flip = FlipNone }}))
             world
 #endif

@@ -39,18 +39,26 @@ module OmniCharacter =
             let characterModel = character.GetCharacterModel world
             let characterState = characterModel.CharacterState
             let animationState = characterModel.AnimationState
-            let statuses = characterState.Statuses
             let color =
                 if animationState.AnimationCycle = CharacterAnimationCycle.WoundCycle && characterState.IsEnemy then
                     match CharacterAnimationState.progressOpt (World.getTickTime world) animationState with
                     | Some progress -> Vector4 (1.0f,0.5f,1.0f,1.0f-progress) // purple
                     | None -> failwithumf ()
-                elif CharacterModel.runningSpecialAutoBattle characterModel then Vector4 (0.75f,0.75f,0.75f,1.0f) // gray
-                elif Set.contains PoisonStatus statuses then Vector4 (0.5f,1.0f,0.5f,1.0f) // green
-                elif Set.contains MuteStatus statuses then Vector4 (0.1f,1.0f,0.5f,1.0f) // orange
-                elif Set.contains SleepStatus statuses then Vector4 (0.5f,0.5f,1.0f,1.0f) // blue
                 else Vector4.One
             color
+
+        static let getSpriteGlow (character : Entity) world =
+            let pulseTime = World.getTickTime world % Constants.Battle.CharacterPulseLength
+            let pulseProgress = single pulseTime / single Constants.Battle.CharacterPulseLength
+            let pulseIntensity = sin (pulseProgress * single Math.PI)
+            let characterModel = character.GetCharacterModel world
+            let characterState = characterModel.CharacterState
+            let statuses = characterState.Statuses
+            if CharacterModel.runningSpecialAutoBattle characterModel then Vector4 (1.0f,0.0f,0.0f,pulseIntensity) // red
+            elif Set.contains PoisonStatus statuses then Vector4 (0.0f,1.0f,0.0f,pulseIntensity) // green
+            elif Set.contains MuteStatus statuses then Vector4 (0.1f,1.0f,0.0f,pulseIntensity) // orange
+            elif Set.contains SleepStatus statuses then Vector4 (0.0f,0.0f,1.0f,pulseIntensity) // blue
+            else Vector4.Zero
 
         static member Properties =
             [define Entity.Omnipresent true]
@@ -79,6 +87,7 @@ module OmniCharacter =
                                   InsetOpt = Some (getSpriteInset character world)
                                   Image = animationState.AnimationSheet
                                   Color = getSpriteColor character world
+                                  Glow = getSpriteGlow character world
                                   Flip = FlipNone }}))
                     world
             else world
