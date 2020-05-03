@@ -21,10 +21,10 @@ module InfinityDispatcherModule =
         override this.Register (game, world) =
 
             // just pre-load all assets in the application for simplicity
-            let world = World.hintRenderPackageUse Assets.GuiPackage world
-            let world = World.hintAudioPackageUse Assets.GuiPackage world
-            let world = World.hintRenderPackageUse Assets.GameplayPackage world
-            let world = World.hintAudioPackageUse Assets.GameplayPackage world
+            let world = World.hintRenderPackageUse Assets.GuiPackageName world
+            let world = World.hintAudioPackageUse Assets.GuiPackageName world
+            let world = World.hintRenderPackageUse Assets.GameplayPackageName world
+            let world = World.hintAudioPackageUse Assets.GameplayPackageName world
 
             // get based
             let world = base.Register (game, world)

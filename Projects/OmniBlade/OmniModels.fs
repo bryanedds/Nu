@@ -270,6 +270,10 @@ type PoiseType =
     | Defending
     | Charging
 
+type AutoBattle =
+    { AutoTarget : CharacterIndex
+      AutoSpecialOpt : SpecialType option }
+
 /// The state of a character.
 /// Used both inside and outside of battle.
 /// Level is calculated from base experience + added experience.
@@ -289,7 +293,8 @@ type CharacterState =
       PowerBuff : single
       ShieldBuff : single
       MagicBuff : single
-      CounterBuff : single }
+      CounterBuff : single
+      AutoBattleOpt : AutoBattle option }
 
     static member empty =
         { CharacterType = Ally Jinn
@@ -307,7 +312,8 @@ type CharacterState =
           PowerBuff = 1.0f // rate at which power is buffed / debuffed
           MagicBuff = 1.0f // rate at which magic is buffed / debuffed
           ShieldBuff = 1.0f // rate at which shield is buffed / debuffed
-          CounterBuff = 1.0f } // rate at which counter is buffed / debuffed
+          CounterBuff = 1.0f // rate at which counter is buffed / debuffed
+          AutoBattleOpt = None }
 
     member this.Name = match this.CharacterType with Ally ally -> scstring ally | Enemy enemy -> scstring enemy
     member this.CharacterIndex = match this.CharacterType with Ally _ -> AllyIndex this.PartyIndex | Enemy _ -> EnemyIndex this.PartyIndex
@@ -387,18 +393,33 @@ type CharacterState =
                 | None -> 0.0f
             | _ -> 0.0f
         intermediate * single this.Level * this.ShieldBuff |> int |> max 0
+        
+    static member runningSpecialAutoBattle state =
+        match state.AutoBattleOpt with
+        | Some autoBattle -> Option.isSome autoBattle.AutoSpecialOpt
+        | None -> false
 
-    static member getDamage rom scalar (source : CharacterState) (target : CharacterState) =
+    static member getAttackResult rom cancels scalar (source : CharacterState) (target : CharacterState) =
+        let cancelled = cancels && CharacterState.runningSpecialAutoBattle target
         let power = source.Power rom
         let shield = target.Shield rom
-        let damage = max 1 (int (Math.Ceiling (double (power - shield))))
-        damage * scalar
+        let damageUnscaled = max 1 (int (Math.Ceiling (double (power - shield))))
+        let damage = damageUnscaled * scalar
+        (cancelled, damage)
 
-    static member changeHitPoints rom delta state =
+    static member setAutoBattleOpt autoBattleOpt state =
+        { state with AutoBattleOpt = autoBattleOpt }
+
+    static member changeHitPoints rom cancel delta state =
+        let autoBattleOpt = 
+            match state.AutoBattleOpt with
+            | Some autoBattle when cancel -> Some { autoBattle with AutoSpecialOpt = None }
+            | _ -> None
         let hitPoints = state.HitPoints
         let hitPoints = max 0 (hitPoints + delta)
         let hitPoints = min (state.HitPointsMax rom) hitPoints
-        { state with HitPoints = hitPoints }
+        let state = { state with AutoBattleOpt = autoBattleOpt; HitPoints = hitPoints }
+        state
 
     static member tryGetSpecialRandom state =
         let specials = state.Specials
@@ -511,10 +532,6 @@ type CharacterAnimationState =
         | Some progress -> progress = 1.0f
         | None -> false
 
-type AutoBattle =
-    { AutoTarget : CharacterIndex
-      AutoSpecialOpt : SpecialType option }
-
 type CharacterInputState =
     | NoInput
     | RegularMenu
@@ -531,7 +548,6 @@ type [<ReferenceEquality; NoComparison>] CharacterModel =
     { CharacterState : CharacterState
       AnimationState : CharacterAnimationState
       ActionTime : int
-      AutoBattleOpt : AutoBattle option
       InputState : CharacterInputState
       Position : Vector2
       Size : Vector2 }
@@ -540,6 +556,7 @@ type [<ReferenceEquality; NoComparison>] CharacterModel =
     member this.Center = this.Position + this.Size * 0.5f
     member this.CenterOffset = this.Center + Constants.Battle.CharacterCenterOffset
     member this.CenterOffset2 = this.Center + Constants.Battle.CharacterCenterOffset2
+    member this.CenterOffset3 = this.Center + Constants.Battle.CharacterCenterOffset3
     member this.Bottom = this.Position + v2 (this.Size.X * 0.5f) 0.0f
     member this.IsEnemy = this.CharacterState.IsEnemy
     member this.IsAlly = this.CharacterState.IsAlly
@@ -555,21 +572,13 @@ type [<ReferenceEquality; NoComparison>] CharacterModel =
     static member setActionTime actionTime character =
         { character with ActionTime = actionTime }
 
-    static member setAutoBattleOpt autoBattleOpt character =
-        { character with AutoBattleOpt = autoBattleOpt }
-
     static member changeActionTime delta character =
         CharacterModel.setActionTime (character.ActionTime + delta) character
 
     static member readyForAutoBattle (character : CharacterModel) =
         character.IsEnemy &&
-        character.AutoBattleOpt.IsNone &&
+        character.CharacterState.AutoBattleOpt.IsNone &&
         character.ActionTime > Constants.Battle.AutoBattleReadyTime
-
-    static member runningSpecialAutoBattle character =
-        match character.AutoBattleOpt with
-        | Some autoBattle -> Option.isSome autoBattle.AutoSpecialOpt
-        | None -> false
 
 type CharacterModels =
     Map<CharacterIndex, CharacterModel>
@@ -711,8 +720,9 @@ type [<ReferenceEquality; NoComparison>] BattleModel =
             | 0 -> CharacterState.tryGetSpecialRandom character.CharacterState
             | _ -> None
         let autoBattle = { AutoTarget = allyIndex; AutoSpecialOpt = specialOpt }
+        let characterState = { character.CharacterState with AutoBattleOpt = Some autoBattle }
         let animationState = { character.AnimationState with Direction = direction }
-        { character with AutoBattleOpt = Some autoBattle; AnimationState = animationState }
+        { character with CharacterState = characterState; AnimationState = animationState }
 
     static member conjActionCommand command model =
         { model with ActionCommands = Queue.conj command model.ActionCommands }

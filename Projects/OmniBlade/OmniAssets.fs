@@ -3,20 +3,21 @@ open Nu
 module Assets =
 
     // the packages as named in the project's 'AssetGraph.nuag' file
-    let GuiPackage = "Gui"
-    let BattlePackage = "Battle"
+    let GuiPackageName = "Gui"
+    let BattlePackageName = "Battle"
 
     // the various assets described by the project's 'AssetGraph.nuag' file
-    let NuSplashSound = asset<Audio> GuiPackage "Nu"
-    let TitleSong = asset<Audio> GuiPackage "Title"
-    let AffirmSound = asset<Audio> GuiPackage "Affirm"
-    let BattleSong = asset<Audio> BattlePackage "Battle"
-    let HitSound = asset<Audio> BattlePackage "Hit"
-    let HealSound = asset<Audio> BattlePackage "Heal"
-    let DeathSound = asset<Audio> BattlePackage "Death"
-    let JinnAnimationSheet = asset<Image> BattlePackage "Jinn"
-    let GlennAnimationSheet = asset<Image> BattlePackage "Glenn"
-    let GoblinAnimationSheet = asset<Image> BattlePackage "Goblin"
+    let NuSplashSound = asset<Audio> GuiPackageName "Nu"
+    let TitleSong = asset<Audio> GuiPackageName "Title"
+    let AffirmSound = asset<Audio> GuiPackageName "Affirm"
+    let BattleSong = asset<Audio> BattlePackageName "Battle"
+    let HitSound = asset<Audio> BattlePackageName "Hit"
+    let HealSound = asset<Audio> BattlePackageName "Heal"
+    let DeathSound = asset<Audio> BattlePackageName "Death"
+    let CancelImage = asset<Image> BattlePackageName "Cancel"
+    let JinnAnimationSheet = asset<Image> BattlePackageName "Jinn"
+    let GlennAnimationSheet = asset<Image> BattlePackageName "Glenn"
+    let GoblinAnimationSheet = asset<Image> BattlePackageName "Goblin"
 
     // the file paths from which various simulants are loaded
     let TitleLayerFilePath = "Assets/Gui/Title.nulyr"

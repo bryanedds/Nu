@@ -55,6 +55,6 @@ module BlazeDispatcherModule =
 
         // here we hint to the renderer and audio system that the 'Gui' package should be loaded
         override this.Register (game, world) =
-            let world = World.hintRenderPackageUse Assets.GuiPackage world
-            let world = World.hintAudioPackageUse Assets.GuiPackage world
+            let world = World.hintRenderPackageUse Assets.GuiPackageName world
+            let world = World.hintAudioPackageUse Assets.GuiPackageName world
             base.Register (game, world)

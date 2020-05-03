@@ -6,12 +6,12 @@ open System
 open Nu
 module Assets =
 
-    let [<Literal>] DefaultPackage = "Default"
-    let [<Literal>] DefaultImage = "Image"
-    let [<Literal>] DefaultTileMap = "TileMap"
-    let [<Literal>] DefaultFont = "Font"
-    let [<Literal>] DefaultSound = "Sound"
-    let [<Literal>] DefaultSong = "Song"
+    let [<Literal>] DefaultPackageName = "Default"
+    let [<Literal>] DefaultImageName = "Image"
+    let [<Literal>] DefaultTileMapName = "TileMap"
+    let [<Literal>] DefaultFontName = "Font"
+    let [<Literal>] DefaultSoundName = "Sound"
+    let [<Literal>] DefaultSongName = "Song"
     let [<Literal>] DefaultImageString = "[Default Image]"
     let [<Literal>] DefaultTileMapString = "[Default TileMap]"
     let [<Literal>] DefaultFontString = "[Default Font]"
