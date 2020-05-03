@@ -17,10 +17,9 @@ module OmniCharacter =
 
     type CharacterDispatcher () =
         inherit EntityDispatcher<CharacterModel, unit, unit>
-            ({ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 20; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.empty; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = [] }
+            ({ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 20; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.empty; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = None; Relics = []; AutoBattleOpt = None }
                AnimationState = { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
                ActionTime = 0
-               AutoBattleOpt = None
                InputState = NoInput
                Position = v2Zero
                Size = v2One })
@@ -54,7 +53,7 @@ module OmniCharacter =
             let characterModel = character.GetCharacterModel world
             let characterState = characterModel.CharacterState
             let statuses = characterState.Statuses
-            if CharacterModel.runningSpecialAutoBattle characterModel then Vector4 (1.0f,0.0f,0.0f,pulseIntensity) // red
+            if CharacterState.runningSpecialAutoBattle characterState then Vector4 (1.0f,0.0f,0.0f,pulseIntensity) // red
             elif Set.contains PoisonStatus statuses then Vector4 (0.0f,1.0f,0.0f,pulseIntensity) // green
             elif Set.contains MuteStatus statuses then Vector4 (0.1f,1.0f,0.0f,pulseIntensity) // orange
             elif Set.contains SleepStatus statuses then Vector4 (0.0f,0.0f,1.0f,pulseIntensity) // blue

@@ -5,22 +5,22 @@ open Nu
 module Assets =
 
     // the packages as named in the project's 'AssetGraph.nuag' file
-    let GuiPackage = "Gui"
-    let GameplayPackage = "Gameplay"
+    let GuiPackageName = "Gui"
+    let GameplayPackageName = "Gameplay"
 
     // the various assets described by the project's 'AssetGraph.nuag' file
-    let NuSplashSound = asset<Audio> GuiPackage "Nu"
-    let MachinerySong = asset<Audio> GuiPackage "Machinery"
-    let DeadBlazeSong = asset<Audio> GameplayPackage "DeadBlaze"
-    let HitSound = asset<Audio> GameplayPackage "Hit"
-    let ExplosionSound = asset<Audio> GameplayPackage "Explosion"
-    let ShotSound = asset<Audio> GameplayPackage "Shot"
-    let JumpSound = asset<Audio> GameplayPackage "Jump"
-    let DeathSound = asset<Audio> GameplayPackage "Death"
-    let EnemyBulletImage = asset<Image> GameplayPackage "EnemyBullet"
-    let PlayerBulletImage = asset<Image> GameplayPackage "PlayerBullet"
-    let EnemyImage = asset<Image> GameplayPackage "Enemy"
-    let PlayerImage = asset<Image> GameplayPackage "Player"
+    let NuSplashSound = asset<Audio> GuiPackageName "Nu"
+    let MachinerySong = asset<Audio> GuiPackageName "Machinery"
+    let DeadBlazeSong = asset<Audio> GameplayPackageName "DeadBlaze"
+    let HitSound = asset<Audio> GameplayPackageName "Hit"
+    let ExplosionSound = asset<Audio> GameplayPackageName "Explosion"
+    let ShotSound = asset<Audio> GameplayPackageName "Shot"
+    let JumpSound = asset<Audio> GameplayPackageName "Jump"
+    let DeathSound = asset<Audio> GameplayPackageName "Death"
+    let EnemyBulletImage = asset<Image> GameplayPackageName "EnemyBullet"
+    let PlayerBulletImage = asset<Image> GameplayPackageName "PlayerBullet"
+    let EnemyImage = asset<Image> GameplayPackageName "Enemy"
+    let PlayerImage = asset<Image> GameplayPackageName "Player"
 
     // the file paths from which various simulants are loaded
     let TitleLayerFilePath = "Assets/Gui/Title.nulyr"

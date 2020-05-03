@@ -510,13 +510,13 @@ module WorldModule3 =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> SdlRenderer.make renderContext :> Renderer
                         | None -> MockRenderer.make () :> Renderer
-                    renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.DefaultPackage) // enqueue default package hint
+                    renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.DefaultPackageName) // enqueue default package hint
                     let rendererSubsystem = RendererSubsystem.make renderer :> World Subsystem
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                         then SdlAudioPlayer.make () :> AudioPlayer
                         else MockAudioPlayer.make () :> AudioPlayer
-                    audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.DefaultPackage) // enqueue default package hint
+                    audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.DefaultPackageName) // enqueue default package hint
                     let audioPlayerSubsystem = AudioPlayerSubsystem.make audioPlayer :> World Subsystem
                     Subsystems.make physicsEngineSubsystem rendererSubsystem audioPlayerSubsystem
 

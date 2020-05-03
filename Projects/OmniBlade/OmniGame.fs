@@ -25,8 +25,8 @@ module OmniGame =
         inherit GameDispatcher<Rom, unit, OmniCommand> (Rom.readFromFiles ())
 
         override this.Register (game, world) =
-            let world = World.hintRenderPackageUse Assets.GuiPackage world
-            let world = World.hintAudioPackageUse Assets.GuiPackage world
+            let world = World.hintRenderPackageUse Assets.GuiPackageName world
+            let world = World.hintAudioPackageUse Assets.GuiPackageName world
             base.Register (game, world)
 
         override this.Bindings (_, _, _) =
