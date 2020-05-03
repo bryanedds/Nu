@@ -171,14 +171,15 @@ module WorldDeclarative =
 
         /// Transform a stream into existing simulants.
         static member streamSimulants
-            (lensSeq : Lens<obj seq, World>)
+            (lens : Lens<obj, World>)
             (indexerOpt : (obj -> int) option)
             (mapper : int -> Lens<obj, World> -> World -> SimulantContent)
             (origin : ContentOrigin)
-            (parent : Simulant)
-            (stream : Stream<'a, World>) =
+            (parent : Simulant) =
+            let lensSeq = Lens.map Reflection.objToObjSeq lens
             let lenses = Lens.explodeIndexedOpt indexerOpt lensSeq
-            stream |>
+            Stream.make (Events.Register --> lens.This.SimulantAddress) |>
+            Stream.sum (Stream.make lens.ChangeEvent) |>
             Stream.trackEffect4
                 (fun (guid, previous) _ world ->
                     let current =
@@ -221,8 +222,5 @@ module WorldDeclarative =
 
         /// Turn an entity stream into a series of live simulants.
         static member expandSimulantStream (lens : Lens<obj, World>) indexerOpt mapper origin parent world =
-            let lensSeq = Lens.map Reflection.objToObjSeq lens
-            Stream.make (Events.Register --> lens.This.SimulantAddress) |>
-            Stream.sum (Stream.make lens.ChangeEvent) |>
-            World.streamSimulants lensSeq indexerOpt mapper origin parent |>
+            World.streamSimulants lens indexerOpt mapper origin parent |>
             Stream.subscribe (fun _ value -> value) Default.Game $ world
