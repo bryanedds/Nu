@@ -376,7 +376,7 @@ module OmniBattle =
                 let model =
                     BattleModel.updateCharacters
                         (fun character ->
-                            let poiseType = CharacterModel.getPoiseType character
+                            let poiseType = CharacterState.getPoiseType character.CharacterState
                             let character = CharacterModel.setAnimationCycle time (PoiseCycle poiseType) character
                             character)
                         model
@@ -403,11 +403,11 @@ module OmniBattle =
                     match specialTypeOpt with
                     | None ->
                         let damage = CharacterState.getDamage rom 1 source.CharacterState target.CharacterState
-                        let model = BattleModel.updateCharacter (CharacterModel.changeHitPoints rom -damage) targetIndex model
+                        let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom -damage) targetIndex model
                         (damage, model)
                     | Some JumpSlash ->
                         let damage = CharacterState.getDamage rom 2 source.CharacterState target.CharacterState // TODO: pull scalar from rom
-                        let model = BattleModel.updateCharacter (CharacterModel.changeHitPoints rom -damage) targetIndex model
+                        let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom -damage) targetIndex model
                         (damage, model)
                     | Some Volt ->
                         (0, model) // TODO: implement
@@ -424,7 +424,7 @@ module OmniBattle =
                 let model =
                     BattleModel.updateCharacter
                         (fun character ->
-                            let poiseType = CharacterModel.getPoiseType character
+                            let poiseType = CharacterState.getPoiseType character.CharacterState
                             let character = CharacterModel.setAnimationCycle time (PoiseCycle poiseType) character
                             character)
                         characterIndex
@@ -472,13 +472,8 @@ module OmniBattle =
                     match consumable with
                     | GreenHerb -> 50 // TODO: pull from rom data
                     | RedHerb -> 500 // TODO: pull from rom data
-                let model =
-                    BattleModel.updateCharacter
-                        (fun character ->
-                            let character = CharacterModel.changeHitPoints rom healing character
-                            let character = CharacterModel.setAnimationCycle time SpinCycle character
-                            character)
-                        targetIndex model
+                let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom healing) targetIndex model
+                let model = BattleModel.updateCharacter (CharacterModel.setAnimationCycle time SpinCycle) targetIndex model
                 let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
                 let playHealSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.HealSound)
                 withCmds model [displayHitPointsChange; playHealSound]
