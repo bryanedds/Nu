@@ -265,45 +265,49 @@ type CharacterIndex =
     | AllyIndex of int
     | EnemyIndex of int
 
-type AutoBattle =
-    { AutoTarget : CharacterIndex
-      AutoSpecialOpt : SpecialType option }
+type PoiseType =
+    | Poising
+    | Defending
+    | Charging
 
+/// The state of a character.
+/// Used both inside and outside of battle.
+/// Level is calculated from base experience + added experience.
 type CharacterState =
     { CharacterType : CharacterType
       PartyIndex : int
       ExpPoints : int
       HitPoints : int
       SpecialPoints : int
+      WeaponOpt : WeaponType option
+      ArmorOpt : ArmorType option
+      Relics : RelicType list
+      Specials : SpecialType Set
+      Statuses : StatusType Set
       Defending : bool
       Charging : bool
       PowerBuff : single
       ShieldBuff : single
       MagicBuff : single
-      CounterBuff : single
-      Specials : SpecialType Set
-      Statuses : StatusType Set
-      WeaponOpt : WeaponType option
-      ArmorOpt : ArmorType option
-      Relics : RelicType list }
+      CounterBuff : single }
 
     static member empty =
         { CharacterType = Ally Jinn
           PartyIndex = 0
           ExpPoints = 0
-          HitPoints = 10 // note this is an arbitrary number as hp max is calculated
-          SpecialPoints = 1 // sp max is calculated
+          HitPoints = 1 // note this is an arbitrary number as hp max is calculated
+          SpecialPoints = 0 // sp max is calculated
+          WeaponOpt = None
+          ArmorOpt = None
+          Relics = []
+          Specials = Set.empty
+          Statuses = Set.empty
           Defending = false
           Charging = false
           PowerBuff = 1.0f // rate at which power is buffed / debuffed
           MagicBuff = 1.0f // rate at which magic is buffed / debuffed
           ShieldBuff = 1.0f // rate at which shield is buffed / debuffed
-          CounterBuff = 1.0f // rate at which counter is buffed / debuffed
-          Specials = Set.empty
-          Statuses = Set.empty
-          WeaponOpt = None
-          ArmorOpt = None
-          Relics = [] } // level is calculated from base experience + added experience
+          CounterBuff = 1.0f } // rate at which counter is buffed / debuffed
 
     member this.Name = match this.CharacterType with Ally ally -> scstring ally | Enemy enemy -> scstring enemy
     member this.CharacterIndex = match this.CharacterType with Ally _ -> AllyIndex this.PartyIndex | Enemy _ -> EnemyIndex this.PartyIndex
@@ -390,6 +394,12 @@ type CharacterState =
         let damage = max 1 (int (Math.Ceiling (double (power - shield))))
         damage * scalar
 
+    static member changeHitPoints rom delta state =
+        let hitPoints = state.HitPoints
+        let hitPoints = max 0 (hitPoints + delta)
+        let hitPoints = min (state.HitPointsMax rom) hitPoints
+        { state with HitPoints = hitPoints }
+
     static member tryGetSpecialRandom state =
         let specials = state.Specials
         if Set.notEmpty specials then
@@ -398,10 +408,10 @@ type CharacterState =
             Some special
         else None
 
-type PoiseType =
-    | Poising
-    | Defending
-    | Charging
+    static member getPoiseType state =
+        if state.Defending then Defending
+        elif state.Charging then Charging
+        else Poising
 
 type CharacterAnimationCycle =
     | WalkCycle
@@ -501,6 +511,10 @@ type CharacterAnimationState =
         | Some progress -> progress = 1.0f
         | None -> false
 
+type AutoBattle =
+    { AutoTarget : CharacterIndex
+      AutoSpecialOpt : SpecialType option }
+
 type CharacterInputState =
     | NoInput
     | RegularMenu
@@ -546,20 +560,6 @@ type [<ReferenceEquality; NoComparison>] CharacterModel =
 
     static member changeActionTime delta character =
         CharacterModel.setActionTime (character.ActionTime + delta) character
-
-    static member changeHitPoints rom delta character =
-        let hitPoints = character.CharacterState.HitPoints
-        let hitPoints = max 0 (hitPoints + delta)
-        let hitPoints = min (character.CharacterState.HitPointsMax rom) hitPoints
-        { character with CharacterState = { character.CharacterState with HitPoints = hitPoints }}
-
-    static member getPoiseType character =
-        if character.CharacterState.Defending then Defending
-        elif character.CharacterState.Charging then Charging
-        else Poising
-
-    static member tryGetSpecialRandom character =
-        CharacterState.tryGetSpecialRandom character.CharacterState
 
     static member readyForAutoBattle (character : CharacterModel) =
         character.IsEnemy &&
@@ -696,6 +696,11 @@ type [<ReferenceEquality; NoComparison>] BattleModel =
         let character = updater character
         { model with Characters = Map.add characterIndex character model.Characters }
 
+    static member updateCharacterState updater characterIndex model =
+        BattleModel.updateCharacter
+            (fun character -> { character with CharacterState = updater character.CharacterState })
+            characterIndex model
+
     static member runAutoBattle character model =
         let allyIndex = BattleModel.getAllyIndexRandom model
         let ally = BattleModel.getCharacter allyIndex model
@@ -703,7 +708,7 @@ type [<ReferenceEquality; NoComparison>] BattleModel =
         let direction = Direction.fromVector2 characterToAlly
         let specialOpt =
             match Gen.random1 4 with
-            | 0 -> CharacterModel.tryGetSpecialRandom character
+            | 0 -> CharacterState.tryGetSpecialRandom character.CharacterState
             | _ -> None
         let autoBattle = { AutoTarget = allyIndex; AutoSpecialOpt = specialOpt }
         let animationState = { character.AnimationState with Direction = direction }
