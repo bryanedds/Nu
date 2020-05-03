@@ -64,6 +64,7 @@ module FieldDispatcherModule =
                                   InsetOpt = tileInsetOpt
                                   Image = image
                                   Color = Vector4.One
+                                  Glow = Vector4.Zero
                                   Flip = FlipNone }
                             sprite :: sprites)
                         fieldMap.FieldTiles [] |>

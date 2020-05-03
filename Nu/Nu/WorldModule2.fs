@@ -679,6 +679,7 @@ module WorldModule2 =
                                       InsetOpt = None
                                       Image = dissolveImage
                                       Color = color
+                                      Glow = Vector4.Zero
                                       Flip = FlipNone }}|])
                     world
             | None -> world

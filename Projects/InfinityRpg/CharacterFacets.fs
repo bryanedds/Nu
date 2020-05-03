@@ -111,6 +111,7 @@ module CharacterAnimationFacetModule =
                                       InsetOpt = getSpriteInsetOpt entity world
                                       Image = entity.GetCharacterAnimationSheet world
                                       Color = Vector4.One
+                                      Glow = Vector4.Zero
                                       Flip = FlipNone }}|])
                     world
             else world

@@ -40,6 +40,7 @@ module Effects =
           Depth : single
           Offset : Vector2
           Color : Vector4
+          Glow : Vector4
           Text : string
           Volume : single
           Enabled : bool }
@@ -117,6 +118,7 @@ module Effects =
         | Rotation of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Depth of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Color of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
+        | Glow of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
         | Text of string
         | Volume of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Bone // TODO: implement bone aspect
@@ -394,6 +396,14 @@ module EffectSystemModule =
                     let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
                     { slice with Color = applied }
                 else slice
+            | Glow (applicator, algorithm, playback, keyFrames) ->
+                if Array.notEmpty keyFrames then
+                    let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                    let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                    let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                    let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
+                    { slice with Color = applied }
+                else slice
             | Volume (applicator, algorithm, playback, keyFrames) ->
                 if Array.notEmpty keyFrames then
                     let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
@@ -458,6 +468,7 @@ module EffectSystemModule =
                                           Image = AssetTag.specialize<Image> image
                                           ViewType = effectSystem.ViewType
                                           Color = slice.Color
+                                          Glow = Vector4.Zero
                                           Flip = FlipNone }})
                     addView spriteView effectSystem
                 else effectSystem
@@ -495,6 +506,7 @@ module EffectSystemModule =
                                       Image = AssetTag.specialize<Image> image
                                       ViewType = effectSystem.ViewType
                                       Color = slice.Color
+                                      Glow = slice.Glow
                                       Flip = FlipNone }})
                     addView animatedSpriteView effectSystem
                 else effectSystem
