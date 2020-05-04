@@ -23,8 +23,9 @@ module Constants =
         let CharacterPulseLength = 60L
         let BackgroundDepth = -10.0f
         let ForgroundDepth = 0.0f
-        let GuiDepth = 10.0f
-        let GuiEffectDepth = 20.0f
+        let EffectDepth = 10.0f
+        let GuiDepth = 20.0f
+        let GuiEffectDepth = 30.0f
 
     [<RequireQualifiedAccess>]
     module OmniBlade =
