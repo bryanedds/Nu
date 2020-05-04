@@ -39,6 +39,7 @@ module Effects =
           Rotation : single
           Depth : single
           Offset : Vector2
+          InsetOpt : Vector4 option
           Color : Vector4
           Glow : Vector4
           Text : string
@@ -117,6 +118,7 @@ module Effects =
         | Size of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
         | Rotation of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Depth of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
+        | Inset of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
         | Color of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
         | Glow of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
         | Text of string
@@ -156,7 +158,7 @@ module Effects =
             "Rate " +
             "Shift " +
             "Expand Resource " +
-            "Expand Enabled Position Translation Offset Size Rotation Depth Color Volume Bone " +
+            "Expand Enabled Position Translation Offset Inset Size Rotation Depth Color Glow Volume Bone " +
             "Expand StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
             "View",
             "", "", "", "",
@@ -388,6 +390,14 @@ module EffectSystemModule =
                     let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
                     { slice with Offset = applied }
                 else slice
+            | Inset (applicator, algorithm, playback, keyFrames) ->
+                if Array.notEmpty keyFrames then
+                    let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                    let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                    let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                    let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
+                    { slice with InsetOpt = Some applied }
+                else slice
             | Color (applicator, algorithm, playback, keyFrames) ->
                 if Array.notEmpty keyFrames then
                     let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
@@ -464,9 +474,9 @@ module EffectSystemModule =
                                           Size = slice.Size
                                           Rotation = slice.Rotation
                                           Offset = slice.Offset
-                                          InsetOpt = None
-                                          Image = AssetTag.specialize<Image> image
                                           ViewType = effectSystem.ViewType
+                                          InsetOpt = slice.InsetOpt
+                                          Image = AssetTag.specialize<Image> image
                                           Color = slice.Color
                                           Glow = Vector4.Zero
                                           Flip = FlipNone }})

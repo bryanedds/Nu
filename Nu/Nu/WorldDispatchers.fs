@@ -259,6 +259,7 @@ module EffectFacetModule =
                       Effects.Rotation = entity.GetRotation world
                       Effects.Depth = entity.GetDepth world
                       Effects.Offset = Vector2 0.5f
+                      Effects.InsetOpt = None
                       Effects.Color = Vector4.One
                       Effects.Glow = Vector4.Zero
                       Effects.Enabled = true

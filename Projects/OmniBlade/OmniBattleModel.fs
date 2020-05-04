@@ -25,6 +25,7 @@ type BattleState =
     | BattleRunning
     | BattleCease of bool * int64
 
+[<RequireQualifiedAccess>]
 module BattleModel =
 
     type [<ReferenceEquality; NoComparison>] BattleModel =

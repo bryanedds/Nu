@@ -8,6 +8,7 @@ type Legionnaire =
       PartyIndexOpt : int option
       CharacterType : CharacterType }
 
+[<RequireQualifiedAccess>]
 module FieldModel =
 
     type [<ReferenceEquality; NoComparison>] FieldModel =
