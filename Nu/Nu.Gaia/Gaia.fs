@@ -631,7 +631,7 @@ module Gaia =
                     | :? ConversionException as exn ->
                         match exn.SymbolOpt with
                         | Some symbol ->
-                            match Symbol.tryGetOrigin symbol with
+                            match Symbol.getOriginOpt symbol with
                             | Some origin ->
                                 form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
                                 form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index
@@ -657,7 +657,7 @@ module Gaia =
                     | :? ConversionException as exn ->
                         match exn.SymbolOpt with
                         | Some symbol ->
-                            match Symbol.tryGetOrigin symbol with
+                            match Symbol.getOriginOpt symbol with
                             | Some origin ->
                                 form.propertyValueTextBox.SelectionStart <- int origin.Start.Index
                                 form.propertyValueTextBox.SelectionEnd <- int origin.Stop.Index

@@ -49,26 +49,26 @@ module OmniBattle =
     type BattleDispatcher () =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
             (let allies =
-                [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 10; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash; Volt]; Statuses = Set.empty; WeaponOpt = Some "Wooden Sword"; ArmorOpt = Some "Leather Vest"; Relics = []; AutoBattleOpt = None }
+                [{ CharacterState = { CharacterType = Ally Jinn; PartyIndex = 0; ExpPoints = 0; HitPoints = 10; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Bolt]; Statuses = Set.empty; WeaponOpt = Some "WoodenSword"; ArmorOpt = Some "LeatherVest"; Accessories = []; AutoBattleOpt = None }
                    AnimationState = { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
                    ActionTime = 600
                    InputState = NoInput
                    Position = v2 -224.0f -168.0f
                    Size = v2 160.0f 160.0f }
-                 { CharacterState = { CharacterType = Ally Glenn; PartyIndex = 1; ExpPoints = 0; HitPoints = 10; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash; Volt]; Statuses = Set.empty; WeaponOpt = Some "Oak Rod"; ArmorOpt = Some "Leather Robe"; Relics = []; AutoBattleOpt = None }
+                 { CharacterState = { CharacterType = Ally Glenn; PartyIndex = 1; ExpPoints = 0; HitPoints = 10; SpecialPoints = 0; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Bolt]; Statuses = Set.empty; WeaponOpt = Some "OakRod"; ArmorOpt = Some "LeatherRobe"; Accessories = []; AutoBattleOpt = None }
                    AnimationState = { TimeStart = 0L; AnimationSheet = Assets.GlennAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
                    ActionTime = 420
                    InputState = NoInput
                    Position = v2 224.0f 64.0f
                    Size = v2 160.0f 160.0f }]
              let enemies =
-                [{ CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = []; AutoBattleOpt = None; }
+                [{ CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None; }
                    AnimationState = { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
                    ActionTime = 99
                    InputState = NoInput
                    Position = v2 0.0f 0.0f
                    Size = v2 160.0f 160.0f }
-                 { CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 1; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [JumpSlash]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Relics = []; AutoBattleOpt = None; }
+                 { CharacterState = { CharacterType = Enemy Goblin; PartyIndex = 1; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None; }
                    AnimationState = { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
                    ActionTime = 0
                    InputState = NoInput
@@ -146,8 +146,8 @@ module OmniBattle =
                 | _ ->
                     if timeLocal = int64 source.AnimationState.Stutter * 4L then
                         match specialType with
-                        | JumpSlash -> withMsg model (AttackCharacter sourceIndex)
-                        | Volt -> withMsg model (AttackCharacter sourceIndex)
+                        | HeadSlash -> withMsg model (AttackCharacter sourceIndex)
+                        | Bolt -> withMsg model (AttackCharacter sourceIndex)
                     elif timeLocal = int64 source.AnimationState.Stutter * 5L then
                         withMsg model (DamageCharacter (sourceIndex, targetIndex, Some specialType))
                     elif CharacterAnimationState.finished time source.AnimationState then
@@ -342,7 +342,7 @@ module OmniBattle =
                 let model = BattleModel.updateCharacter (CharacterModel.setInputState RegularMenu) characterIndex model
                 just model
             | ItemItemSelect (characterIndex, item) ->
-                let model = BattleModel.updateCharacter (CharacterModel.setInputState (AimReticles (item, AllyAim true))) characterIndex model
+                let model = BattleModel.updateCharacter (CharacterModel.setInputState (AimReticles (item, AllyAimHealthy))) characterIndex model
                 just model
             | ItemItemCancel characterIndex ->
                 let model = BattleModel.updateCharacter (CharacterModel.setInputState RegularMenu) characterIndex model
@@ -357,8 +357,8 @@ module OmniBattle =
                             match item with
                             | "GreenHerb" -> ActionCommand.make (Consume GreenHerb) allyIndex (Some targetIndex)
                             | "RedHerb" -> ActionCommand.make (Consume RedHerb) allyIndex (Some targetIndex)
-                            | "JumpSlash" -> ActionCommand.make (Special JumpSlash) allyIndex (Some targetIndex)
-                            | "Volt" -> ActionCommand.make (Special Volt) allyIndex (Some targetIndex)
+                            | "HeadSlash" -> ActionCommand.make (Special HeadSlash) allyIndex (Some targetIndex)
+                            | "Bolt" -> ActionCommand.make (Special Bolt) allyIndex (Some targetIndex)
                             | _ -> ActionCommand.make Attack allyIndex (Some targetIndex)
                         let model = BattleModel.conjActionCommand command model
                         withMsg model (ResetCharacter allyIndex)
@@ -405,11 +405,11 @@ module OmniBattle =
                         let (cancelled, damage) = CharacterState.getAttackResult rom false 1 source.CharacterState target.CharacterState
                         let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom cancelled -damage) targetIndex model
                         (cancelled, damage, model)
-                    | Some JumpSlash ->
+                    | Some HeadSlash ->
                         let (cancelled, damage) = CharacterState.getAttackResult rom true 1 source.CharacterState target.CharacterState
                         let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom cancelled -damage) targetIndex model
                         (cancelled, damage, model)
-                    | Some Volt ->
+                    | Some Bolt ->
                         (false, 0, model) // TODO: implement
                 let (model, sigs) =
                     if target.CharacterState.HitPoints <= 0
@@ -606,17 +606,27 @@ module OmniBattle =
                             let allies = BattleModel.getAllies model
                             let alliesPastRegularMenu = List.notExists (fun ally -> match ally.InputState with NoInput | RegularMenu -> false | _ -> true) allies
                             alliesPastRegularMenu
-                         Entity.RingMenuModel == { Items = [(0, "Attack"); (1, "Defend"); (2, "Item"); (3, "Special")]; ItemCancelOpt = None }
+                         Entity.RingMenuModel == { Items = [(0, (true, "Attack")); (1, (true, "Defend")); (2, (true, "Item")); (3, (true, "Special"))]; ItemCancelOpt = None }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (RegularItemCancel allyIndex)]
                      Content.entity<RingMenuDispatcher> "SpecialMenu"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
                          Entity.Depth == Constants.Battle.GuiDepth
                          Entity.Visible <== ally --> fun ally -> ally.InputState = SpecialMenu
-                         Entity.RingMenuModel <== ally --> fun ally ->
-                             let specials = List.ofSeq ally.CharacterState.Specials
-                             let specials = List.map (fun special -> (getTag special, scstring special)) specials
-                             { Items = specials; ItemCancelOpt = Some "Cancel" }
+                         Entity.RingMenuModel <== ally ->> fun ally world ->
+                            let rom = screen.Parent.GetModel<Rom> world
+                            let specials = List.ofSeq ally.CharacterState.Specials
+                            let specials =
+                                List.map (fun special ->
+                                    let specialTag = getTag special
+                                    let specialUsable =
+                                        match Map.tryFind special rom.Specials with
+                                        | Some specialData -> specialData.SpecialCost <= ally.CharacterState.SpecialPoints
+                                        | None -> false
+                                    let specialName = scstring special
+                                    (specialTag, (specialUsable, specialName)))
+                                    specials
+                            { Items = specials; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (SpecialItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (SpecialItemCancel allyIndex)]
                      Content.entity<RingMenuDispatcher> "ItemMenu"
@@ -626,7 +636,7 @@ module OmniBattle =
                          Entity.RingMenuModel <== model --> fun model ->
                             let consumables = Inventory.getConsumables model.Inventory
                             let consumables = Map.toKeyList consumables
-                            let consumables = List.map (fun special -> (getTag special, scstring special)) consumables
+                            let consumables = List.map (fun special -> (getTag special, (true, scstring special))) consumables
                             { Items = consumables; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (ItemItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (ItemItemCancel allyIndex)]

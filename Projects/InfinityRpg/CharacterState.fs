@@ -15,7 +15,7 @@ type StatusType =
 type EquipmentType =
     | Weapon
     | Armor
-    | Relic
+    | Accessory
 
 type ConsumableType =
     | Herb
@@ -49,7 +49,7 @@ type SpecialType =
     | Bomb
     | DragonBreath
     | Plasma
-    | Volt
+    | Bolt
     | PowerUp
     | PowerDown
     | ShieldUp
@@ -104,13 +104,13 @@ type ArmorData =
       HitPointsBase : int
       SpecialPointsBase : int }
 
-type RelicType =
+type AccessoryType =
     | LeatherBoots
     | BlingRing
     | MagicPorkRinds
 
-type RelicData =
-    { RelicType : RelicType // key
+type AccessoryData =
+    { AccessoryType : AccessoryType // key
       ShieldBase : int
       CounterBase : int }
 
@@ -178,7 +178,7 @@ type CharacterState =
       Statuses : StatusType Set
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
-      Relics : RelicType list }
+      Accessories : AccessoryType list }
 
     static member empty =
         { CharacterType = Ally Avatar
@@ -193,7 +193,7 @@ type CharacterState =
           Statuses = Set.empty<StatusType>
           WeaponOpt = Option<WeaponType>.None
           ArmorOpt = Option<ArmorType>.None
-          Relics = [] } // level is calculated from base experience + added experience
+          Accessories = [] } // level is calculated from base experience + added experience
 
     member this.IsAlly =
         match this.CharacterType with Ally _ -> true | Enemy _ -> false

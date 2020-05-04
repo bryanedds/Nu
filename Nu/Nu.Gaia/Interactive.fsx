@@ -6,7 +6,7 @@
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsec.dll"
 #r "../../packages/FsCheck.2.11.0/lib/net452/FsCheck.dll"
 #r "../../packages/FsCheck.Xunit.2.11.0/lib/net452/FsCheck.Xunit.dll"
-#r "../../packages/Prime.5.2.0/lib/net472/Prime.dll"
+#r "../../packages/Prime.5.4.0/lib/net472/Prime.dll"
 #r "../../packages/Prime.Scripting.5.1.0/lib/net472/Prime.Scripting.exe"
 #r "../../Nu/Nu.Dependencies/FSharpx.Core/FSharpx.Core.dll"
 #r "../../Nu/Nu.Dependencies/FSharpx.Collections/FSharpx.Collections.dll"
@@ -51,7 +51,7 @@ form.Closing.Add (fun args ->
 let sdlDeps = Gaia.tryMakeSdlDeps form |> Either.getRightValue
 
 // make world ready for use in Gaia
-let world = Gaia.tryMakeWorld false plugin sdlDeps WorldConfig.defaultConfig |> Either.getRightValue
+let world = Gaia.tryMakeWorld false sdlDeps WorldConfig.defaultConfig plugin |> Either.getRightValue
 
 // example of running Nu in Gaia for 60 frames from repl
 Gaia.runFromRepl (fun world -> World.getTickTime world < 60L) targetDir sdlDeps form world
