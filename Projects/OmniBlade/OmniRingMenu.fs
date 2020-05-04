@@ -8,6 +8,10 @@ open OmniBlade
 [<AutoOpen>]
 module OmniRingMenu =
 
+    type RingMenuModel =
+        { Items : (int * (bool * string)) list
+          ItemCancelOpt : string option }
+
     type RingMenuCommand =
         | ItemCancel
         | ItemSelect of string

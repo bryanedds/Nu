@@ -8,6 +8,10 @@ open OmniBlade
 [<AutoOpen>]
 module OmniReticles =
 
+    type [<NoComparison>] ReticlesModel =
+        { BattleModel : BattleModel
+          AimType : AimType }
+
     type ReticlesCommand =
         | TargetCancel
         | TargetSelect of CharacterIndex
@@ -20,7 +24,7 @@ module OmniReticles =
         member this.TargetSelectEvent = Events.TargetSelect --> this
 
     type ReticlesDispatcher () =
-        inherit GuiDispatcher<ReticlesModel, unit, ReticlesCommand> ({ Characters = Map.empty; AimType = NoAim })
+        inherit GuiDispatcher<ReticlesModel, unit, ReticlesCommand> ({ BattleModel = BattleModel.empty; AimType = AimType.EnemyAim })
 
         static member Properties =
             [define Entity.SwallowMouseLeft false
@@ -42,13 +46,13 @@ module OmniReticles =
                  Entity.UpImage == asset Assets.BattlePackageName "CancelUp"
                  Entity.DownImage == asset Assets.BattlePackageName "CancelDown"
                  Entity.ClickEvent ==> cmd TargetCancel]
-             Content.entities (model --> fun model -> CharacterModels.getTargets model.AimType model.Characters) $ fun index character world ->
+             Content.entities (model --> fun model -> BattleModel.getTargets model.AimType model.BattleModel) $ fun index character world ->
                 let buttonName = rets.Name + "+" + "Reticle" + "+" + scstring index
                 let button = rets.Parent / buttonName
                 Content.button button.Name
                     [Entity.ParentNodeOpt == None
                      Entity.Size == v2 128.0f 128.0f
-                     Entity.Center <== character --> fun character -> character.CenterOffset
+                     Entity.Center <== character --> fun (character : CharacterModel) -> character.CenterOffset
                      Entity.UpImage == asset Assets.BattlePackageName "ReticleUp"
                      Entity.DownImage == asset Assets.BattlePackageName "ReticleDown"
-                     Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterState.CharacterIndex)]]
+                     Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterIndex)]]
