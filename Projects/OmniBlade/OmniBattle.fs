@@ -57,7 +57,7 @@ module OmniBattle =
                    InputState = NoInput
                    Position = v2 -224.0f -168.0f
                    Size = v2 160.0f 160.0f }
-                 { CharacterState = { CharacterType = Ally Glenn; PartyIndex = 1; ExpPoints = 0; HitPoints = 10; SpecialPoints = 0; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Bolt]; Statuses = Set.empty; WeaponOpt = Some "OakRod"; ArmorOpt = Some "LeatherRobe"; Accessories = []; AutoBattleOpt = None }
+                 { CharacterState = { CharacterType = Ally Glenn; PartyIndex = 1; ExpPoints = 0; HitPoints = 10; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Bolt]; Statuses = Set.empty; WeaponOpt = Some "OakRod"; ArmorOpt = Some "LeatherRobe"; Accessories = []; AutoBattleOpt = None }
                    AnimationState = { TimeStart = 0L; AnimationSheet = Assets.GlennAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
                    ActionTime = 420
                    InputState = NoInput
@@ -456,7 +456,7 @@ module OmniBattle =
                                 (cancelled, -damage)
 
                     // charge special cost
-                    let model = BattleModel.updateCharacterState (CharacterState.changeSpecialPoints rom specialData.SpecialCost) sourceIndex model
+                    let model = BattleModel.updateCharacterState (CharacterState.changeSpecialPoints rom -specialData.SpecialCost) sourceIndex model
 
                     // apply hit points change
                     let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom cancelled hitPointsChange) targetIndex model
