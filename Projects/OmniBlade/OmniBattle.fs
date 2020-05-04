@@ -399,13 +399,12 @@ module OmniBattle =
                 let rom = screen.Parent.GetModel<Rom> world
                 let source = BattleModel.getCharacter sourceIndex model
                 let target = BattleModel.getCharacter targetIndex model
-                let (cancelled, damage) = CharacterState.getAttackResult rom false 1 source.CharacterState target.CharacterState
-                let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom cancelled -damage) targetIndex model
+                let damage = CharacterState.getAttackResult rom source.CharacterState target.CharacterState
+                let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom false -damage) targetIndex model
                 let (model, sigs) =
                     if target.CharacterState.HitPoints <= 0
                     then (model, [Message (ResetCharacter targetIndex)]) // wounded
                     else (BattleModel.updateCharacter (CharacterModel.setAnimationCycle time DamageCycle) targetIndex model, []) // just damaged
-                let sigs = if cancelled then Command (DisplayCancel targetIndex) :: sigs else sigs
                 let sigs = Command (DisplayHitPointsChange (targetIndex, -damage)) :: sigs
                 withSigs model sigs
             | SpecialCharacter1 (sourceIndex, specialType) ->
@@ -419,25 +418,70 @@ module OmniBattle =
                 | Bolt ->
                     just model // TODO: implement
             | SpecialCharacter2 (sourceIndex, targetIndex, specialType) ->
+                
+                // run second phase of special move
                 let time = World.getTickTime world
                 let rom = screen.Parent.GetModel<Rom> world
-                let source = BattleModel.getCharacter sourceIndex model
-                let target = BattleModel.getCharacter targetIndex model
-                let (cancelled, damage, model) =
-                    match specialType with
-                    | HeadSlash ->
-                        let (cancelled, damage) = CharacterState.getAttackResult rom true 1 source.CharacterState target.CharacterState
-                        let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom cancelled -damage) targetIndex model
-                        (cancelled, damage, model)
-                    | Bolt ->
-                        (false, 0, model) // TODO: implement
-                let (model, sigs) =
-                    if target.CharacterState.HitPoints <= 0
-                    then (model, [Message (ResetCharacter targetIndex)]) // wounded
-                    else (BattleModel.updateCharacter (CharacterModel.setAnimationCycle time DamageCycle) targetIndex model, []) // just damaged
-                let sigs = if cancelled then Command (DisplayCancel targetIndex) :: sigs else sigs
-                let sigs = Command (DisplayHitPointsChange (targetIndex, -damage)) :: sigs
-                withSigs model sigs
+                match Map.tryFind specialType rom.Specials with
+                | Some specialData ->
+
+                    // grab characters
+                    let source = BattleModel.getCharacter sourceIndex model
+                    let target = BattleModel.getCharacter targetIndex model
+
+                    // evaluate special move
+                    let (cancelled, hitPointsChange) =
+                        match specialData.EffectType with
+                        | Physical ->
+                            let power = source.CharacterState.Power rom
+                            if specialData.Curative then
+                                let healing = single power * specialData.Scalar |> int |> max 1
+                                (false, healing)
+                            else
+                                let cancelled = specialData.Cancels && CharacterState.runningSpecialAutoBattle target.CharacterState
+                                let shield = target.CharacterState.Shield rom
+                                let damageUnscaled = power - shield
+                                let damage = single damageUnscaled * specialData.Scalar |> int |> max 1
+                                (cancelled, -damage)
+                        | Magical ->
+                            let magic = source.CharacterState.Magic rom
+                            if specialData.Curative then
+                                let healing = single magic * specialData.Scalar |> int |> max 1
+                                (false, healing)
+                            else
+                                let cancelled = specialData.Cancels && CharacterState.runningSpecialAutoBattle target.CharacterState
+                                let shield = target.CharacterState.Shield rom
+                                let damageUnscaled = magic - shield
+                                let damage = single damageUnscaled * specialData.Scalar |> int |> max 1
+                                (cancelled, -damage)
+
+                    // charge special cost
+                    let model = BattleModel.updateCharacterState (CharacterState.changeSpecialPoints rom specialData.SpecialCost) sourceIndex model
+
+                    // apply hit points change
+                    let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom cancelled hitPointsChange) targetIndex model
+
+                    // animate target damage if negative change
+                    let model =
+                        if hitPointsChange < 0 && target.CharacterState.IsHealthy
+                        then BattleModel.updateCharacter (CharacterModel.setAnimationCycle time DamageCycle) targetIndex model
+                        else model
+
+                    // reset target if wounded
+                    let sigs = if target.CharacterState.IsWounded then [Message (ResetCharacter targetIndex)] else []
+
+                    // display cancel if cancelled
+                    let sigs = if cancelled then Command (DisplayCancel targetIndex) :: sigs else sigs
+
+                    // display hit point change if any
+                    let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (targetIndex, hitPointsChange)) :: sigs else sigs
+
+                    // fin
+                    withSigs model sigs
+
+                // special data not found - abort
+                | None-> just model
+
             | ConsumeCharacter1 (consumable, sourceIndex) ->
                 let time = World.getTickTime world
                 let model = BattleModel.updateCharacter (CharacterModel.setAnimationCycle time CastCycle) sourceIndex model
