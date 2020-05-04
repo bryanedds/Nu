@@ -25,6 +25,7 @@ type ElementType =
     | Fire // beats nothing; strongest innate mpow
     | Lightning // beats water
     | Water // beats fire, lightning; weakest innate mpow
+    | Neutral // neutral element
 
 type StatusType =
     | DefendStatus // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
@@ -35,7 +36,7 @@ type StatusType =
 type EquipmentType =
     | Weapon
     | Armor
-    | Relic
+    | Accessory
 
 type ConsumableType =
     | GreenHerb
@@ -51,7 +52,8 @@ type ItemType =
 
 type AimType =
     | EnemyAim
-    | AllyAim of bool
+    | AllyAimHealthy
+    | AllyAimWounded
     | AnyAim
     | NoAim
 
@@ -66,8 +68,8 @@ type EffectType =
     | Magical
 
 type SpecialType =
-    | JumpSlash
-    | Volt
+    | HeadSlash
+    | Bolt
 
 type ActionType =
     | Attack
@@ -90,7 +92,8 @@ type WeaponData =
     { WeaponType : WeaponType // key
       WeaponSubtype : WeaponSubtype
       PowerBase : int
-      MagicBase : int }
+      MagicBase : int
+      Description : string }
 
 type ArmorType =
     string
@@ -104,15 +107,17 @@ type ArmorData =
     { ArmorType : ArmorType // key
       ArmorSubtype : ArmorSubtype
       HitPointsBase : int
-      SpecialPointsBase : int }
+      SpecialPointsBase : int
+      Description : string }
 
-type RelicType =
+type AccessoryType =
     string
 
-type RelicData =
-    { RelicType : RelicType // key
+type AccessoryData =
+    { AccessoryType : AccessoryType // key
       ShieldBase : int
-      CounterBase : int }
+      CounterBase : int
+      Description : string }
 
 type AllyType =
     | Jinn
@@ -125,48 +130,46 @@ type CharacterType =
     | Ally of AllyType
     | Enemy of EnemyType
 
-type DrainData =
-    { EffectType : EffectType
-      Percentage : single }
-
-type ActionData =
-    { ActionType : ActionType // key
-      ActionName : string
+type SpecialData =
+    { SpecialType : SpecialType // key
+      SpecialCost : int
       EffectType : EffectType
-      MagicPointCost : int
+      Scalar : single
       SuccessRate : single
       Curative : bool
-      DrainData : DrainData
+      Cancels : bool
+      Absorb : single // percentage of outcome that is absorbed by the caster
       ElementType : ElementType
       StatusesAdded : StatusType Set
       StatusesRemoved : StatusType Set
-      TargetType : TargetType }
+      TargetType : TargetType
+      Description : string }
 
 type ConsumableData =
-    { ConsumableData : unit }
+    { ConsumableType : ConsumableType // key
+      Scalar : single
+      Curative : bool
+      AimType : AimType
+      Description : string }
 
 type KeyItemData =
     { KeyItemData : unit }
-
-type ItemData =
-    { ItemType : ItemType // key
-      Description : string }
 
 type RewardData =
     { Gold : int }
 
 type CharacterData =
     { CharacterType : CharacterType // key
-      CharacterName : string
-      BaseActions : ActionData list // base actions for all instances of character
-      Reward : RewardData }
+      BaseSpecials : SpecialData list // base actions for all instances of character
+      Reward : RewardData
+      Description : string }
 
 type Rom =
     { Weapons : Map<WeaponType, WeaponData>
       Armors : Map<ArmorType, ArmorData>
-      Relics : Map<RelicType, RelicData>
-      Actions : Map<ActionType, ActionData>
-      Items : Map<ItemType, ItemData>
+      Accessories : Map<AccessoryType, AccessoryData>
+      Specials : Map<SpecialType, SpecialData>
+      Consumables : Map<ConsumableType, ConsumableData>
       Characters : Map<CharacterType, CharacterData> }
 
     static member readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
@@ -178,9 +181,9 @@ type Rom =
     static member readFromFiles () =
         { Weapons = Rom.readSheet Assets.WeaponDataFilePath (fun data -> data.WeaponType)
           Armors = Rom.readSheet Assets.ArmorDataFilePath (fun data -> data.ArmorType)
-          Relics = Rom.readSheet Assets.RelicDataFilePath (fun data -> data.RelicType)
-          Actions = Map.empty
-          Items = Map.empty
+          Accessories = Rom.readSheet Assets.AccessoryDataFilePath (fun data -> data.AccessoryType)
+          Specials = Rom.readSheet Assets.SpecialDataFilePath (fun data -> data.SpecialType)
+          Consumables = Rom.readSheet Assets.ConsumableDataFilePath (fun data -> data.ConsumableType)
           Characters = Map.empty }
 
 type Inventory =
@@ -285,7 +288,7 @@ type CharacterState =
       SpecialPoints : int
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
-      Relics : RelicType list
+      Accessories : AccessoryType list
       Specials : SpecialType Set
       Statuses : StatusType Set
       Defending : bool
@@ -304,7 +307,7 @@ type CharacterState =
           SpecialPoints = 0 // sp max is calculated
           WeaponOpt = None
           ArmorOpt = None
-          Relics = []
+          Accessories = []
           Specials = Set.empty
           Statuses = Set.empty
           Defending = false
@@ -386,9 +389,9 @@ type CharacterState =
 
     member this.Shield (rom : Rom) =
         let intermediate =
-            match this.Relics with
-            | relic :: _ -> // just the first relic for now
-                match Map.tryFind relic rom.Relics with
+            match this.Accessories with
+            | accessory :: _ -> // just the first relic for now
+                match Map.tryFind accessory rom.Accessories with
                 | Some weaponData -> single weaponData.ShieldBase
                 | None -> 0.0f
             | _ -> 0.0f
@@ -618,7 +621,8 @@ module CharacterModels =
     let getTargets aimType (characters : CharacterModels) =
         match aimType with
         | EnemyAim -> getEnemies characters
-        | AllyAim healthy -> if healthy then getAlliesHealthy characters else getAlliesWounded characters
+        | AllyAimHealthy -> getAlliesHealthy characters
+        | AllyAimWounded -> getAlliesWounded characters
         | AnyAim -> Map.toValueList characters
         | NoAim -> []
 
@@ -627,7 +631,7 @@ type [<NoComparison>] ReticlesModel =
       AimType : AimType }
 
 type RingMenuModel =
-    { Items : (int * string) list
+    { Items : (int * (bool * string)) list
       ItemCancelOpt : string option }
 
 type ActionCommand =

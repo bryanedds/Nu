@@ -28,4 +28,6 @@ module Assets =
     // Rom files.
     let WeaponDataFilePath = "Assets/Battle/WeaponData.csv"
     let ArmorDataFilePath = "Assets/Battle/ArmorData.csv"
-    let RelicDataFilePath = "Assets/Battle/RelicData.csv"
+    let AccessoryDataFilePath = "Assets/Battle/AccessoryData.csv"
+    let SpecialDataFilePath = "Assets/Battle/SpecialData.csv"
+    let ConsumableDataFilePath = "Assets/Battle/ConsumableData.csv"
