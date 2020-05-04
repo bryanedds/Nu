@@ -402,13 +402,12 @@ type CharacterState =
         | Some autoBattle -> Option.isSome autoBattle.AutoSpecialOpt
         | None -> false
 
-    static member getAttackResult rom cancels scalar (source : CharacterState) (target : CharacterState) =
-        let cancelled = cancels && CharacterState.runningSpecialAutoBattle target
+    static member getAttackResult rom (source : CharacterState) (target : CharacterState) =
         let power = source.Power rom
         let shield = target.Shield rom
-        let damageUnscaled = max 1 (int (Math.Ceiling (double (power - shield))))
-        let damage = damageUnscaled * scalar
-        (cancelled, damage)
+        let damageUnscaled = power - shield
+        let damage = single damageUnscaled |> int |> max 1
+        damage
 
     static member setAutoBattleOpt autoBattleOpt state =
         { state with AutoBattleOpt = autoBattleOpt }
@@ -421,8 +420,13 @@ type CharacterState =
         let hitPoints = state.HitPoints
         let hitPoints = max 0 (hitPoints + delta)
         let hitPoints = min (state.HitPointsMax rom) hitPoints
-        let state = { state with AutoBattleOpt = autoBattleOpt; HitPoints = hitPoints }
-        state
+        { state with AutoBattleOpt = autoBattleOpt; HitPoints = hitPoints }
+
+    static member changeSpecialPoints rom delta state =
+        let specialPoints = state.SpecialPoints
+        let specialPoints = max 0 (specialPoints + delta)
+        let specialPoints = min (state.SpecialPointsMax rom) specialPoints
+        { state with SpecialPoints = specialPoints }
 
     static member tryGetSpecialRandom state =
         let specials = state.Specials
