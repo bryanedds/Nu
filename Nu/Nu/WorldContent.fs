@@ -36,12 +36,12 @@ module Content =
         LayersFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
 
     /// Describe layers to be streamed from a lens indexed by fst.
-    let layersIndexedByFst (lens : Lens<(int * 'a) list, World>) (mapper : int -> Lens<(int * 'a), World> -> World -> LayerContent) =
-        layersIndexedBy lens fst mapper
+    let layersIndexedByFst (lens : Lens<(int * 'a) list, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
+        layersIndexedBy lens fst (fun i lens -> mapper i (Lens.map snd lens))
 
     /// Describe layers to be streamed from a lens indexed by snd.
-    let layersIndexedBySnd (lens : Lens<('a * int) list, World>) (mapper : int -> Lens<('a * int), World> -> World -> LayerContent) =
-        layersIndexedBy lens snd mapper
+    let layersIndexedBySnd (lens : Lens<('a * int) list, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
+        layersIndexedBy lens snd (fun i lens -> mapper i (Lens.map fst lens))
 
     /// Describe layers to be streamed from a lens indexed by discriminated union tag.
     let layersIndexedByArray (lens : Lens<'a list, World>) (arr : 'a array) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
@@ -86,12 +86,12 @@ module Content =
         EntitiesFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
 
     /// Describe entities to be streamed from a lens indexed by fst.
-    let entitiesIndexedByFst (lens : Lens<(int * 'a) list, World>) (mapper : int -> Lens<(int * 'a), World> -> World -> EntityContent) =
-        entitiesIndexedBy lens fst mapper
+    let entitiesIndexedByFst (lens : Lens<(int * 'a) list, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+        entitiesIndexedBy lens fst (fun i lens -> mapper i (Lens.map snd lens))
 
     /// Describe entities to be streamed from a lens indexed by snd.
-    let entitiesIndexedBySnd (lens : Lens<('a * int) list, World>) (mapper : int -> Lens<('a * int), World> -> World -> EntityContent) =
-        entitiesIndexedBy lens snd mapper
+    let entitiesIndexedBySnd (lens : Lens<('a * int) list, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+        entitiesIndexedBy lens snd (fun i lens -> mapper i (Lens.map fst lens))
 
     /// Describe entities to be streamed from a lens indexed by discriminated union tag.
     let entitiesIndexedByArray (lens : Lens<'a list, World>) (arr : 'a array) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
