@@ -20,7 +20,12 @@
 
 #load "OmniAssets.fs"
 #load "OmniConstants.fs"
-#load "OmniModels.fs"
+#load "OmniData.fs"
+#load "OmniState.fs"
+#load "OmniRingMenuModel.fs"
+#load "OmniCharacterModel.fs"
+#load "OmniReticlesModel.fs"
+#load "OmniBattleModel.fs"
 #load "OmniEvents.fs"
 #load "OmniSimulants.fs"
 #load "OmniRingMenu.fs"
