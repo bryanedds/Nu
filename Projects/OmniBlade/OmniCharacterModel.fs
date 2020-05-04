@@ -1,9 +1,8 @@
 ﻿namespace OmniBlade
-open FSharpx.Collections
 open Prime
 open Nu
 
-[<AutoOpen>]
+[<RequireQualifiedAccess>]
 module CharacterModel =
 
     type [<ReferenceEquality; NoComparison>] CharacterModel =
@@ -13,7 +12,7 @@ module CharacterModel =
               InputState_ : CharacterInputState
               Position_ : Vector2
               Size_ : Vector2 }
-    
+
         (* CharacterState Properties *)
         member this.CharacterType = this.CharacterState.CharacterType
         member this.PartyIndex = this.CharacterState.PartyIndex
@@ -44,7 +43,7 @@ module CharacterModel =
         member this.Power rom = this.CharacterState.Power rom
         member this.Magic rom = this.CharacterState.Magic rom
         member this.Shield rom = this.CharacterState.Shield rom
-        
+
         (* AnimationState Properties *)
         member this.TimeStart = this.AnimationState.TimeStart
         member this.AnimationSheet = this.AnimationState.AnimationSheet
