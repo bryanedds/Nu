@@ -21,15 +21,17 @@ module OmniBattle =
         | ReadyCharacters
         | PoiseCharacters
         | CelebrateCharacters of bool
-        | AttackCharacter of CharacterIndex
-        | DamageCharacter of CharacterIndex * CharacterIndex * SpecialType option
+        | AttackCharacter1 of CharacterIndex
+        | AttackCharacter2 of CharacterIndex * CharacterIndex
+        | SpecialCharacter1 of CharacterIndex * SpecialType
+        | SpecialCharacter2 of CharacterIndex * CharacterIndex * SpecialType
+        | ConsumeCharacter1 of ConsumableType * CharacterIndex
+        | ConsumeCharacter2 of ConsumableType * CharacterIndex
         | ChargeCharacter of CharacterIndex
         | PoiseCharacter of CharacterIndex
         | WoundCharacter of CharacterIndex
         | ResetCharacter of CharacterIndex
         | DestroyCharacter of CharacterIndex
-        | GiveConsumable of ConsumableType * CharacterIndex
-        | TakeConsumable of ConsumableType * CharacterIndex
         | Tick
 
     type BattleCommand =
@@ -93,11 +95,40 @@ module OmniBattle =
                 match timeLocal with
                 | 0L ->
                     if target.CharacterState.IsHealthy
-                    then withMsg model (AttackCharacter sourceIndex)
+                    then withMsg model (AttackCharacter1 sourceIndex)
                     else withMsgs { model with CurrentCommandOpt = None } [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
                 | _ ->
                     if timeLocal = int64 source.AnimationState.Stutter
-                    then withMsg model (DamageCharacter (sourceIndex, targetIndex, None))
+                    then withMsg model (AttackCharacter2 (sourceIndex, targetIndex))
+                    elif CharacterAnimationState.finished time source.AnimationState then
+                        let target = BattleModel.getCharacter targetIndex model
+                        if target.CharacterState.IsHealthy then
+                            let model = { model with CurrentCommandOpt = None }
+                            withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
+                        else
+                            let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
+                            let model = { model with CurrentCommandOpt = Some woundCommand }
+                            withMsg model (PoiseCharacter sourceIndex)
+                    else just model
+            | None ->
+                let model = { model with CurrentCommandOpt = None }
+                withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
+
+        static let tickSpecial specialType sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
+            let source = BattleModel.getCharacter sourceIndex model
+            match targetIndexOpt with
+            | Some targetIndex ->
+                let target = BattleModel.getCharacter targetIndex model
+                match timeLocal with
+                | 0L ->
+                    if target.CharacterState.IsHealthy
+                    then withMsg model (ChargeCharacter sourceIndex)
+                    else withMsgs { model with CurrentCommandOpt = None } [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
+                | _ ->
+                    if timeLocal = int64 source.AnimationState.Stutter * 4L then
+                        withMsg model (SpecialCharacter1 (sourceIndex, specialType))
+                    elif timeLocal = int64 source.AnimationState.Stutter * 5L then
+                        withMsg model (SpecialCharacter2 (sourceIndex, targetIndex, specialType))
                     elif CharacterAnimationState.finished time source.AnimationState then
                         let target = BattleModel.getCharacter targetIndex model
                         if target.CharacterState.IsHealthy then
@@ -120,45 +151,14 @@ module OmniBattle =
                 match timeLocal with
                 | 0L ->
                     if target.CharacterState.IsHealthy
-                    then withMsg model (GiveConsumable (consumable, sourceIndex))
+                    then withMsg model (ConsumeCharacter1 (consumable, sourceIndex))
                     else withMsgs { model with CurrentCommandOpt = None } [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
                 | _ ->
                     if timeLocal = int64 source.AnimationState.Stutter * 3L
-                    then withMsg model (TakeConsumable (consumable, targetIndex))
+                    then withMsg model (ConsumeCharacter2 (consumable, targetIndex))
                     elif CharacterAnimationState.finished time target.AnimationState then
                         let model = { model with CurrentCommandOpt = None }
                         withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
-                    else just model
-            | None ->
-                let model = { model with CurrentCommandOpt = None }
-                withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
-
-        static let tickSpecial specialType sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
-            let source = BattleModel.getCharacter sourceIndex model
-            match targetIndexOpt with
-            | Some targetIndex ->
-                let target = BattleModel.getCharacter targetIndex model
-                match timeLocal with
-                | 0L ->
-                    if target.CharacterState.IsHealthy
-                    then withMsg model (ChargeCharacter sourceIndex)
-                    else withMsgs { model with CurrentCommandOpt = None } [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
-                | _ ->
-                    if timeLocal = int64 source.AnimationState.Stutter * 4L then
-                        match specialType with
-                        | HeadSlash -> withMsg model (AttackCharacter sourceIndex)
-                        | Bolt -> withMsg model (AttackCharacter sourceIndex)
-                    elif timeLocal = int64 source.AnimationState.Stutter * 5L then
-                        withMsg model (DamageCharacter (sourceIndex, targetIndex, Some specialType))
-                    elif CharacterAnimationState.finished time source.AnimationState then
-                        let target = BattleModel.getCharacter targetIndex model
-                        if target.CharacterState.IsHealthy then
-                            let model = { model with CurrentCommandOpt = None }
-                            withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
-                        else
-                            let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
-                            let model = { model with CurrentCommandOpt = Some woundCommand }
-                            withMsg model (PoiseCharacter sourceIndex)
                     else just model
             | None ->
                 let model = { model with CurrentCommandOpt = None }
@@ -388,28 +388,48 @@ module OmniBattle =
                     then BattleModel.updateAllies (CharacterModel.setAnimationCycle time CelebrateCycle) model
                     else BattleModel.updateEnemies (CharacterModel.setAnimationCycle time CelebrateCycle) model
                 just model
-            | AttackCharacter sourceIndex ->
+            | AttackCharacter1 sourceIndex ->
                 let time = World.getTickTime world
                 let model = BattleModel.updateCharacter (CharacterModel.setAnimationCycle time AttackCycle) sourceIndex model
                 let playHitSoundDelay = int64 (BattleModel.getCharacter sourceIndex model).AnimationState.Stutter
                 let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                 withCmd model playHitSound
-            | DamageCharacter (sourceIndex, targetIndex, specialTypeOpt) ->
+            | AttackCharacter2 (sourceIndex, targetIndex) ->
+                let time = World.getTickTime world
+                let rom = screen.Parent.GetModel<Rom> world
+                let source = BattleModel.getCharacter sourceIndex model
+                let target = BattleModel.getCharacter targetIndex model
+                let (cancelled, damage) = CharacterState.getAttackResult rom false 1 source.CharacterState target.CharacterState
+                let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom cancelled -damage) targetIndex model
+                let (model, sigs) =
+                    if target.CharacterState.HitPoints <= 0
+                    then (model, [Message (ResetCharacter targetIndex)]) // wounded
+                    else (BattleModel.updateCharacter (CharacterModel.setAnimationCycle time DamageCycle) targetIndex model, []) // just damaged
+                let sigs = if cancelled then Command (DisplayCancel targetIndex) :: sigs else sigs
+                let sigs = Command (DisplayHitPointsChange (targetIndex, -damage)) :: sigs
+                withSigs model sigs
+            | SpecialCharacter1 (sourceIndex, specialType) ->
+                match specialType with
+                | HeadSlash ->
+                    let time = World.getTickTime world
+                    let model = BattleModel.updateCharacter (CharacterModel.setAnimationCycle time AttackCycle) sourceIndex model
+                    let playHitSoundDelay = int64 (BattleModel.getCharacter sourceIndex model).AnimationState.Stutter
+                    let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
+                    withCmd model playHitSound
+                | Bolt ->
+                    just model // TODO: implement
+            | SpecialCharacter2 (sourceIndex, targetIndex, specialType) ->
                 let time = World.getTickTime world
                 let rom = screen.Parent.GetModel<Rom> world
                 let source = BattleModel.getCharacter sourceIndex model
                 let target = BattleModel.getCharacter targetIndex model
                 let (cancelled, damage, model) =
-                    match specialTypeOpt with
-                    | None ->
-                        let (cancelled, damage) = CharacterState.getAttackResult rom false 1 source.CharacterState target.CharacterState
-                        let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom cancelled -damage) targetIndex model
-                        (cancelled, damage, model)
-                    | Some HeadSlash ->
+                    match specialType with
+                    | HeadSlash ->
                         let (cancelled, damage) = CharacterState.getAttackResult rom true 1 source.CharacterState target.CharacterState
                         let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom cancelled -damage) targetIndex model
                         (cancelled, damage, model)
-                    | Some Bolt ->
+                    | Bolt ->
                         (false, 0, model) // TODO: implement
                 let (model, sigs) =
                     if target.CharacterState.HitPoints <= 0
@@ -418,7 +438,24 @@ module OmniBattle =
                 let sigs = if cancelled then Command (DisplayCancel targetIndex) :: sigs else sigs
                 let sigs = Command (DisplayHitPointsChange (targetIndex, -damage)) :: sigs
                 withSigs model sigs
-                
+            | ConsumeCharacter1 (consumable, sourceIndex) ->
+                let time = World.getTickTime world
+                let model = BattleModel.updateCharacter (CharacterModel.setAnimationCycle time CastCycle) sourceIndex model
+                let item = Consumable consumable
+                let model = { model with Inventory = Inventory.removeItem item model.Inventory }
+                just model
+            | ConsumeCharacter2 (consumable, targetIndex) ->
+                let time = World.getTickTime world
+                let rom = screen.Parent.GetModel<Rom> world
+                let healing =
+                    match consumable with
+                    | GreenHerb -> 50 // TODO: pull from rom data
+                    | RedHerb -> 500 // TODO: pull from rom data
+                let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom false healing) targetIndex model
+                let model = BattleModel.updateCharacter (CharacterModel.setAnimationCycle time SpinCycle) targetIndex model
+                let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
+                let playHealSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.HealSound)
+                withCmds model [displayHitPointsChange; playHealSound]
             | ChargeCharacter sourceIndex ->
                 let time = World.getTickTime world
                 let model = BattleModel.updateCharacter (CharacterModel.setAnimationCycle time (PoiseCycle Charging)) sourceIndex model
@@ -463,24 +500,6 @@ module OmniBattle =
                     then { model with Characters = Map.remove characterIndex model.Characters }
                     else model
                 just model
-            | GiveConsumable (consumable, sourceIndex) ->
-                let time = World.getTickTime world
-                let model = BattleModel.updateCharacter (CharacterModel.setAnimationCycle time CastCycle) sourceIndex model
-                let item = Consumable consumable
-                let model = { model with Inventory = Inventory.removeItem item model.Inventory }
-                just model
-            | TakeConsumable (consumable, targetIndex) ->
-                let time = World.getTickTime world
-                let rom = screen.Parent.GetModel<Rom> world
-                let healing =
-                    match consumable with
-                    | GreenHerb -> 50 // TODO: pull from rom data
-                    | RedHerb -> 500 // TODO: pull from rom data
-                let model = BattleModel.updateCharacterState (CharacterState.changeHitPoints rom false healing) targetIndex model
-                let model = BattleModel.updateCharacter (CharacterModel.setAnimationCycle time SpinCycle) targetIndex model
-                let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
-                let playHealSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.HealSound)
-                withCmds model [displayHitPointsChange; playHealSound]
             | Tick ->
                 if World.isTicking world
                 then tick (World.getTickTime world) model
