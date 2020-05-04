@@ -21,11 +21,14 @@ type Direction =
             else                                                            Downward
         direction
 
+type EffectType =
+    | Physical
+    | Magical
+
 type ElementType =
-    | Fire // beats nothing; strongest innate mpow
-    | Lightning // beats water
-    | Water // beats fire, lightning; weakest innate mpow
-    | Neutral // neutral element
+    | Fire // beats nothing; strongest scalar
+    | Lightning // beats water; average scalar
+    | Water // beats fire, lightning; weakest scaler
 
 type StatusType =
     | DefendStatus // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
@@ -62,10 +65,6 @@ type TargetType =
     | RadialTarget of AimType
     | LineTarget of AimType
     | AllTarget of AimType
-
-type EffectType =
-    | Physical
-    | Magical
 
 type SpecialType =
     | HeadSlash
@@ -139,7 +138,7 @@ type SpecialData =
       Curative : bool
       Cancels : bool
       Absorb : single // percentage of outcome that is absorbed by the caster
-      ElementType : ElementType
+      ElementTypeOpt : ElementType option
       StatusesAdded : StatusType Set
       StatusesRemoved : StatusType Set
       TargetType : TargetType
