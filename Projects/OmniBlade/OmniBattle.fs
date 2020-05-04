@@ -91,8 +91,8 @@ module OmniBattle =
                 let target = BattleModel.getCharacter targetIndex model
                 match timeLocal with
                 | 0L ->
-                    if target.IsHealthy
-                    then withMsg model (AttackCharacter1 sourceIndex)
+                    if target.IsHealthy then
+                        withMsg model (AttackCharacter1 sourceIndex)
                     else
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
@@ -120,8 +120,8 @@ module OmniBattle =
                 let target = BattleModel.getCharacter targetIndex model
                 match timeLocal with
                 | 0L ->
-                    if target.IsHealthy
-                    then withMsg model (ChargeCharacter sourceIndex)
+                    if target.IsHealthy then
+                        withMsg model (ChargeCharacter sourceIndex)
                     else
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
@@ -151,14 +151,14 @@ module OmniBattle =
                 let target = BattleModel.getCharacter targetIndex model
                 match timeLocal with
                 | 0L ->
-                    if target.IsHealthy
-                    then withMsg model (ConsumeCharacter1 (consumable, sourceIndex))
+                    if target.IsHealthy then
+                        withMsg model (ConsumeCharacter1 (consumable, sourceIndex))
                     else
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
                 | _ ->
-                    if timeLocal = int64 source.Stutter * 3L
-                    then withMsg model (ConsumeCharacter2 (consumable, targetIndex))
+                    if timeLocal = int64 source.Stutter * 3L then
+                        withMsg model (ConsumeCharacter2 (consumable, targetIndex))
                     elif CharacterModel.getAnimationFinished time target then
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
@@ -310,52 +310,6 @@ module OmniBattle =
                 | BattleRunning -> tickRunning time model
                 | BattleCease (outcome, timeStart) -> tickCease time timeStart outcome model
             (model, sigs)
-
-        let makeHitPointsChangeEffect delta =
-            let colorOpaque =
-                if delta < 0
-                then v4 1.0f 1.0f 1.0f 1.0f
-                else v4 0.0f 1.0f 1.0f 1.0f
-            let colorTransparent =
-                colorOpaque.WithW 0.0f
-            { EffectName = "HitPointsChange"
-              LifetimeOpt = Some 70L
-              Definitions = Map.empty
-              Content =
-                Effects.TextSprite
-                    (Effects.Resource (Assets.DefaultPackageName, Assets.DefaultFontName),
-                     [|Effects.Text (scstring (abs delta))
-                       Effects.Position
-                        (Effects.Sum, Effects.Linear, Effects.Bounce,
-                         [|{ TweenValue = v2Zero; TweenLength = 10L }
-                           { TweenValue = v2 0.0f 48.0f; TweenLength = 10L }
-                           { TweenValue = v2Zero; TweenLength = 10L }
-                           { TweenValue = v2Zero; TweenLength = 40L }|])
-                       Effects.Color
-                        (Effects.Set, Effects.EaseOut, Effects.Once,
-                         [|{ TweenValue = colorOpaque; TweenLength = 40L }
-                           { TweenValue = colorOpaque; TweenLength = 30L }
-                           { TweenValue = colorTransparent; TweenLength = 0L }|])|],
-                     Effects.Nil) }
-
-        let makeCancelEffect () =
-            { EffectName = "Cancel"
-              LifetimeOpt = Some 40L
-              Definitions = Map.empty
-              Content =
-                Effects.StaticSprite
-                    (Effects.Resource (Assets.CancelImage.PackageName, Assets.CancelImage.AssetName),
-                     [|Effects.Rotation
-                        (Effects.Sum, Effects.Linear, Effects.Bounce,
-                         [|{ TweenValue = single Math.PI * -2.0f; TweenLength = 10L }
-                           { TweenValue = 0.0f; TweenLength = 30L }
-                           { TweenValue = 0.0f; TweenLength = 0L }|])
-                       Effects.Size
-                        (Effects.Set, Effects.EaseOut, Effects.Once,
-                         [|{ TweenValue = v2Zero; TweenLength = 10L }
-                           { TweenValue = v2 208.0f 64.0f; TweenLength = 30L }
-                           { TweenValue = v2 208.0f 64.0f; TweenLength = 0L }|])|],
-                     Effects.Nil) }
 
         override this.Bindings (_, battle, _) =
             [battle.OutgoingStartEvent => cmd FadeSong
@@ -524,45 +478,23 @@ module OmniBattle =
                     just model // TODO: implement
 
             | SpecialCharacter2 (sourceIndex, targetIndex, specialType) ->
-                
-                // run second phase of special move
                 let time = World.getTickTime world
                 let rom = screen.Parent.GetModel<Rom> world
                 match Map.tryFind specialType rom.Specials with
                 | Some specialData ->
-
-                    // grab characters
                     let source = BattleModel.getCharacter sourceIndex model
                     let target = BattleModel.getCharacter targetIndex model
-
-                    // evaluate special move
                     let (cancelled, hitPointsChange) = CharacterModel.evaluateSpecialMove rom specialData source target
-
-                    // charge special cost
                     let model = BattleModel.updateCharacter (CharacterModel.updateSpecialPoints rom ((+) -specialData.SpecialCost)) sourceIndex model
-
-                    // apply hit points change
                     let model = BattleModel.updateCharacter (CharacterModel.updateHitPoints rom (fun hitPoints -> (hitPoints + hitPointsChange, cancelled))) targetIndex model
-
-                    // animate target damage if negative change
                     let model =
                         if hitPointsChange < 0 && target.IsHealthy
                         then BattleModel.updateCharacter (CharacterModel.animate time DamageCycle) targetIndex model
                         else model
-
-                    // reset target if wounded
                     let sigs = if target.IsWounded then [Message (ResetCharacter targetIndex)] else []
-
-                    // display cancel if cancelled
                     let sigs = if cancelled then Command (DisplayCancel targetIndex) :: sigs else sigs
-
-                    // display hit point change if any
                     let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (targetIndex, hitPointsChange)) :: sigs else sigs
-
-                    // fin
                     withSigs model sigs
-
-                // special data not found - abort
                 | None-> just model
 
             | ConsumeCharacter1 (consumable, sourceIndex) ->
@@ -650,7 +582,7 @@ module OmniBattle =
             | DisplayCancel targetIndex ->
                 match BattleModel.tryGetCharacter targetIndex model with
                 | Some target ->
-                    let effect = makeCancelEffect ()
+                    let effect = Effects.makeCancelEffect ()
                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
                     let world = entity.SetEffect effect world
                     let world = entity.SetCenter target.CenterOffset3 world
@@ -662,7 +594,7 @@ module OmniBattle =
             | DisplayHitPointsChange (targetIndex, delta) ->
                 match BattleModel.tryGetCharacter targetIndex model with
                 | Some target ->
-                    let effect = makeHitPointsChangeEffect delta
+                    let effect = Effects.makeHitPointsChangeEffect delta
                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
                     let world = entity.SetEffect effect world
                     let world = entity.SetCenter target.CenterOffset2 world
