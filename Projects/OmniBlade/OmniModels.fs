@@ -29,6 +29,8 @@ type ElementType =
     | Fire // beats nothing; strongest scalar
     | Lightning // beats water; average scalar
     | Water // beats fire, lightning; weakest scaler
+    | Dark // beats light, average scalar
+    | Light // beats dark, average scalar
 
 type StatusType =
     | DefendStatus // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
