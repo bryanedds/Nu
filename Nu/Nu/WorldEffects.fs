@@ -236,7 +236,7 @@ module EffectSystemModule =
         let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm effectSystem =
             match algorithm with
             | Const ->
-                value2
+                value
             | Linear ->
                 value + scale (value2 - value, progress)
             | Random ->
@@ -564,7 +564,7 @@ module EffectSystemModule =
             // eval aspects
             let slice = evalAspects aspects slice effectSystem
 
-            // build sprite views
+            // build sound views
             let effectSystem =
                 if slice.Enabled
                 then addView (PlaySound (slice.Volume, AssetTag.specialize<Audio> sound)) effectSystem

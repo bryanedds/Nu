@@ -23,7 +23,7 @@ module OmniBattle =
         | CelebrateCharacters of bool
         | AttackCharacter1 of CharacterIndex
         | AttackCharacter2 of CharacterIndex * CharacterIndex
-        | SpecialCharacter1 of CharacterIndex * SpecialType
+        | SpecialCharacter1 of CharacterIndex * CharacterIndex * SpecialType
         | SpecialCharacter2 of CharacterIndex * CharacterIndex * SpecialType
         | ConsumeCharacter1 of ConsumableType * CharacterIndex
         | ConsumeCharacter2 of ConsumableType * CharacterIndex
@@ -39,6 +39,7 @@ module OmniBattle =
         | PlaySound of int64 * single * AssetTag<Audio>
         | DisplayCancel of CharacterIndex
         | DisplayHitPointsChange of CharacterIndex * int
+        | DisplayBolt of CharacterIndex
         | InitializeBattle
         | FinalizeBattle
 
@@ -52,13 +53,13 @@ module OmniBattle =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
             (let allies =
                 [CharacterModel.make
-                    { PartyIndex = 0; CharacterType = Ally Jinn; ActionTime = 600; ExpPoints = 0; HitPoints = 10; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Bolt]; Statuses = Set.empty; WeaponOpt = Some "WoodenSword"; ArmorOpt = Some "LeatherVest"; Accessories = []; AutoBattleOpt = None }
+                    { PartyIndex = 0; CharacterType = Ally Jinn; ActionTime = 600; ExpPoints = 0; HitPoints = 10; SpecialPoints = 5; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Bolt]; Statuses = Set.empty; WeaponOpt = Some "WoodenSword"; ArmorOpt = Some "LeatherVest"; Accessories = []; AutoBattleOpt = None }
                     { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
                     NoInput
                     (v2 -224.0f -168.0f)
                     (v2 160.0f 160.0f)
                  CharacterModel.make
-                    { PartyIndex = 1; CharacterType = Ally Glenn; ActionTime = 420; ExpPoints = 0; HitPoints = 10; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Bolt]; Statuses = Set.empty; WeaponOpt = Some "OakRod"; ArmorOpt = Some "LeatherRobe"; Accessories = []; AutoBattleOpt = None }
+                    { PartyIndex = 1; CharacterType = Ally Glenn; ActionTime = 420; ExpPoints = 0; HitPoints = 10; SpecialPoints = 5; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Bolt]; Statuses = Set.empty; WeaponOpt = Some "OakRod"; ArmorOpt = Some "LeatherRobe"; Accessories = []; AutoBattleOpt = None }
                     { TimeStart = 0L; AnimationSheet = Assets.GlennAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
                     NoInput
                     (v2 224.0f 64.0f)
@@ -127,7 +128,7 @@ module OmniBattle =
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
                 | _ ->
                     if timeLocal = int64 source.Stutter * 4L then
-                        withMsg model (SpecialCharacter1 (sourceIndex, specialType))
+                        withMsg model (SpecialCharacter1 (sourceIndex, targetIndex, specialType))
                     elif timeLocal = int64 source.Stutter * 5L then
                         withMsg model (SpecialCharacter2 (sourceIndex, targetIndex, specialType))
                     elif CharacterModel.getAnimationFinished time source then
@@ -466,7 +467,7 @@ module OmniBattle =
                 let sigs = Command (DisplayHitPointsChange (targetIndex, -damage)) :: sigs
                 withSigs model sigs
 
-            | SpecialCharacter1 (sourceIndex, specialType) ->
+            | SpecialCharacter1 (sourceIndex, targetIndex, specialType) ->
                 match specialType with
                 | HeadSlash ->
                     let time = World.getTickTime world
@@ -475,7 +476,9 @@ module OmniBattle =
                     let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                     withCmd model playHitSound
                 | Bolt ->
-                    just model // TODO: implement
+                    let time = World.getTickTime world
+                    let model = BattleModel.updateCharacter (CharacterModel.animate time AttackCycle) sourceIndex model
+                    withCmd model (DisplayBolt targetIndex)
 
             | SpecialCharacter2 (sourceIndex, targetIndex, specialType) ->
                 let time = World.getTickTime world
@@ -599,6 +602,19 @@ module OmniBattle =
                     let world = entity.SetEffect effect world
                     let world = entity.SetCenter target.CenterOffset2 world
                     let world = entity.SetDepth Constants.Battle.GuiEffectDepth world
+                    let world = entity.SetSelfDestruct true world
+                    just world
+                | None -> just world
+
+            | DisplayBolt targetIndex ->
+                match BattleModel.tryGetCharacter targetIndex model with
+                | Some target ->
+                    let effect = Effects.makeBoltEffect ()
+                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
+                    let world = entity.SetEffect effect world
+                    let world = entity.SetSize (v2 256.0f 1024.0f) world
+                    let world = entity.SetBottom target.Bottom world
+                    let world = entity.SetDepth Constants.Battle.EffectDepth world
                     let world = entity.SetSelfDestruct true world
                     just world
                 | None -> just world
