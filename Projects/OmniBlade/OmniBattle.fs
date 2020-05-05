@@ -54,26 +54,26 @@ module OmniBattle =
             (let allies =
                 [CharacterModel.make
                     { PartyIndex = 0; CharacterType = Ally Jinn; ActionTime = 600; ExpPoints = 0; HitPoints = 10; SpecialPoints = 5; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Bolt]; Statuses = Set.empty; WeaponOpt = Some "WoodenSword"; ArmorOpt = Some "LeatherVest"; Accessories = []; AutoBattleOpt = None }
-                    { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
+                    { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Rightward }
                     NoInput
                     (v2 -224.0f -168.0f)
                     (v2 160.0f 160.0f)
                  CharacterModel.make
                     { PartyIndex = 1; CharacterType = Ally Glenn; ActionTime = 420; ExpPoints = 0; HitPoints = 10; SpecialPoints = 5; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Bolt]; Statuses = Set.empty; WeaponOpt = Some "OakRod"; ArmorOpt = Some "LeatherRobe"; Accessories = []; AutoBattleOpt = None }
-                    { TimeStart = 0L; AnimationSheet = Assets.GlennAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
+                    { TimeStart = 0L; AnimationSheet = Assets.GlennAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward }
                     NoInput
                     (v2 224.0f 64.0f)
                     (v2 160.0f 160.0f)]
              let enemies =
                 [CharacterModel.make
                     { PartyIndex = 0; CharacterType = Enemy Goblin; ActionTime = 99; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None; }
-                    { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
+                    { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward }
                     NoInput
                     (v2 0.0f 0.0f)
                     (v2 160.0f 160.0f)
                  CharacterModel.make
                     { PartyIndex = 1; CharacterType = Enemy Goblin; ActionTime = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None; }
-                    { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward; Stutter = 10 }
+                    { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward }
                     NoInput
                     (v2 176.0f -192.0f)
                     (v2 160.0f 160.0f)]
@@ -92,24 +92,22 @@ module OmniBattle =
                 let target = BattleModel.getCharacter targetIndex model
                 match timeLocal with
                 | 0L ->
-                    if target.IsHealthy then
-                        withMsg model (AttackCharacter1 sourceIndex)
+                    if target.IsHealthy
+                    then withMsg model (AttackCharacter1 sourceIndex)
                     else
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
-                | _ ->
-                    if timeLocal = int64 source.Stutter
-                    then withMsg model (AttackCharacter2 (sourceIndex, targetIndex))
-                    elif CharacterModel.getAnimationFinished time source then
-                        let target = BattleModel.getCharacter targetIndex model
-                        if target.IsHealthy then
-                            let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                            withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
-                        else
-                            let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
-                            let model = BattleModel.updateCurrentCommandOpt (constant (Some woundCommand)) model
-                            withMsg model (PoiseCharacter sourceIndex)
-                    else just model
+                | 10L -> withMsg model (AttackCharacter2 (sourceIndex, targetIndex))
+                | _ when CharacterModel.getAnimationFinished time source ->
+                    let target = BattleModel.getCharacter targetIndex model
+                    if target.IsHealthy then
+                        let model = BattleModel.updateCurrentCommandOpt (constant None) model
+                        withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
+                    else
+                        let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
+                        let model = BattleModel.updateCurrentCommandOpt (constant (Some woundCommand)) model
+                        withMsg model (PoiseCharacter sourceIndex)
+                | _ -> just model
             | None ->
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
@@ -121,26 +119,23 @@ module OmniBattle =
                 let target = BattleModel.getCharacter targetIndex model
                 match timeLocal with
                 | 0L ->
-                    if target.IsHealthy then
-                        withMsg model (ChargeCharacter sourceIndex)
+                    if target.IsHealthy
+                    then withMsg model (ChargeCharacter sourceIndex)
                     else
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
-                | _ ->
-                    if timeLocal = int64 source.Stutter * 4L then
-                        withMsg model (SpecialCharacter1 (sourceIndex, targetIndex, specialType))
-                    elif timeLocal = int64 source.Stutter * 5L then
-                        withMsg model (SpecialCharacter2 (sourceIndex, targetIndex, specialType))
-                    elif CharacterModel.getAnimationFinished time source then
-                        let target = BattleModel.getCharacter targetIndex model
-                        if target.IsHealthy then
-                            let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                            withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
-                        else
-                            let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
-                            let model = BattleModel.updateCurrentCommandOpt (constant (Some woundCommand)) model
-                            withMsg model (PoiseCharacter sourceIndex)
-                    else just model
+                | 40L -> withMsg model (SpecialCharacter1 (sourceIndex, targetIndex, specialType))
+                | 50L -> withMsg model (SpecialCharacter2 (sourceIndex, targetIndex, specialType))
+                | _ when CharacterModel.getAnimationFinished time source ->
+                    let target = BattleModel.getCharacter targetIndex model
+                    if target.IsHealthy then
+                        let model = BattleModel.updateCurrentCommandOpt (constant None) model
+                        withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
+                    else
+                        let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
+                        let model = BattleModel.updateCurrentCommandOpt (constant (Some woundCommand)) model
+                        withMsg model (PoiseCharacter sourceIndex)
+                | _ -> just model
             | None ->
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
@@ -148,22 +143,19 @@ module OmniBattle =
         static let tickConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
             match targetIndexOpt with
             | Some targetIndex ->
-                let source = BattleModel.getCharacter sourceIndex model
                 let target = BattleModel.getCharacter targetIndex model
                 match timeLocal with
                 | 0L ->
-                    if target.IsHealthy then
-                        withMsg model (ConsumeCharacter1 (consumable, sourceIndex))
+                    if target.IsHealthy
+                    then withMsg model (ConsumeCharacter1 (consumable, sourceIndex))
                     else
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
-                | _ ->
-                    if timeLocal = int64 source.Stutter * 3L then
-                        withMsg model (ConsumeCharacter2 (consumable, targetIndex))
-                    elif CharacterModel.getAnimationFinished time target then
-                        let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                        withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
-                    else just model
+                | 30L -> withMsg model (ConsumeCharacter2 (consumable, targetIndex))
+                | _ when CharacterModel.getAnimationFinished time target ->
+                    let model = BattleModel.updateCurrentCommandOpt (constant None) model
+                    withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
+                | _ -> just model
             | None ->
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
@@ -449,7 +441,7 @@ module OmniBattle =
             | AttackCharacter1 sourceIndex ->
                 let time = World.getTickTime world
                 let model = BattleModel.updateCharacter (CharacterModel.animate time AttackCycle) sourceIndex model
-                let playHitSoundDelay = int64 (BattleModel.getCharacter sourceIndex model).Stutter
+                let playHitSoundDelay = 10L
                 let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                 withCmd model playHitSound
 
@@ -472,12 +464,12 @@ module OmniBattle =
                 | HeadSlash ->
                     let time = World.getTickTime world
                     let model = BattleModel.updateCharacter (CharacterModel.animate time AttackCycle) sourceIndex model
-                    let playHitSoundDelay = int64 (BattleModel.getCharacter sourceIndex model).Stutter
+                    let playHitSoundDelay = 10L
                     let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                     withCmd model playHitSound
                 | Bolt ->
                     let time = World.getTickTime world
-                    let model = BattleModel.updateCharacter (CharacterModel.animate time AttackCycle) sourceIndex model
+                    let model = BattleModel.updateCharacter (CharacterModel.animate time Cast2Cycle) sourceIndex model
                     withCmd model (DisplayBolt targetIndex)
 
             | SpecialCharacter2 (sourceIndex, targetIndex, specialType) ->

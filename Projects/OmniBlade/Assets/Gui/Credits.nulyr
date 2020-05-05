@@ -21,8 +21,8 @@
   [TextDispatcher
    [[Position [-320.0f 0.0f]]
     [Size [640.0f 64.0f]]
-    [Text "Code + Music + SFX: Bryan Edds"]]]
+    [Text "Code: Bryan Edds"]]]
   [TextDispatcher
    [[Position [-320.0f -96.0f]]
     [Size [640.0f 64.0f]]
-    [Text "Art: MindChamber"]]]]]
+    [Text "Art: Placeholder for now."]]]]]

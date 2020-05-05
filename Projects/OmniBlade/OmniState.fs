@@ -257,14 +257,14 @@ type CharacterAnimationCycle =
     | SpinCycle
     | DamageCycle
     | IdleCycle
+    | Cast2Cycle
     | WoundCycle
 
 type CharacterAnimationState =
     { TimeStart : int64
       AnimationSheet : Image AssetTag
       AnimationCycle : CharacterAnimationCycle
-      Direction : Direction
-      Stutter : int }
+      Direction : Direction }
 
     static member setCycle timeOpt cycle state =
         match timeOpt with
@@ -281,58 +281,76 @@ type CharacterAnimationState =
     static member timeLocal time state =
         time - state.TimeStart
 
-    static member indexCel time state =
-        let timeLocal = CharacterAnimationState.timeLocal time state
-        int timeLocal / state.Stutter
-
-    static member indexLooped run time state =
-        CharacterAnimationState.indexCel time state % run
-
-    static member indexSaturated run time state =
-        let cel = CharacterAnimationState.indexCel time state
-        if cel < dec run then cel else dec run
-
-    static member indexLoopedWithDirection row run time state =
-        let offset = CharacterAnimationState.directionToInt state.Direction * run
-        Vector2i (CharacterAnimationState.indexLooped run time state + offset, row)
-
-    static member indexLoopedWithoutDirection row run time state =
-        Vector2i (CharacterAnimationState.indexLooped run time state, row)
-
-    static member indexSaturatedWithDirection row run time state =
-        let offset = CharacterAnimationState.directionToInt state.Direction * run
-        Vector2i (CharacterAnimationState.indexSaturated run time state + offset, row)
-
-    static member indexSaturatedWithoutDirection row run time state =
-        Vector2i (CharacterAnimationState.indexSaturated run time state, row)
-
-    static member index time state =
+    static member cycleStutter state =
         match state.AnimationCycle with
-        | WalkCycle -> CharacterAnimationState.indexLoopedWithDirection 0 6 time state
-        | CelebrateCycle -> CharacterAnimationState.indexLoopedWithDirection 1 2 time state
-        | ReadyCycle -> CharacterAnimationState.indexSaturatedWithDirection 2 3 time state
-        | PoiseCycle Poising -> CharacterAnimationState.indexLoopedWithDirection 3 3 time state
-        | PoiseCycle Defending -> CharacterAnimationState.indexLoopedWithDirection 9 1 time state
-        | PoiseCycle Charging -> CharacterAnimationState.indexLoopedWithDirection 5 2 time state
-        | AttackCycle -> CharacterAnimationState.indexSaturatedWithDirection 4 3 time state
-        | CastCycle -> CharacterAnimationState.indexLoopedWithDirection 5 2 time state
-        | SpinCycle -> CharacterAnimationState.indexLoopedWithoutDirection 7 4 time state
-        | DamageCycle -> CharacterAnimationState.indexSaturatedWithDirection 6 1 time state
-        | IdleCycle -> CharacterAnimationState.indexSaturatedWithDirection 8 1 time state
-        | WoundCycle -> Vector2i (0, 8)
+        | WalkCycle -> 10L
+        | CelebrateCycle -> 15L
+        | ReadyCycle -> 10L
+        | PoiseCycle _ -> 10L
+        | AttackCycle -> 10L
+        | CastCycle -> 10L
+        | SpinCycle -> 10L
+        | DamageCycle -> 10L
+        | IdleCycle -> 10L
+        | Cast2Cycle -> 10L
+        | WoundCycle -> 10L
 
     static member cycleLengthOpt state =
+        let stutter = CharacterAnimationState.cycleStutter state
         match state.AnimationCycle with
         | WalkCycle -> None
         | CelebrateCycle -> None
-        | ReadyCycle -> Some (int64 (5 * state.Stutter))
+        | ReadyCycle -> Some (5L * stutter)
         | PoiseCycle _ -> None
-        | AttackCycle -> Some (int64 (4 * state.Stutter))
+        | AttackCycle -> Some (4L * stutter)
         | CastCycle -> None
-        | SpinCycle -> Some (int64 (4 * state.Stutter))
-        | DamageCycle -> Some (int64 (3 * state.Stutter))
+        | SpinCycle -> Some (4L * stutter)
+        | DamageCycle -> Some (3L * stutter)
         | IdleCycle -> None
-        | WoundCycle -> Some (int64 (5 * state.Stutter))
+        | Cast2Cycle -> Some (4L * stutter)
+        | WoundCycle -> Some (5L * stutter)
+
+    static member indexCel stutter time state =
+        let timeLocal = CharacterAnimationState.timeLocal time state
+        int (timeLocal / stutter)
+
+    static member indexLooped run stutter time state =
+        CharacterAnimationState.indexCel stutter time state % run
+
+    static member indexSaturated run stutter time state =
+        let cel = CharacterAnimationState.indexCel stutter time state
+        if cel < dec run then cel else dec run
+
+    static member indexLoopedWithDirection row run stutter time state =
+        let offset = CharacterAnimationState.directionToInt state.Direction * run
+        Vector2i (CharacterAnimationState.indexLooped run stutter time state + offset, row)
+
+    static member indexLoopedWithoutDirection row run stutter time state =
+        Vector2i (CharacterAnimationState.indexLooped run stutter time state, row)
+
+    static member indexSaturatedWithDirection row run stutter time state =
+        let offset = CharacterAnimationState.directionToInt state.Direction * run
+        Vector2i (CharacterAnimationState.indexSaturated run stutter time state + offset, row)
+
+    static member indexSaturatedWithoutDirection row run stutter time state =
+        Vector2i (CharacterAnimationState.indexSaturated run stutter time state, row)
+
+    static member index time state =
+        let stutter = CharacterAnimationState.cycleStutter state
+        match state.AnimationCycle with
+        | WalkCycle -> CharacterAnimationState.indexLoopedWithDirection 0 6 stutter time state
+        | CelebrateCycle -> CharacterAnimationState.indexLoopedWithDirection 1 2 stutter time state
+        | ReadyCycle -> CharacterAnimationState.indexSaturatedWithDirection 2 3 stutter time state
+        | PoiseCycle Poising -> CharacterAnimationState.indexLoopedWithDirection 3 3 stutter time state
+        | PoiseCycle Defending -> CharacterAnimationState.indexLoopedWithDirection 9 1 stutter time state
+        | PoiseCycle Charging -> CharacterAnimationState.indexLoopedWithDirection 5 2 stutter time state
+        | AttackCycle -> CharacterAnimationState.indexSaturatedWithDirection 4 3 stutter time state
+        | CastCycle -> CharacterAnimationState.indexLoopedWithDirection 5 2 stutter time state
+        | SpinCycle -> CharacterAnimationState.indexLoopedWithoutDirection 7 4 stutter time state
+        | DamageCycle -> CharacterAnimationState.indexSaturatedWithDirection 6 1 stutter time state
+        | IdleCycle -> CharacterAnimationState.indexSaturatedWithDirection 8 1 stutter time state
+        | Cast2Cycle -> CharacterAnimationState.indexSaturatedWithDirection 10 2 stutter time state
+        | WoundCycle -> Vector2i (0, 8)
 
     static member progressOpt time state =
         let timeLocal = CharacterAnimationState.timeLocal time state
