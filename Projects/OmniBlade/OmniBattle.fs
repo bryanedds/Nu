@@ -26,6 +26,8 @@ module OmniBattle =
         | SpecialCharacter1 of CharacterIndex * CharacterIndex * SpecialType
         | SpecialCharacter2 of CharacterIndex * CharacterIndex * SpecialType
         | SpecialCharacter3 of CharacterIndex * CharacterIndex * SpecialType
+        | SpecialCharacter4 of CharacterIndex * CharacterIndex * SpecialType
+        | SpecialCharacterAmbient of CharacterIndex * CharacterIndex * SpecialType
         | ConsumeCharacter1 of ConsumableType * CharacterIndex
         | ConsumeCharacter2 of ConsumableType * CharacterIndex
         | ChargeCharacter of CharacterIndex
@@ -87,7 +89,7 @@ module OmniBattle =
              let model = BattleModel.make (BattleReady 0L) characters None Queue.empty inventory 100
              model)
 
-        static let tickAttack sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model (_ : World) =
+        static let tickAttack sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
             match targetIndexOpt with
             | Some targetIndex ->
                 let target = BattleModel.getCharacter targetIndex model
@@ -113,7 +115,7 @@ module OmniBattle =
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
 
-        static let tickSpecial specialType sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model world =
+        static let tickSpecial specialType sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
             let source = BattleModel.getCharacter sourceIndex model
             match targetIndexOpt with
             | Some targetIndex ->
@@ -123,32 +125,17 @@ module OmniBattle =
                     | 0L -> (model, [SpecialCharacter1 (sourceIndex, targetIndex, specialType)])
                     | 40L -> (model, [SpecialCharacter2 (sourceIndex, targetIndex, specialType)])
                     | 55L -> (model, [SpecialCharacter3 (sourceIndex, targetIndex, specialType)])
-                    | _ when
-                        CharacterModel.getAnimationFinished time source &&
-                        CharacterModel.getAnimationFinished time target ->
-                        // TODO: extract this to SpecialCharacter4?
-                        let target = BattleModel.getCharacter targetIndex model
-                        if target.IsHealthy then
-                            let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                            (model, [PoiseCharacter sourceIndex; PoiseCharacter targetIndex])
-                        else
-                            let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
-                            let model = BattleModel.updateCurrentCommandOpt (constant (Some woundCommand)) model
-                            (model, [PoiseCharacter sourceIndex])
-                    | _ -> (model, [])
-                let model =
-                    if Simulants.BattleSpecialMovement.GetExists world then
-                        let tags = Simulants.BattleSpecialMovement.GetEffectTags world
-                        match Map.tryFind "Tag" tags with
-                        | Some tag -> BattleModel.updateCharacter (CharacterModel.updateCenter (constant tag.Position)) sourceIndex model
-                        | None -> model
-                    else model
+                    | _ ->
+                        if CharacterModel.getAnimationFinished time source && CharacterModel.getAnimationFinished time target
+                        then (model, [SpecialCharacter4 (sourceIndex, targetIndex, specialType)])
+                        else (model, [])
+                let (model, msgs) = (model, msgs @ [SpecialCharacterAmbient (sourceIndex, targetIndex, specialType)])
                 withMsgs model msgs
             | None ->
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
 
-        static let tickConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model (_ : World) =
+        static let tickConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
             match targetIndexOpt with
             | Some targetIndex ->
                 let target = BattleModel.getCharacter targetIndex model
@@ -168,7 +155,7 @@ module OmniBattle =
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
 
-        static let tickWound targetIndex time model (_ : World) =
+        static let tickWound targetIndex time model =
             let character = BattleModel.getCharacter targetIndex model
             if character.IsAlly then
                 match character.AnimationCycle with
@@ -193,7 +180,7 @@ module OmniBattle =
                     else just model
                 | _ -> failwithumf ()
 
-        static let tickReady time timeStart model (_ : World) =
+        static let tickReady time timeStart model =
             let timeLocal = time - timeStart
             match timeLocal with
             | 0L -> withMsg model ReadyCharacters
@@ -202,25 +189,25 @@ module OmniBattle =
                 withMsg model PoiseCharacters
             | _ -> just model
 
-        static let rec tickCurrentCommand time currentCommand model world =
+        static let rec tickCurrentCommand time currentCommand model =
             let timeLocal = time - currentCommand.TimeStart
             match currentCommand.ActionCommand.Action with
             | Attack ->
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
-                tickAttack source targetOpt time timeLocal model world
+                tickAttack source targetOpt time timeLocal model
             | Consume consumable ->
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
-                tickConsume consumable source targetOpt time timeLocal model world
+                tickConsume consumable source targetOpt time timeLocal model
             | Special specialType ->
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
-                tickSpecial specialType source targetOpt time timeLocal model world
+                tickSpecial specialType source targetOpt time timeLocal model
             | Wound ->
                 match currentCommand.ActionCommand.TargetOpt with
                 | Some target ->
-                    let (model, signal) = tickWound target time model world
+                    let (model, signal) = tickWound target time model
                     match model.CurrentCommandOpt with
                     | Some _ ->
                         // just keep ticking wound...
@@ -231,21 +218,21 @@ module OmniBattle =
                             let enemies = BattleModel.getEnemies model
                             if Seq.forall (fun (character : CharacterModel) -> character.IsWounded) allies then
                                 let model = BattleModel.updateBattleState (constant (BattleCease (false, time))) model
-                                tick time model world // tick for frame 0
+                                tick time model // tick for frame 0
                             elif Seq.forall (fun (character : CharacterModel) -> character.IsWounded) enemies then
                                 let model = BattleModel.updateBattleState (constant (BattleCease (true, time))) model
-                                tick time model world // tick for frame 0
+                                tick time model // tick for frame 0
                             else just model
                         withSig model (signal + signal2)
                 | None -> just model
         
-        and tickNextCommand time nextCommand futureCommands (model : BattleModel) world =
+        and tickNextCommand time nextCommand futureCommands (model : BattleModel) =
             let command = CurrentCommand.make time nextCommand
             let model = BattleModel.updateCurrentCommandOpt (constant (Some command)) model
             let model = BattleModel.updateActionCommands (constant futureCommands) model
-            tick time model world // tick for frame 0
+            tick time model // tick for frame 0
 
-        and tickNoNextCommand time (model : BattleModel) (_ : World) =
+        and tickNoNextCommand time (model : BattleModel) =
             let (allySignalsRev, model) =
                 List.fold (fun (signals, model) (ally : CharacterModel) ->
                     if ally.ActionTime = Constants.Battle.ActionTime then
@@ -292,28 +279,28 @@ module OmniBattle =
                     model
             withSigs model (List.rev (allySignalsRev @ enemySignalsRev))
 
-        and tickNoCurrentCommand time (model : BattleModel) world =
+        and tickNoCurrentCommand time (model : BattleModel) =
             match model.ActionCommands with
-            | Queue.Cons (nextCommand, futureCommands) -> tickNextCommand time nextCommand futureCommands model world
-            | Queue.Nil -> tickNoNextCommand time model world
+            | Queue.Cons (nextCommand, futureCommands) -> tickNextCommand time nextCommand futureCommands model
+            | Queue.Nil -> tickNoNextCommand time model
 
-        and tickRunning time (model : BattleModel) world =
+        and tickRunning time (model : BattleModel) =
             match model.CurrentCommandOpt with
-            | Some currentCommand -> tickCurrentCommand time currentCommand model world
-            | None -> tickNoCurrentCommand time model world
+            | Some currentCommand -> tickCurrentCommand time currentCommand model
+            | None -> tickNoCurrentCommand time model
 
-        and tickCease time timeStart outcome model (_ : World) =
+        and tickCease time timeStart outcome model =
             let timeLocal = time - timeStart
             match timeLocal with
             | 0L -> withMsg model (CelebrateCharacters outcome)
             | _ -> just model
 
-        and tick time model world =
+        and tick time model =
             let (model, sigs) =
                 match model.BattleState with
-                | BattleReady timeStart -> tickReady time timeStart model world
-                | BattleRunning -> tickRunning time model world
-                | BattleCease (outcome, timeStart) -> tickCease time timeStart outcome model world
+                | BattleReady timeStart -> tickReady time timeStart model
+                | BattleRunning -> tickRunning time model
+                | BattleCease (outcome, timeStart) -> tickCease time timeStart outcome model
             (model, sigs)
 
         override this.Bindings (_, battle, _) =
@@ -535,7 +522,28 @@ module OmniBattle =
                     let sigs = if cancelled then Command (DisplayCancel targetIndex) :: sigs else sigs
                     let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (targetIndex, hitPointsChange)) :: sigs else sigs
                     withSigs model sigs
-                | None-> just model
+                | None -> just model
+
+            | SpecialCharacter4 (sourceIndex, targetIndex, _) ->
+                let time = World.getTickTime world
+                let target = BattleModel.getCharacter targetIndex model
+                if target.IsHealthy then
+                    let model = BattleModel.updateCurrentCommandOpt (constant None) model
+                    withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
+                else
+                    let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
+                    let model = BattleModel.updateCurrentCommandOpt (constant (Some woundCommand)) model
+                    withMsgs model [PoiseCharacter sourceIndex]
+                    
+            | SpecialCharacterAmbient (sourceIndex, _, _) ->
+                if Simulants.BattleSpecialMovement.GetExists world then
+                    let model =
+                        let tags = Simulants.BattleSpecialMovement.GetEffectTags world
+                        match Map.tryFind "Tag" tags with
+                        | Some tag -> BattleModel.updateCharacter (CharacterModel.updateCenter (constant tag.Position)) sourceIndex model
+                        | None -> model
+                    just model
+                else just model
 
             | ConsumeCharacter1 (consumable, sourceIndex) ->
                 let time = World.getTickTime world
@@ -605,7 +613,7 @@ module OmniBattle =
 
             | Tick ->
                 if World.isTicking world
-                then tick (World.getTickTime world) model world
+                then tick (World.getTickTime world) model
                 else just model
 
         override this.Command (model, command, battle, world) =
