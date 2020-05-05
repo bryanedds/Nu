@@ -95,3 +95,17 @@ module Effects =
                  [|boltSprite
                    Delay (10L, explosionSprite)
                    Delay (10L, explostionSoundEffect)|]) }
+
+    let makeSpecialMovementEffect start stop =
+        { EffectName = "SpecialMovement"
+          LifetimeOpt = Some 40L
+          Definitions = Map.empty
+          Content =
+            Tag
+                ("Tag",
+                 [|Position
+                    (Sum, Linear, Bounce,
+                     [|{ TweenValue = start; TweenLength = 30L }
+                       { TweenValue = stop; TweenLength = 10L }
+                       { TweenValue = stop; TweenLength = 0L }|])|],
+                 Nil) }

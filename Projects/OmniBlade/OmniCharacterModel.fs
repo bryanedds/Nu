@@ -133,6 +133,15 @@ module CharacterModel =
         static member updateAutoBattleOpt updater character =
             { character with CharacterState = CharacterState.updateAutoBattleOpt updater character.CharacterState }
 
+        static member updatePosition updater (character : CharacterModel) =
+            { character with Position_ = updater character.Position }
+
+        static member updateCenter updater (character : CharacterModel) =
+            { character with Position_ = (updater character.Center) - character.Size * 0.5f }
+
+        static member updateBottom updater (character : CharacterModel) =
+            { character with Position_ = (updater character.Bottom) - character.Size.WithY 0.0f * 0.5f }
+
         static member autoBattle (source : CharacterModel) (target : CharacterModel) =
             let sourceToTarget = target.Position - source.Position
             let autoBattle = CharacterModel.evaluateAutoBattle source target
