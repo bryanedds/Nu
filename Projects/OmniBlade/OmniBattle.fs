@@ -53,13 +53,13 @@ module OmniBattle =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
             (let allies =
                 [CharacterModel.make
-                    { PartyIndex = 0; CharacterType = Ally Jinn; ActionTime = 600; ExpPoints = 0; HitPoints = 10; SpecialPoints = 5; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash]; Statuses = Set.empty; WeaponOpt = Some "WoodenSword"; ArmorOpt = Some "LeatherVest"; Accessories = []; AutoBattleOpt = None }
+                    { PartyIndex = 0; CharacterType = Ally Jinn; ActionTime = 600; ExpPoints = 0; HitPoints = 10; SpecialPoints = 10; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Cyclone]; Statuses = Set.empty; WeaponOpt = Some "WoodenSword"; ArmorOpt = Some "LeatherVest"; Accessories = []; AutoBattleOpt = None }
                     { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Rightward }
                     NoInput
                     (v2 -224.0f -168.0f)
                     (v2 160.0f 160.0f)
                  CharacterModel.make
-                    { PartyIndex = 1; CharacterType = Ally Glenn; ActionTime = 420; ExpPoints = 0; HitPoints = 10; SpecialPoints = 5; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash]; Statuses = Set.empty; WeaponOpt = Some "OakRod"; ArmorOpt = Some "LeatherRobe"; Accessories = []; AutoBattleOpt = None }
+                    { PartyIndex = 1; CharacterType = Ally Glenn; ActionTime = 420; ExpPoints = 0; HitPoints = 10; SpecialPoints = 10; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Tremor]; Statuses = Set.empty; WeaponOpt = Some "OakRod"; ArmorOpt = Some "LeatherRobe"; Accessories = []; AutoBattleOpt = None }
                     { TimeStart = 0L; AnimationSheet = Assets.GlennAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward }
                     NoInput
                     (v2 224.0f 64.0f)
@@ -112,6 +112,7 @@ module OmniBattle =
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
 
         static let tickSpecial specialType sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
+            let source = BattleModel.getCharacter sourceIndex model
             match targetIndexOpt with
             | Some targetIndex ->
                 let target = BattleModel.getCharacter targetIndex model
@@ -124,7 +125,9 @@ module OmniBattle =
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
                 | 40L -> withMsg model (SpecialCharacter1 (sourceIndex, targetIndex, specialType))
                 | 55L -> withMsg model (SpecialCharacter2 (sourceIndex, targetIndex, specialType))
-                | _ when CharacterModel.getAnimationFinished time target ->
+                | _ when
+                    CharacterModel.getAnimationFinished time source &&
+                    CharacterModel.getAnimationFinished time target ->
                     let target = BattleModel.getCharacter targetIndex model
                     if target.IsHealthy then
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
@@ -374,7 +377,7 @@ module OmniBattle =
             | ItemItemSelect (characterIndex, item) ->
                 let model =
                     BattleModel.updateCharacter
-                        (CharacterModel.updateInputState (constant (AimReticles (item, AllyAimHealthy))))
+                        (CharacterModel.updateInputState (constant (AimReticles (item, AllyAim true))))
                         characterIndex
                         model
                 just model
@@ -398,7 +401,9 @@ module OmniBattle =
                             | "GreenHerb" -> ActionCommand.make (Consume GreenHerb) allyIndex (Some targetIndex)
                             | "RedHerb" -> ActionCommand.make (Consume RedHerb) allyIndex (Some targetIndex)
                             | "HeadSlash" -> ActionCommand.make (Special HeadSlash) allyIndex (Some targetIndex)
+                            | "Cyclone" -> ActionCommand.make (Special Cyclone) allyIndex (Some targetIndex)
                             | "Bolt" -> ActionCommand.make (Special Bolt) allyIndex (Some targetIndex)
+                            | "Tremor" -> ActionCommand.make (Special Tremor) allyIndex (Some targetIndex)
                             | _ -> ActionCommand.make Attack allyIndex (Some targetIndex)
                         let model = BattleModel.conjActionCommand command model
                         withMsg model (ResetCharacter allyIndex)
@@ -469,9 +474,22 @@ module OmniBattle =
                     let playHitSoundDelay = 10L
                     let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                     withCmd model playHitSound
+                | Cyclone ->
+                    let time = World.getTickTime world
+                    let model = BattleModel.updateCharacter (CharacterModel.animate time WhirlCycle) sourceIndex model
+                    let playHitSounds =
+                        [PlaySound (20L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
+                         PlaySound (40L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
+                         PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
+                         PlaySound (80L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)]
+                    withCmds model playHitSounds
                 | Bolt ->
                     let time = World.getTickTime world
                     let model = BattleModel.updateCharacter (CharacterModel.animate time Cast2Cycle) sourceIndex model
+                    withCmd model (DisplayBolt targetIndex)
+                | Tremor ->
+                    let time = World.getTickTime world
+                    let model = BattleModel.updateCharacter (CharacterModel.animate time BuryCycle) sourceIndex model
                     withCmd model (DisplayBolt targetIndex)
 
             | SpecialCharacter2 (sourceIndex, targetIndex, specialType) ->
