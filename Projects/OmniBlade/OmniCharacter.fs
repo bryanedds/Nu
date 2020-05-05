@@ -19,7 +19,7 @@ module OmniCharacter =
         inherit EntityDispatcher<CharacterModel, unit, unit>
             (CharacterModel.make
                 { PartyIndex = 0; CharacterType = Ally Jinn; ActionTime = 0; ExpPoints = 0; HitPoints = 20; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.empty; Statuses = Set.empty; WeaponOpt = Some "WoodenSword"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None }
-                { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Rightward; Stutter = 10 }
+                { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Rightward }
                 NoInput v2Zero v2One)
 
         static let [<Literal>] CelSize =

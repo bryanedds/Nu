@@ -49,7 +49,6 @@ module CharacterModel =
         member this.AnimationSheet = this.AnimationState.AnimationSheet
         member this.AnimationCycle = this.AnimationState.AnimationCycle
         member this.Direction = this.AnimationState.Direction
-        member this.Stutter = this.AnimationState.Stutter
 
         (* InputState Properties *)
         member this.InputState = this.InputState_
