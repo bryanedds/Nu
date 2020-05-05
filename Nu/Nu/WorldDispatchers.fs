@@ -33,7 +33,7 @@ module DeclarativeOperators2 =
                 | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
                 | FadeOutSong fade -> World.fadeOutSong fade world
                 | StopSong -> World.stopSong world
-                | Effect effect -> effect world)
+                | Tag _ -> world)
                 world views
 
 [<AutoOpen>]
@@ -160,7 +160,7 @@ module FacetModule =
 module EffectFacetModule =
 
     type EffectTags =
-        Map<string, Symbol * Effects.Slice list>
+        Map<string, Effects.Slice>
 
     type Entity with
 
@@ -269,12 +269,19 @@ module EffectFacetModule =
                 let effectEnv = entity.GetEffectDefinitions world
                 let effectSystem = EffectSystem.make effectViewType effectHistory effectTime effectEnv
 
-                // eval effect and process resulting artifacts
-                let world =
-                    
-                    // evaluate effect with effect system
-                    let (artifacts, _) = EffectSystem.eval effect effectSlice effectSystem
-                    World.actualizeViews artifacts world
+                // evaluate effect with effect system
+                let (artifacts, _) = EffectSystem.eval effect effectSlice effectSystem
+
+                // actualize effect views
+                let world = World.actualizeViews artifacts world
+
+                // store tags
+                let tags =
+                    artifacts |>
+                    Seq.toArray |>
+                    Array.map (function Tag (name, value) -> Some (name, value :?> Effects.Slice) | _ -> None) |>
+                    Array.definitize |> Map.ofArray
+                let world = entity.SetEffectTags tags world
 
                 // update effect history in-place
                 effectHistory.AddToFront effectSlice

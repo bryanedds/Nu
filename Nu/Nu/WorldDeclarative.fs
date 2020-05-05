@@ -117,7 +117,7 @@ type [<NoEquality; NoComparison>] View =
     | PlaySong of int * single * Audio AssetTag
     | FadeOutSong of int
     | StopSong
-    | Effect of (World -> World)
+    | Tag of string * obj
 
 /// Opens up some functions to make simulant lenses more accessible.
 module Declarative =

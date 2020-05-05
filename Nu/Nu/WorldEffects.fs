@@ -135,6 +135,7 @@ module Effects =
         | Mount of Shift * Aspect array * Content
         | Repeat of Shift * Repetition * Aspect array * Content
         | Emit of Shift * Rate * Aspect array * Aspect array * Content
+        | Tag of string * Aspect array * Content
         | Delay of int64 * Content
         | Segment of int64 * int64 * Content
         | Composite of Shift * Content array
@@ -621,6 +622,21 @@ module EffectSystemModule =
                     effectSystem
                     [|0 .. count - 1|]
 
+        and private evalTag name aspects content (slice : Slice) effectSystem =
+
+            // eval aspects
+            let slice = evalAspects aspects slice effectSystem
+
+            // build tag view
+            let effectSystem =
+                if slice.Enabled then
+                    let tagView = Nu.Tag (name, slice)
+                    addView tagView effectSystem
+                else effectSystem
+
+            // build implicitly mounted content
+            evalContent content slice effectSystem
+
         and private evalEmit shift rate emitterAspects aspects content effectSystem =
             let effectSystem =
                 Seq.foldi
@@ -679,6 +695,8 @@ module EffectSystemModule =
                 evalRepeat shift repetition incrementAspects content slice effectSystem
             | Emit (Shift shift, Rate rate, emitterAspects, aspects, content) ->
                 evalEmit shift rate emitterAspects aspects content effectSystem
+            | Tag (name, aspects, content) ->
+                evalTag name aspects content slice effectSystem
             | Delay (delay, content) ->
                 evalSegment delay Int64.MaxValue content slice effectSystem
             | Segment (start, stop, content) ->

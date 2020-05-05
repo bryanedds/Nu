@@ -6,13 +6,13 @@ open Nu
 
 type [<CustomEquality; CustomComparison>] GameEvent =
     | SavedPrincess
-    | FoughtBadfdie of bool
+    | FoughtBaddie of bool
 
     member private this.ToInt () =
         match this with
         | SavedPrincess -> 0
-        | FoughtBadfdie _ -> 1
-        
+        | FoughtBaddie _ -> 1
+
     override this.GetHashCode () =
         let rand = Rand.makeFromInt (this.ToInt ())
         let (result, _) = Rand.nextInt rand
