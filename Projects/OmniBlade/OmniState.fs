@@ -258,6 +258,9 @@ type CharacterAnimationCycle =
     | DamageCycle
     | IdleCycle
     | Cast2Cycle
+    | WhirlCycle
+    | BuryCycle
+    | FlyCycle
     | WoundCycle
 
 type CharacterAnimationState =
@@ -293,6 +296,9 @@ type CharacterAnimationState =
         | DamageCycle -> 10L
         | IdleCycle -> 10L
         | Cast2Cycle -> 10L
+        | WhirlCycle -> 10L
+        | BuryCycle -> 10L
+        | FlyCycle -> 10L
         | WoundCycle -> 10L
 
     static member cycleLengthOpt state =
@@ -308,6 +314,9 @@ type CharacterAnimationState =
         | DamageCycle -> Some (4L * stutter)
         | IdleCycle -> None
         | Cast2Cycle -> Some (4L * stutter)
+        | WhirlCycle -> Some (12L * stutter)
+        | BuryCycle -> Some (8L * stutter)
+        | FlyCycle -> None
         | WoundCycle -> Some (6L * stutter)
 
     static member indexCel stutter time state =
@@ -350,6 +359,9 @@ type CharacterAnimationState =
         | DamageCycle -> CharacterAnimationState.indexSaturatedWithDirection 6 1 stutter time state
         | IdleCycle -> CharacterAnimationState.indexSaturatedWithDirection 8 1 stutter time state
         | Cast2Cycle -> CharacterAnimationState.indexSaturatedWithDirection 10 2 stutter time state
+        | WhirlCycle -> CharacterAnimationState.indexLoopedWithDirection 11 2 stutter time state
+        | BuryCycle -> CharacterAnimationState.indexSaturatedWithDirection 11 2 stutter time state
+        | FlyCycle -> CharacterAnimationState.indexLoopedWithDirection 12 1 stutter time state
         | WoundCycle -> Vector2i (0, 8)
 
     static member progressOpt time state =

@@ -26,11 +26,13 @@ type EffectType =
     | Magical
 
 type ElementType =
-    | Fire // beats nothing; strongest scalar
-    | Lightning // beats water; average scalar
-    | Water // beats fire, lightning; weakest scaler
+    | Fire // beats ice, average scalar
+    | Ice // beats fire, lightning; average scaler
+    | Lightning // beats water, average scalar
+    | Water // beats lightning, average scalar
     | Dark // beats light, stronger scalar
     | Light // beats dark, weaker scalar
+    | Earth // beats nothing, strongest scalar
 
 type StatusType =
     | DefendStatus // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
@@ -70,6 +72,8 @@ type TargetType =
 
 type SpecialType =
     | HeadSlash
+    | Cyclone
+    | Tremor
     | Bolt
 
 type ActionType =
