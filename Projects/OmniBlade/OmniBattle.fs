@@ -123,7 +123,7 @@ module OmniBattle =
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
                 | 40L -> withMsg model (SpecialCharacter1 (sourceIndex, targetIndex, specialType))
-                | 50L -> withMsg model (SpecialCharacter2 (sourceIndex, targetIndex, specialType))
+                | 55L -> withMsg model (SpecialCharacter2 (sourceIndex, targetIndex, specialType))
                 | _ when CharacterModel.getAnimationFinished time target ->
                     let target = BattleModel.getCharacter targetIndex model
                     if target.IsHealthy then
