@@ -49,22 +49,6 @@ module BattleModel =
         static member getEnemies model =
             model.Characters |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
 
-        static member getAllyIndices model =
-            model.Characters |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map fst |> Seq.toList
-
-        static member getEnemyIndices model =
-            model.Characters |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Seq.map fst |> Seq.toList
-
-        static member getAllyIndexRandom model =
-            let allyIndices = BattleModel.getAllyIndices model
-            let allyIndex = List.item (Gen.random1 allyIndices.Length) allyIndices
-            allyIndex
-
-        static member getEnemyIndexRandom model =
-            let enemyIndices = BattleModel.getEnemyIndices model
-            let enemyIndex = List.item (Gen.random1 enemyIndices.Length) enemyIndices
-            enemyIndex
-
         static member getAlliesHealthy model =
             BattleModel.getAllies model |>
             List.filter (fun character -> character.IsHealthy)
@@ -72,6 +56,31 @@ module BattleModel =
         static member getAlliesWounded model =
             BattleModel.getAllies model |>
             List.filter (fun character -> character.IsWounded)
+
+        static member getAllyIndices model =
+            BattleModel.getAllies model |>
+            List.map (fun ally -> ally.CharacterIndex)
+
+        static member getEnemyIndices model =
+            BattleModel.getEnemies model |>
+            List.map (fun enemy -> enemy.CharacterIndex)
+
+        static member getAlliesHealthyIndices model =
+            BattleModel.getAlliesHealthy model |>
+            List.map (fun ally -> ally.CharacterIndex)
+
+        static member getAlliesWoundedIndices model =
+            BattleModel.getAlliesWounded model |>
+            List.map (fun enemy -> enemy.CharacterIndex)
+
+        static member getAllyIndexRandom model =
+            let alliesHealthyIndices = BattleModel.getAlliesHealthyIndices model
+            List.item (Gen.random1 alliesHealthyIndices.Length) alliesHealthyIndices
+
+        static member getEnemyIndexRandom model =
+            let enemyIndices = BattleModel.getEnemyIndices model
+            let enemyIndex = List.item (Gen.random1 enemyIndices.Length) enemyIndices
+            enemyIndex
 
         static member getTargets aimType model =
             match aimType with
