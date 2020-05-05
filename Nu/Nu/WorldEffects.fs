@@ -129,12 +129,14 @@ module Effects =
     and [<NoComparison>] Content =
         | Nil // first to make default value when missing
         | StaticSprite of Resource * Aspect array * Content
-        | AnimatedSprite of Resource * Vector2i * int * int * int64 * Aspect array * Content
+        | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Aspect array * Content
         | TextSprite of Resource * Aspect array * Content
         | SoundEffect of Resource * Aspect array * Content
         | Mount of Shift * Aspect array * Content
         | Repeat of Shift * Repetition * Aspect array * Content
         | Emit of Shift * Rate * Aspect array * Aspect array * Content
+        | Delay of int64 * Content
+        | Segment of int64 * int64 * Content
         | Composite of Shift * Content array
         | Expand of string * Argument array
 
@@ -152,14 +154,13 @@ module Effects =
 [<Syntax   ("Const Linear Random Chaos Ease EaseIn EaseOut Sin Cos " +
             "Or Nor Xor And Nand Equal " +
             "Sum Delta Scale Ratio Set " +
-            "Position Size Rotation Depth Offset Color Volume Enabled " +
             "Once Loop Bounce " +
             "Cycle Iterate " +
             "Rate " +
             "Shift " +
             "Expand Resource " +
             "Expand Enabled Position Translation Offset Inset Size Rotation Depth Color Glow Volume Bone " +
-            "Expand StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Composite Tag Nil " +
+            "Expand StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
             "View",
             "", "", "", "",
             Constants.PrettyPrinter.DefaultThresholdMin,
@@ -283,18 +284,25 @@ module EffectSystemModule =
             | Ratio -> div (value, value2)
             | Set -> value2
 
-        let private evalInsetOpt (celSize : Vector2i) celRun celCount delay effectSystem =
-            if delay <> 0L && celRun <> 0 then
-                let cel = int (effectSystem.EffectTime / delay) % celCount
-                let celI = cel % celRun
-                let celJ = cel / celRun
-                let celX = celI * celSize.X
-                let celY = celJ * celSize.Y
-                let celPosition = Vector2 (single celX, single celY)
-                let celSize = Vector2 (single celSize.X, single celSize.Y)
-                Some (Math.makeBounds celPosition celSize)
-            else None
-
+        let private evalInset (celSize : Vector2i) celRun celCount stutter playback effectSystem =
+            // TODO: make sure Bounce playback works as intended!
+            let celUnmodulated = int (effectSystem.EffectTime / stutter)
+            let cel = celUnmodulated % celCount
+            let celI = cel % celRun
+            let celJ = cel / celRun
+            let bouncing =
+                match playback with
+                | Bounce -> celUnmodulated % (celCount * 2) >= celCount
+                | Once | Loop -> false
+            let (celI, celJ) =
+                if bouncing
+                then (celRun - celI, (celRun % celCount) - celJ)
+                else (celI, celJ)
+            let celX = celI * celSize.X
+            let celY = celJ * celSize.Y
+            let celPosition = Vector2 (single celX, single celY)
+            let celSize = Vector2 (single celSize.X, single celSize.Y)
+            Math.makeBounds celPosition celSize
         let evalArgument (argument : Argument) : Definition =
             match argument with
             | SymbolicCompressionA resource ->
@@ -486,7 +494,7 @@ module EffectSystemModule =
             // build implicitly mounted content
             evalContent content slice effectSystem
 
-        and private evalAnimatedSprite resource celSize celRun celCount delay aspects content slice effectSystem =
+        and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount stutter playback aspects content slice effectSystem =
 
             // pull image from resource
             let image = evalResource resource effectSystem
@@ -494,35 +502,45 @@ module EffectSystemModule =
             // eval aspects
             let slice = evalAspects aspects slice effectSystem
 
-            // eval inset
-            let insetOpt = evalInsetOpt celSize celRun celCount delay effectSystem
+            // ensure valid data
+            if stutter <> 0L && celRun <> 0 then
 
-            // build animated sprite views
-            let effectSystem =
-                if slice.Enabled then
-                    let animatedSpriteView =
-                        Render
-                            (LayerableDescriptor
-                                { Depth = slice.Depth
-                                  AssetTag = image
-                                  PositionY = slice.Position.Y
-                                  LayeredDescriptor =
-                                  SpriteDescriptor 
-                                    { Position = slice.Position
-                                      Size = slice.Size
-                                      Rotation = slice.Rotation
-                                      Offset = slice.Offset
-                                      InsetOpt = insetOpt
-                                      Image = AssetTag.specialize<Image> image
-                                      ViewType = effectSystem.ViewType
-                                      Color = slice.Color
-                                      Glow = slice.Glow
-                                      Flip = FlipNone }})
-                    addView animatedSpriteView effectSystem
-                else effectSystem
+                // compute cel
+                let cel = int (effectSystem.EffectTime / stutter)
 
-            // build implicitly mounted content
-            evalContent content slice effectSystem
+                // eval inset
+                let inset = evalInset celSize celRun celCount stutter playback effectSystem
+
+                // build animated sprite views
+                let effectSystem =
+                    if  slice.Enabled &&
+                        not (playback = Once && cel >= celCount) then
+                        let animatedSpriteView =
+                            Render
+                                (LayerableDescriptor
+                                    { Depth = slice.Depth
+                                      AssetTag = image
+                                      PositionY = slice.Position.Y
+                                      LayeredDescriptor =
+                                      SpriteDescriptor 
+                                        { Position = slice.Position
+                                          Size = slice.Size
+                                          Rotation = slice.Rotation
+                                          Offset = slice.Offset
+                                          InsetOpt = Some inset
+                                          Image = AssetTag.specialize<Image> image
+                                          ViewType = effectSystem.ViewType
+                                          Color = slice.Color
+                                          Glow = slice.Glow
+                                          Flip = FlipNone }})
+                        addView animatedSpriteView effectSystem
+                    else effectSystem
+
+                // build implicitly mounted content
+                evalContent content slice effectSystem
+
+            // abandon evaL
+            else effectSystem
 
         and private evalTextSprite resource aspects content slice effectSystem =
 
@@ -630,6 +648,15 @@ module EffectSystemModule =
                     effectSystem.History
             effectSystem
 
+        and private evalSegment start stop content slice effectSystem =
+            if  effectSystem.EffectTime >= start &&
+                effectSystem.EffectTime < stop then
+                let effectSystem = { effectSystem with EffectTime = effectSystem.EffectTime - start }
+                let effectSystem = evalContent content slice effectSystem
+                let effectSystem = { effectSystem with EffectTime = effectSystem.EffectTime + start }
+                effectSystem
+            else effectSystem
+
         and private evalComposite shift contents slice effectSystem =
             let slice = { slice with Slice.Depth = slice.Depth + shift }
             evalContents contents slice effectSystem
@@ -640,8 +667,8 @@ module EffectSystemModule =
                 effectSystem
             | StaticSprite (resource, aspects, content) ->
                 evalStaticSprite resource aspects content slice effectSystem
-            | AnimatedSprite (resource, celSize, celRun, celCount, delay, aspects, content) ->
-                evalAnimatedSprite resource celSize celRun celCount delay aspects content slice effectSystem
+            | AnimatedSprite (resource, celSize, celRun, celCount, stutter, playback, aspects, content) ->
+                evalAnimatedSprite resource celSize celRun celCount stutter playback aspects content slice effectSystem
             | TextSprite (resource, aspects, content) ->
                 evalTextSprite resource aspects content slice effectSystem
             | SoundEffect (resource, aspects, content) ->
@@ -652,6 +679,10 @@ module EffectSystemModule =
                 evalRepeat shift repetition incrementAspects content slice effectSystem
             | Emit (Shift shift, Rate rate, emitterAspects, aspects, content) ->
                 evalEmit shift rate emitterAspects aspects content effectSystem
+            | Delay (delay, content) ->
+                evalSegment delay Int64.MaxValue content slice effectSystem
+            | Segment (start, stop, content) ->
+                evalSegment start stop content slice effectSystem
             | Composite (Shift shift, contents) ->
                 evalComposite shift contents slice effectSystem
             | Expand (definitionName, arguments) ->

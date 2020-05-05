@@ -33,7 +33,7 @@ module Effects =
                        { TweenValue = colorOpaque; TweenLength = 30L }
                        { TweenValue = colorTransparent; TweenLength = 0L }|])|],
                  Nil) }
-    
+
     let makeCancelEffect () =
         { EffectName = "Cancel"
           LifetimeOpt = Some 40L
@@ -54,7 +54,7 @@ module Effects =
                  Nil) }
 
     let makeBoltEffect () =
-        let staticSprite =
+        let boltSprite =
             StaticSprite
                 (Resource (Assets.BoltAnimationSheet.PackageName, Assets.BoltAnimationSheet.AssetName),
                  [|Inset
@@ -69,16 +69,29 @@ module Effects =
                        { TweenValue = v4One; TweenLength = 40L }
                        { TweenValue = v4One.WithW 0.0f; TweenLength = 0L }|])|],
                  Nil)
-        let soundEffect =
+        let explosionSprite =
+            AnimatedSprite
+                (Resource (Assets.ExplosionAnimationSheet.PackageName, Assets.ExplosionAnimationSheet.AssetName),
+                 v2i 128 128, 4, 12, 2L, Once,
+                 [|Size (Set, Const, Once, [|{ TweenValue = v2 128.0f 128.0f; TweenLength = 0L }|])
+                   Position (Sum, Const, Once, [|{ TweenValue = v2 0.0f -512.0f; TweenLength = 0L }|])
+                   Color
+                    (Set, EaseOut, Once,
+                     [|{ TweenValue = v4One; TweenLength = 30L }
+                       { TweenValue = v4One; TweenLength = 30L }
+                       { TweenValue = v4One.WithW 0.0f; TweenLength = 0L }|])|],
+                 Nil)
+        let explostionSoundEffect =
             SoundEffect
-                (Resource (Assets.Explosion3Sound.PackageName, Assets.Explosion3Sound.AssetName),
-                 [|Enabled
-                    (Equal, Once,
-                     [|{ LogicValue = false; LogicLength = 9L }
-                       { LogicValue = true; LogicLength = 1L }
-                       { LogicValue = false; LogicLength = 70L }|])|],
+                (Resource (Assets.ExplosionSound.PackageName, Assets.ExplosionSound.AssetName),
+                 [|Enabled (Equal, Once, [|{ LogicValue = true; LogicLength = 0L }; { LogicValue = false; LogicLength = 70L }|])|],
                  Nil)
         { EffectName = "Bolt"
           LifetimeOpt = Some 80L
           Definitions = Map.empty
-          Content = Composite (Shift 0.0f, [|staticSprite; soundEffect|]) }
+          Content =
+            Composite
+                (Shift 0.0f,
+                 [|boltSprite
+                   Delay (10L, explosionSprite)
+                   Delay (10L, explostionSoundEffect)|]) }
