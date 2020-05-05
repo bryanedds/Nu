@@ -85,9 +85,18 @@ module BattleModel =
         static member getTargets aimType model =
             match aimType with
             | EnemyAim -> BattleModel.getEnemies model
-            | AllyAimHealthy -> BattleModel.getAlliesHealthy model
-            | AllyAimWounded -> BattleModel.getAlliesWounded model
-            | AnyAim -> Map.toValueList model.Characters
+            | AllyAim healthy ->
+                if healthy
+                then BattleModel.getAlliesHealthy model
+                else BattleModel.getAlliesWounded model
+            | AnyAim healthy ->
+                let allies =
+                    if healthy
+                    then BattleModel.getAlliesHealthy model
+                    else BattleModel.getAlliesWounded model
+                let enemies = BattleModel.getEnemies model
+                let characters = allies @ enemies
+                characters
             | NoAim -> []
 
         static member addCharacter index character (model : BattleModel) =

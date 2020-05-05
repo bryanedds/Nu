@@ -59,9 +59,8 @@ type ItemType =
 
 type AimType =
     | EnemyAim
-    | AllyAimHealthy
-    | AllyAimWounded
-    | AnyAim
+    | AllyAim of bool // healthy
+    | AnyAim of bool // healthy
     | NoAim
 
 type TargetType =

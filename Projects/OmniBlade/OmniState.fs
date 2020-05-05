@@ -296,7 +296,7 @@ type CharacterAnimationState =
         | DamageCycle -> 10L
         | IdleCycle -> 10L
         | Cast2Cycle -> 10L
-        | WhirlCycle -> 10L
+        | WhirlCycle -> 5L
         | BuryCycle -> 10L
         | FlyCycle -> 10L
         | WoundCycle -> 10L
@@ -314,7 +314,7 @@ type CharacterAnimationState =
         | DamageCycle -> Some (4L * stutter)
         | IdleCycle -> None
         | Cast2Cycle -> Some (4L * stutter)
-        | WhirlCycle -> Some (12L * stutter)
+        | WhirlCycle -> Some (20L * stutter)
         | BuryCycle -> Some (8L * stutter)
         | FlyCycle -> None
         | WoundCycle -> Some (6L * stutter)
@@ -359,8 +359,8 @@ type CharacterAnimationState =
         | DamageCycle -> CharacterAnimationState.indexSaturatedWithDirection 6 1 stutter time state
         | IdleCycle -> CharacterAnimationState.indexSaturatedWithDirection 8 1 stutter time state
         | Cast2Cycle -> CharacterAnimationState.indexSaturatedWithDirection 10 2 stutter time state
-        | WhirlCycle -> CharacterAnimationState.indexLoopedWithDirection 11 2 stutter time state
-        | BuryCycle -> CharacterAnimationState.indexSaturatedWithDirection 11 2 stutter time state
+        | WhirlCycle -> CharacterAnimationState.indexLoopedWithoutDirection 11 4 stutter time state
+        | BuryCycle -> CharacterAnimationState.indexSaturatedWithoutDirection 11 4 stutter time state
         | FlyCycle -> CharacterAnimationState.indexLoopedWithDirection 12 1 stutter time state
         | WoundCycle -> Vector2i (0, 8)
 
