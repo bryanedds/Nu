@@ -481,7 +481,8 @@ module OmniBattle =
                         [PlaySound (20L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (40L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
-                         PlaySound (80L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)]
+                         PlaySound (80L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
+                         PlaySound (100L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)]
                     withCmds model playHitSounds
                 | Bolt ->
                     let time = World.getTickTime world

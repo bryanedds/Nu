@@ -261,6 +261,8 @@ type CharacterAnimationCycle =
     | WhirlCycle
     | BuryCycle
     | FlyCycle
+    | LeapCycle
+    | RetractCycle
     | WoundCycle
 
 type CharacterAnimationState =
@@ -299,6 +301,8 @@ type CharacterAnimationState =
         | WhirlCycle -> 5L
         | BuryCycle -> 10L
         | FlyCycle -> 10L
+        | LeapCycle -> 10L
+        | RetractCycle -> 10L
         | WoundCycle -> 10L
 
     static member cycleLengthOpt state =
@@ -314,9 +318,11 @@ type CharacterAnimationState =
         | DamageCycle -> Some (4L * stutter)
         | IdleCycle -> None
         | Cast2Cycle -> Some (4L * stutter)
-        | WhirlCycle -> Some (20L * stutter)
+        | WhirlCycle -> Some (24L * stutter)
         | BuryCycle -> Some (8L * stutter)
         | FlyCycle -> None
+        | LeapCycle -> None
+        | RetractCycle -> None
         | WoundCycle -> Some (6L * stutter)
 
     static member indexCel stutter time state =
@@ -362,6 +368,8 @@ type CharacterAnimationState =
         | WhirlCycle -> CharacterAnimationState.indexLoopedWithoutDirection 11 4 stutter time state
         | BuryCycle -> CharacterAnimationState.indexSaturatedWithoutDirection 11 4 stutter time state
         | FlyCycle -> CharacterAnimationState.indexLoopedWithDirection 12 1 stutter time state
+        | LeapCycle -> CharacterAnimationState.indexLoopedWithDirection 13 1 stutter time state
+        | RetractCycle -> CharacterAnimationState.indexLoopedWithDirection 14 1 stutter time state
         | WoundCycle -> Vector2i (0, 8)
 
     static member progressOpt time state =
