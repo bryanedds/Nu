@@ -287,7 +287,7 @@ type CharacterAnimationState =
         | CelebrateCycle -> 15L
         | ReadyCycle -> 10L
         | PoiseCycle _ -> 10L
-        | AttackCycle -> 10L
+        | AttackCycle -> 15L
         | CastCycle -> 10L
         | SpinCycle -> 10L
         | DamageCycle -> 10L
@@ -300,15 +300,15 @@ type CharacterAnimationState =
         match state.AnimationCycle with
         | WalkCycle -> None
         | CelebrateCycle -> None
-        | ReadyCycle -> Some (5L * stutter)
+        | ReadyCycle -> Some (6L * stutter)
         | PoiseCycle _ -> None
         | AttackCycle -> Some (4L * stutter)
         | CastCycle -> None
         | SpinCycle -> Some (4L * stutter)
-        | DamageCycle -> Some (3L * stutter)
+        | DamageCycle -> Some (4L * stutter)
         | IdleCycle -> None
         | Cast2Cycle -> Some (4L * stutter)
-        | WoundCycle -> Some (5L * stutter)
+        | WoundCycle -> Some (6L * stutter)
 
     static member indexCel stutter time state =
         let timeLocal = CharacterAnimationState.timeLocal time state

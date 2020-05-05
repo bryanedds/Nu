@@ -15,7 +15,7 @@ module Effects =
         let colorTransparent =
             colorOpaque.WithW 0.0f
         { EffectName = "HitPointsChange"
-          LifetimeOpt = Some 70L
+          LifetimeOpt = Some 80L
           Definitions = Map.empty
           Content =
             TextSprite
@@ -26,10 +26,10 @@ module Effects =
                      [|{ TweenValue = v2Zero; TweenLength = 10L }
                        { TweenValue = v2 0.0f 48.0f; TweenLength = 10L }
                        { TweenValue = v2Zero; TweenLength = 10L }
-                       { TweenValue = v2Zero; TweenLength = 40L }|])
+                       { TweenValue = v2Zero; TweenLength = 50L }|])
                    Color
                     (Set, EaseOut, Once,
-                     [|{ TweenValue = colorOpaque; TweenLength = 40L }
+                     [|{ TweenValue = colorOpaque; TweenLength = 50L }
                        { TweenValue = colorOpaque; TweenLength = 30L }
                        { TweenValue = colorTransparent; TweenLength = 0L }|])|],
                  Nil) }

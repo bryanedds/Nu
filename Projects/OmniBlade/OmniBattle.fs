@@ -86,7 +86,6 @@ module OmniBattle =
              model)
 
         static let tickAttack sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
-            let source = BattleModel.getCharacter sourceIndex model
             match targetIndexOpt with
             | Some targetIndex ->
                 let target = BattleModel.getCharacter targetIndex model
@@ -97,8 +96,8 @@ module OmniBattle =
                     else
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
-                | 10L -> withMsg model (AttackCharacter2 (sourceIndex, targetIndex))
-                | _ when CharacterModel.getAnimationFinished time source ->
+                | 15L -> withMsg model (AttackCharacter2 (sourceIndex, targetIndex))
+                | _ when CharacterModel.getAnimationFinished time target ->
                     let target = BattleModel.getCharacter targetIndex model
                     if target.IsHealthy then
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
@@ -113,7 +112,6 @@ module OmniBattle =
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
 
         static let tickSpecial specialType sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
-            let source = BattleModel.getCharacter sourceIndex model
             match targetIndexOpt with
             | Some targetIndex ->
                 let target = BattleModel.getCharacter targetIndex model
@@ -126,7 +124,7 @@ module OmniBattle =
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
                 | 40L -> withMsg model (SpecialCharacter1 (sourceIndex, targetIndex, specialType))
                 | 50L -> withMsg model (SpecialCharacter2 (sourceIndex, targetIndex, specialType))
-                | _ when CharacterModel.getAnimationFinished time source ->
+                | _ when CharacterModel.getAnimationFinished time target ->
                     let target = BattleModel.getCharacter targetIndex model
                     if target.IsHealthy then
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
@@ -230,65 +228,69 @@ module OmniBattle =
                             else just model
                         withSig model (signal + signal2)
                 | None -> just model
+        
+        and tickNextCommand time nextCommand futureCommands (model : BattleModel) =
+            let command = CurrentCommand.make time nextCommand
+            let model = BattleModel.updateCurrentCommandOpt (constant (Some command)) model
+            let model = BattleModel.updateActionCommands (constant futureCommands) model
+            tick time model // tick for frame 0
 
-        and tickNoCommand time (model : BattleModel) =
+        and tickNoNextCommand time (model : BattleModel) =
+            let (allySignalsRev, model) =
+                List.fold (fun (signals, model) (ally : CharacterModel) ->
+                    if ally.ActionTime = Constants.Battle.ActionTime then
+                        let model =
+                            BattleModel.updateCharacter
+                                (fun character ->
+                                    let character = CharacterModel.updateInputState (constant RegularMenu) character
+                                    let character = CharacterModel.animate time (PoiseCycle Poising) character
+                                    character)
+                                ally.CharacterIndex
+                                model
+                        let playActionTimeSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.AffirmSound)
+                        (Command playActionTimeSound :: signals, model)
+                    else (signals, model))
+                    ([], model)
+                    (BattleModel.getAllies model)
+            let (enemySignalsRev, model) =
+                List.fold (fun (signals, model) (enemy : CharacterModel) ->
+                    if enemy.ActionTime = Constants.Battle.ActionTime then
+                        let enemyIndex = enemy.CharacterIndex
+                        match enemy.AutoBattleOpt with
+                        | Some autoBattle ->
+                            let actionCommand =
+                                match autoBattle.AutoSpecialOpt with
+                                | Some special -> { Action = Special special; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
+                                | None -> { Action = Attack; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
+                            let model = BattleModel.conjActionCommand actionCommand model
+                            (Message (ResetCharacter enemyIndex) :: signals, model)
+                        | None -> (Message (ResetCharacter enemyIndex) :: signals, model)
+                    else (signals, model))
+                    ([], model)
+                    (BattleModel.getEnemies model)
+            let model =
+                BattleModel.updateCharacters (fun character ->
+                    let character =
+                        CharacterModel.updateActionTime ((+) Constants.Battle.ActionTimeInc) character
+                    let character =
+                        if CharacterModel.isReadyForAutoBattle character then
+                            let targetIndex = BattleModel.getAllyIndexRandom model
+                            let target = BattleModel.getCharacter targetIndex model
+                            CharacterModel.autoBattle character target
+                        else character
+                    character)
+                    model
+            withSigs model (List.rev (allySignalsRev @ enemySignalsRev))
+
+        and tickNoCurrentCommand time (model : BattleModel) =
             match model.ActionCommands with
-            | Queue.Cons (currentCommand, nextCommands) ->
-                let command = CurrentCommand.make time currentCommand
-                let model = BattleModel.updateCurrentCommandOpt (constant (Some command)) model
-                let model = BattleModel.updateActionCommands (constant nextCommands) model
-                tick time model // tick for frame 0
-            | Queue.Nil ->
-                let (allySignalsRev, model) =
-                    List.fold (fun (signals, model) (ally : CharacterModel) ->
-                        if ally.ActionTime = Constants.Battle.ActionTime then
-                            let model =
-                                BattleModel.updateCharacter
-                                    (fun character ->
-                                        let character = CharacterModel.updateInputState (constant RegularMenu) character
-                                        let character = CharacterModel.animate time (PoiseCycle Poising) character
-                                        character)
-                                    ally.CharacterIndex
-                                    model
-                            let playActionTimeSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.AffirmSound)
-                            (Command playActionTimeSound :: signals, model)
-                        else (signals, model))
-                        ([], model)
-                        (BattleModel.getAllies model)
-                let (enemySignalsRev, model) =
-                    List.fold (fun (signals, model) (enemy : CharacterModel) ->
-                        if enemy.ActionTime = Constants.Battle.ActionTime then
-                            let enemyIndex = enemy.CharacterIndex
-                            match enemy.AutoBattleOpt with
-                            | Some autoBattle ->
-                                let actionCommand =
-                                    match autoBattle.AutoSpecialOpt with
-                                    | Some special -> { Action = Special special; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
-                                    | None -> { Action = Attack; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
-                                let model = BattleModel.conjActionCommand actionCommand model
-                                (Message (ResetCharacter enemyIndex) :: signals, model)
-                            | None -> (Message (ResetCharacter enemyIndex) :: signals, model)
-                        else (signals, model))
-                        ([], model)
-                        (BattleModel.getEnemies model)
-                let model =
-                    BattleModel.updateCharacters (fun character ->
-                        let character =
-                            CharacterModel.updateActionTime ((+) Constants.Battle.ActionTimeInc) character
-                        let character =
-                            if CharacterModel.isReadyForAutoBattle character then
-                                let targetIndex = BattleModel.getAllyIndexRandom model
-                                let target = BattleModel.getCharacter targetIndex model
-                                CharacterModel.autoBattle character target
-                            else character
-                        character)
-                        model
-                withSigs model (List.rev (allySignalsRev @ enemySignalsRev))
+            | Queue.Cons (nextCommand, futureCommands) -> tickNextCommand time nextCommand futureCommands model
+            | Queue.Nil -> tickNoNextCommand time model
 
         and tickRunning time (model : BattleModel) =
             match model.CurrentCommandOpt with
             | Some currentCommand -> tickCurrentCommand time currentCommand model
-            | None -> tickNoCommand time model
+            | None -> tickNoCurrentCommand time model
 
         and tickCease time timeStart outcome model =
             let timeLocal = time - timeStart
@@ -441,7 +443,7 @@ module OmniBattle =
             | AttackCharacter1 sourceIndex ->
                 let time = World.getTickTime world
                 let model = BattleModel.updateCharacter (CharacterModel.animate time AttackCycle) sourceIndex model
-                let playHitSoundDelay = 10L
+                let playHitSoundDelay = 15L
                 let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                 withCmd model playHitSound
 
@@ -624,27 +626,34 @@ module OmniBattle =
                 just (World.hintAudioPackageDisuse Assets.BattlePackageName world)
 
         member private this.SceneContent (model : Lens<BattleModel, World>, _ : Screen, _ : World) =
+
             let background = Simulants.BattleScene / "Background"
             Content.layer Simulants.BattleScene.Name []
+
                 [Content.label background.Name
                     [background.Position == v2 -480.0f -512.0f
                      background.Size == v2 1024.0f 1024.0f
                      background.Depth == Constants.Battle.BackgroundDepth
                      background.LabelImage == asset "Battle" "Background"]
+
                  Content.entitiesIndexedBy
                     (model --> fun model -> BattleModel.getAllies model)
                     (fun model -> model.PartyIndex)
                     (fun index model _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.CharacterModel <== model])
+
                  Content.entitiesIndexedBy
                     (model --> fun model -> BattleModel.getEnemies model)
                     (fun model -> model.PartyIndex)
                     (fun index model _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.CharacterModel <== model])]
 
         member private this.InputContent (model : Lens<BattleModel, World>, screen : Screen, _ : World) =
+
             Content.layers (model --> fun model -> BattleModel.getAllies model) $ fun index ally _ ->
+
                 let allyIndex = AllyIndex index
                 let input = screen / ("Input" + "+" + scstring index)
                 Content.layer input.Name []
+
                     [Content.fillBar "HealthBar" 
                         [Entity.Size == v2 64.0f 8.0f
                          Entity.Center <== ally --> fun ally -> ally.UnderFeet
@@ -653,6 +662,7 @@ module OmniBattle =
                          Entity.Fill <== ally ->> fun ally world ->
                             let rom = screen.Parent.GetModel<Rom> world
                             single ally.HitPoints / single (ally.HitPointsMax rom)]
+
                      Content.entity<RingMenuDispatcher> "RegularMenu"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
                          Entity.Depth == Constants.Battle.GuiDepth
@@ -667,6 +677,7 @@ module OmniBattle =
                          Entity.RingMenuModel == { Items = [(0, (true, "Attack")); (1, (true, "Defend")); (2, (true, "Item")); (3, (true, "Special"))]; ItemCancelOpt = None }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (RegularItemCancel allyIndex)]
+
                      Content.entity<RingMenuDispatcher> "SpecialMenu"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
                          Entity.Depth == Constants.Battle.GuiDepth
@@ -687,6 +698,7 @@ module OmniBattle =
                             { Items = specials; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (SpecialItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (SpecialItemCancel allyIndex)]
+
                      Content.entity<RingMenuDispatcher> "ItemMenu"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
                          Entity.Depth == Constants.Battle.GuiDepth
