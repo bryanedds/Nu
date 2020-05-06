@@ -272,9 +272,11 @@ type CharacterAnimationState =
       Direction : Direction }
 
     static member setCycle timeOpt cycle state =
-        match timeOpt with
-        | Some time -> { state with TimeStart = time; AnimationCycle = cycle }
-        | None -> { state with AnimationCycle = cycle }
+        if state.AnimationCycle <> cycle then
+            match timeOpt with
+            | Some time -> { state with TimeStart = time; AnimationCycle = cycle }
+            | None -> { state with AnimationCycle = cycle }
+        else state
 
     static member directionToInt direction =
         match direction with

@@ -32,6 +32,7 @@ module OmniBattle =
         | SpecialCharacter3 of CharacterIndex * CharacterIndex * SpecialType
         | SpecialCharacter4 of CharacterIndex * CharacterIndex * SpecialType
         | SpecialCharacter5 of CharacterIndex * CharacterIndex * SpecialType
+        | SpecialCharacter6 of CharacterIndex * CharacterIndex * SpecialType
         | SpecialCharacterAmbient of CharacterIndex * CharacterIndex * SpecialType
         | ConsumeCharacter1 of ConsumableType * CharacterIndex
         | ConsumeCharacter2 of ConsumableType * CharacterIndex
@@ -101,7 +102,8 @@ module OmniBattle =
                     else
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
-                | 15L -> withMsg model (AttackCharacter2 (sourceIndex, targetIndex))
+                | 15L ->
+                    withMsg model (AttackCharacter2 (sourceIndex, targetIndex))
                 | _ when CharacterModel.getAnimationFinished time target ->
                     let target = BattleModel.getCharacter targetIndex model
                     if target.IsHealthy then
@@ -123,9 +125,10 @@ module OmniBattle =
                     match timeLocal with
                     | 0L -> (model, [SpecialCharacter1 (sourceIndex, targetIndex, specialType)]) // charge or hop forward
                     | 30L -> (model, [SpecialCharacter2 (sourceIndex, targetIndex, specialType)]) // casting
-                    | 80L -> (model, [SpecialCharacter3 (sourceIndex, targetIndex, specialType)]) // outcome
-                    | 90L -> (model, [SpecialCharacter4 (sourceIndex, targetIndex, specialType)]) // hop back
-                    | 110L -> (model, [SpecialCharacter5 (sourceIndex, targetIndex, specialType)]) // poise
+                    | 50L -> (model, [SpecialCharacter3 (sourceIndex, targetIndex, specialType)]) // affecting
+                    | 70L -> (model, [SpecialCharacter4 (sourceIndex, targetIndex, specialType)]) // affected
+                    | 90L -> (model, [SpecialCharacter5 (sourceIndex, targetIndex, specialType)]) // hop back
+                    | 110L -> (model, [SpecialCharacter6 (sourceIndex, targetIndex, specialType)]) // poise
                     | _ -> (model, [])
                 let (model, msgs) = (model, msgs @ [SpecialCharacterAmbient (sourceIndex, targetIndex, specialType)])
                 withMsgs model msgs
@@ -144,7 +147,8 @@ module OmniBattle =
                     else
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
-                | 30L -> withMsg model (ConsumeCharacter2 (consumable, targetIndex))
+                | 30L ->
+                    withMsg model (ConsumeCharacter2 (consumable, targetIndex))
                 | _ when CharacterModel.getAnimationFinished time target ->
                     let model = BattleModel.updateCurrentCommandOpt (constant None) model
                     withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
@@ -507,20 +511,30 @@ module OmniBattle =
                 | Some specialData ->
                     let source = BattleModel.getCharacter sourceIndex model
                     let target = BattleModel.getCharacter targetIndex model
-                    let (cancelled, hitPointsChange) = CharacterModel.evaluateSpecialMove rom specialData source target
-                    let model = BattleModel.updateCharacter (CharacterModel.updateSpecialPoints rom ((+) -specialData.SpecialCost)) sourceIndex model
-                    let model = BattleModel.updateCharacter (CharacterModel.updateHitPoints rom (fun hitPoints -> (hitPoints + hitPointsChange, cancelled))) targetIndex model
+                    let (_, hitPointsChange) = CharacterModel.evaluateSpecialMove rom specialData source target
                     let model =
                         if hitPointsChange < 0 && target.IsHealthy
                         then BattleModel.updateCharacter (CharacterModel.animate time DamageCycle) targetIndex model
                         else model
+                    just model
+                | None -> just model
+
+            | SpecialCharacter4 (sourceIndex, targetIndex, specialType) ->
+                let rom = screen.Parent.GetModel<Rom> world
+                match Map.tryFind specialType rom.Specials with
+                | Some specialData ->
+                    let source = BattleModel.getCharacter sourceIndex model
+                    let target = BattleModel.getCharacter targetIndex model
+                    let (cancelled, hitPointsChange) = CharacterModel.evaluateSpecialMove rom specialData source target
+                    let model = BattleModel.updateCharacter (CharacterModel.updateSpecialPoints rom ((+) -specialData.SpecialCost)) sourceIndex model
+                    let model = BattleModel.updateCharacter (CharacterModel.updateHitPoints rom (fun hitPoints -> (hitPoints + hitPointsChange, cancelled))) targetIndex model
                     let sigs = if target.IsWounded then [Message (ResetCharacter targetIndex)] else []
                     let sigs = if cancelled then Command (DisplayCancel targetIndex) :: sigs else sigs
                     let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (targetIndex, hitPointsChange)) :: sigs else sigs
                     withSigs model sigs
                 | None -> just model
 
-            | SpecialCharacter4 (sourceIndex, targetIndex, specialType) ->
+            | SpecialCharacter5 (sourceIndex, targetIndex, specialType) ->
                 let source = BattleModel.getCharacter sourceIndex model
                 let target = BattleModel.getCharacter targetIndex model
                 let hopOpt =
@@ -531,7 +545,7 @@ module OmniBattle =
                 | None -> just model
                 | Some hop -> withCmd model (DisplayHop hop)
 
-            | SpecialCharacter5 (sourceIndex, targetIndex, _) ->
+            | SpecialCharacter6 (sourceIndex, targetIndex, _) ->
                 let time = World.getTickTime world
                 let target = BattleModel.getCharacter targetIndex model
                 if target.IsHealthy then
