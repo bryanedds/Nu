@@ -9,6 +9,10 @@ open OmniBlade
 [<AutoOpen>]
 module OmniBattle =
 
+    type [<NoComparison>] Hop =
+        { HopStart : Vector2
+          HopStop : Vector2 }
+
     type BattleMessage =
         | RegularItemSelect of CharacterIndex * string
         | RegularItemCancel of CharacterIndex
@@ -26,7 +30,7 @@ module OmniBattle =
         | SpecialCharacter1 of CharacterIndex * CharacterIndex * SpecialType
         | SpecialCharacter2 of CharacterIndex * CharacterIndex * SpecialType
         | SpecialCharacter3 of CharacterIndex * CharacterIndex * SpecialType
-        | SpecialCharacter4 of CharacterIndex * CharacterIndex * SpecialType
+        | SpecialCharacter5 of CharacterIndex * CharacterIndex * SpecialType
         | SpecialCharacterAmbient of CharacterIndex * CharacterIndex * SpecialType
         | ConsumeCharacter1 of ConsumableType * CharacterIndex
         | ConsumeCharacter2 of ConsumableType * CharacterIndex
@@ -43,7 +47,7 @@ module OmniBattle =
         | DisplayCancel of CharacterIndex
         | DisplayHitPointsChange of CharacterIndex * int
         | DisplayBolt of CharacterIndex
-        | DisplaySpecialMovement of SpecialMovement
+        | DisplayHop of Hop
         | InitializeBattle
         | FinalizeBattle
 
@@ -122,12 +126,13 @@ module OmniBattle =
                 let target = BattleModel.getCharacter targetIndex model
                 let (model, msgs) =
                     match timeLocal with
-                    | 0L -> (model, [SpecialCharacter1 (sourceIndex, targetIndex, specialType)])
-                    | 40L -> (model, [SpecialCharacter2 (sourceIndex, targetIndex, specialType)])
-                    | 55L -> (model, [SpecialCharacter3 (sourceIndex, targetIndex, specialType)])
+                    | 0L -> (model, [SpecialCharacter1 (sourceIndex, targetIndex, specialType)]) // charge or hop forward
+                    | 40L -> (model, [SpecialCharacter2 (sourceIndex, targetIndex, specialType)]) // casting
+                    | 55L -> (model, [SpecialCharacter3 (sourceIndex, targetIndex, specialType)]) // outcome
+                    // | // hop back
                     | _ ->
                         if CharacterModel.getAnimationFinished time source && CharacterModel.getAnimationFinished time target
-                        then (model, [SpecialCharacter4 (sourceIndex, targetIndex, specialType)])
+                        then (model, [SpecialCharacter5 (sourceIndex, targetIndex, specialType)]) // poise
                         else (model, [])
                 let (model, msgs) = (model, msgs @ [SpecialCharacterAmbient (sourceIndex, targetIndex, specialType)])
                 withMsgs model msgs
@@ -463,19 +468,19 @@ module OmniBattle =
             | SpecialCharacter1 (sourceIndex, targetIndex, specialType) ->
                 let source = BattleModel.getCharacter sourceIndex model
                 let target = BattleModel.getCharacter targetIndex model
-                let movementOpt =
+                let hopOpt =
                     match specialType with
-                    | Cyclone -> Some { SpecialStart = source.Center; SpecialStop = target.Bottom }
+                    | Cyclone -> Some { HopStart = source.Center; HopStop = target.Bottom }
                     | HeadSlash | Bolt | Tremor -> None
-                match movementOpt with
+                match hopOpt with
                 | None ->
                     if target.IsHealthy
                     then withMsg model (ChargeCharacter sourceIndex)
                     else
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
-                | Some movement ->
-                    withCmd model (DisplaySpecialMovement movement)
+                | Some hop ->
+                    withCmd model (DisplayHop hop)
 
             | SpecialCharacter2 (sourceIndex, targetIndex, specialType) ->
                 match specialType with
@@ -524,7 +529,7 @@ module OmniBattle =
                     withSigs model sigs
                 | None -> just model
 
-            | SpecialCharacter4 (sourceIndex, targetIndex, _) ->
+            | SpecialCharacter5 (sourceIndex, targetIndex, _) ->
                 let time = World.getTickTime world
                 let target = BattleModel.getCharacter targetIndex model
                 if target.IsHealthy then
@@ -536,10 +541,10 @@ module OmniBattle =
                     withMsgs model [PoiseCharacter sourceIndex]
                     
             | SpecialCharacterAmbient (sourceIndex, _, _) ->
-                if Simulants.BattleSpecialMovement.GetExists world then
+                if Simulants.BattleHop.GetExists world then
                     let model =
-                        let tags = Simulants.BattleSpecialMovement.GetEffectTags world
-                        match Map.tryFind "Tag" tags with
+                        let tags = Simulants.BattleHop.GetEffectTags world
+                        match Map.tryFind "Hop" tags with
                         | Some tag -> BattleModel.updateCharacter (CharacterModel.updateCenter (constant tag.Position)) sourceIndex model
                         | None -> model
                     just model
@@ -664,9 +669,9 @@ module OmniBattle =
                     just world
                 | None -> just world
 
-            | DisplaySpecialMovement movement ->
-                let effect = Effects.makeSpecialMovementEffect movement.SpecialStart movement.SpecialStop
-                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.BattleSpecialMovement.Name) DefaultOverlay Simulants.BattleScene world
+            | DisplayHop hop ->
+                let effect = Effects.makeHopEffect hop.HopStart hop.HopStop
+                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.BattleHop.Name) DefaultOverlay Simulants.BattleScene world
                 let world = entity.SetEffect effect world
                 let world = entity.SetEffectOffset v2Zero world
                 let world = entity.SetSelfDestruct true world

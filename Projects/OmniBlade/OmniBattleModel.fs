@@ -20,10 +20,6 @@ type CurrentCommand =
     static member make timeStart actionCommand =
         { TimeStart = timeStart; ActionCommand = actionCommand }
 
-type [<NoComparison>] SpecialMovement =
-    { SpecialStart : Vector2
-      SpecialStop : Vector2 }
-
 type BattleState =
     | BattleReady of int64
     | BattleRunning

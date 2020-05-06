@@ -96,13 +96,13 @@ module Effects =
                    Delay (10L, explosionSprite)
                    Delay (10L, explostionSoundEffect)|]) }
 
-    let makeSpecialMovementEffect start stop =
-        { EffectName = "SpecialMovement"
+    let makeHopEffect start stop =
+        { EffectName = "Hop"
           LifetimeOpt = Some 40L
           Definitions = Map.empty
           Content =
             Tag
-                ("Tag",
+                ("Hop",
                  [|Position
                     (Sum, Linear, Bounce,
                      [|{ TweenValue = start; TweenLength = 30L }
