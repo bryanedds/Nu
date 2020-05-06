@@ -1351,6 +1351,24 @@ namespace Nu
 
         #endregion
 
+        #region Locales
+
+        public Vector2 Position { get { return new Vector2(X, Y); } }
+
+        public Vector2 Size { get { return new Vector2(Z - X, W - Y); } }
+
+        public Vector2 Center { get { return new Vector2(X + Size.X * 0.5f, Y + Size.Y * 0.5f); } }
+
+        public Vector2 Bottom { get { return new Vector2(X + Size.X * 0.5f, Y); } }
+
+        public Vector2 Top { get { return new Vector2(X + Size.X * 0.5f, Y + Size.Y); } }
+
+        public Vector2 Left { get { return new Vector2(X, Y + Size.Y * 0.5f); } }
+
+        public Vector2 Right { get { return new Vector2(X + Size.X, Y + Size.Y * 0.5f); } }
+
+        #endregion
+
         #region Operators
 
         /// <summary>

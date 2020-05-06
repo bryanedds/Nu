@@ -317,12 +317,12 @@ type CharacterAnimationState =
         | SpinCycle -> Some (4L * stutter)
         | DamageCycle -> Some (4L * stutter)
         | IdleCycle -> None
-        | Cast2Cycle -> Some (4L * stutter)
-        | WhirlCycle -> Some (24L * stutter)
+        | Cast2Cycle -> Some (12L * stutter)
+        | WhirlCycle -> Some (12L * stutter)
         | BuryCycle -> Some (8L * stutter)
         | FlyCycle -> None
-        | HopForwardCycle -> Some (4L * stutter)
-        | HopBackCycle -> Some (2L * stutter)
+        | HopForwardCycle -> None
+        | HopBackCycle -> None
         | WoundCycle -> Some (6L * stutter)
 
     static member indexCel stutter time state =

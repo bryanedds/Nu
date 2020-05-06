@@ -98,14 +98,14 @@ module Effects =
 
     let makeHopEffect start stop =
         { EffectName = "Hop"
-          LifetimeOpt = Some 40L
+          LifetimeOpt = Some 20L
           Definitions = Map.empty
           Content =
             Tag
                 ("Hop",
                  [|Position
                     (Sum, Linear, Bounce,
-                     [|{ TweenValue = start; TweenLength = 30L }
-                       { TweenValue = stop; TweenLength = 10L }
+                     [|{ TweenValue = start; TweenLength = 15L }
+                       { TweenValue = stop; TweenLength = 5L }
                        { TweenValue = stop; TweenLength = 0L }|])|],
                  Nil) }

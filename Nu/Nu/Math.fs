@@ -225,6 +225,7 @@ type [<CustomEquality; CustomComparison>] Vector4Pluggable =
 module Vector4 =
 
     type Vector4 with
+        member this.Translate (translation : Vector2) = Vector4 (this.X + translation.X, this.Y + translation.Y, this.Z + translation.X, this.W + translation.Y)
         member this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
         member this.MapY mapper = Vector4 (this.X, mapper this.Y, this.Z, this.W)
         member this.MapZ mapper = Vector4 (this.X, this.Y, mapper this.Z, this.W)
@@ -233,6 +234,12 @@ module Vector4 =
         member this.WithY y = Vector4 (this.X, y, this.Z, this.W)
         member this.WithZ z = Vector4 (this.X, this.Y, z, this.W)
         member this.WithW w = Vector4 (this.X, this.Y, this.Z, w)
+        member this.WithPosition position = this.Translate (position - this.Position)
+        member this.WithCenter center = this.Translate (center - this.Center)
+        member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
+        member this.WithTop top = this.Translate (top - this.Top)
+        member this.WithLeft left = this.Translate (left - this.Left)
+        member this.WithRight right = this.Translate (right - this.Right)
 
     let inline v4 x y z w = Vector4 (x, y, z, w)
     let inline v4Dup a = v4 a a a a
@@ -445,6 +452,10 @@ module Math =
         bounds.Z > bounds2.X &&
         bounds.Y < bounds2.W &&
         bounds.W > bounds2.Y
+
+    /// Make a Vector2 center value.
+    let makeCenter (position : Vector2) (size : Vector2) =
+        position + size * 0.5f
 
     /// Make a Vector4 bounds value.
     let makeBounds (position : Vector2) (size : Vector2) =
