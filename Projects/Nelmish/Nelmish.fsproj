@@ -178,11 +178,11 @@
   <Import Project="..\..\packages\xunit.core.2.4.0\build\xunit.core.targets" Condition="Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.targets')" />
   <Import Project="..\..\packages\Magick.NET-Q8-x64.7.16.1\build\net40\Magick.NET-Q8-x64.targets" Condition="Exists('..\..\packages\Magick.NET-Q8-x64.7.16.1\build\net40\Magick.NET-Q8-x64.targets')" />
   <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
     <Copy
     	SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.16.1\runtimes\linux-x64\native\Magick.Native-Q8-x64.dll.so"
     	DestinationFiles="$(TargetDir)libMagick.Native-Q8-x64.dll.so"
     	ContinueOnError="false" />
+  </Target>
+  <Target Name="AfterBuild">
   </Target>
 </Project>
