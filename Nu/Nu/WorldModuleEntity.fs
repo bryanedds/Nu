@@ -342,15 +342,44 @@ module WorldModuleEntity =
             if changed then
                 let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
                 if World.getEntityPublishChanges entity world then
+                    let world = World.publishEntityChange Property? Transform value entity world
+                    let world = World.publishEntityChange Property? Bounds (v4 value.Position.X value.Position.Y (value.Position.X + value.Size.X) (value.Position.Y + value.Size.Y)) entity world
                     let world = World.publishEntityChange Property? Position value.Position entity world
+                    let world = World.publishEntityChange Property? Center (value.Position + value.Size * 0.5f) entity world
+                    let world = World.publishEntityChange Property? Bottom (value.Position + value.Size.WithY 0.0f * 0.5f) entity world
                     let world = World.publishEntityChange Property? Size value.Size entity world
                     let world = World.publishEntityChange Property? Rotation value.Rotation entity world
                     let world = World.publishEntityChange Property? Depth value.Depth entity world
-                    let world = World.publishEntityChange Property? Center (value.Position + value.Size * 0.5f) entity world
-                    let world = World.publishEntityChange Property? Bottom (value.Position + value.Size.WithY 0.0f * 0.5f) entity world
-                    World.publishEntityChange Property? Transform value entity world
+                    world
                 else world
             else world
+
+        static member internal getEntityBounds entity world =
+            let transform = (World.getEntityState entity world).Transform
+            v4 transform.Position.X transform.Position.Y (transform.Position.X + transform.Size.X) (transform.Position.Y + transform.Size.Y)
+
+        static member internal setEntityBounds (value : Vector4) entity world =
+            World.updateEntityStatePlus
+                (fun entityState ->
+                    if  entityState.Transform.Position.X <> value.X ||
+                        entityState.Transform.Position.Y <> value.Y ||
+                        entityState.Transform.Position.X + entityState.Transform.Size.X <> value.Z ||
+                        entityState.Transform.Position.Y + entityState.Transform.Size.Y <> value.W then
+                        if entityState.Imperative then
+                            entityState.Transform.Position.X <- value.X
+                            entityState.Transform.Position.Y <- value.Y
+                            entityState.Transform.Size.X <- value.Z - value.X
+                            entityState.Transform.Size.Y <- value.W - value.Y
+                            Some entityState
+                        else
+                            let transform =
+                                { entityState.Transform with
+                                    Position = v2 value.X value.Y
+                                    Size = v2 (value.Z - value.X) (value.W - value.Y) }
+                            let entityState = { entityState with Transform = transform }
+                            Some entityState
+                    else None)
+                false false Property? Position value entity world
 
         static member internal getEntityCenter entity world =
             let transform = (World.getEntityState entity world).Transform
@@ -376,12 +405,13 @@ module WorldModuleEntity =
         static member internal setEntityBottom value entity world =
             World.updateEntityStatePlus
                 (fun entityState ->
-                    if value <> entityState.Position + entityState.Transform.Size.WithY 0.0f * 0.5f then
+                    if value <> entityState.Transform.Position + entityState.Transform.Size.WithY 0.0f * 0.5f then
                         if entityState.Imperative then
                             entityState.Transform.Position <- value - entityState.Transform.Size.WithY 0.0f * 0.5f
                             Some entityState
                         else
-                            let entityState = { entityState with Transform = { entityState.Transform with Position = value - entityState.Transform.Size.WithY 0.0f * 0.5f }}
+                            let transform = { entityState.Transform with Position = value - entityState.Transform.Size.WithY 0.0f * 0.5f }
+                            let entityState = { entityState with Transform = transform }
                             Some entityState
                     else None)
                 false false Property? Position value entity world
@@ -1197,7 +1227,11 @@ module WorldModuleEntity =
         Getters.Add ("Facets", fun entity world -> { PropertyType = typeof<Facet array>; PropertyValue = World.getEntityFacets entity world })
         Getters.Add ("PublishChanges", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChanges entity world })
         Getters.Add ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
+        Getters.Add ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = World.getEntityTransform entity world })
+        Getters.Add ("Bounds", fun entity world -> { PropertyType = typeof<Vector4>; PropertyValue = World.getEntityBounds entity world })
         Getters.Add ("Position", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world })
+        Getters.Add ("Center", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityCenter entity world })
+        Getters.Add ("Bottom", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityBottom entity world })
         Getters.Add ("Size", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world })
         Getters.Add ("Rotation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world })
         Getters.Add ("Depth", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityDepth entity world })
@@ -1217,14 +1251,16 @@ module WorldModuleEntity =
         Getters.Add ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
         Getters.Add ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })
         Getters.Add ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
-        Getters.Add ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = World.getEntityTransform entity world })
-        Getters.Add ("Center", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityCenter entity world })
 
     /// Initialize property setters.
     let private initSetters () =
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("Facets", fun _ _ world -> (false, world))
+        Setters.Add ("Transform", fun property entity world -> (true, World.setEntityTransform (property.PropertyValue :?> Transform) entity world))
+        Setters.Add ("Bounds", fun property entity world -> (true, World.setEntityBounds (property.PropertyValue :?> Vector4) entity world))
         Setters.Add ("Position", fun property entity world -> (true, World.setEntityPosition (property.PropertyValue :?> Vector2) entity world))
+        Setters.Add ("Center", fun property entity world -> (true, World.setEntityCenter (property.PropertyValue :?> Vector2) entity world))
+        Setters.Add ("Bottom", fun property entity world -> (true, World.setEntityBottom (property.PropertyValue :?> Vector2) entity world))
         Setters.Add ("Size", fun property entity world -> (true, World.setEntitySize (property.PropertyValue :?> Vector2) entity world))
         Setters.Add ("Rotation", fun property entity world -> (true, World.setEntityRotation (property.PropertyValue :?> single) entity world))
         Setters.Add ("Depth", fun property entity world -> (true, World.setEntityDepth (property.PropertyValue :?> single) entity world))
@@ -1246,8 +1282,6 @@ module WorldModuleEntity =
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Id", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
-        Setters.Add ("Transform", fun property entity world -> (true, World.setEntityTransform (property.PropertyValue :?> Transform) entity world))
-        Setters.Add ("Center", fun property entity world -> (true, World.setEntityCenter (property.PropertyValue :?> Vector2) entity world))
         
     /// Initialize getters and setters
     let internal init () =

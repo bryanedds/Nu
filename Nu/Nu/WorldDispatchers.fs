@@ -753,6 +753,12 @@ module NodeFacetModule =
         member this.GetPositionLocal world : Vector2 = this.Get Property? PositionLocal world
         member this.SetPositionLocal (value : Vector2) world = this.SetFast Property? PositionLocal false false value world
         member this.PositionLocal = lens Property? PositionLocal this.GetPositionLocal this.SetPositionLocal this
+        member this.GetCenterLocal world : Vector2 = this.Get Property? CenterLocal world
+        member this.SetCenterLocal (value : Vector2) world = this.SetFast Property? CenterLocal false true value world
+        member this.CenterLocal = lens Property? CenterLocal this.GetCenterLocal this.SetCenterLocal this
+        member this.GetBottomLocal world : Vector2 = this.Get Property? BottomLocal world
+        member this.SetBottomLocal (value : Vector2) world = this.SetFast Property? BottomLocal false true value world
+        member this.BottomLocal = lens Property? BottomLocal this.GetBottomLocal this.SetBottomLocal this
         member this.GetDepthLocal world : single = this.Get Property? DepthLocal world
         member this.SetDepthLocal (value : single) world = this.SetFast Property? DepthLocal false false value world
         member this.DepthLocal = lens Property? DepthLocal this.GetDepthLocal this.SetDepthLocal this
@@ -765,9 +771,6 @@ module NodeFacetModule =
         member private this.GetNodeUnsubscribe world : World -> World = this.Get Property? NodeUnsubscribe world
         member private this.SetNodeUnsubscribe (value : World -> World) world = this.SetFast Property? NodeUnsubscribe false true value world
         member private this.NodeUnsubscribe = lens Property? NodeUnsubscribe this.GetNodeUnsubscribe this.SetNodeUnsubscribe this
-        member this.GetCenterLocal world : Vector2 = this.Get Property? CenterLocal world
-        member this.SetCenterLocal (value : Vector2) world = this.SetFast Property? CenterLocal false true value world
-        member this.CenterLocal = lens Property? CenterLocal this.GetCenterLocal this.SetCenterLocal this
 
         member this.SetParentNodeOptWithAdjustment (value : Entity Relation option) world =
             let world =
@@ -920,7 +923,10 @@ module NodeFacetModule =
              define Entity.NodeUnsubscribe (id : World -> World)
              computed Entity.CenterLocal
                 (fun (entity : Entity) world -> entity.GetPositionLocal world + entity.GetSize world * 0.5f)
-                (Some (fun value (entity : Entity) world -> entity.SetPositionLocal (value - entity.GetSize world * 0.5f) world))]
+                (Some (fun value (entity : Entity) world -> entity.SetPositionLocal (value - entity.GetSize world * 0.5f) world))
+             computed Entity.BottomLocal
+                (fun (entity : Entity) world -> entity.GetPositionLocal world + (entity.GetSize world).WithY 0.0f * 0.5f)
+                (Some (fun value (entity : Entity) world -> entity.SetPositionLocal (value - (entity.GetSize world).WithY 0.0f * 0.5f) world))]
 
         override this.Register (entity, world) =
             let world = entity.SetNodeUnsubscribe id world // ensure unsubscribe function reference doesn't get copied in Gaia...

@@ -30,6 +30,7 @@ module OmniBattle =
         | SpecialCharacter1 of CharacterIndex * CharacterIndex * SpecialType
         | SpecialCharacter2 of CharacterIndex * CharacterIndex * SpecialType
         | SpecialCharacter3 of CharacterIndex * CharacterIndex * SpecialType
+        | SpecialCharacter4 of CharacterIndex * CharacterIndex * SpecialType
         | SpecialCharacter5 of CharacterIndex * CharacterIndex * SpecialType
         | SpecialCharacterAmbient of CharacterIndex * CharacterIndex * SpecialType
         | ConsumeCharacter1 of ConsumableType * CharacterIndex
@@ -64,27 +65,23 @@ module OmniBattle =
                     { PartyIndex = 0; CharacterType = Ally Jinn; ActionTime = 600; ExpPoints = 0; HitPoints = 10; SpecialPoints = 10; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Cyclone]; Statuses = Set.empty; WeaponOpt = Some "WoodenSword"; ArmorOpt = Some "LeatherVest"; Accessories = []; AutoBattleOpt = None }
                     { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Rightward }
                     NoInput
-                    (v2 -224.0f -168.0f)
-                    (v2 160.0f 160.0f)
+                    (Math.makeBounds (v2 -224.0f -168.0f) (v2 160.0f 160.0f))
                  CharacterModel.make
                     { PartyIndex = 1; CharacterType = Ally Glenn; ActionTime = 420; ExpPoints = 0; HitPoints = 10; SpecialPoints = 10; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Tremor]; Statuses = Set.empty; WeaponOpt = Some "OakRod"; ArmorOpt = Some "LeatherRobe"; Accessories = []; AutoBattleOpt = None }
                     { TimeStart = 0L; AnimationSheet = Assets.GlennAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward }
                     NoInput
-                    (v2 224.0f 64.0f)
-                    (v2 160.0f 160.0f)]
+                    (Math.makeBounds (v2 224.0f 64.0f) (v2 160.0f 160.0f))]
              let enemies =
                 [CharacterModel.make
                     { PartyIndex = 0; CharacterType = Enemy Goblin; ActionTime = 99; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [Bolt]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None; }
                     { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward }
                     NoInput
-                    (v2 0.0f 0.0f)
-                    (v2 160.0f 160.0f)
+                    (Math.makeBounds (v2 0.0f 0.0f) (v2 160.0f 160.0f))
                  CharacterModel.make
                     { PartyIndex = 1; CharacterType = Enemy Goblin; ActionTime = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [Bolt]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None; }
                     { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward }
                     NoInput
-                    (v2 176.0f -192.0f)
-                    (v2 160.0f 160.0f)]
+                    (Math.makeBounds (v2 176.0f -192.0f) (v2 160.0f 160.0f))]
              let characters =
                 Map.ofList
                     (List.mapi (fun i ally -> (AllyIndex i, ally)) allies @
@@ -119,21 +116,17 @@ module OmniBattle =
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
 
-        static let tickSpecial specialType sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
-            let source = BattleModel.getCharacter sourceIndex model
+        static let tickSpecial specialType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) timeLocal model =
             match targetIndexOpt with
             | Some targetIndex ->
-                let target = BattleModel.getCharacter targetIndex model
                 let (model, msgs) =
                     match timeLocal with
                     | 0L -> (model, [SpecialCharacter1 (sourceIndex, targetIndex, specialType)]) // charge or hop forward
-                    | 40L -> (model, [SpecialCharacter2 (sourceIndex, targetIndex, specialType)]) // casting
-                    | 55L -> (model, [SpecialCharacter3 (sourceIndex, targetIndex, specialType)]) // outcome
-                    // | // hop back
-                    | _ ->
-                        if CharacterModel.getAnimationFinished time source && CharacterModel.getAnimationFinished time target
-                        then (model, [SpecialCharacter5 (sourceIndex, targetIndex, specialType)]) // poise
-                        else (model, [])
+                    | 30L -> (model, [SpecialCharacter2 (sourceIndex, targetIndex, specialType)]) // casting
+                    | 80L -> (model, [SpecialCharacter3 (sourceIndex, targetIndex, specialType)]) // outcome
+                    | 90L -> (model, [SpecialCharacter4 (sourceIndex, targetIndex, specialType)]) // hop back
+                    | 110L -> (model, [SpecialCharacter5 (sourceIndex, targetIndex, specialType)]) // poise
+                    | _ -> (model, [])
                 let (model, msgs) = (model, msgs @ [SpecialCharacterAmbient (sourceIndex, targetIndex, specialType)])
                 withMsgs model msgs
             | None ->
@@ -496,9 +489,7 @@ module OmniBattle =
                     let playHitSounds =
                         [PlaySound (20L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (40L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
-                         PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
-                         PlaySound (80L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
-                         PlaySound (100L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)]
+                         PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)]
                     withCmds model playHitSounds
                 | Bolt ->
                     let time = World.getTickTime world
@@ -528,6 +519,17 @@ module OmniBattle =
                     let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (targetIndex, hitPointsChange)) :: sigs else sigs
                     withSigs model sigs
                 | None -> just model
+
+            | SpecialCharacter4 (sourceIndex, targetIndex, specialType) ->
+                let source = BattleModel.getCharacter sourceIndex model
+                let target = BattleModel.getCharacter targetIndex model
+                let hopOpt =
+                    match specialType with
+                    | Cyclone -> Some { HopStart = target.Bottom; HopStop = source.CenterOriginal }
+                    | HeadSlash | Bolt | Tremor -> None
+                match hopOpt with
+                | None -> just model
+                | Some hop -> withCmd model (DisplayHop hop)
 
             | SpecialCharacter5 (sourceIndex, targetIndex, _) ->
                 let time = World.getTickTime world
@@ -720,7 +722,7 @@ module OmniBattle =
 
                     [Content.fillBar "HealthBar" 
                         [Entity.Size == v2 64.0f 8.0f
-                         Entity.Center <== ally --> fun ally -> ally.UnderFeet
+                         Entity.Center <== ally --> fun ally -> ally.BottomOffset
                          Entity.Depth == Constants.Battle.GuiDepth
                          Entity.Visible <== ally --> fun ally -> ally.HitPoints > 0
                          Entity.Fill <== ally ->> fun ally world ->

@@ -10,8 +10,8 @@ module CharacterModel =
             { CharacterState : CharacterState
               AnimationState : CharacterAnimationState
               InputState_ : CharacterInputState
-              Position_ : Vector2
-              Size_ : Vector2 }
+              BoundsOriginal_ : Vector4
+              Bounds_ : Vector4 }
 
         (* CharacterState Properties *)
         member this.CharacterType = this.CharacterState.CharacterType
@@ -52,16 +52,26 @@ module CharacterModel =
 
         (* InputState Properties *)
         member this.InputState = this.InputState_
-        member this.Position = this.Position_
-        member this.Size = this.Size_
 
-        (* Local Properties *)
-        member this.UnderFeet = this.Position + v2 (this.Size.X * 0.5f) -8.0f
-        member this.Center = this.Position + this.Size * 0.5f
+        (* Bounds Original Properties *)
+        member this.BoundsOriginal = this.BoundsOriginal_
+        member this.PositionOriginal = this.BoundsOriginal_.Position
+        member this.CenterOriginal = this.BoundsOriginal_.Center
+        member this.BottomOriginal = this.BoundsOriginal_.Bottom
+        member this.SizeOriginal = this.BoundsOriginal_.Size
+
+        (* Bounds Properties *)
+        member this.Bounds = this.Bounds_
+        member this.Position = this.Bounds_.Position
+        member this.Center = this.Bounds_.Center
+        member this.Bottom = this.Bounds_.Bottom
+        member this.Size = this.Bounds_.Size
+
+        (* Helper Properties *)
         member this.CenterOffset = this.Center + Constants.Battle.CharacterCenterOffset
         member this.CenterOffset2 = this.Center + Constants.Battle.CharacterCenterOffset2
         member this.CenterOffset3 = this.Center + Constants.Battle.CharacterCenterOffset3
-        member this.Bottom = this.Position + v2 (this.Size.X * 0.5f) 0.0f
+        member this.BottomOffset = this.Bottom + Constants.Battle.CharacterBottomOffset
 
         static member evaluateAutoBattle source (target : CharacterModel) =
             let specialOpt =
@@ -133,14 +143,17 @@ module CharacterModel =
         static member updateAutoBattleOpt updater character =
             { character with CharacterState = CharacterState.updateAutoBattleOpt updater character.CharacterState }
 
+        static member updateBounds updater (character : CharacterModel) =
+            { character with Bounds_ = updater character.Bounds_ }
+
         static member updatePosition updater (character : CharacterModel) =
-            { character with Position_ = updater character.Position }
+            { character with Bounds_ = character.Position |> updater |> character.Bounds.WithPosition }
 
         static member updateCenter updater (character : CharacterModel) =
-            { character with Position_ = (updater character.Center) - character.Size * 0.5f }
+            { character with Bounds_ = character.Center |> updater |> character.Bounds.WithCenter }
 
         static member updateBottom updater (character : CharacterModel) =
-            { character with Position_ = (updater character.Bottom) - character.Size.WithY 0.0f * 0.5f }
+            { character with Bounds_ = character.Bottom |> updater |> character.Bounds.WithBottom }
 
         static member autoBattle (source : CharacterModel) (target : CharacterModel) =
             let sourceToTarget = target.Position - source.Position
@@ -173,11 +186,11 @@ module CharacterModel =
         static member animate time cycle character =
             { character with AnimationState = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState }
 
-        static member make characterState animationState inputState position size =
+        static member make characterState animationState inputState bounds =
             { CharacterState = characterState
               AnimationState = animationState
               InputState_ = inputState
-              Position_ = position
-              Size_ = size }
+              BoundsOriginal_ = bounds
+              Bounds_ = bounds }
 
 type CharacterModel = CharacterModel.CharacterModel

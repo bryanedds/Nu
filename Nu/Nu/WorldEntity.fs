@@ -16,9 +16,21 @@ module WorldEntityModule =
         member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
         member this.GetFacets world = World.getEntityFacets this world
         member this.Facets = lensReadOnly Property? Facets this.GetFacets this
+        member this.GetTransform world = World.getEntityTransform this world
+        member this.SetTransform value world = World.setEntityTransform value this world
+        member this.Transform = lens Property? Transform this.GetTransform this.SetTransform this
+        member this.GetBounds world = World.getEntityBounds this world
+        member this.SetBounds value world = World.setEntityBounds value this world
+        member this.Bounds = lens Property? Bounds this.GetBounds this.SetBounds this
         member this.GetPosition world = World.getEntityPosition this world
         member this.SetPosition value world = World.setEntityPosition value this world
         member this.Position = lens Property? Position this.GetPosition this.SetPosition this
+        member this.GetCenter world = World.getEntityCenter this world
+        member this.SetCenter value world = World.setEntityCenter value this world
+        member this.Center = lens Property? Center this.GetCenter this.SetCenter this
+        member this.GetBottom world = World.getEntityBottom this world
+        member this.SetBottom value world = World.setEntityBottom value this world
+        member this.Bottom = lens Property? Bottom this.GetBottom this.SetBottom this
         member this.GetSize world = World.getEntitySize this world
         member this.SetSize value world = World.setEntitySize value this world
         member this.Size = lens Property? Size this.GetSize this.SetSize this
@@ -72,16 +84,7 @@ module WorldEntityModule =
         member this.CreationTimeStamp = lensReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetId world = World.getEntityId this world
         member this.Id = lensReadOnly Property? Id this.GetId this
-
-        member this.GetCenter world = World.getEntityCenter this world
-        member this.SetCenter value world = World.setEntityCenter value this world
-        member this.Center = lens Property? Center this.GetCenter this.SetCenter this
-        member this.GetBottom world = World.getEntityBottom this world
-        member this.SetBottom value world = World.setEntityBottom value this world
-        member this.Bottom = lens Property? Bottom this.GetBottom this.SetBottom this
-        member this.GetTransform world = World.getEntityTransform this world
-        member this.SetTransform value world = World.setEntityTransform value this world
-        member this.Transform = lens Property? Transform this.GetTransform this.SetTransform this
+        
         member this.GetStaticData<'a> world = World.getEntityStaticData<'a> this world
         member this.SetStaticData<'a> value world = World.setEntityStaticData<'a> value this world
         member this.UpdateStaticData<'a> updater world = this.SetStaticData<'a> (updater this.GetStaticData<'a> world) world
@@ -144,9 +147,6 @@ module WorldEntityModule =
 
         /// Set an entity's size by its quick size.
         member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
-
-        /// Get an entity's bounds, not taking into account its overflow.
-        member this.GetBounds world = Math.makeBounds (this.GetPosition world) (this.GetSize world)
 
         /// Get an entity's bounds, taking into account its overflow.
         member this.GetBoundsOverflow world = Math.makeBoundsOverflow (this.GetPosition world) (this.GetSize world) (this.GetOverflow world)
