@@ -66,7 +66,8 @@
     <PreBuildEvent />
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>"$(ProjectDir)..\..\Nu\Nu.Pipe\bin\$(ConfigurationName)\Nu.Pipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)refinement" False</PostBuildEvent>
+    <PostBuildEvent>copy "$(ProjectDir)..\..\packages\Magick.NET-Q8-x64.7.16.1\runtimes\linux-x64\native\Magick.Native-Q8-x64.dll.so" "$(TargetDir)libMagick.Native-Q8-x64.dll.so"
+"$(ProjectDir)..\..\Nu\Nu.Pipe\bin\$(ConfigurationName)\Nu.Pipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)refinement" False</PostBuildEvent>
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <ItemGroup>
