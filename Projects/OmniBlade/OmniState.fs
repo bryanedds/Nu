@@ -69,11 +69,6 @@ type CharacterIndex =
     | AllyIndex of int
     | EnemyIndex of int
 
-type PoiseType =
-    | Poising
-    | Defending
-    | Charging
-
 type AutoBattle =
     { AutoTarget : CharacterIndex
       AutoSpecialOpt : SpecialType option }
@@ -246,24 +241,6 @@ type CharacterState =
         if state.Defending then Defending
         elif state.Charging then Charging
         else Poising
-
-type CharacterAnimationCycle =
-    | WalkCycle
-    | CelebrateCycle
-    | ReadyCycle
-    | PoiseCycle of PoiseType
-    | AttackCycle
-    | CastCycle
-    | SpinCycle
-    | DamageCycle
-    | IdleCycle
-    | Cast2Cycle
-    | WhirlCycle
-    | BuryCycle
-    | FlyCycle
-    | HopForwardCycle
-    | HopBackCycle
-    | WoundCycle
 
 type CharacterAnimationState =
     { TimeStart : int64
