@@ -200,9 +200,9 @@ type CharacterData =
 type CharacterAnimationData =
     { CharacterAnimationCycle : CharacterAnimationCycle // key
       AnimationType : AnimationType
+      LengthOpt : int64 option
       Run : int
       Stutter : int64
-      LengthOpt : int64
       Offset : Vector2i }
 
 type Rom =
@@ -215,10 +215,10 @@ type Rom =
       CharacterAnimationData : Map<CharacterAnimationCycle, CharacterAnimationData> }
 
     static member readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
-        File.ReadAllText filePath |>
-        flip (Symbol.fromStringCsv true) (Some filePath) |>
-        symbolToValue<'d list> |>
-        Map.ofListBy (fun data -> getKey data, data)
+        let text = File.ReadAllText filePath
+        let symbol = flip (Symbol.fromStringCsv true) (Some filePath) text
+        let value = symbolToValue<'d list> symbol
+        Map.ofListBy (fun data -> getKey data, data) value
 
     static member readFromFiles () =
         { Weapons = Rom.readSheet Assets.WeaponDataFilePath (fun data -> data.WeaponType)
