@@ -134,6 +134,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             | WavAsset _ ->
                 Log.info ("Cannot play wav file as song '" + scstring song + "'.")
             | OggAsset oggAsset ->
+                SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play
                 SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
                 SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) |> ignore // Mix_PlayMusic seems to somtimes cause audio 'popping' when starting a song, so a fade is used instead... |> ignore
             audioPlayer.CurrentSongOpt <- Some playSongMessage
