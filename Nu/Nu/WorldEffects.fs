@@ -16,7 +16,9 @@ module Effects =
         | EaseIn
         | EaseOut
         | Sin
+        | SinOver2
         | Cos
+        | CosOver2
 
     type LogicApplicator =
         | Or
@@ -152,7 +154,7 @@ module Effects =
         Map<string, Definition>
 
 /// Describes an effect in a compositional manner.
-[<Syntax   ("Const Linear Random Chaos Ease EaseIn EaseOut Sin Cos " +
+[<Syntax   ("Const Linear Random Chaos Ease EaseIn EaseOut Sin SinOver2 CosOver2 " +
             "Or Nor Xor And Nand Equal " +
             "Sum Delta Scale Ratio Set " +
             "Once Loop Bounce " +
@@ -263,8 +265,16 @@ module EffectSystemModule =
                 let progressScaled = float progress * Math.PI * 2.0
                 let progressSin = Math.Sin progressScaled
                 value + scale (value2 - value, single progressSin)
+            | SinOver2 ->
+                let progressScaled = float progress * Math.PI
+                let progressSin = Math.Sin progressScaled
+                value + scale (value2 - value, single progressSin)
             | Cos ->
                 let progressScaled = float progress * Math.PI * 2.0
+                let progressCos = Math.Cos progressScaled
+                value + scale (value2 - value, single progressCos)
+            | CosOver2 ->
+                let progressScaled = float progress * Math.PI
                 let progressCos = Math.Cos progressScaled
                 value + scale (value2 - value, single progressCos)
 

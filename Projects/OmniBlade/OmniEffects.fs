@@ -107,5 +107,10 @@ module Effects =
                     (Sum, Linear, Bounce,
                      [|{ TweenValue = start; TweenLength = 15L }
                        { TweenValue = stop; TweenLength = 5L }
-                       { TweenValue = stop; TweenLength = 0L }|])|],
+                       { TweenValue = stop; TweenLength = 0L }|])
+                   Position
+                    (Sum, SinOver2, Bounce,
+                     [|{ TweenValue = v2Zero; TweenLength = 15L }
+                       { TweenValue = v2 0.0f 32.0f; TweenLength = 5L }
+                       { TweenValue = v2Zero; TweenLength = 0L }|])|],
                  Nil) }
