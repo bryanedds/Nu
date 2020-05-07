@@ -205,5 +205,9 @@
     	ContinueOnError="false" />
   </Target>
   <Target Name="AfterBuild">
+    <Copy
+    	SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.16.1\lib\netstandard20\Magick.NET-Q8-x64.dll"
+    	DestinationFiles="$(TargetDir)Magick.NET-Q8-x64.dll"
+    	ContinueOnError="false" />
   </Target>
 </Project>
