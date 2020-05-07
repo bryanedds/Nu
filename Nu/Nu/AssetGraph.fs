@@ -138,44 +138,52 @@ module AssetGraphModule =
             match refinement with
             | PsdToPng -> "png"
             | Retro -> rawAssetExtension
-    
+
         let private getAssetExtension usingRawAssets rawAssetExtension refinements =
             if usingRawAssets then List.fold getAssetExtension2 rawAssetExtension refinements
             else rawAssetExtension
-    
-        let private writeMagickImageAsPng filePath (image : MagickImage) =
+
+        let private writeMagickImageAsPng psdHack filePath (image : MagickImage) =
             match Path.GetExtension filePath with
             | ".png" ->
                 use stream = File.OpenWrite filePath
+                if psdHack then
+                    // HACK: this is a shite ass hack that deals with an image magick bug that causes the transparent
+                    // pixels of an image to be turned pure white or black. The side-effect of this hack is that your
+                    // psd images cannot contain full white or black as a color.
+                    image.ColorFuzz <- Percentage 0.0
+                    image.Opaque (MagickColor.FromRgba (byte 255, byte 255, byte 255, byte 255), MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 0))
+                    image.Opaque (MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 255), MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 0))
                 image.Write (stream, MagickFormat.Png32)
             | _ -> Log.info ("Invalid image file format for scaling refinement; must be of *.png format.")
-    
+
         /// Apply a single refinement to an asset.
         let private refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement =
-    
+
             // build the intermediate file path
             let intermediateFileExtension = Path.GetExtension intermediateFileSubpath
             let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
-    
+
             // build the refinement file path
             let refinementFileExtension = getAssetExtension2 intermediateFileExtension refinement
             let refinementFileSubpath = Path.ChangeExtension (intermediateFileSubpath, refinementFileExtension)
             let refinementFilePath = refinementDirectory + "/" + refinementFileSubpath
-    
+
             // refine the asset
             Directory.CreateDirectory (Path.GetDirectoryName refinementFilePath) |> ignore
             match refinement with
             | PsdToPng ->
+                //Diagnostics.Debugger.Launch ()
                 use image = new MagickImage (intermediateFilePath)
-                writeMagickImageAsPng refinementFilePath image
+                writeMagickImageAsPng true refinementFilePath image
             | Retro ->
                 use image = new MagickImage (intermediateFilePath)
                 image.Scale (Percentage 400)
-                writeMagickImageAsPng refinementFilePath image
-    
+                writeMagickImageAsPng false refinementFilePath image
+
             // return the latest refinement localities
             (refinementFileSubpath, refinementDirectory)
-    
+
         /// Apply all refinements to an asset.
         let private refineAsset inputFileSubpath inputDirectory refinementDirectory refinements =
             List.fold
@@ -183,40 +191,40 @@ module AssetGraphModule =
                     refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement)
                 (inputFileSubpath, inputDirectory)
                 refinements
-    
+
         /// Build all the assets.
         let private buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild assets =
-    
+
             // build assets
             for asset in assets do
-    
+
                 // build input file path
                 let inputFileSubpath = asset.FilePath
                 let inputFileExtension = Path.GetExtension inputFileSubpath
                 let inputFilePath = inputDirectory + "/" + inputFileSubpath
-    
+
                 // build the output file path
                 let outputFileExtension = getAssetExtension true inputFileExtension asset.Refinements
                 let outputFileSubpath = Path.ChangeExtension (asset.FilePath, outputFileExtension)
                 let outputFilePath = outputDirectory + "/" + outputFileSubpath
-    
+
                 // build the asset if fully building or if it's out of date
                 if  fullBuild ||
                     not (File.Exists outputFilePath) ||
                     File.GetLastWriteTimeUtc inputFilePath > File.GetLastWriteTimeUtc outputFilePath then
-    
+
                     // refine the asset
                     let (intermediateFileSubpath, intermediateDirectory) =
                         if List.isEmpty asset.Refinements then (inputFileSubpath, inputDirectory)
                         else refineAsset inputFileSubpath inputDirectory refinementDirectory asset.Refinements
-    
+
                     // attempt to copy the intermediate asset if output file is out of date
                     let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
                     let outputFilePath = outputDirectory + "/" + intermediateFileSubpath
                     Directory.CreateDirectory (Path.GetDirectoryName outputFilePath) |> ignore
                     try File.Copy (intermediateFilePath, outputFilePath, true)
                     with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
-    
+
         /// Load all the assets from a package descriptor.
         let private loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor =
             let assets =
