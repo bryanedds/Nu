@@ -27,17 +27,19 @@ module OmniCharacter =
             160.0f
 
         static let getSpriteInset (character : Entity) world =
+            let rom = Simulants.Game.GetModel<Rom> world
             let model = character.GetCharacterModel world
-            let index = CharacterModel.getAnimationIndex (World.getTickTime world) model
+            let index = CharacterModel.getAnimationIndex rom (World.getTickTime world) model
             let offset = v2 (single index.X * CelSize) (single index.Y * CelSize)
             let inset = Vector4 (offset.X, offset.Y, offset.X + CelSize, offset.Y + CelSize)
             inset
 
         static let getSpriteColor (character : Entity) world =
+            let rom = Simulants.Game.GetModel<Rom> world
             let model = character.GetCharacterModel world
             let color =
                 if model.AnimationCycle = CharacterAnimationCycle.WoundCycle && model.IsEnemy then
-                    match CharacterModel.getAnimationProgressOpt (World.getTickTime world) model with
+                    match CharacterModel.getAnimationProgressOpt rom (World.getTickTime world) model with
                     | Some progress -> Vector4 (1.0f,0.5f,1.0f,1.0f-progress) // purple
                     | None -> failwithumf ()
                 else Vector4.One

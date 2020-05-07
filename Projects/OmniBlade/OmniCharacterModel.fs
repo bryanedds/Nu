@@ -111,14 +111,14 @@ module CharacterModel =
         static member getAttackResult rom source target =
             CharacterState.getAttackResult rom source.CharacterState target.CharacterState
 
-        static member getAnimationIndex time character =
-            CharacterAnimationState.index time character.AnimationState
+        static member getAnimationIndex rom time character =
+            CharacterAnimationState.index rom time character.AnimationState
 
-        static member getAnimationProgressOpt time character =
-            CharacterAnimationState.progressOpt time character.AnimationState
+        static member getAnimationProgressOpt rom time character =
+            CharacterAnimationState.progressOpt rom time character.AnimationState
 
-        static member getAnimationFinished time character =
-            CharacterAnimationState.getFinished time character.AnimationState
+        static member getAnimationFinished rom time character =
+            CharacterAnimationState.getFinished rom time character.AnimationState
 
         static member runningSpecialAutoBattle character =
             CharacterState.runningSpecialAutoBattle character.CharacterState
