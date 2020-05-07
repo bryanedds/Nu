@@ -91,7 +91,7 @@ module OmniBattle =
              let model = BattleModel.make (BattleReady 0L) characters None Queue.empty inventory 100
              model)
 
-        static let tickAttack sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
+        static let tickAttack rom sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
             match targetIndexOpt with
             | Some targetIndex ->
                 let target = BattleModel.getCharacter targetIndex model
@@ -104,7 +104,7 @@ module OmniBattle =
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
                 | 15L ->
                     withMsg model (AttackCharacter2 (sourceIndex, targetIndex))
-                | _ when CharacterModel.getAnimationFinished time target ->
+                | _ when CharacterModel.getAnimationFinished rom time target ->
                     let target = BattleModel.getCharacter targetIndex model
                     if target.IsHealthy then
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
@@ -118,7 +118,7 @@ module OmniBattle =
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
 
-        static let tickSpecial specialType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) timeLocal model =
+        static let tickSpecial (_ : Rom) specialType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) timeLocal model =
             match targetIndexOpt with
             | Some targetIndex ->
                 let (model, msgs) =
@@ -136,7 +136,7 @@ module OmniBattle =
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
 
-        static let tickConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
+        static let tickConsume rom consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
             match targetIndexOpt with
             | Some targetIndex ->
                 let target = BattleModel.getCharacter targetIndex model
@@ -149,7 +149,7 @@ module OmniBattle =
                         withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
                 | 30L ->
                     withMsg model (ConsumeCharacter2 (consumable, targetIndex))
-                | _ when CharacterModel.getAnimationFinished time target ->
+                | _ when CharacterModel.getAnimationFinished rom time target ->
                     let model = BattleModel.updateCurrentCommandOpt (constant None) model
                     withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
                 | _ -> just model
@@ -157,12 +157,12 @@ module OmniBattle =
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
 
-        static let tickWound targetIndex time model =
+        static let tickWound rom targetIndex time model =
             let character = BattleModel.getCharacter targetIndex model
             if character.IsAlly then
                 match character.AnimationCycle with
                 | DamageCycle ->
-                    if CharacterModel.getAnimationFinished time character then
+                    if CharacterModel.getAnimationFinished rom time character then
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsg model (WoundCharacter targetIndex)
                     else just model
@@ -170,19 +170,19 @@ module OmniBattle =
             else
                 match character.AnimationCycle with
                 | DamageCycle ->
-                    if CharacterModel.getAnimationFinished time character then
+                    if CharacterModel.getAnimationFinished rom time character then
                         let woundCharacter = WoundCharacter targetIndex
                         let playDeathSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.DeathSound)
                         withSigs model [Message woundCharacter; Command playDeathSound]
                     else just model
                 | WoundCycle ->
-                    if CharacterModel.getAnimationFinished time character then
+                    if CharacterModel.getAnimationFinished rom time character then
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
                         withMsg model (DestroyCharacter targetIndex)
                     else just model
                 | _ -> failwithumf ()
 
-        static let tickReady time timeStart model =
+        static let tickReady (_ : Rom) time timeStart model =
             let timeLocal = time - timeStart
             match timeLocal with
             | 0L -> withMsg model ReadyCharacters
@@ -191,25 +191,25 @@ module OmniBattle =
                 withMsg model PoiseCharacters
             | _ -> just model
 
-        static let rec tickCurrentCommand time currentCommand model =
+        static let rec tickCurrentCommand rom time currentCommand model =
             let timeLocal = time - currentCommand.TimeStart
             match currentCommand.ActionCommand.Action with
             | Attack ->
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
-                tickAttack source targetOpt time timeLocal model
+                tickAttack rom source targetOpt time timeLocal model
             | Consume consumable ->
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
-                tickConsume consumable source targetOpt time timeLocal model
+                tickConsume rom consumable source targetOpt time timeLocal model
             | Special specialType ->
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
-                tickSpecial specialType source targetOpt time timeLocal model
+                tickSpecial rom specialType source targetOpt time timeLocal model
             | Wound ->
                 match currentCommand.ActionCommand.TargetOpt with
                 | Some target ->
-                    let (model, signal) = tickWound target time model
+                    let (model, signal) = tickWound rom target time model
                     match model.CurrentCommandOpt with
                     | Some _ ->
                         // just keep ticking wound...
@@ -220,21 +220,21 @@ module OmniBattle =
                             let enemies = BattleModel.getEnemies model
                             if Seq.forall (fun (character : CharacterModel) -> character.IsWounded) allies then
                                 let model = BattleModel.updateBattleState (constant (BattleCease (false, time))) model
-                                tick time model // tick for frame 0
+                                tick rom time model // tick for frame 0
                             elif Seq.forall (fun (character : CharacterModel) -> character.IsWounded) enemies then
                                 let model = BattleModel.updateBattleState (constant (BattleCease (true, time))) model
-                                tick time model // tick for frame 0
+                                tick rom time model // tick for frame 0
                             else just model
                         withSig model (signal + signal2)
                 | None -> just model
         
-        and tickNextCommand time nextCommand futureCommands (model : BattleModel) =
+        and tickNextCommand rom time nextCommand futureCommands (model : BattleModel) =
             let command = CurrentCommand.make time nextCommand
             let model = BattleModel.updateCurrentCommandOpt (constant (Some command)) model
             let model = BattleModel.updateActionCommands (constant futureCommands) model
-            tick time model // tick for frame 0
+            tick rom time model // tick for frame 0
 
-        and tickNoNextCommand time (model : BattleModel) =
+        and tickNoNextCommand (_ : Rom) time (model : BattleModel) =
             let (allySignalsRev, model) =
                 List.fold (fun (signals, model) (ally : CharacterModel) ->
                     if ally.ActionTime = Constants.Battle.ActionTime then
@@ -281,28 +281,28 @@ module OmniBattle =
                     model
             withSigs model (List.rev (allySignalsRev @ enemySignalsRev))
 
-        and tickNoCurrentCommand time (model : BattleModel) =
+        and tickNoCurrentCommand rom time (model : BattleModel) =
             match model.ActionCommands with
-            | Queue.Cons (nextCommand, futureCommands) -> tickNextCommand time nextCommand futureCommands model
-            | Queue.Nil -> tickNoNextCommand time model
+            | Queue.Cons (nextCommand, futureCommands) -> tickNextCommand rom time nextCommand futureCommands model
+            | Queue.Nil -> tickNoNextCommand rom time model
 
-        and tickRunning time (model : BattleModel) =
+        and tickRunning rom time (model : BattleModel) =
             match model.CurrentCommandOpt with
-            | Some currentCommand -> tickCurrentCommand time currentCommand model
-            | None -> tickNoCurrentCommand time model
+            | Some currentCommand -> tickCurrentCommand rom time currentCommand model
+            | None -> tickNoCurrentCommand rom time model
 
-        and tickCease time timeStart outcome model =
+        and tickCease (_ : Rom) time timeStart outcome model =
             let timeLocal = time - timeStart
             match timeLocal with
             | 0L -> withMsg model (CelebrateCharacters outcome)
             | _ -> just model
 
-        and tick time model =
+        and tick rom time model =
             let (model, sigs) =
                 match model.BattleState with
-                | BattleReady timeStart -> tickReady time timeStart model
-                | BattleRunning -> tickRunning time model
-                | BattleCease (outcome, timeStart) -> tickCease time timeStart outcome model
+                | BattleReady timeStart -> tickReady rom time timeStart model
+                | BattleRunning -> tickRunning rom time model
+                | BattleCease (outcome, timeStart) -> tickCease rom time timeStart outcome model
             (model, sigs)
 
         override this.Bindings (_, battle, _) =
@@ -311,7 +311,7 @@ module OmniBattle =
              battle.DeselectEvent => cmd FinalizeBattle
              battle.UpdateEvent => msg Tick]
 
-        override this.Message (model, message, screen, world) =
+        override this.Message (model, message, _, world) =
 
             match message with
             | RegularItemSelect (characterIndex, item) ->
@@ -449,8 +449,8 @@ module OmniBattle =
                 withCmd model playHitSound
 
             | AttackCharacter2 (sourceIndex, targetIndex) ->
+                let rom = Simulants.Game.GetModel<Rom> world
                 let time = World.getTickTime world
-                let rom = screen.Parent.GetModel<Rom> world
                 let source = BattleModel.getCharacter sourceIndex model
                 let target = BattleModel.getCharacter targetIndex model
                 let damage = CharacterModel.getAttackResult rom source target
@@ -505,8 +505,8 @@ module OmniBattle =
                     withCmd model (DisplayBolt targetIndex)
 
             | SpecialCharacter3 (sourceIndex, targetIndex, specialType) ->
+                let rom = Simulants.Game.GetModel<Rom> world
                 let time = World.getTickTime world
-                let rom = screen.Parent.GetModel<Rom> world
                 match Map.tryFind specialType rom.Specials with
                 | Some specialData ->
                     let source = BattleModel.getCharacter sourceIndex model
@@ -520,7 +520,7 @@ module OmniBattle =
                 | None -> just model
 
             | SpecialCharacter4 (sourceIndex, targetIndex, specialType) ->
-                let rom = screen.Parent.GetModel<Rom> world
+                let rom = Simulants.Game.GetModel<Rom> world
                 match Map.tryFind specialType rom.Specials with
                 | Some specialData ->
                     let source = BattleModel.getCharacter sourceIndex model
@@ -574,8 +574,8 @@ module OmniBattle =
                 just model
 
             | ConsumeCharacter2 (consumable, targetIndex) ->
+                let rom = Simulants.Game.GetModel<Rom> world
                 let time = World.getTickTime world
-                let rom = screen.Parent.GetModel<Rom> world
                 let healing =
                     match consumable with
                     | GreenHerb -> 50 // TODO: pull from rom data
@@ -633,8 +633,9 @@ module OmniBattle =
                 just model
 
             | Tick ->
+                let rom = Simulants.Game.GetModel<Rom> world
                 if World.isTicking world
-                then tick (World.getTickTime world) model
+                then tick rom (World.getTickTime world) model
                 else just model
 
         override this.Command (model, command, battle, world) =
@@ -740,7 +741,7 @@ module OmniBattle =
                          Entity.Depth == Constants.Battle.GuiDepth
                          Entity.Visible <== ally --> fun ally -> ally.HitPoints > 0
                          Entity.Fill <== ally ->> fun ally world ->
-                            let rom = screen.Parent.GetModel<Rom> world
+                            let rom = Simulants.Game.GetModel<Rom> world
                             single ally.HitPoints / single (ally.HitPointsMax rom)]
 
                      Content.entity<RingMenuDispatcher> "RegularMenu"
@@ -763,7 +764,7 @@ module OmniBattle =
                          Entity.Depth == Constants.Battle.GuiDepth
                          Entity.Visible <== ally --> fun ally -> ally.InputState = SpecialMenu
                          Entity.RingMenuModel <== ally ->> fun ally world ->
-                            let rom = screen.Parent.GetModel<Rom> world
+                            let rom = Simulants.Game.GetModel<Rom> world
                             let specials = List.ofSeq ally.Specials
                             let specials =
                                 List.map (fun special ->
