@@ -1,0 +1,2 @@
+Type,AnimationType,LengthOpt,Run,Stutter,Offset
+WalkCycle,LoopedWithDirection,None,6,10,[0 0]
