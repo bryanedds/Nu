@@ -103,11 +103,34 @@ type ArmorSubtype =
 type AccessoryType =
     string
 
-type AccessoryData =
-    { AccessoryType : AccessoryType // key
-      ShieldBase : int
-      CounterBase : int
-      Description : string }
+type PoiseType =
+    | Poising
+    | Defending
+    | Charging
+
+type AnimationType =
+    | LoopedWithDirection
+    | LoopedWithoutDirection
+    | SaturatedWithDirection
+    | SaturatedWithoutDirection
+
+type CharacterAnimationCycle =
+    | WalkCycle
+    | CelebrateCycle
+    | ReadyCycle
+    | PoiseCycle of PoiseType
+    | AttackCycle
+    | CastCycle
+    | SpinCycle
+    | DamageCycle
+    | IdleCycle
+    | Cast2Cycle
+    | WhirlCycle
+    | BuryCycle
+    | FlyCycle
+    | HopForwardCycle
+    | HopBackCycle
+    | WoundCycle
 
 type AllyType =
     | Jinn
@@ -119,6 +142,12 @@ type EnemyType =
 type CharacterType =
     | Ally of AllyType
     | Enemy of EnemyType
+
+type AccessoryData =
+    { AccessoryType : AccessoryType // key
+      ShieldBase : int
+      CounterBase : int
+      Description : string }
 
 type WeaponData =
     { WeaponType : WeaponType // key
@@ -168,13 +197,22 @@ type CharacterData =
       Reward : RewardData
       Description : string }
 
+type CharacterAnimationData =
+    { CharacterAnimationCycle : CharacterAnimationCycle // key
+      AnimationType : AnimationType
+      Run : int
+      Stutter : int64
+      LengthOpt : int64
+      Offset : Vector2i }
+
 type Rom =
     { Weapons : Map<WeaponType, WeaponData>
       Armors : Map<ArmorType, ArmorData>
       Accessories : Map<AccessoryType, AccessoryData>
       Specials : Map<SpecialType, SpecialData>
       Consumables : Map<ConsumableType, ConsumableData>
-      Characters : Map<CharacterType, CharacterData> }
+      Characters : Map<CharacterType, CharacterData>
+      CharacterAnimationData : Map<CharacterAnimationCycle, CharacterAnimationData> }
 
     static member readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
         File.ReadAllText filePath |>
@@ -188,4 +226,5 @@ type Rom =
           Accessories = Rom.readSheet Assets.AccessoryDataFilePath (fun data -> data.AccessoryType)
           Specials = Rom.readSheet Assets.SpecialDataFilePath (fun data -> data.SpecialType)
           Consumables = Rom.readSheet Assets.ConsumableDataFilePath (fun data -> data.ConsumableType)
-          Characters = Map.empty }
+          Characters = Map.empty
+          CharacterAnimationData = Rom.readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }

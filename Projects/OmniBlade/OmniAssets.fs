@@ -34,3 +34,4 @@ module Assets =
     let AccessoryDataFilePath = "Assets/Battle/AccessoryData.csv"
     let SpecialDataFilePath = "Assets/Battle/SpecialData.csv"
     let ConsumableDataFilePath = "Assets/Battle/ConsumableData.csv"
+    let CharacterAnimationDataFilePath = "Assets/Battle/CharacterAnimationData.csv"
