@@ -16,8 +16,8 @@ module OmniBattle =
     type BattleMessage =
         | RegularItemSelect of CharacterIndex * string
         | RegularItemCancel of CharacterIndex
-        | SpecialItemSelect of CharacterIndex * string
-        | SpecialItemCancel of CharacterIndex
+        | TechItemSelect of CharacterIndex * string
+        | TechItemCancel of CharacterIndex
         | ItemItemSelect of CharacterIndex * string
         | ItemItemCancel of CharacterIndex
         | ReticlesSelect of CharacterIndex * CharacterIndex
@@ -27,13 +27,13 @@ module OmniBattle =
         | CelebrateCharacters of bool
         | AttackCharacter1 of CharacterIndex
         | AttackCharacter2 of CharacterIndex * CharacterIndex
-        | SpecialCharacter1 of CharacterIndex * CharacterIndex * SpecialType
-        | SpecialCharacter2 of CharacterIndex * CharacterIndex * SpecialType
-        | SpecialCharacter3 of CharacterIndex * CharacterIndex * SpecialType
-        | SpecialCharacter4 of CharacterIndex * CharacterIndex * SpecialType
-        | SpecialCharacter5 of CharacterIndex * CharacterIndex * SpecialType
-        | SpecialCharacter6 of CharacterIndex * CharacterIndex * SpecialType
-        | SpecialCharacterAmbient of CharacterIndex * CharacterIndex * SpecialType
+        | TechCharacter1 of CharacterIndex * CharacterIndex * TechType
+        | TechCharacter2 of CharacterIndex * CharacterIndex * TechType
+        | TechCharacter3 of CharacterIndex * CharacterIndex * TechType
+        | TechCharacter4 of CharacterIndex * CharacterIndex * TechType
+        | TechCharacter5 of CharacterIndex * CharacterIndex * TechType
+        | TechCharacter6 of CharacterIndex * CharacterIndex * TechType
+        | TechCharacterAmbient of CharacterIndex * CharacterIndex * TechType
         | ConsumeCharacter1 of ConsumableType * CharacterIndex
         | ConsumeCharacter2 of ConsumableType * CharacterIndex
         | ChargeCharacter of CharacterIndex
@@ -64,23 +64,23 @@ module OmniBattle =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
             (let allies =
                 [CharacterModel.make
-                    { PartyIndex = 0; CharacterType = Ally Jinn; ActionTime = 600; ExpPoints = 0; HitPoints = 10; SpecialPoints = 10; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Cyclone]; Statuses = Set.empty; WeaponOpt = Some "WoodenSword"; ArmorOpt = Some "LeatherVest"; Accessories = []; AutoBattleOpt = None }
+                    { PartyIndex = 0; CharacterType = Ally Jinn; ActionTime = 600; ExpPoints = 0; HitPoints = 10; TechPoints = 10; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Techs = Set.ofList [HeadSlash; Cyclone]; Statuses = Set.empty; WeaponOpt = Some "WoodenSword"; ArmorOpt = Some "LeatherVest"; Accessories = []; AutoBattleOpt = None }
                     { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Rightward }
                     NoInput
                     (Math.makeBounds (v2 -224.0f -168.0f) (v2 160.0f 160.0f))
                  CharacterModel.make
-                    { PartyIndex = 1; CharacterType = Ally Glenn; ActionTime = 420; ExpPoints = 0; HitPoints = 10; SpecialPoints = 10; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [HeadSlash; Tremor]; Statuses = Set.empty; WeaponOpt = Some "OakRod"; ArmorOpt = Some "LeatherRobe"; Accessories = []; AutoBattleOpt = None }
+                    { PartyIndex = 1; CharacterType = Ally Glenn; ActionTime = 420; ExpPoints = 0; HitPoints = 10; TechPoints = 10; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Techs = Set.ofList [HeadSlash; Tremor]; Statuses = Set.empty; WeaponOpt = Some "OakRod"; ArmorOpt = Some "LeatherRobe"; Accessories = []; AutoBattleOpt = None }
                     { TimeStart = 0L; AnimationSheet = Assets.GlennAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward }
                     NoInput
                     (Math.makeBounds (v2 224.0f 64.0f) (v2 160.0f 160.0f))]
              let enemies =
                 [CharacterModel.make
-                    { PartyIndex = 0; CharacterType = Enemy Goblin; ActionTime = 99; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [Bolt]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None; }
+                    { PartyIndex = 0; CharacterType = Enemy Goblin; ActionTime = 99; ExpPoints = 0; HitPoints = 5; TechPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Techs = Set.ofList [Bolt]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None; }
                     { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward }
                     NoInput
                     (Math.makeBounds (v2 0.0f 0.0f) (v2 160.0f 160.0f))
                  CharacterModel.make
-                    { PartyIndex = 1; CharacterType = Enemy Goblin; ActionTime = 0; ExpPoints = 0; HitPoints = 5; SpecialPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Specials = Set.ofList [Bolt]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None; }
+                    { PartyIndex = 1; CharacterType = Enemy Goblin; ActionTime = 0; ExpPoints = 0; HitPoints = 5; TechPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Techs = Set.ofList [Bolt]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None; }
                     { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward }
                     NoInput
                     (Math.makeBounds (v2 176.0f -192.0f) (v2 160.0f 160.0f))]
@@ -119,19 +119,19 @@ module OmniBattle =
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
 
-        static let tickSpecial specialType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) timeLocal model =
+        static let tickTech specialType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) timeLocal model =
             match targetIndexOpt with
             | Some targetIndex ->
                 let (model, msgs) =
                     match timeLocal with
-                    | 0L -> (model, [SpecialCharacter1 (sourceIndex, targetIndex, specialType)]) // charge or hop forward
-                    | 30L -> (model, [SpecialCharacter2 (sourceIndex, targetIndex, specialType)]) // casting
-                    | 50L -> (model, [SpecialCharacter3 (sourceIndex, targetIndex, specialType)]) // affecting
-                    | 70L -> (model, [SpecialCharacter4 (sourceIndex, targetIndex, specialType)]) // affected
-                    | 90L -> (model, [SpecialCharacter5 (sourceIndex, targetIndex, specialType)]) // hop back
-                    | 110L -> (model, [SpecialCharacter6 (sourceIndex, targetIndex, specialType)]) // poise
+                    | 0L -> (model, [TechCharacter1 (sourceIndex, targetIndex, specialType)]) // charge or hop forward
+                    | 30L -> (model, [TechCharacter2 (sourceIndex, targetIndex, specialType)]) // casting
+                    | 50L -> (model, [TechCharacter3 (sourceIndex, targetIndex, specialType)]) // affecting
+                    | 70L -> (model, [TechCharacter4 (sourceIndex, targetIndex, specialType)]) // affected
+                    | 90L -> (model, [TechCharacter5 (sourceIndex, targetIndex, specialType)]) // hop back
+                    | 110L -> (model, [TechCharacter6 (sourceIndex, targetIndex, specialType)]) // poise
                     | _ -> (model, [])
-                let (model, msgs) = (model, msgs @ [SpecialCharacterAmbient (sourceIndex, targetIndex, specialType)])
+                let (model, msgs) = (model, msgs @ [TechCharacterAmbient (sourceIndex, targetIndex, specialType)])
                 withMsgs model msgs
             | None ->
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
@@ -203,10 +203,10 @@ module OmniBattle =
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
                 tickConsume consumable source targetOpt time timeLocal model
-            | Special specialType ->
+            | Tech specialType ->
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
-                tickSpecial specialType source targetOpt time timeLocal model
+                tickTech specialType source targetOpt time timeLocal model
             | Wound ->
                 match currentCommand.ActionCommand.TargetOpt with
                 | Some target ->
@@ -259,8 +259,8 @@ module OmniBattle =
                         match enemy.AutoBattleOpt with
                         | Some autoBattle ->
                             let actionCommand =
-                                match autoBattle.AutoSpecialOpt with
-                                | Some special -> { Action = Special special; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
+                                match autoBattle.AutoTechOpt with
+                                | Some special -> { Action = Tech special; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
                                 | None -> { Action = Attack; Source = enemyIndex; TargetOpt = Some autoBattle.AutoTarget }
                             let model = BattleModel.conjActionCommand actionCommand model
                             (Message (ResetCharacter enemyIndex) :: signals, model)
@@ -323,9 +323,9 @@ module OmniBattle =
                             (CharacterModel.updateInputState (constant (AimReticles (item, EnemyAim))))
                             characterIndex
                             model
-                    | "Special" ->
+                    | "Tech" ->
                         BattleModel.updateCharacter
-                            (CharacterModel.updateInputState (constant SpecialMenu))
+                            (CharacterModel.updateInputState (constant TechMenu))
                             characterIndex
                             model
                     | "Item" ->
@@ -355,7 +355,7 @@ module OmniBattle =
                         model
                 just model
             
-            | SpecialItemSelect (characterIndex, item) ->
+            | TechItemSelect (characterIndex, item) ->
                 let model =
                     BattleModel.updateCharacter
                         (CharacterModel.updateInputState (constant (AimReticles (item, EnemyAim))))
@@ -363,7 +363,7 @@ module OmniBattle =
                         model
                 just model
             
-            | SpecialItemCancel characterIndex ->
+            | TechItemCancel characterIndex ->
                 let model =
                     BattleModel.updateCharacter
                         (CharacterModel.updateInputState (constant RegularMenu))
@@ -397,10 +397,10 @@ module OmniBattle =
                             match item with
                             | "GreenHerb" -> ActionCommand.make (Consume GreenHerb) allyIndex (Some targetIndex)
                             | "RedHerb" -> ActionCommand.make (Consume RedHerb) allyIndex (Some targetIndex)
-                            | "HeadSlash" -> ActionCommand.make (Special HeadSlash) allyIndex (Some targetIndex)
-                            | "Cyclone" -> ActionCommand.make (Special Cyclone) allyIndex (Some targetIndex)
-                            | "Bolt" -> ActionCommand.make (Special Bolt) allyIndex (Some targetIndex)
-                            | "Tremor" -> ActionCommand.make (Special Tremor) allyIndex (Some targetIndex)
+                            | "HeadSlash" -> ActionCommand.make (Tech HeadSlash) allyIndex (Some targetIndex)
+                            | "Cyclone" -> ActionCommand.make (Tech Cyclone) allyIndex (Some targetIndex)
+                            | "Bolt" -> ActionCommand.make (Tech Bolt) allyIndex (Some targetIndex)
+                            | "Tremor" -> ActionCommand.make (Tech Tremor) allyIndex (Some targetIndex)
                             | _ -> ActionCommand.make Attack allyIndex (Some targetIndex)
                         let model = BattleModel.conjActionCommand command model
                         withMsg model (ResetCharacter allyIndex)
@@ -462,7 +462,7 @@ module OmniBattle =
                 let sigs = Command (DisplayHitPointsChange (targetIndex, -damage)) :: sigs
                 withSigs model sigs
             
-            | SpecialCharacter1 (sourceIndex, targetIndex, specialType) ->
+            | TechCharacter1 (sourceIndex, targetIndex, specialType) ->
                 let source = BattleModel.getCharacter sourceIndex model
                 let target = BattleModel.getCharacter targetIndex model
                 let hopOpt =
@@ -479,7 +479,7 @@ module OmniBattle =
                 | Some hop ->
                     withCmd model (DisplayHop hop)
 
-            | SpecialCharacter2 (sourceIndex, targetIndex, specialType) ->
+            | TechCharacter2 (sourceIndex, targetIndex, specialType) ->
                 match specialType with
                 | HeadSlash ->
                     let time = World.getTickTime world
@@ -504,13 +504,13 @@ module OmniBattle =
                     let model = BattleModel.updateCharacter (CharacterModel.animate time BuryCycle) sourceIndex model
                     withCmd model (DisplayBolt targetIndex)
 
-            | SpecialCharacter3 (sourceIndex, targetIndex, specialType) ->
+            | TechCharacter3 (sourceIndex, targetIndex, specialType) ->
                 let time = World.getTickTime world
-                match Map.tryFind specialType data.Specials with
+                match Map.tryFind specialType data.Techs with
                 | Some specialData ->
                     let source = BattleModel.getCharacter sourceIndex model
                     let target = BattleModel.getCharacter targetIndex model
-                    let (_, hitPointsChange) = CharacterModel.evaluateSpecialMove specialData source target
+                    let (_, hitPointsChange) = CharacterModel.evaluateTechMove specialData source target
                     let model =
                         if hitPointsChange < 0 && target.IsHealthy
                         then BattleModel.updateCharacter (CharacterModel.animate time DamageCycle) targetIndex model
@@ -518,13 +518,13 @@ module OmniBattle =
                     just model
                 | None -> just model
 
-            | SpecialCharacter4 (sourceIndex, targetIndex, specialType) ->
-                match Map.tryFind specialType data.Specials with
+            | TechCharacter4 (sourceIndex, targetIndex, specialType) ->
+                match Map.tryFind specialType data.Techs with
                 | Some specialData ->
                     let source = BattleModel.getCharacter sourceIndex model
                     let target = BattleModel.getCharacter targetIndex model
-                    let (cancelled, hitPointsChange) = CharacterModel.evaluateSpecialMove specialData source target
-                    let model = BattleModel.updateCharacter (CharacterModel.updateSpecialPoints ((+) -specialData.SpecialCost)) sourceIndex model
+                    let (cancelled, hitPointsChange) = CharacterModel.evaluateTechMove specialData source target
+                    let model = BattleModel.updateCharacter (CharacterModel.updateTechPoints ((+) -specialData.TechCost)) sourceIndex model
                     let model = BattleModel.updateCharacter (CharacterModel.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled))) targetIndex model
                     let sigs = if target.IsWounded then [Message (ResetCharacter targetIndex)] else []
                     let sigs = if cancelled then Command (DisplayCancel targetIndex) :: sigs else sigs
@@ -532,7 +532,7 @@ module OmniBattle =
                     withSigs model sigs
                 | None -> just model
 
-            | SpecialCharacter5 (sourceIndex, targetIndex, specialType) ->
+            | TechCharacter5 (sourceIndex, targetIndex, specialType) ->
                 let source = BattleModel.getCharacter sourceIndex model
                 let target = BattleModel.getCharacter targetIndex model
                 let hopOpt =
@@ -543,7 +543,7 @@ module OmniBattle =
                 | None -> just model
                 | Some hop -> withCmd model (DisplayHop hop)
 
-            | SpecialCharacter6 (sourceIndex, targetIndex, _) ->
+            | TechCharacter6 (sourceIndex, targetIndex, _) ->
                 let time = World.getTickTime world
                 let target = BattleModel.getCharacter targetIndex model
                 if target.IsHealthy then
@@ -554,7 +554,7 @@ module OmniBattle =
                     let model = BattleModel.updateCurrentCommandOpt (constant (Some woundCommand)) model
                     withMsgs model [PoiseCharacter sourceIndex]
                     
-            | SpecialCharacterAmbient (sourceIndex, _, _) ->
+            | TechCharacterAmbient (sourceIndex, _, _) ->
                 if Simulants.BattleRide.GetExists world then
                     let model =
                         let tags = Simulants.BattleRide.GetEffectTags world
@@ -758,29 +758,29 @@ module OmniBattle =
                                     match ally.InputState with NoInput | RegularMenu -> false | _ -> true)
                                     allies
                             alliesPastRegularMenu
-                         Entity.RingMenuModel == { Items = [(0, (true, "Attack")); (1, (true, "Defend")); (2, (true, "Item")); (3, (true, "Special"))]; ItemCancelOpt = None }
+                         Entity.RingMenuModel == { Items = [(0, (true, "Attack")); (1, (true, "Defend")); (2, (true, "Item")); (3, (true, "Tech"))]; ItemCancelOpt = None }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (RegularItemCancel allyIndex)]
 
-                     Content.entity<RingMenuDispatcher> "SpecialMenu"
+                     Content.entity<RingMenuDispatcher> "TechMenu"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
                          Entity.Depth == Constants.Battle.GuiDepth
-                         Entity.Visible <== ally --> fun ally -> ally.InputState = SpecialMenu
+                         Entity.Visible <== ally --> fun ally -> ally.InputState = TechMenu
                          Entity.RingMenuModel <== ally --> fun ally ->
-                            let specials = List.ofSeq ally.Specials
+                            let specials = List.ofSeq ally.Techs
                             let specials =
                                 List.map (fun special ->
                                     let specialTag = getTag special
                                     let specialUsable =
-                                        match Map.tryFind special data.Specials with
-                                        | Some specialData -> specialData.SpecialCost <= ally.SpecialPoints
+                                        match Map.tryFind special data.Techs with
+                                        | Some specialData -> specialData.TechCost <= ally.TechPoints
                                         | None -> false
                                     let specialName = scstring special
                                     (specialTag, (specialUsable, specialName)))
                                     specials
                             { Items = specials; ItemCancelOpt = Some "Cancel" }
-                         Entity.ItemSelectEvent ==|> fun evt -> msg (SpecialItemSelect (allyIndex, evt.Data))
-                         Entity.CancelEvent ==> msg (SpecialItemCancel allyIndex)]
+                         Entity.ItemSelectEvent ==|> fun evt -> msg (TechItemSelect (allyIndex, evt.Data))
+                         Entity.CancelEvent ==> msg (TechItemCancel allyIndex)]
 
                      Content.entity<RingMenuDispatcher> "ItemMenu"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset

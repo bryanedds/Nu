@@ -18,11 +18,11 @@ module CharacterModel =
         member this.PartyIndex = this.CharacterState.PartyIndex
         member this.ExpPoints = this.CharacterState.ExpPoints
         member this.HitPoints = this.CharacterState.HitPoints
-        member this.SpecialPoints = this.CharacterState.SpecialPoints
+        member this.TechPoints = this.CharacterState.TechPoints
         member this.WeaponOpt = this.CharacterState.WeaponOpt
         member this.ArmorOpt = this.CharacterState.ArmorOpt
         member this.Accessories = this.CharacterState.Accessories
-        member this.Specials = this.CharacterState.Specials
+        member this.Techs = this.CharacterState.Techs
         member this.Statuses = this.CharacterState.Statuses
         member this.Defending = this.CharacterState.Defending
         member this.Charging = this.CharacterState.Charging
@@ -76,12 +76,12 @@ module CharacterModel =
 
         static member evaluateAutoBattle source (target : CharacterModel) =
             let specialOpt =
-                match Gen.random1 Constants.Battle.AutoBattleSpecialFrequency with
-                | 0 -> CharacterState.tryGetSpecialRandom source.CharacterState
+                match Gen.random1 Constants.Battle.AutoBattleTechFrequency with
+                | 0 -> CharacterState.tryGetTechRandom source.CharacterState
                 | _ -> None
-            { AutoTarget = target.CharacterIndex; AutoSpecialOpt = specialOpt }
+            { AutoTarget = target.CharacterIndex; AutoTechOpt = specialOpt }
 
-        static member evaluateSpecialMove specialData source target =
+        static member evaluateTechMove specialData source target =
             match specialData.EffectType with
             | Physical ->
                 let power = source.CharacterState.Power
@@ -89,7 +89,7 @@ module CharacterModel =
                     let healing = single power * specialData.Scalar |> int |> max 1
                     (false, healing)
                 else
-                    let cancelled = specialData.Cancels && CharacterState.runningSpecialAutoBattle target.CharacterState
+                    let cancelled = specialData.Cancels && CharacterState.runningTechAutoBattle target.CharacterState
                     let shield = target.CharacterState.Shield
                     let damageUnscaled = power - shield
                     let damage = single damageUnscaled * specialData.Scalar |> int |> max 1
@@ -100,7 +100,7 @@ module CharacterModel =
                     let healing = single magic * specialData.Scalar |> int |> max 1
                     (false, healing)
                 else
-                    let cancelled = specialData.Cancels && CharacterState.runningSpecialAutoBattle target.CharacterState
+                    let cancelled = specialData.Cancels && CharacterState.runningTechAutoBattle target.CharacterState
                     let shield = target.CharacterState.Shield
                     let damageUnscaled = magic - shield
                     let damage = single damageUnscaled * specialData.Scalar |> int |> max 1
@@ -121,8 +121,8 @@ module CharacterModel =
         static member getAnimationFinished time character =
             CharacterAnimationState.getFinished time character.AnimationState
 
-        static member runningSpecialAutoBattle character =
-            CharacterState.runningSpecialAutoBattle character.CharacterState
+        static member runningTechAutoBattle character =
+            CharacterState.runningTechAutoBattle character.CharacterState
 
         static member isReadyForAutoBattle character =
             Option.isNone character.CharacterState.AutoBattleOpt &&
@@ -132,8 +132,8 @@ module CharacterModel =
         static member updateHitPoints updater character =
             { character with CharacterState = CharacterState.updateHitPoints updater character.CharacterState }
 
-        static member updateSpecialPoints updater character =
-            { character with CharacterState = CharacterState.updateSpecialPoints updater character.CharacterState }
+        static member updateTechPoints updater character =
+            { character with CharacterState = CharacterState.updateTechPoints updater character.CharacterState }
 
         static member updateInputState updater character =
             { character with InputState_ = updater character.InputState_ }
