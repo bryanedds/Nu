@@ -71,7 +71,7 @@ type CharacterIndex =
 
 type AutoBattle =
     { AutoTarget : CharacterIndex
-      AutoSpecialOpt : SpecialType option }
+      AutoTechOpt : TechType option }
 
 /// The state of a character.
 /// Used both inside and outside of battle.
@@ -81,11 +81,11 @@ type CharacterState =
       CharacterType : CharacterType
       ExpPoints : int
       HitPoints : int
-      SpecialPoints : int
+      TechPoints : int
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
       Accessories : AccessoryType list
-      Specials : SpecialType Set
+      Techs : TechType Set
       Statuses : StatusType Set
       Defending : bool
       Charging : bool
@@ -101,11 +101,11 @@ type CharacterState =
           CharacterType = Ally Jinn
           ExpPoints = 0
           HitPoints = 1 // note this is an arbitrary number as hp max is calculated
-          SpecialPoints = 0 // sp max is calculated
+          TechPoints = 0 // sp max is calculated
           WeaponOpt = None
           ArmorOpt = None
           Accessories = []
-          Specials = Set.empty
+          Techs = Set.empty
           Statuses = Set.empty
           Defending = false
           Charging = false
@@ -155,12 +155,12 @@ type CharacterState =
             | None -> 8.0f
         intermediate * single this.Level |> int
 
-    member this.SpecialPointsMax =
+    member this.TechPointsMax =
         let intermediate =
             match this.ArmorOpt with
             | Some armor ->
                 match Map.tryFind armor data.Armors with
-                | Some armorData -> single armorData.SpecialPointsBase
+                | Some armorData -> single armorData.TechPointsBase
                 | None -> 4.0f
             | None -> 4.0f
         intermediate * single this.Level |> int
@@ -195,9 +195,9 @@ type CharacterState =
             | _ -> 0.0f
         intermediate * single this.Level * this.ShieldBuff |> int |> max 0
         
-    static member runningSpecialAutoBattle state =
+    static member runningTechAutoBattle state =
         match state.AutoBattleOpt with
-        | Some autoBattle -> Option.isSome autoBattle.AutoSpecialOpt
+        | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt
         | None -> false
 
     static member getAttackResult (source : CharacterState) (target : CharacterState) =
@@ -219,18 +219,18 @@ type CharacterState =
         let hitPoints = min state.HitPointsMax hitPoints
         let autoBattleOpt = 
             match state.AutoBattleOpt with
-            | Some autoBattle when cancel -> Some { autoBattle with AutoSpecialOpt = None }
+            | Some autoBattle when cancel -> Some { autoBattle with AutoTechOpt = None }
             | _ -> None
         { state with HitPoints = hitPoints; AutoBattleOpt = autoBattleOpt }
 
-    static member updateSpecialPoints updater state =
-        let specialPoints = updater state.SpecialPoints
+    static member updateTechPoints updater state =
+        let specialPoints = updater state.TechPoints
         let specialPoints = max 0 specialPoints
-        let specialPoints = min state.SpecialPointsMax specialPoints
-        { state with SpecialPoints = specialPoints }
+        let specialPoints = min state.TechPointsMax specialPoints
+        { state with TechPoints = specialPoints }
 
-    static member tryGetSpecialRandom state =
-        let specials = state.Specials
+    static member tryGetTechRandom state =
+        let specials = state.Techs
         if Set.notEmpty specials then
             let specialIndex = Gen.random1 specials.Count
             let special = Seq.item specialIndex specials
@@ -326,11 +326,11 @@ type CharacterAnimationState =
 type CharacterInputState =
     | NoInput
     | RegularMenu
-    | SpecialMenu
+    | TechMenu
     | ItemMenu
     | AimReticles of string * AimType
 
     member this.AimType =
         match this with
-        | NoInput | RegularMenu | SpecialMenu | ItemMenu -> NoAim
+        | NoInput | RegularMenu | TechMenu | ItemMenu -> NoAim
         | AimReticles (_, aimType) -> aimType
