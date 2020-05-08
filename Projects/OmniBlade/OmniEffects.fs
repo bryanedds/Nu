@@ -7,6 +7,34 @@ open Nu.Effects
 [<RequireQualifiedAccess>]
 module Effects =
 
+    let Hop (start, stop, height, hopLength, landLength) =
+        Aspects
+            [|Position
+                (Sum, Linear, Once,
+                 [|{ TweenValue = start; TweenLength = hopLength }
+                   { TweenValue = stop; TweenLength = landLength }
+                   { TweenValue = stop; TweenLength = 0L }|])
+              Position
+                (Sum, SinScaled 0.5f, Once,
+                 [|{ TweenValue = v2Zero; TweenLength = hopLength }
+                   { TweenValue = v2 0.0f height; TweenLength = landLength }
+                   { TweenValue = v2Zero; TweenLength = 0L }|])|]
+
+    let Circle (radius, repetitions, length) =
+        Aspects
+            [|Position
+               (Sum, SinScaled repetitions, Once,
+                [|{ TweenValue = v2Zero; TweenLength = length }
+                  { TweenValue = v2 -radius 0.0f; TweenLength = 0L }|])
+              Position
+               (Sum, CosScaled repetitions, Once,
+                [|{ TweenValue = v2Zero; TweenLength = length }
+                  { TweenValue = v2 0.0f -radius; TweenLength = 0L }|])
+              Position
+               (Sum, Constant, Once,
+                [|{ TweenValue = v2 0.0f radius; TweenLength = length }
+                  { TweenValue = v2 0.0f radius; TweenLength = 0L }|])|]
+
     let makeHitPointsChangeEffect delta =
         let colorOpaque =
             if delta < 0
@@ -58,7 +86,7 @@ module Effects =
             StaticSprite
                 (Resource (Assets.BoltAnimationSheet.PackageName, Assets.BoltAnimationSheet.AssetName),
                  [|Inset
-                    (Set, Const, Once,
+                    (Set, Constant, Once,
                      [|{ TweenValue = v4 0.0f   0.0f    256.0f  1024.0f; TweenLength = 5L }
                        { TweenValue = v4 256.0f 0.0f    512.0f  1024.0f; TweenLength = 5L }
                        { TweenValue = v4 512.0f 0.0f    768.0f  1024.0f; TweenLength = 5L }
@@ -73,8 +101,8 @@ module Effects =
             AnimatedSprite
                 (Resource (Assets.ExplosionAnimationSheet.PackageName, Assets.ExplosionAnimationSheet.AssetName),
                  v2i 128 128, 4, 12, 2L, Once,
-                 [|Size (Set, Const, Once, [|{ TweenValue = v2 128.0f 128.0f; TweenLength = 0L }|])
-                   Position (Sum, Const, Once, [|{ TweenValue = v2 0.0f -512.0f; TweenLength = 0L }|])
+                 [|Size (Set, Constant, Once, [|{ TweenValue = v2 128.0f 128.0f; TweenLength = 0L }|])
+                   Position (Sum, Constant, Once, [|{ TweenValue = v2 0.0f -512.0f; TweenLength = 0L }|])
                    Color
                     (Set, EaseOut, Once,
                      [|{ TweenValue = v4One; TweenLength = 30L }
@@ -90,7 +118,7 @@ module Effects =
           LifetimeOpt = Some 80L
           Definitions = Map.empty
           Content =
-            Composite
+            Contents
                 (Shift 0.0f,
                  [|boltSprite
                    Delay (10L, explosionSprite)
@@ -100,17 +128,10 @@ module Effects =
         { EffectName = "Hop"
           LifetimeOpt = Some 20L
           Definitions = Map.empty
-          Content =
-            Tag
-                ("Hop",
-                 [|Position
-                    (Sum, Linear, Bounce,
-                     [|{ TweenValue = start; TweenLength = 15L }
-                       { TweenValue = stop; TweenLength = 5L }
-                       { TweenValue = stop; TweenLength = 0L }|])
-                   Position
-                    (Sum, SinOver2, Bounce,
-                     [|{ TweenValue = v2Zero; TweenLength = 15L }
-                       { TweenValue = v2 0.0f 32.0f; TweenLength = 5L }
-                       { TweenValue = v2Zero; TweenLength = 0L }|])|],
-                 Nil) }
+          Content = Tag ("Tag", [|Hop (start, stop, 32.0f, 15L, 5L)|], Nil) }
+
+    let makeCircleEffect radius =
+        { EffectName = "Circle"
+          LifetimeOpt = Some 60L
+          Definitions = Map.empty
+          Content = Tag ("Tag", [|Circle (radius, 3.0f, 60L)|], Nil) }

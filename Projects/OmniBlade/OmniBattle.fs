@@ -50,6 +50,7 @@ module OmniBattle =
         | DisplayHitPointsChange of CharacterIndex * int
         | DisplayBolt of CharacterIndex
         | DisplayHop of Hop
+        | DisplayCircle of Vector2 * single
         | InitializeBattle
         | FinalizeBattle
 
@@ -467,8 +468,8 @@ module OmniBattle =
                 let target = BattleModel.getCharacter targetIndex model
                 let hopOpt =
                     match specialType with
-                    | Cyclone -> Some { HopStart = source.Center; HopStop = target.Bottom }
-                    | HeadSlash | Bolt | Tremor -> None
+                    | HeadSlash  | Cyclone -> Some { HopStart = source.Bottom; HopStop = target.BottomOffset2 }
+                    | Bolt | Tremor -> None
                 match hopOpt with
                 | None ->
                     if target.IsHealthy
@@ -494,7 +495,7 @@ module OmniBattle =
                         [PlaySound (20L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (40L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)]
-                    withCmds model playHitSounds
+                    withCmds model (DisplayCircle ((BattleModel.getCharacter sourceIndex model).Bottom, 32.0f) :: playHitSounds)
                 | Bolt ->
                     let time = World.getTickTime world
                     let model = BattleModel.updateCharacter (CharacterModel.animate time Cast2Cycle) sourceIndex model
@@ -539,8 +540,8 @@ module OmniBattle =
                 let target = BattleModel.getCharacter targetIndex model
                 let hopOpt =
                     match specialType with
-                    | Cyclone -> Some { HopStart = target.Bottom; HopStop = source.CenterOriginal }
-                    | HeadSlash | Bolt | Tremor -> None
+                    | HeadSlash | Cyclone -> Some { HopStart = target.BottomOffset2; HopStop = source.BottomOriginal }
+                    | Bolt | Tremor -> None
                 match hopOpt with
                 | None -> just model
                 | Some hop -> withCmd model (DisplayHop hop)
@@ -557,11 +558,11 @@ module OmniBattle =
                     withMsgs model [PoiseCharacter sourceIndex]
                     
             | SpecialCharacterAmbient (sourceIndex, _, _) ->
-                if Simulants.BattleHop.GetExists world then
+                if Simulants.BattleRide.GetExists world then
                     let model =
-                        let tags = Simulants.BattleHop.GetEffectTags world
-                        match Map.tryFind "Hop" tags with
-                        | Some tag -> BattleModel.updateCharacter (CharacterModel.updateCenter (constant tag.Position)) sourceIndex model
+                        let tags = Simulants.BattleRide.GetEffectTags world
+                        match Map.tryFind "Tag" tags with
+                        | Some tag -> BattleModel.updateCharacter (CharacterModel.updateBottom (constant tag.Position)) sourceIndex model
                         | None -> model
                     just model
                 else just model
@@ -688,7 +689,16 @@ module OmniBattle =
 
             | DisplayHop hop ->
                 let effect = Effects.makeHopEffect hop.HopStart hop.HopStop
-                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.BattleHop.Name) DefaultOverlay Simulants.BattleScene world
+                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.BattleRide.Name) DefaultOverlay Simulants.BattleScene world
+                let world = entity.SetEffect effect world
+                let world = entity.SetEffectOffset v2Zero world
+                let world = entity.SetSelfDestruct true world
+                just world
+
+            | DisplayCircle (position, radius) ->
+                let effect = Effects.makeCircleEffect radius
+                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.BattleRide.Name) DefaultOverlay Simulants.BattleScene world
+                let world = entity.SetPosition position world
                 let world = entity.SetEffect effect world
                 let world = entity.SetEffectOffset v2Zero world
                 let world = entity.SetSelfDestruct true world

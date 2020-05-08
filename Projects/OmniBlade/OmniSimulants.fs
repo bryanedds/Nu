@@ -26,4 +26,4 @@ module Simulants =
     let BattleHud = Battle / "Hud"
     let BattleBack = BattleHud / "Back"
     let BattleScene = Battle / "Scene"
-    let BattleHop = BattleScene / "Hop"
+    let BattleRide = BattleScene / "Ride"

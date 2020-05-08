@@ -72,6 +72,7 @@ module CharacterModel =
         member this.CenterOffset2 = this.Center + Constants.Battle.CharacterCenterOffset2
         member this.CenterOffset3 = this.Center + Constants.Battle.CharacterCenterOffset3
         member this.BottomOffset = this.Bottom + Constants.Battle.CharacterBottomOffset
+        member this.BottomOffset2 = this.Bottom + Constants.Battle.CharacterBottomOffset2
 
         static member evaluateAutoBattle source (target : CharacterModel) =
             let specialOpt =
