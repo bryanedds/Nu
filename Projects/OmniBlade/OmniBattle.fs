@@ -122,17 +122,21 @@ module OmniBattle =
         static let tickTech specialType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) timeLocal model =
             match targetIndexOpt with
             | Some targetIndex ->
-                let (model, msgs) =
-                    match timeLocal with
-                    | 0L -> (model, [TechCharacter1 (sourceIndex, targetIndex, specialType)]) // charge or hop forward
-                    | 30L -> (model, [TechCharacter2 (sourceIndex, targetIndex, specialType)]) // casting
-                    | 50L -> (model, [TechCharacter3 (sourceIndex, targetIndex, specialType)]) // affecting
-                    | 70L -> (model, [TechCharacter4 (sourceIndex, targetIndex, specialType)]) // affected
-                    | 90L -> (model, [TechCharacter5 (sourceIndex, targetIndex, specialType)]) // hop back
-                    | 110L -> (model, [TechCharacter6 (sourceIndex, targetIndex, specialType)]) // poise
-                    | _ -> (model, [])
-                let (model, msgs) = (model, msgs @ [TechCharacterAmbient (sourceIndex, targetIndex, specialType)])
-                withMsgs model msgs
+                match Map.tryFind specialType data.TechAnimationData with
+                | Some specialData ->
+                    let (model, msgs) =
+                        if timeLocal = specialData.TechStart then (model, [TechCharacter1 (sourceIndex, targetIndex, specialType)])
+                        elif timeLocal = specialData.TechingStart then (model, [TechCharacter2 (sourceIndex, targetIndex, specialType)])
+                        elif timeLocal = specialData.AffectingStart then (model, [TechCharacter3 (sourceIndex, targetIndex, specialType)])
+                        elif timeLocal = specialData.AffectingStop then (model, [TechCharacter4 (sourceIndex, targetIndex, specialType)])
+                        elif timeLocal = specialData.TechingStop then (model, [TechCharacter5 (sourceIndex, targetIndex, specialType)])
+                        elif timeLocal = specialData.TechStop then (model, [TechCharacter6 (sourceIndex, targetIndex, specialType)])
+                        else (model, [])
+                    let (model, msgs) = (model, msgs @ [TechCharacterAmbient (sourceIndex, targetIndex, specialType)])
+                    withMsgs model msgs
+                | None ->
+                    let model = BattleModel.updateCurrentCommandOpt (constant None) model
+                    withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
             | None ->
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
                 withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
@@ -510,12 +514,14 @@ module OmniBattle =
                 | Some specialData ->
                     let source = BattleModel.getCharacter sourceIndex model
                     let target = BattleModel.getCharacter targetIndex model
-                    let (_, hitPointsChange) = CharacterModel.evaluateTechMove specialData source target
+                    let (cancelled, hitPointsChange) = CharacterModel.evaluateTechMove specialData source target
                     let model =
                         if hitPointsChange < 0 && target.IsHealthy
                         then BattleModel.updateCharacter (CharacterModel.animate time DamageCycle) targetIndex model
                         else model
-                    just model
+                    if cancelled
+                    then withCmd model (DisplayCancel targetIndex)
+                    else just model
                 | None -> just model
 
             | TechCharacter4 (sourceIndex, targetIndex, specialType) ->
@@ -527,7 +533,6 @@ module OmniBattle =
                     let model = BattleModel.updateCharacter (CharacterModel.updateTechPoints ((+) -specialData.TechCost)) sourceIndex model
                     let model = BattleModel.updateCharacter (CharacterModel.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled))) targetIndex model
                     let sigs = if target.IsWounded then [Message (ResetCharacter targetIndex)] else []
-                    let sigs = if cancelled then Command (DisplayCancel targetIndex) :: sigs else sigs
                     let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (targetIndex, hitPointsChange)) :: sigs else sigs
                     withSigs model sigs
                 | None -> just model
