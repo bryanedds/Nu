@@ -75,36 +75,99 @@ module CharacterModel =
         member this.BottomOffset2 = this.Bottom + Constants.Battle.CharacterBottomOffset2
 
         static member evaluateAutoBattle source (target : CharacterModel) =
-            let specialOpt =
+            let techOpt =
                 match Gen.random1 Constants.Battle.AutoBattleTechFrequency with
                 | 0 -> CharacterState.tryGetTechRandom source.CharacterState
                 | _ -> None
-            { AutoTarget = target.CharacterIndex; AutoTechOpt = specialOpt }
+            { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
 
-        static member evaluateTechMove specialData source target =
-            match specialData.EffectType with
-            | Physical ->
-                let power = source.CharacterState.Power
-                if specialData.Curative then
-                    let healing = single power * specialData.Scalar |> int |> max 1
-                    (false, healing)
-                else
-                    let cancelled = specialData.Cancels && CharacterState.runningTechAutoBattle target.CharacterState
-                    let shield = target.CharacterState.Shield
-                    let damageUnscaled = power - shield
-                    let damage = single damageUnscaled * specialData.Scalar |> int |> max 1
-                    (cancelled, -damage)
-            | Magical ->
-                let magic = source.CharacterState.Magic
-                if specialData.Curative then
-                    let healing = single magic * specialData.Scalar |> int |> max 1
-                    (false, healing)
-                else
-                    let cancelled = specialData.Cancels && CharacterState.runningTechAutoBattle target.CharacterState
-                    let shield = target.CharacterState.Shield
-                    let damageUnscaled = magic - shield
-                    let damage = single damageUnscaled * specialData.Scalar |> int |> max 1
-                    (cancelled, -damage)
+        static member evaluateAimType aimType (target : CharacterModel) (characters : CharacterModel list) =
+            match aimType with
+            | AnyAim healthy ->
+                characters |>
+                List.filter (fun target -> target.IsHealthy = healthy)
+            | EnemyAim healthy | AllyAim healthy ->
+                characters |>
+                List.filter (CharacterModel.isTeammate target) |>
+                List.filter (fun target -> target.IsHealthy = healthy)
+            | NoAim ->
+                []
+
+        static member evaluateTargetType targetType (source : CharacterModel) target characters =
+            match targetType with
+            | SingleTarget _ ->
+                [target]
+            | ProximityTarget (aimType, radius) ->
+                characters |>
+                CharacterModel.evaluateAimType aimType target |>
+                List.filter (fun character ->
+                    let v = character.Bottom - source.Bottom
+                    v.Length <= radius)
+            | RadialTarget (aimType, radius) ->
+                characters |>
+                CharacterModel.evaluateAimType aimType target |>
+                List.filter (fun character ->
+                    let v = character.Bottom - target.Bottom
+                    v.Length <= radius)
+            | LineTarget (aimType, width) ->
+                characters |>
+                CharacterModel.evaluateAimType aimType target |>
+                List.filter (fun character ->
+                    let a = source.Bottom
+                    let b = target.Bottom
+                    let c = character.Bottom
+                    let (ab, ac, bc) = (b - a, c - a, c - b)
+                    let e = Vector2.Dot (ac, ab)
+                    let d =
+                        if e > 0.0f then
+                            let f = Vector2.Dot(ab, ab);
+                            if e < f
+                            then Vector2.Dot (ac, ac) - e * e / f
+                            else Vector2.Dot (bc, bc)
+                        else Vector2.Dot (ac, ac)
+                    d <= width)
+            | AllTarget aimType ->
+                characters |>
+                CharacterModel.evaluateAimType aimType target
+
+        static member evaluateTechPhysical techData source (target : CharacterModel) =
+            let power = source.CharacterState.Power
+            if techData.Curative then
+                let healing = single power * techData.Scalar |> int |> max 1
+                (false, healing, target.CharacterIndex)
+            else
+                let cancelled = techData.Cancels && CharacterState.runningTechAutoBattle target.CharacterState
+                let shield = target.CharacterState.Shield
+                let damageUnscaled = power - shield
+                let damage = single damageUnscaled * techData.Scalar |> int |> max 1
+                (cancelled, -damage, target.CharacterIndex)
+
+        static member evaluateTechMagical techData source (target : CharacterModel) =
+            let magic = source.CharacterState.Magic
+            if techData.Curative then
+                let healing = single magic * techData.Scalar |> int |> max 1
+                (false, healing, target.CharacterIndex)
+            else
+                let cancelled = techData.Cancels && CharacterState.runningTechAutoBattle target.CharacterState
+                let shield = target.CharacterState.Shield
+                let damageUnscaled = magic - shield
+                let damage = single damageUnscaled * techData.Scalar |> int |> max 1
+                (cancelled, -damage, target.CharacterIndex)
+
+        static member evaluateTech techData source target =
+            match techData.EffectType with
+            | Physical -> CharacterModel.evaluateTechPhysical techData source target
+            | Magical -> CharacterModel.evaluateTechMagical techData source target
+
+        static member evaluateTechMove techData source target characters =
+            let targets =
+                CharacterModel.evaluateTargetType techData.TargetType source target characters
+            let resultsRev =
+                List.fold (fun results target ->
+                    let result = CharacterModel.evaluateTech techData source target
+                    result :: results)
+                    [] targets
+            List.rev resultsRev
 
         static member getPoiseType character =
             CharacterState.getPoiseType character.CharacterState
@@ -123,6 +186,9 @@ module CharacterModel =
 
         static member runningTechAutoBattle character =
             CharacterState.runningTechAutoBattle character.CharacterState
+
+        static member isTeammate character character2 =
+            CharacterState.isTeammate character.CharacterState character2.CharacterState
 
         static member isReadyForAutoBattle character =
             Option.isNone character.CharacterState.AutoBattleOpt &&

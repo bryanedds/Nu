@@ -23,6 +23,7 @@ module Constants =
         let CharacterBottomOffset = v2 0.0f -8.0f
         let CharacterBottomOffset2 = v2 0.0f -32.0f
         let CharacterPulseLength = 60L
+        let LineWidth = 16.0f
         let BackgroundDepth = -10.0f
         let ForgroundDepth = 0.0f
         let EffectDepth = 10.0f

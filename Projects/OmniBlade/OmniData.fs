@@ -58,15 +58,16 @@ type ItemType =
     | KeyItem of KeyItemType
 
 type AimType =
-    | EnemyAim
+    | EnemyAim of bool // healthy (N/A)
     | AllyAim of bool // healthy
     | AnyAim of bool // healthy
     | NoAim
 
 type TargetType =
     | SingleTarget of AimType
-    | RadialTarget of AimType
-    | LineTarget of AimType
+    | ProximityTarget of AimType * single
+    | RadialTarget of AimType * single
+    | LineTarget of AimType * single
     | AllTarget of AimType
 
 type TechType =

@@ -132,6 +132,6 @@ module Effects =
 
     let makeCircleEffect radius =
         { EffectName = "Circle"
-          LifetimeOpt = Some 60L
+          LifetimeOpt = Some 100L
           Definitions = Map.empty
-          Content = Tag ("Tag", [|Circle (radius, 2.0f, 60L)|], Nil) }
+          Content = Tag ("Tag", [|Circle (radius, 2.0f, 100L)|], Nil) }
