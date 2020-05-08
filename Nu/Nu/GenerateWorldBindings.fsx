@@ -39,7 +39,7 @@ type FunctionBinding =
       FunctionReturn : ReturnConversion }
 
 let getExtrinsicKeywords () =
-    "v2 v4 v2i get getAsStream set setAsStream update streamEvent stream fix " +
+    "v2 v4 v2i get getAsStream set setAsStream update streamEvent stream bind " +
     "self parent grandparent game toData monitor"
 
 let getParameterConversion (ty : Type) =

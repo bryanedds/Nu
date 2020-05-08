@@ -79,8 +79,8 @@
     <Compile Include="OmniCharacterModel.fs" />
     <Compile Include="OmniBattleModel.fs" />
     <Compile Include="OmniFieldModel.fs" />
-    <Compile Include="OmniEvents.fs" />
     <Compile Include="OmniEffects.fs" />
+    <Compile Include="OmniEvents.fs" />
     <Compile Include="OmniRingMenu.fs" />
     <Compile Include="OmniReticles.fs" />
     <Compile Include="OmniCharacter.fs" />
@@ -195,15 +195,9 @@
   <Import Project="..\..\packages\xunit.core.2.4.0\build\xunit.core.targets" Condition="Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.targets')" />
   <Import Project="..\..\packages\Magick.NET-Q8-x64.7.16.1\build\net40\Magick.NET-Q8-x64.targets" Condition="Exists('..\..\packages\Magick.NET-Q8-x64.7.16.1\build\net40\Magick.NET-Q8-x64.targets')" />
   <Target Name="BeforeBuild">
-    <Copy
-    	SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.16.1\runtimes\linux-x64\native\Magick.Native-Q8-x64.dll.so"
-    	DestinationFiles="$(TargetDir)libMagick.Native-Q8-x64.dll.so"
-    	ContinueOnError="false" />
+    <Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.16.1\runtimes\linux-x64\native\Magick.Native-Q8-x64.dll.so" DestinationFiles="$(TargetDir)libMagick.Native-Q8-x64.dll.so" ContinueOnError="false" />
   </Target>
   <Target Name="AfterBuild">
-    <Copy
-    	SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.16.1\lib\netstandard20\Magick.NET-Q8-x64.dll"
-    	DestinationFiles="$(TargetDir)Magick.NET-Q8-x64.dll"
-    	ContinueOnError="false" />
+    <Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.16.1\lib\netstandard20\Magick.NET-Q8-x64.dll" DestinationFiles="$(TargetDir)Magick.NET-Q8-x64.dll" ContinueOnError="false" />
   </Target>
 </Project>

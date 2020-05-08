@@ -729,7 +729,7 @@ module WorldScripting =
                  ("get", { Fn = World.evalGetExtrinsic; Pars = [|"simulant?"; "property"|]; DocOpt = Some "Get a simulant's property." })
                  ("getAsStream", { Fn = World.evalGetAsStreamExtrinsic; Pars = [|"simulant?"; "property"|]; DocOpt = Some "Get a simulant's property as a Stream." })
                  ("set", { Fn = World.evalSetExtrinsic; Pars = [|"simulant?"; "property"; "value"|]; DocOpt = Some "Set a simulant's property." })
-                 ("setAsStream", { Fn = World.evalSetAsStreamExtrinsic; Pars = [|"simulant?"; "property"; "stream"|]; DocOpt = Some "Fix a simulant's property to a Stream." })
+                 ("setAsStream", { Fn = World.evalSetAsStreamExtrinsic; Pars = [|"simulant?"; "property"; "stream"|]; DocOpt = Some "Bind a simulant's property to a Stream." })
                  ("streamEvent", { Fn = World.evalStreamEventExtrinsic; Pars = [|"event"|]; DocOpt = Some "Construct a Stream for a given event." })
                  ("map_Stream", { Fn = World.evalMapStreamExtrinsic; Pars = [||]; DocOpt = None })
                  ("fold_Stream", { Fn = World.evalFoldStreamExtrinsic; Pars = [||]; DocOpt = None })

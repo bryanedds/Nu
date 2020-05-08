@@ -271,7 +271,7 @@ module WorldScreenModule =
         /// Turn screen content into a live screen.
         static member expandScreenContent setScreenSplash content origin game world =
             match ScreenContent.expand content game world with
-            | Left (_, descriptor, handlers, fixes, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths, entityContents) ->
+            | Left (_, descriptor, handlers, binds, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths, entityContents) ->
                 let (screen, world) =
                     World.createScreen2 descriptor world
                 let world =
@@ -284,8 +284,8 @@ module WorldScreenModule =
                         world entityFilePaths
                 let world =
                     List.fold (fun world (simulant, left : World Lens, right, breaking) ->
-                        WorldModule.fix5 simulant left right breaking world)
-                        world fixes
+                        WorldModule.bind5 simulant left right breaking world)
+                        world binds
                 let world =
                     List.fold (fun world (handler, address, simulant) ->
                         World.monitor (fun (evt : Event) world ->

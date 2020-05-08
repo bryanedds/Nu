@@ -300,8 +300,8 @@ module Nu =
                     World.unregisterEntityPhysics entity world)
                     world entities
 
-            // init fix5 F# reach-around
-            WorldModule.fix5 <- fun simulant left right breaking world ->
+            // init bind5 F# reach-around
+            WorldModule.bind5 <- fun simulant left right breaking world ->
                 let tryPropagate =
                     if notNull (left.This :> obj)
                     then tryPropagateByLens left right

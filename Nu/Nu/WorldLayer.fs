@@ -252,7 +252,7 @@ module WorldLayerModule =
             match LayerContent.expand content screen world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
                 World.expandLayerStream lens indexerOpt mapper origin screen world
-            | Choice2Of3 (_, descriptor, handlers, fixes, streams, entityFilePaths, entityContents) ->
+            | Choice2Of3 (_, descriptor, handlers, binds, streams, entityFilePaths, entityContents) ->
                 let (layer, world) =
                     World.createLayer3 descriptor screen world
                 let world =
@@ -261,8 +261,8 @@ module WorldLayerModule =
                         world entityFilePaths
                 let world =
                     List.fold (fun world (simulant, left : World Lens, right, breaking) ->
-                        WorldModule.fix5 simulant left right breaking world)
-                        world fixes
+                        WorldModule.bind5 simulant left right breaking world)
+                        world binds
                 let world =
                     List.fold (fun world (handler, address, simulant) ->
                         World.monitor (fun (evt : Event) world ->

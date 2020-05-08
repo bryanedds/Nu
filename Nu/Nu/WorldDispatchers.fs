@@ -124,8 +124,8 @@ module FacetModule =
                     World.monitor (fun (evt : Event) world ->
                         WorldModule.trySignalFacet (handler evt) (getTypeName this) entity world)
                         eventAddress (entity :> Simulant) world
-                | FixDefinition (left, right, breaking) ->
-                    WorldModule.fix5 entity left right breaking world)
+                | BindDefinition (left, right, breaking) ->
+                    WorldModule.bind5 entity left right breaking world)
                 world initializers
 
         override this.Actualize (entity, world) =
@@ -1128,8 +1128,8 @@ module EntityDispatcherModule =
                     World.monitor (fun (evt : Event) world ->
                         WorldModule.trySignal (handler evt) entity world)
                         eventAddress (entity :> Simulant) world
-                | FixDefinition (left, right, breaking) ->
-                    WorldModule.fix5 entity left right breaking world)
+                | BindDefinition (left, right, breaking) ->
+                    WorldModule.bind5 entity left right breaking world)
                 world initializers
 
         override this.Actualize (entity, world) =
@@ -1979,8 +1979,8 @@ module LayerDispatcherModule =
                     World.monitor (fun (evt : Event) world ->
                         WorldModule.trySignal (handler evt) layer world)
                         eventAddress (layer :> Simulant) world
-                | FixDefinition (left, right, breaking) ->
-                    WorldModule.fix5 layer left right breaking world)
+                | BindDefinition (left, right, breaking) ->
+                    WorldModule.bind5 layer left right breaking world)
                 world initializers
 
         override this.Actualize (layer, world) =
@@ -2078,8 +2078,8 @@ module ScreenDispatcherModule =
                     World.monitor (fun (evt : Event) world ->
                         WorldModule.trySignal (handler evt) screen world)
                         eventAddress (screen :> Simulant) world
-                | FixDefinition (left, right, breaking) ->
-                    WorldModule.fix5 screen left right breaking world)
+                | BindDefinition (left, right, breaking) ->
+                    WorldModule.bind5 screen left right breaking world)
                 world initializers
 
         override this.Actualize (screen, world) =
