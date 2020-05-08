@@ -145,51 +145,51 @@ type CharacterState =
         elif this.ExpPoints < 10000 then 19
         else 20
 
-    member this.HitPointsMax rom =
+    member this.HitPointsMax =
         let intermediate =
             match this.ArmorOpt with
             | Some armor ->
-                match Map.tryFind armor rom.Armors with
+                match Map.tryFind armor data.Armors with
                 | Some armorData -> single armorData.HitPointsBase
                 | None -> 8.0f
             | None -> 8.0f
         intermediate * single this.Level |> int
 
-    member this.SpecialPointsMax rom =
+    member this.SpecialPointsMax =
         let intermediate =
             match this.ArmorOpt with
             | Some armor ->
-                match Map.tryFind armor rom.Armors with
+                match Map.tryFind armor data.Armors with
                 | Some armorData -> single armorData.SpecialPointsBase
                 | None -> 4.0f
             | None -> 4.0f
         intermediate * single this.Level |> int
 
-    member this.Power rom =
+    member this.Power =
         let intermediate =
             match this.WeaponOpt with
             | Some weapon ->
-                match Map.tryFind weapon rom.Weapons with
+                match Map.tryFind weapon data.Weapons with
                 | Some weaponData -> single weaponData.PowerBase
                 | None -> 1.0f
             | None -> 1.0f
         intermediate * single this.Level * this.PowerBuff |> int |> max 1
 
-    member this.Magic rom =
+    member this.Magic =
         let intermediate =
             match this.WeaponOpt with
             | Some weapon ->
-                match Map.tryFind weapon rom.Weapons with
+                match Map.tryFind weapon data.Weapons with
                 | Some weaponData -> single weaponData.MagicBase
                 | None -> 1.0f
             | None -> 1.0f
         intermediate * single this.Level * this.MagicBuff |> int |> max 1
 
-    member this.Shield (rom : Rom) =
+    member this.Shield =
         let intermediate =
             match this.Accessories with
             | accessory :: _ -> // just the first relic for now
-                match Map.tryFind accessory rom.Accessories with
+                match Map.tryFind accessory data.Accessories with
                 | Some weaponData -> single weaponData.ShieldBase
                 | None -> 0.0f
             | _ -> 0.0f
@@ -200,9 +200,9 @@ type CharacterState =
         | Some autoBattle -> Option.isSome autoBattle.AutoSpecialOpt
         | None -> false
 
-    static member getAttackResult rom (source : CharacterState) (target : CharacterState) =
-        let power = source.Power rom
-        let shield = target.Shield rom
+    static member getAttackResult (source : CharacterState) (target : CharacterState) =
+        let power = source.Power
+        let shield = target.Shield
         let damageUnscaled = power - shield
         let damage = single damageUnscaled |> int |> max 1
         damage
@@ -213,20 +213,20 @@ type CharacterState =
     static member updateAutoBattleOpt updater state =
         { state with AutoBattleOpt = updater state.AutoBattleOpt }
 
-    static member updateHitPoints rom updater (state : CharacterState) =
+    static member updateHitPoints updater (state : CharacterState) =
         let (hitPoints, cancel) = updater state.HitPoints
         let hitPoints = max 0 hitPoints
-        let hitPoints = min (state.HitPointsMax rom) hitPoints
+        let hitPoints = min state.HitPointsMax hitPoints
         let autoBattleOpt = 
             match state.AutoBattleOpt with
             | Some autoBattle when cancel -> Some { autoBattle with AutoSpecialOpt = None }
             | _ -> None
         { state with HitPoints = hitPoints; AutoBattleOpt = autoBattleOpt }
 
-    static member updateSpecialPoints rom updater state =
+    static member updateSpecialPoints updater state =
         let specialPoints = updater state.SpecialPoints
         let specialPoints = max 0 specialPoints
-        let specialPoints = min (state.SpecialPointsMax rom) specialPoints
+        let specialPoints = min state.SpecialPointsMax specialPoints
         { state with SpecialPoints = specialPoints }
 
     static member tryGetSpecialRandom state =
@@ -299,8 +299,8 @@ type CharacterAnimationState =
         let position = position + offset
         position
 
-    static member index rom time state =
-        match Map.tryFind state.AnimationCycle rom.CharacterAnimationData with
+    static member index time state =
+        match Map.tryFind state.AnimationCycle data.CharacterAnimationData with
         | Some animationData ->
             match animationData.AnimationType with
             | LoopedWithDirection -> CharacterAnimationState.indexLoopedWithDirection animationData.Run animationData.Stutter animationData.Offset time state
@@ -309,8 +309,8 @@ type CharacterAnimationState =
             | SaturatedWithoutDirection -> CharacterAnimationState.indexSaturatedWithoutDirection animationData.Run animationData.Stutter animationData.Offset time state
         | None -> v2iZero
 
-    static member progressOpt rom time state =
-        match Map.tryFind state.AnimationCycle rom.CharacterAnimationData with
+    static member progressOpt time state =
+        match Map.tryFind state.AnimationCycle data.CharacterAnimationData with
         | Some animationData ->
             let timeLocal = CharacterAnimationState.timeLocal time state
             match animationData.LengthOpt with
@@ -318,8 +318,8 @@ type CharacterAnimationState =
             | None -> None
         | None -> None
 
-    static member getFinished rom time state =
-        match CharacterAnimationState.progressOpt rom time state with
+    static member getFinished time state =
+        match CharacterAnimationState.progressOpt time state with
         | Some progress -> progress = 1.0f
         | None -> false
 

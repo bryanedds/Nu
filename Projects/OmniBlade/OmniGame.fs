@@ -15,14 +15,8 @@ module OmniGame =
         | ShowBattle
         | ExitGame
 
-    type Game with
-    
-        member this.GetRom = this.GetModel<Rom>
-        member this.SetRom = this.SetModel<Rom>
-        member this.Rom = this.Model<Rom>
-
     type StandAloneDispatcher () =
-        inherit GameDispatcher<Rom, unit, OmniCommand> (Rom.readFromFiles ())
+        inherit GameDispatcher<unit, unit, OmniCommand> (())
 
         override this.Register (game, world) =
             let world = World.hintRenderPackageUse Assets.GuiPackageName world
@@ -59,4 +53,4 @@ module OmniGame =
              Content.screenFromLayerFile Simulants.Credits.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.CreditsLayerFilePath]
 
     type EditorDispatcher () =
-        inherit GameDispatcher<Rom, unit, OmniCommand> (Rom.readFromFiles ())
+        inherit GameDispatcher<unit, unit, OmniCommand> (())

@@ -3,6 +3,11 @@ open FSharpx.Collections
 open Prime
 open Nu
 
+type BattleState =
+    | BattleReady of int64
+    | BattleRunning
+    | BattleCease of bool * int64
+
 type ActionCommand =
     { Action : ActionType
       Source : CharacterIndex
@@ -19,11 +24,6 @@ type CurrentCommand =
 
     static member make timeStart actionCommand =
         { TimeStart = timeStart; ActionCommand = actionCommand }
-
-type BattleState =
-    | BattleReady of int64
-    | BattleRunning
-    | BattleCease of bool * int64
 
 [<RequireQualifiedAccess>]
 module BattleModel =

@@ -205,26 +205,34 @@ type CharacterAnimationData =
       Stutter : int64
       Offset : Vector2i }
 
-type Rom =
-    { Weapons : Map<WeaponType, WeaponData>
-      Armors : Map<ArmorType, ArmorData>
-      Accessories : Map<AccessoryType, AccessoryData>
-      Specials : Map<SpecialType, SpecialData>
-      Consumables : Map<ConsumableType, ConsumableData>
-      Characters : Map<CharacterType, CharacterData>
-      CharacterAnimationData : Map<CharacterAnimationCycle, CharacterAnimationData> }
+[<AutoOpen>]
+module Data =
 
-    static member readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
+    type Data =
+        { Weapons : Map<WeaponType, WeaponData>
+          Armors : Map<ArmorType, ArmorData>
+          Accessories : Map<AccessoryType, AccessoryData>
+          Specials : Map<SpecialType, SpecialData>
+          Consumables : Map<ConsumableType, ConsumableData>
+          Characters : Map<CharacterType, CharacterData>
+          CharacterAnimationData : Map<CharacterAnimationCycle, CharacterAnimationData> }
+
+    let private readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
         let text = File.ReadAllText filePath
         let symbol = flip (Symbol.fromStringCsv true) (Some filePath) text
         let value = symbolToValue<'d list> symbol
         Map.ofListBy (fun data -> getKey data, data) value
 
-    static member readFromFiles () =
-        { Weapons = Rom.readSheet Assets.WeaponDataFilePath (fun data -> data.WeaponType)
-          Armors = Rom.readSheet Assets.ArmorDataFilePath (fun data -> data.ArmorType)
-          Accessories = Rom.readSheet Assets.AccessoryDataFilePath (fun data -> data.AccessoryType)
-          Specials = Rom.readSheet Assets.SpecialDataFilePath (fun data -> data.SpecialType)
-          Consumables = Rom.readSheet Assets.ConsumableDataFilePath (fun data -> data.ConsumableType)
+    let private readFromFiles () =
+        { Weapons = readSheet Assets.WeaponDataFilePath (fun data -> data.WeaponType)
+          Armors = readSheet Assets.ArmorDataFilePath (fun data -> data.ArmorType)
+          Accessories = readSheet Assets.AccessoryDataFilePath (fun data -> data.AccessoryType)
+          Specials = readSheet Assets.SpecialDataFilePath (fun data -> data.SpecialType)
+          Consumables = readSheet Assets.ConsumableDataFilePath (fun data -> data.ConsumableType)
           Characters = Map.empty
-          CharacterAnimationData = Rom.readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
+          CharacterAnimationData = readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
+
+    let data =
+        readFromFiles ()
+
+type Data = Data.Data
