@@ -39,10 +39,10 @@ module CharacterModel =
         member this.IsHealthy = this.CharacterState.IsHealthy
         member this.IsWounded = this.CharacterState.IsWounded
         member this.Level = this.CharacterState.Level
-        member this.HitPointsMax rom = this.CharacterState.HitPointsMax rom
-        member this.Power rom = this.CharacterState.Power rom
-        member this.Magic rom = this.CharacterState.Magic rom
-        member this.Shield rom = this.CharacterState.Shield rom
+        member this.HitPointsMax = this.CharacterState.HitPointsMax
+        member this.Power = this.CharacterState.Power
+        member this.Magic = this.CharacterState.Magic
+        member this.Shield = this.CharacterState.Shield
 
         (* AnimationState Properties *)
         member this.TimeStart = this.AnimationState.TimeStart
@@ -81,27 +81,27 @@ module CharacterModel =
                 | _ -> None
             { AutoTarget = target.CharacterIndex; AutoSpecialOpt = specialOpt }
 
-        static member evaluateSpecialMove rom specialData source target =
+        static member evaluateSpecialMove specialData source target =
             match specialData.EffectType with
             | Physical ->
-                let power = source.CharacterState.Power rom
+                let power = source.CharacterState.Power
                 if specialData.Curative then
                     let healing = single power * specialData.Scalar |> int |> max 1
                     (false, healing)
                 else
                     let cancelled = specialData.Cancels && CharacterState.runningSpecialAutoBattle target.CharacterState
-                    let shield = target.CharacterState.Shield rom
+                    let shield = target.CharacterState.Shield
                     let damageUnscaled = power - shield
                     let damage = single damageUnscaled * specialData.Scalar |> int |> max 1
                     (cancelled, -damage)
             | Magical ->
-                let magic = source.CharacterState.Magic rom
+                let magic = source.CharacterState.Magic
                 if specialData.Curative then
                     let healing = single magic * specialData.Scalar |> int |> max 1
                     (false, healing)
                 else
                     let cancelled = specialData.Cancels && CharacterState.runningSpecialAutoBattle target.CharacterState
-                    let shield = target.CharacterState.Shield rom
+                    let shield = target.CharacterState.Shield
                     let damageUnscaled = magic - shield
                     let damage = single damageUnscaled * specialData.Scalar |> int |> max 1
                     (cancelled, -damage)
@@ -109,17 +109,17 @@ module CharacterModel =
         static member getPoiseType character =
             CharacterState.getPoiseType character.CharacterState
 
-        static member getAttackResult rom source target =
-            CharacterState.getAttackResult rom source.CharacterState target.CharacterState
+        static member getAttackResult source target =
+            CharacterState.getAttackResult source.CharacterState target.CharacterState
 
-        static member getAnimationIndex rom time character =
-            CharacterAnimationState.index rom time character.AnimationState
+        static member getAnimationIndex time character =
+            CharacterAnimationState.index time character.AnimationState
 
-        static member getAnimationProgressOpt rom time character =
-            CharacterAnimationState.progressOpt rom time character.AnimationState
+        static member getAnimationProgressOpt time character =
+            CharacterAnimationState.progressOpt time character.AnimationState
 
-        static member getAnimationFinished rom time character =
-            CharacterAnimationState.getFinished rom time character.AnimationState
+        static member getAnimationFinished time character =
+            CharacterAnimationState.getFinished time character.AnimationState
 
         static member runningSpecialAutoBattle character =
             CharacterState.runningSpecialAutoBattle character.CharacterState
@@ -129,11 +129,11 @@ module CharacterModel =
             character.CharacterState.ActionTime > Constants.Battle.AutoBattleReadyTime &&
             character.CharacterState.IsEnemy
 
-        static member updateHitPoints rom updater character =
-            { character with CharacterState = CharacterState.updateHitPoints rom updater character.CharacterState }
+        static member updateHitPoints updater character =
+            { character with CharacterState = CharacterState.updateHitPoints updater character.CharacterState }
 
-        static member updateSpecialPoints rom updater character =
-            { character with CharacterState = CharacterState.updateSpecialPoints rom updater character.CharacterState }
+        static member updateSpecialPoints updater character =
+            { character with CharacterState = CharacterState.updateSpecialPoints updater character.CharacterState }
 
         static member updateInputState updater character =
             { character with InputState_ = updater character.InputState_ }
