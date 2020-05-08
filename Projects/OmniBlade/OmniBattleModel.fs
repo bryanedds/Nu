@@ -84,7 +84,8 @@ module BattleModel =
 
         static member getTargets aimType model =
             match aimType with
-            | EnemyAim -> BattleModel.getEnemies model
+            | EnemyAim _ ->
+                BattleModel.getEnemies model
             | AllyAim healthy ->
                 if healthy
                 then BattleModel.getAlliesHealthy model
@@ -116,6 +117,9 @@ module BattleModel =
 
         static member updateEnemies updater model =
             BattleModel.updateCharactersIf (function EnemyIndex _ -> true | _ -> false) updater model
+
+        static member getCharacters model =
+            model.Characters |> Map.toValueList
 
         static member tryGetCharacter characterIndex model =
             Map.tryFind characterIndex model.Characters

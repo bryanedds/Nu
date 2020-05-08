@@ -24,7 +24,7 @@ module OmniReticles =
         member this.TargetSelectEvent = Events.TargetSelect --> this
 
     type ReticlesDispatcher () =
-        inherit GuiDispatcher<ReticlesModel, unit, ReticlesCommand> ({ BattleModel = BattleModel.empty; AimType = AimType.EnemyAim })
+        inherit GuiDispatcher<ReticlesModel, unit, ReticlesCommand> ({ BattleModel = BattleModel.empty; AimType = EnemyAim true })
 
         static member Properties =
             [define Entity.SwallowMouseLeft false

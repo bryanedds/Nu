@@ -69,6 +69,12 @@ type CharacterIndex =
     | AllyIndex of int
     | EnemyIndex of int
 
+    static member isTeammate index index2 =
+        match (index, index2) with
+        | (AllyIndex _, AllyIndex _) -> true
+        | (EnemyIndex _, EnemyIndex _) -> true
+        | (_, _) -> false
+
 type AutoBattle =
     { AutoTarget : CharacterIndex
       AutoTechOpt : TechType option }
@@ -194,6 +200,9 @@ type CharacterState =
                 | None -> 0.0f
             | _ -> 0.0f
         intermediate * single this.Level * this.ShieldBuff |> int |> max 0
+
+    static member isTeammate (state : CharacterState) (state2 : CharacterState) =
+        CharacterIndex.isTeammate state.CharacterIndex state2.CharacterIndex
         
     static member runningTechAutoBattle state =
         match state.AutoBattleOpt with

@@ -83,7 +83,17 @@ module OmniBattle =
                     { PartyIndex = 1; CharacterType = Enemy Goblin; ActionTime = 0; ExpPoints = 0; HitPoints = 5; TechPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Techs = Set.ofList [Bolt]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None; }
                     { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward }
                     NoInput
-                    (Math.makeBounds (v2 176.0f -192.0f) (v2 160.0f 160.0f))]
+                    (Math.makeBounds (v2 176.0f -192.0f) (v2 160.0f 160.0f))
+                 CharacterModel.make
+                    { PartyIndex = 2; CharacterType = Enemy Goblin; ActionTime = 0; ExpPoints = 0; HitPoints = 5; TechPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Techs = Set.ofList [Bolt]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None; }
+                    { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward }
+                    NoInput
+                    (Math.makeBounds (v2 76.0f -92.0f) (v2 160.0f 160.0f))
+                 CharacterModel.make
+                    { PartyIndex = 3; CharacterType = Enemy Goblin; ActionTime = 0; ExpPoints = 0; HitPoints = 5; TechPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Techs = Set.ofList [Bolt]; Statuses = Set.empty; WeaponOpt = Some "Melee"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None; }
+                    { TimeStart = 0L; AnimationSheet = Assets.GoblinAnimationSheet; AnimationCycle = ReadyCycle; Direction = Leftward }
+                    NoInput
+                    (Math.makeBounds (v2 176.0f -92.0f) (v2 160.0f 160.0f))]
              let characters =
                 Map.ofList
                     (List.mapi (fun i ally -> (AllyIndex i, ally)) allies @
@@ -324,7 +334,7 @@ module OmniBattle =
                     match item with
                     | "Attack" ->
                         BattleModel.updateCharacter
-                            (CharacterModel.updateInputState (constant (AimReticles (item, EnemyAim))))
+                            (CharacterModel.updateInputState (constant (AimReticles (item, EnemyAim true))))
                             characterIndex
                             model
                     | "Tech" ->
@@ -362,7 +372,7 @@ module OmniBattle =
             | TechItemSelect (characterIndex, item) ->
                 let model =
                     BattleModel.updateCharacter
-                        (CharacterModel.updateInputState (constant (AimReticles (item, EnemyAim))))
+                        (CharacterModel.updateInputState (constant (AimReticles (item, EnemyAim true))))
                         characterIndex
                         model
                 just model
@@ -497,8 +507,9 @@ module OmniBattle =
                     let playHitSounds =
                         [PlaySound (20L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (40L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
-                         PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)]
-                    withCmds model (DisplayCircle ((BattleModel.getCharacter sourceIndex model).Bottom, 32.0f) :: playHitSounds)
+                         PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
+                         PlaySound (80L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)]
+                    withCmds model (DisplayCircle ((BattleModel.getCharacter sourceIndex model).Bottom, 64.0f) :: playHitSounds)
                 | Bolt ->
                     let time = World.getTickTime world
                     let model = BattleModel.updateCharacter (CharacterModel.animate time Cast2Cycle) sourceIndex model
@@ -514,14 +525,19 @@ module OmniBattle =
                 | Some specialData ->
                     let source = BattleModel.getCharacter sourceIndex model
                     let target = BattleModel.getCharacter targetIndex model
-                    let (cancelled, hitPointsChange) = CharacterModel.evaluateTechMove specialData source target
-                    let model =
-                        if hitPointsChange < 0 && target.IsHealthy
-                        then BattleModel.updateCharacter (CharacterModel.animate time DamageCycle) targetIndex model
-                        else model
-                    if cancelled
-                    then withCmd model (DisplayCancel targetIndex)
-                    else just model
+                    let characters = BattleModel.getCharacters model
+                    let results = CharacterModel.evaluateTechMove specialData source target characters
+                    let (model, cmds) =
+                        List.fold (fun (model, cmds) (cancelled, hitPointsChange, characterIndex)->
+                            let character = BattleModel.getCharacter characterIndex model
+                            if hitPointsChange < 0 && character.IsHealthy then
+                                let model = BattleModel.updateCharacter (CharacterModel.animate time DamageCycle) characterIndex model
+                                let cmds = if cancelled then DisplayCancel characterIndex :: cmds else cmds
+                                (model, cmds)
+                            else (model, cmds))
+                            (model, [])
+                            results
+                    withCmds model cmds
                 | None -> just model
 
             | TechCharacter4 (sourceIndex, targetIndex, specialType) ->
@@ -529,11 +545,17 @@ module OmniBattle =
                 | Some specialData ->
                     let source = BattleModel.getCharacter sourceIndex model
                     let target = BattleModel.getCharacter targetIndex model
-                    let (cancelled, hitPointsChange) = CharacterModel.evaluateTechMove specialData source target
-                    let model = BattleModel.updateCharacter (CharacterModel.updateTechPoints ((+) -specialData.TechCost)) sourceIndex model
-                    let model = BattleModel.updateCharacter (CharacterModel.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled))) targetIndex model
-                    let sigs = if target.IsWounded then [Message (ResetCharacter targetIndex)] else []
-                    let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (targetIndex, hitPointsChange)) :: sigs else sigs
+                    let characters = BattleModel.getCharacters model
+                    let results = CharacterModel.evaluateTechMove specialData source target characters
+                    let (model, sigs) =
+                        List.fold (fun (model, sigs) (cancelled, hitPointsChange, characterIndex)->
+                            let model = BattleModel.updateCharacter (CharacterModel.updateTechPoints ((+) -specialData.TechCost)) sourceIndex model
+                            let model = BattleModel.updateCharacter (CharacterModel.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled))) characterIndex model
+                            let sigs = if target.IsWounded then Message (ResetCharacter characterIndex) :: sigs else sigs
+                            let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (characterIndex, hitPointsChange)) :: sigs else sigs
+                            (model, sigs))
+                            (model, [])
+                            results
                     withSigs model sigs
                 | None -> just model
 

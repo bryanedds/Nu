@@ -1,5 +1,5 @@
 Type,SpecialCost,EffectType,Scalar,SuccessRate,Curative,Cancels,Absorb,ElementType,StatusesAdded,StatusesRemoved,TargetType,Description
-HeadSlash,1,Physical,1,1,False,True,0,None,[],[],[SingleTarget EnemyAim],None
-Cyclone,3,Physical,1,1,False,False,0,None,[],[],[RadialTarget EnemyAim],None
-Bolt,2,Magical,2,1,False,False,0,[Some Lightning],[],[],[SingleTarget EnemyAim],None
-Tremor,3,Magical,1,1,False,False,0,[Some Earth],[],[],[AllTarget EnemyAim],None
+HeadSlash,1,Physical,1,1,False,True,0,None,[],[],[SingleTarget [EnemyAim True]],None
+Cyclone,3,Physical,1,1,False,False,0,None,[],[],[RadialTarget [EnemyAim True] 256],None
+Bolt,2,Magical,2,1,False,False,0,[Some Lightning],[],[],[SingleTarget [EnemyAim True]],None
+Tremor,3,Magical,1,1,False,False,0,[Some Earth],[],[],[AllTarget [EnemyAim True]],None
