@@ -151,8 +151,11 @@ module BattleModel =
         static member updateInventory updater model =
             { model with Inventory_ = updater model.Inventory_ }
 
-        static member conjActionCommand command model =
+        static member appendActionCommand command model =
             { model with ActionCommands_ = Queue.conj command model.ActionCommands }
+
+        static member prependActionCommand command model =
+            { model with ActionCommands_ = Queue.rev model.ActionCommands |> Queue.conj command |> Queue.rev }
 
         static member make battleState characters currentCommandOpt actionCommands inventory gold =
             { BattleState_ = battleState
