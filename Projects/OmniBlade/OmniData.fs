@@ -72,8 +72,8 @@ type TargetType =
 type TechType =
     | HeadSlash
     | Cyclone
-    | Tremor
     | Bolt
+    | Tremor
 
 type ActionType =
     | Attack
@@ -163,6 +163,13 @@ type ArmorData =
       TechPointsBase : int
       Description : string }
 
+type ConsumableData =
+    { ConsumableType : ConsumableType // key
+      Scalar : single
+      Curative : bool
+      AimType : AimType
+      Description : string }
+
 type TechData =
     { TechType : TechType // key
       TechCost : int
@@ -178,12 +185,14 @@ type TechData =
       TargetType : TargetType
       Description : string }
 
-type ConsumableData =
-    { ConsumableType : ConsumableType // key
-      Scalar : single
-      Curative : bool
-      AimType : AimType
-      Description : string }
+type TechAnimationData =
+    { TechType : TechType // key
+      TechStart : int64
+      TechingStart : int64
+      AffectingStart : int64
+      AffectingStop : int64
+      TechingStop : int64
+      TechStop : int64 }
 
 type KeyItemData =
     { KeyItemData : unit }
@@ -212,8 +221,9 @@ module Data =
         { Weapons : Map<WeaponType, WeaponData>
           Armors : Map<ArmorType, ArmorData>
           Accessories : Map<AccessoryType, AccessoryData>
-          Techs : Map<TechType, TechData>
           Consumables : Map<ConsumableType, ConsumableData>
+          Techs : Map<TechType, TechData>
+          TechAnimationData : Map<TechType, TechAnimationData>
           Characters : Map<CharacterType, CharacterData>
           CharacterAnimationData : Map<CharacterAnimationCycle, CharacterAnimationData> }
 
@@ -227,8 +237,9 @@ module Data =
         { Weapons = readSheet Assets.WeaponDataFilePath (fun data -> data.WeaponType)
           Armors = readSheet Assets.ArmorDataFilePath (fun data -> data.ArmorType)
           Accessories = readSheet Assets.AccessoryDataFilePath (fun data -> data.AccessoryType)
-          Techs = readSheet Assets.TechDataFilePath (fun data -> data.TechType)
           Consumables = readSheet Assets.ConsumableDataFilePath (fun data -> data.ConsumableType)
+          Techs = readSheet Assets.TechDataFilePath (fun data -> data.TechType)
+          TechAnimationData = readSheet Assets.TechAnimationDataFilePath (fun data -> data.TechType)
           Characters = Map.empty
           CharacterAnimationData = readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
 
