@@ -104,10 +104,10 @@ module WorldModule =
     let mutable internal unsubscribeSimulantScripts : Simulant -> World -> World =
         Unchecked.defaultof<_>
         
-    /// F# reach-around for fixing properties.
-    /// HACK: fix5 allows the use of fake lenses in declarative usage.
+    /// F# reach-around for binding properties.
+    /// HACK: bind5 allows the use of fake lenses in declarative usage.
     /// NOTE: the downside to using fake lenses is that composed fake lenses do not function.
-    let mutable internal fix5 : Simulant -> World Lens -> World Lens -> bool -> World -> World =
+    let mutable internal bind5 : Simulant -> World Lens -> World Lens -> bool -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal register : Simulant -> World -> World =

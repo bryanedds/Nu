@@ -949,8 +949,8 @@ module GameDispatcherModule =
                     World.monitor (fun (evt : Event) world ->
                         WorldModule.trySignal (handler evt) game world)
                         eventAddress (game :> Simulant) world
-                | FixDefinition (left, right, breaking) ->
-                    WorldModule.fix5 game left right breaking world)
+                | BindDefinition (left, right, breaking) ->
+                    WorldModule.bind5 game left right breaking world)
                 world initializers
 
         override this.Actualize (game, world) =

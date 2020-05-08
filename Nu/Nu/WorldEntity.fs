@@ -351,7 +351,7 @@ module WorldEntityModule =
             match EntityContent.expand content layer world with
             | Choice1Of3 (lens, indexerOpt, mapper) ->
                 World.expandEntityStream lens indexerOpt mapper origin layer world
-            | Choice2Of3 (_, descriptor, handlers, fixes, content) ->
+            | Choice2Of3 (_, descriptor, handlers, binds, content) ->
                 let (entity, world) =
                     World.createEntity4 DefaultOverlay descriptor layer world
                 let world =
@@ -374,8 +374,8 @@ module WorldEntityModule =
                             world
                 let world =
                     List.fold (fun world (simulant, left : World Lens, right, breaking) ->
-                        WorldModule.fix5 simulant left right breaking world)
-                        world fixes
+                        WorldModule.bind5 simulant left right breaking world)
+                        world binds
                 let world =
                     List.fold (fun world (handler, address, simulant) ->
                         World.monitor (fun (evt : Event) world ->
