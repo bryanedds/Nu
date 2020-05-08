@@ -8,7 +8,7 @@ open Prime
 module Effects =
 
     type Algorithm =
-        | Const
+        | Constant
         | Linear
         | Random
         | Chaos
@@ -16,9 +16,9 @@ module Effects =
         | EaseIn
         | EaseOut
         | Sin
-        | SinOver2
+        | SinScaled of single
         | Cos
-        | CosOver2
+        | CosScaled of single
 
     type LogicApplicator =
         | Or
@@ -127,6 +127,7 @@ module Effects =
         | Volume of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Bone // TODO: implement bone aspect
         | Expand of string * Argument array
+        | Aspects of Aspect array
 
     and [<NoComparison>] Content =
         | Nil // first to make default value when missing
@@ -140,8 +141,8 @@ module Effects =
         | Tag of string * Aspect array * Content
         | Delay of int64 * Content
         | Segment of int64 * int64 * Content
-        | Composite of Shift * Content array
         | Expand of string * Argument array
+        | Contents of Shift * Content array
 
     and Argument =
         SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
@@ -154,7 +155,7 @@ module Effects =
         Map<string, Definition>
 
 /// Describes an effect in a compositional manner.
-[<Syntax   ("Const Linear Random Chaos Ease EaseIn EaseOut Sin SinOver2 CosOver2 " +
+[<Syntax   ("Constant Linear Random Chaos Ease EaseIn EaseOut Sin SinScaled Cos CosScaled " +
             "Or Nor Xor And Nand Equal " +
             "Sum Delta Scale Ratio Set " +
             "Once Loop Bounce " +
@@ -162,7 +163,7 @@ module Effects =
             "Rate " +
             "Shift " +
             "Expand Resource " +
-            "Expand Enabled Position Translation Offset Inset Size Rotation Depth Color Glow Volume Bone " +
+            "Expand Enabled Position Translation Offset Inset Size Rotation Depth Color Glow Volume Bone Aspects " +
             "Expand StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
             "View",
             "", "", "", "",
@@ -178,7 +179,7 @@ type [<NoEquality; NoComparison>] Effect =
         { EffectName = Constants.Engine.DefaultEffectName
           LifetimeOpt = None
           Definitions = Map.empty
-          Content = Effects.Composite (Effects.Shift 0.0f, [||]) }
+          Content = Effects.Contents (Effects.Shift 0.0f, [||]) }
 
 [<AutoOpen>]
 module EffectSystemModule =
@@ -239,7 +240,7 @@ module EffectSystemModule =
 
         let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm effectSystem =
             match algorithm with
-            | Const ->
+            | Constant ->
                 value
             | Linear ->
                 value + scale (value2 - value, progress)
@@ -265,18 +266,19 @@ module EffectSystemModule =
                 let progressScaled = float progress * Math.PI * 2.0
                 let progressSin = Math.Sin progressScaled
                 value + scale (value2 - value, single progressSin)
-            | SinOver2 ->
-                let progressScaled = float progress * Math.PI
+            | SinScaled scalar ->
+                let progressScaled = float progress * Math.PI * 2.0 * float scalar
                 let progressSin = Math.Sin progressScaled
                 value + scale (value2 - value, single progressSin)
             | Cos ->
                 let progressScaled = float progress * Math.PI * 2.0
                 let progressCos = Math.Cos progressScaled
                 value + scale (value2 - value, single progressCos)
-            | CosOver2 ->
-                let progressScaled = float progress * Math.PI
+            | CosScaled scalar ->
+                let progressScaled = float progress * Math.PI * 2.0 * float scalar
                 let progressCos = Math.Cos progressScaled
-                value + scale (value2 - value, single progressCos)
+                let result = value + scale (value2 - value, single progressCos)
+                result
 
         let private applyLogic value value2 applicator =
             match applicator with
@@ -417,6 +419,7 @@ module EffectSystemModule =
                     let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
                     { slice with InsetOpt = Some applied }
                 else slice
+
             | Color (applicator, algorithm, playback, keyFrames) ->
                 if Array.notEmpty keyFrames then
                     let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
@@ -452,6 +455,12 @@ module EffectSystemModule =
                     | SymbolicCompressionB (SymbolicCompressionA aspect) -> evalAspect aspect slice effectSystem
                     | _ -> Log.info ("Expected Aspect for definition '" + definitionName + "'."); slice
                 | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); slice
+
+            | Aspects aspects ->
+                Array.fold
+                    (fun slice aspect -> evalAspect aspect slice effectSystem)
+                    slice
+                    aspects
         
         and private evalAspects aspects slice effectSystem =
             Array.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
@@ -683,9 +692,9 @@ module EffectSystemModule =
                 effectSystem
             else effectSystem
 
-        and private evalComposite shift contents slice effectSystem =
+        and private evalContents shift contents slice effectSystem =
             let slice = { slice with Slice.Depth = slice.Depth + shift }
-            evalContents contents slice effectSystem
+            evalContents3 contents slice effectSystem
 
         and private evalContent content slice effectSystem =
             match content with
@@ -711,12 +720,12 @@ module EffectSystemModule =
                 evalSegment delay Int64.MaxValue content slice effectSystem
             | Segment (start, stop, content) ->
                 evalSegment start stop content slice effectSystem
-            | Composite (Shift shift, contents) ->
-                evalComposite shift contents slice effectSystem
+            | Contents (Shift shift, contents) ->
+                evalContents shift contents slice effectSystem
             | Expand (definitionName, arguments) ->
                 evalExpand definitionName arguments slice effectSystem
 
-        and private evalContents contents slice effectSystem =
+        and private evalContents3 contents slice effectSystem =
             Array.fold
                 (fun effectSystem content -> evalContent content slice effectSystem)
                 effectSystem
@@ -748,7 +757,7 @@ module EffectSystemModule =
                 { EffectName = String.concat "+" (List.map (fun effect -> effect.EffectName) effects)
                   LifetimeOpt = None
                   Definitions = List.fold (fun definitions effect -> Map.concat definitions effect.Definitions) Map.empty effects
-                  Content = Composite (Shift 0.0f, effects |> List.map (fun effect -> effect.Content) |> Array.ofList) }
+                  Content = Contents (Shift 0.0f, effects |> List.map (fun effect -> effect.Content) |> Array.ofList) }
             effectCombined
 
         let make viewType history effectTime globalEnv = 
