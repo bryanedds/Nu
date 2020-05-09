@@ -4,7 +4,7 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type [<CustomEquality; CustomComparison>] GameEvent =
+type [<CustomEquality; CustomComparison>] Advent =
     | SavedPrincess
     | FoughtBaddie of bool
 
@@ -20,10 +20,10 @@ type [<CustomEquality; CustomComparison>] GameEvent =
 
     override this.Equals that =
         match that with
-        | :? GameEvent as thatEvent -> (this :> IComparable<GameEvent>).CompareTo thatEvent = 0
+        | :? Advent as thatAdvent -> (this :> IComparable<Advent>).CompareTo thatAdvent = 0
         | _ -> false
 
-    interface IComparable<GameEvent> with
+    interface IComparable<Advent> with
         member this.CompareTo that =
             let thisInt = this.ToInt ()
             let thatInt = that.ToInt ()
@@ -32,7 +32,7 @@ type [<CustomEquality; CustomComparison>] GameEvent =
     interface IComparable with
         member this.CompareTo that =
             match that with
-            | :? GameEvent as thatEvent -> (this :> IComparable<GameEvent>).CompareTo thatEvent
+            | :? Advent as thatAdvent -> (this :> IComparable<Advent>).CompareTo thatAdvent
             | _ -> -1
 
 type Inventory =
@@ -155,7 +155,7 @@ type CharacterState =
         let intermediate =
             match this.ArmorOpt with
             | Some armor ->
-                match Map.tryFind armor data.Armors with
+                match Map.tryFind armor data.Value.Armors with
                 | Some armorData -> single armorData.HitPointsBase
                 | None -> 8.0f
             | None -> 8.0f
@@ -165,7 +165,7 @@ type CharacterState =
         let intermediate =
             match this.ArmorOpt with
             | Some armor ->
-                match Map.tryFind armor data.Armors with
+                match Map.tryFind armor data.Value.Armors with
                 | Some armorData -> single armorData.TechPointsBase
                 | None -> 4.0f
             | None -> 4.0f
@@ -175,7 +175,7 @@ type CharacterState =
         let intermediate =
             match this.WeaponOpt with
             | Some weapon ->
-                match Map.tryFind weapon data.Weapons with
+                match Map.tryFind weapon data.Value.Weapons with
                 | Some weaponData -> single weaponData.PowerBase
                 | None -> 1.0f
             | None -> 1.0f
@@ -185,7 +185,7 @@ type CharacterState =
         let intermediate =
             match this.WeaponOpt with
             | Some weapon ->
-                match Map.tryFind weapon data.Weapons with
+                match Map.tryFind weapon data.Value.Weapons with
                 | Some weaponData -> single weaponData.MagicBase
                 | None -> 1.0f
             | None -> 1.0f
@@ -195,7 +195,7 @@ type CharacterState =
         let intermediate =
             match this.Accessories with
             | accessory :: _ -> // just the first relic for now
-                match Map.tryFind accessory data.Accessories with
+                match Map.tryFind accessory data.Value.Accessories with
                 | Some weaponData -> single weaponData.ShieldBase
                 | None -> 0.0f
             | _ -> 0.0f
@@ -309,7 +309,7 @@ type CharacterAnimationState =
         position
 
     static member index time state =
-        match Map.tryFind state.AnimationCycle data.CharacterAnimationData with
+        match Map.tryFind state.AnimationCycle data.Value.CharacterAnimationData with
         | Some animationData ->
             match animationData.AnimationType with
             | LoopedWithDirection -> CharacterAnimationState.indexLoopedWithDirection animationData.Run animationData.Stutter animationData.Offset time state
@@ -319,7 +319,7 @@ type CharacterAnimationState =
         | None -> v2iZero
 
     static member progressOpt time state =
-        match Map.tryFind state.AnimationCycle data.CharacterAnimationData with
+        match Map.tryFind state.AnimationCycle data.Value.CharacterAnimationData with
         | Some animationData ->
             let timeLocal = CharacterAnimationState.timeLocal time state
             match animationData.LengthOpt with

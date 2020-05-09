@@ -153,7 +153,7 @@ module OmniBattle =
         static let tickTech techType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) timeLocal model =
             match targetIndexOpt with
             | Some targetIndex ->
-                match Map.tryFind techType data.TechAnimationData with
+                match Map.tryFind techType data.Value.TechAnimationData with
                 | Some techData ->
                     let (model, msgs) =
                         if timeLocal = techData.TechStart then (model, [TechCharacter1 (sourceIndex, targetIndex, techType)])
@@ -544,7 +544,7 @@ module OmniBattle =
 
             | TechCharacter3 (sourceIndex, targetIndex, techType) ->
                 let time = World.getTickTime world
-                match Map.tryFind techType data.Techs with
+                match Map.tryFind techType data.Value.Techs with
                 | Some techData ->
                     let source = BattleModel.getCharacter sourceIndex model
                     let target = BattleModel.getCharacter targetIndex model
@@ -564,7 +564,7 @@ module OmniBattle =
                 | None -> just model
 
             | TechCharacter4 (sourceIndex, targetIndex, techType) ->
-                match Map.tryFind techType data.Techs with
+                match Map.tryFind techType data.Value.Techs with
                 | Some techData ->
                     let source = BattleModel.getCharacter sourceIndex model
                     let target = BattleModel.getCharacter targetIndex model
@@ -591,7 +591,7 @@ module OmniBattle =
                 | Some hop -> withCmd model (DisplayHop hop)
 
             | TechCharacter6 (sourceIndex, targetIndex, techType) ->
-                match Map.tryFind techType data.Techs with
+                match Map.tryFind techType data.Value.Techs with
                 | Some techData ->
                     let source = BattleModel.getCharacter sourceIndex model
                     let target = BattleModel.getCharacter targetIndex model
@@ -831,7 +831,7 @@ module OmniBattle =
                                 List.map (fun tech ->
                                     let techTag = getTag tech
                                     let techUsable =
-                                        match Map.tryFind tech data.Techs with
+                                        match Map.tryFind tech data.Value.Techs with
                                         | Some techData -> techData.TechCost <= ally.TechPoints
                                         | None -> false
                                     let techName = scstring tech
