@@ -48,8 +48,8 @@ module Effects =
           Content =
             TextSprite
                 (Resource (Assets.DefaultPackageName, Assets.DefaultFontName),
-                 [|Text (scstring (abs delta))
-                   Position
+                 scstring (abs delta),
+                 [|Position
                     (Sum, Linear, Bounce,
                      [|{ TweenValue = v2Zero; TweenLength = 10L }
                        { TweenValue = v2 0.0f 48.0f; TweenLength = 10L }

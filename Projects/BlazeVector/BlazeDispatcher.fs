@@ -21,17 +21,17 @@ module BlazeDispatcherModule =
     type BlazeDispatcher () =
         inherit GameDispatcher<unit, unit, BlazeCommand> (())
 
-        // here we define the bindings used to connect events to their desired commands
-        override this.Bindings (_, _, _) =
-            [Simulants.Splash.SelectEvent => cmd PlaySplashSound
-             Simulants.Title.IncomingStartEvent => cmd PlayTitleSong
-             Simulants.Title.OutgoingStartEvent => cmd FadeSong
-             Simulants.TitleCredits.ClickEvent => cmd ShowCredits
-             Simulants.TitlePlay.ClickEvent => cmd ShowGameplay
-             Simulants.TitleExit.ClickEvent => cmd ExitGame
-             Simulants.CreditsBack.ClickEvent => cmd ShowTitle
-             Simulants.Gameplay.OutgoingStartEvent => cmd FadeSong
-             Simulants.GameplayBack.ClickEvent => cmd ShowTitle]
+        // here we channel from events to signals
+        override this.Channel (_, _, _) =
+            [Simulants.Splash.SelectEvent => [cmd PlaySplashSound]
+             Simulants.Title.IncomingStartEvent => [cmd PlayTitleSong]
+             Simulants.Title.OutgoingStartEvent => [cmd FadeSong]
+             Simulants.TitleCredits.ClickEvent => [cmd ShowCredits]
+             Simulants.TitlePlay.ClickEvent => [cmd ShowGameplay]
+             Simulants.TitleExit.ClickEvent => [cmd ExitGame]
+             Simulants.CreditsBack.ClickEvent => [cmd ShowTitle]
+             Simulants.Gameplay.OutgoingStartEvent => [cmd FadeSong]
+             Simulants.GameplayBack.ClickEvent => [cmd ShowTitle]]
 
         // here we handle the above commands
         override this.Command (_, command, _, world) =

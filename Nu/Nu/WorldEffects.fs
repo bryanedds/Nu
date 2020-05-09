@@ -44,7 +44,6 @@ module Effects =
           InsetOpt : Vector4 option
           Color : Vector4
           Glow : Vector4
-          Text : string
           Volume : single
           Enabled : bool }
 
@@ -123,7 +122,6 @@ module Effects =
         | Inset of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
         | Color of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
         | Glow of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
-        | Text of string
         | Volume of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Bone // TODO: implement bone aspect
         | Expand of string * Argument array
@@ -133,7 +131,7 @@ module Effects =
         | Nil // first to make default value when missing
         | StaticSprite of Resource * Aspect array * Content
         | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Aspect array * Content
-        | TextSprite of Resource * Aspect array * Content
+        | TextSprite of Resource * string * Aspect array * Content
         | SoundEffect of Resource * Aspect array * Content
         | Mount of Shift * Aspect array * Content
         | Repeat of Shift * Repetition * Aspect array * Content
@@ -444,8 +442,6 @@ module EffectSystemModule =
                     let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Volume tweened applicator
                     { slice with Volume = applied }
                 else slice
-            | Text text ->
-                { slice with Text = text }
             | Bone ->
                 slice
             | Aspect.Expand (definitionName, _) ->
@@ -562,7 +558,7 @@ module EffectSystemModule =
             // abandon evaL
             else effectSystem
 
-        and private evalTextSprite resource aspects content slice effectSystem =
+        and private evalTextSprite resource text aspects content slice effectSystem =
 
             // pull font from resource
             let font = evalResource resource effectSystem
@@ -584,7 +580,7 @@ module EffectSystemModule =
                                         { Position = slice.Position - slice.Size * 0.5f
                                           Size = slice.Size
                                           ViewType = effectSystem.ViewType
-                                          Text = slice.Text
+                                          Text = text
                                           Font = AssetTag.specialize<Font> font
                                           Color = slice.Color
                                           Justification = Justified (JustifyCenter, JustifyMiddle) }})
@@ -704,8 +700,8 @@ module EffectSystemModule =
                 evalStaticSprite resource aspects content slice effectSystem
             | AnimatedSprite (resource, celSize, celRun, celCount, stutter, playback, aspects, content) ->
                 evalAnimatedSprite resource celSize celRun celCount stutter playback aspects content slice effectSystem
-            | TextSprite (resource, aspects, content) ->
-                evalTextSprite resource aspects content slice effectSystem
+            | TextSprite (resource, text, aspects, content) ->
+                evalTextSprite resource text aspects content slice effectSystem
             | SoundEffect (resource, aspects, content) ->
                 evalSoundEffect resource aspects content slice effectSystem
             | Mount (Shift shift, aspects, content) ->

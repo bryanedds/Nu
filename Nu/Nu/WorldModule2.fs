@@ -927,8 +927,8 @@ module GameDispatcherModule =
 
         override this.Register (game, world) =
             let (model, world) = World.attachModel initial Property? Model game world
-            let bindings = this.Bindings (model, game, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model game) bindings game world
+            let channels = this.Channel (model, game, world)
+            let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
             let content = this.Content (this.Model game, game, world)
             let world =
                 List.foldi (fun contentIndex world content ->
@@ -966,13 +966,13 @@ module GameDispatcherModule =
         abstract member Initializers : Lens<'model, World> * Game * World -> PropertyInitializer list
         default this.Initializers (_, _, _) = []
 
-        abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
-        default this.Bindings (_, _, _) = []
+        abstract member Channel : 'model * Game * World -> Channel<'message, 'command, Game, World> list
+        default this.Channel (_, _, _) = []
 
-        abstract member Message : 'model * 'message * Game * World -> 'model * Signal<'message, 'command>
+        abstract member Message : 'model * 'message * Game * World -> 'model * Signal<'message, 'command> list
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Game * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Game * World -> World * Signal<'message, 'command> list
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Game * World -> ScreenContent list

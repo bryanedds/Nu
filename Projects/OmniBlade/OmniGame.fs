@@ -23,16 +23,16 @@ module OmniGame =
             let world = World.hintAudioPackageUse Assets.GuiPackageName world
             base.Register (game, world)
 
-        override this.Bindings (_, _, _) =
-            [Simulants.Splash.RegisterEvent => cmd PlaySplashSound
-             Simulants.Title.IncomingStartEvent => cmd PlayTitleSong
-             Simulants.Title.OutgoingStartEvent => cmd FadeSong
-             Simulants.TitleCredits.ClickEvent => cmd ShowCredits
-             Simulants.TitlePlay.ClickEvent => cmd ShowBattle
-             Simulants.TitleExit.ClickEvent => cmd ExitGame
-             Simulants.CreditsBack.ClickEvent => cmd ShowTitle
-             Simulants.Battle.OutgoingStartEvent => cmd FadeSong
-             Simulants.BattleBack.ClickEvent => cmd ShowTitle]
+        override this.Channel (_, _, _) =
+            [Simulants.Splash.RegisterEvent => [cmd PlaySplashSound]
+             Simulants.Title.IncomingStartEvent => [cmd PlayTitleSong]
+             Simulants.Title.OutgoingStartEvent => [cmd FadeSong]
+             Simulants.TitleCredits.ClickEvent => [cmd ShowCredits]
+             Simulants.TitlePlay.ClickEvent => [cmd ShowBattle]
+             Simulants.TitleExit.ClickEvent => [cmd ExitGame]
+             Simulants.CreditsBack.ClickEvent => [cmd ShowTitle]
+             Simulants.Battle.OutgoingStartEvent => [cmd FadeSong]
+             Simulants.BattleBack.ClickEvent => [cmd ShowTitle]]
 
         override this.Command (_, command, _, world) =
             let world =

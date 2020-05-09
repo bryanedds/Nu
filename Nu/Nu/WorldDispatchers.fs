@@ -103,8 +103,8 @@ module FacetModule =
 
         override this.Register (entity, world) =
             let (model, world) = World.attachModel initial this.ModelName entity world
-            let bindings = this.Bindings (model, entity, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
+            let channels = this.Channel (model, entity, world)
+            let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
             let content = this.Content (this.Model entity, entity, world)
             let world =
                 List.fold (fun world content ->
@@ -141,13 +141,13 @@ module FacetModule =
         abstract member Initializers : Lens<'model, World> * Entity * World -> PropertyInitializer list
         default this.Initializers (_, _, _) = []
 
-        abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
-        default this.Bindings (_, _, _) = []
+        abstract member Channel : 'model * Entity * World -> Channel<'message, 'command, Entity, World> list
+        default this.Channel (_, _, _) = []
 
-        abstract member Message : 'model * 'message * Entity * World -> 'model * Signal<'message, 'command>
+        abstract member Message : 'model * 'message * Entity * World -> 'model * Signal<'message, 'command> list
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Entity * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Entity * World -> World * Signal<'message, 'command> list
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Entity * World -> EntityContent list
@@ -263,7 +263,6 @@ module EffectFacetModule =
                       Effects.Color = Vector4.One
                       Effects.Glow = Vector4.Zero
                       Effects.Enabled = true
-                      Effects.Text = ""
                       Effects.Volume = Constants.Audio.DefaultSoundVolume }
                 let effectHistory = entity.GetEffectHistory world
                 let effectEnv = entity.GetEffectDefinitions world
@@ -1107,8 +1106,8 @@ module EntityDispatcherModule =
 
         override this.Register (entity, world) =
             let (model, world) = World.attachModel initial Property? Model entity world
-            let bindings = this.Bindings (model, entity, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
+            let channels = this.Channel (model, entity, world)
+            let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
             let content = this.Content (this.Model entity, entity, world)
             let world =
                 List.fold (fun world content ->
@@ -1148,13 +1147,13 @@ module EntityDispatcherModule =
         abstract member Initializers : Lens<'model, World> * Entity * World -> PropertyInitializer list
         default this.Initializers (_, _, _) = []
 
-        abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
-        default this.Bindings (_, _, _) = []
+        abstract member Channel : 'model * Entity * World -> Channel<'message, 'command, Entity, World> list
+        default this.Channel (_, _, _) = []
 
-        abstract member Message : 'model * 'message * Entity * World -> 'model * Signal<'message, 'command>
+        abstract member Message : 'model * 'message * Entity * World -> 'model * Signal<'message, 'command> list
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Entity * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Entity * World -> World * Signal<'message, 'command> list
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Entity * World -> EntityContent list
@@ -1958,8 +1957,8 @@ module LayerDispatcherModule =
 
         override this.Register (layer, world) =
             let (model, world) = World.attachModel initial Property? Model layer world
-            let bindings = this.Bindings (model, layer, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model layer) bindings layer world
+            let channels = this.Channel (model, layer, world)
+            let world = Signal.processChannels this.Message this.Command (this.Model layer) channels layer world
             let content = this.Content (this.Model layer, layer, world)
             let world =
                 List.fold (fun world content ->
@@ -1996,13 +1995,13 @@ module LayerDispatcherModule =
         abstract member Initializers : Lens<'model, World> * Layer * World -> PropertyInitializer list
         default this.Initializers (_, _, _) = []
 
-        abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
-        default this.Bindings (_, _, _) = []
+        abstract member Channel : 'model * Layer * World -> Channel<'message, 'command, Layer, World> list
+        default this.Channel (_, _, _) = []
 
-        abstract member Message : 'model * 'message * Layer * World -> 'model * Signal<'message, 'command>
+        abstract member Message : 'model * 'message * Layer * World -> 'model * Signal<'message, 'command> list
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Layer * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Layer * World -> World * Signal<'message, 'command> list
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Layer * World -> EntityContent list
@@ -2057,8 +2056,8 @@ module ScreenDispatcherModule =
 
         override this.Register (screen, world) =
             let (model, world) = World.attachModel initial Property? Model screen world
-            let bindings = this.Bindings (model, screen, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model screen) bindings screen world
+            let channels = this.Channel (model, screen, world)
+            let world = Signal.processChannels this.Message this.Command (this.Model screen) channels screen world
             let content = this.Content (this.Model screen, screen, world)
             let world =
                 List.fold (fun world content ->
@@ -2095,13 +2094,13 @@ module ScreenDispatcherModule =
         abstract member Initializers : Lens<'model, World> * Screen * World -> PropertyInitializer list
         default this.Initializers (_, _, _) = []
 
-        abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
-        default this.Bindings (_, _, _) = []
+        abstract member Channel : 'model * Screen * World -> Channel<'message, 'command, Screen, World> list
+        default this.Channel (_, _, _) = []
 
-        abstract member Message : 'model * 'message * Screen * World -> 'model * Signal<'message, 'command>
+        abstract member Message : 'model * 'message * Screen * World -> 'model * Signal<'message, 'command> list
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Screen * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Screen * World -> World * Signal<'message, 'command> list
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Screen * World -> LayerContent list
