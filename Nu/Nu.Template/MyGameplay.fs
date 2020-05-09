@@ -23,17 +23,18 @@ type GameplayCommand =
 type MyGameplayDispatcher () =
     inherit ScreenDispatcher<GameplayModel, GameplayMessage, GameplayCommand> ()
 
-    // here we define the bindings used to connect events to their desired commands
-    override this.Bindings (_, _, _) =
+    // here we channel from events to signals
+    override this.Channel (_, _, _) =
         [Simulants.Game.KeyboardKeyDownEvent =|> fun evt ->
             if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
-            then cmd Jump
-            else cmd Nop
+            then [cmd Jump]
+            else [cmd Nop]
          Simulants.Gameplay.UpdateEvent =|> fun _ ->
-            if KeyboardState.isKeyDown KeyboardKey.Left then cmd MoveLeft
-            elif KeyboardState.isKeyDown KeyboardKey.Right then cmd MoveRight
-            else cmd Nop
-         Simulants.Gameplay.UpdateEvent => cmd EyeTrack]
+            if KeyboardState.isKeyDown KeyboardKey.Left then [cmd MoveLeft]
+            elif KeyboardState.isKeyDown KeyboardKey.Right then [cmd MoveRight]
+            else [cmd Nop]
+         Simulants.Gameplay.UpdateEvent =>
+            [cmd EyeTrack]]
 
     // here we handle the above commands
     override this.Command (_, command, _, world) =

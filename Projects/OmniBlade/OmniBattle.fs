@@ -206,14 +206,14 @@ module OmniBattle =
                         let enemies = BattleModel.getEnemies model
                         if List.forall (fun (character : CharacterModel) -> character.IsWounded) allies then
                             let model = BattleModel.updateBattleState (constant (BattleCease (false, time))) model
-                            let (model, signal) = tick time model
-                            (model, signal :: sigs)
+                            let (model, sigs2) = tick time model
+                            (model, sigs @ sigs2)
                         elif
                             List.forall (fun (character : CharacterModel) -> character.IsWounded) enemies &&
                             List.hasAtMost 1 enemies then
                             let model = BattleModel.updateBattleState (constant (BattleCease (true, time))) model
-                            let (model, signal) = tick time model
-                            (model, signal :: sigs)
+                            let (model, sigs2) = tick time model
+                            (model, sigs @ sigs2)
                         else (model, sigs)
                     | Some _ -> (model, sigs)
                 withSigs model sigs
@@ -324,11 +324,11 @@ module OmniBattle =
                 | BattleCease (outcome, timeStart) -> tickCease time timeStart outcome model
             (model, sigs)
 
-        override this.Bindings (_, battle, _) =
-            [battle.OutgoingStartEvent => cmd FadeSong
-             battle.SelectEvent => cmd InitializeBattle
-             battle.DeselectEvent => cmd FinalizeBattle
-             battle.UpdateEvent => msg Tick]
+        override this.Channel (_, battle, _) =
+            [battle.OutgoingStartEvent => [cmd FadeSong]
+             battle.SelectEvent => [cmd InitializeBattle]
+             battle.DeselectEvent => [cmd FinalizeBattle]
+             battle.UpdateEvent => [msg Tick]]
 
         override this.Message (model, message, _, world) =
 
