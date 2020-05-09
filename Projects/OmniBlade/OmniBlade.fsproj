@@ -85,6 +85,7 @@
     <Compile Include="OmniReticles.fs" />
     <Compile Include="OmniCharacter.fs" />
     <Compile Include="OmniBattle.fs" />
+    <Compile Include="OmniField.fs" />
     <Compile Include="OmniGame.fs" />
     <Compile Include="OmniPlugin.fs" />
     <Compile Include="Program.fs" />

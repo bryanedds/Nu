@@ -13,8 +13,9 @@ module FieldModel =
 
     type [<ReferenceEquality; NoComparison>] FieldModel =
         private
-            { Legion : Map<int, Legionnaire>
-              GameEvents_ : Set<GameEvent>
+            { FieldType : FieldType
+              Legion : Map<int, Legionnaire>
+              Advents_ : Set<Advent>
               Inventory_ : Inventory
               Gold_ : int }
 
@@ -23,9 +24,10 @@ module FieldModel =
                 (fun _ legionnaire -> Option.isSome legionnaire.PartyIndexOpt)
                 fieldModel.Legion
 
-        static member make legion gameEvents inventory gold =
-            { Legion = legion
-              GameEvents_ = gameEvents
+        static member make fieldType legion advents inventory gold =
+            { FieldType = fieldType
+              Legion = legion
+              Advents_ = advents
               Inventory_ = inventory
               Gold_ = gold }
 

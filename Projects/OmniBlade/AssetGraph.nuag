@@ -1,4 +1,4 @@
-﻿[[Default
+[[Default
   [[Asset Font "Assets/Default/FreeMonoBold.032.ttf" [Render] []]
    [Assets Assets/Default nueffect [Symbol] []]
    [Assets Assets/Default nuscript [Symbol] []]
@@ -14,6 +14,15 @@
    [Assets Assets/Gui wav [Audio] []]
    [Assets Assets/Gui ogg [Audio] []]
    [Assets Assets/Gui nulyr [] []]]]
+ [Field
+  [[Assets Assets/Field csv [Symbol] []]
+   [Assets Assets/Field psd [Render] [PsdToPng Retro]]
+   [Assets Assets/Field png [Render] []]
+   [Assets Assets/Field wav [Audio] []]
+   [Assets Assets/Field ogg [Audio] []]
+   [Assets Assets/Field tsx [] []]
+   [Assets Assets/Field tmx [] []]
+   [Assets Assets/Field nulyr [] []]]]
  [Battle
   [[Assets Assets/Battle csv [Symbol] []]
    [Assets Assets/Battle psd [Render] [PsdToPng Retro]]

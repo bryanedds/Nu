@@ -4,12 +4,14 @@ module Assets =
 
     // the packages as named in the project's 'AssetGraph.nuag' file
     let GuiPackageName = "Gui"
+    let FieldPackageName = "Field"
     let BattlePackageName = "Battle"
 
     // the various assets described by the project's 'AssetGraph.nuag' file
     let NuSplashSound = asset<Audio> GuiPackageName "Nu"
     let TitleSong = asset<Audio> GuiPackageName "Title"
     let AffirmSound = asset<Audio> GuiPackageName "Affirm"
+    let DebugRoomTileMap = asset<TileMap> FieldPackageName "DebugRoom"
     let BattleSong = asset<Audio> BattlePackageName "Battle"
     let HitSound = asset<Audio> BattlePackageName "Hit"
     let ExplosionSound = asset<Audio> BattlePackageName "Explosion"

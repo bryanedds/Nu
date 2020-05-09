@@ -104,6 +104,16 @@ type ArmorSubtype =
 type AccessoryType =
     string
 
+type DoorType =
+    | UnlockedDoor
+    | DebugRoomDoor
+
+type FieldType =
+    | DebugRoom
+
+type BattleType =
+    | DebugBattle
+
 type PoiseType =
     | Poising
     | Defending
@@ -201,6 +211,47 @@ type KeyItemData =
 type RewardData =
     { Gold : int }
 
+type DoorData =
+    { DoorType : DoorType // key
+      DoorKeyOpt : string option
+      OpenImage : Image AssetTag
+      ClosedImage : Image AssetTag }
+
+type [<NoComparison>] FieldObject =
+    | Npc of Vector4
+    | Shopkeep of Vector4
+    | Switch of Vector4 // anything the can affect another thing on the field through interaction
+    | Trigger of Vector4 // anything the can affect another thing on the field through traversal
+    | Portal of Vector4 // leads to a different field
+    | Door of Vector4 * DoorType // can be impassible until unlocked
+    | Chest of Vector4
+    | TileMap of TileMap AssetTag
+
+    static member getBounds fieldObject world =
+        match fieldObject with
+        | Npc bounds -> bounds
+        | Shopkeep bounds -> bounds
+        | Switch bounds -> bounds
+        | Trigger bounds -> bounds
+        | Portal bounds -> bounds
+        | Door (bounds, _) -> bounds
+        | Chest bounds -> bounds
+        | TileMap tileMap ->
+            let (_, _, tileMap) = World.getTileMapMetadata tileMap world
+            let bounds = v4 0.0f 0.0f (single tileMap.Width) (single tileMap.Height)
+            bounds
+
+type [<NoComparison>] FieldData =
+    { FieldType : FieldType // key
+      FieldSongOpt : Audio AssetTag option
+      FieldSoundOpt : Audio AssetTag option
+      FieldObjects : FieldObject list }
+
+type BattleData =
+    { BattleType : BattleType // key
+      BattleEnemies : CharacterType list
+      BattleSongOpt : Audio AssetTag }
+
 type CharacterData =
     { CharacterType : CharacterType // key
       BaseTechs : TechData list // base actions for all instances of character
@@ -218,7 +269,7 @@ type CharacterAnimationData =
 [<AutoOpen>]
 module Data =
 
-    type Data =
+    type [<NoComparison>] Data =
         { Weapons : Map<WeaponType, WeaponData>
           Armors : Map<ArmorType, ArmorData>
           Accessories : Map<AccessoryType, AccessoryData>
@@ -226,7 +277,9 @@ module Data =
           Techs : Map<TechType, TechData>
           TechAnimationData : Map<TechType, TechAnimationData>
           Characters : Map<CharacterType, CharacterData>
-          CharacterAnimationData : Map<CharacterAnimationCycle, CharacterAnimationData> }
+          CharacterAnimationData : Map<CharacterAnimationCycle, CharacterAnimationData>
+          FieldData : Map<FieldType, FieldData>
+          BattleData : Map<BattleType, BattleData> }
 
     let private readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
         let text = File.ReadAllText filePath
@@ -242,9 +295,11 @@ module Data =
           Techs = readSheet Assets.TechDataFilePath (fun data -> data.TechType)
           TechAnimationData = readSheet Assets.TechAnimationDataFilePath (fun data -> data.TechType)
           Characters = Map.empty
-          CharacterAnimationData = readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
+          CharacterAnimationData = readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle)
+          FieldData = Map.empty
+          BattleData = Map.empty }
 
     let data =
-        readFromFiles ()
+        lazy (readFromFiles ())
 
 type Data = Data.Data
