@@ -13,11 +13,13 @@ module FieldModel =
 
     type [<ReferenceEquality; NoComparison>] FieldModel =
         private
-            { FieldType : FieldType
+            { FieldType_ : FieldType
               Legion : Map<int, Legionnaire>
               Advents_ : Set<Advent>
               Inventory_ : Inventory
               Gold_ : int }
+
+        member this.FieldType = this.FieldType_
 
         static member getPartyMembers fieldModel =
             Map.filter
@@ -25,7 +27,7 @@ module FieldModel =
                 fieldModel.Legion
 
         static member make fieldType legion advents inventory gold =
-            { FieldType = fieldType
+            { FieldType_ = fieldType
               Legion = legion
               Advents_ = advents
               Inventory_ = inventory

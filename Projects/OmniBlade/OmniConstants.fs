@@ -8,6 +8,21 @@ open OmniBlade
 module Constants =
 
     [<RequireQualifiedAccess>]
+    module Gameplay =
+
+        let CharacterSize = v2 160.0f 160.0f
+
+    [<RequireQualifiedAccess>]
+    module Field =
+
+        let WalkForce = 8000.0f
+        let BackgroundDepth = -10.0f
+        let ForgroundDepth = 0.0f
+        let EffectDepth = 10.0f
+        let GuiDepth = 20.0f
+        let GuiEffectDepth = 30.0f
+
+    [<RequireQualifiedAccess>]
     module Battle =
 
         let AllyMax = 3

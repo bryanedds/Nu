@@ -264,7 +264,8 @@ type [<NoComparison>] FieldObject =
 type [<NoComparison>] FieldData =
     { FieldType : FieldType // key
       FieldSongOpt : Audio AssetTag option
-      FieldSoundOpt : Audio AssetTag option
+      FieldAmbienceOpt : Audio AssetTag option
+      FieldTileMap : TileMap AssetTag
       FieldObjects : FieldObject list }
 
 type [<NoComparison>] EnemyData =
@@ -322,7 +323,7 @@ module Data =
           Techs = readSheet Assets.TechDataFilePath (fun data -> data.TechType)
           Archetypes = readSheet Assets.ArchetypeDataFilePath (fun data -> data.ArchetypeType)
           Characters = readSheet Assets.CharacterDataFilePath (fun data -> data.CharacterType)
-          Fields = Map.empty
+          Fields = readSheet Assets.FieldDataFilePath (fun data -> data.FieldType)
           Battles = readSheet Assets.BattleDataFilePath (fun data -> data.BattleType)
           TechAnimations = readSheet Assets.TechAnimationDataFilePath (fun data -> data.TechType)
           CharacterAnimations = readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }

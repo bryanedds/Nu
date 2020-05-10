@@ -545,6 +545,9 @@ module TileMapFacetModule =
         member this.GetTileMapAsset world : TileMap AssetTag = this.Get Property? TileMapAsset world
         member this.SetTileMapAsset (value : TileMap AssetTag) world = this.SetFast Property? TileMapAsset false false value world
         member this.TileMapAsset = lens Property? TileMapAsset this.GetTileMapAsset this.SetTileMapAsset this
+        member this.GetTileLayerClearance world : single = this.Get Property? TileLayerClearance world
+        member this.SetTileLayerClearance (value : single) world = this.SetFast Property? TileLayerClearance false false value world
+        member this.TileLayerClearance = lens Property? TileLayerClearance this.GetTileLayerClearance this.SetTileLayerClearance this
         member this.GetParallax world : single = this.Get Property? Parallax world
         member this.SetParallax (value : single) world = this.SetFast Property? Parallax false false value world
         member this.Parallax = lens Property? Parallax this.GetParallax this.SetParallax this
@@ -662,6 +665,7 @@ module TileMapFacetModule =
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
              define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackageName Assets.DefaultTileMapName)
+             define Entity.TileLayerClearance 2.0f
              define Entity.Parallax 0.0f]
 
         override this.RegisterPhysics (tileMap, world) =
@@ -696,13 +700,14 @@ module TileMapFacetModule =
             if tileMap.GetVisible world then
                 match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with
                 | Some (_, images, map) ->
+                    let viewType = tileMap.GetViewType world
                     let layers = List.ofSeq map.Layers
                     let tileSourceSize = Vector2i (map.TileWidth, map.TileHeight)
                     let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
-                    let viewType = tileMap.GetViewType world
+                    let tileLayerClearance = tileMap.GetTileLayerClearance world
                     List.foldi
                         (fun i world (layer : TmxLayer) ->
-                            let depth = tileMap.GetDepth world + single i * 2.0f // MAGIC_VALUE: assumption
+                            let depth = tileMap.GetDepth world + single i * tileLayerClearance
                             let parallaxTranslation =
                                 match viewType with
                                 | Absolute -> Vector2.Zero

@@ -2,16 +2,26 @@
 open Nu
 module Assets =
 
-    // the packages as named in the project's 'AssetGraph.nuag' file
+    // package names
     let GuiPackageName = "Gui"
     let FieldPackageName = "Field"
     let BattlePackageName = "Battle"
+    let GameplayPackageName = "Gameplay"
 
-    // the various assets described by the project's 'AssetGraph.nuag' file
+    // gui assets
     let NuSplashSound = asset<Audio> GuiPackageName "Nu"
     let TitleSong = asset<Audio> GuiPackageName "Title"
     let AffirmSound = asset<Audio> GuiPackageName "Affirm"
+
+    // gameplay assets
+    let FinnAnimationSheet = asset<Image> GameplayPackageName "Finn"
+    let GlennAnimationSheet = asset<Image> GameplayPackageName "Glenn"
+    let BlueGoblinAnimationSheet = asset<Image> GameplayPackageName "BlueGoblin"
+
+    // field assets
     let DebugRoomTileMap = asset<TileMap> FieldPackageName "DebugRoom"
+
+    // battle assets
     let BattleSong = asset<Audio> BattlePackageName "Battle"
     let HitSound = asset<Audio> BattlePackageName "Hit"
     let ExplosionSound = asset<Audio> BattlePackageName "Explosion"
@@ -20,24 +30,22 @@ module Assets =
     let CancelImage = asset<Image> BattlePackageName "Cancel"
     let BoltAnimationSheet = asset<Image> BattlePackageName "Bolt"
     let ExplosionAnimationSheet = asset<Image> BattlePackageName "Explosion"
-    let FinnAnimationSheet = asset<Image> BattlePackageName "Finn"
-    let GlennAnimationSheet = asset<Image> BattlePackageName "Glenn"
-    let BlueGoblinAnimationSheet = asset<Image> BattlePackageName "BlueGoblin"
 
-    // the file paths from which various simulants are loaded
+    // layer file paths
     let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
     let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
-    let BattleHudLayerFilePath = "Assets/Battle/Hud.nulyr"
+    let FieldHudLayerFilePath = "Assets/Field/Hud.nulyr"
     let BattleSceneLayerFilePath = "Assets/Battle/Scene.nulyr"
 
-    // Rom files.
-    let WeaponDataFilePath = "Assets/Battle/WeaponData.csv"
-    let ArmorDataFilePath = "Assets/Battle/ArmorData.csv"
-    let AccessoryDataFilePath = "Assets/Battle/AccessoryData.csv"
-    let ConsumableDataFilePath = "Assets/Battle/ConsumableData.csv"
-    let TechDataFilePath = "Assets/Battle/TechData.csv"
-    let ArchetypeDataFilePath = "Assets/Battle/ArchetypeData.csv"
-    let CharacterDataFilePath = "Assets/Battle/CharacterData.csv"
-    let BattleDataFilePath = "Assets/Battle/BattleData.csv"
-    let TechAnimationDataFilePath = "Assets/Battle/TechAnimationData.csv"
-    let CharacterAnimationDataFilePath = "Assets/Battle/CharacterAnimationData.csv"
+    // data file paths
+    let WeaponDataFilePath = "Assets/Gameplay/WeaponData.csv"
+    let ArmorDataFilePath = "Assets/Gameplay/ArmorData.csv"
+    let AccessoryDataFilePath = "Assets/Gameplay/AccessoryData.csv"
+    let ConsumableDataFilePath = "Assets/Gameplay/ConsumableData.csv"
+    let TechDataFilePath = "Assets/Gameplay/TechData.csv"
+    let ArchetypeDataFilePath = "Assets/Gameplay/ArchetypeData.csv"
+    let CharacterDataFilePath = "Assets/Gameplay/CharacterData.csv"
+    let FieldDataFilePath = "Assets/Gameplay/FieldData.csv"
+    let BattleDataFilePath = "Assets/Gameplay/BattleData.csv"
+    let TechAnimationDataFilePath = "Assets/Gameplay/TechAnimationData.csv"
+    let CharacterAnimationDataFilePath = "Assets/Gameplay/CharacterAnimationData.csv"

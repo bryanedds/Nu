@@ -12,7 +12,7 @@ module OmniGame =
         | FadeSong
         | ShowTitle
         | ShowCredits
-        | ShowBattle
+        | ShowField
         | ExitGame
 
     type StandAloneDispatcher () =
@@ -28,9 +28,11 @@ module OmniGame =
              Simulants.Title.IncomingStartEvent => [cmd PlayTitleSong]
              Simulants.Title.OutgoingStartEvent => [cmd FadeSong]
              Simulants.TitleCredits.ClickEvent => [cmd ShowCredits]
-             Simulants.TitlePlay.ClickEvent => [cmd ShowBattle]
+             Simulants.TitlePlay.ClickEvent => [cmd ShowField]
              Simulants.TitleExit.ClickEvent => [cmd ExitGame]
              Simulants.CreditsBack.ClickEvent => [cmd ShowTitle]
+             Simulants.Field.OutgoingStartEvent => [cmd FadeSong]
+             Simulants.FieldBack.ClickEvent => [cmd ShowTitle]
              Simulants.Battle.OutgoingStartEvent => [cmd FadeSong]
              Simulants.BattleBack.ClickEvent => [cmd ShowTitle]]
 
@@ -42,15 +44,16 @@ module OmniGame =
                 | FadeSong -> World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
                 | ShowTitle -> World.transitionScreen Simulants.Title world
                 | ShowCredits -> World.transitionScreen Simulants.Credits world
-                | ShowBattle -> World.transitionScreen Simulants.Battle world
+                | ShowField -> World.transitionScreen Simulants.Field world
                 | ExitGame -> World.exit world
             just world
 
         override this.Content (_, _, _) =
-            [Content.screenFromLayerFile<BattleDispatcher> Simulants.Battle.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.BattleHudLayerFilePath
-             Content.screen Simulants.Splash.Name (Splash (Constants.OmniBlade.DissolveData, Constants.OmniBlade.SplashData, Simulants.Title)) [] []
+            [Content.screen Simulants.Splash.Name (Splash (Constants.OmniBlade.DissolveData, Constants.OmniBlade.SplashData, Simulants.Title)) [] []
              Content.screenFromLayerFile Simulants.Title.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.TitleLayerFilePath
-             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.CreditsLayerFilePath]
+             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.CreditsLayerFilePath
+             Content.screenFromLayerFile<FieldDispatcher> Simulants.Field.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.FieldHudLayerFilePath
+             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve Constants.OmniBlade.DissolveData) [] []]
 
     type EditorDispatcher () =
         inherit GameDispatcher<unit, unit, OmniCommand> (())
