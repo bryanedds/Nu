@@ -32,16 +32,16 @@ module BattleModel =
         private
             { BattleState_ : BattleState
               Characters : Map<CharacterIndex, CharacterModel>
-              CurrentCommandOpt_ : CurrentCommand option
-              ActionCommands_ : ActionCommand Queue
               Inventory_ : Inventory
-              Gold_ : int }
+              Gold_ : int
+              CurrentCommandOpt_ : CurrentCommand option
+              ActionCommands_ : ActionCommand Queue }
 
         member this.BattleState = this.BattleState_
-        member this.CurrentCommandOpt = this.CurrentCommandOpt_
-        member this.ActionCommands = this.ActionCommands_
         member this.Inventory = this.Inventory_
         member this.Gold = this.Gold_
+        member this.CurrentCommandOpt = this.CurrentCommandOpt_
+        member this.ActionCommands = this.ActionCommands_
 
         static member getAllies model =
             model.Characters |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
@@ -142,14 +142,17 @@ module BattleModel =
         static member updateBattleState updater model =
             { model with BattleState_ = updater model.BattleState_ }
 
+        static member updateInventory updater model =
+            { model with Inventory_ = updater model.Inventory_ }
+
+        static member updateGold updater model =
+            { model with Gold_ = updater model.Gold_ }
+
         static member updateCurrentCommandOpt updater model =
             { model with CurrentCommandOpt_ = updater model.CurrentCommandOpt_ }
 
         static member updateActionCommands updater model =
             { model with ActionCommands_ = updater model.ActionCommands_ }
-
-        static member updateInventory updater model =
-            { model with Inventory_ = updater model.Inventory_ }
 
         static member appendActionCommand command model =
             { model with ActionCommands_ = Queue.conj command model.ActionCommands }
@@ -157,15 +160,27 @@ module BattleModel =
         static member prependActionCommand command model =
             { model with ActionCommands_ = Queue.rev model.ActionCommands |> Queue.conj command |> Queue.rev }
 
-        static member make battleState characters currentCommandOpt actionCommands inventory gold =
-            { BattleState_ = battleState
-              Characters = characters
-              CurrentCommandOpt_ = currentCommandOpt
-              ActionCommands_ = actionCommands
-              Inventory_ = inventory
-              Gold_ = gold }
+        static member make allies inventory gold battleType time =
+            match Map.tryFind battleType data.Value.Battles with
+            | Some battleData ->
+                let enemies = List.mapi CharacterModel.makeEnemy battleData.BattleEnemies
+                let characters = allies @ enemies |> Map.ofListBy (fun (character : CharacterModel) -> (character.CharacterIndex, character))
+                let model =
+                    { BattleState_ = BattleReady time
+                      Characters = characters
+                      Inventory_ = inventory
+                      Gold_ = gold
+                      CurrentCommandOpt_ = None
+                      ActionCommands_ = Queue.empty }
+                model
+            | None -> BattleModel.empty
 
         static member empty =
-            BattleModel.make (BattleReady 0L) Map.empty None Queue.empty { Items = Map.empty } 0
+            { BattleState_ = BattleReady 0L
+              Characters = Map.empty
+              Inventory_ = { Items = Map.empty }
+              Gold_ = 0
+              CurrentCommandOpt_ = None
+              ActionCommands_ = Queue.empty }
 
 type BattleModel = BattleModel.BattleModel

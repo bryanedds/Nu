@@ -234,8 +234,25 @@ module CharacterModel =
         static member animate time cycle character =
             { character with AnimationState = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState }
 
+        static member makeEnemy index enemyData =
+            let animationSheet = 
+                let characterType = Enemy enemyData.EnemyType
+                match Map.tryFind characterType data.Value.Characters with
+                | Some characterData -> characterData.AnimationSheet
+                | None -> Assets.BlueGoblinAnimationSheet
+            let enemy =
+                CharacterModel.make
+                    (EnemyIndex index)
+                    (Enemy enemyData.EnemyType)
+                    0
+                    None None [] // TODO: figure out if / how we should populate these 
+                    animationSheet
+                    Leftward
+                    (Math.makeBounds enemyData.EnemyPosition (v2 160.0f 160.0f))
+            enemy
+
         static member make characterIndex characterType expPoints weaponOpt armorOpt accessories animationSheet direction bounds =
-            let characterState = CharacterState.make characterIndex characterType expPoints weaponOpt armorOpt accessories
+            let characterState = CharacterState.make characterIndex characterType expPoints weaponOpt armorOpt accessories animationSheet
             let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = ReadyCycle; Direction = direction }
             { CharacterState = characterState
               AnimationState = animationState
