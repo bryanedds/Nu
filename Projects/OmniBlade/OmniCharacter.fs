@@ -19,14 +19,11 @@ module OmniCharacter =
         inherit EntityDispatcher<CharacterModel, unit, unit>
             (CharacterModel.make (AllyIndex 0) (Ally Finn) 0 None None [] Assets.FinnAnimationSheet Rightward (Math.makeBounds  v2Zero v2One))
 
-        static let [<Literal>] CelSize =
-            160.0f
-
         static let getSpriteInset (character : Entity) world =
             let model = character.GetCharacterModel world
             let index = CharacterModel.getAnimationIndex (World.getTickTime world) model
-            let offset = v2 (single index.X * CelSize) (single index.Y * CelSize)
-            let inset = Vector4 (offset.X, offset.Y, offset.X + CelSize, offset.Y + CelSize)
+            let offset = v2 (single index.X) (single index.Y) * Constants.Gameplay.CharacterSize
+            let inset = Math.makeBounds offset Constants.Gameplay.CharacterSize
             inset
 
         static let getSpriteColor (character : Entity) world =
@@ -58,7 +55,7 @@ module OmniCharacter =
             [Entity.Bounds <== model --> fun (model : CharacterModel) -> model.Bounds]
 
         override this.Actualize (character, world) =
-            if character.GetInView world then
+            if character.GetVisibleLayered world && character.GetInView world then
                 let model = character.GetCharacterModel world
                 World.enqueueRenderMessage
                     (RenderDescriptorMessage

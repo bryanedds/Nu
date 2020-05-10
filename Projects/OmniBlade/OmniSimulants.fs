@@ -21,8 +21,16 @@ module Simulants =
     let CreditsGui = Credits / "Gui"
     let CreditsBack = CreditsGui / "Back"
 
+    // field
+    let Field = Default.Screen
+    let FieldHud = Field / "Hud"
+    let FieldBack = FieldHud / "Back"
+    let FieldScene = Field / "Scene"
+    let FieldTileMap = FieldScene / "TileMap"
+    let FieldAvatar = FieldScene / "Avatar"
+
     // battle
-    let Battle = Default.Screen
+    let Battle = Screen "Battle"
     let BattleHud = Battle / "Hud"
     let BattleBack = BattleHud / "Back"
     let BattleScene = Battle / "Scene"
