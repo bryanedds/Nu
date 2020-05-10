@@ -83,15 +83,14 @@ type AutoBattle =
 /// Used both inside and outside of battle.
 /// Level is calculated from base experience + added experience.
 type CharacterState =
-    { PartyIndex : int // key
-      CharacterType : CharacterType
+    { CharacterIndex : CharacterIndex // key
+      ArchetypeType : ArchetypeType
       ExpPoints : int
       HitPoints : int
       TechPoints : int
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
       Accessories : AccessoryType list
-      Techs : TechType Set
       Statuses : StatusType Set
       Defending : bool
       Charging : bool
@@ -102,104 +101,18 @@ type CharacterState =
       ActionTime : int
       AutoBattleOpt : AutoBattle option }
 
-    static member empty =
-        { PartyIndex = 0
-          CharacterType = Ally Jinn
-          ExpPoints = 0
-          HitPoints = 1 // note this is an arbitrary number as hp max is calculated
-          TechPoints = 0 // sp max is calculated
-          WeaponOpt = None
-          ArmorOpt = None
-          Accessories = []
-          Techs = Set.empty
-          Statuses = Set.empty
-          Defending = false
-          Charging = false
-          PowerBuff = 1.0f // rate at which power is buffed / debuffed
-          MagicBuff = 1.0f // rate at which magic is buffed / debuffed
-          ShieldBuff = 1.0f // rate at which shield is buffed / debuffed
-          CounterBuff = 1.0f // rate at which counter is buffed / debuffed
-          ActionTime = 0
-          AutoBattleOpt = None }
-
-    member this.CharacterIndex = match this.CharacterType with Ally _ -> AllyIndex this.PartyIndex | Enemy _ -> EnemyIndex this.PartyIndex
-    member this.Name = match this.CharacterType with Ally ally -> scstring ally | Enemy enemy -> scstring enemy
-    member this.IsAlly = match this.CharacterType with Ally _ -> true | Enemy _ -> false
+    member this.PartyIndex = match this.CharacterIndex with AllyIndex index | EnemyIndex index -> index
+    member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
     member this.IsEnemy = not this.IsAlly
     member this.IsHealthy = this.HitPoints > 0
     member this.IsWounded = this.HitPoints <= 0
-
-    member this.Level =
-        if this.ExpPoints < 8 then 1
-        elif this.ExpPoints < 16 then 2
-        elif this.ExpPoints < 24 then 3
-        elif this.ExpPoints < 36 then 4
-        elif this.ExpPoints < 50 then 5
-        elif this.ExpPoints < 75 then 6
-        elif this.ExpPoints < 100 then 6
-        elif this.ExpPoints < 150 then 8
-        elif this.ExpPoints < 225 then 9
-        elif this.ExpPoints < 350 then 10
-        elif this.ExpPoints < 500 then 11
-        elif this.ExpPoints < 750 then 12
-        elif this.ExpPoints < 1000 then 13
-        elif this.ExpPoints < 1500 then 14
-        elif this.ExpPoints < 2250 then 15
-        elif this.ExpPoints < 3500 then 16
-        elif this.ExpPoints < 5000 then 17
-        elif this.ExpPoints < 7500 then 18
-        elif this.ExpPoints < 10000 then 19
-        else 20
-
-    member this.HitPointsMax =
-        let intermediate =
-            match this.ArmorOpt with
-            | Some armor ->
-                match Map.tryFind armor data.Value.Armors with
-                | Some armorData -> single armorData.HitPointsBase
-                | None -> 8.0f
-            | None -> 8.0f
-        intermediate * single this.Level |> int
-
-    member this.TechPointsMax =
-        let intermediate =
-            match this.ArmorOpt with
-            | Some armor ->
-                match Map.tryFind armor data.Value.Armors with
-                | Some armorData -> single armorData.TechPointsBase
-                | None -> 4.0f
-            | None -> 4.0f
-        intermediate * single this.Level |> int
-
-    member this.Power =
-        let intermediate =
-            match this.WeaponOpt with
-            | Some weapon ->
-                match Map.tryFind weapon data.Value.Weapons with
-                | Some weaponData -> single weaponData.PowerBase
-                | None -> 1.0f
-            | None -> 1.0f
-        intermediate * single this.Level * this.PowerBuff |> int |> max 1
-
-    member this.Magic =
-        let intermediate =
-            match this.WeaponOpt with
-            | Some weapon ->
-                match Map.tryFind weapon data.Value.Weapons with
-                | Some weaponData -> single weaponData.MagicBase
-                | None -> 1.0f
-            | None -> 1.0f
-        intermediate * single this.Level * this.MagicBuff |> int |> max 1
-
-    member this.Shield =
-        let intermediate =
-            match this.Accessories with
-            | accessory :: _ -> // just the first relic for now
-                match Map.tryFind accessory data.Value.Accessories with
-                | Some weaponData -> single weaponData.ShieldBase
-                | None -> 0.0f
-            | _ -> 0.0f
-        intermediate * single this.Level * this.ShieldBuff |> int |> max 0
+    member this.Level = Algorithms.expPointsToLevel this.ExpPoints
+    member this.HitPointsMax = Algorithms.hitPointsMax this.ArmorOpt this.ArchetypeType this.Level
+    member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
+    member this.Power = Algorithms.power this.WeaponOpt this.PowerBuff this.ArchetypeType this.Level
+    member this.Magic = Algorithms.magic this.WeaponOpt this.MagicBuff this.ArchetypeType this.Level
+    member this.Shield = Algorithms.shield this.Accessories this.ShieldBuff this.ArchetypeType this.Level
+    member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
     static member isTeammate (state : CharacterState) (state2 : CharacterState) =
         CharacterIndex.isTeammate state.CharacterIndex state2.CharacterIndex
@@ -238,7 +151,7 @@ type CharacterState =
         let specialPoints = min state.TechPointsMax specialPoints
         { state with TechPoints = specialPoints }
 
-    static member tryGetTechRandom state =
+    static member tryGetTechRandom (state : CharacterState) =
         let specials = state.Techs
         if Set.notEmpty specials then
             let specialIndex = Gen.random1 specials.Count
@@ -250,6 +163,35 @@ type CharacterState =
         if state.Defending then Defending
         elif state.Charging then Charging
         else Poising
+
+    static member make characterIndex characterType expPoints weaponOpt armorOpt accessories =
+        let (archetypeType, levelBase) =
+            match Map.tryFind characterType data.Value.Characters with
+            | Some characterData -> (characterData.ArchetypeType, characterData.LevelBase)
+            | None -> (Squire, 0)
+        let expPointsTotal = Algorithms.levelToExpPoints levelBase + expPoints
+        let level = Algorithms.expPointsToLevel expPointsTotal
+        let hitPointsMax = Algorithms.hitPointsMax armorOpt archetypeType level
+        let techPointsMax = Algorithms.hitPointsMax armorOpt archetypeType level
+        let characterState =
+            { CharacterIndex = characterIndex
+              ArchetypeType = archetypeType
+              ExpPoints = expPointsTotal
+              HitPoints = hitPointsMax
+              TechPoints = techPointsMax
+              WeaponOpt = weaponOpt
+              ArmorOpt = armorOpt
+              Accessories = accessories
+              Statuses = Set.empty
+              Defending = false
+              Charging = false
+              PowerBuff = 1.0f
+              MagicBuff = 1.0f
+              ShieldBuff = 1.0f
+              CounterBuff = 1.0f
+              ActionTime = 0
+              AutoBattleOpt = None }
+        characterState
 
 type CharacterAnimationState =
     { TimeStart : int64
