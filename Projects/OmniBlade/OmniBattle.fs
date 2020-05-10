@@ -62,15 +62,12 @@ module OmniBattle =
 
     type BattleDispatcher () =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
-            (let characters =
+            (// TODO: data-drive ally positions
+             let allies =
                 [CharacterModel.make (AllyIndex 0) (Ally Finn) 0 (Some "WoodenSword") (Some "LeatherVest") [] Assets.FinnAnimationSheet Rightward (Math.makeBounds (v2 -224.0f -168.0f) (v2 160.0f 160.0f))
-                 CharacterModel.make (AllyIndex 1) (Ally Glenn) 0 (Some "StoneSword") (Some "LeatherMail") [] Assets.GlennAnimationSheet Leftward (Math.makeBounds (v2 224.0f 64.0f) (v2 160.0f 160.0f))
-                 CharacterModel.make (EnemyIndex 0) (Enemy BlueGoblin) 0 (Some "Melee") None [] Assets.GoblinAnimationSheet Leftward (Math.makeBounds (v2 0.0f 0.0f) (v2 160.0f 160.0f))
-                 CharacterModel.make (EnemyIndex 1) (Enemy BlueGoblin) 0 (Some "Melee") None [] Assets.GoblinAnimationSheet Leftward (Math.makeBounds (v2 176.0f -192.0f) (v2 160.0f 160.0f))
-                 CharacterModel.make (EnemyIndex 2) (Enemy BlueGoblin) 0 (Some "Melee") None [] Assets.GoblinAnimationSheet Leftward (Math.makeBounds (v2 76.0f -92.0f) (v2 160.0f 160.0f))]
-             let characters = Map.ofListBy (fun (character : CharacterModel) -> (character.CharacterIndex, character)) characters
+                 CharacterModel.make (AllyIndex 1) (Ally Glenn) 0 (Some "StoneSword") (Some "LeatherMail") [] Assets.GlennAnimationSheet Leftward (Math.makeBounds (v2 224.0f 64.0f) (v2 160.0f 160.0f))]
              let inventory = { Items = Map.ofList [(Consumable GreenHerb, 2); (Consumable RedHerb, 2)] }
-             let model = BattleModel.make (BattleReady 0L) characters None Queue.empty inventory 100
+             let model = BattleModel.make allies inventory 100 DebugBattle 0L
              model)
 
         static let tickAttack sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =

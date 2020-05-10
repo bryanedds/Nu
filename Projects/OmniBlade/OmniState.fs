@@ -99,7 +99,8 @@ type CharacterState =
       MagicBuff : single
       CounterBuff : single
       ActionTime : int
-      AutoBattleOpt : AutoBattle option }
+      AutoBattleOpt : AutoBattle option
+      AnimationSheet : Image AssetTag }
 
     member this.PartyIndex = match this.CharacterIndex with AllyIndex index | EnemyIndex index -> index
     member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
@@ -164,7 +165,7 @@ type CharacterState =
         elif state.Charging then Charging
         else Poising
 
-    static member make characterIndex characterType expPoints weaponOpt armorOpt accessories =
+    static member make characterIndex characterType expPoints weaponOpt armorOpt accessories animationSheet =
         let (archetypeType, levelBase) =
             match Map.tryFind characterType data.Value.Characters with
             | Some characterData -> (characterData.ArchetypeType, characterData.LevelBase)
@@ -190,7 +191,8 @@ type CharacterState =
               ShieldBuff = 1.0f
               CounterBuff = 1.0f
               ActionTime = 0
-              AutoBattleOpt = None }
+              AutoBattleOpt = None
+              AnimationSheet = animationSheet }
         characterState
 
 type CharacterAnimationState =

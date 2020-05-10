@@ -1,4 +1,4 @@
-Type,ArchetypeType,LevelBase,Reward,Description
-Finn,Fighter,0,[1 1],The main protagonist.
-Glenn,Brawler,0,[1 1],Finn’s best friend.
-BlueGoblin,Goblin,0,[1 1],A minor goblin from the Golobogos Islands.
+Type,ArchetypeType,LevelBase,Reward,AnimationSheet,Description
+Finn,Fighter,0,[1 1],[Battle Finn],The main protagonist.
+Glenn,Brawler,0,[1 1],[Battle Glenn],Finn’s best friend.
+BlueGoblin,Goblin,0,[1 1],[Battle BlueGoblin],A minor goblin from the Golobogos Islands.

@@ -7,9 +7,6 @@ open Nu
 [<RequireQualifiedAccess>]
 module Algorithms =
 
-    let LevelMax =
-        32
-
     let ExpReqs =
         [0; 8
          15; 22; 35; 50; 75; 100
@@ -20,6 +17,9 @@ module Algorithms =
 
     let ExpReqRanges =
         List.pairwise ExpReqs
+
+    let LevelMax =
+        List.length ExpReqs
 
     let levelToExpPointsRange level =
         ExpReqRanges |>
@@ -115,4 +115,3 @@ module Algorithms =
         match indexOpt with
         | Some index -> techs |> Map.toList |> List.take (inc index) |> List.map snd |> Set.ofList
         | None -> Set.empty
-        

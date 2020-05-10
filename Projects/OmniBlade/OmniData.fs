@@ -268,7 +268,7 @@ type [<NoComparison>] FieldData =
       FieldObjects : FieldObject list }
 
 type [<NoComparison>] EnemyData =
-    { EnemyType : EnemyType
+    { EnemyType : EnemyType // key
       EnemyPosition : Vector2 }
 
 type [<NoComparison>] BattleData =
@@ -281,6 +281,7 @@ type CharacterData =
     { CharacterType : CharacterType // key
       ArchetypeType : ArchetypeType
       LevelBase : int
+      AnimationSheet : Image AssetTag
       Description : string }
 
 type CharacterAnimationData =

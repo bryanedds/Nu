@@ -22,7 +22,7 @@ module Assets =
     let ExplosionAnimationSheet = asset<Image> BattlePackageName "Explosion"
     let FinnAnimationSheet = asset<Image> BattlePackageName "Finn"
     let GlennAnimationSheet = asset<Image> BattlePackageName "Glenn"
-    let GoblinAnimationSheet = asset<Image> BattlePackageName "Goblin"
+    let BlueGoblinAnimationSheet = asset<Image> BattlePackageName "BlueGoblin"
 
     // the file paths from which various simulants are loaded
     let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
