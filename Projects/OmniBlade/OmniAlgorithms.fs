@@ -91,19 +91,20 @@ module Algorithms =
             | None -> 1.0f
         intermediate * single level * magicBuff * intelligence |> int |> max 1
 
-    let shield accessories shieldBuff archetypeType level =
-        let toughness = 
+    let shield effectType accessories shieldBuff archetypeType level =
+        let (toughness, intelligence) = 
             match Map.tryFind archetypeType data.Value.Archetypes with
-            | Some archetypeData -> archetypeData.Toughness
-            | None -> 1.0f
+            | Some archetypeData -> (archetypeData.Toughness, archetypeData.Intelligence)
+            | None -> (1.0f, 1.0f)
         let intermediate =
             match accessories with
             | accessory :: _ -> // just the first accessory for now
                 match Map.tryFind accessory data.Value.Accessories with
-                | Some weaponData -> single weaponData.ShieldBase
+                | Some accessoryData -> single accessoryData.ShieldBase
                 | None -> 0.0f
             | _ -> 0.0f
-        intermediate * single level * shieldBuff * toughness |> int |> max 0
+        let scalar = match effectType with Magical -> intelligence | Physical -> toughness
+        intermediate * single level * shieldBuff * scalar |> int |> max 0
 
     let techs archetypeType level =
         let techs =

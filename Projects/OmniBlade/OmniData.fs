@@ -84,8 +84,9 @@ type ActionType =
 
 type ArchetypeType =
     | Squire
+    | Mage
     | Fighter
-    | Barbarian
+    | Brawler
     | Wizard
     | Cleric
     | Goblin
@@ -96,7 +97,7 @@ type WeaponType =
 type WeaponSubtype =
     | Melee
     | Sword
-    | Axe
+    | Heavesword
     | Bow
     | Staff
     | Rod
@@ -108,6 +109,7 @@ type ArmorSubtype =
     | Robe
     | Vest
     | Mail
+    | Pelt
 
 type AccessoryType =
     string
@@ -213,6 +215,8 @@ type ArchetypeData =
       Toughness : single // shield scalar
       Wealth : single // gold scalar
       Mythos : single // exp scala
+      WeaponSubtype : WeaponSubtype
+      ArmorSubtype : ArmorSubtype
       Techs : Map<int, TechType> } // tech availability according to level
 
 type TechAnimationData =

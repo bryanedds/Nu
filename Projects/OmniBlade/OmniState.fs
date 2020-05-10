@@ -111,7 +111,7 @@ type CharacterState =
     member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.Power = Algorithms.power this.WeaponOpt this.PowerBuff this.ArchetypeType this.Level
     member this.Magic = Algorithms.magic this.WeaponOpt this.MagicBuff this.ArchetypeType this.Level
-    member this.Shield = Algorithms.shield this.Accessories this.ShieldBuff this.ArchetypeType this.Level
+    member this.Shield effectType = Algorithms.shield effectType this.Accessories this.ShieldBuff this.ArchetypeType this.Level
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
     static member isTeammate (state : CharacterState) (state2 : CharacterState) =
@@ -122,9 +122,9 @@ type CharacterState =
         | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt
         | None -> false
 
-    static member getAttackResult (source : CharacterState) (target : CharacterState) =
+    static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
         let power = source.Power
-        let shield = target.Shield
+        let shield = target.Shield effectType
         let damageUnscaled = power - shield
         let damage = single damageUnscaled |> int |> max 1
         damage
