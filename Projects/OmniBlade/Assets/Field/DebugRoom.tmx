@@ -7,11 +7,17 @@
   </data>
  </layer>
  <layer id="1" name="Walls" width="32" height="16">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
   <data encoding="base64" compression="zlib">
    eJzt1VsOwUAUxvEzLg9swDMSCcsgESzDNSxDi3247oOWfSBsw186jUlpXwgPOskvTnq+zJnzJC8iedTRRU/rfuA3+M2va3qmP7ePAWxMkFQiGWSVV0+MXlgm2Lcj7mmjo9/RwBQzLLFCkWwZFeXVK6MXlgn2lxH3jGGhoOevsYED9/4usk20lFe7Ri8sE+w7EffMsUBVz9/jgLPWITvESHn1WZ69k9liZ+x/wVUex1Kva/lQ5oiTsf+vjr//r068f7z/v+9fwhC5L85NIImiPP4H7+9IIf0F5twbuylVYw==
   </data>
  </layer>
  <layer id="3" name="Object" width="32" height="16">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
   <data encoding="base64" compression="zlib">
    eJxjYBgFo2AUDDfgzzyw9uczU8cdumj69ZhRaWwgm5GBIQeIcxkR7qAn6Aba2wPEvYz0t3sUjAJSAADcngUJ
   </data>

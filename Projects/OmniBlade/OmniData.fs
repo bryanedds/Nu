@@ -71,7 +71,7 @@ type TargetType =
     | AllTarget of AimType
 
 type TechType =
-    | HeadSlash
+    | Critical
     | Cyclone
     | Bolt
     | Tremor
@@ -81,6 +81,14 @@ type ActionType =
     | Consume of ConsumableType
     | Tech of TechType
     | Wound
+
+type ArchetypeType =
+    | Thief
+    | Fighter
+    | Barbarian
+    | Wizard
+    | Cleric
+    | Goblin
 
 type WeaponType =
     string
@@ -148,17 +156,11 @@ type AllyType =
     | Glenn
 
 type EnemyType =
-    | Goblin
+    | BlueGoblin
 
 type CharacterType =
     | Ally of AllyType
     | Enemy of EnemyType
-
-type AccessoryData =
-    { AccessoryType : AccessoryType // key
-      ShieldBase : int
-      CounterBase : int
-      Description : string }
 
 type WeaponData =
     { WeaponType : WeaponType // key
@@ -172,6 +174,12 @@ type ArmorData =
       ArmorSubtype : ArmorSubtype
       HitPointsBase : int
       TechPointsBase : int
+      Description : string }
+
+type AccessoryData =
+    { AccessoryType : AccessoryType // key
+      ShieldBase : int
+      CounterBase : int
       Description : string }
 
 type ConsumableData =
@@ -196,6 +204,16 @@ type TechData =
       TargetType : TargetType
       Description : string }
 
+type ArchetypeData =
+    { ArchetypeType : ArchetypeType // key
+      Stamina : single // hit points scalar
+      Strength : single // power scalar
+      Intelligence : single // magic scalar
+      Toughness : single // shield scalar
+      Wealth : single // gold scalar
+      Mythos : single // exp scala
+      Techs : Map<int, TechType> } // tech availability according to level
+
 type TechAnimationData =
     { TechType : TechType // key
       TechStart : int64
@@ -207,9 +225,6 @@ type TechAnimationData =
 
 type KeyItemData =
     { KeyItemData : unit }
-
-type RewardData =
-    { Gold : int }
 
 type DoorData =
     { DoorType : DoorType // key
@@ -247,15 +262,20 @@ type [<NoComparison>] FieldData =
       FieldSoundOpt : Audio AssetTag option
       FieldObjects : FieldObject list }
 
-type BattleData =
+type [<NoComparison>] EnemyData =
+    { EnemyType : EnemyType
+      EnemyPosition : Vector2 }
+
+type [<NoComparison>] BattleData =
     { BattleType : BattleType // key
-      BattleEnemies : CharacterType list
-      BattleSongOpt : Audio AssetTag }
+      BattleAllyPositions : Vector2 list
+      BattleEnemies : EnemyData list
+      BattleSongOpt : Audio AssetTag option }
 
 type CharacterData =
     { CharacterType : CharacterType // key
-      BaseTechs : TechData list // base actions for all instances of character
-      Reward : RewardData
+      ArchetypeType : ArchetypeType
+      BaseLevel : int
       Description : string }
 
 type CharacterAnimationData =
@@ -275,11 +295,12 @@ module Data =
           Accessories : Map<AccessoryType, AccessoryData>
           Consumables : Map<ConsumableType, ConsumableData>
           Techs : Map<TechType, TechData>
-          TechAnimationData : Map<TechType, TechAnimationData>
+          Archetypes : Map<ArchetypeType, ArchetypeData>
           Characters : Map<CharacterType, CharacterData>
-          CharacterAnimationData : Map<CharacterAnimationCycle, CharacterAnimationData>
-          FieldData : Map<FieldType, FieldData>
-          BattleData : Map<BattleType, BattleData> }
+          Fields : Map<FieldType, FieldData>
+          Battles : Map<BattleType, BattleData>
+          TechAnimations : Map<TechType, TechAnimationData>
+          CharacterAnimations : Map<CharacterAnimationCycle, CharacterAnimationData> }
 
     let private readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
         let text = File.ReadAllText filePath
@@ -293,11 +314,12 @@ module Data =
           Accessories = readSheet Assets.AccessoryDataFilePath (fun data -> data.AccessoryType)
           Consumables = readSheet Assets.ConsumableDataFilePath (fun data -> data.ConsumableType)
           Techs = readSheet Assets.TechDataFilePath (fun data -> data.TechType)
-          TechAnimationData = readSheet Assets.TechAnimationDataFilePath (fun data -> data.TechType)
-          Characters = Map.empty
-          CharacterAnimationData = readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle)
-          FieldData = Map.empty
-          BattleData = Map.empty }
+          Archetypes = readSheet Assets.ArchetypeDataFilePath (fun data -> data.ArchetypeType)
+          Characters = readSheet Assets.CharacterDataFilePath (fun data -> data.CharacterType)
+          Fields = Map.empty
+          Battles = readSheet Assets.BattleDataFilePath (fun data -> data.BattleType)
+          TechAnimations = readSheet Assets.TechAnimationDataFilePath (fun data -> data.TechType)
+          CharacterAnimations = readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
 
     let data =
         lazy (readFromFiles ())

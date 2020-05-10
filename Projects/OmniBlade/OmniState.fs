@@ -309,7 +309,7 @@ type CharacterAnimationState =
         position
 
     static member index time state =
-        match Map.tryFind state.AnimationCycle data.Value.CharacterAnimationData with
+        match Map.tryFind state.AnimationCycle data.Value.CharacterAnimations with
         | Some animationData ->
             match animationData.AnimationType with
             | LoopedWithDirection -> CharacterAnimationState.indexLoopedWithDirection animationData.Run animationData.Stutter animationData.Offset time state
@@ -319,7 +319,7 @@ type CharacterAnimationState =
         | None -> v2iZero
 
     static member progressOpt time state =
-        match Map.tryFind state.AnimationCycle data.Value.CharacterAnimationData with
+        match Map.tryFind state.AnimationCycle data.Value.CharacterAnimations with
         | Some animationData ->
             let timeLocal = CharacterAnimationState.timeLocal time state
             match animationData.LengthOpt with
