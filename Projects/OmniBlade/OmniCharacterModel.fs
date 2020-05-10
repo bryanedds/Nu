@@ -14,7 +14,6 @@ module CharacterModel =
               Bounds_ : Vector4 }
 
         (* CharacterState Properties *)
-        member this.CharacterType = this.CharacterState.CharacterType
         member this.PartyIndex = this.CharacterState.PartyIndex
         member this.ExpPoints = this.CharacterState.ExpPoints
         member this.HitPoints = this.CharacterState.HitPoints
@@ -33,7 +32,6 @@ module CharacterModel =
         member this.ActionTime = this.CharacterState.ActionTime
         member this.AutoBattleOpt = this.CharacterState.AutoBattleOpt
         member this.CharacterIndex = this.CharacterState.CharacterIndex
-        member this.Name = this.CharacterState.Name
         member this.IsEnemy = this.CharacterState.IsEnemy
         member this.IsAlly = this.CharacterState.IsAlly
         member this.IsHealthy = this.CharacterState.IsHealthy
@@ -253,10 +251,12 @@ module CharacterModel =
         static member animate time cycle character =
             { character with AnimationState = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState }
 
-        static member make characterState animationState inputState bounds =
+        static member make characterIndex characterType expPoints weaponOpt armorOpt accessories animationSheet direction bounds =
+            let characterState = CharacterState.make characterIndex characterType expPoints weaponOpt armorOpt accessories
+            let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = ReadyCycle; Direction = direction }
             { CharacterState = characterState
               AnimationState = animationState
-              InputState_ = inputState
+              InputState_ = NoInput
               BoundsOriginal_ = bounds
               Bounds_ = bounds }
 

@@ -22,6 +22,7 @@
 #load "OmniConstants.fs"
 #load "OmniSimulants.fs"
 #load "OmniData.fs"
+#load "OmniAlgorithms.fs"
 #load "OmniState.fs"
 #load "OmniCharacterModel.fs"
 #load "OmniBattleModel.fs"

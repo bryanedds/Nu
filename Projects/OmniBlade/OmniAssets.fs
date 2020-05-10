@@ -20,7 +20,7 @@ module Assets =
     let CancelImage = asset<Image> BattlePackageName "Cancel"
     let BoltAnimationSheet = asset<Image> BattlePackageName "Bolt"
     let ExplosionAnimationSheet = asset<Image> BattlePackageName "Explosion"
-    let JinnAnimationSheet = asset<Image> BattlePackageName "Jinn"
+    let FinnAnimationSheet = asset<Image> BattlePackageName "Finn"
     let GlennAnimationSheet = asset<Image> BattlePackageName "Glenn"
     let GoblinAnimationSheet = asset<Image> BattlePackageName "Goblin"
 

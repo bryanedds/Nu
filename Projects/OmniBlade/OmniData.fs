@@ -83,7 +83,7 @@ type ActionType =
     | Wound
 
 type ArchetypeType =
-    | Thief
+    | Squire
     | Fighter
     | Barbarian
     | Wizard
@@ -152,7 +152,7 @@ type CharacterAnimationCycle =
     | WoundCycle
 
 type AllyType =
-    | Jinn
+    | Finn
     | Glenn
 
 type EnemyType =
@@ -208,6 +208,7 @@ type ArchetypeData =
     { ArchetypeType : ArchetypeType // key
       Stamina : single // hit points scalar
       Strength : single // power scalar
+      Focus : single // tech points scalar
       Intelligence : single // magic scalar
       Toughness : single // shield scalar
       Wealth : single // gold scalar
@@ -275,7 +276,7 @@ type [<NoComparison>] BattleData =
 type CharacterData =
     { CharacterType : CharacterType // key
       ArchetypeType : ArchetypeType
-      BaseLevel : int
+      LevelBase : int
       Description : string }
 
 type CharacterAnimationData =

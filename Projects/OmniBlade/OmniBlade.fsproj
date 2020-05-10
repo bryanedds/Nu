@@ -75,6 +75,7 @@
     <Compile Include="OmniConstants.fs" />
     <Compile Include="OmniSimulants.fs" />
     <Compile Include="OmniData.fs" />
+    <Compile Include="OmniAlgorithms.fs" />
     <Compile Include="OmniState.fs" />
     <Compile Include="OmniCharacterModel.fs" />
     <Compile Include="OmniBattleModel.fs" />

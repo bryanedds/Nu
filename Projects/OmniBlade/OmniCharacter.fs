@@ -17,11 +17,7 @@ module OmniCharacter =
 
     type CharacterDispatcher () =
         inherit EntityDispatcher<CharacterModel, unit, unit>
-            (CharacterModel.make
-                { PartyIndex = 0; CharacterType = Ally Jinn; ActionTime = 0; ExpPoints = 0; HitPoints = 20; TechPoints = 1; Defending = false; Charging = false; PowerBuff = 1.0f; ShieldBuff = 1.0f; MagicBuff = 1.0f; CounterBuff = 1.0f; Techs = Set.empty; Statuses = Set.empty; WeaponOpt = Some "WoodenSword"; ArmorOpt = None; Accessories = []; AutoBattleOpt = None }
-                { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Rightward }
-                NoInput
-                (Math.makeBounds v2Zero v2One))
+            (CharacterModel.make (AllyIndex 0) (Ally Finn) 0 None None [] Assets.FinnAnimationSheet Rightward (Math.makeBounds  v2Zero v2One))
 
         static let [<Literal>] CelSize =
             160.0f
