@@ -64,7 +64,7 @@ module OmniBattle =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
             (let characters =
                 [CharacterModel.make (AllyIndex 0) (Ally Finn) 0 (Some "WoodenSword") (Some "LeatherVest") [] Assets.FinnAnimationSheet Rightward (Math.makeBounds (v2 -224.0f -168.0f) (v2 160.0f 160.0f))
-                 CharacterModel.make (AllyIndex 1) (Ally Glenn) 0 (Some "OakRod") (Some "LeatherRobe") [] Assets.GlennAnimationSheet Leftward (Math.makeBounds (v2 224.0f 64.0f) (v2 160.0f 160.0f))
+                 CharacterModel.make (AllyIndex 1) (Ally Glenn) 0 (Some "StoneSword") (Some "LeatherMail") [] Assets.GlennAnimationSheet Leftward (Math.makeBounds (v2 224.0f 64.0f) (v2 160.0f 160.0f))
                  CharacterModel.make (EnemyIndex 0) (Enemy BlueGoblin) 0 (Some "Melee") None [] Assets.GoblinAnimationSheet Leftward (Math.makeBounds (v2 0.0f 0.0f) (v2 160.0f 160.0f))
                  CharacterModel.make (EnemyIndex 1) (Enemy BlueGoblin) 0 (Some "Melee") None [] Assets.GoblinAnimationSheet Leftward (Math.makeBounds (v2 176.0f -192.0f) (v2 160.0f 160.0f))
                  CharacterModel.make (EnemyIndex 2) (Enemy BlueGoblin) 0 (Some "Melee") None [] Assets.GoblinAnimationSheet Leftward (Math.makeBounds (v2 76.0f -92.0f) (v2 160.0f 160.0f))]
@@ -442,7 +442,7 @@ module OmniBattle =
                 let time = World.getTickTime world
                 let source = BattleModel.getCharacter sourceIndex model
                 let target = BattleModel.getCharacter targetIndex model
-                let damage = CharacterModel.getAttackResult source target
+                let damage = CharacterModel.getAttackResult Physical source target
                 let model = BattleModel.updateCharacter (CharacterModel.updateHitPoints (fun hitPoints -> (hitPoints - damage, false))) targetIndex model
                 let (model, sigs) =
                     if target.HitPoints <= 0

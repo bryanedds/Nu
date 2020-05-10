@@ -1,7 +1,8 @@
-Type,Stamina,Strength,Focus,Intelligence,Toughness,Wealth,Mythos,Techs
-Squire,1,1,1,1,1,1,1,[[1 Critical]]
-Fighter,1.5,1.25,0.75,0.5,1,1,1,[[1 Critical] [3 Cyclone]]
-Barbarian,1.25,1.5,0.75,0.5,1,1,1,[[1 Critical]]
-Wizard,0.75,0.5,1.5,1.5,1,1,1,[[1 Critical] [1 Bolt]]
-Cleric,1,0.75,1.25,1.25,1,1,1,[[1 Critical]]
-Goblin,1,1,1,1,1,1,1,[[1 Bolt]]
+Type,Stamina,Strength,Focus,Intelligence,Toughness,Wealth,Mythos,WeaponSubtype,ArmorSubtype,Techs
+Squire,1,1,1,1,1,1,1,Sword,Vest,[[1 Critical]]
+Mage,1,1,1,1,1,1,1,Sword,Vest,[[1 Critical] [3 Tremor]]
+Fighter,1.5,1.25,0.75,0.5,1,1,1,Sword,Mail,[[1 Critical] [3 Cyclone]]
+Brawler,1.25,1.5,0.75,0.5,1,1,1,Heavesword,Mail,[[1 Critical]]
+Wizard,0.75,0.5,1.5,1.5,1,1,1,Rod,Robe,[[1 Critical] [1 Bolt]]
+Cleric,0.75,0.75,1.25,1.25,1,1,1,Staff,Robe,[[1 Critical]]
+Goblin,1,1,1,1,1,1,1,Melee,Pelt,[[1 Bolt]]
