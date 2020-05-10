@@ -37,9 +37,9 @@ module MetadataModule =
 
         let private getTileSetProperties (tileSet : TmxTileset) =
             let properties = tileSet.Properties
-            try AssetTag.make<Image> properties.["PackageName"] properties.["ImageAssetName"]
+            try scvalue<Image AssetTag> properties.["Image"] 
             with :? KeyNotFoundException ->
-                let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (PackageName or AssetName)."
+                let errorMessage = "TileSet '" + tileSet.Name + "' missing Image property."
                 raise (TileSetPropertyNotFoundException errorMessage)
 
         let private generateTextureMetadata asset =
