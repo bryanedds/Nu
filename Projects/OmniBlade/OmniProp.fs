@@ -47,22 +47,29 @@ module PropDispatcherModule =
 
         override this.View (model, entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
-                //[Render
-                //    (LayerableDescriptor
-                //        { Depth = entity.GetDepth world
-                //          PositionY = (entity.GetPosition world).Y
-                //          AssetTag = model.AnimationSheet
-                //          LayeredDescriptor =
-                //          SpriteDescriptor
-                //            { Position = entity.GetPosition world
-                //              Size = entity.GetSize world
-                //              Rotation = entity.GetRotation world
-                //              Offset = Vector2.Zero
-                //              ViewType = entity.GetViewType world
-                //              InsetOpt = Some (getSpriteInset entity world)
-                //              Image = model.AnimationSheet
-                //              Color = v4One
-                //              Glow = v4Zero
-                //              Flip = FlipNone }})]
-                []
+                let image =
+                    match model.PropData with
+                    | Chest (chestType, _, _) ->
+                        match chestType with
+                        | WoodenChest -> Assets.WoodenChestImage
+                        | BrassChest -> Assets.BrassChestImage
+                    | _ ->
+                        Assets.CancelImage
+                [Render
+                    (LayerableDescriptor
+                        { Depth = entity.GetDepth world
+                          PositionY = (entity.GetPosition world).Y
+                          AssetTag = image
+                          LayeredDescriptor =
+                          SpriteDescriptor
+                            { Position = entity.GetPosition world
+                              Size = entity.GetSize world
+                              Rotation = entity.GetRotation world
+                              Offset = Vector2.Zero
+                              ViewType = entity.GetViewType world
+                              InsetOpt = None
+                              Image = image
+                              Color = v4One
+                              Glow = v4Zero
+                              Flip = FlipNone }})]
             else []
