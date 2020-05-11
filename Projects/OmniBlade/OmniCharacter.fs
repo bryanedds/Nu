@@ -17,13 +17,13 @@ module OmniCharacter =
 
     type CharacterDispatcher () =
         inherit EntityDispatcher<CharacterModel, unit, unit>
-            (CharacterModel.make (AllyIndex 0) (Ally Finn) 0 None None [] Assets.FinnAnimationSheet Rightward (Math.makeBounds  v2Zero v2One))
+            (CharacterModel.make (AllyIndex 0) (Ally Finn) 0 None None [] Assets.FinnAnimationSheet Rightward (v4Bounds v2Zero v2One))
 
         static let getSpriteInset (character : Entity) world =
             let model = character.GetCharacterModel world
             let index = CharacterModel.getAnimationIndex (World.getTickTime world) model
             let offset = v2 (single index.X) (single index.Y) * Constants.Gameplay.CharacterSize
-            let inset = Math.makeBounds offset Constants.Gameplay.CharacterSize
+            let inset = v4Bounds offset Constants.Gameplay.CharacterSize
             inset
 
         static let getSpriteColor (character : Entity) world =

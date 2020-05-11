@@ -19,13 +19,13 @@ module AvatarDispatcherModule =
 
     type AvatarDispatcher () =
         inherit EntityDispatcher<AvatarModel, AvatarMessage, unit>
-            (AvatarModel.make Assets.FinnAnimationSheet Downward (Math.makeBounds v2Zero Constants.Gameplay.CharacterSize))
+            (AvatarModel.make Assets.FinnAnimationSheet Downward (v4Bounds v2Zero Constants.Gameplay.CharacterSize))
 
         static let getSpriteInset (avatar : Entity) world =
             let model = avatar.GetAvatarModel world
             let index = AvatarModel.getAnimationIndex (World.getTickTime world) model
             let offset = v2 (single index.X) (single index.Y) * Constants.Gameplay.CharacterSize
-            let inset = Math.makeBounds offset Constants.Gameplay.CharacterSize
+            let inset = v4Bounds offset Constants.Gameplay.CharacterSize
             inset
 
         static member Facets =

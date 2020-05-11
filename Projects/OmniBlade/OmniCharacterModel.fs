@@ -248,7 +248,7 @@ module CharacterModel =
                     None None [] // TODO: figure out if / how we should populate these 
                     animationSheet
                     Leftward
-                    (Math.makeBounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize)
+                    (v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize)
             enemy
 
         static member make characterIndex characterType expPoints weaponOpt armorOpt accessories animationSheet direction bounds =
