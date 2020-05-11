@@ -54,6 +54,7 @@ module Vector2 =
     let v2Zero = Vector2.Zero
     let v2UnitX = Vector2.UnitX
     let v2UnitY = Vector2.UnitY
+    let v2Center (position : Vector2) (size : Vector2) = position + size * 0.5f
 
 /// The Vector2 value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] Vector2Pluggable =
@@ -249,6 +250,14 @@ module Vector4 =
     let v4UnitY = Vector4.UnitY
     let v4UnitZ = Vector4.UnitZ
     let v4UnitW = Vector4.UnitW
+    let v4Bounds (position : Vector2) (size : Vector2) = v4 position.X position.Y (position.X + size.X) (position.Y + size.Y)
+    let v4BoundsOverflow (position : Vector2) (size : Vector2) (overflow : Vector2) =
+        let sizeHalf = size * 0.5f
+        let center = position + sizeHalf
+        let sizeHalfOverflow = Vector2.Multiply (sizeHalf, overflow + Vector2.One)
+        let xy = center - sizeHalfOverflow
+        let x2y2 = center + sizeHalfOverflow
+        v4 xy.X xy.Y x2y2.X x2y2.Y
 
 /// Converts Vector4 types.
 type Vector4Converter () =
@@ -454,21 +463,16 @@ module Math =
         bounds.W > bounds2.Y
 
     /// Make a Vector2 center value.
-    let makeCenter (position : Vector2) (size : Vector2) =
-        position + size * 0.5f
+    let makeCenter position size =
+        v2Center position size
 
     /// Make a Vector4 bounds value.
-    let makeBounds (position : Vector2) (size : Vector2) =
-        Vector4 (position.X, position.Y, position.X + size.X, position.Y + size.Y)
+    let makeBounds position size =
+        v4Bounds position size
 
     /// Make a Vector4 bounds value, taking into consideration overflow.
-    let makeBoundsOverflow (position : Vector2) (size : Vector2) (overflow : Vector2) =
-        let sizeHalf = size * 0.5f
-        let center = position + sizeHalf
-        let sizeHalfOverflow = Vector2.Multiply (sizeHalf, overflow + Vector2.One)
-        let xy = center - sizeHalfOverflow
-        let x2y2 = center + sizeHalfOverflow
-        Vector4 (xy.X, xy.Y, x2y2.X, x2y2.Y)
+    let makeBoundsOverflow position size overflow =
+        v4BoundsOverflow position size overflow
 
     /// Get the view of the eye in absolute terms (world space).
     let getViewAbsolute (_ : Vector2) (_ : Vector2) =

@@ -26,6 +26,7 @@
 #load "OmniState.fs"
 #load "OmniCharacterModel.fs"
 #load "OmniBattleModel.fs"
+#load "OmniAvatarModel.fs"
 #load "OmniFieldModel.fs"
 #load "OmniEffects.fs"
 #load "OmniEvents.fs"
@@ -33,6 +34,8 @@
 #load "OmniReticles.fs"
 #load "OmniCharacter.fs"
 #load "OmniBattle.fs"
+#load "OmniAvatar.fs"
+#load "OmniField.fs"
 #load "OmniGame.fs"
 #load "OmniPlugin.fs"
 
