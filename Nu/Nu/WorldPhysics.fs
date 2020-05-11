@@ -10,13 +10,20 @@ open Nu
 [<AutoOpen; ModuleBinding>]
 module WorldPhysicsModule =
 
+    // HACK: exposes CollisionBody property for earlier access.
+    type Entity with
+
+        member this.GetCollisionBody world : BodyShape = this.Get Property? CollisionBody world
+        member this.SetCollisionBody (value : BodyShape) world = this.SetFast Property? CollisionBody false false value world
+        member this.CollisionBody = lens Property? CollisionBody this.GetCollisionBody this.SetCollisionBody this
+
     /// The subsystem for the world's physics system.
     type [<ReferenceEquality>] PhysicsEngineSubsystem =
         private
             { PhysicsEngine : PhysicsEngine }
 
         static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
-            let bodyShape = entity.Get<BodyShape> Property? CollisionBody world
+            let bodyShape = entity.GetCollisionBody world
             let bodyCenter = BodyShape.getCenter bodyShape
             let bodyOffset = bodyCenter * entity.GetSize world
             let transform = entity.GetTransform world
