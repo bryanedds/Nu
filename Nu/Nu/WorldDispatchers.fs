@@ -700,37 +700,41 @@ module TileMapFacetModule =
                     let tileLayerClearance = tileMap.GetTileLayerClearance world
                     List.foldi
                         (fun i world (layer : TmxLayer) ->
-                            let depth = tileMap.GetDepth world + single i * tileLayerClearance
-                            let parallaxTranslation =
-                                match viewType with
-                                | Absolute -> Vector2.Zero
-                                | Relative -> tileMap.GetParallax world * depth * -World.getEyeCenter world
-                            let parallaxPosition = tileMap.GetPosition world + parallaxTranslation
-                            let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
-                            let image = List.head images // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                            if World.isBoundsInView viewType (Math.makeBounds parallaxPosition size) world then
-                                World.enqueueRenderMessage
-                                    (RenderDescriptorsMessage
-                                        [|LayerableDescriptor 
-                                            { Depth = depth
-                                              AssetTag = image
-                                              PositionY = (tileMap.GetPosition world).Y
-                                              LayeredDescriptor =
-                                                TileLayerDescriptor
-                                                    { Position = parallaxPosition
-                                                      Size = size
-                                                      Rotation = tileMap.GetRotation world
-                                                      ViewType = viewType
-                                                      MapSize = Vector2i (map.Width, map.Height)
-                                                      Tiles = layer.Tiles
-                                                      TileSourceSize = tileSourceSize
-                                                      TileSize = tileSize
-                                                      TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                                      TileSetImage = image }}|])
-                                    world
-                            else world)
-                        world
-                        layers
+                            List.fold
+                                (fun world j ->
+                                    let offset = single (map.Height - j - 1) * tileSize.Y
+                                    let position = tileMap.GetPosition world + v2 0.0f offset
+                                    let depth = tileMap.GetDepth world + single i * tileLayerClearance
+                                    let parallaxTranslation =
+                                        match viewType with
+                                        | Absolute -> Vector2.Zero
+                                        | Relative -> tileMap.GetParallax world * depth * -World.getEyeCenter world
+                                    let parallaxPosition = position + parallaxTranslation
+                                    let size = Vector2 (tileSize.X * single map.Width, tileSize.Y)
+                                    let image = List.head images // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
+                                    if World.isBoundsInView viewType (Math.makeBounds parallaxPosition size) world then
+                                        World.enqueueRenderMessage
+                                            (RenderDescriptorsMessage
+                                                [|LayerableDescriptor 
+                                                    { Depth = depth
+                                                      AssetTag = image
+                                                      PositionY = parallaxPosition.Y
+                                                      LayeredDescriptor =
+                                                        TileLayerDescriptor
+                                                            { Position = parallaxPosition
+                                                              Size = size
+                                                              Rotation = tileMap.GetRotation world
+                                                              ViewType = viewType
+                                                              MapSize = Vector2i (map.Width, map.Height)
+                                                              Tiles = layer.Tiles.GetRange (j * map.Width, map.Width)
+                                                              TileSourceSize = tileSourceSize
+                                                              TileSize = tileSize
+                                                              TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
+                                                              TileSetImage = image }}|])
+                                            world
+                                    else world)
+                                world [0 .. dec map.Height])
+                        world layers
                 | None -> world
             else world
 
