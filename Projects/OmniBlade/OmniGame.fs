@@ -15,7 +15,7 @@ module OmniGame =
         | ShowField
         | ExitGame
 
-    type StandAloneDispatcher () =
+    type OmniDispatcher () =
         inherit GameDispatcher<unit, unit, OmniCommand> (())
 
         override this.Register (game, world) =
@@ -54,6 +54,3 @@ module OmniGame =
              Content.screenFromLayerFile Simulants.Credits.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.CreditsLayerFilePath
              Content.screenFromLayerFile<FieldDispatcher> Simulants.Field.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.FieldHudLayerFilePath
              Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve Constants.OmniBlade.DissolveData) [] []]
-
-    type EditorDispatcher () =
-        inherit GameDispatcher<unit, unit, OmniCommand> (())

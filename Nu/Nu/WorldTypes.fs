@@ -1106,16 +1106,12 @@ module WorldTypes =
     and NuPlugin () =
 
         /// The game dispatcher that Nu will utilize when running outside the editor.
-        abstract GetStandAloneGameDispatcher : unit -> Type
-        default this.GetStandAloneGameDispatcher () = typeof<GameDispatcher>
+        abstract GetGameDispatcher : unit -> Type
+        default this.GetGameDispatcher () = typeof<GameDispatcher>
 
-        /// The game dispatcher that Nu will utilize when running inside the editor.
-        abstract GetEditorGameDispatcher : unit -> Type
-        default this.GetEditorGameDispatcher () = typeof<GameDispatcher>
-
-        /// The screen dispatcher that Nu may utilize when running inside the editor.
-        abstract GetEditorScreenDispatcherOpt : unit -> Type option
-        default this.GetEditorScreenDispatcherOpt () = Some typeof<ScreenDispatcher>
+        /// The screen dispatcher that Nu will utilize when running inside the editor.
+        abstract GetEditorScreenDispatcher : unit -> Type
+        default this.GetEditorScreenDispatcher () = typeof<ScreenDispatcher>
 
         /// Make the overlay routes that will allow Nu to use different overlays for the specified
         /// dispatcher name.
