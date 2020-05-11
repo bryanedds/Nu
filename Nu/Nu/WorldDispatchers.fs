@@ -630,15 +630,13 @@ module TileMapFacetModule =
             | None -> None
 
         let getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex (tileLayer : TmxLayer) world =
-            if tileLayer.Properties.ContainsKey Constants.Physics.CollisionProperty then
-                Seq.foldi
-                    (fun i bodyPropertyList _ ->
-                        match getTileBodyProperties tileMap tileMapData tileLayer tileLayerIndex i world with
-                        | Some bodyProperties -> bodyProperties :: bodyPropertyList
-                        | None -> bodyPropertyList)
-                    [] tileLayer.Tiles |>
-                Seq.toList
-            else []
+            Seq.foldi
+                (fun i bodyPropertyList _ ->
+                    match getTileBodyProperties tileMap tileMapData tileLayer tileLayerIndex i world with
+                    | Some bodyProperties -> bodyProperties :: bodyPropertyList
+                    | None -> bodyPropertyList)
+                [] tileLayer.Tiles |>
+            Seq.toList
 
         let registerTileLayerPhysics (tileMap : Entity) tileMapData tileLayerIndex world tileLayer =
             let bodyPropertyList = getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex tileLayer world
@@ -686,10 +684,8 @@ module TileMapFacetModule =
             | Some tileMapData ->
                 Seq.foldi
                     (fun tileLayerIndex world (tileLayer : TmxLayer) ->
-                        if tileLayer.Properties.ContainsKey Constants.Physics.CollisionProperty then
-                            let physicsIds = getTileLayerPhysicsIds tileMap tileMapData tileLayer tileLayerIndex world
-                            World.destroyBodies physicsIds world
-                        else world)
+                        let physicsIds = getTileLayerPhysicsIds tileMap tileMapData tileLayer tileLayerIndex world
+                        World.destroyBodies physicsIds world)
                     world
                     tileMapData.Map.Layers
             | None ->
