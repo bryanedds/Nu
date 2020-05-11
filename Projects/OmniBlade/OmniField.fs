@@ -16,6 +16,7 @@ module OmniField =
         | FadeSong
         | PlaySound of int64 * single * AssetTag<Audio>
         | Move of Vector2
+        | EyeTrack
 
     type Screen with
 
@@ -33,7 +34,8 @@ module OmniField =
                 100)
 
         override this.Channel (_, field, _) =
-            [field.UpdateEvent =|> fun _ ->
+            [field.UpdateEvent => [cmd EyeTrack]
+             field.UpdateEvent =|> fun _ ->
                 let force = v2Zero
                 let force = if KeyboardState.isKeyDown KeyboardKey.Right then v2 Constants.Field.WalkForce 0.0f + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Left then v2 -Constants.Field.WalkForce 0.0f + force else force
@@ -47,12 +49,17 @@ module OmniField =
             match message with
             | Nil -> just model
 
-        override this.Command (_, command, _, world) =
+        override this.Command (model, command, _, world) =
 
             match command with
             | Move force ->
                 let physicsId = Simulants.FieldAvatar.GetPhysicsId world
                 let world = World.applyBodyForce force physicsId world
+                just world
+
+            | EyeTrack ->
+                let avatarModel = Simulants.FieldAvatar.GetAvatarModel world
+                let world = World.setEyeCenter avatarModel.Center world
                 just world
 
             | FadeSong ->

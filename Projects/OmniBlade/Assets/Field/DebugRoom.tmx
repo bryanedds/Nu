@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="16" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="1">
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="16" tilewidth="64" tileheight="64" infinite="0" nextlayerid="4" nextobjectid="1">
  <tileset firstgid="1" source="Colloseum.tsx"/>
  <layer id="2" name="Floor" width="32" height="16">
   <data encoding="base64" compression="zlib">
@@ -8,7 +8,7 @@
  </layer>
  <layer id="1" name="Walls" width="32" height="16">
   <data encoding="base64" compression="zlib">
-   eJzt1VsOwUAUxvEzLg9swDMSCcsgESzDNSxDi3247oOWfSBsw186jUlpXwgPOskvPXG+zJnzJC8iedTRRU/rfuAb/M2va3qmP7ePAWxMkFQiGWSVV0+MXlgm2Lcj7mmjo9/RwBQzLLFCkWwZFeXVK6MXlgn2lxH3jGGhoOevsYED9/4usk20lFe7Ri8sE+w7EffMsUBVz9/jgLPWITvESHn1WZ69k9liZ+x/wVUex1Kva/lQ5oiTsf+vjr//r068f7z/v+9fwhC5L85NIImiPP4H7+9IIf2Frzn3BrgpVVc=
+   eJzt1VsOwUAUxvEzrmEXNJGwDBLBMlzDMij24boP130gbMO/6TQmpX3R8MAkv/TE+TJnzpOciORQRRsdrR3B1/+bV1f0TG9uFz3YGCOuRDLIKrceG72gjL9vh9zTREu/o4YJplhgCYtsESXl1kujF5Tx9xch9wwxQl7PX2GNHfbOu8jW0VBuvTd6QRl/fxdyzwxzlPX8A464aC2yfQyUW1/k2TuZDbbG/lfc5HFG6nUtEWVOOBv7f+t4+3/r/Pf/7//r+xeQQvqDc2OIw5LH/6DzjgSSH/iac+9HNVTk
   </data>
  </layer>
  <layer id="3" name="Object" width="32" height="16">
