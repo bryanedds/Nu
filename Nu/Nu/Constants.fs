@@ -80,7 +80,7 @@ module Constants =
         let (*Literal*) PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
         let [<Literal>] NormalDensity = 1.0f
         let (*Literal*) Gravity = Vector2 (0.0f, -9.80665f) * PhysicsToPixelRatio
-        let [<Literal>] DepthProperty = "Depth"
+        let [<Literal>] DepthProperty = "D"
         let [<Literal>] CollisionProperty = "C"
         let (*Literal*) MessageListConfig = Functional
 
