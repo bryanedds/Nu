@@ -499,7 +499,7 @@ module WorldModule3 =
                       RebuildEntityTree = World.rebuildEntityTree }
 
                 // look up the active game dispather
-                let activeGameDispatcherType = if config.StandAlone then plugin.GetStandAloneGameDispatcher () else plugin.GetEditorGameDispatcher ()
+                let activeGameDispatcherType = if config.StandAlone then plugin.GetGameDispatcher () else typeof<GameDispatcher>
                 let activeGameDispatcher = Map.find activeGameDispatcherType.Name dispatchers.GameDispatchers
 
                 // make the world's subsystems

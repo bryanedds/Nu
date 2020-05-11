@@ -7,13 +7,5 @@ type ElmarioPlugin () =
     inherit NuPlugin ()
     
     // this specifies the game dispatcher to use in your application
-    override this.GetStandAloneGameDispatcher () =
+    override this.GetGameDispatcher () =
         typeof<ElmarioDispatcher>
-        
-    // this specifies the game dispatcher to use in the editor
-    override this.GetEditorGameDispatcher () =
-        typeof<ElmarioDispatcher>
-            
-    // this specifies no screen dispatcher is created by the editor since one is already created by ElmarioDispatcher
-    override this.GetEditorScreenDispatcherOpt () =
-        None

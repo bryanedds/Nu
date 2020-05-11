@@ -144,7 +144,10 @@ module Gaia =
             seq {
                 for node in form.hierarchyTreeView.Nodes do
                     yield node
-                    yield! collect node.Nodes.[0].Parent }
+                    yield!
+                        if node.Nodes.Count <> 0
+                        then collect node.Nodes.[0].Parent
+                        else Seq.empty }
         Array.ofSeq result
 
     let private tryFindHierarchyTreeNode name (form : GaiaForm) (world : World) =
@@ -1672,21 +1675,21 @@ module Gaia =
         let worldEir = World.tryMake sdlDeps worldConfig plugin
         match worldEir with
         | Right world ->
-            let world = World.setEventFilter (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])]) world
-            let screenDispatcherOpt =
+            let world =
+                World.setEventFilter
+                    (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])])
+                    world
+            let screenDispatcher =
                 if useGameplayScreen
-                then plugin.GetEditorScreenDispatcherOpt ()
-                else Some typeof<ScreenDispatcher>
+                then plugin.GetEditorScreenDispatcher ()
+                else typeof<ScreenDispatcher>
+            let (screen, world) =
+                World.createScreen3 screenDispatcher.Name (Some Default.Screen.Name) world
             let world =
-                match screenDispatcherOpt with
-                | Some screenDispatcher ->
-                    let (screen, world) = World.createScreen3 screenDispatcher.Name (Some Default.Screen.Name) world
-                    World.selectScreen screen world
-                | None -> world
-            let world =
-                if Seq.isEmpty (World.getLayers Default.Screen world)
-                then World.createLayer (Some Default.Layer.Name) Default.Screen world |> snd
+                if Seq.isEmpty (World.getLayers screen world)
+                then World.createLayer (Some "Layer") screen world |> snd
                 else world
+            let world = World.selectScreen screen world
             Right world
         | Left error -> Left error
 

@@ -6,13 +6,9 @@ type MyPlugin () =
     inherit NuPlugin ()
 
     // this specifies the game dispatcher to use in your application
-    override this.GetStandAloneGameDispatcher () =
+    override this.GetGameDispatcher () =
         typeof<MyGameDispatcher>
 
-    // this specifies the game dispatcher to use in the editor
-    override this.GetEditorGameDispatcher () =
-        typeof<GameDispatcher>
-
-    // this specifies the screen dispatcher to optionally use in the editor
-    override this.GetEditorScreenDispatcherOpt () =
-        Some typeof<MyGameplayDispatcher>
+    // this specifies the screen dispatcher to use in the editor
+    override this.GetEditorScreenDispatcher () =
+        typeof<MyGameplayDispatcher>

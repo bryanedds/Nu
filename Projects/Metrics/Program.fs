@@ -82,9 +82,7 @@ type MyGameDispatcher () =
 
 type MetricsPlugin () =
     inherit NuPlugin ()
-    override this.GetStandAloneGameDispatcher () = typeof<MyGameDispatcher>
-    override this.GetEditorGameDispatcher () = typeof<MyGameDispatcher>
-    override this.GetEditorScreenDispatcherOpt () = None
+    override this.GetGameDispatcher () = typeof<MyGameDispatcher>
 
 /// This program exists to take metrics on Nu's performance.
 module Program =
