@@ -34,14 +34,14 @@ module OmniField =
                 100)
 
         override this.Channel (_, field, _) =
-            [field.UpdateEvent => [cmd EyeTrack]
-             field.UpdateEvent =|> fun _ ->
+            [field.UpdateEvent =|> fun _ ->
                 let force = v2Zero
                 let force = if KeyboardState.isKeyDown KeyboardKey.Right then v2 Constants.Field.WalkForce 0.0f + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Left then v2 -Constants.Field.WalkForce 0.0f + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Up then v2 0.0f Constants.Field.WalkForce + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Down then v2 0.0f -Constants.Field.WalkForce + force else force
                 [cmd (Move force)]
+             field.PostUpdateEvent => [cmd EyeTrack]
              field.OutgoingStartEvent => [cmd FadeSong]]
 
         override this.Message (model, message, _, _) =
