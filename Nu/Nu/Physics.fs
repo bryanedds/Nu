@@ -64,7 +64,7 @@ type [<StructuralEquality; NoComparison>] BodyCapsule =
 /// The shape of a physics body polygon.
 type [<StructuralEquality; NoComparison>] BodyPolygon =
     { Vertices : Vector2 array
-      Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
+      Center : Vector2 }
 
 /// The shape of a physics body.
 [<Syntax
@@ -76,6 +76,13 @@ type [<StructuralEquality; NoComparison>] BodyShape =
     | BodyCircle of BodyCircle
     | BodyCapsule of BodyCapsule
     | BodyPolygon of BodyPolygon
+
+    static member getCenter body =
+        match body with
+        | BodyBox box -> box.Center
+        | BodyCircle circle -> circle.Center
+        | BodyCapsule capsule -> capsule.Center
+        | BodyPolygon polygon -> polygon.Center
 
 /// The type of a physics body; Static, Kinematic, or Dynamic.
 [<Syntax
@@ -303,7 +310,6 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
         body.Awake <- bodyProperties.Awake
         body.Enabled <- bodyProperties.Enabled
-        body.Position <- FarseerPhysicsEngine.toPhysicsV2 bodyProperties.Position
         body.Rotation <- bodyProperties.Rotation
         body.Friction <- bodyProperties.Friction
         body.Restitution <- bodyProperties.Restitution
@@ -326,7 +332,7 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
                  FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.X * 2.0f),
                  FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.Y * 2.0f),
                  bodyProperties.Density,
-                 FarseerPhysicsEngine.toPhysicsV2 bodyBox.Center,
+                 FarseerPhysicsEngine.toPhysicsV2 (bodyProperties.Position + bodyBox.Center),
                  0.0f,
                  FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
                  sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
@@ -339,7 +345,7 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
                 (physicsEngine.PhysicsContext,
                  FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCircle.Radius,
                  bodyProperties.Density,
-                 FarseerPhysicsEngine.toPhysicsV2 bodyCircle.Center,
+                 FarseerPhysicsEngine.toPhysicsV2 (bodyProperties.Position + bodyCircle.Center),
                  FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
                  sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
         body.UserData <- sourceAddress // BUG: ...so I set it again here :/
@@ -352,7 +358,7 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
                  FarseerPhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Height,
                  FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCapsule.Radius,
                  bodyProperties.Density,
-                 FarseerPhysicsEngine.toPhysicsV2 bodyCapsule.Center,
+                 FarseerPhysicsEngine.toPhysicsV2 (bodyProperties.Position + bodyCapsule.Center),
                  0.0f,
                  FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
                  sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
@@ -368,7 +374,7 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
                 (physicsEngine.PhysicsContext,
                  FarseerPhysics.Common.Vertices (Array.map FarseerPhysicsEngine.toPhysicsV2 bodyPolygon.Vertices),
                  bodyProperties.Density,
-                 FarseerPhysicsEngine.toPhysicsV2 bodyPolygon.Center,
+                 FarseerPhysicsEngine.toPhysicsV2 (bodyProperties.Position + bodyPolygon.Center),
                  0.0f,
                  FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
                  sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
@@ -575,7 +581,7 @@ module PhysicsEngine =
         | "@" -> -1
         | _ -> Convert.ToInt32 (categoryMask, 2)
 
-    /// Localize a collision body to a specif physics object.
+    /// Localize a collision body to a specific physics object.
     let localizeCollisionBody (extent : Vector2) (bodyShape : BodyShape) =
         match bodyShape with
         | BodyBox bodyBox -> BodyBox { Extent = Vector2.Multiply (extent, bodyBox.Extent); Center = Vector2.Multiply (extent, bodyBox.Center) }

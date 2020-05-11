@@ -16,11 +16,13 @@ module WorldPhysicsModule =
             { PhysicsEngine : PhysicsEngine }
 
         static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
+            let bodyShape = entity.Get<BodyShape> Property? CollisionBody world
+            let bodyCenter = BodyShape.getCenter bodyShape
+            let bodyOffset = bodyCenter * entity.GetSize world
             let transform = entity.GetTransform world
             let transform2 =
                 { transform with
-                    // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
-                    Position = message.Position - transform.Size * 0.5f
+                    Position = (message.Position - bodyOffset) - transform.Size * 0.5f
                     Rotation = message.Rotation }
             if transform <> transform2
             then entity.SetTransform transform2 world
