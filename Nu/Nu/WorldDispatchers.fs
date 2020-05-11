@@ -702,9 +702,13 @@ module TileMapFacetModule =
                         (fun i world (layer : TmxLayer) ->
                             List.fold
                                 (fun world j ->
-                                    let offset = single (map.Height - j - 1) * tileSize.Y
-                                    let position = tileMap.GetPosition world + v2 0.0f offset
-                                    let depth = tileMap.GetDepth world + single i * tileLayerClearance
+                                    let yOffset = single (map.Height - j - 1) * tileSize.Y
+                                    let position = tileMap.GetPosition world + v2 0.0f yOffset
+                                    let depthOffset =
+                                        match layer.Properties.TryGetValue Constants.Physics.DepthProperty with
+                                        | (true, depth) -> scvalue depth
+                                        | (false, _) -> single i * tileLayerClearance
+                                    let depth = tileMap.GetDepth world + depthOffset
                                     let parallaxTranslation =
                                         match viewType with
                                         | Absolute -> Vector2.Zero
