@@ -54,26 +54,23 @@ module OmniCharacter =
         override this.Initializers (model, _, _) =
             [Entity.Bounds <== model --> fun (model : CharacterModel) -> model.Bounds]
 
-        override this.Actualize (character, world) =
+        override this.View (model, character, world) =
             if character.GetVisibleLayered world && character.GetInView world then
-                let model = character.GetCharacterModel world
-                World.enqueueRenderMessage
-                    (RenderDescriptorMessage
-                        (LayerableDescriptor
-                            { Depth = character.GetDepth world
-                              PositionY = (character.GetPosition world).Y
-                              AssetTag = model.AnimationSheet
-                              LayeredDescriptor =
-                              SpriteDescriptor
-                                { Position = character.GetPosition world
-                                  Size = character.GetSize world
-                                  Rotation = character.GetRotation world
-                                  Offset = Vector2.Zero
-                                  ViewType = character.GetViewType world
-                                  InsetOpt = Some (getSpriteInset character world)
-                                  Image = model.AnimationSheet
-                                  Color = getSpriteColor character world
-                                  Glow = getSpriteGlow character world
-                                  Flip = FlipNone }}))
-                    world
-            else world
+                [Render
+                    (LayerableDescriptor
+                        { Depth = character.GetDepth world
+                          PositionY = (character.GetPosition world).Y
+                          AssetTag = model.AnimationSheet
+                          LayeredDescriptor =
+                          SpriteDescriptor
+                            { Position = character.GetPosition world
+                              Size = character.GetSize world
+                              Rotation = character.GetRotation world
+                              Offset = Vector2.Zero
+                              ViewType = character.GetViewType world
+                              InsetOpt = Some (getSpriteInset character world)
+                              Image = model.AnimationSheet
+                              Color = getSpriteColor character world
+                              Glow = getSpriteGlow character world
+                              Flip = FlipNone }})]
+            else []

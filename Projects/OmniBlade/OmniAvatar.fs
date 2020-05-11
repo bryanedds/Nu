@@ -68,26 +68,23 @@ module AvatarDispatcherModule =
                 let model = AvatarModel.updateBounds (constant (entity.GetBounds world)) model
                 just model
 
-        override this.Actualize (entity, world) =
-            let model = entity.GetAvatarModel world
+        override this.View (model, entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
-                World.enqueueRenderMessage
-                    (RenderDescriptorMessage
-                        (LayerableDescriptor
-                            { Depth = entity.GetDepth world
-                              PositionY = (entity.GetPosition world).Y
-                              AssetTag = model.AnimationSheet
-                              LayeredDescriptor =
-                              SpriteDescriptor
-                                { Position = entity.GetPosition world
-                                  Size = entity.GetSize world
-                                  Rotation = entity.GetRotation world
-                                  Offset = Vector2.Zero
-                                  ViewType = entity.GetViewType world
-                                  InsetOpt = Some (getSpriteInset entity world)
-                                  Image = model.AnimationSheet
-                                  Color = v4One
-                                  Glow = v4Zero
-                                  Flip = FlipNone }}))
-                    world
-            else world
+                [Render
+                    (LayerableDescriptor
+                        { Depth = entity.GetDepth world
+                          PositionY = (entity.GetPosition world).Y
+                          AssetTag = model.AnimationSheet
+                          LayeredDescriptor =
+                          SpriteDescriptor
+                            { Position = entity.GetPosition world
+                              Size = entity.GetSize world
+                              Rotation = entity.GetRotation world
+                              Offset = Vector2.Zero
+                              ViewType = entity.GetViewType world
+                              InsetOpt = Some (getSpriteInset entity world)
+                              Image = model.AnimationSheet
+                              Color = v4One
+                              Glow = v4Zero
+                              Flip = FlipNone }})]
+            else []
