@@ -47,8 +47,8 @@ type [<CustomEquality; NoComparison>] PhysicsId =
 
 /// The shape of a physics body box.
 type [<StructuralEquality; NoComparison>] BodyBox =
-    { Extent : Vector2
-      Center : Vector2 }
+    { Extent : Vector2 // TODO: P1: consider if this should instead be size?
+      Center : Vector2 } // TODO: P1: consider if these should be called Offset instead?
 
 /// The shape of a physics body circle.
 type [<StructuralEquality; NoComparison>] BodyCircle =

@@ -19,7 +19,7 @@ module AvatarDispatcherModule =
 
     type AvatarDispatcher () =
         inherit EntityDispatcher<AvatarModel, AvatarMessage, unit>
-            (AvatarModel.make Assets.FinnAnimationSheet Downward (v4Bounds v2Zero Constants.Gameplay.CharacterSize))
+            (AvatarModel.make Assets.FinnAnimationSheet Downward (v4Bounds (v2 128.0f 128.0f) Constants.Gameplay.CharacterSize))
 
         static let getSpriteInset (avatar : Entity) world =
             let model = avatar.GetAvatarModel world
@@ -36,14 +36,14 @@ module AvatarDispatcherModule =
              define Entity.CelSize Constants.Gameplay.CharacterSize
              define Entity.CelRun 8
              define Entity.FixedRotation true
-             define Entity.GravityScale 3.0f
+             define Entity.GravityScale 0.0f
              define Entity.CollisionBody (BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f })]
 
         override this.Channel (_, entity, _) =
             [entity.UpdateEvent => [msg Update]]
 
-        override this.Initializers (model, entity, world) =
-            [entity.Bounds == (model.Get world).BoundsOriginal
+        override this.Initializers (model, entity, _) =
+            [entity.Bounds <== model.Map (fun model -> model.Bounds)
              entity.LinearDamping == 8.0f
              entity.GravityScale == 0.0f]
 
