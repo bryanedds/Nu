@@ -10,6 +10,7 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Gameplay =
 
+        let TileSize = v2 64.0f 64.0f
         let CharacterSize = v2 160.0f 160.0f
 
     [<RequireQualifiedAccess>]

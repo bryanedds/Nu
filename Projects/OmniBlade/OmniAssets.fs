@@ -20,6 +20,8 @@ module Assets =
 
     // field assets
     let DebugRoomTileMap = asset<TileMap> FieldPackageName "DebugRoom"
+    let WoodenChestImage = asset<Image> FieldPackageName "WoodenChest"
+    let BrassChestImage = asset<Image> FieldPackageName "BrassChest"
 
     // battle assets
     let BattleSong = asset<Audio> BattlePackageName "Battle"

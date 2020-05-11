@@ -117,13 +117,25 @@ type ArmorSubtype =
 type AccessoryType =
     string
 
-type DoorType =
-    | UnlockedDoor
-    | DebugRoomDoor
-
 type ShopkeepType =
-    | WeaponShopkeep
-    | ArmorShopKeep
+    | WeaponShopkeep of int // level
+    | ArmorShopKeep of int // level
+    | AccessoryShopKeep of int // level
+
+type ShopkeepAppearanceType =
+    | Male
+    | Female
+    | Fancy
+
+type LockType =
+    | Unlocked
+
+type ChestType =
+    | WoodenChest
+    | BrassChest
+
+type DoorType =
+    | WoodenDoor
 
 type FieldType =
     | DebugRoom
@@ -246,6 +258,7 @@ type DoorData =
 
 type ShopkeepData =
     { ShopkeepType : ShopkeepType // key
+      ShopkeepAppearanceType : ShopkeepAppearanceType
       ShopkeepItems : ItemType Set
       ShopkeepGreet : string list
       ShopkeepFarewell : string list }
@@ -253,11 +266,11 @@ type ShopkeepData =
 type PropData =
     | Npc of Direction * Dialog
     | Shopkeep of ShopkeepType
-    | Chest of ItemType
-    | Door of DoorType // can be impassible until unlocked
+    | Chest of ChestType * LockType * ItemType
+    | Door of DoorType * LockType
     | Portal // leads to a different field
     | Switch // anything the can affect another thing on the field through interaction
-    | Trigger // anything the can affect another thing on the field through traversal
+    | Sensor // anything the can affect another thing on the field through traversal
 
 type FieldData =
     { FieldType : FieldType // key
