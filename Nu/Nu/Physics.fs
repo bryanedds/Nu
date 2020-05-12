@@ -81,6 +81,7 @@ type [<StructuralEquality; NoComparison>] BodyShape =
     | BodyCircle of BodyCircle
     | BodyCapsule of BodyCapsule
     | BodyPolygon of BodyPolygon
+    | BodyTree of BodyShape * BodyShape list
 
     static member getCenter body =
         match body with
@@ -88,6 +89,7 @@ type [<StructuralEquality; NoComparison>] BodyShape =
         | BodyCircle circle -> circle.Center
         | BodyCapsule capsule -> capsule.Center
         | BodyPolygon polygon -> polygon.Center
+        | BodyTree (root, _) -> BodyShape.getCenter root
 
 /// The type of a physics body; Static, Kinematic, or Dynamic.
 [<Syntax
@@ -354,61 +356,61 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
         body.IsSensor <- bodyProperties.IsSensor
         body.SleepingAllowed <- true
 
-    static member private createBoxBody (bodySource : BodySource) bodyProperties bodyBox physicsEngine =
-        let body =
-            Factories.BodyFactory.CreateRectangle
-                (physicsEngine.PhysicsContext,
-                 FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.X * 2.0f),
-                 FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.Y * 2.0f),
-                 bodyProperties.Density,
-                 FarseerPhysicsEngine.toPhysicsV2 (bodyProperties.Position + bodyBox.Center),
-                 0.0f,
-                 FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
-                 bodySource) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-        body.UserData <- bodySource // BUG: ...so I set it again here :/
-        body
+    static member private attachBoxBody (bodySource : BodySource) bodyProperties bodyBox body =
+        Factories.FixtureFactory.AttachRectangle
+            (FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.X * 2.0f),
+             FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.Y * 2.0f),
+             bodyProperties.Density,
+             FarseerPhysicsEngine.toPhysicsV2 bodyBox.Center,
+             body,
+             bodySource) |>
+        ignore
 
-    static member private createCircleBody (bodySource : BodySource) bodyProperties (bodyCircle : BodyCircle) physicsEngine =
-        let body =
-            Factories.BodyFactory.CreateCircle
-                (physicsEngine.PhysicsContext,
-                 FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCircle.Radius,
-                 bodyProperties.Density,
-                 FarseerPhysicsEngine.toPhysicsV2 (bodyProperties.Position + bodyCircle.Center),
-                 FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
-                 bodySource) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-        body.UserData <- bodySource // BUG: ...so I set it again here :/
-        body
+    static member private attachBodyCircle (bodySource : BodySource) bodyProperties (bodyCircle : BodyCircle) body =
+        Factories.FixtureFactory.AttachCircle
+            (FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCircle.Radius,
+             bodyProperties.Density,
+             body,
+             FarseerPhysicsEngine.toPhysicsV2 bodyCircle.Center,
+             bodySource) |>
+        ignore
 
-    static member private createCapsuleBody (bodySource : BodySource) bodyProperties bodyCapsule physicsEngine =
-        let body =
-            Factories.BodyFactory.CreateCapsule
-                (physicsEngine.PhysicsContext,
-                 FarseerPhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Height,
-                 FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCapsule.Radius,
-                 bodyProperties.Density,
-                 FarseerPhysicsEngine.toPhysicsV2 (bodyProperties.Position + bodyCapsule.Center),
-                 0.0f,
-                 FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
-                 bodySource) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-        body.UserData <- bodySource // BUG: ...so I set it again here :/
-        // scale in the capsule's box to stop sticking
-        let capsuleBox = body.FixtureList.[0].Shape :?> FarseerPhysics.Collision.Shapes.PolygonShape
-        capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f)) |> ignore
-        body
+    static member private attachBodyCapsule (bodySource : BodySource) bodyProperties bodyCapsule body =
+        let height = FarseerPhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Height
+        let endRadius = FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCapsule.Radius
+        let density = bodyProperties.Density
+        let center = FarseerPhysicsEngine.toPhysicsV2 bodyCapsule.Center
+        let rectangle = Common.PolygonTools.CreateRectangle (endRadius * 0.75f, height * 0.5f, center, 0.0f) // scaled in the capsule's box by 0.75f to stop corner sticking
+        let list = List<Common.Vertices> ()
+        list.Add rectangle
+        Factories.FixtureFactory.AttachCompoundPolygon (list, density, body, bodySource) |> ignore
+        Factories.FixtureFactory.AttachCircle (endRadius, density, body, Framework.Vector2 (0.0f, height * 0.5f), bodySource) |> ignore
+        Factories.FixtureFactory.AttachCircle (endRadius, density, body, Framework.Vector2 (0.0f, 0.0f - height * 0.5f), bodySource) |> ignore
 
-    static member private createPolygonBody (bodySource : BodySource) bodyProperties bodyPolygon physicsEngine =
-        let body =
-            Factories.BodyFactory.CreatePolygon
-                (physicsEngine.PhysicsContext,
-                 FarseerPhysics.Common.Vertices (Array.map FarseerPhysicsEngine.toPhysicsV2 bodyPolygon.Vertices),
-                 bodyProperties.Density,
-                 FarseerPhysicsEngine.toPhysicsV2 (bodyProperties.Position + bodyPolygon.Center),
-                 0.0f,
-                 FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
-                 bodySource) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-        body.UserData <- bodySource // BUG: ...so I set it again here :/
-        body
+    static member private attachBodyPolygon (bodySource : BodySource) (bodyProperties : BodyProperties) bodyPolygon body =
+        let vertices =
+            bodyPolygon.Vertices |>
+            Array.map (fun vertex -> vertex + bodyPolygon.Center) |>
+            Array.map FarseerPhysicsEngine.toPhysicsV2
+        Factories.FixtureFactory.AttachPolygon
+            (FarseerPhysics.Common.Vertices vertices,
+             bodyProperties.Density,
+             body,
+             bodySource) |>
+        ignore
+
+    static member private attachBodyTree (bodySource : BodySource) bodyProperties bodyRoot bodyChildren body =
+        FarseerPhysicsEngine.attachBodyShape bodySource bodyProperties bodyRoot body
+        for bodyChild in bodyChildren do
+            FarseerPhysicsEngine.attachBodyShape bodySource bodyProperties bodyChild body
+
+    static member private attachBodyShape (bodySource : BodySource) (bodyProperties : BodyProperties) bodyShape body =
+        match bodyShape with
+        | BodyBox bodyBox -> FarseerPhysicsEngine.attachBoxBody bodySource bodyProperties bodyBox body
+        | BodyCircle bodyCircle -> FarseerPhysicsEngine.attachBodyCircle bodySource bodyProperties bodyCircle body
+        | BodyCapsule bodyCapsule -> FarseerPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule body
+        | BodyPolygon bodyPolygon -> FarseerPhysicsEngine.attachBodyPolygon bodySource bodyProperties bodyPolygon body
+        | BodyTree (bodyRoot, bodyChildren) -> FarseerPhysicsEngine.attachBodyTree bodySource bodyProperties bodyRoot bodyChildren body
 
     static member private createBody4 sourceId (source : Simulant) bodyProperties physicsEngine =
 
@@ -416,16 +418,25 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
         let bodySource =
             { SourceSimulant = source
               SourceBodyId = bodyProperties.BodyId }
-    
-        // make and configure the body
+
+        // make the body
         let body =
-            match bodyProperties.Shape with
-            | BodyBox bodyBox -> FarseerPhysicsEngine.createBoxBody bodySource bodyProperties bodyBox physicsEngine
-            | BodyCircle bodyCircle -> FarseerPhysicsEngine.createCircleBody bodySource bodyProperties bodyCircle physicsEngine
-            | BodyCapsule bodyCapsule -> FarseerPhysicsEngine.createCapsuleBody bodySource bodyProperties bodyCapsule physicsEngine
-            | BodyPolygon bodyPolygon -> FarseerPhysicsEngine.createPolygonBody bodySource bodyProperties bodyPolygon physicsEngine
+            Factories.BodyFactory.CreateBody
+                (physicsEngine.PhysicsContext,
+                 FarseerPhysicsEngine.toPhysicsV2 bodyProperties.Position,
+                 bodyProperties.Rotation,
+                 FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
+                 bodySource) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+        body.UserData <- bodySource // BUG: ...so I set it again here :/
+
+        // attach body shape
+        FarseerPhysicsEngine.attachBodyShape bodySource bodyProperties bodyProperties.Shape body
+
+        // configure body
         FarseerPhysicsEngine.configureBodyProperties bodyProperties body
-        body.add_OnCollision (fun fn fn2 collision -> FarseerPhysicsEngine.handleCollision physicsEngine fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
+
+        // listen for collisions
+        body.add_OnCollision (fun fn fn2 collision -> FarseerPhysicsEngine.handleCollision physicsEngine fn fn2 collision)
 
         // attempt to add the body
         if not (physicsEngine.Bodies.TryAdd ({ SourceId = sourceId; BodyId = bodyProperties.BodyId }, body)) then
@@ -617,7 +628,7 @@ module PhysicsEngine =
         | _ -> Convert.ToInt32 (categoryMask, 2)
 
     /// Localize a body shape to a specific physics object.
-    let localizeBodyShape (extent : Vector2) (bodyShape : BodyShape) =
+    let rec localizeBodyShape (extent : Vector2) (bodyShape : BodyShape) =
         match bodyShape with
         | BodyBox bodyBox -> BodyBox { Extent = Vector2.Multiply (extent, bodyBox.Extent); Center = Vector2.Multiply (extent, bodyBox.Center) }
         | BodyCircle bodyCircle -> BodyCircle { Radius = extent.X * bodyCircle.Radius; Center = extent.X * bodyCircle.Center }
@@ -625,6 +636,10 @@ module PhysicsEngine =
         | BodyPolygon bodyPolygon ->
             let vertices = Array.map (fun vertex -> Vector2.Multiply (vertex, extent)) bodyPolygon.Vertices
             BodyPolygon { Vertices = vertices; Center = Vector2.Multiply (extent, bodyPolygon.Center) }
+        | BodyTree (bodyRoot, bodyChildren) ->
+            let bodyRoot = localizeBodyShape extent bodyRoot
+            let bodyChildren = List.map (localizeBodyShape extent) bodyChildren
+            BodyTree (bodyRoot, bodyChildren)
 
     /// Check that the physics engine contain the body with the given physics id.
     let bodyExists physicsId (physicsEngine : PhysicsEngine) =

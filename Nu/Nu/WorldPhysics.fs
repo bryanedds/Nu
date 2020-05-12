@@ -10,13 +10,6 @@ open Nu
 [<AutoOpen; ModuleBinding>]
 module WorldPhysicsModule =
 
-    // HACK: exposes BodyShape property for earlier access.
-    type Entity with
-
-        member this.GetBodyShape world : BodyShape = this.Get Property? BodyShape world
-        member this.SetBodyShape (value : BodyShape) world = this.SetFast Property? BodyShape false false value world
-        member this.BodyShape = lens Property? BodyShape this.GetBodyShape this.SetBodyShape this
-
     /// The subsystem for the world's physics system.
     type [<ReferenceEquality>] PhysicsEngineSubsystem =
         private
@@ -29,11 +22,8 @@ module WorldPhysicsModule =
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.SourceSimulant :?> Entity
-                    let bodyShape = entity.GetBodyShape world
-                    let bodyCenter = BodyShape.getCenter bodyShape
-                    let bodyOffset = bodyCenter * entity.GetSize world
                     let transform = entity.GetTransform world
-                    let position = (bodyTransformMessage.Position - bodyOffset) - transform.Size * 0.5f
+                    let position = bodyTransformMessage.Position - transform.Size * 0.5f
                     let rotation = bodyTransformMessage.Rotation
                     let world =
                         if bodyTransformMessage.BodySource.SourceBodyId = Guid.Empty then

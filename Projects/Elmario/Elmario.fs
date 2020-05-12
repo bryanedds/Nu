@@ -47,7 +47,7 @@ type ElmarioDispatcher () =
             | Jump ->
                 let physicsId = Simulants.Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world then
-                    let world = World.applyBodyForce (v2 0.0f 200000.0f) physicsId world
+                    let world = World.applyBodyForce (v2 0.0f 175000.0f) physicsId world
                     World.playSound Constants.Audio.DefaultSoundVolume (asset "Gameplay" "Jump") world
                 else world
             | Nop -> world
