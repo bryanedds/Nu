@@ -49,7 +49,7 @@ and LayerPropertyDescriptor (propertyDescriptor, attributes) =
 
     override this.IsReadOnly =
         not propertyCanWrite ||
-        not (Reflection.isPropertyPersistentByName propertyName)
+        Reflection.isPropertyNonPersistentByName propertyName
 
     override this.SetValue (source, value) =
         Globals.WorldChangers.Add $ fun world ->

@@ -132,7 +132,7 @@ module WorldEntityModule =
         /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world =
             let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-            let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+            let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
             this.SetFast propertyName alwaysPublish nonPersistent value world
 
         /// Set a property value.

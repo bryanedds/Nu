@@ -52,7 +52,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
 
     override this.IsReadOnly =
         not propertyCanWrite ||
-        not (Reflection.isPropertyPersistentByName propertyName)
+        Reflection.isPropertyNonPersistentByName propertyName
 
     override this.GetValue source =
         match source with
@@ -120,7 +120,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                         | (Left error, world) -> Log.trace error; world
                     | _ ->
                         let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                        let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                        let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                         PropertyDescriptor.trySetValue alwaysPublish nonPersistent propertyDescriptor value entity world |> snd
                 let world = entity.PropagatePhysics world
                 Globals.World <- world // must be set for property grid

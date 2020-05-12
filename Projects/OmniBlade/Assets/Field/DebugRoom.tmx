@@ -18,6 +18,9 @@
   </data>
  </layer>
  <objectgroup id="4" name="Props">
+  <properties>
+   <property name="D" value="10"/>
+  </properties>
   <object id="2" name="7ced2215-353f-4653-86f4-05200b99f641" type="[Chest WoodenChest Unlocked [Consumable GreenHerb]]" gid="813" x="512" y="640" width="64" height="64"/>
  </objectgroup>
 </map>
