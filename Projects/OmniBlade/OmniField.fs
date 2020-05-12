@@ -4,6 +4,7 @@ open FSharpx.Collections
 open Prime
 open Nu
 open Nu.Declarative
+open TiledSharp
 open OmniBlade
 
 [<AutoOpen>]
@@ -82,4 +83,17 @@ module OmniField =
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
                     [Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Position == v2 256.0f 256.0f
-                     Entity.Depth == Constants.Field.ForgroundDepth]]]
+                     Entity.Depth == Constants.Field.ForgroundDepth]
+                 //Content.entities
+                 //   (model ->> fun model world ->
+                 //       match Map.tryFind model.FieldType data.Value.Fields with
+                 //       | Some fieldData ->
+                 //           let (_, _, tileMap) = World.getTileMapMetadata fieldData.FieldTileMap world
+                 //           let group = tileMap.ObjectGroups.Item "Props"
+                 //           let objects = enumerable<TmxObjectGroup.TmxObject> group.Objects
+                 //           List.ofSeq objects
+                 //       | None -> [])
+                 //   (fun _ lens world ->
+                 //       let object = lens.Get world
+                 //       Content.entity<PropDispatcher>)
+                        ]]
