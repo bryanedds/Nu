@@ -13,9 +13,9 @@ type GameplayMessage =
 
 // this is our Elm-style command type. Commands are used instead of messages when things like physics are involved.
 type GameplayCommand =
-    | Jump
     | MoveLeft
     | MoveRight
+    | Jump
     | EyeTrack
     | Nop
 
@@ -40,12 +40,6 @@ type MyGameplayDispatcher () =
     override this.Command (_, command, _, world) =
         let world =
             match command with
-            | Jump ->
-                let physicsId = Simulants.Player.GetPhysicsId world
-                if World.isBodyOnGround physicsId world then
-                    let world = World.applyBodyForce (v2 0.0f 200000.0f) physicsId world
-                    World.playSound Constants.Audio.DefaultSoundVolume (asset "Gameplay" "Jump") world
-                else world
             | MoveLeft ->
                 let physicsId = Simulants.Player.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
@@ -56,6 +50,12 @@ type MyGameplayDispatcher () =
                 if World.isBodyOnGround physicsId world
                 then World.applyBodyForce (v2 3000.0f 0.0f) physicsId world
                 else World.applyBodyForce (v2 750.0f 0.0f) physicsId world
+            | Jump ->
+                let physicsId = Simulants.Player.GetPhysicsId world
+                if World.isBodyOnGround physicsId world then
+                    let world = World.applyBodyForce (v2 0.0f 175000.0f) physicsId world
+                    World.playSound Constants.Audio.DefaultSoundVolume (asset "Gameplay" "Jump") world
+                else world
             | EyeTrack ->
                 if World.getTickRate world <> 0L
                 then Simulants.Game.SetEyeCenter (Simulants.Player.GetCenter world) world
