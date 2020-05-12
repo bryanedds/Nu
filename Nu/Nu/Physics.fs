@@ -73,7 +73,7 @@ type [<StructuralEquality; NoComparison>] BodyPolygon =
 
 /// The shape of a physics body.
 [<Syntax
-    ("BodyBox BodyCircle BodyCapsule BodyPolygon", "", "", "", "",
+    ("BodyBox BodyCircle BodyCapsule BodyPolygon BodyShapes", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type [<StructuralEquality; NoComparison>] BodyShape =
@@ -82,6 +82,87 @@ type [<StructuralEquality; NoComparison>] BodyShape =
     | BodyCapsule of BodyCapsule
     | BodyPolygon of BodyPolygon
     | BodyShapes of BodyShape list
+
+type [<NoComparison>] JointAngle =
+    { BodyId : Guid
+      BodyId2 : Guid
+      Anchor : Vector2
+      Anchor2 : Vector2
+      Angle : single
+      Softness : single }
+
+type [<NoComparison>] JointDistance =
+    { BodyId : Guid
+      BodyId2 : Guid
+      Anchor : Vector2
+      Anchor2 : Vector2
+      Softness : single }
+
+type [<NoComparison>] JointFriction =
+    { BodyId : Guid
+      BodyId2 : Guid
+      Anchor : Vector2
+      Anchor2 : Vector2 }
+
+type [<NoComparison>] JointGear =
+    { BodyId : Guid
+      BodyId2 : Guid
+      Anchor : Vector2
+      Anchor2 : Vector2 }
+
+type [<NoComparison>] JointMotor =
+    { BodyId : Guid
+      BodyId2 : Guid
+      Anchor : Vector2
+      Anchor2 : Vector2 }
+
+type [<NoComparison>] JointPrismatic =
+    { BodyId : Guid
+      BodyId2 : Guid
+      Anchor : Vector2
+      Anchor2 : Vector2 }
+
+type [<NoComparison>] JointPulley =
+    { BodyId : Guid
+      BodyId2 : Guid
+      Anchor : Vector2
+      Anchor2 : Vector2 }
+
+type [<NoComparison>] JointRevolute =
+    { BodyId : Guid
+      BodyId2 : Guid
+      Anchor : Vector2
+      Anchor2 : Vector2 }
+
+type [<NoComparison>] JointRope =
+    { BodyId : Guid
+      BodyId2 : Guid
+      Anchor : Vector2
+      Anchor2 : Vector2 }
+
+type [<NoComparison>] JointWheel =
+    { BodyId : Guid
+      BodyId2 : Guid
+      Anchor : Vector2
+      Anchor2 : Vector2 }
+
+/// A joint on physics bodies.
+[<Syntax
+    ("JointAngle JointDistance JointFriction JointGear JointMotor JointPrismatic JointPulley JointRevolute JointRope JointWheel",
+     "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DetailedThresholdMax)>]
+type [<StructuralEquality; NoComparison>] Joint =
+    | JointAngle of JointAngle
+    | JointDistance of JointDistance
+    | JointFriction of JointFriction
+    | JointGear of JointGear
+    | JointMotor of JointMotor
+    | JointPrismatic of JointPrismatic
+    | JointPulley of JointPulley
+    | JointRevolute of JointRevolute
+    | JointRope of JointRope
+    | JointWheel of JointWheel
 
 /// The type of a physics body; Static, Kinematic, or Dynamic.
 [<Syntax
