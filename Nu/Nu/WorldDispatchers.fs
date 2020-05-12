@@ -116,7 +116,7 @@ module FacetModule =
                 | PropertyDefinition def ->
                     let propertyName = def.PropertyName
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                    let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
                     World.setProperty def.PropertyName alwaysPublish nonPersistent property entity world
                 | EventHandlerDefinition (handler, partialAddress) ->
@@ -1134,7 +1134,7 @@ module EntityDispatcherModule =
                 | PropertyDefinition def ->
                     let propertyName = def.PropertyName
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                    let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
                     World.setProperty def.PropertyName alwaysPublish nonPersistent property entity world
                 | EventHandlerDefinition (handler, partialAddress) ->
@@ -1985,7 +1985,7 @@ module LayerDispatcherModule =
                 | PropertyDefinition def ->
                     let propertyName = def.PropertyName
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                    let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
                     World.setProperty def.PropertyName alwaysPublish nonPersistent property layer world
                 | EventHandlerDefinition (handler, partialAddress) ->
@@ -2084,7 +2084,7 @@ module ScreenDispatcherModule =
                 | PropertyDefinition def ->
                     let propertyName = def.PropertyName
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                    let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
                     World.setProperty def.PropertyName alwaysPublish nonPersistent property screen world
                 | EventHandlerDefinition (handler, partialAddress) ->

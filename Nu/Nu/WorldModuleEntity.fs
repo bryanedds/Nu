@@ -924,7 +924,11 @@ module WorldModuleEntity =
                 World.createEntity5 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt overlayDescriptor layer world
             let world =
                 List.fold (fun world (propertyName, property) ->
-                    World.setEntityProperty propertyName false false property entity world)
+                    World.setEntityProperty
+                        propertyName
+                        (Reflection.isPropertyAlwaysPublishByName propertyName)
+                        (Reflection.isPropertyNonPersistentByName propertyName)
+                        property entity world)
                     world descriptor.SimulantProperties
             let world =
                 if WorldModule.isSimulantSelected entity world

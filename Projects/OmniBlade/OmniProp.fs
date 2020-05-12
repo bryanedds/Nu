@@ -19,7 +19,7 @@ module PropDispatcherModule =
 
     type PropDispatcher () =
         inherit EntityDispatcher<PropModel, PropMessage, unit>
-            (PropModel.make (Chest (WoodenChest, Unlocked, Consumable GreenHerb)) (v4Bounds v2Zero Constants.Gameplay.TileSize))
+            (PropModel.make (Chest (BrassChest, Unlocked, Consumable GreenHerb)) (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f)
 
         static member Facets =
             [typeof<RigidBodyFacet>]
@@ -27,7 +27,7 @@ module PropDispatcherModule =
         static member Properties =
             [define Entity.FixedRotation true
              define Entity.GravityScale 0.0f
-             define Entity.CollisionBody (BodyBox { Extent = Constants.Gameplay.TileSize * 0.5f; Center = v2Zero })]
+             define Entity.CollisionBody (BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero })]
 
         override this.Channel (_, entity, _) =
             [entity.UpdateEvent => [msg Update]]
@@ -38,6 +38,9 @@ module PropDispatcherModule =
              entity.BodyType == Static
              entity.LinearDamping == 0.0f
              entity.GravityScale == 0.0f]
+
+        override this.Register (entity, world) =
+            base.Register (entity, world)
 
         override this.Message (model, message, entity, world) =
             match message with

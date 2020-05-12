@@ -154,7 +154,7 @@ module WorldScripting =
                 | Some property ->
                     let struct (propertyValue, world) = World.evalInternal propertyValueExpr world
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                    let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                     match property.PropertyValue with
                     | :? DesignerProperty as dp ->
                         match ScriptingSystem.tryExport dp.DesignerType propertyValue world with
@@ -193,7 +193,7 @@ module WorldScripting =
                                         match World.tryGetProperty propertyName simulant world with
                                         | Some property ->
                                             let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                                            let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
+                                            let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                                             match property.PropertyValue with
                                             | :? DesignerProperty as dp ->
                                                 match ScriptingSystem.tryExport dp.DesignerType expr world with

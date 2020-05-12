@@ -293,7 +293,7 @@ module PropertyDescriptor =
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Transform) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Flags) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty (property.GetCustomAttributes<ExtensionAttribute> ())) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> not (Reflection.isPropertyNonPersistentByName property.Name)) properties
             let propertyDescriptors =
                 Seq.map (fun (property : PropertyInfo) ->
                     let propertyName = property.Name
@@ -314,7 +314,7 @@ module PropertyDescriptor =
                             (fun propertyDescriptors' (propertyName, property : Property) ->
                                 if property.PropertyType = typeof<ComputedProperty> then
                                     propertyDescriptors'
-                                elif Reflection.isPropertyPersistentByName propertyName then
+                                elif not (Reflection.isPropertyNonPersistentByName propertyName) then
                                     let propertyType =
                                         match property.PropertyValue with
                                         | :? DesignerProperty as designerProperty -> designerProperty.DesignerType

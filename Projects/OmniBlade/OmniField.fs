@@ -84,24 +84,28 @@ module OmniField =
                     [Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Position == v2 256.0f 256.0f
                      Entity.Depth == Constants.Field.ForgroundDepth]
-                 //Content.entities
-                 //   (model ->> fun model world ->
-                 //       match Map.tryFind model.FieldType data.Value.Fields with
-                 //       | Some fieldData ->
-                 //           match World.tryGetTileMapMetadata fieldData.FieldTileMap world with
-                 //           | Some (_, _, tileMap) ->
-                 //               if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
-                 //                   let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
-                 //                   let objects = enumerable<TmxObject> group.Objects
-                 //                   List.ofSeq objects
-                 //               else []
-                 //           | None -> []
-                 //       | None -> [])
-                 //   (fun _ lens world ->
-                 //       let object = lens.Get world
-                 //       let propPosition = v2 (single object.X) (single object.Y)
-                 //       let propBounds = v4Bounds propPosition Constants.Gameplay.TileSize
-                 //       let propData = scvalue<PropData> object.Type
-                 //       let propModel = PropModel.make propData propBounds
-                 //       Content.entity<PropDispatcher> object.Name [Entity.PropModel == propModel])
-                        ]]
+                 Content.entities
+                    (model ->> fun model world ->
+                        match Map.tryFind model.FieldType data.Value.Fields with
+                        | Some fieldData ->
+                            match World.tryGetTileMapMetadata fieldData.FieldTileMap world with
+                            | Some (_, _, tileMap) ->
+                                if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
+                                    let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
+                                    let objects = enumerable<TmxObject> group.Objects
+                                    let objectsAndGroups = Seq.map (flip pair group) objects
+                                    List.ofSeq objectsAndGroups
+                                else []
+                            | None -> []
+                        | None -> [])
+                    (fun _ lens world ->
+                        let (object, group) = lens.Get world
+                        let propPosition = v2 (single object.X) (single object.Y)
+                        let propBounds = v4Bounds propPosition Constants.Gameplay.TileSize
+                        let propDepth =
+                            match group.Properties.TryGetValue Constants.Physics.DepthProperty with
+                            | (true, depth) -> Constants.Field.ForgroundDepth + scvalue depth
+                            | (false, _) -> Constants.Field.ForgroundDepth
+                        let propData = scvalue<PropData> object.Type
+                        let propModel = PropModel.make propData propBounds propDepth
+                        Content.entity<PropDispatcher> object.Name [Entity.PropModel == propModel])]]

@@ -27,8 +27,8 @@ module Reflection =
             propertyName.EndsWith "Model" ||
             propertyName.EndsWith "Ap"
 
-    /// Is a property with the given name persistent?
-    let isPropertyPersistentByName (propertyName : string) =
+    /// Is a property with the given name not persistent?
+    let isPropertyNonPersistentByName (propertyName : string) =
         /// NOTE: we hard-code these property names to avoid as many Np suffixes as we can.
         match propertyName with
         | "Dispatcher"
@@ -44,19 +44,19 @@ module Reflection =
         | "NodeUnsubscribe"
         | "EffectPhysicsShapes"
         | "EffectTags"
-        | "EffectHistory" -> false
+        | "EffectHistory" -> true
         | _ ->
-            not (propertyName.EndsWith ("Np", StringComparison.Ordinal)) && // don't write explicitly non-persistent properties
-            not (propertyName.EndsWith ("Id", StringComparison.Ordinal)) && // don't write an Id
-            not (propertyName.EndsWith ("Ids", StringComparison.Ordinal)) // don't write multiple Ids
+            propertyName.EndsWith ("Np", StringComparison.Ordinal) || // don't write explicitly non-persistent properties
+            propertyName.EndsWith ("Id", StringComparison.Ordinal) || // don't write an Id
+            propertyName.EndsWith ("Ids", StringComparison.Ordinal) // don't write multiple Ids
 
-    /// Is the property of the given target persistent?
-    let isPropertyPersistent (property : PropertyInfo) (target : 'a) =
-        isPropertyPersistentByName property.Name &&
-        not
-            (property.Name = Constants.Engine.NamePropertyName &&
-             property.PropertyType = typeof<string> &&
-             Gen.isName (property.GetValue target :?> string))
+    /// Is the property of the given target not persistent?
+    let isPropertyNonPersistent (property : PropertyInfo) (target : 'a) =
+        isPropertyNonPersistentByName property.Name ||
+        (property.Name = Constants.Engine.NamePropertyName &&
+         property.PropertyType = typeof<string> &&
+         Gen.isName (property.GetValue target :?> string))
+
     /// Check that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) (dispatcher : 'a) =
         let dispatcherType = dispatcher.GetType ()
@@ -299,7 +299,7 @@ module Reflection =
         for property in properties do
             if  property.Name <> Property? FacetNames &&
                 property.Name <> Property? OverlayNameOpt &&
-                isPropertyPersistentByName property.Name then
+                not (isPropertyNonPersistentByName property.Name) then
                 tryReadMemberProperty propertyDescriptors property target
         target
 
@@ -314,7 +314,7 @@ module Reflection =
             let propertyType = property.PropertyType
             let propertyValue = property.PropertyValue
             if  propertyType <> typeof<ComputedProperty> &&
-                isPropertyPersistentByName propertyName &&
+                not (isPropertyNonPersistentByName propertyName) &&
                 shouldWriteProperty propertyName propertyType propertyValue then
                 let converter = SymbolicConverter (false, None, propertyType)
                 let propertySymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
@@ -325,7 +325,7 @@ module Reflection =
 
     /// Write a member property value to a property descriptors.
     let private writeMemberProperty (propertyValue : obj) (property : PropertyInfo) shouldWriteProperty propertyDescriptors (target : 'a) =
-        if  isPropertyPersistent property target &&
+        if  not (isPropertyNonPersistent property target) &&
             shouldWriteProperty property.Name property.PropertyType propertyValue then
             if  property.Name = Property? Transform &&
                 property.PropertyType = typeof<Transform> then
