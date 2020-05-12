@@ -89,3 +89,10 @@ module CoreOperators =
     /// Make a pair of values.
     /// TODO: move this into Prime.
     let pair a b = (a, b)
+
+[<RequireQualifiedAccess>]
+module Seq =
+
+    /// Eagerly evaluate a sequence.
+    /// TODO: move this into Prime.
+    let eval seq = seq |> Seq.toArray |> Seq.ofArray

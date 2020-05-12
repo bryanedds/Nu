@@ -44,7 +44,7 @@ module AvatarDispatcherModule =
 
         override this.Initializers (model, entity, _) =
             [entity.Bounds <== model.Map (fun model -> model.Bounds)
-             entity.LinearDamping == 8.0f
+             entity.LinearDamping == 12.0f
              entity.GravityScale == 0.0f]
 
         override this.Message (model, message, entity, world) =
