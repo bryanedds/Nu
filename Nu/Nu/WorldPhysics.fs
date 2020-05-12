@@ -22,22 +22,6 @@ module WorldPhysicsModule =
         private
             { PhysicsEngine : PhysicsEngine }
 
-        static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
-            // TODO: P1: also publish a body transform message, perhaps only for non-empty body ids.
-            if message.BodySource.SourceBodyId = Guid.Empty then
-                let bodyShape = entity.GetCollisionBody world
-                let bodyCenter = BodyShape.getCenter bodyShape
-                let bodyOffset = bodyCenter * entity.GetSize world
-                let transform = entity.GetTransform world
-                let transform2 =
-                    { transform with
-                        Position = (message.Position - bodyOffset) - transform.Size * 0.5f
-                        Rotation = message.Rotation }
-                if transform <> transform2
-                then entity.SetTransform transform2 world
-                else world
-            else world
-
         static member private handleIntegrationMessage world integrationMessage =
             match World.getLiveness world with
             | Running ->
@@ -45,9 +29,23 @@ module WorldPhysicsModule =
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.SourceSimulant :?> Entity
-                    if entity.GetExists world
-                    then PhysicsEngineSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
-                    else world
+                    let bodyShape = entity.GetCollisionBody world
+                    let bodyCenter = BodyShape.getCenter bodyShape
+                    let bodyOffset = bodyCenter * entity.GetSize world
+                    let transform = entity.GetTransform world
+                    let position = (bodyTransformMessage.Position - bodyOffset) - transform.Size * 0.5f
+                    let rotation = bodyTransformMessage.Rotation
+                    let world =
+                        if bodyTransformMessage.BodySource.SourceBodyId = Guid.Empty then
+                            let transform2 = { transform with Position = position; Rotation = rotation }
+                            if transform <> transform2
+                            then entity.SetTransform transform2 world
+                            else world
+                        else world
+                    let transformAddress = Events.Transform --> entity.EntityAddress
+                    let transformData = { BodySource = bodySource; Position = position; Rotation = rotation }
+                    let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
+                    World.publish transformData transformAddress eventTrace Default.Game world
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let entity = bodyCollisionMessage.BodySource.SourceSimulant :?> Entity
                     if entity.GetExists world then
