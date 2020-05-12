@@ -582,7 +582,10 @@ module TileMapFacetModule =
                 Vector2i
                     (int tileMapPosition.X + tmd.TileSize.X * i,
                      int tileMapPosition.Y - tmd.TileSize.Y * (j + 1)) // subtraction for right-handedness
-            let tileSetTileOpt = Seq.tryFind (fun (item : TmxTilesetTile) -> tile.Gid - 1 = item.Id) tmd.TileSet.Tiles
+            let tileSetTileOpt =
+                match tmd.TileSet.Tiles.TryGetValue (tile.Gid - 1) with
+                | (true, tile) -> Some tile
+                | (false, _) -> None
             { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; TileSetTileOpt = tileSetTileOpt }
 
         let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr world =
@@ -716,6 +719,12 @@ module TileMapFacetModule =
                                     let parallaxPosition = position + parallaxTranslation
                                     let size = Vector2 (tileSize.X * single map.Width, tileSize.Y)
                                     let image = List.head images // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
+                                    let tiles =
+                                        layer.Tiles |>
+                                        enumerable<_> |>
+                                        Seq.skip (j * map.Width) |>
+                                        Seq.take map.Width |>
+                                        Seq.toArray
                                     if World.isBoundsInView viewType (Math.makeBounds parallaxPosition size) world then
                                         World.enqueueRenderMessage
                                             (RenderDescriptorsMessage
@@ -730,7 +739,7 @@ module TileMapFacetModule =
                                                               Rotation = tileMap.GetRotation world
                                                               ViewType = viewType
                                                               MapSize = Vector2i (map.Width, map.Height)
-                                                              Tiles = layer.Tiles.GetRange (j * map.Width, map.Width)
+                                                              Tiles = tiles
                                                               TileSourceSize = tileSourceSize
                                                               TileSize = tileSize
                                                               TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...

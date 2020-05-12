@@ -95,5 +95,5 @@ module OmniField =
                  //       | None -> [])
                  //   (fun _ lens world ->
                  //       let object = lens.Get world
-                 //       Content.entity<PropDispatcher>)
+                 //       Content.entity<PropDispatcher> object.)
                         ]]

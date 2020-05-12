@@ -65,7 +65,7 @@ type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
       Rotation : single
       ViewType : ViewType
       MapSize : Vector2i
-      Tiles : TmxLayerTile List // OPTIMIZATION: using List for direct transfer from Tmx
+      Tiles : TmxLayerTile array
       TileSourceSize : Vector2i
       TileSize : Vector2
       TileSet : TmxTileset
@@ -329,7 +329,7 @@ type [<ReferenceEquality>] SdlRenderer =
                 let tileSourceRectRef = ref (SDL.SDL_Rect ())
                 let tileDestRectRef = ref (SDL.SDL_Rect ())
                 let tileRotationCenterRef = ref (SDL.SDL_Point ())
-                Seq.iteri
+                Array.iteri
                     (fun n (tile : TmxLayerTile) ->
                         let mapRun = mapSize.X
                         let (i, j) = (n % mapRun, n / mapRun)
