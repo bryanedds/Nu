@@ -81,15 +81,7 @@ type [<StructuralEquality; NoComparison>] BodyShape =
     | BodyCircle of BodyCircle
     | BodyCapsule of BodyCapsule
     | BodyPolygon of BodyPolygon
-    | BodyTree of BodyShape * BodyShape list
-
-    static member getCenter body =
-        match body with
-        | BodyBox box -> box.Center
-        | BodyCircle circle -> circle.Center
-        | BodyCapsule capsule -> capsule.Center
-        | BodyPolygon polygon -> polygon.Center
-        | BodyTree (root, _) -> BodyShape.getCenter root
+    | BodyShapes of BodyShape list
 
 /// The type of a physics body; Static, Kinematic, or Dynamic.
 [<Syntax
@@ -317,8 +309,8 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
 
     static member private handleCollision
         physicsEngine (fixture : Dynamics.Fixture) (fixture2 : Dynamics.Fixture) (contact : Dynamics.Contacts.Contact) =
-        let sourceBody = fixture.Body.UserData :?> BodySource
-        let sourceBody2 = fixture2.Body.UserData :?> BodySource
+        let sourceBody = fixture.UserData :?> BodySource
+        let sourceBody2 = fixture2.UserData :?> BodySource
         let normal = fst (contact.GetWorldManifold ())
         let bodyCollisionMessage =
             { BodySource = sourceBody
@@ -357,23 +349,25 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
         body.SleepingAllowed <- true
 
     static member private attachBoxBody (bodySource : BodySource) bodyProperties bodyBox body =
-        Factories.FixtureFactory.AttachRectangle
-            (FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.X * 2.0f),
-             FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.Y * 2.0f),
-             bodyProperties.Density,
-             FarseerPhysicsEngine.toPhysicsV2 bodyBox.Center,
-             body,
-             bodySource) |>
-        ignore
+        let fixture =
+            Factories.FixtureFactory.AttachRectangle
+                (FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.X * 2.0f),
+                 FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.Y * 2.0f),
+                 bodyProperties.Density,
+                 FarseerPhysicsEngine.toPhysicsV2 bodyBox.Center,
+                 body,
+                 bodySource)
+        fixture
 
     static member private attachBodyCircle (bodySource : BodySource) bodyProperties (bodyCircle : BodyCircle) body =
-        Factories.FixtureFactory.AttachCircle
-            (FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCircle.Radius,
-             bodyProperties.Density,
-             body,
-             FarseerPhysicsEngine.toPhysicsV2 bodyCircle.Center,
-             bodySource) |>
-        ignore
+        let fixture =
+            Factories.FixtureFactory.AttachCircle
+                (FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCircle.Radius,
+                 bodyProperties.Density,
+                 body,
+                 FarseerPhysicsEngine.toPhysicsV2 bodyCircle.Center,
+                 bodySource)
+        fixture
 
     static member private attachBodyCapsule (bodySource : BodySource) bodyProperties bodyCapsule body =
         let height = FarseerPhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Height
@@ -383,34 +377,40 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
         let rectangle = Common.PolygonTools.CreateRectangle (endRadius * 0.75f, height * 0.5f, center, 0.0f) // scaled in the capsule's box by 0.75f to stop corner sticking
         let list = List<Common.Vertices> ()
         list.Add rectangle
-        Factories.FixtureFactory.AttachCompoundPolygon (list, density, body, bodySource) |> ignore
-        Factories.FixtureFactory.AttachCircle (endRadius, density, body, Framework.Vector2 (0.0f, height * 0.5f), bodySource) |> ignore
-        Factories.FixtureFactory.AttachCircle (endRadius, density, body, Framework.Vector2 (0.0f, 0.0f - height * 0.5f), bodySource) |> ignore
+        let fixtures = Factories.FixtureFactory.AttachCompoundPolygon (list, density, body, bodySource)
+        let fixtureTop = Factories.FixtureFactory.AttachCircle (endRadius, density, body, Framework.Vector2 (0.0f, height * 0.5f), bodySource)
+        let fixtureBottom = Factories.FixtureFactory.AttachCircle (endRadius, density, body, Framework.Vector2 (0.0f, 0.0f - height * 0.5f), bodySource)
+        fixtures.Add fixtureTop
+        fixtures.Add fixtureBottom
+        fixtures
 
     static member private attachBodyPolygon (bodySource : BodySource) (bodyProperties : BodyProperties) bodyPolygon body =
         let vertices =
             bodyPolygon.Vertices |>
             Array.map (fun vertex -> vertex + bodyPolygon.Center) |>
             Array.map FarseerPhysicsEngine.toPhysicsV2
-        Factories.FixtureFactory.AttachPolygon
-            (FarseerPhysics.Common.Vertices vertices,
-             bodyProperties.Density,
-             body,
-             bodySource) |>
-        ignore
+        let fixture =
+            Factories.FixtureFactory.AttachPolygon
+                (FarseerPhysics.Common.Vertices vertices,
+                 bodyProperties.Density,
+                 body,
+                 bodySource)
+        fixture
 
-    static member private attachBodyTree (bodySource : BodySource) bodyProperties bodyRoot bodyChildren body =
-        FarseerPhysicsEngine.attachBodyShape bodySource bodyProperties bodyRoot body
-        for bodyChild in bodyChildren do
-            FarseerPhysicsEngine.attachBodyShape bodySource bodyProperties bodyChild body
+    static member private attachBodyShapes (bodySource : BodySource) bodyProperties bodyShapes body : Fixture array =
+        let list = List () // NOTE: was too lazy to write a fold, so used mutation and left this comment...
+        for bodyShape in bodyShapes do
+            let fixtures = FarseerPhysicsEngine.attachBodyShape bodySource bodyProperties bodyShape body
+            list.AddRange fixtures
+        list |> Array.ofSeq
 
-    static member private attachBodyShape (bodySource : BodySource) (bodyProperties : BodyProperties) bodyShape body =
+    static member private attachBodyShape (bodySource : BodySource) (bodyProperties : BodyProperties) bodyShape body : Fixture array =
         match bodyShape with
-        | BodyBox bodyBox -> FarseerPhysicsEngine.attachBoxBody bodySource bodyProperties bodyBox body
-        | BodyCircle bodyCircle -> FarseerPhysicsEngine.attachBodyCircle bodySource bodyProperties bodyCircle body
-        | BodyCapsule bodyCapsule -> FarseerPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule body
-        | BodyPolygon bodyPolygon -> FarseerPhysicsEngine.attachBodyPolygon bodySource bodyProperties bodyPolygon body
-        | BodyTree (bodyRoot, bodyChildren) -> FarseerPhysicsEngine.attachBodyTree bodySource bodyProperties bodyRoot bodyChildren body
+        | BodyBox bodyBox -> FarseerPhysicsEngine.attachBoxBody bodySource bodyProperties bodyBox body |> Array.singleton
+        | BodyCircle bodyCircle -> FarseerPhysicsEngine.attachBodyCircle bodySource bodyProperties bodyCircle body |> Array.singleton
+        | BodyCapsule bodyCapsule -> FarseerPhysicsEngine.attachBodyCapsule bodySource bodyProperties bodyCapsule body |> Array.ofSeq
+        | BodyPolygon bodyPolygon -> FarseerPhysicsEngine.attachBodyPolygon bodySource bodyProperties bodyPolygon body |> Array.singleton
+        | BodyShapes bodyShapes -> FarseerPhysicsEngine.attachBodyShapes bodySource bodyProperties bodyShapes body
 
     static member private createBody4 sourceId (source : Simulant) bodyProperties physicsEngine =
 
@@ -426,11 +426,10 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
                  FarseerPhysicsEngine.toPhysicsV2 bodyProperties.Position,
                  bodyProperties.Rotation,
                  FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
-                 bodySource) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-        body.UserData <- bodySource // BUG: ...so I set it again here :/
+                 bodySource)
 
         // attach body shape
-        FarseerPhysicsEngine.attachBodyShape bodySource bodyProperties bodyProperties.Shape body
+        FarseerPhysicsEngine.attachBodyShape bodySource bodyProperties bodyProperties.Shape body |> ignore
 
         // configure body
         FarseerPhysicsEngine.configureBodyProperties bodyProperties body
@@ -636,10 +635,9 @@ module PhysicsEngine =
         | BodyPolygon bodyPolygon ->
             let vertices = Array.map (fun vertex -> Vector2.Multiply (vertex, extent)) bodyPolygon.Vertices
             BodyPolygon { Vertices = vertices; Center = Vector2.Multiply (extent, bodyPolygon.Center) }
-        | BodyTree (bodyRoot, bodyChildren) ->
-            let bodyRoot = localizeBodyShape extent bodyRoot
-            let bodyChildren = List.map (localizeBodyShape extent) bodyChildren
-            BodyTree (bodyRoot, bodyChildren)
+        | BodyShapes bodyShapes ->
+            let bodyShapes = List.map (localizeBodyShape extent) bodyShapes
+            BodyShapes bodyShapes
 
     /// Check that the physics engine contain the body with the given physics id.
     let bodyExists physicsId (physicsEngine : PhysicsEngine) =
