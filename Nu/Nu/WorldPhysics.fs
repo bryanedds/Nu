@@ -23,16 +23,19 @@ module WorldPhysicsModule =
             { PhysicsEngine : PhysicsEngine }
 
         static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
-            let bodyShape = entity.GetCollisionBody world
-            let bodyCenter = BodyShape.getCenter bodyShape
-            let bodyOffset = bodyCenter * entity.GetSize world
-            let transform = entity.GetTransform world
-            let transform2 =
-                { transform with
-                    Position = (message.Position - bodyOffset) - transform.Size * 0.5f
-                    Rotation = message.Rotation }
-            if transform <> transform2
-            then entity.SetTransform transform2 world
+            // TODO: also publish a body transform message
+            if message.BodySource.SourceBodyId = Guid.Empty then
+                let bodyShape = entity.GetCollisionBody world
+                let bodyCenter = BodyShape.getCenter bodyShape
+                let bodyOffset = bodyCenter * entity.GetSize world
+                let transform = entity.GetTransform world
+                let transform2 =
+                    { transform with
+                        Position = (message.Position - bodyOffset) - transform.Size * 0.5f
+                        Rotation = message.Rotation }
+                if transform <> transform2
+                then entity.SetTransform transform2 world
+                else world
             else world
 
         static member private handleIntegrationMessage world integrationMessage =
@@ -42,7 +45,7 @@ module WorldPhysicsModule =
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.SourceSimulant :?> Entity
-                    if entity.GetExists world && bodySource.SourceBodyId = Guid.Empty
+                    if entity.GetExists world
                     then PhysicsEngineSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
                     else world
                 | BodyCollisionMessage bodyCollisionMessage ->
