@@ -738,18 +738,18 @@ module OmniBattle =
                      background.LabelImage == asset "Battle" "Background"]
 
                  Content.entitiesIndexedBy
-                    (model --> fun model -> BattleModel.getAllies model)
+                    (model --> fun model -> BattleModel.getAllies model |> seq)
                     (fun model -> model.PartyIndex)
                     (fun index model _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.CharacterModel <== model])
 
                  Content.entitiesIndexedBy
-                    (model --> fun model -> BattleModel.getEnemies model)
+                    (model --> fun model -> BattleModel.getEnemies model |> seq)
                     (fun model -> model.PartyIndex)
                     (fun index model _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.CharacterModel <== model])]
 
         member private this.InputContent (model : Lens<BattleModel, World>, screen : Screen, _ : World) =
 
-            Content.layers (model --> fun model -> BattleModel.getAllies model) $ fun index ally _ ->
+            Content.layers (model --> fun model -> BattleModel.getAllies model |> seq) $ fun index ally _ ->
 
                 let allyIndex = AllyIndex index
                 let input = screen / ("Input" + "+" + scstring index)
