@@ -22,7 +22,7 @@ module Constants =
         let EffectDepth = 10.0f
         let GuiDepth = 20.0f
         let GuiEffectDepth = 30.0f
-        let PropProperty = "P"
+        let PropsLayerName = "Props"
 
     [<RequireQualifiedAccess>]
     module Battle =

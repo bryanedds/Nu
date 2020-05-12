@@ -50,7 +50,7 @@ module OmniField =
             match message with
             | Nil -> just model
 
-        override this.Command (model, command, _, world) =
+        override this.Command (_, command, _, world) =
 
             match command with
             | Move force ->
@@ -88,12 +88,20 @@ module OmniField =
                  //   (model ->> fun model world ->
                  //       match Map.tryFind model.FieldType data.Value.Fields with
                  //       | Some fieldData ->
-                 //           let (_, _, tileMap) = World.getTileMapMetadata fieldData.FieldTileMap world
-                 //           let group = tileMap.ObjectGroups.Item "Props"
-                 //           let objects = enumerable<TmxObjectGroup.TmxObject> group.Objects
-                 //           List.ofSeq objects
+                 //           match World.tryGetTileMapMetadata fieldData.FieldTileMap world with
+                 //           | Some (_, _, tileMap) ->
+                 //               if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
+                 //                   let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
+                 //                   let objects = enumerable<TmxObject> group.Objects
+                 //                   List.ofSeq objects
+                 //               else []
+                 //           | None -> []
                  //       | None -> [])
                  //   (fun _ lens world ->
                  //       let object = lens.Get world
-                 //       Content.entity<PropDispatcher> object.)
+                 //       let propPosition = v2 (single object.X) (single object.Y)
+                 //       let propBounds = v4Bounds propPosition Constants.Gameplay.TileSize
+                 //       let propData = scvalue<PropData> object.Type
+                 //       let propModel = PropModel.make propData propBounds
+                 //       Content.entity<PropDispatcher> object.Name [Entity.PropModel == propModel])
                         ]]
