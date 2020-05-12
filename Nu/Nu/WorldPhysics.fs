@@ -23,7 +23,7 @@ module WorldPhysicsModule =
             { PhysicsEngine : PhysicsEngine }
 
         static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
-            // TODO: also publish a body transform message
+            // TODO: P1: also publish a body transform message, perhaps only for non-empty body ids.
             if message.BodySource.SourceBodyId = Guid.Empty then
                 let bodyShape = entity.GetCollisionBody world
                 let bodyCenter = BodyShape.getCenter bodyShape
