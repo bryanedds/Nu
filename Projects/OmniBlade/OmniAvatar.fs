@@ -12,7 +12,7 @@ module AvatarDispatcherModule =
         | Update
 
     type Entity with
-        
+
         member this.GetAvatarModel = this.GetModel<AvatarModel>
         member this.SetAvatarModel = this.SetModel<AvatarModel>
         member this.AvatarModel = this.Model<AvatarModel> ()
