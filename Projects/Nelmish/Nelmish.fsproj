@@ -146,8 +146,11 @@
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <Reference Include="System.Xml.Linq">
+      <Private>True</Private>
+    </Reference>
     <Reference Include="TiledSharp">
-      <HintPath>..\..\Nu\Nu.Dependencies\TiledSharp\Release\TiledSharp.dll</HintPath>
+      <HintPath>..\..\packages\TiledSharp.1.0.1\lib\netstandard2.0\TiledSharp.dll</HintPath>
     </Reference>
     <Reference Include="xunit.abstractions">
       <HintPath>..\..\packages\xunit.abstractions.2.0.3\lib\net35\xunit.abstractions.dll</HintPath>
