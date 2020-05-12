@@ -122,6 +122,28 @@ type [<StructuralEquality; NoComparison>] BodyProperties =
       IsBullet : bool
       IsSensor : bool }
 
+    static member empty =
+        { BodyId = Guid.Empty
+          Position = Vector2.Zero
+          Rotation = 0.0f
+          Shape = BodyBox { Extent = Vector2 (0.5f, 0.5f); Center = Vector2.Zero }
+          BodyType = Dynamic
+          Awake = true
+          Enabled = true
+          Density = Constants.Physics.NormalDensity
+          Friction = 0.2f
+          Restitution = 0.0f
+          FixedRotation = false
+          AngularVelocity = 0.0f
+          AngularDamping = 0.0f
+          LinearVelocity = Vector2.Zero
+          LinearDamping = 0.0f
+          GravityScale = 1.0f
+          CollisionCategories = 1
+          CollisionMask = -1
+          IsBullet = false
+          IsSensor = false }
+
 /// A message to the physics system to create a body.
 type [<StructuralEquality; NoComparison>] CreateBodyMessage =
     { SourceSimulant : Simulant
@@ -594,8 +616,8 @@ module PhysicsEngine =
         | "@" -> -1
         | _ -> Convert.ToInt32 (categoryMask, 2)
 
-    /// Localize a collision body to a specific physics object.
-    let localizeCollisionBody (extent : Vector2) (bodyShape : BodyShape) =
+    /// Localize a body shape to a specific physics object.
+    let localizeBodyShape (extent : Vector2) (bodyShape : BodyShape) =
         match bodyShape with
         | BodyBox bodyBox -> BodyBox { Extent = Vector2.Multiply (extent, bodyBox.Extent); Center = Vector2.Multiply (extent, bodyBox.Center) }
         | BodyCircle bodyCircle -> BodyCircle { Radius = extent.X * bodyCircle.Radius; Center = extent.X * bodyCircle.Center }

@@ -45,7 +45,7 @@ module BulletModule =
              define Entity.LinearDamping 0.0f
              define Entity.GravityScale 0.0f
              define Entity.IsBullet true
-             define Entity.CollisionBody (BodyCircle { Radius = 0.5f; Center = Vector2.Zero })
+             define Entity.BodyShape (BodyCircle { Radius = 0.5f; Center = Vector2.Zero })
              define Entity.StaticImage Assets.PlayerBulletImage
              define Entity.Age 0L]
 
@@ -105,7 +105,7 @@ module EnemyModule =
              define Entity.FixedRotation true
              define Entity.LinearDamping 3.0f
              define Entity.GravityScale 0.0f
-             define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
+             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
              define Entity.CelCount 6
              define Entity.CelRun 4
              define Entity.CelSize (Vector2 (48.0f, 96.0f))
@@ -212,7 +212,7 @@ module PlayerModule =
              define Entity.Friction 0.0f
              define Entity.LinearDamping 3.0f
              define Entity.GravityScale 0.0f
-             define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
+             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
              define Entity.CelCount 16
              define Entity.CelRun 4
              define Entity.CelSize (Vector2 (48.0f, 96.0f))
