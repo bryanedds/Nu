@@ -93,14 +93,14 @@ module OmniField =
                                 if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
                                     let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
                                     let objects = enumerable<TmxObject> group.Objects
-                                    let objectsAndGroups = Seq.map (flip pair group) objects
+                                    let objectsAndGroups = Seq.map (fun object -> (object, group, tileMap)) objects
                                     List.ofSeq objectsAndGroups
                                 else []
                             | None -> []
                         | None -> [])
                     (fun _ lens world ->
-                        let (object, group) = lens.Get world
-                        let propPosition = v2 (single object.X) (single object.Y)
+                        let (object, group, tileMap) = lens.Get world
+                        let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
                         let propBounds = v4Bounds propPosition Constants.Gameplay.TileSize
                         let propDepth =
                             match group.Properties.TryGetValue Constants.Physics.DepthProperty with
