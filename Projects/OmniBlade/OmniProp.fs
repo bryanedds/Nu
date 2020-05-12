@@ -33,8 +33,8 @@ module PropDispatcherModule =
             [entity.UpdateEvent => [msg Update]]
 
         override this.Initializers (model, entity, _) =
-            [entity.Bounds <== model.Map (fun model -> model.Bounds)
-             entity.IsSensor <== model.Map (fun model -> match model.PropData with Sensor -> true | _ -> false)
+            [entity.Bounds <== model --> fun model -> model.Bounds
+             entity.IsSensor <== model --> fun model -> match model.PropData with Sensor -> true | _ -> false
              entity.BodyType == Static
              entity.LinearDamping == 0.0f
              entity.GravityScale == 0.0f]
