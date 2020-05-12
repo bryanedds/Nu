@@ -45,6 +45,11 @@ type [<CustomEquality; NoComparison>] PhysicsId =
     override this.GetHashCode () =
         PhysicsId.hash this
 
+/// Store origination information about a simulant physics body.
+type [<NoComparison>] BodySource =
+    { SourceSimulant : Simulant
+      SourceBodyId : Guid }
+
 /// The shape of a physics body box.
 type [<StructuralEquality; NoComparison>] BodyBox =
     { Extent : Vector2 // TODO: P1: consider if this should instead be size?
@@ -174,8 +179,8 @@ type [<StructuralEquality; NoComparison>] ApplyBodyForceMessage =
 
 /// A message from the physics system describing a body collision that took place.
 type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
-    { SourceSimulant : Simulant
-      SourceSimulant2 : Simulant
+    { BodySource : BodySource
+      BodySource2 : BodySource
       Normal : Vector2
       Speed : single }
 
@@ -288,10 +293,12 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
 
     static member private handleCollision
         physicsEngine (fixture : Dynamics.Fixture) (fixture2 : Dynamics.Fixture) (contact : Dynamics.Contacts.Contact) =
+        let sourceBody = fixture.Body.UserData :?> BodySource
+        let sourceBody2 = fixture2.Body.UserData :?> BodySource
         let normal = fst (contact.GetWorldManifold ())
         let bodyCollisionMessage =
-            { SourceSimulant = fixture.Body.UserData :?> Simulant
-              SourceSimulant2 = fixture2.Body.UserData :?> Simulant
+            { BodySource = sourceBody
+              BodySource2 = sourceBody2
               Normal = Vector2 (normal.X, normal.Y)
               Speed = contact.TangentSpeed * Constants.Physics.PhysicsToPixelRatio }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
@@ -325,7 +332,7 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
         body.IsSensor <- bodyProperties.IsSensor
         body.SleepingAllowed <- true
 
-    static member private createBoxBody sourceAddress bodyProperties bodyBox physicsEngine =
+    static member private createBoxBody (bodySource : BodySource) bodyProperties bodyBox physicsEngine =
         let body =
             Factories.BodyFactory.CreateRectangle
                 (physicsEngine.PhysicsContext,
@@ -335,11 +342,11 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
                  FarseerPhysicsEngine.toPhysicsV2 (bodyProperties.Position + bodyBox.Center),
                  0.0f,
                  FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
-                 sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-        body.UserData <- sourceAddress // BUG: ...so I set it again here :/
+                 bodySource) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+        body.UserData <- bodySource // BUG: ...so I set it again here :/
         body
 
-    static member private createCircleBody sourceAddress bodyProperties (bodyCircle : BodyCircle) physicsEngine =
+    static member private createCircleBody (bodySource : BodySource) bodyProperties (bodyCircle : BodyCircle) physicsEngine =
         let body =
             Factories.BodyFactory.CreateCircle
                 (physicsEngine.PhysicsContext,
@@ -347,11 +354,11 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
                  bodyProperties.Density,
                  FarseerPhysicsEngine.toPhysicsV2 (bodyProperties.Position + bodyCircle.Center),
                  FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
-                 sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-        body.UserData <- sourceAddress // BUG: ...so I set it again here :/
+                 bodySource) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+        body.UserData <- bodySource // BUG: ...so I set it again here :/
         body
 
-    static member private createCapsuleBody sourceAddress bodyProperties bodyCapsule physicsEngine =
+    static member private createCapsuleBody (bodySource : BodySource) bodyProperties bodyCapsule physicsEngine =
         let body =
             Factories.BodyFactory.CreateCapsule
                 (physicsEngine.PhysicsContext,
@@ -361,14 +368,14 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
                  FarseerPhysicsEngine.toPhysicsV2 (bodyProperties.Position + bodyCapsule.Center),
                  0.0f,
                  FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
-                 sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-        body.UserData <- sourceAddress // BUG: ...so I set it again here :/
+                 bodySource) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+        body.UserData <- bodySource // BUG: ...so I set it again here :/
         // scale in the capsule's box to stop sticking
         let capsuleBox = body.FixtureList.[0].Shape :?> FarseerPhysics.Collision.Shapes.PolygonShape
         capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f)) |> ignore
         body
 
-    static member private createPolygonBody sourceAddress bodyProperties bodyPolygon physicsEngine =
+    static member private createPolygonBody (bodySource : BodySource) bodyProperties bodyPolygon physicsEngine =
         let body =
             Factories.BodyFactory.CreatePolygon
                 (physicsEngine.PhysicsContext,
@@ -377,19 +384,24 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
                  FarseerPhysicsEngine.toPhysicsV2 (bodyProperties.Position + bodyPolygon.Center),
                  0.0f,
                  FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
-                 sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-        body.UserData <- sourceAddress // BUG: ...so I set it again here :/
+                 bodySource) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+        body.UserData <- bodySource // BUG: ...so I set it again here :/
         body
 
-    static member private createBody4 sourceId sourceAddress bodyProperties physicsEngine =
+    static member private createBody4 sourceId (source : Simulant) bodyProperties physicsEngine =
+
+        // derive body source
+        let bodySource =
+            { SourceSimulant = source
+              SourceBodyId = bodyProperties.BodyId }
     
         // make and configure the body
         let body =
             match bodyProperties.Shape with
-            | BodyBox bodyBox -> FarseerPhysicsEngine.createBoxBody sourceAddress bodyProperties bodyBox physicsEngine
-            | BodyCircle bodyCircle -> FarseerPhysicsEngine.createCircleBody sourceAddress bodyProperties bodyCircle physicsEngine
-            | BodyCapsule bodyCapsule -> FarseerPhysicsEngine.createCapsuleBody sourceAddress bodyProperties bodyCapsule physicsEngine
-            | BodyPolygon bodyPolygon -> FarseerPhysicsEngine.createPolygonBody sourceAddress bodyProperties bodyPolygon physicsEngine
+            | BodyBox bodyBox -> FarseerPhysicsEngine.createBoxBody bodySource bodyProperties bodyBox physicsEngine
+            | BodyCircle bodyCircle -> FarseerPhysicsEngine.createCircleBody bodySource bodyProperties bodyCircle physicsEngine
+            | BodyCapsule bodyCapsule -> FarseerPhysicsEngine.createCapsuleBody bodySource bodyProperties bodyCapsule physicsEngine
+            | BodyPolygon bodyPolygon -> FarseerPhysicsEngine.createPolygonBody bodySource bodyProperties bodyPolygon physicsEngine
         FarseerPhysicsEngine.configureBodyProperties bodyProperties body
         body.add_OnCollision (fun fn fn2 collision -> FarseerPhysicsEngine.handleCollision physicsEngine fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
 
@@ -488,9 +500,10 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
         // In truth, we just need a better physics engine implementation :)
         for body in physicsEngine.PhysicsContext.BodyList do
             if body.Awake && not body.IsStatic then
+                let bodySource = body.UserData :?> BodySource
                 let bodyTransformMessage =
                     BodyTransformMessage
-                        { SourceSimulant = body.UserData :?> Simulant
+                        { SourceSimulant = bodySource.SourceSimulant
                           Position = FarseerPhysicsEngine.toPixelV2 body.Position
                           Rotation = body.Rotation }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
