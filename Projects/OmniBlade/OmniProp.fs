@@ -49,6 +49,7 @@ module PropDispatcherModule =
                 just model
 
         override this.View (model, entity, world) =
+
             if entity.GetVisibleLayered world && entity.GetInView world then
                 let image =
                     match model.PropData with

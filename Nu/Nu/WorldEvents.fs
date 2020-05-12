@@ -33,9 +33,10 @@ type [<StructuralEquality; NoComparison>] GamepadButtonData =
 
 /// The data for a collision event.
 type [<StructuralEquality; NoComparison>] CollisionData =
-    { Normal : Vector2
-      Speed : single
-      Collidee : Entity }
+    { Collider : BodySource
+      Collidee : BodySource
+      Normal : Vector2
+      Speed : single }
 
 module Events =
 

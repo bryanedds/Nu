@@ -432,7 +432,7 @@ module TextFacetModule =
 module RigidBodyFacetModule =
 
     type Entity with
-    
+
         member this.GetBodyType world : BodyType = this.Get Property? BodyType world
         member this.SetBodyType (value : BodyType) world = this.SetFast Property? BodyType false false value world
         member this.BodyType = lens Property? BodyType this.GetBodyType this.SetBodyType this
@@ -533,6 +533,40 @@ module RigidBodyFacetModule =
 
         override this.UnregisterPhysics (entity, world) =
             World.destroyBody (entity.GetPhysicsId world) world
+
+[<AutoOpen>]
+module RigidBodiesFacetModule =
+
+    type Entity with
+
+        member this.GetCollisionBodies world : Map<Guid, BodyProperties> = this.Get Property? CollisionBodies world
+        member this.SetCollisionBodies (value : Map<Guid, BodyProperties>) world = this.SetFast Property? CollisionBodies false false value world
+        member this.CollisionBodies = lens Property? CollisionBodies this.GetCollisionBodies this.SetCollisionBodies this
+
+    type RigidBodiesFacet () =
+        inherit Facet ()
+
+        static member Properties =
+            [define Entity.CollisionBodies Map.empty]
+
+        override this.RegisterPhysics (entity, world) =
+            let position = entity.GetPosition world
+            let size = entity.GetSize world
+            let rotation = entity.GetRotation world
+            let bodiesProperties = entity.GetCollisionBodies world |> Map.toValueList
+            let bodiesProperties =
+                List.map (fun (properties : BodyProperties) ->
+                    { properties with
+                        Position = properties.Position + position
+                        Rotation = properties.Rotation + rotation
+                        Shape = PhysicsEngine.localizeCollisionBody size properties.Shape })
+                    bodiesProperties
+            World.createBodies entity (entity.GetId world) bodiesProperties world
+
+        override this.UnregisterPhysics (entity, world) =
+            let bodiesProperties = entity.GetCollisionBodies world |> Map.toValueList
+            let physicsIds = List.map (fun (properties : BodyProperties) -> { SourceId = entity.GetId world; BodyId = properties.BodyId }) bodiesProperties
+            World.destroyBodies physicsIds world
 
 [<AutoOpen>]
 module TileMapFacetModule =
@@ -703,7 +737,7 @@ module TileMapFacetModule =
                     let tileLayerClearance = tileMap.GetTileLayerClearance world
                     List.foldi
                         (fun i world (layer : TmxLayer) ->
-                            List.fold
+                            Array.fold
                                 (fun world j ->
                                     let yOffset = single (map.Height - j - 1) * tileSize.Y
                                     let position = tileMap.GetPosition world + v2 0.0f yOffset
@@ -746,7 +780,7 @@ module TileMapFacetModule =
                                                               TileSetImage = image }}|])
                                             world
                                     else world)
-                                world [0 .. dec map.Height])
+                                world [|0 .. dec map.Height|])
                         world layers
                 | None -> world
             else world
