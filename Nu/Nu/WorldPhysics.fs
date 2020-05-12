@@ -40,8 +40,9 @@ module WorldPhysicsModule =
             | Running ->
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
-                    let entity = bodyTransformMessage.SourceSimulant :?> Entity
-                    if entity.GetExists world
+                    let bodySource = bodyTransformMessage.BodySource
+                    let entity = bodySource.SourceSimulant :?> Entity
+                    if entity.GetExists world && bodySource.SourceBodyId = Guid.Empty
                     then PhysicsEngineSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
                     else world
                 | BodyCollisionMessage bodyCollisionMessage ->

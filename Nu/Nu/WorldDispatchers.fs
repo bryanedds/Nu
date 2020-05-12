@@ -547,7 +547,28 @@ module RigidBodiesFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.CollisionBodies Map.empty]
+            let bodyProperties = 
+                { BodyId = Guid.Empty
+                  Position = Vector2.Zero
+                  Rotation = 0.0f
+                  Shape = BodyBox { Extent = Vector2 (0.5f, 0.5f); Center = Vector2.Zero }
+                  BodyType = Dynamic
+                  Awake = true
+                  Enabled = true
+                  Density = Constants.Physics.NormalDensity
+                  Friction = 0.2f
+                  Restitution = 0.0f
+                  FixedRotation = false
+                  AngularVelocity = 0.0f
+                  AngularDamping = 0.0f
+                  LinearVelocity = Vector2.Zero
+                  LinearDamping = 0.0f
+                  GravityScale = 1.0f
+                  CollisionCategories = PhysicsEngine.categorizeCollisionMask "1"
+                  CollisionMask = PhysicsEngine.categorizeCollisionMask "@"
+                  IsBullet = false
+                  IsSensor = false }
+            [define Entity.CollisionBodies (Map.singleton Guid.Empty bodyProperties)]
 
         override this.RegisterPhysics (entity, world) =
             let position = entity.GetPosition world
