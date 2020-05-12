@@ -186,7 +186,7 @@ type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
 
 /// A message from the physics system describing the updated transform of a body.
 type [<StructuralEquality; NoComparison>] BodyTransformMessage =
-    { SourceSimulant : Simulant
+    { BodySource : BodySource
       Position : Vector2
       Rotation : single }
 
@@ -503,7 +503,7 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
                 let bodySource = body.UserData :?> BodySource
                 let bodyTransformMessage =
                     BodyTransformMessage
-                        { SourceSimulant = bodySource.SourceSimulant
+                        { BodySource = bodySource
                           Position = FarseerPhysicsEngine.toPixelV2 body.Position
                           Rotation = body.Rotation }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
