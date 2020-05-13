@@ -484,6 +484,7 @@ module RigidBodyFacetModule =
         member this.GetPhysicsId world : PhysicsId = this.Get Property? PhysicsId world
         member this.PhysicsId = lensReadOnly Property? PhysicsId this.GetPhysicsId this
         member this.CollisionEvent = Events.Collision --> this
+        member this.SeparationEvent = Events.Separation --> this
 
     type RigidBodyFacet () =
         inherit Facet ()

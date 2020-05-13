@@ -4,9 +4,8 @@ namespace Nu
 {
     /// <summary>
     /// A 2d int vector.
-    /// NOTE: implements a very arbitrary comparison method.
     /// </summary>
-    public struct Vector2i : IComparable<Vector2i>, IComparable
+    public struct Vector2i : IEquatable<Vector2i>, IComparable<Vector2i>, IComparable
     {
         public Vector2i(int x, int y)
         {
@@ -24,20 +23,6 @@ namespace Nu
         {
             X = (int) v.X;
             Y = (int) v.Y;
-        }
-
-        public int CompareTo(Vector2i that)
-        {
-            if (X < that.X) return -1;
-            if (X > that.X) return 1;
-            if (Y < that.Y) return -1;
-            if (Y > that.Y) return 1;
-            return 0;
-        }
-
-        public int CompareTo(object that)
-        {
-            return CompareTo((Vector2i)that);
         }
 
         public Vector2 Vector2
@@ -128,6 +113,31 @@ namespace Nu
         public override int GetHashCode()
         {
             return X ^ Y;
+        }
+
+        /// <summary>Indicates whether the current vector is equal to another vector.</summary>
+        /// <param name="other">A vector to compare with this vector.</param>
+        /// <returns>true if the current vector is equal to the vector parameter; otherwise, false.</returns>
+        public bool Equals(Vector2i other)
+        {
+            return
+                X == other.X &&
+                Y == other.Y;
+        }
+
+        public int CompareTo(Vector2i other)
+        {
+            var result = X.CompareTo(other.X);
+            if (result == 0) return result;
+            result = Y.CompareTo(other.Y);
+            return result;
+        }
+
+        public int CompareTo(object obj)
+        {
+            var other = obj as Vector2i?;
+            if (other == null) return -1;
+            return CompareTo(other.Value);
         }
 
         public int X;

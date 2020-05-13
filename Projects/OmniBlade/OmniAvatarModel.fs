@@ -8,6 +8,7 @@ module AvatarModel =
     type [<ReferenceEquality; NoComparison>] AvatarModel =
         private
             { AnimationState : CharacterAnimationState
+              IntersectedBodyShapes_ : BodyShapeSource list
               BoundsOriginal_ : Vector4
               Bounds_ : Vector4 }
 
@@ -16,6 +17,9 @@ module AvatarModel =
         member this.AnimationSheet = this.AnimationState.AnimationSheet
         member this.AnimationCycle = this.AnimationState.AnimationCycle
         member this.Direction = this.AnimationState.Direction
+
+        (* Local Properties *)
+        member this.IntersectedBodyShapes = this.IntersectedBodyShapes_
 
         (* Bounds Original Properties *)
         member this.BoundsOriginal = this.BoundsOriginal_
@@ -40,6 +44,9 @@ module AvatarModel =
         static member getAnimationFinished time avatar =
             CharacterAnimationState.getFinished time avatar.AnimationState
 
+        static member updateIntersectedBodyShapes updater (avatar : AvatarModel) =
+            { avatar with IntersectedBodyShapes_ = updater avatar.IntersectedBodyShapes_ }
+
         static member updateBounds updater (avatar : AvatarModel) =
             { avatar with Bounds_ = updater avatar.Bounds_ }
 
@@ -61,6 +68,7 @@ module AvatarModel =
         static member make animationSheet direction bounds =
             let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = IdleCycle; Direction = direction }
             { AnimationState = animationState
+              IntersectedBodyShapes_ = []
               BoundsOriginal_ = bounds
               Bounds_ = bounds }
 

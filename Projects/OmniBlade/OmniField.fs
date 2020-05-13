@@ -13,7 +13,7 @@ module OmniField =
     type FieldMessage =
         | Nil
 
-    type [<NoComparison>] FieldCommand =
+    type FieldCommand =
         | FadeSong
         | PlaySound of int64 * single * AssetTag<Audio>
         | Move of Vector2

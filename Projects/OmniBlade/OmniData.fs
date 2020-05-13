@@ -279,11 +279,11 @@ type FieldData =
       FieldTileMap : TileMap AssetTag
       FieldProps : PropData list }
 
-type [<NoComparison>] EnemyData =
+type EnemyData =
     { EnemyType : EnemyType // key
       EnemyPosition : Vector2 }
 
-type [<NoComparison>] BattleData =
+type BattleData =
     { BattleType : BattleType // key
       BattleAllyPositions : Vector2 list
       BattleEnemies : EnemyData list

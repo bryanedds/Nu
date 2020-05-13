@@ -9,7 +9,7 @@ open OmniBlade
 [<AutoOpen>]
 module OmniBattle =
 
-    type [<NoComparison>] Hop =
+    type Hop =
         { HopStart : Vector2
           HopStop : Vector2 }
 
@@ -43,7 +43,7 @@ module OmniBattle =
         | DestroyCharacter of CharacterIndex
         | Tick
 
-    type [<NoComparison>] BattleCommand =
+    type BattleCommand =
         | FadeSong
         | PlaySound of int64 * single * AssetTag<Audio>
         | DisplayCancel of CharacterIndex
