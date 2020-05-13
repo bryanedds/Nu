@@ -689,7 +689,7 @@ module TileMapFacetModule =
             let td = makeTileData tm tmd tl ti world
             match td.TileSetTileOpt with
             | Some tileSetTile ->
-                match tileSetTile.Properties.TryGetValue Constants.Physics.CollisionProperty with
+                match tileSetTile.Properties.TryGetValue Constants.TileMap.CollisionPropertyName with
                 | (true, cexpr) ->
                     let tileBody =
                         match cexpr with
@@ -719,7 +719,7 @@ module TileMapFacetModule =
                     let tileData = makeTileData tileMap tileMapData tileLayer tileIndex world
                     match tileData.TileSetTileOpt with
                     | Some tileSetTile ->
-                        if tileSetTile.Properties.ContainsKey Constants.Physics.CollisionProperty then
+                        if tileSetTile.Properties.ContainsKey Constants.TileMap.CollisionPropertyName then
                             let physicsId = { SourceId = tileMap.GetId world; CorrelationId = Gen.idFromInts tileLayerIndex tileIndex }
                             physicsId :: physicsIds
                         else physicsIds
@@ -779,7 +779,7 @@ module TileMapFacetModule =
                                     let yOffset = single (map.Height - j - 1) * tileSize.Y
                                     let position = tileMap.GetPosition world + v2 0.0f yOffset
                                     let depthOffset =
-                                        match layer.Properties.TryGetValue Constants.Physics.DepthProperty with
+                                        match layer.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
                                         | (true, depth) -> scvalue depth
                                         | (false, _) -> single i * tileLayerClearance
                                     let depth = tileMap.GetDepth world + depthOffset

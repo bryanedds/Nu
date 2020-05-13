@@ -18,7 +18,7 @@ module PropDispatcherModule =
 
     type PropDispatcher () =
         inherit EntityDispatcher<PropModel, PropMessage, unit>
-            (PropModel.make (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f (Chest (BrassChest, Unlocked, Consumable GreenHerb)))
+            (PropModel.make (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f (Chest (Consumable GreenHerb, Unlocked, WoodenChest, Gen.idEmpty)))
 
         static member Facets =
             [typeof<RigidBodyFacet>]
@@ -51,7 +51,7 @@ module PropDispatcherModule =
             if entity.GetVisibleLayered world && entity.GetInView world then
                 let image =
                     match model.PropData with
-                    | Chest (chestType, _, _) ->
+                    | Chest (_, _, chestType, _) ->
                         match chestType with
                         | WoodenChest -> Assets.WoodenChestImage
                         | BrassChest -> Assets.BrassChestImage
