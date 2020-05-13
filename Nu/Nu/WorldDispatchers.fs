@@ -863,7 +863,7 @@ module NodeFacetModule =
                 | (Some relationOld, Some relationNew) ->
                     let parentOld = this.Resolve relationOld
                     let parentNew = this.Resolve relationNew
-                    if parentOld.GetExists world && parentNew.GetExists world then
+                    if parentOld.Exists world && parentNew.Exists world then
                         let position = this.GetPositionLocal world + parentNew.GetPosition world
                         let depth = this.GetDepthLocal world + parentNew.GetDepth world
                         let world = this.SetPosition position world
@@ -874,7 +874,7 @@ module NodeFacetModule =
                     else world
                 | (Some relationOld, None) ->
                     let parentOld = this.Resolve relationOld
-                    if parentOld.GetExists world then
+                    if parentOld.Exists world then
                         let position = this.GetPositionLocal world + parentOld.GetPosition world
                         let depth = this.GetDepthLocal world + parentOld.GetDepth world
                         let world = this.SetPosition position world
@@ -885,7 +885,7 @@ module NodeFacetModule =
                     else world
                 | (None, Some relationNew) ->
                     let parentNew = this.Resolve relationNew
-                    if parentNew.GetExists world then
+                    if parentNew.Exists world then
                         let position = this.GetPosition world - parentNew.GetPosition world
                         let depth = this.GetDepth world - parentNew.GetDepth world
                         let world = this.SetPositionLocal position world
@@ -902,12 +902,12 @@ module NodeFacetModule =
 
         member this.ParentNodeExists world =
             match this.GetParentNodeOpt world with
-            | Some relation -> (this.Resolve relation).GetExists world
+            | Some relation -> (this.Resolve relation).Exists world
             | None -> false
 
         member private this.GetChildNodes2 nodes world =
             let nodeOpt =
-                if this.FacetedAs<NodeFacet> world
+                if this.Has<NodeFacet> world
                 then Option.map this.Resolve (this.GetParentNodeOpt world)
                 else None
             match nodeOpt with
@@ -982,7 +982,7 @@ module NodeFacetModule =
                 if node = entity then
                     Log.trace "Cannot mount entity to itself."
                     World.choose oldWorld
-                elif entity.FacetedAs<RigidBodyFacet> world then
+                elif entity.Has<RigidBodyFacet> world then
                     Log.trace "Cannot mount a rigid body entity onto another entity. Instead, consider using physics constraints."
                     World.choose oldWorld
                 else

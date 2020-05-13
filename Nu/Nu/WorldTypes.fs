@@ -155,6 +155,24 @@ module WorldTypes =
     and [<StructuralEquality; NoComparison>] AmbientChangeData = 
         { OldWorldWithOldState : World }
 
+    /// Store origination information about a simulant physics body.
+    and [<NoComparison>] BodySource =
+        { SourceEntity : Entity
+          SourceBodyId : Guid }
+        static member internal fromInternal (internal_ : BodySourceInternal) =
+            { SourceEntity = internal_.SourceSimulant :?> Entity
+              SourceBodyId = internal_.SourceBodyId }
+    
+    /// Store origination information about a simulant physics shape body.
+    and [<NoComparison>] BodyShapeSource =
+        { SourceEntity : Entity
+          SourceBodyId : Guid
+          SourceBodyShapeId : Guid }
+        static member internal fromInternal (internal_ : BodyShapeSourceInternal) =
+            { SourceEntity = internal_.SourceSimulant :?> Entity
+              SourceBodyId = internal_.SourceBodyId
+              SourceBodyShapeId = internal_.SourceBodyShapeId }
+
     /// Describes the information needed to sort simulants.
     /// OPTIMIZATION: carries related simulant to avoid GC pressure.
     and [<CustomEquality; CustomComparison>] SortPriority =

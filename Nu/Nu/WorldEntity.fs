@@ -145,9 +145,6 @@ module WorldEntityModule =
         /// Get an entity's quick size.
         member this.GetQuickSize world = World.getEntityQuickSize this world
 
-        /// Set an entity's size by its quick size.
-        member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
-
         /// Get an entity's bounds, taking into account its overflow.
         member this.GetBoundsOverflow world = Math.makeBoundsOverflow (this.GetPosition world) (this.GetSize world) (this.GetOverflow world)
 
@@ -173,7 +170,10 @@ module WorldEntityModule =
              else true
 
         /// Check that an entity exists in the world.
-        member this.GetExists world = World.getEntityExists this world
+        member this.Exists world = World.getEntityExists this world
+
+        /// Set an entity's size by its quick size.
+        member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
 
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =
@@ -184,16 +184,16 @@ module WorldEntityModule =
                 this world
 
         /// Check that an entity uses a facet of the given type.
-        member this.FacetedAs (facetType, world) = Array.exists (fun facet -> getType facet = facetType) (this.GetFacets world)
+        member this.Has (facetType, world) = Array.exists (fun facet -> getType facet = facetType) (this.GetFacets world)
 
         /// Check that an entity uses a facet of the given type.
-        member this.FacetedAs<'a> world = this.FacetedAs (typeof<'a>, world)
+        member this.Has<'a> world = this.Has (typeof<'a>, world)
 
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
+        member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
+        member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Resolve a relation in the context of an entity.
         member this.Resolve relation = resolve<Entity> this relation

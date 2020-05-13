@@ -163,7 +163,7 @@ module Gaia =
         let layerNodeKey = scstring entity.Parent
         let layerNode = form.hierarchyTreeView.Nodes.[layerNodeKey]
         entityNode.Name <- entityNodeKey
-        if entity.FacetedAs<NodeFacet> world then
+        if entity.Has<NodeFacet> world then
             match entity.GetParentNodeOpt world with
             | Some relation ->
                 let entityParent = resolve entity relation
@@ -235,7 +235,7 @@ module Gaia =
         match form.entityPropertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             Globals.World <- world // must be set for property grid
-            if entityTds.DescribedEntity.GetExists world
+            if entityTds.DescribedEntity.Exists world
             then form.entityPropertyGrid.Refresh ()
             else deselectEntity form world
         | _ -> ()
@@ -253,7 +253,7 @@ module Gaia =
         match form.layerPropertyGrid.SelectedObject with
         | :? LayerTypeDescriptorSource as layerTds ->
             Globals.World <- world // must be set for property grid
-            if layerTds.DescribedLayer.GetExists world
+            if layerTds.DescribedLayer.Exists world
             then form.layerPropertyGrid.Refresh ()
             else deselectLayer form world
         | _ -> ()
@@ -334,7 +334,7 @@ module Gaia =
                     updateEditorState (fun editorState ->
                         let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
                         let entityPosition =
-                            if entity.FacetedAs<NodeFacet> world && entity.ParentNodeExists world
+                            if entity.Has<NodeFacet> world && entity.ParentNodeExists world
                             then entity.GetPositionLocal world
                             else entity.GetPosition world
                         { editorState with DragEntityState = DragEntityPosition (entityPosition + mousePositionWorld, mousePositionWorld, entity) })
@@ -397,7 +397,7 @@ module Gaia =
             let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
             let layerName = match layerDescriptor.LayerProperties.TryFind "Name" with Some (Atom (name, _)) -> name | _ -> failwithumf ()
             let layer = Default.Screen / layerName
-            if not (layer.GetExists world) then
+            if not (layer.Exists world) then
                 let (layer, world) = World.readLayer layerDescriptor None Default.Screen world
                 form.layerTabControl.SelectedTab.Text <- layer.Name
                 form.layerTabControl.SelectedTab.Name <- layer.Name
@@ -469,7 +469,7 @@ module Gaia =
         let selectedLayer = (getEditorState world).SelectedLayer
         let entityNames =
             World.getEntities selectedLayer world |>
-            Seq.filter (fun entity -> entity.FacetedAs<NodeFacet> world) |>
+            Seq.filter (fun entity -> entity.Has<NodeFacet> world) |>
             Seq.filter (fun entity -> not (Gen.isName entity.Name)) |>
             Seq.map (fun entity -> entity.Name) |>
             flip Seq.append [Constants.Editor.NonePick] |>
@@ -1332,14 +1332,14 @@ module Gaia =
                 // NOTE: in https://github.com/bryanedds/Nu/issues/272, we found that we need to check for an entity's
                 // existence here because it could be deleted right as the drag operation begins if the delete button
                 // is held during selection
-                if entity.GetExists world then
+                if entity.Exists world then
                     let (positionSnap, _) = getSnaps form
                     let mousePosition = World.getMousePositionF world
                     let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
                     let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                     let entityPositionSnapped = Math.snap2F positionSnap entityPosition
                     let world =
-                        if entity.FacetedAs<NodeFacet> world && entity.ParentNodeExists world
+                        if entity.Has<NodeFacet> world && entity.ParentNodeExists world
                         then entity.SetPositionLocal entityPositionSnapped world
                         else entity.SetPosition entityPositionSnapped world
                     let world = entity.PropagatePhysics world

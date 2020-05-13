@@ -97,7 +97,16 @@ module OmniField =
                      Entity.Position == v2 -400.0f -200.0f
                      Entity.Depth == Constants.Field.GuiDepth
                      Entity.Enabled <== model --> fun model -> List.notEmpty model.Avatar.IntersectedBodyShapes
-                     Entity.Text == "XXX"]
+                     Entity.Text <== model ->> fun model world ->
+                        match model.Avatar.IntersectedBodyShapes with
+                        | head :: _ ->
+                            if head.SourceEntity.Is<PropDispatcher> world then
+                                let propModel = head.SourceEntity.GetPropModel world
+                                match propModel.PropData with
+                                | Chest _ -> "Open"
+                                | _ -> ""
+                            else ""
+                        | [] -> ""]
                  Content.entities
                     (model ->> fun model world ->
                         match Map.tryFind model.FieldType data.Value.Fields with

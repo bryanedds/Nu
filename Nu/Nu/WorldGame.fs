@@ -122,10 +122,10 @@ module WorldGameModule =
         member this.MouseToEntity viewType entityPosition mousePosition world = World.mouseToEntity viewType entityPosition mousePosition world
 
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
+        member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
+        member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Resolve a relation in the context of a game.
         member this.Resolve relation = resolve<Game> this relation

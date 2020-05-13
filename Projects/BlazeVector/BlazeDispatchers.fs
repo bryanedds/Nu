@@ -86,8 +86,8 @@ module EnemyModule =
         static let handleCollision evt world =
             let enemy = evt.Subscriber : Entity
             if World.isTicking world then
-                let collidee = evt.Data.Collidee.SourceSimulant :?> Entity
-                let isBullet = collidee.DispatchesAs<BulletDispatcher> world
+                let collidee = evt.Data.Collidee.SourceEntity
+                let isBullet = collidee.Is<BulletDispatcher> world
                 if isBullet then
                     let world = enemy.SetHealth (enemy.GetHealth world - 1) world
                     let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.HitSound world
@@ -257,7 +257,7 @@ module SceneModule =
                 | PlayerFall ->
                     if Simulants.Player.HasFallen world && World.isSelectedScreenIdling world then
                         let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.DeathSound world
-                        if Simulants.Title.GetExists world
+                        if Simulants.Title.Exists world
                         then World.transitionScreen Simulants.Title world
                         else world
                     else world
