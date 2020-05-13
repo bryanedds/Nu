@@ -62,11 +62,10 @@ module OmniField =
                     | head :: _ ->
                         if head.SourceEntity.Is<PropDispatcher> world then
                             let propModel = head.SourceEntity.GetPropModel world
-                            match propModel.PropData with
+                            match propModel.Props with
                             | Chest (itemType, lockType, chestType, chestId) ->
-                                // TODO: open chest
-                                // TODO: update inventory
-                                // TODO: update advents
+                                let model = FieldModel.updateInventory (Inventory.addItem itemType) model
+                                let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
                                 model
                             | _ -> model
                         else model
@@ -113,13 +112,14 @@ module OmniField =
                     [Entity.Size == v2Dup 92.0f
                      Entity.Position == v2 -400.0f -200.0f
                      Entity.Depth == Constants.Field.GuiDepth
-                     Entity.Enabled <== model --> fun model -> List.notEmpty model.Avatar.IntersectedBodyShapes
+                     Entity.Visible <== model --> fun model ->
+                        List.notEmpty model.Avatar.IntersectedBodyShapes
                      Entity.Text <== model ->> fun model world ->
                         match model.Avatar.IntersectedBodyShapes with
                         | head :: _ ->
                             if head.SourceEntity.Is<PropDispatcher> world then
                                 let propModel = head.SourceEntity.GetPropModel world
-                                match propModel.PropData with
+                                match propModel.Props with
                                 | Chest _ -> "Open"
                                 | _ -> ""
                             else ""
@@ -133,22 +133,23 @@ module OmniField =
                                 if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
                                     let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
                                     let objects = enumerable<TmxObject> group.Objects
-                                    let objectsAndGroups = Seq.map (fun object -> (object, group, tileMap)) objects
-                                    Seq.eval objectsAndGroups
+                                    let results = Seq.map (fun object -> (object, group, tileMap, model.Advents)) objects
+                                    Seq.eval results
                                 else Seq.empty
                             | None -> Seq.empty
                         | None -> Seq.empty)
-                    (fun _ lens world ->
-                        let (object, group, tileMap) = lens.Get world
-                        let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
-                        let propBounds = v4Bounds propPosition Constants.Gameplay.TileSize
-                        let propDepth =
-                            match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
-                            | (true, depthStr) -> Constants.Field.ForgroundDepth + scvalue depthStr
-                            | (false, _) -> Constants.Field.ForgroundDepth
-                        let propData =
-                            match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
-                            | (true, propDataStr) -> scvalue<PropData> propDataStr
-                            | (false, _) -> Chest (Consumable GreenHerb, Unlocked, WoodenChest, Gen.idEmpty)
-                        let propModel = PropModel.make propBounds propDepth propData
-                        Content.entity<PropDispatcher> object.Name [Entity.PropModel == propModel])]]
+                    (fun _ model _ ->
+                        let propModel = model.Map (fun (object, group, tileMap, advents) ->
+                            let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
+                            let propBounds = v4Bounds propPosition Constants.Gameplay.TileSize
+                            let propDepth =
+                                match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
+                                | (true, depthStr) -> Constants.Field.ForgroundDepth + scvalue depthStr
+                                | (false, _) -> Constants.Field.ForgroundDepth
+                            let propData =
+                                match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
+                                | (true, propDataStr) -> scvalue<PropData> propDataStr
+                                | (false, _) -> Chest (Consumable GreenHerb, Unlocked, WoodenChest, Gen.idEmpty)
+                            let propModel = PropModel.make propBounds propDepth advents propData
+                            propModel)
+                        Content.entity<PropDispatcher> Gen.name [Entity.PropModel <== propModel])]]
