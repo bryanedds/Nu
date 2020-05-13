@@ -56,21 +56,22 @@ type [<NoComparison>] BodyShapeSource =
       SourceBodyId : Guid
       SourceBodyShapeId : Guid }
 
+/// Describes body shape-specific properties.
 type BodyShapeProperties =
     { BodyShapeId : Guid
-      Friction : single
-      Restitution : single
-      CollisionCategories : int
-      CollisionMask : int
-      IsSensor : bool }
+      FrictionOpt : single option
+      RestitutionOpt : single option
+      CollisionCategoriesOpt : int option
+      CollisionMaskOpt : int option
+      IsSensorOpt : bool option }
 
     static member empty =
-        { BodyShapeId = Gen.idEmpty
-          Friction = 0.2f
-          Restitution = 0.0f
-          CollisionCategories = 1
-          CollisionMask = -1
-          IsSensor = false }
+        { BodyShapeId = Gen.id
+          FrictionOpt = None
+          RestitutionOpt = None
+          CollisionCategoriesOpt = None
+          CollisionMaskOpt = None
+          IsSensorOpt = None }
 
 /// The shape of a physics body box.
 type [<StructuralEquality; NoComparison>] BodyBox =
@@ -475,11 +476,11 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
         Array.ofSeq contacts
 
     static member private configureBodyShapeProperties (bodyShapeProperties : BodyShapeProperties) (bodyShape : Fixture) =
-        bodyShape.Friction <- bodyShapeProperties.Friction
-        bodyShape.Restitution <- bodyShapeProperties.Restitution
-        bodyShape.CollisionCategories <- enum<Category> bodyShapeProperties.CollisionCategories
-        bodyShape.CollidesWith <- enum<Category> bodyShapeProperties.CollisionMask
-        bodyShape.IsSensor <- bodyShapeProperties.IsSensor
+        match bodyShapeProperties.FrictionOpt with Some f -> bodyShape.Friction <- f | None -> ()
+        match bodyShapeProperties.RestitutionOpt with Some r -> bodyShape.Restitution <- r | None -> ()
+        match bodyShapeProperties.CollisionCategoriesOpt with Some cc -> bodyShape.CollisionCategories <- enum<Category> cc | None -> ()
+        match bodyShapeProperties.CollisionMaskOpt with Some cm -> bodyShape.CollidesWith <- enum<Category> cm | None -> ()
+        match bodyShapeProperties.IsSensorOpt with Some isSensor -> bodyShape.IsSensor <- isSensor | None -> ()
         bodyShape
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
