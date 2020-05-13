@@ -8,7 +8,7 @@ open Nu
 
 /// Describes a generalized simulant value independent of the engine.
 /// Not used for serialization.
-type [<NoEquality; NoComparison>] SimulantDescriptor =
+type [<NoComparison>] SimulantDescriptor =
     { SimulantNameOpt : string option
       SimulantDispatcherName : string
       SimulantProperties : (string * Property) list

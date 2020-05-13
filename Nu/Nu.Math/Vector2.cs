@@ -33,7 +33,7 @@ namespace Nu
     /// </remarks>
     [Serializable]
     [StructLayout(LayoutKind.Sequential)]
-    public struct Vector2 : IEquatable<Vector2>
+    public struct Vector2 : IEquatable<Vector2>, IComparable<Vector2>, IComparable
     {
         #region Fields
 
@@ -1161,7 +1161,7 @@ namespace Nu
 
         #endregion
 
-        #region IEquatable<Vector2> Members
+        #region Equatable and Comparable Members
 
         /// <summary>Indicates whether the current vector is equal to another vector.</summary>
         /// <param name="other">A vector to compare with this vector.</param>
@@ -1171,6 +1171,21 @@ namespace Nu
             return
                 X == other.X &&
                 Y == other.Y;
+        }
+
+        public int CompareTo(Vector2 other)
+        {
+            var result = X.CompareTo(other.X);
+            if (result == 0) return result;
+            result = Y.CompareTo(other.Y);
+            return result;
+        }
+
+        public int CompareTo(object obj)
+        {
+            var other = obj as Vector2?;
+            if (other == null) return -1;
+            return CompareTo(other.Value);
         }
 
         #endregion

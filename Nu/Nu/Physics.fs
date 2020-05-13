@@ -339,6 +339,11 @@ type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
       Normal : Vector2
       Speed : single }
 
+/// A message from the physics system describing a body separation that took place.
+type [<StructuralEquality; NoComparison>] BodySeparationMessage =
+    { BodyShapeSource : BodyShapeSource
+      BodyShapeSource2 : BodyShapeSource }
+
 /// A message from the physics system describing the updated transform of a body.
 type [<StructuralEquality; NoComparison>] BodyTransformMessage =
     { BodySource : BodySource
@@ -374,6 +379,7 @@ type [<StructuralEquality; NoComparison>] PhysicsMessage =
 /// A message from the physics system.
 type [<StructuralEquality; NoComparison>] IntegrationMessage =
     | BodyCollisionMessage of BodyCollisionMessage
+    | BodySeparationMessage of BodySeparationMessage
     | BodyTransformMessage of BodyTransformMessage
 
 /// Represents a physics engine in Nu.
@@ -465,6 +471,14 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
         true
+
+    static member private handleSeparation
+        physicsEngine (bodyShape : Dynamics.Fixture) (bodyShape2 : Dynamics.Fixture) =
+        let bodySeparationMessage =
+            { BodyShapeSource = bodyShape.UserData :?> BodyShapeSource
+              BodyShapeSource2 = bodyShape2.UserData :?> BodyShapeSource }
+        let integrationMessage = BodySeparationMessage bodySeparationMessage
+        physicsEngine.IntegrationMessages.Add integrationMessage
 
     static member private getBodyContacts physicsId physicsEngine =
         let body = physicsEngine.Bodies.[physicsId]
@@ -617,6 +631,9 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
 
         // listen for collisions
         body.add_OnCollision (fun fn fn2 collision -> FarseerPhysicsEngine.handleCollision physicsEngine fn fn2 collision)
+
+        // listen for collisions
+        body.add_OnSeparation (fun fn fn2 -> FarseerPhysicsEngine.handleSeparation physicsEngine fn fn2)
 
         // attempt to add the body
         if not (physicsEngine.Bodies.TryAdd ({ SourceId = createBodyMessage.SourceId; CorrelationId = bodyProperties.BodyId }, body)) then

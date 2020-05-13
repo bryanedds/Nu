@@ -8,8 +8,10 @@ open OmniBlade
 [<AutoOpen>]
 module AvatarDispatcherModule =
 
-    type AvatarMessage =
+    type [<NoComparison>] AvatarMessage =
         | Update
+        | Collision of CollisionData
+        | Separation of SeparationData
 
     type Entity with
 
@@ -20,6 +22,9 @@ module AvatarDispatcherModule =
     type AvatarDispatcher () =
         inherit EntityDispatcher<AvatarModel, AvatarMessage, unit>
             (AvatarModel.make Assets.FinnAnimationSheet Downward (v4Bounds (v2 128.0f 128.0f) Constants.Gameplay.CharacterSize))
+
+        static let sensorShapeId =
+            Gen.id
 
         static let getSpriteInset (avatar : Entity) world =
             let model = avatar.GetAvatarModel world
@@ -32,13 +37,15 @@ module AvatarDispatcherModule =
             [typeof<RigidBodyFacet>]
 
         override this.Channel (_, entity, _) =
-            [entity.UpdateEvent => [msg Update]]
+            [entity.UpdateEvent => [msg Update]
+             entity.CollisionEvent =|> fun evt -> [msg (Collision evt.Data)]
+             entity.SeparationEvent =|> fun evt -> [msg (Separation evt.Data)]]
 
         override this.Initializers (model, entity, _) =
             let bodyShapes =
                 BodyShapes
                     [BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
-                     BodyCircle { Radius = 0.33f; Center = v2 0.0f -0.3f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = Gen.id; IsSensorOpt = Some true }}]
+                     BodyCircle { Radius = 0.33f; Center = v2 0.0f -0.3f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; IsSensorOpt = Some true }}]
             [entity.Bounds <== model.Map (fun model -> model.Bounds)
              entity.FixedRotation == true
              entity.GravityScale == 0.0f
@@ -63,6 +70,24 @@ module AvatarDispatcherModule =
 
                 // update bounds
                 let model = AvatarModel.updateBounds (constant (entity.GetBounds world)) model
+                just model
+
+            | Separation separation ->
+
+                // remove separated body shape
+                let model =
+                    if separation.Separator.SourceBodyShapeId = sensorShapeId
+                    then AvatarModel.updateIntersectedBodyShapes (List.remove ((=) separation.Separatee)) model
+                    else model
+                just model
+
+            | Collision collision ->
+
+                // add collidee shape
+                let model =
+                    if collision.Collider.SourceBodyShapeId = sensorShapeId
+                    then AvatarModel.updateIntersectedBodyShapes (fun shapes -> collision.Collidee :: shapes) model
+                    else model
                 just model
 
         override this.View (model, entity, world) =

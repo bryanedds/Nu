@@ -19,6 +19,28 @@ module WorldPhysicsModule =
             match World.getLiveness world with
             | Running ->
                 match integrationMessage with
+                | BodyCollisionMessage bodyCollisionMessage ->
+                    let entity = bodyCollisionMessage.BodyShapeSource.SourceSimulant :?> Entity
+                    if entity.GetExists world then
+                        let collisionAddress = Events.Collision --> entity.EntityAddress
+                        let collisionData =
+                            { Collider = bodyCollisionMessage.BodyShapeSource
+                              Collidee = bodyCollisionMessage.BodyShapeSource2
+                              Normal = bodyCollisionMessage.Normal
+                              Speed = bodyCollisionMessage.Speed }
+                        let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
+                        World.publish collisionData collisionAddress eventTrace Default.Game world
+                    else world
+                | BodySeparationMessage bodySeparationMessage ->
+                    let entity = bodySeparationMessage.BodyShapeSource.SourceSimulant :?> Entity
+                    if entity.GetExists world then
+                        let separationAddress = Events.Separation --> entity.EntityAddress
+                        let separationData =
+                            { Separator = bodySeparationMessage.BodyShapeSource
+                              Separatee = bodySeparationMessage.BodyShapeSource2  }
+                        let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
+                        World.publish separationData separationAddress eventTrace Default.Game world
+                    else world
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
                     let entity = bodySource.SourceSimulant :?> Entity
@@ -36,18 +58,6 @@ module WorldPhysicsModule =
                     let transformData = { BodySource = bodySource; Position = position; Rotation = rotation }
                     let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
                     World.publish transformData transformAddress eventTrace Default.Game world
-                | BodyCollisionMessage bodyCollisionMessage ->
-                    let entity = bodyCollisionMessage.BodyShapeSource.SourceSimulant :?> Entity
-                    if entity.GetExists world then
-                        let collisionAddress = Events.Collision --> entity.EntityAddress
-                        let collisionData =
-                            { Collider = bodyCollisionMessage.BodyShapeSource
-                              Collidee = bodyCollisionMessage.BodyShapeSource2
-                              Normal = bodyCollisionMessage.Normal
-                              Speed = bodyCollisionMessage.Speed }
-                        let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
-                        World.publish collisionData collisionAddress eventTrace Default.Game world
-                    else world
             | Exiting -> world
 
         member this.BodyExists physicsId = this.PhysicsEngine.BodyExists physicsId

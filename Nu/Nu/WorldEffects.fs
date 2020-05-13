@@ -35,7 +35,7 @@ module Effects =
         | Ratio
         | Set
 
-    type [<NoComparison>] Slice =
+    type Slice =
         { Position : Vector2
           Size : Vector2
           Rotation : single
@@ -62,19 +62,19 @@ module Effects =
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<NoComparison>] Tween2KeyFrame =
+    type Tween2KeyFrame =
         { TweenValue : Vector2
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<NoComparison>] Tween3KeyFrame =
+    type Tween3KeyFrame =
         { TweenValue : Vector3
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<NoComparison>] Tween4KeyFrame =
+    type Tween4KeyFrame =
         { TweenValue : Vector4
           TweenLength : int64 }
         interface KeyFrame with
