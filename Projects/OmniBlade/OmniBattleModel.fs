@@ -37,6 +37,7 @@ module BattleModel =
               CurrentCommandOpt_ : CurrentCommand option
               ActionCommands_ : ActionCommand Queue }
 
+        (* Local Properties *)
         member this.BattleState = this.BattleState_
         member this.Inventory = this.Inventory_
         member this.Gold = this.Gold_

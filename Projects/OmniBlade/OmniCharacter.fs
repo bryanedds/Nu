@@ -17,7 +17,7 @@ module OmniCharacter =
 
     type CharacterDispatcher () =
         inherit EntityDispatcher<CharacterModel, unit, unit>
-            (CharacterModel.make (AllyIndex 0) (Ally Finn) 0 None None [] Assets.FinnAnimationSheet Rightward (v4Bounds v2Zero v2One))
+            (CharacterModel.make (v4Bounds v2Zero v2One) (AllyIndex 0) (Ally Finn) 0 None None [] Assets.FinnAnimationSheet Rightward)
 
         static let getSpriteInset (character : Entity) world =
             let model = character.GetCharacterModel world

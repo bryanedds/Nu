@@ -7,19 +7,10 @@ module AvatarModel =
 
     type [<ReferenceEquality; NoComparison>] AvatarModel =
         private
-            { AnimationState : CharacterAnimationState
-              IntersectedBodyShapes_ : BodyShapeSource list
-              BoundsOriginal_ : Vector4
-              Bounds_ : Vector4 }
-
-        (* AnimationState Properties *)
-        member this.TimeStart = this.AnimationState.TimeStart
-        member this.AnimationSheet = this.AnimationState.AnimationSheet
-        member this.AnimationCycle = this.AnimationState.AnimationCycle
-        member this.Direction = this.AnimationState.Direction
-
-        (* Local Properties *)
-        member this.IntersectedBodyShapes = this.IntersectedBodyShapes_
+            { BoundsOriginal_ : Vector4
+              Bounds_ : Vector4
+              AnimationState : CharacterAnimationState
+              IntersectedBodyShapes_ : BodyShapeSource list }
 
         (* Bounds Original Properties *)
         member this.BoundsOriginal = this.BoundsOriginal_
@@ -34,6 +25,15 @@ module AvatarModel =
         member this.Center = this.Bounds_.Center
         member this.Bottom = this.Bounds_.Bottom
         member this.Size = this.Bounds_.Size
+
+        (* AnimationState Properties *)
+        member this.TimeStart = this.AnimationState.TimeStart
+        member this.AnimationSheet = this.AnimationState.AnimationSheet
+        member this.AnimationCycle = this.AnimationState.AnimationCycle
+        member this.Direction = this.AnimationState.Direction
+
+        (* Local Properties *)
+        member this.IntersectedBodyShapes = this.IntersectedBodyShapes_
 
         static member getAnimationIndex time avatar =
             CharacterAnimationState.index time avatar.AnimationState
@@ -65,11 +65,11 @@ module AvatarModel =
         static member animate time cycle avatar =
             { avatar with AnimationState = CharacterAnimationState.setCycle (Some time) cycle avatar.AnimationState }
 
-        static member make animationSheet direction bounds =
+        static member make bounds animationSheet direction =
             let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = IdleCycle; Direction = direction }
-            { AnimationState = animationState
-              IntersectedBodyShapes_ = []
-              BoundsOriginal_ = bounds
-              Bounds_ = bounds }
+            { BoundsOriginal_ = bounds
+              Bounds_ = bounds
+              AnimationState = animationState
+              IntersectedBodyShapes_ = [] }
 
 type AvatarModel = AvatarModel.AvatarModel

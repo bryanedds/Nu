@@ -1,5 +1,4 @@
 ﻿namespace OmniBlade
-open System
 open Prime
 open Nu
 open Nu.Declarative
@@ -21,7 +20,7 @@ module AvatarDispatcherModule =
 
     type AvatarDispatcher () =
         inherit EntityDispatcher<AvatarModel, AvatarMessage, unit>
-            (AvatarModel.make Assets.FinnAnimationSheet Downward (v4Bounds (v2 128.0f 128.0f) Constants.Gameplay.CharacterSize))
+            (AvatarModel.make (v4Bounds (v2 128.0f 128.0f) Constants.Gameplay.CharacterSize) Assets.FinnAnimationSheet Downward)
 
         static let sensorShapeId =
             Gen.id

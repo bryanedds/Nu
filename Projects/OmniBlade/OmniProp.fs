@@ -1,5 +1,4 @@
 ﻿namespace OmniBlade
-open System
 open Prime
 open Nu
 open Nu.Declarative
@@ -19,7 +18,7 @@ module PropDispatcherModule =
 
     type PropDispatcher () =
         inherit EntityDispatcher<PropModel, PropMessage, unit>
-            (PropModel.make (Chest (BrassChest, Unlocked, Consumable GreenHerb)) (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f)
+            (PropModel.make (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f (Chest (BrassChest, Unlocked, Consumable GreenHerb)))
 
         static member Facets =
             [typeof<RigidBodyFacet>]
@@ -49,7 +48,6 @@ module PropDispatcherModule =
                 just model
 
         override this.View (model, entity, world) =
-
             if entity.GetVisibleLayered world && entity.GetInView world then
                 let image =
                     match model.PropData with
@@ -57,8 +55,7 @@ module PropDispatcherModule =
                         match chestType with
                         | WoodenChest -> Assets.WoodenChestImage
                         | BrassChest -> Assets.BrassChestImage
-                    | _ ->
-                        Assets.CancelImage
+                    | _ -> Assets.CancelImage
                 [Render
                     (LayerableDescriptor
                         { Depth = entity.GetDepth world

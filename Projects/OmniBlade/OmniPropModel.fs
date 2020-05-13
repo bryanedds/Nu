@@ -7,9 +7,9 @@ module PropModel =
 
     type [<ReferenceEquality; NoComparison>] PropModel =
         private
-            { PropData_ : PropData
-              Bounds_ : Vector4
-              Depth_ : single }
+            { Bounds_ : Vector4
+              Depth_ : single
+              PropData_ : PropData }
 
         (* Bounds Properties *)
         member this.Bounds = this.Bounds_
@@ -19,8 +19,8 @@ module PropModel =
         member this.Size = this.Bounds_.Size
 
         (* Local Properties *)
-        member this.PropData = this.PropData_
         member this.Depth = this.Depth_
+        member this.PropData = this.PropData_
 
         static member updateBounds updater (model : PropModel) =
             { model with Bounds_ = updater model.Bounds_ }
@@ -34,9 +34,9 @@ module PropModel =
         static member updateBottom updater (model : PropModel) =
             { model with Bounds_ = model.Bottom |> updater |> model.Bounds.WithBottom }
 
-        static member make propData bounds depth =
+        static member make bounds depth propData =
             { PropData_ = propData
-              Bounds_ = bounds
-              Depth_ = depth }
+              Depth_ = depth
+              Bounds_ = bounds }
 
 type PropModel = PropModel.PropModel
