@@ -27,7 +27,7 @@ module PropDispatcherModule =
         static member Properties =
             [define Entity.FixedRotation true
              define Entity.GravityScale 0.0f
-             define Entity.BodyShape (BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero })]
+             define Entity.BodyShape (BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None })]
 
         override this.Channel (_, entity, _) =
             [entity.UpdateEvent => [msg Update]]

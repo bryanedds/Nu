@@ -31,21 +31,19 @@ module AvatarDispatcherModule =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
-        static member Properties =
-            [define Entity.AnimationDelay 6L
-             define Entity.CelSize Constants.Gameplay.CharacterSize
-             define Entity.CelRun 8
-             define Entity.FixedRotation true
-             define Entity.GravityScale 0.0f
-             define Entity.BodyShape (BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f })]
-
         override this.Channel (_, entity, _) =
             [entity.UpdateEvent => [msg Update]]
 
         override this.Initializers (model, entity, _) =
+            let bodyShapes =
+                BodyShapes
+                    [BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                     BodyCircle { Radius = 0.33f; Center = v2 0.0f -0.3f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = Gen.id; IsSensor = true }}]
             [entity.Bounds <== model.Map (fun model -> model.Bounds)
-             entity.LinearDamping == 12.0f
-             entity.GravityScale == 0.0f]
+             entity.FixedRotation == true
+             entity.LinearDamping == 16.0f
+             entity.GravityScale == 0.0f
+             entity.BodyShape == bodyShapes]
 
         override this.Message (model, message, entity, world) =
             let time = World.getTickTime world

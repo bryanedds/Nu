@@ -50,6 +50,10 @@ module Gen =
         static member isName (name : string) =
             name.StartsWith Gen.namePrefix
 
+        /// Generate an empty id.
+        static member idEmpty =
+            Guid.Empty
+
         /// Generate a unique id.
         static member id =
             Guid.NewGuid ()
