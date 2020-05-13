@@ -382,6 +382,8 @@ module WorldModule3 =
                  (typeof<ScriptFacet>.Name, ScriptFacet () :> Facet)
                  (typeof<TextFacet>.Name, TextFacet () :> Facet)
                  (typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
+                 (typeof<RigidBodiesFacet>.Name, RigidBodiesFacet () :> Facet)
+                 (typeof<JointFacet>.Name, JointFacet () :> Facet)
                  (typeof<TileMapFacet>.Name, TileMapFacet () :> Facet)
                  (typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
                  (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]

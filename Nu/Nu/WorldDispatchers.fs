@@ -538,31 +538,6 @@ module RigidBodyFacetModule =
             World.destroyBody (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
-module JointFacetModule =
-
-    type Entity with
-
-        member this.GetJointDevice world : JointDevice = this.Get Property? JointDevice world
-        member this.SetJointDevice (value : JointDevice) world = this.SetFast Property? JointDevice false false value world
-        member this.JointDevice = lens Property? JointDevice this.GetJointDevice this.SetJointDevice this
-
-    type JointFacet () =
-        inherit Facet ()
-
-        static member Properties =
-            [define Entity.JointDevice JointEmpty
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Guid.Empty }) None]
-
-        override this.RegisterPhysics (entity, world) =
-            let jointProperties =
-                { JointId = (entity.GetPhysicsId world).CorrelationId
-                  JointDevice = (entity.GetJointDevice world) }
-            World.createJoint entity (entity.GetId world) jointProperties world
-
-        override this.UnregisterPhysics (entity, world) =
-            World.destroyJoint (entity.GetPhysicsId world) world
-
-[<AutoOpen>]
 module RigidBodiesFacetModule =
 
     type Entity with
@@ -603,6 +578,31 @@ module RigidBodiesFacetModule =
             let bodiesProperties = entity.GetBodies world |> Map.toValueList
             let physicsIds = List.map (fun (properties : BodyProperties) -> { SourceId = entity.GetId world; CorrelationId = properties.BodyId }) bodiesProperties
             World.destroyBodies physicsIds world
+
+[<AutoOpen>]
+module JointFacetModule =
+
+    type Entity with
+
+        member this.GetJointDevice world : JointDevice = this.Get Property? JointDevice world
+        member this.SetJointDevice (value : JointDevice) world = this.SetFast Property? JointDevice false false value world
+        member this.JointDevice = lens Property? JointDevice this.GetJointDevice this.SetJointDevice this
+
+    type JointFacet () =
+        inherit Facet ()
+
+        static member Properties =
+            [define Entity.JointDevice JointEmpty
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Guid.Empty }) None]
+
+        override this.RegisterPhysics (entity, world) =
+            let jointProperties =
+                { JointId = (entity.GetPhysicsId world).CorrelationId
+                  JointDevice = (entity.GetJointDevice world) }
+            World.createJoint entity (entity.GetId world) jointProperties world
+
+        override this.UnregisterPhysics (entity, world) =
+            World.destroyJoint (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
 module TileMapFacetModule =
