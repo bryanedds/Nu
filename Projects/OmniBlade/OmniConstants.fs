@@ -16,7 +16,7 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Field =
 
-        let WalkForce = 5000.0f
+        let WalkForce = 20000.0f
         let BackgroundDepth = -10.0f
         let ForgroundDepth = 0.0f
         let EffectDepth = 10.0f

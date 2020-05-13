@@ -26,7 +26,7 @@ module WorldPhysicsModule =
                     let position = bodyTransformMessage.Position - transform.Size * 0.5f
                     let rotation = bodyTransformMessage.Rotation
                     let world =
-                        if bodyTransformMessage.BodySource.SourceBodyId = Guid.Empty then
+                        if bodyTransformMessage.BodySource.SourceBodyId = Gen.idEmpty then
                             let transform2 = { transform with Position = position; Rotation = rotation }
                             if transform <> transform2
                             then entity.SetTransform transform2 world
@@ -37,12 +37,12 @@ module WorldPhysicsModule =
                     let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
                     World.publish transformData transformAddress eventTrace Default.Game world
                 | BodyCollisionMessage bodyCollisionMessage ->
-                    let entity = bodyCollisionMessage.BodySource.SourceSimulant :?> Entity
+                    let entity = bodyCollisionMessage.BodyShapeSource.SourceSimulant :?> Entity
                     if entity.GetExists world then
                         let collisionAddress = Events.Collision --> entity.EntityAddress
                         let collisionData =
-                            { Collider = bodyCollisionMessage.BodySource
-                              Collidee = bodyCollisionMessage.BodySource2
+                            { Collider = bodyCollisionMessage.BodyShapeSource
+                              Collidee = bodyCollisionMessage.BodyShapeSource2
                               Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed }
                         let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty

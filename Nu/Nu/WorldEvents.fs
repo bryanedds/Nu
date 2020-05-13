@@ -39,8 +39,8 @@ type [<StructuralEquality; NoComparison>] TransformData =
 
 /// The data for a collision event.
 type [<StructuralEquality; NoComparison>] CollisionData =
-    { Collider : BodySource
-      Collidee : BodySource
+    { Collider : BodyShapeSource
+      Collidee : BodyShapeSource
       Normal : Vector2
       Speed : single }
 

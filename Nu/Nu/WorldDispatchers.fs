@@ -505,17 +505,17 @@ module RigidBodyFacetModule =
              define Entity.GravityScale 1.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.BodyShape (BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero })
+             define Entity.BodyShape (BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero; PropertiesOpt = None })
              define Entity.IsBullet false
              define Entity.IsSensor false
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Guid.Empty }) None]
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.RegisterPhysics (entity, world) =
             let bodyProperties = 
                 { BodyId = (entity.GetPhysicsId world).CorrelationId
                   Position = entity.GetPosition world + entity.GetSize world * 0.5f
                   Rotation = entity.GetRotation world
-                  Shape = getBodyShape entity world
+                  BodyShape = getBodyShape entity world
                   BodyType = entity.GetBodyType world
                   Awake = entity.GetAwake world
                   Enabled = entity.GetEnabled world
@@ -555,7 +555,7 @@ module RigidBodiesFacetModule =
         static member Properties =
             [define Entity.Bodies Map.empty
              define Entity.Joints Map.empty
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Guid.Empty }) None]
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.RegisterPhysics (entity, world) =
             let position = entity.GetPosition world
@@ -568,7 +568,7 @@ module RigidBodiesFacetModule =
                     { properties with
                         Position = properties.Position + position
                         Rotation = properties.Rotation + rotation
-                        Shape = World.localizeBodyShape size properties.Shape })
+                        BodyShape = World.localizeBodyShape size properties.BodyShape })
             let world = World.createBodies entity (entity.GetId world) bodiesProperties world
             let jointsProperties = Map.toValueList (entity.GetJoints world)
             let world = World.createJoints entity (entity.GetId world) jointsProperties world
@@ -593,7 +593,7 @@ module JointFacetModule =
 
         static member Properties =
             [define Entity.JointDevice JointEmpty
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Guid.Empty }) None]
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.RegisterPhysics (entity, world) =
             let jointProperties =
@@ -666,7 +666,7 @@ module TileMapFacetModule =
                     (single (td.TilePosition.X + tmd.TileSize.X / 2),
                      single (td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y))
               Rotation = tm.GetRotation world
-              Shape = tileShape
+              BodyShape = tileShape
               BodyType = BodyType.Static
               Awake = false
               Enabled = true
@@ -692,7 +692,7 @@ module TileMapFacetModule =
                 | (true, cexpr) ->
                     let tileBody =
                         match cexpr with
-                        | "" -> BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero }
+                        | "" -> BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero; PropertiesOpt = None }
                         | _ -> scvalue<BodyShape> cexpr
                     let tileBodyProperties = getTileBodyProperties6 tm tmd tli td ti tileBody world
                     Some tileBodyProperties
@@ -1923,7 +1923,7 @@ module CharacterDispatcherModule =
              define Entity.CelRun 8
              define Entity.FixedRotation true
              define Entity.GravityScale 3.0f
-             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero })
+             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero; PropertiesOpt = None })
              define Entity.CharacterIdleImage (AssetTag.make Assets.DefaultPackageName "CharacterIdle")
              define Entity.CharacterJumpImage (AssetTag.make Assets.DefaultPackageName "CharacterJump")
              define Entity.CharacterWalkSheet (AssetTag.make Assets.DefaultPackageName "CharacterWalk")
