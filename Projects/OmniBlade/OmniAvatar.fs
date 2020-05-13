@@ -38,10 +38,9 @@ module AvatarDispatcherModule =
             let bodyShapes =
                 BodyShapes
                     [BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
-                     BodyCircle { Radius = 0.33f; Center = v2 0.0f -0.3f; PropertiesOpt = Some { BodyShapeProperties.empty with IsSensorOpt = Some true }}]
+                     BodyCircle { Radius = 0.33f; Center = v2 0.0f -0.3f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = Gen.id; IsSensorOpt = Some true }}]
             [entity.Bounds <== model.Map (fun model -> model.Bounds)
              entity.FixedRotation == true
-             entity.LinearDamping == 16.0f
              entity.GravityScale == 0.0f
              entity.BodyShape == bodyShapes]
 

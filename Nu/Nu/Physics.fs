@@ -66,7 +66,7 @@ type BodyShapeProperties =
       IsSensorOpt : bool option }
 
     static member empty =
-        { BodyShapeId = Gen.id
+        { BodyShapeId = Gen.idEmpty
           FrictionOpt = None
           RestitutionOpt = None
           CollisionCategoriesOpt = None

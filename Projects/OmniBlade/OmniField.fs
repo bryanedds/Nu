@@ -83,7 +83,8 @@ module OmniField =
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
                     [Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Position == v2 256.0f 256.0f
-                     Entity.Depth == Constants.Field.ForgroundDepth]
+                     Entity.Depth == Constants.Field.ForgroundDepth
+                     Entity.LinearDamping == Constants.Field.LinearDamping]
                  Content.entities
                     (model ->> fun model world ->
                         match Map.tryFind model.FieldType data.Value.Fields with
