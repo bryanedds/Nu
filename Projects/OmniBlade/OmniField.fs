@@ -10,8 +10,8 @@ open OmniBlade
 [<AutoOpen>]
 module OmniField =
 
-    type FieldMessage =
-        | Nil
+    type [<NoComparison>] FieldMessage =
+        | AvatarChanged of AvatarModel
 
     type FieldCommand =
         | FadeSong
@@ -29,6 +29,7 @@ module OmniField =
         inherit ScreenDispatcher<FieldModel, FieldMessage, FieldCommand>
             (FieldModel.make
                 DebugRoom
+                (AvatarModel.make (v4Bounds (v2 128.0f 128.0f) Constants.Gameplay.CharacterSize) Assets.FinnAnimationSheet Downward)
                 Map.empty
                 Set.empty
                 { Items = Map.empty }
@@ -43,12 +44,17 @@ module OmniField =
                 let force = if KeyboardState.isKeyDown KeyboardKey.Down then v2 0.0f -Constants.Field.WalkForce + force else force
                 [cmd (Move force)]
              field.PostUpdateEvent => [cmd EyeTrack]
-             field.OutgoingStartEvent => [cmd FadeSong]]
+             field.OutgoingStartEvent => [cmd FadeSong]
+             Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt ->
+                let avatarModel = evt.Data.Value :?> AvatarModel
+                [msg (AvatarChanged avatarModel)]]
 
         override this.Message (model, message, _, _) =
 
             match message with
-            | Nil -> just model
+            | AvatarChanged avatarModel ->
+                let model = FieldModel.updateAvatar (constant avatarModel) model
+                just model
 
         override this.Command (_, command, _, world) =
 
@@ -75,7 +81,7 @@ module OmniField =
             [Content.layer Simulants.FieldScene.Name []
                 [Content.tileMap Simulants.FieldTileMap.Name
                     [Entity.Depth == Constants.Field.BackgroundDepth
-                     Entity.TileMapAsset <== model --> fun (model : FieldModel) ->
+                     Entity.TileMapAsset <== model --> fun model ->
                         match Map.tryFind model.FieldType data.Value.Fields with
                         | Some fieldData -> fieldData.FieldTileMap
                         | None -> Assets.DebugRoomTileMap
@@ -84,7 +90,14 @@ module OmniField =
                     [Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Position == v2 256.0f 256.0f
                      Entity.Depth == Constants.Field.ForgroundDepth
-                     Entity.LinearDamping == Constants.Field.LinearDamping]
+                     Entity.LinearDamping == Constants.Field.LinearDamping
+                     Entity.AvatarModel <== model --> fun model -> model.Avatar]
+                 Content.button Simulants.FieldInteract.Name
+                    [Entity.Size == v2Dup 92.0f
+                     Entity.Position == v2 -400.0f -200.0f
+                     Entity.Depth == Constants.Field.GuiDepth
+                     Entity.Enabled <== model --> fun model -> List.notEmpty model.Avatar.IntersectedBodyShapes
+                     Entity.Text == "XXX"]
                  Content.entities
                     (model ->> fun model world ->
                         match Map.tryFind model.FieldType data.Value.Fields with
