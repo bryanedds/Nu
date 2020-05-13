@@ -588,7 +588,7 @@ module OmniBattle =
                 | None -> just model
                     
             | TechCharacterAmbient (sourceIndex, _, _) ->
-                if Simulants.BattleRide.GetExists world then
+                if Simulants.BattleRide.Exists world then
                     let model =
                         let tags = Simulants.BattleRide.GetEffectTags world
                         match Map.tryFind "Tag" tags with

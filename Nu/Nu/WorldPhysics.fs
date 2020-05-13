@@ -21,11 +21,11 @@ module WorldPhysicsModule =
                 match integrationMessage with
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let entity = bodyCollisionMessage.BodyShapeSource.SourceSimulant :?> Entity
-                    if entity.GetExists world then
+                    if entity.Exists world then
                         let collisionAddress = Events.Collision --> entity.EntityAddress
                         let collisionData =
-                            { Collider = bodyCollisionMessage.BodyShapeSource
-                              Collidee = bodyCollisionMessage.BodyShapeSource2
+                            { Collider = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource
+                              Collidee = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource2
                               Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed }
                         let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
@@ -33,11 +33,11 @@ module WorldPhysicsModule =
                     else world
                 | BodySeparationMessage bodySeparationMessage ->
                     let entity = bodySeparationMessage.BodyShapeSource.SourceSimulant :?> Entity
-                    if entity.GetExists world then
+                    if entity.Exists world then
                         let separationAddress = Events.Separation --> entity.EntityAddress
                         let separationData =
-                            { Separator = bodySeparationMessage.BodyShapeSource
-                              Separatee = bodySeparationMessage.BodyShapeSource2  }
+                            { Separator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
+                              Separatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2  }
                         let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
                         World.publish separationData separationAddress eventTrace Default.Game world
                     else world
@@ -55,7 +55,7 @@ module WorldPhysicsModule =
                             else world
                         else world
                     let transformAddress = Events.Transform --> entity.EntityAddress
-                    let transformData = { BodySource = bodySource; Position = position; Rotation = rotation }
+                    let transformData = { BodySource = BodySource.fromInternal bodySource; Position = position; Rotation = rotation }
                     let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
                     World.publish transformData transformAddress eventTrace Default.Game world
             | Exiting -> world

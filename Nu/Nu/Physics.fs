@@ -46,12 +46,12 @@ type [<CustomEquality; NoComparison>] PhysicsId =
         PhysicsId.hash this
 
 /// Store origination information about a simulant physics body.
-type [<NoComparison>] BodySource =
+type [<NoComparison>] BodySourceInternal =
     { SourceSimulant : Simulant
       SourceBodyId : Guid }
 
 /// Store origination information about a simulant physics shape body.
-type [<NoComparison>] BodyShapeSource =
+type [<NoComparison>] BodyShapeSourceInternal =
     { SourceSimulant : Simulant
       SourceBodyId : Guid
       SourceBodyShapeId : Guid }
@@ -334,19 +334,19 @@ type [<StructuralEquality; NoComparison>] ApplyBodyForceMessage =
 
 /// A message from the physics system describing a body collision that took place.
 type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
-    { BodyShapeSource : BodyShapeSource
-      BodyShapeSource2 : BodyShapeSource
+    { BodyShapeSource : BodyShapeSourceInternal
+      BodyShapeSource2 : BodyShapeSourceInternal
       Normal : Vector2
       Speed : single }
 
 /// A message from the physics system describing a body separation that took place.
 type [<StructuralEquality; NoComparison>] BodySeparationMessage =
-    { BodyShapeSource : BodyShapeSource
-      BodyShapeSource2 : BodyShapeSource }
+    { BodyShapeSource : BodyShapeSourceInternal
+      BodyShapeSource2 : BodyShapeSourceInternal }
 
 /// A message from the physics system describing the updated transform of a body.
 type [<StructuralEquality; NoComparison>] BodyTransformMessage =
-    { BodySource : BodySource
+    { BodySource : BodySourceInternal
       Position : Vector2
       Rotation : single }
 
@@ -464,8 +464,8 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
         physicsEngine (bodyShape : Dynamics.Fixture) (bodyShape2 : Dynamics.Fixture) (contact : Dynamics.Contacts.Contact) =
         let normal = fst (contact.GetWorldManifold ())
         let bodyCollisionMessage =
-            { BodyShapeSource = bodyShape.UserData :?> BodyShapeSource
-              BodyShapeSource2 = bodyShape2.UserData :?> BodyShapeSource
+            { BodyShapeSource = bodyShape.UserData :?> BodyShapeSourceInternal
+              BodyShapeSource2 = bodyShape2.UserData :?> BodyShapeSourceInternal
               Normal = Vector2 (normal.X, normal.Y)
               Speed = contact.TangentSpeed * Constants.Physics.PhysicsToPixelRatio }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
@@ -475,8 +475,8 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
     static member private handleSeparation
         physicsEngine (bodyShape : Dynamics.Fixture) (bodyShape2 : Dynamics.Fixture) =
         let bodySeparationMessage =
-            { BodyShapeSource = bodyShape.UserData :?> BodyShapeSource
-              BodyShapeSource2 = bodyShape2.UserData :?> BodyShapeSource }
+            { BodyShapeSource = bodyShape.UserData :?> BodyShapeSourceInternal
+              BodyShapeSource2 = bodyShape2.UserData :?> BodyShapeSourceInternal }
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
 
@@ -786,7 +786,7 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
             if body.Awake && not body.IsStatic then
                 let bodyTransformMessage =
                     BodyTransformMessage
-                        { BodySource = body.UserData :?> BodySource
+                        { BodySource = body.UserData :?> BodySourceInternal
                           Position = FarseerPhysicsEngine.toPixelV2 body.Position
                           Rotation = body.Rotation }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage

@@ -79,13 +79,13 @@ module WorldScreenModule =
                 | _ -> false
 
         /// Check that a screen exists in the world.
-        member this.GetExists world = World.getScreenExists this world
+        member this.Exists world = World.getScreenExists this world
 
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
+        member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
+        member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Resolve a relation in the context of a screen.
         member this.Resolve relation = resolve<Screen> this relation
