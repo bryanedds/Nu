@@ -508,11 +508,11 @@ module RigidBodyFacetModule =
              define Entity.BodyShape (BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero })
              define Entity.IsBullet false
              define Entity.IsSensor false
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; BodyId = Guid.Empty }) None]
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Guid.Empty }) None]
 
         override this.RegisterPhysics (entity, world) =
             let bodyProperties = 
-                { BodyId = (entity.GetPhysicsId world).BodyId
+                { BodyId = (entity.GetPhysicsId world).CorrelationId
                   Position = entity.GetPosition world + entity.GetSize world * 0.5f
                   Rotation = entity.GetRotation world
                   Shape = getBodyShape entity world
@@ -538,6 +538,31 @@ module RigidBodyFacetModule =
             World.destroyBody (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
+module JointFacetModule =
+
+    type Entity with
+
+        member this.GetJointDevice world : JointDevice = this.Get Property? JointDevice world
+        member this.SetJointDevice (value : JointDevice) world = this.SetFast Property? JointDevice false false value world
+        member this.JointDevice = lens Property? JointDevice this.GetJointDevice this.SetJointDevice this
+
+    type JointFacet () =
+        inherit Facet ()
+
+        static member Properties =
+            [define Entity.JointDevice JointEmpty
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Guid.Empty }) None]
+
+        override this.RegisterPhysics (entity, world) =
+            let jointProperties =
+                { JointId = (entity.GetPhysicsId world).CorrelationId
+                  JointDevice = (entity.GetJointDevice world) }
+            World.createJoint entity (entity.GetId world) jointProperties world
+
+        override this.UnregisterPhysics (entity, world) =
+            World.destroyJoint (entity.GetPhysicsId world) world
+
+[<AutoOpen>]
 module RigidBodiesFacetModule =
 
     type Entity with
@@ -545,31 +570,38 @@ module RigidBodiesFacetModule =
         member this.GetBodies world : Map<Guid, BodyProperties> = this.Get Property? Bodies world
         member this.SetBodies (value : Map<Guid, BodyProperties>) world = this.SetFast Property? Bodies false false value world
         member this.Bodies = lens Property? Bodies this.GetBodies this.SetBodies this
+        member this.GetJoints world : Map<Guid, JointProperties> = this.Get Property? Joints world
+        member this.SetJoints (value : Map<Guid, JointProperties>) world = this.SetFast Property? Joints false false value world
+        member this.Joints = lens Property? Joints this.GetJoints this.SetJoints this
 
     type RigidBodiesFacet () =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.Bodies (Map.singleton Guid.Empty BodyProperties.empty)
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; BodyId = Guid.Empty }) None]
+            [define Entity.Bodies Map.empty
+             define Entity.Joints Map.empty
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Guid.Empty }) None]
 
         override this.RegisterPhysics (entity, world) =
             let position = entity.GetPosition world
             let size = entity.GetSize world
             let rotation = entity.GetRotation world
-            let bodiesProperties = entity.GetBodies world |> Map.toValueList
             let bodiesProperties =
-                List.map (fun (properties : BodyProperties) ->
+                entity.GetBodies world |>
+                Map.toValueList |>
+                List.map (fun properties ->
                     { properties with
                         Position = properties.Position + position
                         Rotation = properties.Rotation + rotation
                         Shape = World.localizeBodyShape size properties.Shape })
-                    bodiesProperties
-            World.createBodies entity (entity.GetId world) bodiesProperties world
+            let world = World.createBodies entity (entity.GetId world) bodiesProperties world
+            let jointsProperties = Map.toValueList (entity.GetJoints world)
+            let world = World.createJoints entity (entity.GetId world) jointsProperties world
+            world
 
         override this.UnregisterPhysics (entity, world) =
             let bodiesProperties = entity.GetBodies world |> Map.toValueList
-            let physicsIds = List.map (fun (properties : BodyProperties) -> { SourceId = entity.GetId world; BodyId = properties.BodyId }) bodiesProperties
+            let physicsIds = List.map (fun (properties : BodyProperties) -> { SourceId = entity.GetId world; CorrelationId = properties.BodyId }) bodiesProperties
             World.destroyBodies physicsIds world
 
 [<AutoOpen>]
@@ -687,7 +719,7 @@ module TileMapFacetModule =
                     match tileData.TileSetTileOpt with
                     | Some tileSetTile ->
                         if tileSetTile.Properties.ContainsKey Constants.Physics.CollisionProperty then
-                            let physicsId = { SourceId = tileMap.GetId world; BodyId = Gen.idFromInts tileLayerIndex tileIndex }
+                            let physicsId = { SourceId = tileMap.GetId world; CorrelationId = Gen.idFromInts tileLayerIndex tileIndex }
                             physicsId :: physicsIds
                         else physicsIds
                     | None -> physicsIds)

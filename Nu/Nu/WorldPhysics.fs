@@ -159,6 +159,30 @@ module WorldPhysicsModule =
             let destroyBodiesMessage = DestroyBodiesMessage { PhysicsIds = physicsIds }
             World.enqueuePhysicsMessage destroyBodiesMessage world
 
+        /// Send a message to the physics system to create a physics joint.
+        [<FunctionBinding>]
+        static member createJoint (entity : Entity) entityId jointProperties world =
+            let createJointMessage = CreateJointMessage { SourceSimulant = entity; SourceId = entityId; JointProperties = jointProperties }
+            World.enqueuePhysicsMessage createJointMessage world
+
+        /// Send a message to the physics system to create physics joints.
+        [<FunctionBinding>]
+        static member createJoints (entity : Entity) entityId jointsProperties world =
+            let createJointsMessage = CreateJointsMessage { SourceSimulant = entity; SourceId = entityId; JointsProperties = jointsProperties }
+            World.enqueuePhysicsMessage createJointsMessage world
+
+        /// Send a message to the physics system to destroy a physics joint.
+        [<FunctionBinding>]
+        static member destroyJoint physicsId world =
+            let destroyJointMessage = DestroyJointMessage { PhysicsId = physicsId }
+            World.enqueuePhysicsMessage destroyJointMessage world
+
+        /// Send a message to the physics system to destroy physics joints.
+        [<FunctionBinding>]
+        static member destroyJoints physicsIds world =
+            let destroyJointsMessage = DestroyJointsMessage { PhysicsIds = physicsIds }
+            World.enqueuePhysicsMessage destroyJointsMessage world
+
         /// Send a message to the physics system to set the position of a body with the given physics id.
         [<FunctionBinding>]
         static member setBodyPosition position physicsId world =
