@@ -4,37 +4,22 @@
   <property name="Image" value="[Field Colloseum]"/>
  </properties>
  <image source="Colloseum.png" width="2048" height="2048"/>
- <tile id="1">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="2">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="3">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="4">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="5">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="6">
+ <tile id="32">
   <properties>
    <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="33">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="34">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="37">
   <properties>
    <property name="C" value=""/>
   </properties>
@@ -45,6 +30,16 @@
   </properties>
  </tile>
  <tile id="65">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="66">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="69">
   <properties>
    <property name="C" value=""/>
   </properties>
