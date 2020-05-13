@@ -7,7 +7,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Algorithms =
 
-    let ExpReqs =
+    let expReqs =
         [0; 8
          15; 22; 35; 50; 75; 100
          150; 220; 350; 500; 750; 1000
@@ -15,25 +15,25 @@ module Algorithms =
          15000; 22000; 35000; 50000; 75000; 100000
          150000; 220000; 350000; 500000; 750000; 1000000]
 
-    let ExpReqRanges =
-        List.pairwise ExpReqs
+    let expReqRanges =
+        List.pairwise expReqs
 
-    let LevelMax =
-        List.length ExpReqs
+    let levelMax =
+        List.length expReqs
 
     let levelToExpPointsRange level =
-        ExpReqRanges |>
+        expReqRanges |>
         List.tryItem level |>
-        Option.getOrDefault (List.last ExpReqs, Int32.MaxValue)
+        Option.getOrDefault (List.last expReqs, Int32.MaxValue)
 
     let levelToExpPoints level =
         fst (levelToExpPointsRange level)
 
     let expPointsToLevel expPoints =
-        ExpReqRanges |>
+        expReqRanges |>
         List.tryFindIndex (fun (low, high) -> expPoints >= low && expPoints < high) |>
         Option.map inc |> // level 1 is the minimum
-        Option.getOrDefault LevelMax
+        Option.getOrDefault levelMax
 
     let hitPointsMax armorOpt archetypeType level =
         let stamina = 

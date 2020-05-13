@@ -75,13 +75,6 @@ type CharacterIndex =
         | (EnemyIndex _, EnemyIndex _) -> true
         | (_, _) -> false
 
-type AutoBattle =
-    { AutoTarget : CharacterIndex
-      AutoTechOpt : TechType option }
-
-/// The state of a character.
-/// Used both inside and outside of battle.
-/// Level is calculated from base experience + added experience.
 type CharacterState =
     { CharacterIndex : CharacterIndex // key
       ArchetypeType : ArchetypeType
@@ -99,7 +92,6 @@ type CharacterState =
       MagicBuff : single
       CounterBuff : single
       ActionTime : int
-      AutoBattleOpt : AutoBattle option
       AnimationSheet : Image AssetTag }
 
     member this.PartyIndex = match this.CharacterIndex with AllyIndex index | EnemyIndex index -> index
@@ -117,11 +109,6 @@ type CharacterState =
 
     static member isTeammate (state : CharacterState) (state2 : CharacterState) =
         CharacterIndex.isTeammate state.CharacterIndex state2.CharacterIndex
-        
-    static member runningTechAutoBattle state =
-        match state.AutoBattleOpt with
-        | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt
-        | None -> false
 
     static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
         let power = source.Power
@@ -133,18 +120,11 @@ type CharacterState =
     static member updateActionTime updater state =
         { state with ActionTime = updater state.ActionTime }
 
-    static member updateAutoBattleOpt updater state =
-        { state with AutoBattleOpt = updater state.AutoBattleOpt }
-
     static member updateHitPoints updater (state : CharacterState) =
-        let (hitPoints, cancel) = updater state.HitPoints
+        let hitPoints = updater state.HitPoints
         let hitPoints = max 0 hitPoints
         let hitPoints = min state.HitPointsMax hitPoints
-        let autoBattleOpt = 
-            match state.AutoBattleOpt with
-            | Some autoBattle when cancel -> Some { autoBattle with AutoTechOpt = None }
-            | _ -> None
-        { state with HitPoints = hitPoints; AutoBattleOpt = autoBattleOpt }
+        { state with HitPoints = hitPoints }
 
     static member updateTechPoints updater state =
         let specialPoints = updater state.TechPoints
@@ -191,7 +171,6 @@ type CharacterState =
               ShieldBuff = 1.0f
               CounterBuff = 1.0f
               ActionTime = 0
-              AutoBattleOpt = None
               AnimationSheet = animationSheet }
         characterState
 

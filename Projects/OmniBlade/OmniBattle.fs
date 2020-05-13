@@ -1,5 +1,4 @@
 ﻿namespace OmniBlade
-open System
 open FSharpx.Collections
 open Prime
 open Nu
@@ -64,8 +63,8 @@ module OmniBattle =
         inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
             (// TODO: data-drive ally positions
              let allies =
-                [CharacterModel.make (AllyIndex 0) (Ally Finn) 0 (Some "WoodenSword") (Some "LeatherVest") [] Assets.FinnAnimationSheet Rightward (v4Bounds (v2 -224.0f -168.0f) Constants.Gameplay.CharacterSize)
-                 CharacterModel.make (AllyIndex 1) (Ally Glenn) 0 (Some "StoneSword") (Some "LeatherMail") [] Assets.GlennAnimationSheet Leftward (v4Bounds (v2 224.0f 64.0f) Constants.Gameplay.CharacterSize)]
+                [CharacterModel.make (v4Bounds (v2 -224.0f -168.0f) Constants.Gameplay.CharacterSize) (AllyIndex 0) (Ally Finn) 0 (Some "WoodenSword") (Some "LeatherVest") [] Assets.FinnAnimationSheet Rightward
+                 CharacterModel.make (v4Bounds (v2 224.0f 64.0f) Constants.Gameplay.CharacterSize) (AllyIndex 1) (Ally Glenn) 0 (Some "StoneSword") (Some "LeatherMail") [] Assets.GlennAnimationSheet Leftward]
              let inventory = { Items = Map.ofList [(Consumable GreenHerb, 2); (Consumable RedHerb, 2)] }
              let model = BattleModel.make allies inventory 100 DebugBattle 0L
              model)

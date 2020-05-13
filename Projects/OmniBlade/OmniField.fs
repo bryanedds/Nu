@@ -108,5 +108,5 @@ module OmniField =
                             | (true, depth) -> Constants.Field.ForgroundDepth + scvalue depth
                             | (false, _) -> Constants.Field.ForgroundDepth
                         let propData = scvalue<PropData> object.Type
-                        let propModel = PropModel.make propData propBounds propDepth
+                        let propModel = PropModel.make propBounds propDepth propData
                         Content.entity<PropDispatcher> object.Name [Entity.PropModel == propModel])]]
