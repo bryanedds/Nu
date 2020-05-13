@@ -264,12 +264,12 @@ type ShopkeepData =
       ShopkeepFarewell : string list }
 
 type PropData =
-    | Chest of ChestType * LockType * ItemType
-    | Door of DoorType * LockType
+    | Chest of ItemType * LockType * ChestType * Guid
+    | Door of LockType * DoorType
     | Portal // leads to a different field
     | Switch // anything the can affect another thing on the field through interaction
     | Sensor // anything the can affect another thing on the field through traversal
-    | Npc of Direction * Dialog
+    | Npc of Dialog * Direction
     | Shopkeep of ShopkeepType
 
 type FieldData =

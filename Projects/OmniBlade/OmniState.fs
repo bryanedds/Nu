@@ -5,13 +5,15 @@ open Prime
 open Nu
 
 type [<CustomEquality; CustomComparison>] Advent =
+    | OpenedChest of Guid
+    | KilledFinalBoss
     | SavedPrincess
-    | FoughtBaddie of bool
 
     member private this.ToInt () =
         match this with
-        | SavedPrincess -> 0
-        | FoughtBaddie _ -> 1
+        | OpenedChest guid -> hash guid
+        | KilledFinalBoss -> 1
+        | SavedPrincess -> 2
 
     override this.GetHashCode () =
         let rand = Rand.makeFromInt (this.ToInt ())

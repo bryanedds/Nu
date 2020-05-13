@@ -12,6 +12,7 @@ module OmniField =
 
     type [<NoComparison>] FieldMessage =
         | AvatarChanged of AvatarModel
+        | Interact
 
     type FieldCommand =
         | FadeSong
@@ -45,15 +46,31 @@ module OmniField =
                 [cmd (Move force)]
              field.PostUpdateEvent => [cmd EyeTrack]
              field.OutgoingStartEvent => [cmd FadeSong]
-             Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt ->
-                let avatarModel = evt.Data.Value :?> AvatarModel
-                [msg (AvatarChanged avatarModel)]]
+             Simulants.FieldInteract.ClickEvent => [msg Interact]
+             Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt -> [msg (AvatarChanged (evt.Data.Value :?> AvatarModel))]]
 
-        override this.Message (model, message, _, _) =
+        override this.Message (model, message, _, world) =
 
             match message with
             | AvatarChanged avatarModel ->
                 let model = FieldModel.updateAvatar (constant avatarModel) model
+                just model
+
+            | Interact ->
+                let model =
+                    match model.Avatar.IntersectedBodyShapes with
+                    | head :: _ ->
+                        if head.SourceEntity.Is<PropDispatcher> world then
+                            let propModel = head.SourceEntity.GetPropModel world
+                            match propModel.PropData with
+                            | Chest (itemType, lockType, chestType, chestId) ->
+                                // TODO: open chest
+                                // TODO: update inventory
+                                // TODO: update advents
+                                model
+                            | _ -> model
+                        else model
+                    | [] -> model
                 just model
 
         override this.Command (_, command, _, world) =
@@ -126,9 +143,12 @@ module OmniField =
                         let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
                         let propBounds = v4Bounds propPosition Constants.Gameplay.TileSize
                         let propDepth =
-                            match group.Properties.TryGetValue Constants.Physics.DepthProperty with
-                            | (true, depth) -> Constants.Field.ForgroundDepth + scvalue depth
+                            match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
+                            | (true, depthStr) -> Constants.Field.ForgroundDepth + scvalue depthStr
                             | (false, _) -> Constants.Field.ForgroundDepth
-                        let propData = scvalue<PropData> object.Type
+                        let propData =
+                            match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
+                            | (true, propDataStr) -> scvalue<PropData> propDataStr
+                            | (false, _) -> Chest (Consumable GreenHerb, Unlocked, WoodenChest, Gen.idEmpty)
                         let propModel = PropModel.make propBounds propDepth propData
                         Content.entity<PropDispatcher> object.Name [Entity.PropModel == propModel])]]
