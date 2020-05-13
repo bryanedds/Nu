@@ -14,20 +14,27 @@ module FieldModel =
     type [<ReferenceEquality; NoComparison>] FieldModel =
         private
             { FieldType_ : FieldType
+              AvatarModel_ : AvatarModel
               Legion_ : Map<int, Legionnaire>
               Advents_ : Set<Advent>
               Inventory_ : Inventory
               Gold_ : int }
 
+        (* Local Properties *)
         member this.FieldType = this.FieldType_
+        member this.Avatar = this.AvatarModel_
 
         static member getPartyMembers fieldModel =
             Map.filter
                 (fun _ legionnaire -> Option.isSome legionnaire.PartyIndexOpt)
                 fieldModel.Legion_
 
-        static member make fieldType legion advents inventory gold =
+        static member updateAvatar updater fieldModel =
+            { fieldModel with AvatarModel_ = updater fieldModel.AvatarModel_ }
+
+        static member make fieldType avatarModel legion advents inventory gold =
             { FieldType_ = fieldType
+              AvatarModel_ = avatarModel
               Legion_ = legion
               Advents_ = advents
               Inventory_ = inventory

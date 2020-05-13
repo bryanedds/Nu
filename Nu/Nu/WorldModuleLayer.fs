@@ -121,7 +121,7 @@ module WorldModuleLayer =
         static member internal setLayerScriptFrame value layer world = World.updateLayerState (fun layerState -> if value <> layerState.ScriptFrame then Some { layerState with ScriptFrame = value } else None) Property? ScriptFrame value layer world
         static member internal getLayerName layer world = (World.getLayerState layer world).Name
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
-        
+
         static member internal tryGetLayerProperty propertyName layer world =
             if World.getLayerExists layer world then
                 match Getters.TryGetValue propertyName with
