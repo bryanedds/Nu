@@ -5,13 +5,13 @@ open Prime
 open Nu
 
 type [<CustomEquality; CustomComparison>] Advent =
-    | OpenedChest of Guid
+    | Opened of Guid
     | KilledFinalBoss
     | SavedPrincess
 
     member private this.ToInt () =
         match this with
-        | OpenedChest guid -> hash guid
+        | Opened guid -> hash guid
         | KilledFinalBoss -> 1
         | SavedPrincess -> 2
 
@@ -58,6 +58,13 @@ type Inventory =
         match Map.tryFind item inventory.Items with
         | Some itemCount when itemCount > 0 -> true
         | _ -> false
+
+    static member addItem item inventory =
+        match Map.tryFind item inventory.Items with
+        | Some itemCount ->
+            { inventory with Items = Map.add item (inc itemCount) inventory.Items }
+        | None ->
+            { inventory with Items = Map.add item 1 inventory.Items }
 
     static member removeItem item inventory =
         match Map.tryFind item inventory.Items with

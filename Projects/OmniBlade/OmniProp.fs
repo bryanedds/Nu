@@ -18,7 +18,7 @@ module PropDispatcherModule =
 
     type PropDispatcher () =
         inherit EntityDispatcher<PropModel, PropMessage, unit>
-            (PropModel.make (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f (Chest (Consumable GreenHerb, Unlocked, WoodenChest, Gen.idEmpty)))
+            (PropModel.make (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f Set.empty (Chest (Consumable GreenHerb, Unlocked, WoodenChest, Gen.idEmpty)))
 
         static member Facets =
             [typeof<RigidBodyFacet>]
@@ -33,7 +33,7 @@ module PropDispatcherModule =
 
         override this.Initializers (model, entity, _) =
             [entity.Bounds <== model --> fun model -> model.Bounds
-             entity.IsSensor <== model --> fun model -> match model.PropData with Sensor -> true | _ -> false
+             entity.IsSensor <== model --> fun model -> match model.Props with Sensor -> true | _ -> false
              entity.BodyType == Static
              entity.LinearDamping == 0.0f
              entity.GravityScale == 0.0f]
@@ -50,11 +50,17 @@ module PropDispatcherModule =
         override this.View (model, entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
                 let image =
-                    match model.PropData with
-                    | Chest (_, _, chestType, _) ->
+                    match model.Props with
+                    | Chest (_, _, chestType, chestId) ->
                         match chestType with
-                        | WoodenChest -> Assets.WoodenChestImage
-                        | BrassChest -> Assets.BrassChestImage
+                        | WoodenChest ->
+                            if Set.contains (Opened chestId) model.Advents
+                            then Assets.WoodenChestImageOpened
+                            else Assets.WoodenChestImageClosed
+                        | BrassChest ->
+                            if Set.contains (Opened chestId) model.Advents
+                            then Assets.BrassChestImageOpened
+                            else Assets.BrassChestImageClosed
                     | _ -> Assets.CancelImage
                 [Render
                     (LayerableDescriptor
