@@ -20,8 +20,8 @@ open TiledSharp
 open Prime
 open Nu
 
-/// The data needed to describe a Tiled tile.
-type [<StructuralEquality; NoComparison>] TileData =
+/// Describes a Tiled tile.
+type [<StructuralEquality; NoComparison>] TileDescriptor =
     { Tile : TmxLayerTile
       I : int
       J : int
@@ -31,13 +31,13 @@ type [<StructuralEquality; NoComparison>] TileData =
       TileSetTileOpt : TmxTilesetTile option
       TilePosition : Vector2i }
 
-/// The data needed to describe a Tiled tile map.
-type [<StructuralEquality; NoComparison>] TileMapData =
-    { Map : TmxMap
-      MapSize : Vector2i
-      TileSize : Vector2i
+/// Describes a Tiled tile map.
+type [<StructuralEquality; NoComparison>] TileMapDescriptor =
+    { TileMap : TmxMap
+      TileSizeI : Vector2i
       TileSizeF : Vector2
-      TileMapSize : Vector2i
+      TileMapSizeM : Vector2i
+      TileMapSizeI : Vector2i
       TileMapSizeF : Vector2
       TileSet : TmxTileset
       TileSetSize : Vector2i }
