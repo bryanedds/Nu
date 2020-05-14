@@ -623,36 +623,36 @@ module TileMapFacetModule =
     type TileMapFacet () =
         inherit Facet ()
 
-        let tryMakeTileMapData (tileMapAsset : TileMap AssetTag) world =
+        let tryMakeTileMapDescriptor (tileMapAsset : TileMap AssetTag) world =
             let metadataMap = World.getMetadata world
             match Metadata.tryGetTileMapMetadata tileMapAsset metadataMap with
-            | Some (_, _, map) ->
-                let mapSize = Vector2i (map.Width, map.Height)
-                let tileSize = Vector2i (map.TileWidth, map.TileHeight)
-                let tileSizeF = Vector2 (single tileSize.X, single tileSize.Y)
-                let tileMapSize = Vector2i (mapSize.X * tileSize.X, mapSize.Y * tileSize.Y)
-                let tileMapSizeF = Vector2 (single tileMapSize.X, single tileMapSize.Y)
-                let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
+            | Some (_, _, tileMap) ->
+                let tileSizeI = Vector2i (tileMap.TileWidth, tileMap.TileHeight)
+                let tileSizeF = Vector2 (single tileSizeI.X, single tileSizeI.Y)
+                let tileMapSizeM = Vector2i (tileMap.Width, tileMap.Height)
+                let tileMapSizeI = Vector2i (tileMapSizeM.X * tileSizeI.X, tileMapSizeM.Y * tileSizeI.Y)
+                let tileMapSizeF = Vector2 (single tileMapSizeI.X, single tileMapSizeI.Y)
+                let tileSet = tileMap.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
                 let tileSetSize =
                     let tileSetWidthOpt = tileSet.Image.Width
                     let tileSetHeightOpt = tileSet.Image.Height
-                    Vector2i (tileSetWidthOpt.Value / tileSize.X, tileSetHeightOpt.Value / tileSize.Y)
-                Some { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
+                    Vector2i (tileSetWidthOpt.Value / tileSizeI.X, tileSetHeightOpt.Value / tileSizeI.Y)
+                Some { TileMap = tileMap; TileMapSizeM = tileMapSizeM; TileSizeI = tileSizeI; TileSizeF = tileSizeF; TileMapSizeI = tileMapSizeI; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
             | None -> None
 
-        let makeTileData (tm : Entity) tmd (tl : TmxLayer) tileIndex world =
-            let mapRun = tmd.MapSize.X
+        let makeTileDescriptor (tm : Entity) tmd (tl : TmxLayer) tileIndex world =
+            let tileMapRun = tmd.TileMapSizeM.X
             let tileSetRun = tmd.TileSetSize.X
-            let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
+            let (i, j) = (tileIndex % tileMapRun, tileIndex / tileMapRun)
             let tile = tl.Tiles.[tileIndex]
             let gid = tile.Gid - tmd.TileSet.FirstGid
-            let gidPosition = gid * tmd.TileSize.X
+            let gidPosition = gid * tmd.TileSizeI.X
             let gid2 = Vector2i (gid % tileSetRun, gid / tileSetRun)
             let tileMapPosition = tm.GetPosition world
             let tilePosition =
                 Vector2i
-                    (int tileMapPosition.X + tmd.TileSize.X * i,
-                     int tileMapPosition.Y - tmd.TileSize.Y * (j + 1)) // subtraction for right-handedness
+                    (int tileMapPosition.X + tmd.TileSizeI.X * i,
+                     int tileMapPosition.Y - tmd.TileSizeI.Y * (j + 1)) // subtraction for right-handedness
             let tileSetTileOpt =
                 match tmd.TileSet.Tiles.TryGetValue (tile.Gid - 1) with
                 | (true, tile) -> Some tile
@@ -660,12 +660,12 @@ module TileMapFacetModule =
             { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; TileSetTileOpt = tileSetTileOpt }
 
         let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr world =
-            let tileShape = World.localizeBodyShape (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr world
+            let tileShape = World.localizeBodyShape (Vector2 (single tmd.TileSizeI.X, single tmd.TileSizeI.Y)) cexpr world
             { BodyId = Gen.idFromInts tli ti
               Position =
                 Vector2
-                    (single (td.TilePosition.X + tmd.TileSize.X / 2),
-                     single (td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y))
+                    (single (td.TilePosition.X + tmd.TileSizeI.X / 2),
+                     single (td.TilePosition.Y + tmd.TileSizeI.Y / 2 + tmd.TileMapSizeI.Y))
               Rotation = tm.GetRotation world
               BodyShape = tileShape
               BodyType = BodyType.Static
@@ -686,7 +686,7 @@ module TileMapFacetModule =
               IsSensor = false }
 
         let getTileBodyProperties tm tmd (tl : TmxLayer) tli ti world =
-            let td = makeTileData tm tmd tl ti world
+            let td = makeTileDescriptor tm tmd tl ti world
             match td.TileSetTileOpt with
             | Some tileSetTile ->
                 match tileSetTile.Properties.TryGetValue Constants.TileMap.CollisionPropertyName with
@@ -700,24 +700,24 @@ module TileMapFacetModule =
                 | (false, _) -> None
             | None -> None
 
-        let getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex (tileLayer : TmxLayer) world =
+        let getTileLayerBodyPropertyList tileMap tileMapDescriptor tileLayerIndex (tileLayer : TmxLayer) world =
             Seq.foldi
                 (fun i bodyPropertyList _ ->
-                    match getTileBodyProperties tileMap tileMapData tileLayer tileLayerIndex i world with
+                    match getTileBodyProperties tileMap tileMapDescriptor tileLayer tileLayerIndex i world with
                     | Some bodyProperties -> bodyProperties :: bodyPropertyList
                     | None -> bodyPropertyList)
                 [] tileLayer.Tiles |>
             Seq.toList
 
-        let registerTileLayerPhysics (tileMap : Entity) tileMapData tileLayerIndex world tileLayer =
-            let bodyPropertyList = getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex tileLayer world
+        let registerTileLayerPhysics (tileMap : Entity) tileMapDescriptor tileLayerIndex world tileLayer =
+            let bodyPropertyList = getTileLayerBodyPropertyList tileMap tileMapDescriptor tileLayerIndex tileLayer world
             World.createBodies tileMap (tileMap.GetId world) bodyPropertyList world
 
-        let getTileLayerPhysicsIds (tileMap : Entity) tileMapData tileLayer tileLayerIndex world =
+        let getTileLayerPhysicsIds (tileMap : Entity) tileMapDescriptor tileLayer tileLayerIndex world =
             Seq.foldi
                 (fun tileIndex physicsIds _ ->
-                    let tileData = makeTileData tileMap tileMapData tileLayer tileIndex world
-                    match tileData.TileSetTileOpt with
+                    let tileDescriptor = makeTileDescriptor tileMap tileMapDescriptor tileLayer tileIndex world
+                    match tileDescriptor.TileSetTileOpt with
                     | Some tileSetTile ->
                         if tileSetTile.Properties.ContainsKey Constants.TileMap.CollisionPropertyName then
                             let physicsId = { SourceId = tileMap.GetId world; CorrelationId = Gen.idFromInts tileLayerIndex tileIndex }
@@ -739,26 +739,26 @@ module TileMapFacetModule =
 
         override this.RegisterPhysics (tileMap, world) =
             let tileMapAsset = tileMap.GetTileMapAsset world
-            match tryMakeTileMapData tileMapAsset world with
-            | Some tileMapData ->
+            match tryMakeTileMapDescriptor tileMapAsset world with
+            | Some tileMapDescriptor ->
                 Seq.foldi
-                    (registerTileLayerPhysics tileMap tileMapData)
+                    (registerTileLayerPhysics tileMap tileMapDescriptor)
                     world
-                    tileMapData.Map.Layers
+                    tileMapDescriptor.TileMap.Layers
             | None ->
                 Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
                 world
 
         override this.UnregisterPhysics (tileMap, world) =
             let tileMapAsset = tileMap.GetTileMapAsset world
-            match tryMakeTileMapData tileMapAsset world with
-            | Some tileMapData ->
+            match tryMakeTileMapDescriptor tileMapAsset world with
+            | Some tileMapDescriptor ->
                 Seq.foldi
                     (fun tileLayerIndex world (tileLayer : TmxLayer) ->
-                        let physicsIds = getTileLayerPhysicsIds tileMap tileMapData tileLayer tileLayerIndex world
+                        let physicsIds = getTileLayerPhysicsIds tileMap tileMapDescriptor tileLayer tileLayerIndex world
                         World.destroyBodies physicsIds world)
                     world
-                    tileMapData.Map.Layers
+                    tileMapDescriptor.TileMap.Layers
             | None ->
                 Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
                 world
