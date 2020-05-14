@@ -101,10 +101,10 @@ type [<StructuralEquality; NoComparison>] RenderDescriptor =
 
 /// A message to the rendering system.
 type [<StructuralEquality; NoComparison>] RenderMessage =
-    | RenderDescriptorMessage of renderDescriptorMessage : RenderDescriptor
-    | RenderDescriptorsMessage of renderDescriptorsMessage : RenderDescriptor array
-    | HintRenderPackageUseMessage of hintRenderPackageUseMessage : string
-    | HintRenderPackageDisuseMessage of hintRenderPackageDisuseMessage : string
+    | RenderDescriptorMessage of RenderDescriptor
+    | RenderDescriptorsMessage of RenderDescriptor array
+    | HintRenderPackageUseMessage of string
+    | HintRenderPackageDisuseMessage of string
     | ReloadRenderAssetsMessage
     //| ScreenFlashMessage of ...
 

@@ -146,10 +146,10 @@ module WorldScreenModule =
 
         /// Set the dissolve properties of a screen.
         [<FunctionBinding>]
-        static member setScreenDissolve dissolveData playSongOpt (screen : Screen) world =
+        static member setScreenDissolve dissolveData songOpt (screen : Screen) world =
             let dissolveImageOpt = Some dissolveData.DissolveImage
-            let world = screen.SetIncoming { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; DissolveImageOpt = dissolveImageOpt; PlaySongOpt = playSongOpt } world
-            let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; DissolveImageOpt = dissolveImageOpt; PlaySongOpt = playSongOpt } world
+            let world = screen.SetIncoming { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; DissolveImageOpt = dissolveImageOpt; SongOpt = songOpt } world
+            let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; DissolveImageOpt = dissolveImageOpt; SongOpt = songOpt } world
             world
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
@@ -203,9 +203,9 @@ module WorldScreenModule =
 
         /// Create a screen with a dissolving transition, and add it to the world.
         [<FunctionBinding "createDissolveScreen">]
-        static member createDissolveScreen5 dispatcherName nameOpt dissolveData playSongOpt world =
+        static member createDissolveScreen5 dispatcherName nameOpt dissolveData songOpt world =
             let (screen, world) = World.createScreen3 dispatcherName nameOpt world
-            let world = World.setScreenDissolve dissolveData playSongOpt screen world
+            let world = World.setScreenDissolve dissolveData songOpt screen world
             (screen, world)
         
         /// Create a screen with a dissolving transition, and add it to the world.
@@ -264,7 +264,7 @@ module WorldScreenModule =
         static member applyScreenBehavior setScreenSplash behavior (screen : Screen) world =
             match behavior with
             | Vanilla -> (screen, world)
-            | Dissolve (dissolveData, playSongOpt) -> (screen, World.setScreenDissolve dissolveData playSongOpt screen world)
+            | Dissolve (dissolveData, songOpt) -> (screen, World.setScreenDissolve dissolveData songOpt screen world)
             | Splash (dissolveData, splashData, destination) ->
                 let world = World.setScreenDissolve dissolveData None screen world
                 let world = setScreenSplash (Some splashData) destination screen world

@@ -229,7 +229,7 @@ module WorldModule2 =
                     let world =
                         if selectedScreen.GetTransitionTicks world = 0L then
                             let world =
-                                match (selectedScreen.GetIncoming world).PlaySongOpt with
+                                match (selectedScreen.GetIncoming world).SongOpt with
                                 | Some playSong -> World.playSong playSong.FadeOutMs playSong.Volume playSong.Song world
                                 | None -> world
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
@@ -249,7 +249,7 @@ module WorldModule2 =
                 let world =
                     if selectedScreen.GetTransitionTicks world = 0L then
                         let world =
-                            match (selectedScreen.GetOutgoing world).PlaySongOpt with
+                            match (selectedScreen.GetOutgoing world).SongOpt with
                             | Some playSong -> World.fadeOutSong playSong.FadeOutMs world
                             | None -> world
                         let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
@@ -316,15 +316,15 @@ module WorldModule2 =
 
         /// Create a dissolve screen whose content is loaded from the given layer file.
         [<FunctionBinding>]
-        static member createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData playSongOpt layerFilePath world =
-            let (dissolveScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt dissolveData playSongOpt world
+        static member createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData songOpt layerFilePath world =
+            let (dissolveScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt dissolveData songOpt world
             let world = World.readLayerFromFile layerFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
         /// Create a dissolve screen whose content is loaded from the given layer file.
         [<FunctionBinding>]
-        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveData playSongOpt layerFilePath world =
-            World.createDissolveScreenFromLayerFile6 typeof<'d>.Name nameOpt dissolveData layerFilePath playSongOpt world
+        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveData songOpt layerFilePath world =
+            World.createDissolveScreenFromLayerFile6 typeof<'d>.Name nameOpt dissolveData layerFilePath songOpt world
 
         /// Create a splash screen that transitions to the given destination upon completion.
         [<FunctionBinding>]
