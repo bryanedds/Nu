@@ -230,7 +230,7 @@ module WorldModule2 =
                         if selectedScreen.GetTransitionTicks world = 0L then
                             let world =
                                 match (selectedScreen.GetIncoming world).PlaySongOpt with
-                                | Some playSong -> World.playSong playSong.TimeToFadeOutSongMs playSong.Volume playSong.Song world
+                                | Some playSong -> World.playSong playSong.FadeOutMs playSong.Volume playSong.Song world
                                 | None -> world
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
                             World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
@@ -250,7 +250,7 @@ module WorldModule2 =
                     if selectedScreen.GetTransitionTicks world = 0L then
                         let world =
                             match (selectedScreen.GetOutgoing world).PlaySongOpt with
-                            | Some playSong -> World.fadeOutSong playSong.TimeToFadeOutSongMs world
+                            | Some playSong -> World.fadeOutSong playSong.FadeOutMs world
                             | None -> world
                         let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                         World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world

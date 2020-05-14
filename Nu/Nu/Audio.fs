@@ -14,7 +14,7 @@ type Audio = private { __ : unit }
 
 /// A message to the audio system to play a song.
 type [<StructuralEquality; NoComparison>] PlaySongMessage =
-    { TimeToFadeOutSongMs : int
+    { FadeOutMs : int
       Volume : single
       Song : Audio AssetTag }
 

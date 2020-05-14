@@ -652,7 +652,7 @@ module OmniBattle =
 
             match command with
             | FadeSong ->
-                let world = World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
+                let world = World.fadeOutSong Constants.Audio.DefaultFadeOutMs world
                 just world
 
             | PlaySound (delay, volume, sound) ->
