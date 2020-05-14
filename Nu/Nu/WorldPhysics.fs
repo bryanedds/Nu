@@ -29,7 +29,7 @@ module WorldPhysicsModule =
                               Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed }
                         let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
-                        World.publish collisionData collisionAddress eventTrace Default.Game world
+                        World.publish collisionData collisionAddress eventTrace Simulants.Game world
                     else world
                 | BodySeparationMessage bodySeparationMessage ->
                     let entity = bodySeparationMessage.BodyShapeSource.SourceSimulant :?> Entity
@@ -39,7 +39,7 @@ module WorldPhysicsModule =
                             { Separator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
                               Separatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2  }
                         let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
-                        World.publish separationData separationAddress eventTrace Default.Game world
+                        World.publish separationData separationAddress eventTrace Simulants.Game world
                     else world
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
@@ -57,7 +57,7 @@ module WorldPhysicsModule =
                     let transformAddress = Events.Transform --> entity.EntityAddress
                     let transformData = { BodySource = BodySource.fromInternal bodySource; Position = position; Rotation = rotation }
                     let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
-                    World.publish transformData transformAddress eventTrace Default.Game world
+                    World.publish transformData transformAddress eventTrace Simulants.Game world
             | Exiting -> world
 
         member this.BodyExists physicsId = this.PhysicsEngine.BodyExists physicsId

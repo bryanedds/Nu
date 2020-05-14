@@ -43,10 +43,10 @@ module BlazeDispatcherModule =
         override this.Content (_, _) =
             let playMachinery = { Volume = Constants.Audio.DefaultSongVolume; TimeToFadeOutSongMs = Constants.Audio.DefaultTimeToFadeOutSongMs; Song = Assets.MachinerySong }
             let playDeadBlaze = { Volume = 0.5f (* turn up song's volume! *); TimeToFadeOutSongMs = Constants.Audio.DefaultTimeToFadeOutSongMs; Song = Assets.DeadBlazeSong }
-            [Content.screen Simulants.Splash.Name (Splash (Default.DissolveData, Default.SplashData, Simulants.Title)) [] []
-             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Default.DissolveData, Some playMachinery)) Assets.TitleLayerFilePath
-             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Default.DissolveData, Some playMachinery)) Assets.CreditsLayerFilePath
-             Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Default.DissolveData, (Some playDeadBlaze))) Assets.GameplayLayerFilePath]
+            [Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, Simulants.Title)) [] []
+             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, Some playMachinery)) Assets.TitleLayerFilePath
+             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, Some playMachinery)) Assets.CreditsLayerFilePath
+             Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, (Some playDeadBlaze))) Assets.GameplayLayerFilePath]
 
         // here we hint to the renderer and audio system that the 'Gui' package should be loaded
         override this.Register (game, world) =

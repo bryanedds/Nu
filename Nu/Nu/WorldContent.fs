@@ -70,7 +70,7 @@ module Content =
 
     /// Describe a layer to be streamed when a screen is selected.
     let layerIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> LayerContent) =
-        layerIf (Default.Game.SelectedScreenOpt --> fun screenOpt -> screenOpt = Some screen) mapper
+        layerIf (Simulants.Game.SelectedScreenOpt --> fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe a layer to be loaded from a file.
     let layerFromFile<'d when 'd :> LayerDispatcher> layerName filePath =
@@ -120,7 +120,7 @@ module Content =
 
     /// Describe an entity to be streamed when a screen is selected.
     let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> EntityContent) =
-        entityIf (Default.Game.SelectedScreenOpt --> fun screenOpt -> screenOpt = Some screen) mapper
+        entityIf (Simulants.Game.SelectedScreenOpt --> fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =

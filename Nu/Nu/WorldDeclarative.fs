@@ -8,7 +8,7 @@ open Nu
 
 /// Describes the behavior of a screen.
 type [<NoComparison>] ScreenBehavior =
-    | Vanilla of PlaySongMessage option
+    | Vanilla
     | Dissolve  of DissolveData * PlaySongMessage option
     | Splash of DissolveData * SplashData * Screen
     | OmniScreen
@@ -222,4 +222,4 @@ module WorldDeclarative =
         /// Turn an entity stream into a series of live simulants.
         static member expandSimulantStream (lens : Lens<obj, World>) indexerOpt mapper origin parent world =
             World.streamSimulants lens indexerOpt mapper origin parent |>
-            Stream.subscribe (fun _ value -> value) Default.Game $ world
+            Stream.subscribe (fun _ value -> value) Simulants.Game $ world

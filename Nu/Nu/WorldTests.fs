@@ -11,8 +11,8 @@ module WorldTests =
     let TestValueKey = scstring Gen.id
     let TestFilePath = "TestFile.nugame"
     let StringEvent = stoa<string> "String/Event"
-    let Jim = Default.Layer / "Jim"
-    let Bob = Default.Layer / "Bob"
+    let Jim = Simulants.DefaultLayer / "Jim"
+    let Bob = Simulants.DefaultLayer / "Bob"
 
     let [<Fact>] runOneFrameThenCleanUp () =
         let worldConfig = WorldConfig.defaultConfig
@@ -22,14 +22,14 @@ module WorldTests =
     let [<Fact>] entitySubscribeWorks () =
         let world = World.makeDefault ()
         let handleEvent = fun evt world -> World.addKeyedValue TestValueKey evt.Subscriber world
-        let world = World.subscribe handleEvent StringEvent Default.Entity world
-        let world = World.publish String.Empty StringEvent EventTrace.empty Default.Game world
-        Assert.Equal<Simulant> (Default.Entity :> Simulant, World.getKeyedValue TestValueKey world)
+        let world = World.subscribe handleEvent StringEvent Simulants.DefaultEntity world
+        let world = World.publish String.Empty StringEvent EventTrace.empty Simulants.Game world
+        Assert.Equal<Simulant> (Simulants.DefaultEntity :> Simulant, World.getKeyedValue TestValueKey world)
 
     let [<Fact>] iterativeFrpWorks () =
         let world = World.makeDefault ()
-        let world = World.createEntity (Some Jim.Name) DefaultOverlay Default.Layer world |> snd
-        let world = World.createEntity (Some Bob.Name) DefaultOverlay Default.Layer world |> snd
+        let world = World.createEntity (Some Jim.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
+        let world = World.createEntity (Some Bob.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
         let world = !-- Bob.Visible --- Stream.map not -|> Jim.Visible $ world
         let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
@@ -37,8 +37,8 @@ module WorldTests =
 
     let [<Fact>] iterativeFrpCyclicWorks () =
         let world = World.makeDefault ()
-        let world = World.createEntity (Some Jim.Name) DefaultOverlay Default.Layer world |> snd
-        let world = World.createEntity (Some Bob.Name) DefaultOverlay Default.Layer world |> snd
+        let world = World.createEntity (Some Jim.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
+        let world = World.createEntity (Some Bob.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
         let world = !-- Bob.Visible -/> Jim.Visible $ world
         let world = !-- Jim.Visible -|> Bob.Visible $ world
         let world = Bob.SetVisible false world

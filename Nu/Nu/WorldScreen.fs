@@ -113,7 +113,7 @@ module WorldScreenModule =
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update --> screen) eventTrace Default.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update --> screen) eventTrace Simulants.Game true world)
                 screen
                 world
 
@@ -126,7 +126,7 @@ module WorldScreenModule =
 
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate --> screen) eventTrace Default.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate --> screen) eventTrace Simulants.Game true world)
                 screen
                 world
 
@@ -263,7 +263,7 @@ module WorldScreenModule =
         /// Apply a screen behavior to a screen.
         static member applyScreenBehavior setScreenSplash behavior (screen : Screen) world =
             match behavior with
-            | Vanilla playSongOpt -> (screen, world)
+            | Vanilla -> (screen, world)
             | Dissolve (dissolveData, playSongOpt) -> (screen, World.setScreenDissolve dissolveData playSongOpt screen world)
             | Splash (dissolveData, splashData, destination) ->
                 let world = World.setScreenDissolve dissolveData None screen world

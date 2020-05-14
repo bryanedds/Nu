@@ -107,7 +107,7 @@ module BattleModel =
     let removeCharacter index (model : BattleModel) =
         { model with Characters = Map.remove index model.Characters }
 
-    let updateCharactersIf predicate updater model =
+    let updateCharactersIf predicate updater (model : BattleModel) =
         { model with Characters = Map.map (fun index character -> if predicate index then updater character else character) model.Characters }
 
     let updateCharacters updater model =

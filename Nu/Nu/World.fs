@@ -181,7 +181,7 @@ module Nu =
                             let world = handler data.Value world
                             (Cascade, world))
                         (rtoa (Array.append [|"Change"; propertyName; "Event"|] (Address.getNames simulant.SimulantAddress)))
-                        (Default.Game :> Simulant)
+                        (Simulants.Game :> Simulant)
                         (world :?> World)
                 (box unsubscribe, box world)
 
@@ -402,7 +402,7 @@ module WorldModule3 =
                 let eventTracer = Log.remark "Event"
                 let eventTracing = Core.getEventTracing ()
                 let eventFilter = Core.getEventFilter ()
-                let globalSimulant = Default.Game
+                let globalSimulant = Simulants.Game
                 let globalSimulantGeneralized = { GpgAddress = atoa globalSimulant.GameAddress }
                 EventSystemDelegate.make eventTracer eventTracing eventFilter globalSimulant globalSimulantGeneralized
 
@@ -444,8 +444,8 @@ module WorldModule3 =
             let world = World.make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree (snd defaultGameDispatcher)
             
             // subscribe to subscribe and unsubscribe events
-            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Default.Game world
-            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Default.Game world
+            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
+            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Simulants.Game world
 
             // finally, register the game
             World.registerGame world
@@ -454,9 +454,9 @@ module WorldModule3 =
         static member makeDefault () =
             let worldConfig = WorldConfig.defaultConfig
             let world = World.makeEmpty worldConfig
-            let world = World.createScreen (Some Default.Screen.Name) world |> snd
-            let world = World.createLayer (Some Default.Layer.Name) Default.Screen world |> snd
-            let world = World.createEntity (Some Default.Entity.Name) DefaultOverlay Default.Layer world |> snd
+            let world = World.createScreen (Some Simulants.DefaultScreen.Name) world |> snd
+            let world = World.createLayer (Some Simulants.DefaultLayer.Name) Simulants.DefaultScreen world |> snd
+            let world = World.createEntity (Some Simulants.DefaultEntity.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
             world
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
@@ -475,7 +475,7 @@ module WorldModule3 =
                     let eventTracer = Log.remark "Event"
                     let eventTracing = Core.getEventTracing ()
                     let eventFilter = Core.getEventFilter ()
-                    let globalSimulant = Default.Game
+                    let globalSimulant = Simulants.Game
                     let globalSimulantGeneralized = { GpgAddress = atoa globalSimulant.GameAddress }
                     EventSystemDelegate.make eventTracer eventTracing eventFilter globalSimulant globalSimulantGeneralized
                     
@@ -551,8 +551,8 @@ module WorldModule3 =
                     let world = List.fold (fun world (key, value) -> World.addKeyedValue key value world) world kvps
 
                     // subscribe to subscribe and unsubscribe events
-                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Default.Game world
-                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Default.Game world
+                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
+                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Simulants.Game world
 
                     // try to load the prelude for the scripting language
                     match World.tryEvalPrelude world with

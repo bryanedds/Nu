@@ -98,7 +98,7 @@ module WorldLayerModule =
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update --> layer) eventTrace Default.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update --> layer) eventTrace Simulants.Game true world)
                 layer
                 world
 
@@ -111,7 +111,7 @@ module WorldLayerModule =
 
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate --> layer) eventTrace Default.Game true world)
+                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate --> layer) eventTrace Simulants.Game true world)
                 layer
                 world
 

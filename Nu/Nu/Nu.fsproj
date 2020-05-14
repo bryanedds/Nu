@@ -87,6 +87,7 @@
     <Compile Include="Subsystems.fs" />
     <Compile Include="AmbientState.fs" />
     <Compile Include="WorldTypes.fs" />
+    <Compile Include="WorldConstants.fs" />
     <Compile Include="WorldEvents.fs" />
     <Compile Include="WorldDescriptive.fs" />
     <Compile Include="WorldModule.fs" />

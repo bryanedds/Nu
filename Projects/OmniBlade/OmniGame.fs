@@ -62,15 +62,17 @@ module OmniGame =
             just world
 
         override this.Content (model, _) =
+            let playTitleSong = { Volume = Constants.Audio.DefaultSongVolume; TimeToFadeOutSongMs = Constants.Audio.DefaultTimeToFadeOutSongMs; Song = Assets.TitleSong }
+            let playBattleSong = { Volume = Constants.Audio.DefaultSongVolume; TimeToFadeOutSongMs = Constants.Audio.DefaultTimeToFadeOutSongMs; Song = Assets.BattleSong }
             [Content.screen Simulants.Splash.Name (Splash (Constants.OmniBlade.DissolveData, Constants.OmniBlade.SplashData, Simulants.Title)) [] []
-             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.OmniBlade.DissolveData, None)) Assets.TitleLayerFilePath
-             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.OmniBlade.DissolveData, None)) Assets.CreditsLayerFilePath
+             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.OmniBlade.DissolveData, (Some playTitleSong))) Assets.TitleLayerFilePath
+             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.OmniBlade.DissolveData, (Some playTitleSong))) Assets.CreditsLayerFilePath
              Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.OmniBlade.DissolveData, None))
                 [Screen.FieldModel <== model --> fun model ->
                     match model with
                     | Title | Credits -> FieldModel.empty
                     | Gameplay (fieldModel, _) -> fieldModel] []
-             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.OmniBlade.DissolveData, None))
+             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.OmniBlade.DissolveData, (Some playBattleSong)))
                 [Screen.BattleModel <== model --> fun model ->
                     match model with
                     | Title | Credits -> BattleModel.empty
