@@ -329,7 +329,7 @@ module WorldModule2 =
         /// Create a splash screen that transitions to the given destination upon completion.
         [<FunctionBinding>]
         static member createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world =
-            let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashDescriptor.DissolveData None world
+            let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashDescriptor.DissolveDescriptor None world
             let world = World.setScreenSplash (Some splashDescriptor) destination splashScreen world
             (splashScreen, world)
 

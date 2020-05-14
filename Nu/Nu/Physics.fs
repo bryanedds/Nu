@@ -47,14 +47,14 @@ type [<CustomEquality; NoComparison>] PhysicsId =
 
 /// Store origination information about a simulant physics body.
 type [<NoComparison>] BodySourceInternal =
-    { SourceSimulant : Simulant
-      SourceBodyId : Guid }
+    { Simulant : Simulant
+      BodyId : Guid }
 
 /// Store origination information about a simulant physics shape body.
 type [<NoComparison>] BodyShapeSourceInternal =
-    { SourceSimulant : Simulant
-      SourceBodyId : Guid
-      SourceBodyShapeId : Guid }
+    { Simulant : Simulant
+      BodyId : Guid
+      ShapeId : Guid }
 
 /// Describes body shape-specific properties.
 type BodyShapeProperties =
@@ -526,9 +526,9 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
 
     static member private attachBoxBody sourceSimulant bodyDensity (bodyBox : BodyBox) bodyId body =
         let bodyShapeSource =
-            { SourceSimulant = sourceSimulant
-              SourceBodyId = bodyId
-              SourceBodyShapeId = match bodyBox.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
+            { Simulant = sourceSimulant
+              BodyId = bodyId
+              ShapeId = match bodyBox.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
         let bodyShape =
             Factories.FixtureFactory.AttachRectangle
                 (FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.X * 2.0f),
@@ -543,9 +543,9 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
 
     static member private attachBodyCircle sourceSimulant bodyDensity (bodyCircle : BodyCircle) bodyId body =
         let bodyShapeSource =
-            { SourceSimulant = sourceSimulant
-              SourceBodyId = bodyId
-              SourceBodyShapeId = match bodyCircle.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
+            { Simulant = sourceSimulant
+              BodyId = bodyId
+              ShapeId = match bodyCircle.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
         let bodyShape =
             Factories.FixtureFactory.AttachCircle
                 (FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCircle.Radius,
@@ -559,9 +559,9 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
 
     static member private attachBodyCapsule sourceSimulant bodyDensity (bodyCapsule : BodyCapsule) bodyId body =
         let bodyShapeSource =
-            { SourceSimulant = sourceSimulant
-              SourceBodyId = bodyId
-              SourceBodyShapeId = match bodyCapsule.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
+            { Simulant = sourceSimulant
+              BodyId = bodyId
+              ShapeId = match bodyCapsule.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
         let height = FarseerPhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Height
         let endRadius = FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCapsule.Radius
         let density = bodyDensity
@@ -583,9 +583,9 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
 
     static member private attachBodyPolygon sourceSimulant bodyDensity bodyPolygon bodyId body =
         let bodyShapeSource =
-            { SourceSimulant = sourceSimulant
-              SourceBodyId = bodyId
-              SourceBodyShapeId = match bodyPolygon.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
+            { Simulant = sourceSimulant
+              BodyId = bodyId
+              ShapeId = match bodyPolygon.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
         let vertices =
             bodyPolygon.Vertices |>
             Array.map (fun vertex -> vertex + bodyPolygon.Center) |>
@@ -621,7 +621,7 @@ type [<ReferenceEquality>] FarseerPhysicsEngine =
         // get fields
         let sourceSimulant = createBodyMessage.SourceSimulant
         let bodyProperties = createBodyMessage.BodyProperties
-        let bodySource = { SourceSimulant = sourceSimulant; SourceBodyId = bodyProperties.BodyId }
+        let bodySource = { Simulant = sourceSimulant; BodyId = bodyProperties.BodyId }
 
         // make the body
         let body =

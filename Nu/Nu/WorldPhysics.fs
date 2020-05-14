@@ -20,7 +20,7 @@ module WorldPhysicsModule =
             | Running ->
                 match integrationMessage with
                 | BodyCollisionMessage bodyCollisionMessage ->
-                    let entity = bodyCollisionMessage.BodyShapeSource.SourceSimulant :?> Entity
+                    let entity = bodyCollisionMessage.BodyShapeSource.Simulant :?> Entity
                     if entity.Exists world then
                         let collisionAddress = Events.Collision --> entity.EntityAddress
                         let collisionData =
@@ -32,7 +32,7 @@ module WorldPhysicsModule =
                         World.publish collisionData collisionAddress eventTrace Simulants.Game world
                     else world
                 | BodySeparationMessage bodySeparationMessage ->
-                    let entity = bodySeparationMessage.BodyShapeSource.SourceSimulant :?> Entity
+                    let entity = bodySeparationMessage.BodyShapeSource.Simulant :?> Entity
                     if entity.Exists world then
                         let separationAddress = Events.Separation --> entity.EntityAddress
                         let separationData =
@@ -43,12 +43,12 @@ module WorldPhysicsModule =
                     else world
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
-                    let entity = bodySource.SourceSimulant :?> Entity
+                    let entity = bodySource.Simulant :?> Entity
                     let transform = entity.GetTransform world
                     let position = bodyTransformMessage.Position - transform.Size * 0.5f
                     let rotation = bodyTransformMessage.Rotation
                     let world =
-                        if bodyTransformMessage.BodySource.SourceBodyId = Gen.idEmpty then
+                        if bodyTransformMessage.BodySource.BodyId = Gen.idEmpty then
                             let transform2 = { transform with Position = position; Rotation = rotation }
                             if transform <> transform2
                             then entity.SetTransform transform2 world
