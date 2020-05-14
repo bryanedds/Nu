@@ -9,7 +9,7 @@ open Nu
 /// Describes the behavior of a screen.
 type [<NoComparison>] ScreenBehavior =
     | Vanilla
-    | Dissolve  of DissolveData * PlaySongMessage option
+    | Dissolve  of DissolveData * SongDescriptor option
     | Splash of DissolveData * SplashData * Screen
     | OmniScreen
 

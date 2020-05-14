@@ -12,14 +12,14 @@ open Nu
 /// Audio. Currently just used as a phantom type.
 type Audio = private { __ : unit }
 
-/// A message to the audio system to play a song.
-type [<StructuralEquality; NoComparison>] PlaySongMessage =
+/// Descrides a song.
+type [<StructuralEquality; NoComparison>] SongDescriptor =
     { FadeOutMs : int
       Volume : single
       Song : Audio AssetTag }
 
-/// A message to the audio system to play a sound.
-type [<StructuralEquality; NoComparison>] PlaySoundMessage =
+/// Describes a sound.
+type [<StructuralEquality; NoComparison>] SoundDescriptor =
     { Volume : single
       Sound : Audio AssetTag }
 
@@ -27,8 +27,8 @@ type [<StructuralEquality; NoComparison>] PlaySoundMessage =
 type [<StructuralEquality; NoComparison>] AudioMessage =
     | HintAudioPackageUseMessage of string
     | HintAudioPackageDisuseMessage of string
-    | PlaySoundMessage of PlaySoundMessage
-    | PlaySongMessage of PlaySongMessage
+    | PlaySoundMessage of SoundDescriptor
+    | PlaySongMessage of SongDescriptor
     | FadeOutSongMessage of int
     | StopSongMessage
     | ReloadAudioAssetsMessage
@@ -69,7 +69,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
           AudioPackages : AudioAsset Packages
           mutable AudioMessages : AudioMessage List
-          mutable CurrentSongOpt : PlaySongMessage option }
+          mutable CurrentSongOpt : SongDescriptor option }
 
     static member private haltSound () =
         SDL_mixer.Mix_HaltMusic () |> ignore
