@@ -248,9 +248,9 @@ module Nu =
                 World.setLocalFrame oldLocalFrame world
                 struct (evaleds, world)
 
-            // init isSimulantSelected F# reach-around
-            WorldModule.isSimulantSelected <- fun simulant world ->
-                World.isSimulantSelected simulant world
+            // init isSelected F# reach-around
+            WorldModule.isSelected <- fun simulant world ->
+                World.isSelected simulant world
                 
             // init admitScreenElements F# reach-around
             WorldModule.admitScreenElements <- fun screen world ->

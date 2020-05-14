@@ -8,10 +8,10 @@ open Nu
 
 /// Describes the behavior of a screen.
 type [<NoComparison>] ScreenBehavior =
-    | Vanilla
-    | OmniScreen
-    | Dissolve of DissolveData
+    | Vanilla of PlaySongMessage option
+    | Dissolve  of DissolveData * PlaySongMessage option
     | Splash of DissolveData * SplashData * Screen
+    | OmniScreen
 
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =

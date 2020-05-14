@@ -221,7 +221,7 @@ module WorldGameModule =
         /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omni-screen.
         /// Game is always considered 'selected' as well.
         [<FunctionBinding>]
-        static member isSimulantSelected (simulant : Simulant) world =
+        static member isSelected (simulant : Simulant) world =
             match Address.getNames simulant.SimulantAddress with
             | [||] -> true
             | names ->

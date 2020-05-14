@@ -172,13 +172,16 @@ module WorldEntityModule =
         /// Check that an entity exists in the world.
         member this.Exists world = World.getEntityExists this world
 
+        /// Check that an entity is selected.
+        member this.Selected world = WorldModule.isSelected this world
+
         /// Set an entity's size by its quick size.
         member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
 
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =
             World.withEventContext (fun world ->
-                if WorldModule.isSimulantSelected this world
+                if WorldModule.isSelected this world
                 then World.propagateEntityPhysics this world
                 else world)
                 this world

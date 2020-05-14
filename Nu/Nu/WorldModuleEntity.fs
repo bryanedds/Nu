@@ -488,7 +488,7 @@ module WorldModuleEntity =
                         let world =
                             World.withEventContext (fun world ->
                                 let world = facet.Register (entity, world)
-                                if WorldModule.isSimulantSelected entity world
+                                if WorldModule.isSelected entity world
                                 then facet.UnregisterPhysics (entity, world)
                                 else world)
                                 entity world
@@ -544,7 +544,7 @@ module WorldModuleEntity =
                         let world =
                             World.withEventContext (fun world ->
                                 let world = facet.Register (entity, world)
-                                if WorldModule.isSimulantSelected entity world
+                                if WorldModule.isSelected entity world
                                 then facet.RegisterPhysics (entity, world)
                                 else world)
                                 entity world
@@ -746,7 +746,7 @@ module WorldModuleEntity =
                 let world =
                     Array.fold (fun world (facet : Facet) ->
                         let world = facet.Register (entity, world)
-                        if WorldModule.isSimulantSelected entity world
+                        if WorldModule.isSelected entity world
                         then facet.RegisterPhysics (entity, world)
                         else world)
                         world facets
@@ -764,7 +764,7 @@ module WorldModuleEntity =
                 let world = dispatcher.Unregister (entity, world)
                 Array.fold (fun world (facet : Facet) ->
                     let world = facet.Unregister (entity, world)
-                    if WorldModule.isSimulantSelected entity world
+                    if WorldModule.isSelected entity world
                     then facet.UnregisterPhysics (entity, world)
                     else world)
                     world facets)
@@ -801,7 +801,7 @@ module WorldModuleEntity =
 
                 // mutate entity tree
                 let world =
-                    if WorldModule.isSimulantSelected entity world then
+                    if WorldModule.isSelected entity world then
                         let entityTree =
                             MutantCache.mutateMutant
                                 (fun () -> oldWorld.Dispatchers.RebuildEntityTree oldWorld)
@@ -837,7 +837,7 @@ module WorldModuleEntity =
                 
                 // mutate entity tree if entity is selected
                 let world =
-                    if WorldModule.isSimulantSelected entity world then
+                    if WorldModule.isSelected entity world then
                         let entityTree =
                             MutantCache.mutateMutant
                                 (fun () -> oldWorld.Dispatchers.RebuildEntityTree world)
@@ -934,7 +934,7 @@ module WorldModuleEntity =
                         property entity world)
                     world descriptor.SimulantProperties
             let world =
-                if WorldModule.isSimulantSelected entity world
+                if WorldModule.isSelected entity world
                 then World.propagateEntityPhysics entity world
                 else world
             (entity, world)
@@ -1158,7 +1158,7 @@ module WorldModuleEntity =
         static member internal updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax (entity : Entity) oldWorld world =
 
             // only need to do this when entity is selected
-            if WorldModule.isSimulantSelected entity world then
+            if WorldModule.isSelected entity world then
 
                 // OPTIMIZATION: work with the entity state directly to avoid function call overheads
                 let entityState = World.getEntityState entity world

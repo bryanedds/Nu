@@ -20,8 +20,8 @@ module Stream =
 
     /// Take events from a stream only when the simulant is contained by, or is the same as,
     /// the currently selected screen. Game is always considered 'selected' as well.
-    let [<DebuggerHidden; DebuggerStepThrough>] isSimulantSelected simulant stream =
-        Stream.filterEvent (fun _ -> World.isSimulantSelected simulant) stream
+    let [<DebuggerHidden; DebuggerStepThrough>] isSelected simulant stream =
+        Stream.filterEvent (fun _ -> World.isSelected simulant) stream
 
     /// Take events from a stream only when the currently selected screen is idling (that
     /// is, there is no screen transition in progress).

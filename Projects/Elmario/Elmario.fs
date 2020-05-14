@@ -55,7 +55,7 @@ type ElmarioDispatcher () =
 
     // here we describe the content of the game including elmario, the ground he walks on, and a rock.
     override this.Content (_, _) =
-        [Content.screen Default.Screen.Name Vanilla []
+        [Content.screen Default.Screen.Name (Vanilla None) []
             [Content.layer Default.Layer.Name []
                 [Content.character Simulants.Elmario.Name
                     [Entity.Position == v2 0.0f 0.0f

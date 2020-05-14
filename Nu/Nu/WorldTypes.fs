@@ -36,13 +36,15 @@ type TransitionState =
 type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
     { TransitionType : TransitionType
       TransitionLifetime : int64
-      DissolveImageOpt : Image AssetTag option }
+      DissolveImageOpt : Image AssetTag option
+      PlaySongOpt : PlaySongMessage option }
 
     /// Make a screen transition.
     static member make transitionType =
         { TransitionType = transitionType
           TransitionLifetime = 0L
-          DissolveImageOpt = None }
+          DissolveImageOpt = None
+          PlaySongOpt = None }
 
 /// Describes the behavior of the screen dissolving algorithm.
 type [<StructuralEquality; NoComparison>] DissolveData =
