@@ -1,6 +1,7 @@
 [[ButtonDispatcherRouted
   [ButtonDispatcher]
-  [[ClickSoundOpt [Some [Gui Affirm]]]]]
-[TextDispatcherRouted
+  [[ClickSoundOpt [Some [Gui Affirm]]]
+   [TextColor [1 1 1 1]]]]
+ [TextDispatcherRouted
   [TextDispatcher]
-  [[Color [0.5 0.5 0.5 0.5]]]]]
+  [[TextColor [1 1 1 1]]]]]

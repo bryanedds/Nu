@@ -393,9 +393,9 @@ module TextFacetModule =
         member this.GetJustification world : Justification = this.Get Property? Justification world
         member this.SetJustification (value : Justification) world = this.SetFast Property? Justification false false value world
         member this.Justification = lens Property? Justification this.GetJustification this.SetJustification this
-        member this.GetColor world : Vector4 = this.Get Property? Color world
-        member this.SetColor (value : Vector4) world = this.SetFast Property? Color false false value world
-        member this.Color = lens Property? Color this.GetColor this.SetColor this
+        member this.GetTextColor world : Vector4 = this.Get Property? TextColor world
+        member this.SetTextColor (value : Vector4) world = this.SetFast Property? TextColor false false value world
+        member this.TextColor = lens Property? TextColor this.GetTextColor this.SetTextColor this
 
     type TextFacet () =
         inherit Facet ()
@@ -405,7 +405,7 @@ module TextFacetModule =
              define Entity.Font (AssetTag.make<Font> Assets.DefaultPackageName Assets.DefaultFontName)
              define Entity.Margins Vector2.Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
-             define Entity.Color (Vector4 (0.0f, 0.0f, 0.0f, 1.0f))]
+             define Entity.TextColor (Vector4 (0.0f, 0.0f, 0.0f, 1.0f))]
 
         override this.Actualize (text, world) =
             let textStr = text.GetText world
@@ -423,7 +423,7 @@ module TextFacetModule =
                                       Size = text.GetSize world - text.GetMargins world * 2.0f
                                       ViewType = Absolute
                                       Font = text.GetFont world
-                                      Color = text.GetColor world
+                                      Color = text.GetTextColor world
                                       Justification = text.GetJustification world }}|])
                     world
             else world
