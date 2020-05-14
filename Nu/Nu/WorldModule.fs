@@ -77,7 +77,7 @@ module WorldModule =
         Unchecked.defaultof<_>
 
     /// F# reach-around for checking that a simulant is selected.
-    let mutable internal isSimulantSelected : Simulant -> World -> bool =
+    let mutable internal isSelected : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
     /// F# reach-around for registering physics entities of an entire screen.

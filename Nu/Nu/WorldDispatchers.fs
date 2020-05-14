@@ -490,7 +490,7 @@ module RigidBodyFacetModule =
         inherit Facet ()
 
         static let getBodyShape (entity : Entity) world =
-            World.localizeBodyShape (entity.GetSize world) (entity.GetBodyShape world)
+            World.localizeBodyShape (entity.GetSize world) (entity.GetBodyShape world) world
 
         static member Properties =
             [define Entity.BodyType Dynamic
@@ -569,7 +569,7 @@ module RigidBodiesFacetModule =
                     { properties with
                         Position = properties.Position + position
                         Rotation = properties.Rotation + rotation
-                        BodyShape = World.localizeBodyShape size properties.BodyShape })
+                        BodyShape = World.localizeBodyShape size properties.BodyShape world })
             let world = World.createBodies entity (entity.GetId world) bodiesProperties world
             let jointsProperties = Map.toValueList (entity.GetJoints world)
             let world = World.createJoints entity (entity.GetId world) jointsProperties world
@@ -660,7 +660,7 @@ module TileMapFacetModule =
             { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; TileSetTileOpt = tileSetTileOpt }
 
         let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr world =
-            let tileShape = World.localizeBodyShape (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
+            let tileShape = World.localizeBodyShape (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr world
             { BodyId = Gen.idFromInts tli ti
               Position =
                 Vector2

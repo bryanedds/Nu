@@ -157,20 +157,22 @@ module WorldModule2 =
         static member tryTransitionScreen destination world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
-                if World.getScreenExists selectedScreen world then
-                    let subscriptionKey = Gen.id
-                    let subscription = fun (_ : Event<unit, Screen>) world ->
-                        match World.getScreenTransitionDestinationOpt world with
-                        | Some destination ->
-                            let world = World.unsubscribe subscriptionKey world
-                            let world = World.setScreenTransitionDestinationOpt None world
-                            let world = World.selectScreen destination world
-                            (Cascade, world)
-                        | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
-                    let world = World.setScreenTransitionDestinationOpt (Some destination) world
-                    let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
-                    let world = World.subscribePlus<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
-                    (true, world)
+                if not (World.isSelectedScreenTransitioning world) then
+                    if World.getScreenExists selectedScreen world then
+                        let subscriptionKey = Gen.id
+                        let subscription = fun (_ : Event<unit, Screen>) world ->
+                            match World.getScreenTransitionDestinationOpt world with
+                            | Some destination ->
+                                let world = World.unsubscribe subscriptionKey world
+                                let world = World.setScreenTransitionDestinationOpt None world
+                                let world = World.selectScreen destination world
+                                (Cascade, world)
+                            | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
+                        let world = World.setScreenTransitionDestinationOpt (Some destination) world
+                        let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
+                        let world = World.subscribePlus<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
+                        (true, world)
+                    else (false, world)
                 else (false, world)
             | None -> (false, world)
 
@@ -226,6 +228,10 @@ module WorldModule2 =
                 | Running ->
                     let world =
                         if selectedScreen.GetTransitionTicks world = 0L then
+                            let world =
+                                match (selectedScreen.GetIncoming world).PlaySongOpt with
+                                | Some playSong -> World.playSong playSong.TimeToFadeOutSongMs playSong.Volume playSong.Song world
+                                | None -> world
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
                             World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
                         else world
@@ -242,6 +248,10 @@ module WorldModule2 =
             | OutgoingState ->
                 let world =
                     if selectedScreen.GetTransitionTicks world = 0L then
+                        let world =
+                            match (selectedScreen.GetOutgoing world).PlaySongOpt with
+                            | Some playSong -> World.fadeOutSong playSong.TimeToFadeOutSongMs world
+                            | None -> world
                         let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                         World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
                     else world
@@ -306,20 +316,20 @@ module WorldModule2 =
 
         /// Create a dissolve screen whose content is loaded from the given layer file.
         [<FunctionBinding>]
-        static member createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData layerFilePath world =
-            let (dissolveScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt dissolveData world
+        static member createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData playSongOpt layerFilePath world =
+            let (dissolveScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt dissolveData playSongOpt world
             let world = World.readLayerFromFile layerFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
         /// Create a dissolve screen whose content is loaded from the given layer file.
         [<FunctionBinding>]
-        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveData layerFilePath world =
-            World.createDissolveScreenFromLayerFile6 typeof<'d>.Name nameOpt dissolveData layerFilePath world
+        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveData playSongOpt layerFilePath world =
+            World.createDissolveScreenFromLayerFile6 typeof<'d>.Name nameOpt dissolveData layerFilePath playSongOpt world
 
         /// Create a splash screen that transitions to the given destination upon completion.
         [<FunctionBinding>]
         static member createSplashScreen6 dispatcherName nameOpt splashData destination world =
-            let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashData.DissolveData world
+            let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashData.DissolveData None world
             let world = World.setScreenSplash (Some splashData) destination splashScreen world
             (splashScreen, world)
 

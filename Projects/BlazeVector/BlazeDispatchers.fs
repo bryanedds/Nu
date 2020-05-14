@@ -268,7 +268,6 @@ module GameplayModule =
 
     type GameplayCommand =
         | StartPlay
-        | StoppingPlay
         | StopPlay
 
     type GameplayDispatcher () =
@@ -308,7 +307,6 @@ module GameplayModule =
 
         override this.Channel (_, gameplay, _) =
             [gameplay.SelectEvent => [cmd StartPlay]
-             gameplay.OutgoingStartEvent => [cmd StoppingPlay]
              gameplay.DeselectEvent => [cmd StopPlay]]
 
         override this.Command (_, command, gameplay, world) =
@@ -316,10 +314,7 @@ module GameplayModule =
                 match command with
                 | StartPlay ->
                     let world = createScene gameplay world
-                    let world = createSectionLayers gameplay world
-                    World.playSong 0 1.0f Assets.DeadBlazeSong world
-                | StoppingPlay ->
-                    World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
+                    createSectionLayers gameplay world
                 | StopPlay ->
                     let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + scstring i]
                     let layerNames = Simulants.Scene.Name :: sectionNames

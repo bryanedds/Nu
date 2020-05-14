@@ -237,7 +237,8 @@ module WorldPhysicsModule =
 
         /// Localize a body shape to a specific physics object.
         [<FunctionBinding>]
-        static member localizeBodyShape (extent : Vector2) (bodyShape : BodyShape) =
+        static member localizeBodyShape (extent : Vector2) (bodyShape : BodyShape) (world : World) =
+            ignore world // for world parameter for scripting
             PhysicsEngine.localizeBodyShape extent bodyShape
 
 /// The subsystem for the world's physics system.

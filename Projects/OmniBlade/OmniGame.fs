@@ -8,20 +8,26 @@ open OmniBlade
 module OmniGame =
 
     type [<NoComparison>] OmniModel =
-        | Gui
-        | Field of FieldModel
-        | Battle of FieldModel * BattleModel
+        | Title
+        | Credits
+        | Gameplay of FieldModel * BattleModel option
 
-    type OmniCommand =
-        | PlayTitleSong
-        | FadeSong
-        | ShowTitle
-        | ShowCredits
-        | ShowField
-        | ExitGame
+    type [<NoComparison>] OmniMessage =
+        | UpdateModel
+        | SetModel of OmniModel
+
+    type [<NoComparison>] OmniCommand =
+        | Show of Screen
+        | Exit
+
+    type Game with
+
+        member this.GetOmniModel = this.GetModel<OmniModel>
+        member this.SetOmniModel = this.SetModel<OmniModel>
+        member this.OmniModel = this.Model<OmniModel> ()
 
     type OmniDispatcher () =
-        inherit GameDispatcher<OmniModel, unit, OmniCommand> (Gui)
+        inherit GameDispatcher<OmniModel, OmniMessage, OmniCommand> (Title)
 
         override this.Register (game, world) =
             let world = World.hintRenderPackageUse Assets.GuiPackageName world
@@ -29,43 +35,43 @@ module OmniGame =
             base.Register (game, world)
 
         override this.Channel (_, _) =
-            [Simulants.Title.IncomingStartEvent => [cmd PlayTitleSong]
-             Simulants.Title.OutgoingStartEvent => [cmd FadeSong]
-             Simulants.TitleCredits.ClickEvent => [cmd ShowCredits]
-             Simulants.TitlePlay.ClickEvent => [cmd ShowField]
-             Simulants.TitleExit.ClickEvent => [cmd ExitGame]
-             Simulants.CreditsBack.ClickEvent => [cmd ShowTitle]
-             Simulants.Field.OutgoingStartEvent => [cmd FadeSong]
-             Simulants.FieldBack.ClickEvent => [cmd ShowTitle]
-             Simulants.Battle.OutgoingStartEvent => [cmd FadeSong]
-             Simulants.BattleBack.ClickEvent => [cmd ShowTitle]]
+            [Simulants.Game.OmniModel.ChangeEvent => [msg UpdateModel]
+             Simulants.TitlePlay.ClickEvent => [msg (SetModel (Gameplay (FieldModel.empty, None)))]
+             Simulants.TitleCredits.ClickEvent => [msg (SetModel Credits)]
+             Simulants.CreditsBack.ClickEvent => [msg (SetModel Title)]
+             Simulants.FieldBack.ClickEvent => [msg (SetModel Title)]
+             Simulants.TitleExit.ClickEvent => [cmd Exit]]
+
+        override this.Message (model, message, _, _) =
+            match message with
+            | UpdateModel ->
+                match model with
+                | Title -> withCmd model (Show Simulants.Title)
+                | Credits -> withCmd model (Show Simulants.Credits)
+                | Gameplay (_, battleModelOpt) ->
+                    if Option.isSome battleModelOpt then withCmd model (Show Simulants.Battle)
+                    elif Option.isNone battleModelOpt then withCmd model (Show Simulants.Field)
+                    else just model
+            | SetModel model -> just model
 
         override this.Command (_, command, _, world) =
             let world =
                 match command with
-                | PlayTitleSong -> World.playSong 0 (Constants.Audio.DefaultSongVolume) Assets.TitleSong world
-                | FadeSong -> World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
-                | ShowTitle -> World.transitionScreen Simulants.Title world
-                | ShowCredits -> World.transitionScreen Simulants.Credits world
-                | ShowField -> World.transitionScreen Simulants.Field world
-                | ExitGame -> World.exit world
+                | Show screen -> World.transitionScreen screen world
+                | Exit -> World.exit world
             just world
 
         override this.Content (model, _) =
             [Content.screen Simulants.Splash.Name (Splash (Constants.OmniBlade.DissolveData, Constants.OmniBlade.SplashData, Simulants.Title)) [] []
-             Content.screenFromLayerFile Simulants.Title.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.TitleLayerFilePath
-             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.CreditsLayerFilePath
-             Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve Constants.OmniBlade.DissolveData)
+             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.OmniBlade.DissolveData, None)) Assets.TitleLayerFilePath
+             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.OmniBlade.DissolveData, None)) Assets.CreditsLayerFilePath
+             Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.OmniBlade.DissolveData, None))
                 [Screen.FieldModel <== model --> fun model ->
                     match model with
-                    | Gui -> FieldModel.empty
-                    | Field _ -> FieldModel.empty
-                    | Battle (fieldModel, _) -> fieldModel]
-                []
-             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve Constants.OmniBlade.DissolveData)
+                    | Title | Credits -> FieldModel.empty
+                    | Gameplay (fieldModel, _) -> fieldModel] []
+             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.OmniBlade.DissolveData, None))
                 [Screen.BattleModel <== model --> fun model ->
                     match model with
-                    | Gui -> BattleModel.empty
-                    | Field _ -> BattleModel.empty
-                    | Battle (_, battleModel) -> battleModel]
-                []]
+                    | Title | Credits -> BattleModel.empty
+                    | Gameplay (_, battleModelOpt) -> Option.getOrDefault BattleModel.empty battleModelOpt] []]

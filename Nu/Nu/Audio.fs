@@ -69,8 +69,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
           AudioPackages : AudioAsset Packages
           mutable AudioMessages : AudioMessage List
-          mutable CurrentSongOpt : PlaySongMessage option
-          mutable NextPlaySongOpt : PlaySongMessage option }
+          mutable CurrentSongOpt : PlaySongMessage option }
 
     static member private haltSound () =
         SDL_mixer.Mix_HaltMusic () |> ignore
@@ -170,15 +169,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             Log.info ("PlaySoundMessage failed due to unloadable assets for '" + scstring sound + "'.")
     
     static member private handlePlaySong playSongMessage audioPlayer =
-        if SDL_mixer.Mix_PlayingMusic () = 1 then
-            if audioPlayer.CurrentSongOpt <> Some playSongMessage then
-                if  playSongMessage.TimeToFadeOutSongMs <> 0 &&
-                    not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
-                    SDL_mixer.Mix_FadeOutMusic playSongMessage.TimeToFadeOutSongMs |> ignore
-                else
-                    SDL_mixer.Mix_HaltMusic () |> ignore
-                audioPlayer.NextPlaySongOpt <- Some playSongMessage
-        else SdlAudioPlayer.playSong playSongMessage audioPlayer
+        SdlAudioPlayer.playSong playSongMessage audioPlayer
     
     static member private handleFadeOutSong timeToFadeOutSongMs =
         if SDL_mixer.Mix_PlayingMusic () = 1 then
@@ -213,21 +204,9 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             SdlAudioPlayer.handleAudioMessage audioMessage audioPlayer
     
     static member private tryUpdateCurrentSong audioPlayer =
-        if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
-        else { audioPlayer with CurrentSongOpt = None }
-    
-    static member private tryUpdateNextSong audioPlayer =
-        match audioPlayer.NextPlaySongOpt with
-        | Some nextPlaySong ->
-            if SDL_mixer.Mix_PlayingMusic () = 0 then
-                SdlAudioPlayer.handlePlaySong nextPlaySong audioPlayer
-                audioPlayer.NextPlaySongOpt <- None
-        | None -> ()
-    
-    static member private updateAudioPlayer audioPlayer =
-        audioPlayer |>
-            SdlAudioPlayer.tryUpdateCurrentSong |>
-            SdlAudioPlayer.tryUpdateNextSong
+        if SDL_mixer.Mix_PlayingMusic () = 1 then
+            audioPlayer.CurrentSongOpt <- None
+        
     
     /// Make a NuAudioPlayer.
     static member make () =
@@ -237,8 +216,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             { AudioContext = ()
               AudioPackages = dictPlus []
               AudioMessages = List ()
-              CurrentSongOpt = None
-              NextPlaySongOpt = None }
+              CurrentSongOpt = None }
         audioPlayer
     
     interface AudioPlayer with
@@ -256,7 +234,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
         member audioPlayer.Play audioMessages =
             SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer
-            SdlAudioPlayer.updateAudioPlayer audioPlayer
+            SdlAudioPlayer.tryUpdateCurrentSong audioPlayer
 
 [<RequireQualifiedAccess>]
 module AudioPlayer =

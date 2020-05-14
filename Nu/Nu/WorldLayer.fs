@@ -66,6 +66,9 @@ module WorldLayerModule =
         /// Check that a layer exists in the world.
         member this.Exists world = World.getLayerExists this world
 
+        /// Check that a layer is selected.
+        member this.Selected world = WorldModule.isSelected this world
+
         /// Check that a layer dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
