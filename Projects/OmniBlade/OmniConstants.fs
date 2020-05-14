@@ -48,14 +48,17 @@ module Constants =
         let GuiEffectDepth = 30.0f
 
     [<RequireQualifiedAccess>]
-    module OmniBlade =
-
-        let DissolveData =
+    module Dissolve =
+    
+        let Default =
             { IncomingTime = 20L
               OutgoingTime = 30L
               DissolveImage = asset<Image> Assets.GuiPackageName "Dissolve" }
-
-        let SplashData =
-            { DissolveData = DissolveData
+                  
+    [<RequireQualifiedAccess>]
+    module Splash =
+    
+        let Default =
+            { DissolveData = Dissolve.Default
               IdlingTime = 60L
               SplashImage = asset<Image> Assets.GuiPackageName "Nu" }
