@@ -75,7 +75,7 @@ module AvatarDispatcherModule =
 
                 // remove separated body shape
                 let model =
-                    if separation.Separator.SourceBodyShapeId = sensorShapeId
+                    if separation.Separator.BodyShapeId = sensorShapeId
                     then AvatarModel.updateIntersectedBodyShapes (List.remove ((=) separation.Separatee)) model
                     else model
                 just model
@@ -84,7 +84,7 @@ module AvatarDispatcherModule =
 
                 // add collidee shape
                 let model =
-                    if collision.Collider.SourceBodyShapeId = sensorShapeId
+                    if collision.Collider.BodyShapeId = sensorShapeId
                     then AvatarModel.updateIntersectedBodyShapes (fun shapes -> collision.Collidee :: shapes) model
                     else model
                 just model

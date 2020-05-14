@@ -86,7 +86,7 @@ module EnemyModule =
         static let handleCollision evt world =
             let enemy = evt.Subscriber : Entity
             if World.isTicking world then
-                let collidee = evt.Data.Collidee.SourceEntity
+                let collidee = evt.Data.Collidee.Entity
                 let isBullet = collidee.Is<BulletDispatcher> world
                 if isBullet then
                     let world = enemy.SetHealth (enemy.GetHealth world - 1) world

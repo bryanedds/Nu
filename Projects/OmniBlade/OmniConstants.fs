@@ -59,6 +59,6 @@ module Constants =
     module Splash =
     
         let Default =
-            { DissolveData = Dissolve.Default
+            { DissolveDescriptor = Dissolve.Default
               IdlingTime = 60L
               SplashImage = asset<Image> Assets.GuiPackageName "Nu" }

@@ -76,7 +76,7 @@ type [<StructuralEquality; NoComparison>] DissolveDescriptor =
 
 /// Describes the behavior of the screen splash algorithm.
 type [<StructuralEquality; NoComparison>] SplashDescriptor =
-    { DissolveData : DissolveDescriptor
+    { DissolveDescriptor : DissolveDescriptor
       IdlingTime : int64
       SplashImage : Image AssetTag }
 
@@ -159,21 +159,21 @@ module WorldTypes =
 
     /// Store origination information about a simulant physics body.
     and [<NoComparison>] BodySource =
-        { SourceEntity : Entity
-          SourceBodyId : Guid }
+        { Entity : Entity
+          BodyId : Guid }
         static member internal fromInternal (internal_ : BodySourceInternal) =
-            { SourceEntity = internal_.SourceSimulant :?> Entity
-              SourceBodyId = internal_.SourceBodyId }
+            { Entity = internal_.Simulant :?> Entity
+              BodyId = internal_.BodyId }
     
     /// Store origination information about a simulant physics shape body.
     and [<NoComparison>] BodyShapeSource =
-        { SourceEntity : Entity
-          SourceBodyId : Guid
-          SourceBodyShapeId : Guid }
+        { Entity : Entity
+          BodyId : Guid
+          BodyShapeId : Guid }
         static member internal fromInternal (internal_ : BodyShapeSourceInternal) =
-            { SourceEntity = internal_.SourceSimulant :?> Entity
-              SourceBodyId = internal_.SourceBodyId
-              SourceBodyShapeId = internal_.SourceBodyShapeId }
+            { Entity = internal_.Simulant :?> Entity
+              BodyId = internal_.BodyId
+              BodyShapeId = internal_.ShapeId }
 
     /// Describes the information needed to sort simulants.
     /// OPTIMIZATION: carries related simulant to avoid GC pressure.

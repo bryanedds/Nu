@@ -56,8 +56,8 @@ module OmniField =
                 | Shopkeep _ -> Some "Inquire"
 
         static let isFacingBodyShape bodyShape (avatar : AvatarModel) world =
-            if bodyShape.SourceEntity.Is<PropDispatcher> world then
-                let v = bodyShape.SourceEntity.GetBottom world - avatar.Bottom
+            if bodyShape.Entity.Is<PropDispatcher> world then
+                let v = bodyShape.Entity.GetBottom world - avatar.Bottom
                 let direction = Direction.fromVector2 v
                 direction = avatar.Direction
             else false
@@ -71,7 +71,7 @@ module OmniField =
             match getFacingBodyShapes avatar world with
             | head :: _ ->
                 // TODO: distance-sort these instead of just taking head
-                let prop = head.SourceEntity.GetPropModel world
+                let prop = head.Entity.GetPropModel world
                 Some prop.PropData
             | [] -> None
 

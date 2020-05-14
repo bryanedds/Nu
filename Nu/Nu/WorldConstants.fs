@@ -19,6 +19,6 @@ module Splash =
 
     /// The default 'splashing' behavior of game's splash screen.
     let Default =
-        { DissolveData = Dissolve.Default
+        { DissolveDescriptor = Dissolve.Default
           IdlingTime = 60L
           SplashImage = AssetTag.make Assets.DefaultPackageName "Image5" }
