@@ -31,42 +31,42 @@ module Content =
         ScreenFromInitializers (typeof<'d>.Name, screenName, behavior, initializers, layers)
 
     /// Describe layers to be streamed from a lens indexed by the given mapper.
-    let layersIndexedBy (lens : Lens<'a seq, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
+    let layersIndexedBy (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
         let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
         LayersFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
 
     /// Describe layers to be streamed from a lens indexed by fst.
-    let layersIndexedByFst (lens : Lens<(int * 'a) seq, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
+    let layersIndexedByFst (lens : Lens<(int * 'a) list, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
         layersIndexedBy lens fst (fun i lens -> mapper i (Lens.map snd lens))
 
     /// Describe layers to be streamed from a lens indexed by snd.
-    let layersIndexedBySnd (lens : Lens<('a * int) seq, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
+    let layersIndexedBySnd (lens : Lens<('a * int) list, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
         layersIndexedBy lens snd (fun i lens -> mapper i (Lens.map fst lens))
 
     /// Describe layers to be streamed from a lens indexed by discriminated union tag.
-    let layersIndexedByArray (lens : Lens<'a seq, World>) (arr : 'a array) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
+    let layersIndexedByArray (lens : Lens<'a list, World>) (arr : 'a array) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
         let indexer a = Array.findIndex ((=) a) arr
         layersIndexedBy lens indexer mapper
 
     /// Describe layers to be streamed from a lens indexed by its union tag.
-    let layersIndexedByTag (lens : Lens<'a seq, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
+    let layersIndexedByTag (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
         let indexer (a : 'a) =
             let (unionCaseInfo, _) = FSharpValue.GetUnionFields (a :> obj, typeof<'a>)
             unionCaseInfo.Tag
         layersIndexedBy lens indexer mapper
 
     /// Describe layers to be streamed from a lens.
-    let layers (lens : Lens<'a seq, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
+    let layers (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
         let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
         LayersFromStream (lens.Map box, None, mapper)
 
     /// Describe a layer to be optionally streamed from a lens.
     let layerOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> World -> LayerContent) =
-        layers (lens --> function Some a -> Seq.singleton a | None -> Seq.empty) (fun _ -> mapper)
+        layers (lens --> function Some a -> [a] | None -> []) (fun _ -> mapper)
 
     /// Describe a layer to be optionally streamed from a lens.
     let layerIf (lens : Lens<bool, World>) (mapper : Lens<unit, World> -> World -> LayerContent) =
-        layers (lens --> function true -> Seq.singleton () | false -> Seq.empty) (fun _ -> mapper)
+        layers (lens --> function true -> [()] | false -> []) (fun _ -> mapper)
 
     /// Describe a layer to be streamed when a screen is selected.
     let layerIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> LayerContent) =
@@ -81,42 +81,42 @@ module Content =
         LayerFromInitializers (typeof<'d>.Name, layerName, initializers, entities)
 
     /// Describe entities to be streamed from a lens indexed by the given indexer.
-    let entitiesIndexedBy (lens : Lens<'a seq, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+    let entitiesIndexedBy (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
         let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
         EntitiesFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
 
     /// Describe entities to be streamed from a lens indexed by fst.
-    let entitiesIndexedByFst (lens : Lens<(int * 'a) seq, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+    let entitiesIndexedByFst (lens : Lens<(int * 'a) list, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
         entitiesIndexedBy lens fst (fun i lens -> mapper i (Lens.map snd lens))
 
     /// Describe entities to be streamed from a lens indexed by snd.
-    let entitiesIndexedBySnd (lens : Lens<('a * int) seq, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+    let entitiesIndexedBySnd (lens : Lens<('a * int) list, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
         entitiesIndexedBy lens snd (fun i lens -> mapper i (Lens.map fst lens))
 
     /// Describe entities to be streamed from a lens indexed by discriminated union tag.
-    let entitiesIndexedByArray (lens : Lens<'a seq, World>) (arr : 'a array) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+    let entitiesIndexedByArray (lens : Lens<'a list, World>) (arr : 'a array) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
         let indexer a = Array.findIndex ((=) a) arr
         entitiesIndexedBy lens indexer mapper
 
     /// Describe entities to be streamed from a lens indexed by its union tag.
-    let entitiesIndexedByTag (lens : Lens<'a seq, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+    let entitiesIndexedByTag (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
         let indexer (a : 'a) =
             let (unionCaseInfo, _) = FSharpValue.GetUnionFields (a :> obj, typeof<'a>)
             unionCaseInfo.Tag
         entitiesIndexedBy lens indexer mapper
 
     /// Describe entities to be streamed from a lens.
-    let entities (lens : Lens<'a seq, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
+    let entities (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
         let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
         EntitiesFromStream (lens.Map box, None, mapper)
 
     /// Describe an entity to be optionally streamed from a lens.
     let entityOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> World -> EntityContent) =
-        entities (lens --> function Some a -> Seq.singleton a | None -> Seq.empty) (fun _ -> mapper)
+        entities (lens --> function Some a -> [a] | None -> []) (fun _ -> mapper)
 
     /// Describe an entity to be optionally streamed from a lens.
     let entityIf (lens : Lens<bool, World>) (mapper : Lens<unit, World> -> World -> EntityContent) =
-        entities (lens --> function true -> Seq.singleton () | false -> Seq.empty) (fun _ -> mapper)
+        entities (lens --> function true -> [()] | false -> []) (fun _ -> mapper)
 
     /// Describe an entity to be streamed when a screen is selected.
     let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> EntityContent) =

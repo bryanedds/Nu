@@ -45,7 +45,7 @@ module OmniReticles =
                  Entity.UpImage == asset Assets.BattlePackageName "CancelUp"
                  Entity.DownImage == asset Assets.BattlePackageName "CancelDown"
                  Entity.ClickEvent ==> cmd TargetCancel]
-             Content.entities (model --> fun model -> BattleModel.getTargets model.AimType model.BattleModel |> seq) $ fun index character world ->
+             Content.entities (model --> fun model -> BattleModel.getTargets model.AimType model.BattleModel) $ fun index character world ->
                 let buttonName = rets.Name + "+" + "Reticle" + "+" + scstring index
                 let button = rets.Parent / buttonName
                 Content.button button.Name

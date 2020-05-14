@@ -227,10 +227,10 @@ module OmniField =
                                     let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
                                     let objects = enumerable<TmxObject> group.Objects
                                     let results = Seq.map (fun object -> (object, group, tileMap, model.Advents)) objects
-                                    Seq.eval results
-                                else Seq.empty
-                            | None -> Seq.empty
-                        | None -> Seq.empty)
+                                    Seq.toList results
+                                else []
+                            | None -> []
+                        | None -> [])
                     (fun _ model _ ->
                         let propModel = model.Map (fun (object, group, tileMap, advents) ->
                             let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
