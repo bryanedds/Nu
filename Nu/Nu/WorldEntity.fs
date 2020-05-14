@@ -226,7 +226,7 @@ module WorldEntityModule =
                     else Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
                 if World.getEntityPublishUpdates entity world then
                     let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.UpdateEventCached eventTrace Default.Game false world
+                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.UpdateEventCached eventTrace Simulants.Game false world
                 else world)
                 entity
                 world
@@ -242,7 +242,7 @@ module WorldEntityModule =
                     else Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
                 if World.getEntityPublishPostUpdates entity world then
                     let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateEventCached eventTrace Default.Game false world
+                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateEventCached eventTrace Simulants.Game false world
                 else world)
                 entity
                 world

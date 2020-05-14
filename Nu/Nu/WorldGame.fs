@@ -142,7 +142,7 @@ module WorldGameModule =
     type World with
 
         static member internal registerGame world =
-            let game = Default.Game
+            let game = Simulants.Game
             let world =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcher world
@@ -154,7 +154,7 @@ module WorldGameModule =
             World.choose world
 
         static member internal unregisterGame world =
-            let game = Default.Game
+            let game = Simulants.Game
             let world =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcher world
@@ -166,7 +166,7 @@ module WorldGameModule =
             World.choose world
 
         static member internal updateGame world =
-            let game = Default.Game
+            let game = Simulants.Game
             World.withEventContext (fun world ->
 
                 // update via dispatcher
@@ -181,7 +181,7 @@ module WorldGameModule =
                 world
 
         static member internal postUpdateGame world =
-            let game = Default.Game
+            let game = Simulants.Game
             World.withEventContext (fun world ->
                 
                 // post-update via dispatcher
@@ -196,7 +196,7 @@ module WorldGameModule =
                 world
 
         static member internal actualizeGame world =
-            let game = Default.Game
+            let game = Simulants.Game
             World.withEventContext (fun world ->
                 let dispatcher = game.GetDispatcher world
                 let world = dispatcher.Actualize (game, world)

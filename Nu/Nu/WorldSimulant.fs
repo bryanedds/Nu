@@ -87,7 +87,7 @@ module WorldSimulantModule =
         /// Get the given simulant's dispatcher.
         static member getDispatcher (simulant : Simulant) (world : World) =
             match simulant with
-            | :? Game -> Default.Game.GetDispatcher world :> Dispatcher
+            | :? Game -> Simulants.Game.GetDispatcher world :> Dispatcher
             | :? Screen as screen -> screen.GetDispatcher world :> Dispatcher
             | :? Layer as layer -> layer.GetDispatcher world :> Dispatcher
             | :? Entity as entity -> entity.GetDispatcher world :> Dispatcher
@@ -152,7 +152,7 @@ module WorldSimulantModule =
             ignore (world : World)
             match simulant with
             | :? Game -> None
-            | :? Screen -> Some (Default.Game :> Simulant)
+            | :? Screen -> Some (Simulants.Game :> Simulant)
             | :? Layer as layer -> Some (layer.Parent :> Simulant)
             | :? Entity as entity -> Some (entity.Parent :> Simulant)
             | _ -> failwithumf ()
@@ -163,7 +163,7 @@ module WorldSimulantModule =
             ignore (world : World)
             match simulant with
             | :? Game -> failwithumf ()
-            | :? Screen -> Default.Game :> Simulant
+            | :? Screen -> Simulants.Game :> Simulant
             | :? Layer as layer -> layer.Parent :> Simulant
             | :? Entity as entity -> entity.Parent :> Simulant
             | _ -> failwithumf ()
@@ -199,7 +199,7 @@ module WorldSimulantModule =
         /// Attempt to convert an address to a concrete simulant reference.
         static member tryDerive address =
             match Address.getNames address with
-            | [||] -> Some (Default.Game :> Simulant)
+            | [||] -> Some (Simulants.Game :> Simulant)
             | [|_|] -> Some (Screen (Address.changeType<obj, Screen> address) :> Simulant)
             | [|_; _|] -> Some (Layer (Address.changeType<obj, Layer> address) :> Simulant)
             | [|_; _; _|] -> Some (Entity (Address.changeType<obj, Entity> address) :> Simulant)

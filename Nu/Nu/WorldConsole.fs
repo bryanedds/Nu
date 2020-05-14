@@ -48,7 +48,7 @@ module WorldConsole =
                 showWindowByTitle gameTitle |> ignore
                 world
             | input ->
-                let context = Default.Game
+                let context = Simulants.Game
                 let frame = context.GetScriptFrame world
                 try let expr = scvalue<Scripting.Expr> input
                     let struct (result, world) = World.eval expr frame context world
@@ -70,7 +70,7 @@ module WorldConsole =
                     then run (getActiveWindowTitle ()) world
                     else world)
                     Events.KeyboardKeyDown
-                    Default.Game
+                    Simulants.Game
                     world
             Log.info "Console hooked up (press ` (backtick) in game to open console)."
             (true, world)

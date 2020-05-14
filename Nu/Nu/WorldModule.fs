@@ -10,31 +10,19 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
-module Default =
+module Simulants=
 
     /// The default game. Always exists.
     let Game = Game ()
 
     /// The default screen - may or may not exist.
-    let Screen = Screen Constants.Engine.DefaultScreenName
+    let DefaultScreen = Screen Constants.Engine.DefaultScreenName
     
     /// The default layer - may or may not exist.
-    let Layer = Screen / Constants.Engine.DefaultLayerName
+    let DefaultLayer = DefaultScreen / Constants.Engine.DefaultLayerName
     
     /// The default entity - may or may not exist.
-    let Entity = Layer / Constants.Engine.DefaultEntityName
-
-    /// The default 'dissolving' transition behavior of game's screens.
-    let DissolveData =
-        { IncomingTime = 20L
-          OutgoingTime = 30L
-          DissolveImage = AssetTag.make Assets.DefaultPackageName "Image9" }
-
-    /// The default 'splashing' behavior of game's splash screen.
-    let SplashData =
-        { DissolveData = DissolveData
-          IdlingTime = 60L
-          SplashImage = AssetTag.make Assets.DefaultPackageName "Image5" }
+    let DefaultEntity = DefaultLayer / Constants.Engine.DefaultEntityName
 
 [<AutoOpen>]
 module WorldModuleOperators =

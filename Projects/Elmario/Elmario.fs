@@ -6,7 +6,7 @@ module Simulants =
 
     // here we create an entity reference for Elmario. This is useful for simulants that you want
     // to refer to from multiple places
-    let Elmario = Default.Layer / "Elmario"
+    let Elmario = Simulants.DefaultLayer / "Elmario"
 
 // this is our Elm-style command type
 type Command =
@@ -55,8 +55,8 @@ type ElmarioDispatcher () =
 
     // here we describe the content of the game including elmario, the ground he walks on, and a rock.
     override this.Content (_, _) =
-        [Content.screen Default.Screen.Name (Vanilla None) []
-            [Content.layer Default.Layer.Name []
+        [Content.screen Simulants.DefaultScreen.Name Vanilla []
+            [Content.layer Simulants.DefaultLayer.Name []
                 [Content.character Simulants.Elmario.Name
                     [Entity.Position == v2 0.0f 0.0f
                      Entity.Size == v2 144.0f 144.0f]
