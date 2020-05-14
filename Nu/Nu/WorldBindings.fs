@@ -446,8 +446,8 @@ module WorldBindings =
                 | Some value -> value :?> Single
                 | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
             let song =
-                match ScriptingSystem.tryExport typeof<AssetTag<Audio>> song world with
-                | Some value -> value :?> AssetTag<Audio>
+                match ScriptingSystem.tryExport typeof<AssetTag<Song>> song world with
+                | Some value -> value :?> AssetTag<Song>
                 | None -> failwith "Invalid argument type for 'song'; expecting a value convertable to AssetTag`1."
             let result = World.playSong timeToFadeOutSongMs volume song world
             struct (Scripting.Unit, result)
@@ -488,8 +488,8 @@ module WorldBindings =
                 | Some value -> value :?> Single
                 | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
             let sound =
-                match ScriptingSystem.tryExport typeof<AssetTag<Audio>> sound world with
-                | Some value -> value :?> AssetTag<Audio>
+                match ScriptingSystem.tryExport typeof<AssetTag<Sound>> sound world with
+                | Some value -> value :?> AssetTag<Sound>
                 | None -> failwith "Invalid argument type for 'sound'; expecting a value convertable to AssetTag`1."
             let result = World.playSound volume sound world
             struct (Scripting.Unit, result)

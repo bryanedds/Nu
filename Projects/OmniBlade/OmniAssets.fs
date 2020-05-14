@@ -9,8 +9,8 @@ module Assets =
     let GameplayPackageName = "Gameplay"
 
     // gui assets
-    let TitleSong = asset<Audio> GuiPackageName "Title"
-    let AffirmSound = asset<Audio> GuiPackageName "Affirm"
+    let TitleSong = asset<Song> GuiPackageName "Title"
+    let AffirmSound = asset<Sound> GuiPackageName "Affirm"
     let DialogThin = asset<Image> GuiPackageName "DialogThin"
     let DialogMedium = asset<Image> GuiPackageName "DialogMedium"
     let DialogLarge = asset<Image> GuiPackageName "DialogLarge"
@@ -19,11 +19,11 @@ module Assets =
     let FinnAnimationSheet = asset<Image> GameplayPackageName "Finn"
     let GlennAnimationSheet = asset<Image> GameplayPackageName "Glenn"
     let BlueGoblinAnimationSheet = asset<Image> GameplayPackageName "BlueGoblin"
-    let HitSound = asset<Audio> GameplayPackageName "Hit"
-    let ExplosionSound = asset<Audio> GameplayPackageName "Explosion"
-    let HealSound = asset<Audio> GameplayPackageName "Heal"
-    let DeathSound = asset<Audio> GameplayPackageName "Death"
-    let OpenChestSound = asset<Audio> GameplayPackageName "Unlatch"
+    let HitSound = asset<Sound> GameplayPackageName "Hit"
+    let ExplosionSound = asset<Sound> GameplayPackageName "Explosion"
+    let HealSound = asset<Sound> GameplayPackageName "Heal"
+    let DeathSound = asset<Sound> GameplayPackageName "Death"
+    let OpenChestSound = asset<Sound> GameplayPackageName "Unlatch"
 
     // field assets
     let DebugRoomTileMap = asset<TileMap> FieldPackageName "DebugRoom"
@@ -33,7 +33,7 @@ module Assets =
     let BrassChestImageClosed = asset<Image> FieldPackageName "BrassChestClosed"
 
     // battle assets
-    let BattleSong = asset<Audio> BattlePackageName "Battle"
+    let BattleSong = asset<Song> BattlePackageName "Battle"
     let CancelImage = asset<Image> BattlePackageName "Cancel"
     let BoltAnimationSheet = asset<Image> BattlePackageName "Bolt"
     let ExplosionAnimationSheet = asset<Image> BattlePackageName "Explosion"

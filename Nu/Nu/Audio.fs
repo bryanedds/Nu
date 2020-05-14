@@ -9,19 +9,22 @@ open SDL2
 open Prime
 open Nu
 
-/// Audio. Currently just used as a phantom type.
-type Audio = private { __ : unit }
+/// Song. Currently just used as a phantom type.
+type Song = private { __ : unit }
+
+/// Sound. Currently just used as a phantom type.
+type Sound = private { __ : unit }
 
 /// Descrides a song.
 type [<StructuralEquality; NoComparison>] SongDescriptor =
     { FadeOutMs : int
       Volume : single
-      Song : Audio AssetTag }
+      Song : Song AssetTag }
 
 /// Describes a sound.
 type [<StructuralEquality; NoComparison>] SoundDescriptor =
     { Volume : single
-      Sound : Audio AssetTag }
+      Sound : Sound AssetTag }
 
 /// A message to the audio system.
 type [<StructuralEquality; NoComparison>] AudioMessage =
@@ -77,7 +80,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         for i in [0 .. channelCount - 1] do
             SDL_mixer.Mix_HaltChannel i |> ignore
     
-    static member private tryLoadAudioAsset2 (asset : Audio Asset) =
+    static member private tryLoadAudioAsset2 (asset : obj Asset) =
         match Path.GetExtension asset.FilePath with
         | ".wav" ->
             let wavOpt = SDL_mixer.Mix_LoadWAV asset.FilePath
@@ -100,7 +103,6 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         | Right assetGraph ->
             match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Audio) packageName assetGraph with
             | Right assets ->
-                let assets = List.map Asset.specialize<Audio> assets
                 let audioAssetOpts = List.map SdlAudioPlayer.tryLoadAudioAsset2 assets
                 let audioAssets = List.definitize audioAssetOpts
                 match Dictionary.tryFind packageName audioPlayer.AudioPackages with
@@ -115,7 +117,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         | Left error ->
             Log.info ("Audio package load failed due to unloadable asset graph due to: '" + error)
 
-    static member private tryLoadAudioAsset (assetTag : Audio AssetTag) audioPlayer =
+    static member private tryLoadAudioAsset (assetTag : obj AssetTag) audioPlayer =
         let assetsOpt =
             if audioPlayer.AudioPackages.ContainsKey assetTag.PackageName then
                 Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages
@@ -127,7 +129,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
     static member private playSong playSongMessage audioPlayer =
         let song = playSongMessage.Song
-        match SdlAudioPlayer.tryLoadAudioAsset song audioPlayer with
+        match SdlAudioPlayer.tryLoadAudioAsset (AssetTag.generalize song) audioPlayer with
         | Some audioAsset ->
             match audioAsset with
             | WavAsset _ ->
@@ -158,7 +160,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
     static member private handlePlaySound playSoundMessage audioPlayer =
         let sound = playSoundMessage.Sound
-        match SdlAudioPlayer.tryLoadAudioAsset sound audioPlayer with
+        match SdlAudioPlayer.tryLoadAudioAsset (AssetTag.generalize sound) audioPlayer with
         | Some audioAsset ->
             match audioAsset with
             | WavAsset wavAsset ->

@@ -112,8 +112,8 @@ type [<NoEquality; NoComparison>] GameContent =
 /// The passive side-effects of a simulant.
 type [<NoEquality; NoComparison>] View =
     | Render of RenderDescriptor
-    | PlaySound of single * Audio AssetTag
-    | PlaySong of int * single * Audio AssetTag
+    | PlaySound of single * Sound AssetTag
+    | PlaySong of int * single * Song AssetTag
     | FadeOutSong of int
     | StopSong
     | Tag of string * obj

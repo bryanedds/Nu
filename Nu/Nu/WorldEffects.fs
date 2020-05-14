@@ -605,7 +605,7 @@ module EffectSystemModule =
             // build sound views
             let effectSystem =
                 if slice.Enabled
-                then addView (PlaySound (slice.Volume, AssetTag.specialize<Audio> sound)) effectSystem
+                then addView (PlaySound (slice.Volume, AssetTag.specialize<Sound> sound)) effectSystem
                 else effectSystem
 
             // build implicitly mounted content

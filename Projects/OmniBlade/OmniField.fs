@@ -17,7 +17,7 @@ module OmniField =
 
     type FieldCommand =
         | FadeSong
-        | PlaySound of int64 * single * AssetTag<Audio>
+        | PlaySound of int64 * single * AssetTag<Sound>
         | TryMove of Vector2
         | EyeTrack
 

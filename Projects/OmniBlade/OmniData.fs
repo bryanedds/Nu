@@ -282,8 +282,8 @@ type PropData =
 
 type FieldData =
     { FieldType : FieldType // key
-      FieldSongOpt : Audio AssetTag option
-      FieldAmbienceOpt : Audio AssetTag option
+      FieldSongOpt : Song AssetTag option
+      FieldAmbienceOpt : Song AssetTag option
       FieldTileMap : TileMap AssetTag
       FieldProps : PropData list }
 
@@ -295,7 +295,7 @@ type BattleData =
     { BattleType : BattleType // key
       BattleAllyPositions : Vector2 list
       BattleEnemies : EnemyData list
-      BattleSongOpt : Audio AssetTag option }
+      BattleSongOpt : Song AssetTag option }
 
 type CharacterData =
     { CharacterType : CharacterType // key
