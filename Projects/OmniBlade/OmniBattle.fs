@@ -823,7 +823,12 @@ module OmniBattle =
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
                          Entity.Depth == Constants.Battle.GuiDepth
                          Entity.Visible <== ally --> fun ally -> match ally.InputState with AimReticles _ -> true | _ -> false
-                         Entity.ReticlesModel <== model --> fun model -> { BattleModel = model; AimType = (BattleModel.getCharacter allyIndex model).InputState.AimType }
+                         Entity.ReticlesModel <== model --> fun model ->
+                            let aimType =
+                                match BattleModel.tryGetCharacter allyIndex model with
+                                | Some character -> character.InputState.AimType
+                                | None -> NoAim
+                            { BattleModel = model; AimType = aimType }
                          Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (evt.Data, allyIndex))
                          Entity.CancelEvent ==> msg (ReticlesCancel allyIndex)]]
 

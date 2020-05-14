@@ -14,6 +14,70 @@ type [<NoComparison>] SimulantDescriptor =
       SimulantProperties : (string * Property) list
       SimulantChildren : SimulantDescriptor list }
 
+/// Describes an entity value independent of the engine.
+/// Used to directly serialize an entity.
+type [<NoComparison>] EntityDescriptor =
+    { EntityDispatcherName : string
+      EntityProperties : Map<string, Symbol> }
+
+[<RequireQualifiedAccess>]
+module EntityDescriptor =
+
+    /// Derive a name from the dispatcher.
+    let getNameOpt dispatcher =
+        dispatcher.EntityProperties |>
+        Map.tryFind (Property? Name) |>
+        Option.map symbolToValue<string>
+
+    /// The empty entity descriptor.
+    let empty =
+        { EntityDispatcherName = String.Empty
+          EntityProperties = Map.empty }
+
+/// Describes a layer value independent of the engine.
+/// Used to directly serialize a layer.
+type [<NoComparison>] LayerDescriptor =
+    { LayerDispatcherName : string
+      LayerProperties : Map<string, Symbol>
+      EntitieDescriptors : EntityDescriptor list }
+
+[<RequireQualifiedAccess>]
+module LayerDescriptor =
+
+    /// Derive a name from the dispatcher.
+    let getNameOpt dispatcher =
+        dispatcher.LayerProperties |>
+        Map.tryFind (Property? Name) |>
+        Option.map symbolToValue<string>
+
+    /// The empty layer descriptor.
+    let empty =
+        { LayerDispatcherName = String.Empty
+          LayerProperties = Map.empty
+          EntitieDescriptors = [] }
+
+/// Describes a screen value independent of the engine.
+/// Used to directly serialize a screen.
+type [<NoComparison>] ScreenDescriptor =
+    { ScreenDispatcherName : string
+      ScreenProperties : Map<string, Symbol>
+      LayerDescriptors : LayerDescriptor list }
+
+[<RequireQualifiedAccess>]
+module ScreenDescriptor =
+
+    /// Derive a name from the dispatcher.
+    let getNameOpt dispatcher =
+        dispatcher.ScreenProperties |>
+        Map.tryFind (Property? Name) |>
+        Option.map symbolToValue<string>
+
+    /// The empty screen descriptor.
+    let empty =
+        { ScreenDispatcherName = String.Empty
+          ScreenProperties = Map.empty
+          LayerDescriptors = [] }
+
 /// Describes a game value independent of the engine.
 /// Used to directly serialize a game.
 type [<NoComparison>] GameDescriptor =
@@ -21,66 +85,14 @@ type [<NoComparison>] GameDescriptor =
       GameProperties : Map<string, Symbol>
       ScreenDescriptors : ScreenDescriptor list }
 
+[<RequireQualifiedAccess>]
+module GameDescriptor =
+
     /// The empty game descriptor.
-    static member empty =
+    let empty =
         { GameDispatcherName = String.Empty
           GameProperties = Map.empty
           ScreenDescriptors = [] }
-
-/// Describes a screen value independent of the engine.
-/// Used to directly serialize a screen.
-and [<NoComparison>] ScreenDescriptor =
-    { ScreenDispatcherName : string
-      ScreenProperties : Map<string, Symbol>
-      LayerDescriptors : LayerDescriptor list }
-
-    /// The empty screen descriptor.
-    static member empty =
-        { ScreenDispatcherName = String.Empty
-          ScreenProperties = Map.empty
-          LayerDescriptors = [] }
-
-    /// Derive a name from the dispatcher.
-    static member getNameOpt dispatcher =
-        dispatcher.ScreenProperties |>
-        Map.tryFind (Property? Name) |>
-        Option.map symbolToValue<string>
-
-/// Describes a layer value independent of the engine.
-/// Used to directly serialize a layer.
-and [<NoComparison>] LayerDescriptor =
-    { LayerDispatcherName : string
-      LayerProperties : Map<string, Symbol>
-      EntitieDescriptors : EntityDescriptor list }
-
-    /// The empty layer descriptor.
-    static member empty =
-        { LayerDispatcherName = String.Empty
-          LayerProperties = Map.empty
-          EntitieDescriptors = [] }
-
-    /// Derive a name from the dispatcher.
-    static member getNameOpt dispatcher =
-        dispatcher.LayerProperties |>
-        Map.tryFind (Property? Name) |>
-        Option.map symbolToValue<string>
-
-/// Describes an entity value independent of the engine.
-/// Used to directly serialize an entity.
-and [<NoComparison>] EntityDescriptor =
-    { EntityDispatcherName : string
-      EntityProperties : Map<string, Symbol> }
-
-    /// The empty entity descriptor.
-    static member empty =
-        { EntityDispatcherName = String.Empty
-          EntityProperties = Map.empty }
-
-    /// Derive a name from the dispatcher.
-    static member getNameOpt dispatcher =
-        dispatcher.EntityProperties |>
-        Map.tryFind (Property? Name) |>
-        Option.map symbolToValue<string>
 
 /// Initializes a property.
 type [<NoEquality; NoComparison>] PropertyInitializer =

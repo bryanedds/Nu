@@ -18,7 +18,7 @@ module PropDispatcherModule =
 
     type PropDispatcher () =
         inherit EntityDispatcher<PropModel, PropMessage, unit>
-            (PropModel.make (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f Set.empty (Chest (Consumable GreenHerb, Unlocked, WoodenChest, Gen.idEmpty)))
+            (PropModel.make (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f Set.empty PropData.empty)
 
         static member Facets =
             [typeof<RigidBodyFacet>]

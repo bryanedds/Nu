@@ -42,7 +42,7 @@ module OmniCharacter =
             let pulseIntensity = sin (pulseProgress * single Math.PI)
             let model = character.GetCharacterModel world
             let statuses = model.Statuses
-            if CharacterModel.runningTechAutoBattle model then Vector4 (1.0f,0.0f,0.0f,pulseIntensity) // red
+            if CharacterModel.isAutoBattling model then Vector4 (1.0f,0.0f,0.0f,pulseIntensity) // red
             elif Set.contains PoisonStatus statuses then Vector4 (0.0f,1.0f,0.0f,pulseIntensity) // green
             elif Set.contains MuteStatus statuses then Vector4 (0.1f,1.0f,0.0f,pulseIntensity) // orange
             elif Set.contains SleepStatus statuses then Vector4 (0.0f,0.0f,1.0f,pulseIntensity) // blue

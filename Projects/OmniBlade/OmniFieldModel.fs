@@ -39,33 +39,42 @@ module FieldModel =
         member this.Gold = this.Gold_
         member this.DialogOpt = this.DialogOpt_
 
-        static member getPartyMembers fieldModel =
-            Map.filter
-                (fun _ legionnaire -> Option.isSome legionnaire.PartyIndexOpt)
-                fieldModel.Legion_
+    let getPartyMembers fieldModel =
+        Map.filter
+            (fun _ legionnaire -> Option.isSome legionnaire.PartyIndexOpt)
+            fieldModel.Legion_
 
-        static member updateAvatar updater fieldModel =
-            { fieldModel with Avatar_ = updater fieldModel.Avatar_ }
+    let updateAvatar updater fieldModel =
+        { fieldModel with Avatar_ = updater fieldModel.Avatar_ }
 
-        static member updateAdvents updater model =
-            { model with Advents_ = updater model.Advents_ }
+    let updateAdvents updater model =
+        { model with Advents_ = updater model.Advents_ }
 
-        static member updateInventory updater model =
-            { model with Inventory_ = updater model.Inventory_ }
+    let updateInventory updater model =
+        { model with Inventory_ = updater model.Inventory_ }
 
-        static member updateGold updater model =
-            { model with Gold_ = updater model.Gold_ }
+    let updateGold updater model =
+        { model with Gold_ = updater model.Gold_ }
 
-        static member updateDialogOpt updater model =
-            { model with DialogOpt_ = updater model.DialogOpt_ }
+    let updateDialogOpt updater model =
+        { model with DialogOpt_ = updater model.DialogOpt_ }
 
-        static member make fieldType avatarModel legion advents inventory gold =
-            { FieldType_ = fieldType
-              Avatar_ = avatarModel
-              Legion_ = legion
-              Advents_ = advents
-              Inventory_ = inventory
-              Gold_ = gold
-              DialogOpt_ = None }
+    let make fieldType avatarModel legion advents inventory gold =
+        { FieldType_ = fieldType
+          Avatar_ = avatarModel
+          Legion_ = legion
+          Advents_ = advents
+          Inventory_ = inventory
+          Gold_ = gold
+          DialogOpt_ = None }
+
+    let empty =
+        { FieldType_ = FieldType.DebugRoom
+          Avatar_ = AvatarModel.empty
+          Legion_ = Map.empty
+          Advents_ = Set.empty
+          Inventory_ = { Items = Map.empty }
+          Gold_ = 0
+          DialogOpt_ = None }
 
 type FieldModel = FieldModel.FieldModel

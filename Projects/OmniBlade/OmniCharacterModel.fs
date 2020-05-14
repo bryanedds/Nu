@@ -77,200 +77,200 @@ module CharacterModel =
         member this.AutoBattleOpt = this.AutoBattleOpt_
         member this.InputState = this.InputState_
 
-        static member evaluateAutoBattle source (target : CharacterModel) =
-            let techOpt =
-                match Gen.random1 Constants.Battle.AutoBattleTechFrequency with
-                | 0 -> CharacterState.tryGetTechRandom source.CharacterState_
-                | _ -> None
-            { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
+    let isTeammate character character2 =
+        CharacterState.isTeammate character.CharacterState_ character2.CharacterState_
 
-        static member evaluateAimType aimType (target : CharacterModel) (characters : CharacterModel list) =
-            match aimType with
-            | AnyAim healthy ->
-                characters |>
-                List.filter (fun target -> target.IsHealthy = healthy)
-            | EnemyAim healthy | AllyAim healthy ->
-                characters |>
-                List.filter (CharacterModel.isTeammate target) |>
-                List.filter (fun target -> target.IsHealthy = healthy)
-            | NoAim ->
-                []
+    let isReadyForAutoBattle character =
+        Option.isNone character.AutoBattleOpt_ &&
+        character.CharacterState_.ActionTime > Constants.Battle.AutoBattleReadyTime &&
+        character.CharacterState_.IsEnemy
 
-        static member evaluateTargetType targetType (source : CharacterModel) target characters =
-            match targetType with
-            | SingleTarget _ ->
-                [target]
-            | ProximityTarget (aimType, radius) ->
-                characters |>
-                CharacterModel.evaluateAimType aimType target |>
-                List.filter (fun character ->
-                    let v = character.Bottom - source.Bottom
-                    v.Length <= radius)
-            | RadialTarget (aimType, radius) ->
-                characters |>
-                CharacterModel.evaluateAimType aimType target |>
-                List.filter (fun character ->
-                    let v = character.Bottom - target.Bottom
-                    v.Length <= radius)
-            | LineTarget (aimType, width) ->
-                characters |>
-                CharacterModel.evaluateAimType aimType target |>
-                List.filter (fun character ->
-                    let a = source.Bottom
-                    let b = target.Bottom
-                    let c = character.Bottom
-                    let (ab, ac, bc) = (b - a, c - a, c - b)
-                    let e = Vector2.Dot (ac, ab)
-                    let d =
-                        if e > 0.0f then
-                            let f = Vector2.Dot(ab, ab);
-                            if e < f
-                            then Vector2.Dot (ac, ac) - e * e / f
-                            else Vector2.Dot (bc, bc)
-                        else Vector2.Dot (ac, ac)
-                    d <= width)
-            | AllTarget aimType ->
-                characters |>
-                CharacterModel.evaluateAimType aimType target
+    let isAutoBattling character =
+        match character.AutoBattleOpt_ with
+        | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt
+        | None -> false
 
-        static member evaluateTech techData source (target : CharacterModel) =
-            let power = source.CharacterState_.Power
-            if techData.Curative then
-                let healing = single power * techData.Scalar |> int |> max 1
-                (false, healing, target.CharacterIndex)
-            else
-                let cancelled = techData.Cancels && CharacterModel.runningTechAutoBattle target
-                let shield = target.CharacterState_.Shield techData.EffectType
-                let damageUnscaled = power - shield
-                let damage = single damageUnscaled * techData.Scalar |> int |> max 1
-                (cancelled, -damage, target.CharacterIndex)
+    let evaluateAutoBattle source (target : CharacterModel) =
+        let techOpt =
+            match Gen.random1 Constants.Battle.AutoBattleTechFrequency with
+            | 0 -> CharacterState.tryGetTechRandom source.CharacterState_
+            | _ -> None
+        { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
 
-        static member evaluateTechMove techData source target characters =
-            let targets =
-                CharacterModel.evaluateTargetType techData.TargetType source target characters
-            let resultsRev =
-                List.fold (fun results target ->
-                    let result = CharacterModel.evaluateTech techData source target
-                    result :: results)
-                    [] targets
-            List.rev resultsRev
+    let evaluateAimType aimType (target : CharacterModel) (characters : CharacterModel list) =
+        match aimType with
+        | AnyAim healthy ->
+            characters |>
+            List.filter (fun target -> target.IsHealthy = healthy)
+        | EnemyAim healthy | AllyAim healthy ->
+            characters |>
+            List.filter (isTeammate target) |>
+            List.filter (fun target -> target.IsHealthy = healthy)
+        | NoAim ->
+            []
 
-        static member getPoiseType character =
-            CharacterState.getPoiseType character.CharacterState_
+    let evaluateTargetType targetType (source : CharacterModel) target characters =
+        match targetType with
+        | SingleTarget _ ->
+            [target]
+        | ProximityTarget (aimType, radius) ->
+            characters |>
+            evaluateAimType aimType target |>
+            List.filter (fun character ->
+                let v = character.Bottom - source.Bottom
+                v.Length <= radius)
+        | RadialTarget (aimType, radius) ->
+            characters |>
+            evaluateAimType aimType target |>
+            List.filter (fun character ->
+                let v = character.Bottom - target.Bottom
+                v.Length <= radius)
+        | LineTarget (aimType, width) ->
+            characters |>
+            evaluateAimType aimType target |>
+            List.filter (fun character ->
+                let a = source.Bottom
+                let b = target.Bottom
+                let c = character.Bottom
+                let (ab, ac, bc) = (b - a, c - a, c - b)
+                let e = Vector2.Dot (ac, ab)
+                let d =
+                    if e > 0.0f then
+                        let f = Vector2.Dot(ab, ab);
+                        if e < f
+                        then Vector2.Dot (ac, ac) - e * e / f
+                        else Vector2.Dot (bc, bc)
+                    else Vector2.Dot (ac, ac)
+                d <= width)
+        | AllTarget aimType ->
+            characters |>
+            evaluateAimType aimType target
 
-        static member getAttackResult effectType source target =
-            CharacterState.getAttackResult effectType source.CharacterState_ target.CharacterState_
+    let evaluateTech techData source (target : CharacterModel) =
+        let power = source.CharacterState_.Power
+        if techData.Curative then
+            let healing = single power * techData.Scalar |> int |> max 1
+            (false, healing, target.CharacterIndex)
+        else
+            let cancelled = techData.Cancels && isAutoBattling target
+            let shield = target.CharacterState_.Shield techData.EffectType
+            let damageUnscaled = power - shield
+            let damage = single damageUnscaled * techData.Scalar |> int |> max 1
+            (cancelled, -damage, target.CharacterIndex)
 
-        static member getAnimationIndex time character =
-            CharacterAnimationState.index time character.AnimationState_
+    let evaluateTechMove techData source target characters =
+        let targets =
+            evaluateTargetType techData.TargetType source target characters
+        let resultsRev =
+            List.fold (fun results target ->
+                let result = evaluateTech techData source target
+                result :: results)
+                [] targets
+        List.rev resultsRev
 
-        static member getAnimationProgressOpt time character =
-            CharacterAnimationState.progressOpt time character.AnimationState_
+    let getPoiseType character =
+        CharacterState.getPoiseType character.CharacterState_
 
-        static member getAnimationFinished time character =
-            CharacterAnimationState.getFinished time character.AnimationState_
-        
-        static member runningTechAutoBattle character =
+    let getAttackResult effectType source target =
+        CharacterState.getAttackResult effectType source.CharacterState_ target.CharacterState_
+
+    let getAnimationIndex time character =
+        CharacterAnimationState.index time character.AnimationState_
+
+    let getAnimationProgressOpt time character =
+        CharacterAnimationState.progressOpt time character.AnimationState_
+
+    let getAnimationFinished time character =
+        CharacterAnimationState.getFinished time character.AnimationState_
+
+    let updateHitPoints updater character =
+        let (hitPoints, cancel) = updater character.CharacterState_.HitPoints
+        let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
+        let autoBattleOpt = 
             match character.AutoBattleOpt_ with
-            | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt
-            | None -> false
+            | Some autoBattle when cancel -> Some { autoBattle with AutoTechOpt = None }
+            | _ -> None
+        { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
 
-        static member isTeammate character character2 =
-            CharacterState.isTeammate character.CharacterState_ character2.CharacterState_
+    let updateTechPoints updater character =
+        { character with CharacterState_ = CharacterState.updateTechPoints updater character.CharacterState_ }
 
-        static member isReadyForAutoBattle character =
-            Option.isNone character.AutoBattleOpt_ &&
-            character.CharacterState_.ActionTime > Constants.Battle.AutoBattleReadyTime &&
-            character.CharacterState_.IsEnemy
-
-        static member updateHitPoints updater character =
-            let (hitPoints, cancel) = updater character.CharacterState_.HitPoints
-            let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
-            let autoBattleOpt = 
-                match character.AutoBattleOpt_ with
-                | Some autoBattle when cancel -> Some { autoBattle with AutoTechOpt = None }
-                | _ -> None
-            { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
-
-        static member updateTechPoints updater character =
-            { character with CharacterState_ = CharacterState.updateTechPoints updater character.CharacterState_ }
-
-        static member updateInputState updater character =
-            { character with InputState_ = updater character.InputState_ }
+    let updateInputState updater character =
+        { character with InputState_ = updater character.InputState_ }
     
-        static member updateActionTime updater character =
-            { character with CharacterState_ = CharacterState.updateActionTime updater character.CharacterState_ }
+    let updateActionTime updater character =
+        { character with CharacterState_ = CharacterState.updateActionTime updater character.CharacterState_ }
 
-        static member updateAutoBattleOpt updater character =
-            { character with AutoBattleOpt_ = updater character.AutoBattleOpt_ }
+    let updateAutoBattleOpt updater character =
+        { character with AutoBattleOpt_ = updater character.AutoBattleOpt_ }
 
-        static member updateBounds updater (character : CharacterModel) =
-            { character with Bounds_ = updater character.Bounds_ }
+    let updateBounds updater (character : CharacterModel) =
+        { character with Bounds_ = updater character.Bounds_ }
 
-        static member updatePosition updater (character : CharacterModel) =
-            { character with Bounds_ = character.Position |> updater |> character.Bounds.WithPosition }
+    let updatePosition updater (character : CharacterModel) =
+        { character with Bounds_ = character.Position |> updater |> character.Bounds.WithPosition }
 
-        static member updateCenter updater (character : CharacterModel) =
-            { character with Bounds_ = character.Center |> updater |> character.Bounds.WithCenter }
+    let updateCenter updater (character : CharacterModel) =
+        { character with Bounds_ = character.Center |> updater |> character.Bounds.WithCenter }
 
-        static member updateBottom updater (character : CharacterModel) =
-            { character with Bounds_ = character.Bottom |> updater |> character.Bounds.WithBottom }
+    let updateBottom updater (character : CharacterModel) =
+        { character with Bounds_ = character.Bottom |> updater |> character.Bounds.WithBottom }
 
-        static member autoBattle (source : CharacterModel) (target : CharacterModel) =
-            let sourceToTarget = target.Position - source.Position
-            let direction = Direction.fromVector2 sourceToTarget
-            let animationState = { source.AnimationState_ with Direction = direction }
-            let autoBattle = CharacterModel.evaluateAutoBattle source target
-            { source with AnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
+    let autoBattle (source : CharacterModel) (target : CharacterModel) =
+        let sourceToTarget = target.Position - source.Position
+        let direction = Direction.fromVector2 sourceToTarget
+        let animationState = { source.AnimationState_ with Direction = direction }
+        let autoBattle = evaluateAutoBattle source target
+        { source with AnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
 
-        static member defend character =
-            let characterState = character.CharacterState_
-            let characterState =
-                // TODO: shield buff
-                if not characterState.Defending
-                then { characterState with CounterBuff = max 0.0f (characterState.CounterBuff + Constants.Battle.DefendingCounterBuff) }
-                else characterState
-            let characterState = { characterState with Defending = true }
-            { character with CharacterState_ = characterState }
+    let defend character =
+        let characterState = character.CharacterState_
+        let characterState =
+            // TODO: shield buff
+            if not characterState.Defending
+            then { characterState with CounterBuff = max 0.0f (characterState.CounterBuff + Constants.Battle.DefendingCounterBuff) }
+            else characterState
+        let characterState = { characterState with Defending = true }
+        { character with CharacterState_ = characterState }
 
-        static member undefend character =
-            let characterState = character.CharacterState_
-            let characterState =
-                // TODO: shield buff
-                if characterState.Defending
-                then { characterState with CounterBuff = max 0.0f (characterState.CounterBuff - Constants.Battle.DefendingCounterBuff) }
-                else characterState
-            let characterState = { characterState with Defending = false }
-            { character with CharacterState_ = characterState }
+    let undefend character =
+        let characterState = character.CharacterState_
+        let characterState =
+            // TODO: shield buff
+            if characterState.Defending
+            then { characterState with CounterBuff = max 0.0f (characterState.CounterBuff - Constants.Battle.DefendingCounterBuff) }
+            else characterState
+        let characterState = { characterState with Defending = false }
+        { character with CharacterState_ = characterState }
 
-        static member animate time cycle character =
-            { character with AnimationState_ = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState_ }
+    let animate time cycle character =
+        { character with AnimationState_ = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState_ }
 
-        static member makeEnemy index enemyData =
-            let animationSheet = 
-                let characterType = Enemy enemyData.EnemyType
-                match Map.tryFind characterType data.Value.Characters with
-                | Some characterData -> characterData.AnimationSheet
-                | None -> Assets.BlueGoblinAnimationSheet
-            let enemy =
-                CharacterModel.make
-                    (v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize)
-                    (EnemyIndex index)
-                    (Enemy enemyData.EnemyType)
-                    0
-                    None None [] // TODO: figure out if / how we should populate these 
-                    animationSheet
-                    Leftward
-            enemy
+    let make bounds characterIndex characterType expPoints weaponOpt armorOpt accessories animationSheet direction =
+        let characterState = CharacterState.make characterIndex characterType expPoints weaponOpt armorOpt accessories animationSheet
+        let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = ReadyCycle; Direction = direction }
+        { BoundsOriginal_ = bounds
+          Bounds_ = bounds
+          CharacterState_ = characterState
+          AnimationState_ = animationState
+          AutoBattleOpt_ = None
+          InputState_ = NoInput }
 
-        static member make bounds characterIndex characterType expPoints weaponOpt armorOpt accessories animationSheet direction =
-            let characterState = CharacterState.make characterIndex characterType expPoints weaponOpt armorOpt accessories animationSheet
-            let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = ReadyCycle; Direction = direction }
-            { BoundsOriginal_ = bounds
-              Bounds_ = bounds
-              CharacterState_ = characterState
-              AnimationState_ = animationState
-              AutoBattleOpt_ = None
-              InputState_ = NoInput }
+    let makeEnemy index enemyData =
+        let animationSheet = 
+            let characterType = Enemy enemyData.EnemyType
+            match Map.tryFind characterType data.Value.Characters with
+            | Some characterData -> characterData.AnimationSheet
+            | None -> Assets.BlueGoblinAnimationSheet
+        let enemy =
+            make
+                (v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize)
+                (EnemyIndex index)
+                (Enemy enemyData.EnemyType)
+                0
+                None None [] // TODO: figure out if / how we should populate these 
+                animationSheet
+                Leftward
+        enemy
 
 type CharacterModel = CharacterModel.CharacterModel

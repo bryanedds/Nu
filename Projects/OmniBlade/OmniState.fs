@@ -264,6 +264,12 @@ type CharacterAnimationState =
         | Some progress -> progress = 1.0f
         | None -> false
 
+    static member empty =
+        { TimeStart = 0L
+          AnimationSheet = Assets.FinnAnimationSheet
+          AnimationCycle = IdleCycle
+          Direction = Downward }
+
 type CharacterInputState =
     | NoInput
     | RegularMenu

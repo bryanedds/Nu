@@ -65,7 +65,10 @@ type BodyShapeProperties =
       CollisionMaskOpt : int option
       IsSensorOpt : bool option }
 
-    static member empty =
+[<RequireQualifiedAccess>]
+module BodyShapeProperties =
+
+    let empty =
         { BodyShapeId = Gen.idEmpty
           FrictionOpt = None
           RestitutionOpt = None
@@ -144,7 +147,10 @@ type [<StructuralEquality; NoComparison>] BodyProperties =
       IsBullet : bool
       IsSensor : bool }
 
-    static member empty =
+[<RequireQualifiedAccess>]
+module BodyProperties =
+
+    let empty =
         { BodyId = Gen.idEmpty
           Position = Vector2.Zero
           Rotation = 0.0f
@@ -253,7 +259,10 @@ type [<NoComparison>] JointProperties =
     { JointId : Guid
       JointDevice : JointDevice }
 
-    static member empty =
+[<RequireQualifiedAccess>]
+module JointProperties =
+
+    let empty =
         { JointId = Gen.idEmpty
           JointDevice = JointEmpty }
 

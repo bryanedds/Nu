@@ -24,22 +24,28 @@ module PropModel =
         member this.Advents = this.Advents_
         member this.PropData = this.PropData_
 
-        static member updateBounds updater (model : PropModel) =
-            { model with Bounds_ = updater model.Bounds_ }
+    let updateBounds updater (model : PropModel) =
+        { model with Bounds_ = updater model.Bounds_ }
 
-        static member updatePosition updater (model : PropModel) =
-            { model with Bounds_ = model.Position |> updater |> model.Bounds.WithPosition }
+    let updatePosition updater (model : PropModel) =
+        { model with Bounds_ = model.Position |> updater |> model.Bounds.WithPosition }
 
-        static member updateCenter updater (model : PropModel) =
-            { model with Bounds_ = model.Center |> updater |> model.Bounds.WithCenter }
+    let updateCenter updater (model : PropModel) =
+        { model with Bounds_ = model.Center |> updater |> model.Bounds.WithCenter }
 
-        static member updateBottom updater (model : PropModel) =
-            { model with Bounds_ = model.Bottom |> updater |> model.Bounds.WithBottom }
+    let updateBottom updater (model : PropModel) =
+        { model with Bounds_ = model.Bottom |> updater |> model.Bounds.WithBottom }
 
-        static member make bounds depth advents props =
-            { Bounds_ = bounds
-              Depth_ = depth
-              Advents_ = advents
-              PropData_ = props }
+    let make bounds depth advents props =
+        { Bounds_ = bounds
+          Depth_ = depth
+          Advents_ = advents
+          PropData_ = props }
+
+    let empty =
+        { Bounds_ = v4Bounds v2Zero Constants.Gameplay.CharacterSize
+          Depth_ = 0.0f
+          Advents_ = Set.empty
+          PropData_ = PropData.empty }
 
 type PropModel = PropModel.PropModel
