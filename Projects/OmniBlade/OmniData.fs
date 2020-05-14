@@ -59,6 +59,11 @@ type ItemType =
     | Equipment of EquipmentType
     | Consumable of ConsumableType
     | KeyItem of KeyItemType
+    static member getName item =
+        match item with
+        | Equipment ty -> scstring ty
+        | Consumable ty -> scstring ty
+        | KeyItem ty -> scstring ty
 
 type AimType =
     | EnemyAim of bool // healthy (N/A)

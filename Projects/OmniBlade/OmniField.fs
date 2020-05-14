@@ -40,7 +40,7 @@ module OmniField =
         static let tryGetInteraction dialogOpt advents prop =
             match dialogOpt with
             | Some dialog ->
-                if dialog.DialogProgress > dialog.DialogText.Length
+                if dialog.DialogProgress > String.Join("\n", dialog.DialogText).Length
                 then Some "Next"
                 else None
             | None ->
@@ -104,14 +104,16 @@ module OmniField =
                 let model =
                     FieldModel.updateDialogOpt
                         (function
-                         | Some dialog -> Some { dialog with DialogProgress = inc dialog.DialogProgress }
+                         | Some dialog ->
+                            let increment = if World.getTickTime world % 3L = 0L then 1 else 0
+                            Some { dialog with DialogProgress = dialog.DialogProgress + increment }
                          | None -> None)
                         model
                 just model
 
             | Interact ->
                 match model.DialogOpt with
-                | Some dialog ->
+                | Some _ ->
                     let model = FieldModel.updateDialogOpt (constant None) model
                     just model
                 | None ->
@@ -121,7 +123,7 @@ module OmniField =
                         | Chest (itemType, lockType, chestType, chestId) ->
                             let model = FieldModel.updateInventory (Inventory.addItem itemType) model
                             let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
-                            let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found '" + scstring itemType + "'!"]; DialogProgress = 0 })) model
+                            let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0 })) model
                             withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
                         | _ -> just model
                     | None -> just model
@@ -200,7 +202,9 @@ module OmniField =
                             let textToShow = String.tryTake dialog.DialogProgress text
                             textToShow
                         | None -> ""
-                     Entity.Visible <== model --> fun model -> Option.isSome model.DialogOpt]
+                     Entity.Visible <== model --> fun model -> Option.isSome model.DialogOpt
+                     Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
+                     Entity.Margins == v2 32.0f 0.0f]
                  Content.entities
                     (model ->> fun model world ->
                         match Map.tryFind model.FieldType data.Value.Fields with
